@@ -1,13 +1,12 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Pitchfork_Continuation_Example
-    SOURCES 
+    SOURCES
     PitchforkProblemInterface.H
     PitchforkProblemInterface.C
     PitchforkContinuation.C

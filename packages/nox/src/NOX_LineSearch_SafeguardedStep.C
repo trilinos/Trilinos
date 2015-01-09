@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,7 +64,7 @@
 
 NOX::LineSearch::SafeguardedStep::
 SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
-		Teuchos::ParameterList& params) :
+        Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils())
@@ -75,21 +75,21 @@ SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
 bool NOX::LineSearch::SafeguardedStep::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
-{ 
+{
   globalDataPtr_ = gd;
   print_.reset(gd->getUtils());
   paramsPtr_ = &params;
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Step");
   p.validateParametersAndSetDefaults(*getValidParameters());
-  
+
   userLimits_ = p.get<Teuchos::RCP<NOX::Abstract::Vector> >("Update Limit Vector");
   lowerStepBound_ = p.get<double>("Step Size Lower Bound");
   upperStepBound_ = p.get<double>("Step Size Upper Bound");
   useCounter_ = p.get<bool>("Use Counters");
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(userLimits_), std::runtime_error,
-			     "Error: The line search NOX::LineSearch::SafeguardedStep requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
+                 "Error: The line search NOX::LineSearch::SafeguardedStep requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
 
   if (is_null(invLimits_))
     invLimits_ = userLimits_->clone(NOX::ShapeCopy);
@@ -105,10 +105,10 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp, 
-					       double& step, 
-					       const Abstract::Vector& dir,
-					       const Solver::Generic& s) 
+bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
+                           double& step,
+                           const Abstract::Vector& dir,
+                           const Solver::Generic& s)
 {
   printOpeningRemarks();
 
@@ -139,7 +139,7 @@ bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
   }
 
   if (print_.isPrintType(NOX::Utils::InnerIteration)) {
-    print_.out () << "    computed step = " << step << std::endl;  
+    print_.out () << "    computed step = " << step << std::endl;
   }
 
   step = std::max(step,lowerStepBound_);
@@ -165,7 +165,7 @@ bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
   return true;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList> 
+Teuchos::RCP<const Teuchos::ParameterList>
 NOX::LineSearch::SafeguardedStep::getValidParameters()
 {
   if (is_null(validParams_)) {
@@ -178,12 +178,12 @@ NOX::LineSearch::SafeguardedStep::getValidParameters()
 
   return validParams_;
 }
-  
+
 void NOX::LineSearch::SafeguardedStep::printOpeningRemarks() const
 {
-  if (print_.isPrintType(NOX::Utils::InnerIteration)) 
+  if (print_.isPrintType(NOX::Utils::InnerIteration))
   {
     print_.out() << "\n" << NOX::Utils::fill(72) << "\n"
-		 << "-- SafeguardedStep Line Search -- \n";
+         << "-- SafeguardedStep Line Search -- \n";
   }
 }

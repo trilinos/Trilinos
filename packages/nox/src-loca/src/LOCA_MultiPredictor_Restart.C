@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,8 +57,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Restart::Restart(
-	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor()
 {
@@ -70,12 +70,12 @@ LOCA::MultiPredictor::Restart::Restart(
     globalData->locaErrorCheck->throwError(func, name + " is not set!");
 
   if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> >(name)) 
+      isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> >(name))
     predictor = (*predParams).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> >(name);
 
   else if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-	   isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> >(name)) {
+       isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> >(name)) {
     Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> v =
       (*predParams).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> >(name);
@@ -93,8 +93,8 @@ LOCA::MultiPredictor::Restart::~Restart()
 }
 
 LOCA::MultiPredictor::Restart::Restart(
-				 const LOCA::MultiPredictor::Restart& source,
-				 NOX::CopyType type) :
+                 const LOCA::MultiPredictor::Restart& source,
+                 NOX::CopyType type) :
   globalData(source.globalData),
   predictor(source.predictor)
 {
@@ -102,9 +102,9 @@ LOCA::MultiPredictor::Restart::Restart(
 
 LOCA::MultiPredictor::AbstractStrategy&
 LOCA::MultiPredictor::Restart::operator=(
-			  const LOCA::MultiPredictor::AbstractStrategy& s)
+              const LOCA::MultiPredictor::AbstractStrategy& s)
 {
-  const LOCA::MultiPredictor::Restart& source = 
+  const LOCA::MultiPredictor::Restart& source =
     dynamic_cast<const LOCA::MultiPredictor::Restart&>(s);
 
   if (this != &source) {
@@ -121,25 +121,25 @@ LOCA::MultiPredictor::Restart::clone(NOX::CopyType type) const
   return Teuchos::rcp(new Restart(*this, type));
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Restart::compute(
-	      bool baseOnSecant, const std::vector<double>& stepSize,
-	      LOCA::MultiContinuation::ExtendedGroup& grp,
-	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec)
+          bool baseOnSecant, const std::vector<double>& stepSize,
+          LOCA::MultiContinuation::ExtendedGroup& grp,
+          const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+          const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
-    globalData->locaUtils->out() << 
+    globalData->locaUtils->out() <<
       "\n\tCalling Predictor with method: Restart" << std::endl;
 
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Restart::evaluate(
-	      const std::vector<double>& stepSize,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec,
-	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
+          const std::vector<double>& stepSize,
+          const LOCA::MultiContinuation::ExtendedVector& xVec,
+          LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {
   // Number of continuation parameters
   int numParams = stepSize.size();
@@ -150,9 +150,9 @@ LOCA::MultiPredictor::Restart::evaluate(
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Restart::computeTangent(
-			LOCA::MultiContinuation::ExtendedMultiVector& v)
+            LOCA::MultiContinuation::ExtendedMultiVector& v)
 {
   v = *predictor;
 

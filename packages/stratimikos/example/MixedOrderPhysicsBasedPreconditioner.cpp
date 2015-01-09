@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
   using Thyra::solve;
   typedef RCP<const Thyra::LinearOpBase<double> > LinearOpPtr;
   typedef RCP<Thyra::VectorBase<double> > VectorPtr;
-  
+
   bool success = true;
   bool verbose = true;
 
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
     //
     *out << "\nA) Reading in Epetra_CrsMatrix objects for P1, P2, M11, M12, M21, and M22 ...\n";
     //
-    
+
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
 
     // ToDo: Replace the above functions with a general Thyra strategy object
     // to do the reading
-    
+
     //
     *out << "\nB) Get the preconditioner and/or linear solver strategies to invert M11, M22, P1, and P2 ...\n";
     //
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
       *out << "\nRead in parameter list:\n\n";
       paramList->print(*out,PLPrintOptions().indent(2).showTypes(true));
     }
-    
+
     Stratimikos::DefaultLinearSolverBuilder M11_linsolve_strategy_builder;
     M11_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"M11 Solver",true) );
@@ -303,7 +303,7 @@ int main(int argc, char* argv[])
     P2_linsolve_strategy_builder.setParameterList(
       sublist(paramList,"P2 Solver",true) );
 
-    // 
+    //
     // Create the linear solver and/or preconditioner strategies
     // (i.e. factories)
     //
@@ -313,10 +313,10 @@ int main(int argc, char* argv[])
 
     RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > M11_linsolve_strategy
       = createLinearSolveStrategy(M11_linsolve_strategy_builder);
-      
+
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > M22_linsolve_strategy
       = createLinearSolveStrategy(M22_linsolve_strategy_builder);
-      
+
     // For P1, we only want its preconditioner factory.
 
     RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > P1_linsolve_strategy;
@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
 
     LinearOpPtr precP2Op = multiply( P1ToP2, invP1, P2ToP1 );
     *out << "\nprecP2Op = " << describe(*precP2Op,verbLevel) << "\n";
-      
+
     //
     *out << "\nD) Setup the solver for P2 ...\n";
     //
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
       initializeOp(*P2_linsolve_strategy, P2, P2_lows.ptr());
     }
     *out << "\nP2_lows = " << describe(*P2_lows, verbLevel) << "\n";
-    
+
     //
     *out << "\nE) Solve P2 for a random RHS ...\n";
     //
@@ -413,12 +413,12 @@ int main(int argc, char* argv[])
     //
     *out << "\nF) Checking the error in the solution of r=b-P2*x ...\n";
     //
-    
+
     VectorPtr P2x = Thyra::createMember(b->space());
     Thyra::apply( *P2, Thyra::NOTRANS, *x, P2x.ptr() );
     VectorPtr r = Thyra::createMember(b->space());
     Thyra::V_VmV<double>(r.ptr(), *b, *P2x);
-    
+
     double
       P2x_nrm = Thyra::norm(*P2x),
       r_nrm = Thyra::norm(*r),
@@ -427,25 +427,24 @@ int main(int argc, char* argv[])
 
     bool result = r_nrm_over_b_nrm <= solveTol;
     if(!result) success = false;
-    
+
     *out
       << "\n||P2*x|| = " << P2x_nrm << "\n";
-    
+
     *out
       << "\n||P2*x-b||/||b|| = " << r_nrm << "/" << b_nrm
       << " = " << r_nrm_over_b_nrm << " <= " << solveTol
       << " : " << Thyra::passfail(result) << "\n";
-    
+
+    Teuchos::TimeMonitor::summarize(*out<<"\n");
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)
-    
-  Teuchos::TimeMonitor::summarize(*out<<"\n");
-  
+
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
 
-  return ( success ? 0 : 1 );
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 
 }

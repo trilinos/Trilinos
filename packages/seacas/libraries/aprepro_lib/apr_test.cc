@@ -1,3 +1,36 @@
+// Copyright (c) 2014, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <iostream>
 #include <fstream>
 
@@ -63,20 +96,46 @@ int main(int argc, char *argv[])
     
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
-  std::string line;
-  while( std::cout << "\nexpession: " &&
-	 std::getline(std::cin, line) &&
-	 !line.empty() ) {
-    if (line[0] != '{') 
-      line = "{" + line + "}\n";
-    else
+  std::string line, tmp;
+  while( std::cout << "\nexpression: " &&
+   std::getline(std::cin, tmp) &&
+   !tmp.empty() ) {
+
+    line += tmp;
+
+    if(*tmp.rbegin() == '\\')
+    {
+      line.erase(line.length()-1);
+      continue;
+    }
+
       line += "\n";
     
-    bool result = aprepro.parse_string(line, "input");
+    bool result = aprepro.parse_string_interactive(line);
 
     if (result) {
-      std::cout << "         : " << aprepro.parsing_results().str();
-      aprepro.clear_results();
+      std::string res_str = aprepro.parsing_results().str();
+      std::cout << "         : " << res_str;
+
+
+      // Example showing how to get the substitution history for the current line.
+      if(aprepro.ap_options.keep_history)
+      {
+        std::vector<SEAMS::history_data> hist = aprepro.get_history();
+        for(size_t i = 0; i < hist.size(); i++)
+        {
+          SEAMS::history_data curr_history = hist[i];
+          std::cout << curr_history.original << " was substituted with " <<
+                       curr_history.substitution << " at index " <<
+                       curr_history.index << std::endl;
+        }
+
+        aprepro.clear_history();
+      }
     }
+
+    aprepro.clear_results();
+
+    line.clear();
   }
 }

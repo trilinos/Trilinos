@@ -68,14 +68,15 @@ template <typename Adapter>
 private:
 
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
+  typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   const RCP<const Environment> env_;
 
-  partId_t numGlobalParts_;           // desired
-  partId_t targetGlobalParts_;        // actual
-  partId_t numNonEmpty_;              // of actual
+  part_t numGlobalParts_;           // desired
+  part_t targetGlobalParts_;        // actual
+  part_t numNonEmpty_;              // of actual
 
   ArrayRCP<MetricValues<scalar_t> > metrics_;
   ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
@@ -122,16 +123,16 @@ public:
       imbalance = metrics_[0].getMaxImbalance();
   }
 
-  /*! \brief Return the imbalance for the requested weight dimension.
+  /*! \brief Return the imbalance for the requested weight.
    *  \param imbalance on return is the requested value.
-   *  \param dim is the weight dimension requested, ranging from zero
+   *  \param idx is the weight index requested, ranging from zero
    *     to one less than the number of weights provided in the input.
    *  If there were no weights, this is the object count imbalance.
    */
-  void getWeightImbalance(scalar_t &imbalance, int dim=0) const{
+  void getWeightImbalance(scalar_t &imbalance, int idx=0) const{
     imbalance = 0;
-    if (metrics_.size() > 2)  // dimension dim of multiple weights
-      imbalance = metrics_[dim+2].getMaxImbalance();
+    if (metrics_.size() > 2)  // idx of multiple weights
+      imbalance = metrics_[idx+2].getMaxImbalance();
     else if (metrics_.size() == 2)   //  only one weight
       imbalance = metrics_[1].getMaxImbalance();
     else                       // no weights, return object count imbalance
@@ -140,8 +141,8 @@ public:
 
   /*! \brief Print all the metrics
    */
-  void printMetrics(ostream &os) const {
-    Zoltan2::printMetrics<scalar_t>(os, 
+  void printMetrics(std::ostream &os) const {
+    Zoltan2::printMetrics<scalar_t, part_t>(os, 
       targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
       metrics_.view(0, metrics_.size()));
   }
@@ -157,7 +158,7 @@ template <typename Adapter>
     metrics_(),  metricsConst_()
 {
 
-  env->debug(DETAILED_STATUS, string("Entering PartitioningSolutionQuality"));
+  env->debug(DETAILED_STATUS, std::string("Entering PartitioningSolutionQuality"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 
   // When we add parameters for which weights to use, we
@@ -170,10 +171,10 @@ template <typename Adapter>
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
 
   if (pe){
-    string strChoice = pe->getValue<string>(&strChoice);
-    if (strChoice == string("multicriteria_minimize_total_weight"))
+    std::string strChoice = pe->getValue<std::string>(&strChoice);
+    if (strChoice == std::string("multicriteria_minimize_total_weight"))
       mcnorm = normMinimizeTotalWeight;
-    else if (strChoice == string("multicriteria_minimize_maximum_weight"))
+    else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
       mcnorm = normMinimizeMaximumWeight;
   } 
 
@@ -186,7 +187,7 @@ template <typename Adapter>
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
-  env->debug(DETAILED_STATUS, string("Exiting PartitioningSolutionQuality"));
+  env->debug(DETAILED_STATUS, std::string("Exiting PartitioningSolutionQuality"));
 }
 
 }   // namespace Zoltan2

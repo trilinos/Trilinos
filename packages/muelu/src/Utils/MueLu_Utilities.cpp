@@ -45,6 +45,8 @@
 // @HEADER
 #include "MueLu_Utilities_def.hpp"
 
+#include <string>
+
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
 #endif
@@ -55,8 +57,7 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
-   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType      Node;
 
    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
 
@@ -68,7 +69,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     try {
-      Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(Op);
+      Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(Op);
     }
     catch (...) {
       TorE = "tpetra";
@@ -78,13 +79,13 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
       try {
-        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(Op);
+        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
         // Compute the transpose A of the Tpetra matrix tpetraOp.
-        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
+        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
         {
           Teuchos::TimeMonitor tmm (*Teuchos::TimeMonitor::getNewCounter ("ZZ Tpetra Transpose Only"));
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(rcpFromRef(tpetraOp));
+          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp));
           A = transposer.createTranspose();
         }
         RCP<Xpetra::TpetraCrsMatrix<SC> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC>(A));
@@ -93,8 +94,9 @@ namespace MueLu {
 
         return AAAA;
       }
-      catch (...) {
-        throw Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices");
+      catch (std::exception& e) {
+        std::cout << "threw exception '" << e.what() << "'" << std::endl;
+        throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
 #endif
@@ -108,7 +110,7 @@ namespace MueLu {
     } else {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       // Epetra case
-      Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);
+      Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(Op);
       EpetraExt::RowMatrix_Transpose transposer;
       Epetra_CrsMatrix * A = dynamic_cast<Epetra_CrsMatrix*>(&transposer(epetraOp));
       transposer.ReleaseTranspose(); // So we can keep A in Muelu...
@@ -161,8 +163,7 @@ namespace MueLu {
    typedef double                                           Scalar;
    typedef int                                              LocalOrdinal;
    typedef int                                              GlobalOrdinal;
-   typedef KokkosClassic::DefaultNode::DefaultNodeType             Node;
-   typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps LocalMatOps;
+   typedef KokkosClassic::DefaultNode::DefaultNodeType      Node;
 
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
@@ -184,8 +185,8 @@ namespace MueLu {
 
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2TpetraCrs(A);
-      Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>&       tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2NonConstTpetraCrs(B);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2TpetraCrs(A);
+      Tpetra::CrsMatrix<SC, LO, GO, NO>&       tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal>::Op2NonConstTpetraCrs(B);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 #else
@@ -226,7 +227,7 @@ namespace MueLu {
 
         fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
-        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
       } else {
         // general case
@@ -245,7 +246,7 @@ namespace MueLu {
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
 
-        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
+        C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
         fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
@@ -269,7 +270,7 @@ namespace MueLu {
            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
            << std::endl;
 
-      C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
+      C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO>(A.getRowMap(), nnzToAllocate, pft));
 
       if (transposeB)
         fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
@@ -293,9 +294,9 @@ namespace MueLu {
 
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpA = Utils<double,int,int>::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO>& tpB = Utils<double,int,int>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> >  tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>&  tpA = Utils<double,int,int>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC, LO, GO, NO>&  tpB = Utils<double,int,int>::Op2TpetraCrs(B);
+      RCP<  Tpetra::CrsMatrix<SC, LO, GO, NO> > tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
 #else
@@ -319,13 +320,13 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
       Epetra_MultiVector * MV;
       EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-      return Xpetra::toXpetra(rcp(MV));
+      return Xpetra::toXpetra<int>(rcp(MV));
 #else
       throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
 #endif
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>                sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO>                    sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>  reader_type;
       typedef Tpetra::Map<LO,GO,NO>                             map_type;
       typedef Tpetra::MultiVector<SC,LO,GO,NO>                  multivector_type;
@@ -353,13 +354,13 @@ namespace MueLu {
           throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
 
         RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
-        return Xpetra::toXpetra(*eMap1);
+        return Xpetra::toXpetra<int>(*eMap1);
 #else
         throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
 #endif
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<double,int,int,NO,LMO> sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<double,int,int,NO> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
       RCP<NO> node = rcp(new NO());
@@ -377,4 +378,45 @@ namespace MueLu {
     }
   }
 
-}
+
+  /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
+     from level-specific sublists from inList
+     and moves it to nonSerialList.  Everything else is copied to serialList.
+     This function returns the level number of the highest level for which
+     non-serializable data was provided.
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
+    using Teuchos::ParameterList;
+
+    ParameterList dummy;
+    long maxLevel = 0;
+
+    for (ParameterList::ConstIterator it = inList.begin(); it != inList.end(); it++) {
+      const std::string& levelName = it->first;
+
+      // Check for mach of the form "level X" where X is a positive integer
+      if (inList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
+        int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
+        if (maxLevel < levelID)
+          maxLevel = levelID;
+
+        // Split the sublist
+        const ParameterList& levelList = inList.sublist(levelName);
+        for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
+          const std::string& name = it2->first;
+          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
+            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          else
+            serialList   .sublist(levelName).setEntry(name, it2->second);
+        }
+
+      } else {
+        serialList.setEntry(it->first, it->second);
+      }
+    }
+
+    return maxLevel;
+  }
+
+
+} // namespace MueLu

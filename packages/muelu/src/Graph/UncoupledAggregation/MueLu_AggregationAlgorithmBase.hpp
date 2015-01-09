@@ -43,94 +43,83 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_AggregationAlgorithmBase.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_AGGREGATIONALGORITHMBASE_HPP_
 #define MUELU_AGGREGATIONALGORITHMBASE_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 
-//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
-
-#include "MueLu_AggOptions.hpp"
+#include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
 
-using namespace AggOptions; // necessary
+  // In the algorithm, aggStat[] = READY/NOTSEL/SELECTED indicates whether a node has been aggregated
+  enum NodeState {
+    READY      = 1, // indicates that a node is available to be
+                    // selected as a root node of an aggregate
 
-/* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
-namespace NodeStats {
-enum NodeState {
-  READY   = 1,   /* indicates that a node is available to be */
-  /* selected as a root node of an aggregate  */
+    NOTSEL     = 2, // indicates that a node has been rejected as a root node.
+                    // This could perhaps be because if this node had been
+                    // selected a small aggregate would have resulted
+                    // This is Phase 1 specific
 
-  NOTSEL  = 2,   /* indicates that a node has been rejected  */
-  /* as a root node. This could perhaps be    */
-  /* because if this node had been selected a */
-  /* small aggregate would have resulted.     */
+    AGGREGATED = 3, // indicates that a node has been assigned
+                    // to an aggregate
 
-  AGGREGATED = 3,   /* indicates that a node has been assigned  */
-  /* to an aggregate.                         */
+    ONEPT      = 4, // indicates that a node shall be preserved over
+                    // all multigrid levels as 1 point aggregate
 
-  ONEPT    = 4,  /* indicates that a node shall be preserved over all multigrid levels as 1 point aggregate */
-  SMALLAGG = 5,   /* indicates that a node shall be aggregated separately from standard nodes with small aggregates (only neighbour nodes which are also marked with the SMALLAGG flag) */
-  BOUNDARY = 6     // node is a Dirichlet node and should never be aggregated
-};
-} // namespace NodeStats
+    IGNORED    = 5, // indicates that the node is removed from consideration,
+                    // and is not aggregated
 
+    BOUNDARY   = 6  // node is a Dirichlet node
+                    // During aggregation, it is transformed either to AGGREGATED
+                    // or to IGNORED
+  };
 
 
-// TODO: dangerous: same definition as in CheapAggregationAlgorithm
-class Aggregate {
-public:
-  int index;                    // local aggregate id
-  std::vector<int> list;  // list of node ids in aggregate
-};
 
-/*!
-     @class pure virtual base class for all aggregation algorithms.
-     @brief Base class for MueLu aggregation algorithms
+  class Aggregate {
+  public:
+    int index;                  // local aggregate id
+    std::vector<int> list;      // list of node ids in aggregate
+  };
 
-     @ingroup MueLuBaseClasses
- */
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-class AggregationAlgorithmBase
-: public BaseClass
-  {
+  /*!
+       @class pure virtual base class for all aggregation algorithms.
+       @brief Base class for MueLu aggregation algorithms
+
+       @ingroup MueLuBaseClasses
+   */
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class AggregationAlgorithmBase : public BaseClass {
 #undef MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
-  public:
+    public:
 
-  //! @name Constructors/Destructors
-  //@{
+    //! @name Constructors/Destructors
+    //@{
 
-  //! Destructor.
-  virtual ~AggregationAlgorithmBase() {}
+    //! Destructor.
+    virtual ~AggregationAlgorithmBase() {}
 
-  //@}
+    //@}
 
-  //! @name Build routines
-  //@{
+    //! @name Build routines
+    //@{
 
-  //! BuildAggregates routine.
-  virtual void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
-  //@}
+    //! BuildAggregates routine.
+    virtual void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    //@}
 
-  private:
+    };
 
-  }; // class AggregationAlgorithmBase
-
-} // namespace MueLu
+  } // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #endif /* MUELU_AGGREGATIONALGORITHMBASE_HPP_ */

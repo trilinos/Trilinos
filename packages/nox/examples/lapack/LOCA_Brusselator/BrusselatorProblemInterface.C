@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,12 +56,12 @@
 #include "NOX_Utils.H"
 
 BrusselatorProblemInterface::BrusselatorProblemInterface(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, 
-		    double b, 
-		    double d1,
-		    double d2,
-		    std::ofstream& file)  : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int N, double a,
+            double b,
+            double d1,
+            double d2,
+            std::ofstream& file)  :
   globalData(global_data),
   initialGuess(2*N),
   alpha(a),
@@ -84,8 +84,8 @@ BrusselatorProblemInterface::getInitialGuess()
 }
 
 bool
-BrusselatorProblemInterface::computeF(NOX::LAPACK::Vector& f, 
-				      const NOX::LAPACK::Vector &x)
+BrusselatorProblemInterface::computeF(NOX::LAPACK::Vector& f,
+                      const NOX::LAPACK::Vector &x)
 {
   double h = 1.0 / double(n-1);
   double hh = h*h;
@@ -101,13 +101,13 @@ BrusselatorProblemInterface::computeF(NOX::LAPACK::Vector& f,
     f(i) = D2*(x(i-1) - 2.0*x(i) + x(i+1)) / hh
       + beta*x(i-n) - x(i-n)*x(i-n)*x(i);
   f(2*n-1) = x(2*n-1) - beta/alpha;
-  
+
   return true;
 }
 
 bool
-BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-					     const NOX::LAPACK::Vector & x)
+BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J,
+                         const NOX::LAPACK::Vector & x)
 {
   double h = 1.0 / double(n-1);
   double hh = h*h;
@@ -135,9 +135,9 @@ BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J,
 
 bool
 BrusselatorProblemInterface::computeShiftedMatrix(
-				    double alpha, double beta,
-				    const NOX::LAPACK::Vector& x,
-				    NOX::LAPACK::Matrix<double>& A)
+                    double alpha, double beta,
+                    const NOX::LAPACK::Vector& x,
+                    NOX::LAPACK::Matrix<double>& A)
 {
   bool res = true;
   if (alpha != 0.0) {
@@ -166,31 +166,31 @@ BrusselatorProblemInterface::setParams(const LOCA::ParameterVector& p) {
 
 void
 BrusselatorProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
-					   const double conParam)
+                       const double conParam)
 {
    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-     globalData->locaUtils->out() 
-       << "At parameter value: " 
+     globalData->locaUtils->out()
+       << "At parameter value: "
        << globalData->locaUtils->sciformat(conParam)
        << "   the solution vector is\n";
-     
-     for (int i=0; i<6; i++) 
-       globalData->locaUtils->out() 
-	 << " " << globalData->locaUtils->sciformat(x(i));
+
+     for (int i=0; i<6; i++)
+       globalData->locaUtils->out()
+     << " " << globalData->locaUtils->sciformat(x(i));
      globalData->locaUtils->out() << " ...";
-     for (int i=n-2; i<n; i++)  
-       globalData->locaUtils->out() 
-	 << " " << globalData->locaUtils->sciformat(x(i));
+     for (int i=n-2; i<n; i++)
+       globalData->locaUtils->out()
+     << " " << globalData->locaUtils->sciformat(x(i));
      globalData->locaUtils->out() << std::endl;
-     
-     for (int i=n; i<n+6; i++) 
-       globalData->locaUtils->out() 
-	 << " " << globalData->locaUtils->sciformat(x(i));
+
+     for (int i=n; i<n+6; i++)
+       globalData->locaUtils->out()
+     << " " << globalData->locaUtils->sciformat(x(i));
      globalData->locaUtils->out() << " ...";
-     for (int i=2*n-2; i<2*n; i++)  
-       globalData->locaUtils->out() 
-	 << " " << globalData->locaUtils->sciformat(x(i));
-     globalData->locaUtils->out() << std::endl; 
+     for (int i=2*n-2; i<2*n; i++)
+       globalData->locaUtils->out()
+     << " " << globalData->locaUtils->sciformat(x(i));
+     globalData->locaUtils->out() << std::endl;
    }
 
    outputFile << conParam << " ";

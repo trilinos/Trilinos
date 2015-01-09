@@ -1,7 +1,3 @@
-
-INCLUDE(TribitsAddExecutableAndTest)
-
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ConstNonconstObjectContainer_UnitTest  
   SOURCES

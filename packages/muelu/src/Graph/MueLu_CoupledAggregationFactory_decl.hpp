@@ -78,7 +78,9 @@ namespace MueLu {
      -
   */
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CoupledAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_COUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -99,9 +101,9 @@ namespace MueLu {
     //@{
 
     // Options algo1
-    void SetOrdering(Ordering ordering) { algo1_.SetOrdering(ordering); }
+    void SetOrdering(const std::string& ordering) { algo1_.SetOrdering(ordering); }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { algo1_.SetMaxNeighAlreadySelected(maxNeighAlreadySelected); }
-    Ordering GetOrdering() const { return algo1_.GetOrdering(); }
+    const std::string& GetOrdering() const { return algo1_.GetOrdering(); }
     int GetMaxNeighAlreadySelected() const { return algo1_.GetMaxNeighAlreadySelected(); }
 
     // Options algo2

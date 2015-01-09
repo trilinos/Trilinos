@@ -30,11 +30,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_ElementVariableType.h>
 #include <Ioss_Tet4.h>
-#include <assert.h>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 
-#include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -99,6 +100,7 @@ Ioss::Tet4::Tet4()
 {
   Ioss::ElementTopology::alias("tetra4", "tetra");
   Ioss::ElementTopology::alias("tetra4", "tet4");
+  Ioss::ElementTopology::alias("tetra4", "tet");
   Ioss::ElementTopology::alias("tetra4", "Solid_Tet_4_3D");
 }
 

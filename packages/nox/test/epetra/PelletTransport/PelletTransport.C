@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@
 #include "PelletTransport.H"
 #include "MaterialProps.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  , double xmaxUO2_  ,
                                   int NumGlobalElementsHe_   , double xminHe_   , double xmaxHe_   ,
                                   int NumGlobalElementsClad_ , double xminClad_ , double xmaxClad_ ,
@@ -90,8 +90,8 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   NumSpecies = 2;
   NumGlobalUnknowns = NumSpecies * NumGlobalNodes;
 
-  // Construct a Source Map that puts approximately the same 
-  // number of equations on each processor 
+  // Construct a Source Map that puts approximately the same
+  // number of equations on each processor
 
   // Begin by distributing nodes fairly equally
   StandardNodeMap = new Epetra_Map(NumGlobalNodes, 0, *Comm);
@@ -101,26 +101,26 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
 
   // Construct an overlap node map for the finite element fill
   // For single processor jobs, the overlap and standard maps are the same
-  if (NumProc == 1) 
+  if (NumProc == 1)
     OverlapNodeMap = new Epetra_Map(*StandardNodeMap);
-  else 
+  else
   {
     // Distribute elements such that nodes are ghosted
     int OverlapNumMyNodes;
     int OverlapMinMyNodeGID;
 
     OverlapNumMyNodes = NumMyNodes + 1;
-    if ( MyPID == NumProc - 1 ) 
+    if ( MyPID == NumProc - 1 )
       OverlapNumMyNodes --;
-    
+
     OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
-    
+
     int* OverlapMyGlobalNodes = new int[OverlapNumMyNodes];
-    
-    for( int i = 0; i < OverlapNumMyNodes; ++i ) 
+
+    for( int i = 0; i < OverlapNumMyNodes; ++i )
       OverlapMyGlobalNodes[i] = OverlapMinMyNodeGID + i;
-    
-    OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes, 
+
+    OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes,
                           OverlapMyGlobalNodes, 0, *Comm);
 
     delete [] OverlapMyGlobalNodes;
@@ -142,14 +142,14 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
 
   assert(StandardMap->NumGlobalElements() == NumGlobalUnknowns);
 
-  if (NumProc == 1) 
+  if (NumProc == 1)
     OverlapMap = new Epetra_Map(*StandardMap);
-  else 
+  else
   {
     int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
     int OverlapNumMyUnknowns = NumSpecies * OverlapNumMyNodes;
     int* OverlapMyGlobalUnknowns = new int[OverlapNumMyUnknowns];
-    for (int k=0; k<NumSpecies; k++) 
+    for (int k=0; k<NumSpecies; k++)
       for( int i = 0; i < OverlapNumMyNodes; ++i )
         OverlapMyGlobalUnknowns[ NumSpecies * i + k ] = NumSpecies * OverlapNodeMap->GID(i) + k;
 
@@ -185,7 +185,7 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   Comm->Barrier();
 #endif
 
-  // Construct Linear Objects  
+  // Construct Linear Objects
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   nodeImporter = new Epetra_Import(*OverlapNodeMap, *StandardNodeMap);
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
@@ -205,7 +205,7 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   // Create the element type int vector
   int numLocalElems = OverlapNodeMap->NumMyElements() - 1;
   Epetra_Map * elemMap = new Epetra_Map(-1, numLocalElems, 0, *Comm);
-  elemTypes = Teuchos::rcp(new Epetra_IntVector(*elemMap)); 
+  elemTypes = Teuchos::rcp(new Epetra_IntVector(*elemMap));
   for( int i = 0; i < numLocalElems; ++i )
     if( i < NumGlobalElementsUO2 )
       (*elemTypes)[i] = UO2;
@@ -262,14 +262,14 @@ PelletTransport::~PelletTransport()
 }
 
 // Reset function
-void 
+void
 PelletTransport::reset(const Epetra_Vector& x)
 {
   *oldSolution = x;
 }
 
 // Set initialSolution to desired initial condition
-void 
+void
 PelletTransport::initializeSoln()
 {
   Epetra_Vector& soln = *initialSolution;
@@ -289,27 +289,27 @@ PelletTransport::initializeSoln()
   {
     for( int i = 0; i < x.MyLength(); ++i )
     {
-      soln[2*i]   = 750.0 ; 
+      soln[2*i]   = 750.0 ;
       soln[2*i+1] = 0.02  ;
     }
   }
   *oldSolution = soln;
-} 
+}
 
-bool 
-PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType, 
-				    const Epetra_Vector* soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+bool
+PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
+                    const Epetra_Vector* soln,
+                    Epetra_Vector* tmp_rhs,
+                    Epetra_RowMatrix* tmp_matrix)
 {
 
-  if( fType == NOX::Epetra::Interface::Required::Jac ) 
+  if( fType == NOX::Epetra::Interface::Required::Jac )
   {
-    std::cout << "This problem only works for Finite-Difference or Matrix-Free Based Jacobians." 
+    std::cout << "This problem only works for Finite-Difference or Matrix-Free Based Jacobians."
          << " No analytic Jacobian fill available !!" << std::endl;
     throw "Problem ERROR";
   }
-  else 
+  else
     rhs = new Epetra_Vector(*OverlapMap);
 
   // Create the overlapped solution and position vectors
@@ -329,7 +329,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   MaterialPropBase::PropData materialProps;
   // Hard-code use of UO2 for now - RWH 5/14/2007
   std::string fixedType = "UO2";
-  
+
   int OverlapMinMyNodeGID;
   if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
   else OverlapMinMyNodeGID = StandardNodeMap->MinMyGID()-1;
@@ -342,7 +342,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   double uuold[2*NUMSPECIES];
   Basis basis(NumSpecies);
 
-  
+
   // Zero out the objects that will be filled
   rhs->PutScalar(0.0);
 
@@ -356,7 +356,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
     // Loop Over Gauss Points
     for( int gp = 0; gp < 2; ++gp )
     {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0] = xvec[ne];
       xx[1] = xvec[ne+1];
       for (int k=0; k<NumSpecies; k++) {
@@ -376,23 +376,23 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
       double & Ffunc   = materialProps.thermoF  ;
       double & D_diff1 = materialProps.D_diff   ;
 
-	            
+
       // Loop over Nodes in Element
-      for( i = 0; i < 2; ++i ) 
+      for( i = 0; i < 2; ++i )
       {
-	row1=OverlapMap->GID(NumSpecies * (ne+i));
-	row2=OverlapMap->GID(NumSpecies * (ne+i) + 1);
+    row1=OverlapMap->GID(NumSpecies * (ne+i));
+    row2=OverlapMap->GID(NumSpecies * (ne+i) + 1);
         flux1 = -k1*basis.duu[0]/basis.dx;
-        flux2 = -0.5*D_diff1*(basis.duu[1]/basis.dx 
+        flux2 = -0.5*D_diff1*(basis.duu[1]/basis.dx
               + basis.uu[1]*Qstar1/(Ffunc*8.3142*basis.uu[0]*basis.uu[0])*basis.duu[0]/basis.dx);
-        term1 = basis.wt*basis.dx*basis.xx*( 
-                    rho1*Cp1*(basis.uu[0] - basis.uuold[0])/dt * basis.phi[i] 
+        term1 = basis.wt*basis.dx*basis.xx*(
+                    rho1*Cp1*(basis.uu[0] - basis.uuold[0])/dt * basis.phi[i]
                   - flux1*basis.dphide[i]/basis.dx
                   - Qdot1*basis.phi[i]
                 );
         term2 = basis.wt*basis.dx*basis.xx*(
-                    0.5*(basis.uu[1] - basis.uuold[1])/dt * basis.phi[i] 
-                  - flux2*basis.dphide[i]/basis.dx 
+                    0.5*(basis.uu[1] - basis.uuold[1])/dt * basis.phi[i]
+                  - flux2*basis.dphide[i]/basis.dx
                 );
         (*rhs)[NumSpecies*(ne+i)]   += term1;
         (*rhs)[NumSpecies*(ne+i)+1] += term2;
@@ -403,14 +403,14 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // Dirichlet BCs at xminUO2
   const double xB = dynamic_cast<const MaterialProp_UO2 &>(MaterialPropFactory::factory().get_model(PelletTransport::UO2)).get_xB();
-  if (MyPID==0) 
+  if (MyPID==0)
   {
     // Use no-flux BCs
     //(*rhs)[0]= (*soln)[0] - 0.6;
     //(*rhs)[1]= (*soln)[1] - 10.0/3.0;
   }
   // Dirichlet BCs at xmaxUO2
-  if( StandardMap->LID(NumSpecies*(NumGlobalElementsUO2)) >= 0 ) 
+  if( StandardMap->LID(NumSpecies*(NumGlobalElementsUO2)) >= 0 )
   {
     int lastUO2Dof = StandardMap->LID(NumSpecies*(NumGlobalElementsUO2) + 1);
     //(*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 840.0;
@@ -420,11 +420,11 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   int lastUO2DofGID = NumSpecies*NumGlobalElementsUO2 + 1;
   int lastGID = StandardMap->MaxAllGID();
   for( int i = lastUO2DofGID; i < lastGID; i+=2 )
-    if( StandardMap->LID(i) >= 0 ) 
+    if( StandardMap->LID(i) >= 0 )
       (*rhs)[StandardMap->LID(i)] = (*soln)[StandardMap->LID(i)] - xB;
-    
+
   // Dirichlet BCs at xmaxClad
-  if( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) 
+  if( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 )
   {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
     (*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 750.0;
@@ -433,7 +433,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   // Do an assemble for overlap nodes
   tmp_rhs->Export(*rhs, *Importer, Add);
 
@@ -442,13 +442,13 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   return true;
 }
 
-Teuchos::RCP<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector>
 PelletTransport::getSolution()
 {
   return initialSolution;
 }
-  
-Teuchos::RCP<Epetra_CrsMatrix> 
+
+Teuchos::RCP<Epetra_CrsMatrix>
 PelletTransport::getJacobian()
 {
   if( Teuchos::is_null(A) ) return A;
@@ -459,35 +459,35 @@ PelletTransport::getJacobian()
   }
 }
 
-Teuchos::RCP<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector>
 PelletTransport::getMesh()
-{ 
+{
   return xptr;
 }
 
-Epetra_Vector& 
+Epetra_Vector&
 PelletTransport::getOldSoln()
 {
   return *oldSolution;
-} 
-  
-double 
+}
+
+double
 PelletTransport::getdt()
 {
   return dt;
 }
 
-Teuchos::RCP<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph>
 PelletTransport::getGraph()
 {
   return AA;
 }
 
 
-Epetra_CrsGraph& 
+Epetra_CrsGraph&
 PelletTransport::generateGraphUsingNodes(Epetra_CrsGraph& AA)
 {
-  
+
   int row, column;
 
   int myMinNodeGID = StandardNodeMap->MinMyGID();
@@ -499,10 +499,10 @@ PelletTransport::generateGraphUsingNodes(Epetra_CrsGraph& AA)
     leftNodeGID  = myNode - 1;
     rightNodeGID = myNode + 1;
 
-    if( leftNodeGID < StandardNodeMap->MinAllGID() ) 
+    if( leftNodeGID < StandardNodeMap->MinAllGID() )
       leftNodeGID = StandardNodeMap->MinAllGID();
 
-    if( rightNodeGID > StandardNodeMap->MaxAllGID() ) 
+    if( rightNodeGID > StandardNodeMap->MaxAllGID() )
       rightNodeGID = StandardNodeMap->MaxAllGID();
 
     for( int dependNode = leftNodeGID; dependNode <= rightNodeGID; dependNode++ ) {
@@ -518,7 +518,7 @@ PelletTransport::generateGraphUsingNodes(Epetra_CrsGraph& AA)
           AA.InsertGlobalIndices(row, 1, &column);
         }
       }
-    }  
+    }
   }
 
   AA.FillComplete();

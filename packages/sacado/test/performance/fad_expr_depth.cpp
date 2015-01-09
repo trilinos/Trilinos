@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -69,12 +67,12 @@ void do_times(const T x[], int nloop, Teuchos::Array<double>& times)
 
 #ifdef HAVE_ADOLC
 template <typename F>
-double do_time_adolc(double *x, double **seed, int d, int nloop, 
-		     int tag, const F& f)
+double do_time_adolc(double *x, double **seed, int d, int nloop,
+                     int tag, const F& f)
 {
   Teuchos::Time timer("F", false);
   int n = F::n;
-  trace_on(tag);  
+  trace_on(tag);
   adouble *x_ad = new adouble[n];
   for (int i=0; i<n; i++)
     x_ad[i] <<= x[i];
@@ -99,8 +97,8 @@ double do_time_adolc(double *x, double **seed, int d, int nloop,
 }
 
 template <template <typename,int> class F>
-void do_times_adolc(double *x, double **seed, int d, int nloop, 
-		    int& tag, Teuchos::Array<double>& times)
+void do_times_adolc(double *x, double **seed, int d, int nloop,
+                    int& tag, Teuchos::Array<double>& times)
 {
   int i = 0;
   times[i++] = do_time_adolc(x, seed, d, nloop, tag++, F<adouble,1>());
@@ -127,8 +125,8 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   {
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
-  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	    << std::endl;
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+            << std::endl;
   std::cout << std::setw(5) << "deriv" << " ";
   for (int i=0; i<ExprFuncs::nfunc; i++)
     std::cout << std::setw(w) << ExprFuncs::mult_names[i] << " ";
@@ -148,22 +146,22 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   int nloop_func = 10000000;
   Teuchos::Array<double> times_func(ExprFuncs::nfunc);
   do_times<double,ExprFuncs::mult>(x, nloop_func, times_func);
-  
+
   // Get times for each derivative dimension
   for (int i=0; i<nderiv; i++) {
     FadType fx[ExprFuncs::nx_max];
     for (int k=0; k<ExprFuncs::nx_max; k++) {
       fx[k] = FadType(deriv_dim[i],  urand.number());
       for (int j=0; j<deriv_dim[i]; j++) {
-	fx[k].fastAccessDx(j) = urand.number();
+        fx[k].fastAccessDx(j) = urand.number();
       }
     }
-    
+
     //int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
     int nloop = static_cast<int>(100000.0);
     Teuchos::Array<double> times(ExprFuncs::nfunc);
     do_times<FadType,ExprFuncs::mult>(fx, nloop, times);
-     
+
     // Print times
     int d = deriv_dim[i];
     if (d == 0)
@@ -183,8 +181,8 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   {
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
-  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	    << std::endl;
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+            << std::endl;
   std::cout << std::setw(5) << "deriv" << " ";
   for (int i=0; i<ExprFuncs::nfunc; i++)
     std::cout << std::setw(w) << ExprFuncs::add_names[i] << " ";
@@ -204,22 +202,22 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   int nloop_func = 10000000;
   Teuchos::Array<double> times_func(ExprFuncs::nfunc);
   do_times<double,ExprFuncs::add>(x, nloop_func, times_func);
-  
+
   // Get times for each derivative dimension
   for (int i=0; i<nderiv; i++) {
     FadType fx[ExprFuncs::nx_max];
     for (int k=0; k<ExprFuncs::nx_max; k++) {
       fx[k] = FadType(deriv_dim[i],  urand.number());
       for (int j=0; j<deriv_dim[i]; j++) {
-	fx[k].fastAccessDx(j) = urand.number();
+        fx[k].fastAccessDx(j) = urand.number();
       }
     }
-    
+
     //int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
     int nloop = static_cast<int>(100000.0);
     Teuchos::Array<double> times(ExprFuncs::nfunc);
     do_times<FadType,ExprFuncs::add>(fx, nloop, times);
-     
+
     // Print times
     int d = deriv_dim[i];
     if (d == 0)
@@ -239,8 +237,8 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   {
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
-  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	    << std::endl;
+  std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+            << std::endl;
   std::cout << std::setw(5) << "deriv" << " ";
   for (int i=0; i<ExprFuncs::nfunc; i++)
     std::cout << std::setw(w) << ExprFuncs::nest_names[i] << " ";
@@ -260,22 +258,22 @@ void print_times(const std::string& screen_name, const std::string& file_name)
   int nloop_func = 10000000;
   Teuchos::Array<double> times_func(ExprFuncs::nfunc);
   do_times<double,ExprFuncs::nest>(x, nloop_func, times_func);
-  
+
   // Get times for each derivative dimension
   for (int i=0; i<nderiv; i++) {
     FadType fx[ExprFuncs::nx_max];
     for (int k=0; k<ExprFuncs::nx_max; k++) {
       fx[k] = FadType(deriv_dim[i],  urand.number());
       for (int j=0; j<deriv_dim[i]; j++) {
-	fx[k].fastAccessDx(j) = urand.number();
+        fx[k].fastAccessDx(j) = urand.number();
       }
     }
-    
+
     //int nloop = static_cast<int>(1000000.0/(deriv_dim[i]+1));
     int nloop = static_cast<int>(100000.0);
     Teuchos::Array<double> times(ExprFuncs::nfunc);
     do_times<FadType,ExprFuncs::nest>(fx, nloop, times);
-     
+
     // Print times
     int d = deriv_dim[i];
     if (d == 0)
@@ -294,8 +292,8 @@ void print_times(const std::string& screen_name, const std::string& file_name)
 }
 
 #ifdef HAVE_ADOLC
-void print_times_adolc(const std::string& screen_name, 
-		       const std::string& file_name)
+void print_times_adolc(const std::string& screen_name,
+                       const std::string& file_name)
 {
   const int nderiv = 10;
   int deriv_dim[nderiv] = { 0, 1, 3, 5, 10, 15, 20, 30, 40, 50 };
@@ -316,8 +314,8 @@ void print_times_adolc(const std::string& screen_name,
   {
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	      << std::endl;
+    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+              << std::endl;
     std::cout << std::setw(5) << "deriv" << " ";
     for (int i=0; i<ExprFuncs::nfunc; i++)
       std::cout << std::setw(w) << ExprFuncs::mult_names[i] << " ";
@@ -325,11 +323,11 @@ void print_times_adolc(const std::string& screen_name,
     std::cout << "===== ";
     for (int i=0; i<ExprFuncs::nfunc; i++) {
       for (int j=0; j<w; j++)
-	std::cout << '=';
+        std::cout << '=';
       std::cout << " ";
     }
     std::cout << std::endl;
-    
+
     // Get function evaluation times
     double x[ExprFuncs::nx_max];
     for (int i=0; i<ExprFuncs::nx_max; i++)
@@ -337,24 +335,24 @@ void print_times_adolc(const std::string& screen_name,
     int nloop_func = 10000000;
     Teuchos::Array<double> times_func(ExprFuncs::nfunc);
     do_times<double,ExprFuncs::mult>(x, nloop_func, times_func);
-    
+
     // Get times for each derivative dimension
     for (int i=0; i<nderiv; i++) {
       //int nloop = static_cast<int>(100000.0/(deriv_dim[i]+1));
       int nloop = static_cast<int>(10000.0);
       Teuchos::Array<double> times(ExprFuncs::nfunc);
       do_times_adolc<ExprFuncs::mult>(x, seed, deriv_dim[i], nloop, tag, times);
-      
+
       // Print times
       int d = deriv_dim[i];
       if (d == 0)
-	d = 1;
+        d = 1;
       std::cout << std::setw(5) << deriv_dim[i] << " ";
       file << deriv_dim[i] << " ";
       for (int j=0; j<times.size(); j++) {
-	double rel_time = times[j]/(times_func[j]*d);
-	std::cout << std::setw(w) << rel_time << " ";
-	file << rel_time << " ";
+        double rel_time = times[j]/(times_func[j]*d);
+        std::cout << std::setw(w) << rel_time << " ";
+        file << rel_time << " ";
       }
       std::cout << std::endl;
       file << std::endl;
@@ -364,8 +362,8 @@ void print_times_adolc(const std::string& screen_name,
   {
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	      << std::endl;
+    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+              << std::endl;
     std::cout << std::setw(5) << "deriv" << " ";
     for (int i=0; i<ExprFuncs::nfunc; i++)
       std::cout << std::setw(w) << ExprFuncs::add_names[i] << " ";
@@ -373,11 +371,11 @@ void print_times_adolc(const std::string& screen_name,
     std::cout << "===== ";
     for (int i=0; i<ExprFuncs::nfunc; i++) {
       for (int j=0; j<w; j++)
-	std::cout << '=';
+        std::cout << '=';
       std::cout << " ";
     }
     std::cout << std::endl;
-    
+
     // Get function evaluation times
     double x[ExprFuncs::nx_max];
     for (int i=0; i<ExprFuncs::nx_max; i++)
@@ -385,24 +383,24 @@ void print_times_adolc(const std::string& screen_name,
     int nloop_func = 10000000;
     Teuchos::Array<double> times_func(ExprFuncs::nfunc);
     do_times<double,ExprFuncs::add>(x, nloop_func, times_func);
-  
+
     // Get times for each derivative dimension
      for (int i=0; i<nderiv; i++) {
        //int nloop = static_cast<int>(100000.0/(deriv_dim[i]+1));
        int nloop = static_cast<int>(10000.0);
        Teuchos::Array<double> times(ExprFuncs::nfunc);
        do_times_adolc<ExprFuncs::add>(x, seed, deriv_dim[i], nloop, tag, times);
-     
+
        // Print times
        int d = deriv_dim[i];
        if (d == 0)
-	 d = 1;
+         d = 1;
        std::cout << std::setw(5) << deriv_dim[i] << " ";
        file << deriv_dim[i] << " ";
        for (int j=0; j<times.size(); j++) {
-	 double rel_time = times[j]/(times_func[j]*d);
-	 std::cout << std::setw(w) << rel_time << " ";
-	 file << rel_time << " ";
+         double rel_time = times[j]/(times_func[j]*d);
+         std::cout << std::setw(w) << rel_time << " ";
+         file << rel_time << " ";
        }
        std::cout << std::endl;
        file << std::endl;
@@ -412,8 +410,8 @@ void print_times_adolc(const std::string& screen_name,
   {
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): " 
-	      << std::endl;
+    std::cout << screen_name << " Relative times (time/(func_time*nderiv)): "
+              << std::endl;
     std::cout << std::setw(5) << "deriv" << " ";
     for (int i=0; i<ExprFuncs::nfunc; i++)
       std::cout << std::setw(w) << ExprFuncs::nest_names[i] << " ";
@@ -421,11 +419,11 @@ void print_times_adolc(const std::string& screen_name,
     std::cout << "===== ";
     for (int i=0; i<ExprFuncs::nfunc; i++) {
       for (int j=0; j<w; j++)
-	std::cout << '=';
+        std::cout << '=';
       std::cout << " ";
     }
     std::cout << std::endl;
-    
+
     // Get function evaluation times
     double x[ExprFuncs::nx_max];
     for (int i=0; i<ExprFuncs::nx_max; i++)
@@ -433,24 +431,24 @@ void print_times_adolc(const std::string& screen_name,
     int nloop_func = 10000000;
     Teuchos::Array<double> times_func(ExprFuncs::nfunc);
     do_times<double,ExprFuncs::nest>(x, nloop_func, times_func);
-    
+
     // Get times for each derivative dimension
     for (int i=0; i<nderiv; i++) {
       //int nloop = static_cast<int>(10000.0/(deriv_dim[i]+1));
       int nloop = static_cast<int>(1000.0);
       Teuchos::Array<double> times(ExprFuncs::nfunc);
       do_times_adolc<ExprFuncs::nest>(x, seed, deriv_dim[i], nloop, tag, times);
-      
+
       // Print times
       int d = deriv_dim[i];
       if (d == 0)
-	d = 1;
+        d = 1;
       std::cout << std::setw(5) << deriv_dim[i] << " ";
       file << deriv_dim[i] << " ";
       for (int j=0; j<times.size(); j++) {
-	double rel_time = times[j]/(times_func[j]*d);
-	std::cout << std::setw(w) << rel_time << " ";
-	file << rel_time << " ";
+        double rel_time = times[j]/(times_func[j]*d);
+        std::cout << std::setw(w) << rel_time << " ";
+        file << rel_time << " ";
       }
       std::cout << std::endl;
       file << std::endl;

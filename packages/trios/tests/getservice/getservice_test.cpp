@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
     int rc = 0;
     nssi_service getservice_svc;
 
+    int transport_index=-1;
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -129,19 +131,44 @@ int main(int argc, char *argv[])
     struct getservice_args args;
 
 
-    const int num_nssi_transports = 5;
-    const int nssi_transport_vals[] = {
+    const int nssi_transport_list[] = {
+            NSSI_RPC_PTL,
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
+            NSSI_RPC_IB,
+            NSSI_RPC_GEMINI,
             NSSI_RPC_GEMINI,
             NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGQPAMI,
             NSSI_RPC_BGQPAMI,
             NSSI_RPC_MPI};
+
+    const int num_nssi_transports = 11;
+    const int nssi_transport_vals[] = {
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+            };
     const char * nssi_transport_names[] = {
+            "portals",
             "ptl",
+            "infiniband",
             "ib",
+            "gemini",
             "gni",
+            "bgpdcmf",
             "dcmf",
+            "bgqpami",
+            "pami",
             "mpi"
     };
 
@@ -202,13 +229,15 @@ int main(int argc, char *argv[])
         parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
 
-        // Set an enumeration command line option for the io_method
-        parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
+        // Set an enumeration command line option for the NNTI transport
+        parser.setOption("transport", &transport_index, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
                 "NSSI transports (not all are available on every platform): \n"
-                "\t\t\tportals : Cray or Schutt\n"
-                "\t\t\tinfiniband : libibverbs\n"
-                "\t\t\tgemini : Cray\n"
-                "\t\t\tmpi : isend/irecv implementation\n"
+                "\t\t\tportals|ptl    : Cray or Schutt\n"
+                "\t\t\tinfiniband|ib  : libibverbs\n"
+                "\t\t\tgemini|gni     : Cray libugni (Gemini or Aries)\n"
+                "\t\t\tbgpdcmf|dcmf   : IBM BG/P DCMF\n"
+                "\t\t\tbgqpami|pami   : IBM BG/Q PAMI\n"
+                "\t\t\tmpi            : isend/irecv implementation\n"
                 );
 
 
@@ -255,6 +284,12 @@ int main(int argc, char *argv[])
     }
 
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
+
+    log_debug(LOG_ALL, "transport_index=%d", transport_index);
+    if (transport_index > -1) {
+    	args.transport     =nssi_transport_list[transport_index];
+    	args.transport_name=std::string(nssi_transport_names[transport_index]);
+    }
 
     log_debug(args.debug_level, "%d: Finished processing arguments", rank);
 

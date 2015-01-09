@@ -42,6 +42,9 @@
 #ifndef STOKHOS_MULTIPLY_HPP
 #define STOKHOS_MULTIPLY_HPP
 
+#include "Kokkos_Core.hpp"
+#include <vector> // for std::vector (needed below)
+
 namespace Stokhos {
 
 class DefaultMultiply {};
@@ -111,6 +114,92 @@ void multiply(const MatrixType& A,
 }
 
 template <typename BlockSpec> class BlockMultiply;
+
+namespace details {
+
+/*
+ * Compute work range = (begin, end) such that adjacent threads/blocks write to
+ * separate cache lines
+ */
+template <typename scalar_type, typename device_type, typename size_type>
+KOKKOS_INLINE_FUNCTION
+Kokkos::pair<size_type, size_type>
+compute_work_range( const device_type device,
+                    const size_type work_count,
+                    const size_type thread_count,
+                    const size_type thread_rank)
+{
+#if defined( KOKKOS_HAVE_CUDA )
+  enum { cache_line =
+         Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 128 : 64 };
+#else
+  enum { cache_line = 64 };
+#endif
+
+  enum { work_align = cache_line / sizeof(scalar_type) };
+  enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+  enum { work_mask  = work_align - 1 };
+
+  const size_type work_per_thread =
+    ( ( ( ( work_count + work_mask ) >> work_shift ) + thread_count - 1 ) /
+      thread_count ) << work_shift ;
+
+  size_type work_begin = thread_rank * work_per_thread;
+  size_type work_end = work_begin + work_per_thread;
+  if (work_begin > work_count)
+    work_begin = work_count;
+  if (work_end > work_count)
+    work_end = work_count;
+
+  return Kokkos::make_pair(work_begin, work_end);
+}
+
+// Functor implementing assignment update for multiply kernels
+struct MultiplyAssign {
+  template <typename Scalar>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Scalar& y, const Scalar& x) const { y = x; }
+};
+
+// Functor implementing += update for multiply kernels
+struct MultiplyUpdate {
+  template <typename Scalar>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Scalar& y, const Scalar& x) const { y += x; }
+};
+
+// Functor implementing scaled assignment update for multiply kernels
+template <typename Value>
+struct MultiplyScaledAssign {
+  const Value a;
+  MultiplyScaledAssign(const Value& a_) : a(a_) {}
+  template <typename Scalar>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Scalar& y, const Scalar& x) const { y = a*x; }
+};
+
+// Functor implementing += update for multiply kernels
+template <typename Value>
+struct MultiplyScaledUpdate {
+  const Value a;
+  MultiplyScaledUpdate(const Value& a_) : a(a_) {}
+  template <typename Scalar>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Scalar& y, const Scalar& x) const { y += a*x; }
+};
+
+// Functor implementing saxpby update for multiply kernels
+template <typename Value>
+struct MultiplyScaledUpdate2 {
+  const Value a;
+  const Value b;
+  MultiplyScaledUpdate2(const Value& a_, const Value& b_) : a(a_), b(b_) {}
+  template <typename Scalar>
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Scalar& y, const Scalar& x) const { y = a*x + b*y; }
+};
+
+} // namespace details
 
 } // namespace Stokhos
 

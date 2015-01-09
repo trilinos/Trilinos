@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -35,9 +35,10 @@
   \brief A status test for testing the norm of the eigenvectors residuals.
 */
 
-
+#include "AnasaziTypes.hpp"
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
 namespace Anasazi {
 
   //! @name LOBPCG Exceptions
@@ -79,15 +80,6 @@ namespace Anasazi {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
     public:
-
-    /*! \enum ResType 
-      Enumerated type used to specify which residual norm used by this status test.
-    */
-    enum ResType {
-      RES_ORTH,
-      RES_2NORM,
-      RITZRES_2NORM
-    };
 
     //! @name Constructors/destructors
     //@{ 
@@ -215,7 +207,7 @@ namespace Anasazi {
     std::vector<int> ind_;
     int quorum_;
     bool scaled_;
-    ResType whichNorm_;
+    enum ResType whichNorm_;
     bool throwExceptionOnNaN_;
   };
 

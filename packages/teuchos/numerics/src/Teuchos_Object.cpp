@@ -44,66 +44,95 @@
 
 #include "Teuchos_Object.hpp"
 
-namespace Teuchos
-{
-//=============================================================================
-Object::Object(int tracebackModeIn) : label_(0)
-{
-  setLabel("Teuchos::Object");
-  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-}
-//=============================================================================
-Object::Object(const char* label_in, int tracebackModeIn) : label_(0)
-{
-  setLabel(label_in);
-  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-}
-//=============================================================================
-Object::Object(const Object& Obj) : label_(0)
-{
-  setLabel(Obj.label());
-}
-// Set TracebackMode value to default
-int Object::tracebackMode(-1);
+namespace Teuchos {
 
-void Object::setTracebackMode(int tracebackModeValue)
+// Set TracebackMode value to default.
+int Object::tracebackMode = -1;
+
+Object::Object (int tracebackModeIn)
 {
-  if (tracebackModeValue < 0)
+  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
+}
+
+Object::Object (const char* label_in, int tracebackModeIn) :
+  label_ (label_in) // this does a deep copy of the input string
+{
+  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
+}
+
+Object::Object (const std::string& label_in, int tracebackModeIn) :
+  label_ (label_in)
+{
+  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
+}
+
+void Object::setLabel (const char* theLabel) {
+  label_ = std::string (theLabel);
+}
+
+void Object::setTracebackMode (int tracebackModeValue)
+{
+  if (tracebackModeValue < 0) {
     tracebackModeValue = 0;
-  Object tempObject(tracebackModeValue);
+  }
+  Object tempObject (tracebackModeValue);
 }
 
 int Object::getTracebackMode()
 {
   int temp = Object::tracebackMode;
-  if (temp == -1)
+  if (temp == -1) {
     temp = Teuchos_DefaultTracebackMode;
+  }
   return(temp);
 }
-//=============================================================================
-void Object::print(std::ostream& os) const
+
+void Object::print (std::ostream& os) const
 {
   // os << label_; // No need to print label, since std::ostream does it already
 }
-//=============================================================================
-Object::~Object()  
+
+int Object::reportError (const std::string message, int errorCode) const
 {
-  if (label_!=0) {
-    delete [] label_;
-		label_ = 0;
-	}
+  using std::cerr;
+  using std::endl;
+
+  // mfh 23 Nov 2014: I found the following message here:
+  //
+  // NOTE:  We are extracting a C-style std::string from Message because
+  //        the SGI compiler does not have a real std::string class with
+  //        the << operator.  Some day we should get rid of ".c_str()"
+  //
+  // All the compilers we support now have a correct implementation of
+  // std::string, so I've corrected the code below to use std::string
+  // instead.
+
+  if (tracebackMode == 1 && errorCode < 0) {
+    // Report fatal error
+    cerr << endl << "Error in Teuchos Object with label: " << label_
+         << endl << "Teuchos Error:  " << message << "  Error Code:  "
+         << errorCode << endl;
+    return errorCode;
+  }
+  if (tracebackMode == 2 && errorCode != 0) {
+    cerr << endl << "Error in Teuchos Object with label: " << label_
+         << endl << "Teuchos Error:  " << message << "  Error Code:  "
+         << errorCode << endl;
+    return errorCode;
+  }
+  return errorCode;
 }
-//=============================================================================
-char* Object::label() const
+
+const char* Object::label () const
 {
-  return(label_);
+  return label_.c_str ();
 }
-//=============================================================================
-void Object::setLabel(const char* label_in)
-{ 
-  if (label_ != 0)
-    delete [] label_;
-  label_ = new char[std::strlen(label_in) + 1];
-  std::strcpy(label_, label_in);
+
+std::ostream& operator<< (std::ostream& os, const Teuchos::Object& obj)
+{
+  os << obj.label () << std::endl;
+  obj.print (os);
+  return os;
 }
+
 } // namespace Teuchos

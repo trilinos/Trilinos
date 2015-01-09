@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Epetra_LinearSystem_Stratimikos.H"	// class definition
+#include "NOX_Epetra_LinearSystem_Stratimikos.H"    // class definition
 
 #ifdef HAVE_NOX_STRATIMIKOS
 
@@ -63,7 +63,7 @@
 
 // External include files for Epetra
 #include "Epetra_Map.h"
-#include "Epetra_Vector.h" 
+#include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
@@ -104,9 +104,9 @@
 //***********************************************************************
 NOX::Epetra::LinearSystemStratimikos::
 LinearSystemStratimikos(
- Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& stratSolverParams,  
- const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ Teuchos::ParameterList& printParams,
+ Teuchos::ParameterList& stratSolverParams,
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
  const Teuchos::RCP<Epetra_Operator>& jacobian,
  const NOX::Epetra::Vector& cloneVector,
  const Teuchos::RCP<NOX::Epetra::Scaling> s):
@@ -139,11 +139,11 @@ LinearSystemStratimikos(
 //***********************************************************************
 NOX::Epetra::LinearSystemStratimikos::
 LinearSystemStratimikos(
- Teuchos::ParameterList& printParams, 
+ Teuchos::ParameterList& printParams,
  Teuchos::ParameterList& stratSolverParams,
- const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
  const Teuchos::RCP<Epetra_Operator>& jacobian,
- const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
  const Teuchos::RCP<Epetra_Operator>& preconditioner,
  const NOX::Epetra::Vector& cloneVector,
  const bool& precIsAlreadyInverted,
@@ -164,13 +164,13 @@ LinearSystemStratimikos(
   timeApplyJacbianInverse(0.0),
   getLinearSolveToleranceFromNox(false)
 {
-  // Interface for user-defined preconditioning -- 
+  // Interface for user-defined preconditioning --
   // requires flipping of the apply and applyInverse methods
   precPtr = preconditioner;
   if (precIsAlreadyInverted) {
     precMatrixSource = UserDefined_;
   }
-  else { // User supplies approximate matrix 
+  else { // User supplies approximate matrix
     precMatrixSource = SeparateMatrix;
   }
 
@@ -185,7 +185,7 @@ LinearSystemStratimikos(
 }
 
 //***********************************************************************
-NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos() 
+NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos()
 {
   destroyPreconditioner();
 }
@@ -219,7 +219,7 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
   if ("Belos" == stratParams.get("Linear Solver Type","Belos")) {
   }
 */
-  
+
 
 }
 //***********************************************************************
@@ -229,23 +229,23 @@ reset(Teuchos::ParameterList& noxStratParams)
 
   // First remove any preconditioner that may still be active
   destroyPreconditioner();
-    
-  zeroInitialGuess = 
+
+  zeroInitialGuess =
     noxStratParams.get("Zero Initial Guess", false);
 
-  manualScaling = 
+  manualScaling =
     noxStratParams.get("Compute Scaling Manually", true);
 
   // Place linear solver details in the "Output" sublist of the
   // "Linear Solver" parameter list
-  outputSolveDetails = 
+  outputSolveDetails =
     noxStratParams.get("Output Solver Details", true);
 
-  throwErrorOnPrecFailure = 
+  throwErrorOnPrecFailure =
     noxStratParams.get("Throw Error on Prec Failure", true);
 
   // Setup the preconditioner reuse policy
-  std::string preReusePolicyName = 
+  std::string preReusePolicyName =
     noxStratParams.get("Preconditioner Reuse Policy", "Rebuild");
   if (preReusePolicyName == "Rebuild")
     precReusePolicy = PRPT_REBUILD;
@@ -262,7 +262,7 @@ reset(Teuchos::ParameterList& noxStratParams)
 
   // This needs to be in sync with Inexact Newton option from
   // a different sublist
-  getLinearSolveToleranceFromNox = 
+  getLinearSolveToleranceFromNox =
     noxStratParams.get("Use Linear Solve Tolerance From NOX", false);
 
   linearSolveCount = 0;
@@ -271,7 +271,7 @@ reset(Teuchos::ParameterList& noxStratParams)
   linearSolveAchievedTol = 0.0;
 
   if (noxStratParams.isParameter("Output Stream"))
-    outputStream = 
+    outputStream =
       noxStratParams.get< Teuchos::RCP<Teuchos::FancyOStream> >("Output Stream");
   else
     outputStream = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -280,24 +280,24 @@ reset(Teuchos::ParameterList& noxStratParams)
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-applyJacobian(const NOX::Epetra::Vector& input, 
-	      NOX::Epetra::Vector& result) const
+applyJacobian(const NOX::Epetra::Vector& input,
+          NOX::Epetra::Vector& result) const
 {
   jacPtr->SetUseTranspose(false);
-  int status = jacPtr->Apply(input.getEpetraVector(), 
-  		  	     result.getEpetraVector());
+  int status = jacPtr->Apply(input.getEpetraVector(),
+                     result.getEpetraVector());
   return (status == 0);
 }
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-applyJacobianTranspose(const NOX::Epetra::Vector& input, 
-		       NOX::Epetra::Vector& result) const
+applyJacobianTranspose(const NOX::Epetra::Vector& input,
+               NOX::Epetra::Vector& result) const
 {
   // Apply the Jacobian
   jacPtr->SetUseTranspose(true);
-  int status = jacPtr->Apply(input.getEpetraVector(), 
-				  result.getEpetraVector());
+  int status = jacPtr->Apply(input.getEpetraVector(),
+                  result.getEpetraVector());
   jacPtr->SetUseTranspose(false);
 
   return (status == 0);
@@ -306,8 +306,8 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
 applyJacobianInverse(Teuchos::ParameterList &p,
-		     const NOX::Epetra::Vector& input, 
-		     NOX::Epetra::Vector& result)
+             const NOX::Epetra::Vector& input,
+             NOX::Epetra::Vector& result)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -320,7 +320,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   // Epetra_LinearProblem requires non-const versions so we can perform
   // scaling of the linear problem.
   NOX::Epetra::Vector& nonConstInput = const_cast<NOX::Epetra::Vector&>(input);
-  
+
   // Zero out the delta X of the linear problem if requested by user.
   if (zeroInitialGuess) result.init(0.0);
 
@@ -329,9 +329,9 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     Thyra::epetraLinearOp(jacPtr);
 
   // Set the linear Op and  precomputed prec on this lows
-  if (precObj == Teuchos::null) 
+  if (precObj == Teuchos::null)
     Thyra::initializeOp(*lowsFactory, linearOp, lows.ptr());
-  else 
+  else
     Thyra::initializePreconditionedOp<double>(
       *lowsFactory, linearOp, precObj, lows.ptr());
 
@@ -366,14 +366,14 @@ applyJacobianInverse(Teuchos::ParameterList &p,
       linearSolveIters_last = status.extraParameters->get<int>("Belos/Iteration Count");
       linearSolveIters_total += linearSolveIters_last;
     }
-    if (status.extraParameters->isParameter("Belos/Achieved Tolerance")) 
+    if (status.extraParameters->isParameter("Belos/Achieved Tolerance"))
       linearSolveAchievedTol = status.extraParameters->get<double>("Belos/Achieved Tolerance");
     if (status.extraParameters->isParameter("AztecOO/Iteration Count")) {
 
       linearSolveIters_last = status.extraParameters->get<int>("AztecOO/Iteration Count");
       linearSolveIters_total += linearSolveIters_last;
     }
-    if (status.extraParameters->isParameter("AztecOO/Achieved Tolerance")) 
+    if (status.extraParameters->isParameter("AztecOO/Achieved Tolerance"))
       linearSolveAchievedTol = status.extraParameters->get<double>("AztecOO/Achieved Tolerance");
   }
 
@@ -382,37 +382,37 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   if (p.get("Write Linear System", false)) {
     std::ostringstream iterationNumber;
     iterationNumber << linearSolveCount;
-    
-    std::string prefixName = p.get("Write Linear System File Prefix", 
-				   "NOX_LinSys");
+
+    std::string prefixName = p.get("Write Linear System File Prefix",
+                   "NOX_LinSys");
     std::string postfixName = iterationNumber.str();
     postfixName += ".mm";
 
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
     std::string rhsFileName = prefixName + "_RHS_" + postfixName;
     std::string jacFileName = prefixName + "_Jacobian_" + postfixName;
-    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
-					     result.getEpetraVector());
-    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
-					     input.getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(),
+                         result.getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(),
+                         input.getEpetraVector());
 
     Epetra_RowMatrix* printMatrix = NULL;
-    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get());
     if (printMatrix == NULL) {
       std::cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
-	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
-	   << "Please set the \"Write Linear System\" parameter to false."
-	   << std::endl;
+       << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
+       << "Please set the \"Write Linear System\" parameter to false."
+       << std::endl;
       throw "NOX Error";
     }
-    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
-					   "test matrix", "Jacobian XXX");
+    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix,
+                       "test matrix", "Jacobian XXX");
   }
 #endif
 
   //Release RCPs
-  x = Teuchos::null; b = Teuchos::null; 
-  resultRCP = Teuchos::null; inputRCP = Teuchos::null; 
+  x = Teuchos::null; b = Teuchos::null;
+  resultRCP = Teuchos::null; inputRCP = Teuchos::null;
 
 
   double endTime = timer.WallTime();
@@ -423,10 +423,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-applyRightPreconditioning(bool useTranspose, 
-			  Teuchos::ParameterList& params,
-			  const NOX::Epetra::Vector& input, 
-			  NOX::Epetra::Vector& result) const
+applyRightPreconditioning(bool useTranspose,
+              Teuchos::ParameterList& params,
+              const NOX::Epetra::Vector& input,
+              NOX::Epetra::Vector& result) const
 {
 
 std::cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
@@ -436,15 +436,15 @@ return false;
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p, 
-		     bool recomputeGraph) const
+createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
+             bool recomputeGraph) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
   NOX_FUNC_TIME_MONITOR("NOX: Total Preconditioner Generation Time");
 
-  double startTime = timer.WallTime();  
+  double startTime = timer.WallTime();
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
     utils.out() << "\n       Creating a new preconditioner" << std::endl;;
@@ -462,7 +462,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       // Wrap Thyra objects around Epetra Op
       RCP<const Thyra::LinearOpBase<double> > linearOp =
         Thyra::epetraLinearOp(jacPtr);
-  
+
       RCP<const Thyra::LinearOpSourceBase<double> > losb =
            rcp(new Thyra::DefaultLinearOpSource<double>(linearOp));
 
@@ -473,9 +473,9 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
       pop = precObj->getNonconstRightPrecOp();
       if (pop == Teuchos::null)
-      	pop = precObj->getNonconstUnspecifiedPrecOp();
-      solvePrecOpPtr = 
-      	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+          pop = precObj->getNonconstUnspecifiedPrecOp();
+      solvePrecOpPtr =
+          Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -484,8 +484,8 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   else if (precMatrixSource == SeparateMatrix) {
 
     // Compute matrix for use in preconditioning
-    precInterfacePtr->computePreconditioner(x.getEpetraVector(), 
-				      *precPtr, &p);
+    precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+                      *precPtr, &p);
 
     RCP<Thyra::PreconditionerFactoryBase<double> > precFactory =
       lowsFactory->getPreconditionerFactory();
@@ -493,7 +493,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     if (precFactory != Teuchos::null) {
       precObj = precFactory->createPrec();
 
-      // Send Prec Matrix to 
+      // Send Prec Matrix to
       RCP<const Thyra::LinearOpBase<double> > precOp =
         Thyra::epetraLinearOp(precPtr);
 
@@ -507,9 +507,9 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
       pop = precObj->getNonconstRightPrecOp();
       if (pop == Teuchos::null)
-      	pop = precObj->getNonconstUnspecifiedPrecOp();
-      solvePrecOpPtr = 
-      	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+          pop = precObj->getNonconstUnspecifiedPrecOp();
+      solvePrecOpPtr =
+          Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -518,13 +518,13 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   else if (precMatrixSource == UserDefined_) {
 
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
-					    *precPtr, &p);
+                        *precPtr, &p);
 
     // Wrap the preconditioner so that apply() calls ApplyInverse()
     RCP<const Thyra::LinearOpBase<double> > precOp =
-      Thyra::epetraLinearOp(precPtr, 
-			    Thyra::NOTRANS, 
-			    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
+      Thyra::epetraLinearOp(precPtr,
+                Thyra::NOTRANS,
+                Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
 
     RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
        rcp(new Thyra::DefaultPreconditioner<double>);
@@ -533,7 +533,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     solvePrecOpPtr = precPtr;
   }
 
-  isPrecConstructed = true; 
+  isPrecConstructed = true;
 
   // Unscale the linear system
   //if ( !Teuchos::is_null(scaling) )
@@ -544,7 +544,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
   if (precObj != Teuchos::null)  {
     if (utils.isPrintType(Utils::LinearSolverDetails))
-      utils.out() << "\n       Time required to create preconditioner : " 
+      utils.out() << "\n       Time required to create preconditioner : "
            << (endTime - startTime) << " (sec.)" << std::endl;
   }
   else {
@@ -557,9 +557,9 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
-recomputePreconditioner(const NOX::Epetra::Vector& x, 
-			Teuchos::ParameterList& linearSolverParams) const
-{  
+recomputePreconditioner(const NOX::Epetra::Vector& x,
+            Teuchos::ParameterList& linearSolverParams) const
+{
 std::cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
      << " NOT IMPLEMENTED " << std::endl;
 return false;
@@ -567,12 +567,12 @@ return false;
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::destroyPreconditioner() const
-{ 
+{
   return true;
 }
 
 //***********************************************************************
-NOX::Epetra::LinearSystemStratimikos::OperatorType 
+NOX::Epetra::LinearSystemStratimikos::OperatorType
 NOX::Epetra::LinearSystemStratimikos::getOperatorType(const Epetra_Operator& Op)
 {
   //***************
@@ -580,21 +580,21 @@ NOX::Epetra::LinearSystemStratimikos::getOperatorType(const Epetra_Operator& Op)
   //***************
 
   const Epetra_Operator* testOperator = 0;
-  
+
   // Is it an Epetra_CrsMatrix ?
   testOperator = dynamic_cast<const Epetra_CrsMatrix*>(&Op);
-  if (testOperator != 0) 
-    return EpetraCrsMatrix; 
+  if (testOperator != 0)
+    return EpetraCrsMatrix;
 
   // Is it an Epetra_VbrMatrix ?
   testOperator = dynamic_cast<const Epetra_VbrMatrix*>(&Op);
-  if (testOperator != 0) 
-    return EpetraVbrMatrix; 
+  if (testOperator != 0)
+    return EpetraVbrMatrix;
 
   // Is it an Epetra_RowMatrix ?
   testOperator = dynamic_cast<const Epetra_RowMatrix*>(&Op);
-  if (testOperator != 0) 
-    return EpetraRowMatrix; 
+  if (testOperator != 0)
+    return EpetraRowMatrix;
 
   // Otherwise it must be an Epetra_Operator!
   return EpetraOperator;
@@ -604,8 +604,8 @@ NOX::Epetra::LinearSystemStratimikos::getOperatorType(const Epetra_Operator& Op)
 bool NOX::Epetra::LinearSystemStratimikos::
 computeJacobian(const NOX::Epetra::Vector& x)
 {
-  bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(), 
-						  *jacPtr);
+  bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(),
+                          *jacPtr);
   return success;
 }
 
@@ -629,21 +629,21 @@ void NOX::Epetra::LinearSystemStratimikos::
 throwError(const std::string& functionName, const std::string& errorMsg) const
 {
   if (utils.isPrintType(Utils::Error)) {
-    utils.out() << "NOX::Epetra::LinearSystemStratimikos::" << functionName 
-	 << " - " << errorMsg << std::endl;
+    utils.out() << "NOX::Epetra::LinearSystemStratimikos::" << functionName
+     << " - " << errorMsg << std::endl;
   }
   throw "NOX Error";
 }
 
 //***********************************************************************
-Teuchos::RCP<const NOX::Epetra::Interface::Jacobian> 
+Teuchos::RCP<const NOX::Epetra::Interface::Jacobian>
 NOX::Epetra::LinearSystemStratimikos::getJacobianInterface() const
 {
   return jacInterfacePtr;
 }
 
 //***********************************************************************
-Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner> 
+Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner>
 NOX::Epetra::LinearSystemStratimikos::getPrecInterface() const
 {
   return precInterfacePtr;
@@ -685,7 +685,7 @@ NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
 }
 
 //***********************************************************************
-Teuchos::RCP<const Epetra_Operator> 
+Teuchos::RCP<const Epetra_Operator>
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
 {
   return solvePrecOpPtr;
@@ -699,16 +699,16 @@ NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
 }
 
 //***********************************************************************
-NOX::Epetra::LinearSystem::PreconditionerReusePolicyType 
+NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
 NOX::Epetra::LinearSystemStratimikos::
 getPreconditionerPolicy(bool advanceReuseCounter)
 {
 
-  if (precReusePolicy == PRPT_REBUILD) 
+  if (precReusePolicy == PRPT_REBUILD)
     return PRPT_REBUILD;
 
   if (precReusePolicy == PRPT_RECOMPUTE) {
-    if (isPrecConstructed) 
+    if (isPrecConstructed)
       return PRPT_RECOMPUTE;
     else
       return PRPT_REBUILD;
@@ -719,62 +719,62 @@ getPreconditionerPolicy(bool advanceReuseCounter)
   // function has been called.
 
   if (precReusePolicy == PRPT_REUSE) {
-    
+
     // If preconditioner is not built at all, you must build it
     if (!isPrecConstructed) {
       if (advanceReuseCounter)
-	precQueryCounter++;
+    precQueryCounter++;
       return PRPT_REBUILD;
     }
-    
-    if (utils.isPrintType(Utils::Details)) 
+
+    if (utils.isPrintType(Utils::Details))
       if (advanceReuseCounter)
-	utils.out() << "\n       Preconditioner Reuse: Age of Prec --> " 
-		    << precQueryCounter << " / " << maxAgeOfPrec << std::endl;
-    
+    utils.out() << "\n       Preconditioner Reuse: Age of Prec --> "
+            << precQueryCounter << " / " << maxAgeOfPrec << std::endl;
+
     // This allows reuse for the entire nonlinear solve
     if( maxAgeOfPrec == -2 ) {
       if (advanceReuseCounter)
-	precQueryCounter++;
+    precQueryCounter++;
       return PRPT_REUSE;
     }
-    
-    // This allows one recompute of the preconditioner followed by reuse 
+
+    // This allows one recompute of the preconditioner followed by reuse
     // for the remainder of the nonlinear solve
     else if( maxAgeOfPrec == -1 ) {
       if (advanceReuseCounter)
-	precQueryCounter++;
+    precQueryCounter++;
       maxAgeOfPrec = -2;
       return PRPT_REBUILD;
     }
-    
-    // This is the typical use 
+
+    // This is the typical use
     else {
       if( precQueryCounter == 0 || precQueryCounter >= maxAgeOfPrec ) {
         if (advanceReuseCounter)
           precQueryCounter = 1;
-	return PRPT_REBUILD;
+    return PRPT_REBUILD;
       }
       else {
-	if (advanceReuseCounter)
-	  precQueryCounter++;
-	return PRPT_REUSE;
+    if (advanceReuseCounter)
+      precQueryCounter++;
+    return PRPT_REUSE;
       }
     }
   } // if (precReusePolicy == PRPT_REUSE)
-  
+
   return PRPT_REBUILD;
 }
 
 //***********************************************************************
-double 
+double
 NOX::Epetra::LinearSystemStratimikos::getTimeCreatePreconditioner() const
 {
   return timeCreatePreconditioner;
 }
 
 //***********************************************************************
-double 
+double
 NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse() const
 {
   return timeApplyJacbianInverse;
@@ -783,7 +783,7 @@ NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse() const
 //***********************************************************************
 void
 NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve(
-	       const Teuchos::RCP<const Epetra_Operator>& solveJacOp)
+           const Teuchos::RCP<const Epetra_Operator>& solveJacOp)
 {
   jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
   jacType = getOperatorType(*solveJacOp);
@@ -792,21 +792,21 @@ NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve(
 //***********************************************************************
 void
 NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(
-	       const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
+           const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
   solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
 
   // Wrap the preconditioner so that apply() calls ApplyInverse()
   Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
-    Thyra::epetraLinearOp(solvePrecOpPtr, 
-			  Thyra::NOTRANS, 
-			  Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
+    Thyra::epetraLinearOp(solvePrecOpPtr,
+              Thyra::NOTRANS,
+              Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
 
   Teuchos::RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
     rcp(new Thyra::DefaultPreconditioner<double>);
   precObjDef->initializeRight(precOp);
   precObj = precObjDef;
-  
+
 }
 
 //***********************************************************************
@@ -820,27 +820,27 @@ NOX::Epetra::LinearSystemStratimikos::setStratimikosPreconditioner() const
 
 //***********************************************************************
 void NOX::Epetra::LinearSystemStratimikos::
-precError(int error_code, 
-	  const std::string& nox_function,
-	  const std::string& prec_type,
-	  const std::string& prec_function) const
+precError(int error_code,
+      const std::string& nox_function,
+      const std::string& prec_type,
+      const std::string& prec_function) const
 {
   if (error_code != 0) {
-    
+
     std::ostringstream msg;
 
-    if (throwErrorOnPrecFailure) 
+    if (throwErrorOnPrecFailure)
       msg << "Error - ";
-    else 
+    else
       msg << "Warning - ";
 
     msg << "NOX::Epetra::LinearSystemStratimikos::" << nox_function << " - The " << prec_type << " preconditioner has returned a nonzero error code of " << error_code << " for the function \"" << prec_function << "\".  Please consult the preconditioner documentation for this error type.";
-    
+
     if (throwErrorOnPrecFailure) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
     }
     else
-      utils.out() << msg.str() << std::endl; 
+      utils.out() << msg.str() << std::endl;
   }
 }
 
@@ -851,10 +851,10 @@ getNumLinearSolves() {return linearSolveCount;}
 
 int NOX::Epetra::LinearSystemStratimikos::
 getLinearItersLastSolve() {return linearSolveIters_last;}
-  
+
 int NOX::Epetra::LinearSystemStratimikos::
 getLinearItersTotal() {return linearSolveIters_total;}
-  
+
 double NOX::Epetra::LinearSystemStratimikos::
 getAchievedTol() {return linearSolveAchievedTol;}
 //***********************************************************************

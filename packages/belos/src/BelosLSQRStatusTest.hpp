@@ -46,7 +46,7 @@
 
 /*!
   \file BelosLSQRStatusTest.hpp
-  \brief Belos::StatusTest class defining LSQR convergence 
+  \brief Belos::StatusTest class defining LSQR convergence
 */
 
 #include "BelosStatusTest.hpp"
@@ -55,7 +55,7 @@
 /*!  \class LSQRStatusTest:
   \brief A Belos::StatusTest class for specifying convergence of LSQR.  The outer status tests passes if an inner
   status passes a user specified number of times consecutively.  The inner status test depends on information
-  specificto LSQR iteration.
+  specific to LSQR iteration.
 */
 
 namespace Belos {
@@ -80,9 +80,9 @@ public:
  side (b), and an estimate of the relative error in the data defining the coefficinet matrix (A).  The default
  termIterMax is 1, and the other three parameters default to 0.  The defaults specified in LSQRSolMgr are more realistic.
    */
-  LSQRStatusTest( MagnitudeType condMax = 0.0, 
-                  int term_iter_max = 1, 
-                  MagnitudeType rel_rhs_err = 0.0, 
+  LSQRStatusTest( MagnitudeType condMax = 0.0,
+                  int term_iter_max = 1,
+                  MagnitudeType rel_rhs_err = 0.0,
                   MagnitudeType rel_mat_err = 0.0 );
 
   //! Destructor
@@ -110,8 +110,8 @@ public:
 
   //! Set the tolerances
   int setCondLim(MagnitudeType condMax) {
-    condMax_ = condMax; 
-    rcondMin_ = (condMax > 0) ? (Teuchos::ScalarTraits< MagnitudeType >::one() / condMax) : Teuchos::ScalarTraits< MagnitudeType >::eps(); 
+    condMax_ = condMax;
+    rcondMin_ = (condMax > 0) ? (Teuchos::ScalarTraits< MagnitudeType >::one() / condMax) : Teuchos::ScalarTraits< MagnitudeType >::eps();
     return(0);}
 
   int setTermIterMax(int term_iter_max) {
@@ -131,7 +131,7 @@ public:
   //@}
 
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   //! Returns the value of the upper limit of the condition number of Abar set in the constructor.
   MagnitudeType getCondMaxLim() const {return(condMax_);}
@@ -220,10 +220,10 @@ private:
   // convergence requires that term_iter_max consecutive iterates satisfy the other convergence tests
   int term_iter_;
 
-  // condition number of the operator 
+  // condition number of the operator
   MagnitudeType matCondNum_;
 
-  // Frobenius norm of the operator 
+  // Frobenius norm of the operator
   MagnitudeType matNorm_;
 
   // residual norm for the linear system
@@ -237,11 +237,16 @@ private:
 };
 
 template <class ScalarType, class MV, class OP>
-LSQRStatusTest<ScalarType,MV,OP>::LSQRStatusTest( MagnitudeType condMax /* = 0 */, int term_iter_max /* = 1 */, MagnitudeType rel_rhs_err /* = 0 */, MagnitudeType rel_mat_err /* = 0 */)
+LSQRStatusTest<ScalarType,MV,OP>::
+LSQRStatusTest (MagnitudeType condMax /* = 0 */,
+                int term_iter_max /* = 1 */,
+                MagnitudeType rel_rhs_err /* = 0 */,
+                MagnitudeType rel_mat_err /* = 0 */)
   : condMax_(condMax),
     term_iter_max_ (term_iter_max),
     rel_rhs_err_ (rel_rhs_err),
     rel_mat_err_ (rel_mat_err),
+    rcondMin_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
     status_ (Belos::Undefined),
     term_iter_ (0),
     matCondNum_ ( Teuchos::ScalarTraits<MagnitudeType>::one() ),
@@ -261,21 +266,22 @@ void LSQRStatusTest<ScalarType,MV,OP>::reset()
 }
 
 template <class ScalarType, class MV, class OP>
-Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteration<ScalarType,MV,OP>* iSolver) 
+Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteration<ScalarType,MV,OP>* iSolver)
 {
   const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
-  if (condMax_ > MTzero ) 
+  if (condMax_ > MTzero )
     {
-	rcondMin_ = MTone / condMax_;
+        rcondMin_ = MTone / condMax_;
     }
-  else 
+  else
     {
-	rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
+        rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
     }
 
   bool termIterFlag = false;
   LSQRIter<ScalarType,MV,OP>* solver = dynamic_cast< LSQRIter<ScalarType,MV,OP>* > (iSolver);
+  TEUCHOS_ASSERT(solver != NULL);
   LSQRIterationState< ScalarType, MV > state = solver->getState();
   //
   //   LSQR solves a least squares problem.  A converged preconditioned residual norm
@@ -296,10 +302,10 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   // the difference between the preconditioned residual and the unpreconditioned residual.
   //
 
-  std::cout << " X " << state.sol_norm 
-            << "  b-AX " << state.resid_norm 
-            << "  Atr  " << state.mat_resid_norm 
-            << "  A " << state.frob_mat_norm 
+  std::cout << " X " << state.sol_norm
+            << "  b-AX " << state.resid_norm
+            << "  Atr  " << state.mat_resid_norm
+            << "  A " << state.frob_mat_norm
             << "  cond  " << state.mat_cond_num
             << "  relResNorm " << state.resid_norm/state.bnorm
             << "  LS " << state.mat_resid_norm /( state.resid_norm * state.frob_mat_norm )
@@ -318,12 +324,12 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
       stop_crit_2 = (state.resid_norm > zero) ? state.mat_resid_norm / (state.frob_mat_norm * state.resid_norm) : zero;
     }
   else
-    { 
+    {
      if( state.resid_norm == zero )
        {
-         stop_crit_2 = zero; 
+         stop_crit_2 = zero;
        }
-     else 
+     else
        {
          stop_crit_2 = one; // Initial mat_norm always vanishes
        }
@@ -378,8 +384,8 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   status_ = (term_iter_ < term_iter_max_) ? Belos::Failed : Belos::Passed;
 
   matCondNum_ = state.mat_cond_num; // information that defined convergence
-  matNorm_ = state.frob_mat_norm;   // in accessible variables 
-  resNorm_  = state.resid_norm;     
+  matNorm_ = state.frob_mat_norm;   // in accessible variables
+  resNorm_  = state.resid_norm;
   matResNorm_ = state.mat_resid_norm;
 
   return status_;

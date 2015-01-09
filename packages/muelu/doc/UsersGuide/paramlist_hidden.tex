@@ -1,0 +1,131 @@
+
+\cbb{problem: type}{string}{"unknown"}{Type of problem to be solved. Possible values: see Table~\ref{t:problem_types}.}
+        
+\cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
+        
+\cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
+        
+\cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
+        
+\cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
+        
+\cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
+        
+\cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
+        
+\cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
+        
+\cbb{smoother: type}{string}{"RELAXATION"}{Smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+        
+\cbb{smoother: pre type}{string}{"RELAXATION"}{Pre-smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+        
+\cbb{smoother: post type}{string}{"RELAXATION"}{Post-smoother type. Possible values: see Table~\ref{tab:smoothers}.}
+        
+\cba{smoother: params}{\parameterlist}{Smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+        
+\cba{smoother: pre params}{\parameterlist}{Pre-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+        
+\cba{smoother: post params}{\parameterlist}{Post-smoother parameters. For standard smoothers, \muelu passes them directly to the appropriate package library.}
+        
+\cbb{smoother: overlap}{int}{0}{Smoother subdomain overlap.}
+        
+\cbb{smoother: pre overlap}{int}{0}{Pre-smoother subdomain overlap.}
+        
+\cbb{smoother: post overlap}{int}{0}{Post-smoother subdomain overlap.}
+        
+\cbb{coarse: max size}{int}{2000}{Maximum dimension of a coarse grid. \muelu will stop coarsening once it is achieved.}
+        
+\cbb{coarse: type}{string}{"SuperLU"}{Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.}
+        
+\cba{coarse: params}{\parameterlist}{Coarse solver parameters. \muelu passes them directly to the appropriate package library.}
+        
+\cbb{coarse: overlap}{int}{0}{Coarse solver subdomain overlap.}
+        
+\cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
+        
+\cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
+        
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
+        
+\cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
+        
+\cbb{aggregation: min agg size}{int}{2}{Minimum size of an aggregate.}
+        
+\cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
+        
+\cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
+        
+\cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
+        
+\cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
+        
+\cbb{aggregation: enable phase 2a}{bool}{true}{Turn on/off phase 2a of aggregation}
+        
+\cbb{aggregation: enable phase 2b}{bool}{true}{Turn on/off phase 2b of aggregation}
+        
+\cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
+        
+\cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
+        
+\cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
+        
+\cbb{aggregation: mode}{string}{"old"}{old = Tobias, new = ML}
+        
+\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
+        
+\cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
+        
+\cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
+        
+\cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
+        
+\cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
+        
+\cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
+        
+\cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
+        
+\cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+        
+\cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
+        
+\cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
+        
+\cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
+        
+\cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
+        
+\cbb{filtered matrix: reuse graph}{bool}{true}{Set values to zero instead of constructing a new graph.}
+        
+\cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).}
+        
+\cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
+        
+\cbb{emin: num reuse iterations}{int}{1}{Number of iterations to minimize the reused prolongator energy in energy-minimization.}
+        
+\cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minimization. Possible values: "AkPtent".}
+        
+\cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
+        
+\cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
+        
+\cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
+        
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+        
+\cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
+        
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.}
+        
+\cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
+        
+\cbb{repartition: remap parts}{bool}{true}{Postprocessing for partitioning to reduce data migration.}
+        
+\cbb{repartition: remap num values}{int}{4}{Number of maximum components from each processor used to construct partial bipartite graph.}
+        
+\cbb{repartition: print partition distribution}{bool}{false}{Partition distribution printout.}
+        
+\cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
+        
+\cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+        

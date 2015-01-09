@@ -67,7 +67,7 @@ bool TestTiming(const Amesos_BaseSolver* Solver,
     // 6) Redistributing the vector for each solve to the accepted format for the solver
     vec_redist_time = TimingsList.get( "Total vector redistribution time", 0.0 );
   }
-  catch( exception& e ) {
+  catch( std::exception& e ) {
     if (Comm.MyPID() == 0)
       std::cout << std::endl << "Exception caught in TestTiming() : " << e.what() << std::endl;
     testPassed = false;

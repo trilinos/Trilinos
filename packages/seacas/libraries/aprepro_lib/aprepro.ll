@@ -1,4 +1,40 @@
+/*
+ * Copyright (c) 2014, Sandia Corporation.
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ * 
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
 /* -*- Mode: c++ -*- */
+
 %{
 
 #include <fstream>
@@ -22,7 +58,7 @@ typedef SEAMS::Parser::token_type token_type;
  * by default returns 0, which is not of token_type. */
 #define yyterminate() return token::END
 
-#define show(x)   printf("<%s>", x);
+#define show(x)   *(aprepro->infoStream) << "<" << x << ">" << std::flush;
  namespace SEAMS {
    extern int echo;
    extern char *get_temp_filename(void);
@@ -50,6 +86,13 @@ bool suppress_nl = false;
  bool switch_case_run = false; // has there been a case which matched condition run?
  bool switch_skip_to_endcase = false;
  double switch_condition = 0.0; // Value specified in "switch(condition)"
+
+// For substitution history
+size_t curr_index = 0;
+std::string history_string;
+size_t hist_start = 0;
+
+#define YY_USER_ACTION curr_index += yyleng;
  
 %}
 /*** Flex Declarations and Options ***/
@@ -132,6 +175,7 @@ integer {D}+({E})?
       BEGIN(LOOP);
     }
     aprepro.ap_file_list.top().lineno++;
+    aprepro.isCollectingLoop = true;
   }
 
   .+")}".*"\n"  {
@@ -140,10 +184,7 @@ integer {D}+({E})?
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     if (!check_valid_var(yytext)) {
-      std::cerr << "Aprepro: WARN: Invalid variable name syntax '"
-		<< yytext << "' (" << aprepro.ap_file_list.top().name
-		<< ", line " << aprepro.ap_file_list.top().lineno
-		<< ")\n";
+      aprepro.warning("Invalid variable name syntax '" + std::string(yytext) + "'");
       BEGIN(LOOP_SKIP);
     } else {
       s = aprepro.getsym(yytext);
@@ -167,19 +208,29 @@ integer {D}+({E})?
       }
     }
     aprepro.ap_file_list.top().lineno++;
+    aprepro.isCollectingLoop = true;
   }
 }
 
 <LOOP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
     aprepro.ap_file_list.top().lineno++;
-    if (--loop_lvl == 0) {
+    if(loop_lvl > 0)
+      --loop_lvl;
+
+    if (loop_lvl == 0) {
       BEGIN(INITIAL);
       tmp_file->close();
       delete tmp_file;
+
+      if(!aprepro.doLoopSubstitution)
+        yy_push_state(VERBATIM);
+
+      aprepro.isCollectingLoop = false;
 				     
       yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
       yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+      curr_index = 0;
     }
     else {
       (*tmp_file) << yytext;
@@ -192,6 +243,27 @@ integer {D}+({E})?
     aprepro.ap_file_list.top().lineno++;
   }
 
+  {WS}"{"[Aa]"bort"[Ll]"oop".*"\n" {
+    if(aprepro.ap_options.interactive ||
+       aprepro.string_interactive())
+    {
+      aprepro.warning("Aborting loop(s).", false);
+
+      // Leave the looping state and remove the loop file
+      BEGIN(INITIAL);
+      tmp_file->close();
+      delete tmp_file;
+
+      if(aprepro.ap_file_list.top().tmp_file) {
+        remove(aprepro.ap_file_list.top().name.c_str());
+        aprepro.ap_file_list.pop();
+      }
+
+      loop_lvl = 0;
+      aprepro.isCollectingLoop = false;
+    }
+  }
+
   .*"\n" {
     (*tmp_file) << yytext;
     aprepro.ap_file_list.top().lineno++;
@@ -201,13 +273,32 @@ integer {D}+({E})?
 <LOOP_SKIP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
     aprepro.ap_file_list.top().lineno++;
-    if (--loop_lvl == 0)
+    if(loop_lvl > 0)
+      --loop_lvl;
+
+    if (loop_lvl == 0) {
       BEGIN(INITIAL);
+      aprepro.isCollectingLoop = false;
+    }
   }
 
   {WS}"{"[Ll]"oop"{WS}"(".*"\n" {
     loop_lvl++; /* Nested Loop */
     aprepro.ap_file_list.top().lineno++;
+  }
+
+  {WS}"{"[Aa]"bort"[Ll]"oop".*"\n" {
+    if(aprepro.ap_options.interactive ||
+       aprepro.string_interactive())
+    {
+      aprepro.warning("Aborting loops(s).", false);
+
+      // Leave the looping state
+      BEGIN(INITIAL);
+
+      loop_lvl = 0;
+      aprepro.isCollectingLoop = false;
+    }
   }
 
   .*"\n" {
@@ -217,6 +308,7 @@ integer {D}+({E})?
 
 <END_CASE_SKIP>"{case".*"\n"  {
   yyless(0);
+  curr_index = 0;
   BEGIN(INITIAL);
   switch_skip_to_endcase = false;
 }
@@ -272,7 +364,7 @@ integer {D}+({E})?
    * NOTE: if_lvl was not incremented, so don't need to decrement when
    *       endif found.
    */
-  {WS}"{"[Ee]"ndif}".*"\n"     { 
+  {WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
     aprepro.ap_file_list.top().lineno++;  
     if (--if_skip_level == 0)
       BEGIN(IF_SKIP);
@@ -283,7 +375,7 @@ integer {D}+({E})?
     if_skip_level++;
   }
 
-  {WS}"{if"{WS}"(".*"\n"  { 
+  {WS}"{"[Ii]"f"{WS}"(".*"\n"  {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
   }
@@ -311,7 +403,7 @@ integer {D}+({E})?
     BEGIN(IF_WHILE_SKIP);
   }
 
-  {WS}"{if"{WS}"("  { 
+  {WS}"{"[Ii]"f"{WS}"("  {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
 	       aprepro.ap_file_list.top().lineno);
@@ -333,7 +425,10 @@ integer {D}+({E})?
   if (aprepro.ap_options.debugging) 
     fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
 	     if_lvl, aprepro.ap_file_list.top().lineno);
-  if (if_state[if_lvl] == IF_SKIP) {
+  if(YY_START == VERBATIM) {
+    if(echo) ECHO;
+  }
+  else if (if_state[if_lvl] == IF_SKIP) {
     if (!if_case_run[if_lvl]) {
       BEGIN(INITIAL);
       if_state[if_lvl] = INITIAL;
@@ -353,7 +448,7 @@ integer {D}+({E})?
 }
 
 <IF_SKIP>{
-  {WS}"{"{WS}"elseif".*"\n"  { 
+  {WS}"{"{WS}[Ee]"lse"[Ii]"f".*"\n"  {
     /* If any previous 'block' of this if has executed, then
      * just skip this block; otherwise see if condition is
      * true and execute this block
@@ -368,6 +463,7 @@ integer {D}+({E})?
     } else {
       /* Need to check the elseif condition; push back and parse */
       yyless(0);
+      curr_index = 0;
       BEGIN(INITIAL);
       if_state[if_lvl] = INITIAL;
     }
@@ -383,20 +479,28 @@ integer {D}+({E})?
    }
 }
 
-{WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
-			       if_state[if_lvl] == INITIAL)
-			     BEGIN(INITIAL);
+{WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
+    aprepro.ap_file_list.top().lineno++;
+
+    if(YY_START == VERBATIM) {
+      if(echo) ECHO;
+    }
+    else {
+      if (if_state[if_lvl] == IF_SKIP ||
+          if_state[if_lvl] == INITIAL)
+            BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
 			      if that should be skipped */
-    if (aprepro.ap_options.debugging) 
-	printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
-		if_lvl, aprepro.ap_file_list.top().lineno);
-			   if (--if_lvl < 0) {
-			     if_lvl = 0;
-			     yyerror("Improperly Nested ifdef/ifndef statements");
-			   }
-			   aprepro.ap_file_list.top().lineno++;  
-			   /* Ignore endif if not skipping */ }
+      if (aprepro.ap_options.debugging)
+        printf ("DEBUG IF: 'endif'  at level = %d at line %d\n",
+                if_lvl, aprepro.ap_file_list.top().lineno);
+      if (--if_lvl < 0) {
+        if_lvl = 0;
+        yyerror("Improperly Nested ifdef/ifndef statements");
+      }
+      /* Ignore endif if not skipping */
+    }
+  }
 
 <INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
@@ -435,37 +539,37 @@ integer {D}+({E})?
 				 yytmp = aprepro.open_file(pt, "r");
 			       else
 				 yytmp = aprepro.check_open_file(pt, "r");
-			       if (yytmp != NULL) {
+             if (yytmp != NULL) {
 				 yyin = yytmp;
-				 if (aprepro.ap_options.info_msg == true) {
-				   std::cerr << "Aprepro: INFO: Included File: '"
-					     << pt << "' (" << aprepro.ap_file_list.top().name
-					     << ", line " << aprepro.ap_file_list.top().lineno
-					     << ")\n";
-				 }
+				 aprepro.info("Included File: '" +
+					      std::string(pt) + "'", true);
+
 				 SEAMS::file_rec new_file(pt, 0, false, 0);
 				 aprepro.ap_file_list.push(new_file);
 
 				 yyFlexLexer::yypush_buffer_state (
-				    yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+            yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+         curr_index = 0;
+
+         if(!aprepro.doIncludeSubstitution)
+           yy_push_state(VERBATIM);
+
 			       } else {
-				 if (aprepro.ap_options.warning_msg == true) {
-				   std::cerr << "Aprepro: WARN: Can't open '"
-					     << yytext << "'\n";
-				 }
+				 aprepro.warning("Can't open '" +
+						 std::string(yytext) + "'", false);
 			       }
 			       aprepro.ap_file_list.top().lineno++;
 			     }
 			   }
 
-
 <PARSING>{integer}  |        
 <PARSING>{number}	   { sscanf (yytext, "%lf", &yylval->val);
-                             return(token::NUM); }
+                       return(token::NUM); }
 
-<PARSING>{WS}              ; /* Empty Rule */
+<PARSING>{WS}          ; // Empty rule
 
-<PARSING>{id}              { symrec *s;
+<PARSING>{id} {
+           symrec *s;
 			     s = aprepro.getsym(yytext);
 			     if (s == 0)
 			       s = aprepro.putsym (yytext, SEAMS::Aprepro::UNDEFINED_VARIABLE, 0);
@@ -508,17 +612,22 @@ integer {D}+({E})?
 <PARSING>"!"               return(token::NOT);
 <PARSING>"["               return(token::LBRACK);
 <PARSING>"]"               return(token::RBRACK);
-<PARSING>{qstring}	   { char *pt = strrchr(yytext, '"');
+<PARSING>{qstring}	   {
+           char *pt = strrchr(yytext, '"');
 			     *pt = '\0';
                              new_string(yytext+1, &yylval->string);
 			     return token::QSTRING; }
 
-<PARSING>{mlstring}	   { char *pt = strrchr(yytext, '\'');
+<PARSING>{mlstring}	   {
+           char *pt = strrchr(yytext, '\'');
 			     *pt = '\0';
                              new_string(yytext+1, &yylval->string);
 			     return token::QSTRING; }
 
 <PARSING>"}" {
+  // Add to the history string
+  save_history_string();
+
   if (switch_skip_to_endcase)
     BEGIN(END_CASE_SKIP);
   else
@@ -531,7 +640,20 @@ integer {D}+({E})?
 
 \\\}                      { if (echo) LexerOutput("}", 1); }
 
-"{"                        { BEGIN(PARSING); return(token::LBRACE);  }
+"{"  {
+    // Check if we need to save the substitution history first.
+    if(aprepro.ap_options.keep_history &&
+       strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0)
+    {
+      hist_start = curr_index - yyleng;
+      if(hist_start < 0)
+        hist_start = 0;
+    }
+
+    BEGIN(PARSING);
+
+    return(token::LBRACE);
+  }
 
 [Ee][Xx][Ii][Tt] |
 [Qq][Uu][Ii][Tt]           { if (aprepro.ap_options.end_on_exit)
@@ -548,10 +670,10 @@ integer {D}+({E})?
 
 
 {id} |
-.                          { if (echo) ECHO; }
+.                          { if (echo && if_state[if_lvl] != IF_SKIP) ECHO; }
 
-"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false; 
-                             aprepro.ap_file_list.top().lineno++; }
+"\n"                       { if (echo && !suppress_nl) ECHO; suppress_nl = false;
+                             aprepro.ap_file_list.top().lineno++;}
 
 %%
 
@@ -576,6 +698,15 @@ namespace SEAMS {
 
   void Scanner::LexerOutput(const char* buf, int size )
   {
+    // Do this before writing so that we have the correct index in the
+    // output stream.
+    if(aprepro.ap_options.keep_history)
+    {
+      aprepro.add_history(history_string, buf);
+      history_string.clear();
+      hist_start = 0;
+    }
+
     aprepro.outputStream.top()->write( buf, size );
     if (aprepro.ap_options.interactive && aprepro.outputStream.size() == 1) {
       // In interactive mode, output to stdout in addition to the
@@ -586,43 +717,82 @@ namespace SEAMS {
 
   int Scanner::yywrap()
   {
+    // Clear the history string.
+    history_string.clear();
+    hist_start = 0;
+    curr_index = 0;
+
+    // If we are using the string interactive method, we want to return to
+    // our original state if parsing was cutoff prematurely.
+    if(aprepro.string_interactive() && YY_START == PARSING)
+    {  
+
+
+      if (switch_skip_to_endcase)
+        BEGIN(END_CASE_SKIP);
+      else
+        BEGIN(if_state[if_lvl]);
+    }
+
+
     if (aprepro.ap_file_list.size() <= 1) {		/* End of main file, not in nested include */
       return (1);
+    }
+    else if (aprepro.string_interactive() && loop_lvl) {
+        return (1);
     }
     else {
       /* We are in an included or looping file */
       if (aprepro.ap_file_list.top().tmp_file) {
-	if (aprepro.ap_options.debugging)
-	  std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
-	if (--aprepro.ap_file_list.top().loop_count <= 0)  {
-	  if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
-	    if (!aprepro.ap_options.debugging)
-	      remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
-	  }
-	  delete yyin;
-	  aprepro.ap_file_list.pop(); 
-	  yyFlexLexer::yypop_buffer_state();
-	}
-	else {
-	  // Do not pop ap_file_list; we are rereading that file...
-	  delete yyin;
-	  yyFlexLexer::yypop_buffer_state();
-	  yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
-	  yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
-	  aprepro.ap_file_list.top().lineno = 0;
-	}
+        if (aprepro.ap_options.debugging)
+          std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
+        if (--aprepro.ap_file_list.top().loop_count <= 0)  {
+          // On Windows, you can't remove the temp file until all the references to the
+          // file object have been released, so we will delete it here.
+          delete yyin;
+
+          if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
+            if (!aprepro.ap_options.debugging)
+              remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
+
+            if(!aprepro.doLoopSubstitution)
+              yy_pop_state();
+          }
+
+          aprepro.ap_file_list.pop();
+          yyFlexLexer::yypop_buffer_state();
+        }
+        else {
+          // Do not pop ap_file_list; we are rereading that file...
+          delete yyin;
+          yyFlexLexer::yypop_buffer_state();
+          yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
+          yyFlexLexer::yypush_buffer_state (yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
+          aprepro.ap_file_list.top().lineno = 0;
+        }
       }
       else {
-	delete yyin;
-	yyFlexLexer::yypop_buffer_state();
-	aprepro.ap_file_list.pop();
-	/* Turn echoing back on at end of included files. */
-	echo = true;
-	/* Set immutable mode back to global immutable 
-	 * state at end of included file
-	 */
-	aprepro.stateImmutable = aprepro.ap_options.immutable;	
+        delete yyin;
+        yyFlexLexer::yypop_buffer_state();
+        aprepro.ap_file_list.pop();
+
+        /* Turn echoing back on at end of included files. */
+        echo = true;
+
+        // If we are not doing aprepro substitutions for the included file, but
+        // just collecting lines, pop the state from VERBATIM back to what it
+        // was previously.
+        if(!aprepro.doIncludeSubstitution)
+          yy_pop_state();
+
+        /* Set immutable mode back to global immutable
+        * state at end of included file*/
+        aprepro.stateImmutable = aprepro.ap_options.immutable;
       }
+
+      // Reset the current character index.
+      curr_index = yyin->tellg();
+
       return (0);
     }
   }
@@ -634,9 +804,7 @@ namespace SEAMS {
 
   void Scanner::yyerror (const char *s)
   {
-    std::cerr << "Aprepro: ERROR:  " << s << " ("
-	      << aprepro.ap_file_list.top().name<< ", line "
-	      << aprepro.ap_file_list.top().lineno + 1 << ")\n";
+    aprepro.error(s);
   }
 
   char *Scanner::execute (char string[])
@@ -652,7 +820,11 @@ namespace SEAMS {
      */
     int i;
     while ((i = yyFlexLexer::yyinput ()) != '}' && i != EOF)
-      ;				/* eat up values */
+      curr_index++;				/* eat up values */
+
+    // Increment curr_index to account for the '}' and save history
+    curr_index++;
+    save_history_string();
 
     /* Allocate space for string + '}' + '{' + end_of_string */
     std::string new_string;
@@ -681,7 +853,12 @@ namespace SEAMS {
      *       (to be read first),
      */
     while ((i = yyFlexLexer::yyinput ()) != '}' && i != EOF)
-      ;				/* eat up values */
+      curr_index++;				/* eat up values */
+
+    // Increment curr_index to account for the '}' and save history
+    curr_index++;
+    save_history_string();
+
     {
       aprepro.ap_file_list.push(SEAMS::file_rec("_string_", 0, true, -1));
       std::string new_string("}");
@@ -776,6 +953,34 @@ namespace SEAMS {
       switch_skip_to_endcase = true;
     }
     return(NULL);
+  }
+
+  void Scanner::save_history_string()
+  {
+    if(!aprepro.ap_options.keep_history)
+      return;
+
+    // Don't do it if the file is the one used by execute and rescan.
+    if(strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) == 0)
+      return;
+
+    size_t hist_end = curr_index;
+    size_t len = hist_end - hist_start;
+
+    if(len <= 0)
+      return;
+
+    // Go back in the stream to where we started keeping history.
+    yyin->seekg(hist_start);
+
+    // Read everything up to this point again and save it.
+    char* tmp = new char[len+1];
+    yyin->read(tmp, len);
+    tmp[len] = '\0';
+
+    history_string = tmp;
+    delete [] tmp;
+    hist_start = 0;
   }
 }
 

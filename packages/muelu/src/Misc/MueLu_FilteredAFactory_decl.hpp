@@ -62,7 +62,7 @@ namespace MueLu {
     @brief Factory for building filtered matrices using filtered graphs.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class FilteredAFactory : public SingleLevelFactoryBase {
 #undef MUELU_FILTEREDAFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -77,7 +77,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~FilteredAFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 
@@ -99,6 +99,9 @@ namespace MueLu {
     void Build(Level& currentLevel) const;
 
     //@}
+  private:
+    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
+    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
 
   }; //class FilteredAFactory
 

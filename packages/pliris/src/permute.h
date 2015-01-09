@@ -48,11 +48,11 @@
 #include "defines.h"
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
  void X_PERMUTE_(DATA_TYPE *, int *);
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

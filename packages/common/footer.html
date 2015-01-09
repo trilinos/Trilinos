@@ -1,3 +1,29 @@
+
+<!-- Assumes Doxygen adds the jquery script. Otherwise, uncomment following
+     line:
+<script type="text/javascript" 
+        src="common/parameterList/js/jquery.js"></script> 
+-->
+<script type="text/javascript" 
+        src="common/parameterList/js/iframeResizer.min.js"></script> 
+
+<script type="text/javascript">
+iFrameResize({
+  log                 : true,   // Enable console logging
+  enablePublicMethods : true,   // Enable methods within iframe hosted page 
+  heightCalculationMethod: 'bodyScroll',
+  autoResize: true,
+  resizedCallback     : function(messageData){ // Callback fn when msg recd
+    $('p#callback').html(
+        '<b>Frame ID:</b> '    + messageData.iframe.id +
+        ' <b>Height:</b> '     + messageData.height +
+        ' <b>Width:</b> '      + messageData.width + 
+        ' <b>Event type:</b> ' + messageData.type
+     );
+  }
+});
+</script>
+
 <hr size="1"><address style="align: right;"><small>
 Generated on $datetime for $projectname by&nbsp;<a href="http://www.doxygen.org/index.html"><img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> $doxygenversion</small></address>
 </body>

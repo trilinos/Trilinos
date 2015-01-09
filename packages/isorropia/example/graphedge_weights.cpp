@@ -199,7 +199,8 @@ int main(int argc, char** argv) {
   paramlist.set("PARTITIONING METHOD", "GRAPH");
   paramlist.set("PRINT ZOLTAN METRICS", "2");
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("GRAPH_PACKAGE", "PHG");
+  sublist.set("GRAPH_PACKAGE", "PHG"); // Use ParMetis or Scotch if you have it
+  sublist.set("EDGE_WEIGHT_DIM", "1"); // One weight per edge
 
   //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
   //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls

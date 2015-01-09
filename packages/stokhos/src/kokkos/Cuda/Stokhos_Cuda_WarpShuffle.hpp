@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CUDA_WARP_SHUFFLE_HPP
 #define STOKHOS_CUDA_WARP_SHUFFLE_HPP
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef __CUDA_ARCH__
 #  if (__CUDA_ARCH__ >= 300)

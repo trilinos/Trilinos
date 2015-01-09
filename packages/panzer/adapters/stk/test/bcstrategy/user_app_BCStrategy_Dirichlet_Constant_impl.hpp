@@ -78,6 +78,7 @@ setup(const panzer::PhysicsBlock& side_pb,
   using std::string;
   using std::pair;
 
+/*
   // need the dof value to form the residual
   this->required_dof_names.push_back(this->m_bc.equationSetName());
 
@@ -89,6 +90,15 @@ setup(const panzer::PhysicsBlock& side_pb,
 
   // map residual to target field
   this->residual_to_target_field_map[residual_name] = "Constant_" + this->m_bc.equationSetName();
+*/
+
+  // add in gather DOF
+  this->addDOF(this->m_bc.equationSetName());              // DOF Name
+
+  // add in the target
+  this->addTarget("Constant_"+this->m_bc.equationSetName(),  // Target Name
+                  this->m_bc.equationSetName(),              // DOF Name
+                  "Residual_"+this->m_bc.identifier());      // Residual Name
 
   // find the basis for this dof 
   const vector<pair<string,RCP<panzer::PureBasis> > >& dofs = side_pb.getProvidedDOFs();

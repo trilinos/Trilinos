@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -28,6 +28,7 @@
 // ************************************************************************
 // @HEADER
 
+#include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 #include <BelosTpetraAdapter.hpp>
@@ -42,6 +43,7 @@ namespace TpetraIntrepidPoissonExample {
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
                 const int num_steps,
@@ -55,7 +57,10 @@ solveWithBelos (bool& converged,
   typedef operator_type OP;
 
   // Invoke the generic solve routine.
-  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, tol, maxNumIters, num_steps, X, A, B, M_left, M_right);
+  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed,
+                                                      solverName, tol, maxNumIters,
+                                                      num_steps,
+                                                      X, A, B, M_left, M_right);
 }
 
 /// \brief Solve the linear system(s) AX=B with Belos by cloning to a new
@@ -88,7 +93,6 @@ cloneAndSolveWithBelos (
   typedef Tpetra::CrsMatrix<ST, LO, GO, CloneNode>    clone_sparse_matrix_type;
   typedef Tpetra::Operator<ST, LO, GO, CloneNode>     clone_operator_type;
   typedef Tpetra::MultiVector<ST, LO, GO, CloneNode>  clone_multi_vector_type;
-  typedef typename KokkosClassic::DefaultKernels<ST,LO,CloneNode>::SparseOps clone_sparse_ops;
   typedef clone_multi_vector_type MV;
   typedef clone_operator_type OP;
 
@@ -107,16 +111,24 @@ cloneAndSolveWithBelos (
   RCP<const clone_operator_type> M_left_clone, M_right_clone;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Clone Preconditioner", clone_prec);
+
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
     if (M_left != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_left);
-      M_left_clone = M_muelu->clone<CloneNode, clone_sparse_ops>(clone_node);
+      M_left_clone = M_muelu->clone<CloneNode> (clone_node);
     }
     if (M_right != Teuchos::null && prec_type == "MueLu") {
       RCP< const MueLu::TpetraOperator<ST,LO,GO,Node> > M_muelu =
         rcp_dynamic_cast<const MueLu::TpetraOperator<ST,LO,GO,Node> >(M_right);
-      M_right_clone = M_muelu->clone<CloneNode, clone_sparse_ops>(clone_node);
+      M_right_clone = M_muelu->clone<CloneNode> (clone_node);
     }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "
+      "In order to precondition with MueLu, you must have built Trilinos "
+      "with the MueLu package enabled.");
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
   }
 
   // Solve
@@ -203,8 +215,8 @@ solveWithBelosGPU (
               << std::endl;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
-    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+    if (!Kokkos::HostSpace::execution_space::is_initialized())
+      Kokkos::HostSpace::execution_space::initialize();
     if (!Kokkos::Cuda::is_initialized())
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 #endif
@@ -217,7 +229,7 @@ solveWithBelosGPU (
       gpu_node, X, A, B, prec_type, M_left, M_right);
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
 #endif
   }
   else {

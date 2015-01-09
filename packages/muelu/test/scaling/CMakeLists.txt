@@ -11,7 +11,6 @@ ASSERT_DEFINED(
 # Executable
 #
 
-INCLUDE(TribitsAddExecutable)
 
 #TODO: how to remove that?
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -46,70 +45,25 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     ReadMatrix
     SOURCES ReadMatrix.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
   TRIBITS_ADD_EXECUTABLE(
     MatrixMatrixMultiply
     SOURCES MatrixMatrixMultiply.cpp
     COMM mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
   TRIBITS_ADD_EXECUTABLE(
-    ${MueLu_ScalingTestName}
+    ${MueLu_ScalingTestName}  #TODO: Suffix Int/LongInt when done in the source code
     SOURCES ScalingTest.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
-  TRIBITS_ADD_EXECUTABLE(
-    ScalingTestParamList  #TODO: Suffix Int/LongInt when done in the source code
-    SOURCES ScalingTestParamList.cpp
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters galeri
-    )
 
   TRIBITS_ADD_EXECUTABLE(
-    RAPScalingTest
-    SOURCES RAPScalingTest.cpp
+    Driver
+    SOURCES Driver.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
-    )
-
-  TRIBITS_ADD_EXECUTABLE(
-    ProlongatorScalingTest
-    SOURCES ProlongatorTest.cpp
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
-    )
-
-#  TRIBITS_ADD_EXECUTABLE(
-#    CoalesceDropTest
-#    SOURCES CoalesceDropTest.cpp
-#    COMM serial mpi
-#    DEPLIBS muelu xpetra muelu-adapters
-#    )
-
-  TRIBITS_ADD_EXECUTABLE(
-    TransposeTest
-    SOURCES TransposeTest.cpp
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
-    )
-
-  TRIBITS_ADD_EXECUTABLE(
-    SmootherScalingTest
-    SOURCES SmootherScalingTest.cpp
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
-    )
-
-  TRIBITS_ADD_EXECUTABLE(
-    AggregationScalingTest
-    SOURCES AggregationScalingTest.cpp
-    COMM serial mpi
-    DEPLIBS muelu xpetra muelu-adapters
     )
 
   # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
@@ -118,15 +72,14 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
       Reuse
       SOURCES Reuse.cpp
       COMM serial mpi
-      DEPLIBS muelu xpetra muelu-adapters galeri
     )
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
-      SOURCE_FILES reuse.xml
+      SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml
     )
   ENDIF()
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
-    SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
+    SOURCE_FILES scaling.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
@@ -150,24 +103,24 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra_Defaults"
+      Driver
+      NAME "DriverEpetra_Defaults"
       ARGS "--linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
 
     TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra_IsotropicPoisson"
-      ARGS "--linAlgebra=Epetra --xml=isotropicPoisson.xml"
+      Driver
+      NAME "DriverEpetra_isotropic_poisson"
+      ARGS "--linAlgebra=Epetra --xml=iso_poisson.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
 
     TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListEpetra_Milestone"
+      Driver
+      NAME "DriverEpetra_Milestone"
       ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -175,9 +128,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 
     IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
-        ScalingTestParamList
-        NAME "ScalingTestParamListEpetra_IsorropiaPoisson"
-        ARGS "--linAlgebra=Epetra --xml=scalingTestIsorropia.xml"
+        Driver
+        NAME "DriverEpetra_IsorropiaPoisson"
+        ARGS "--linAlgebra=Epetra --xml=isorropia.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
       )
@@ -186,33 +139,17 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   ENDIF()
 
   TRIBITS_ADD_TEST(
-    RAPScalingTest
+    Driver
     NAME "RAPScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --nraps=2"
+    ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
 
   TRIBITS_ADD_TEST(
-    ProlongatorScalingTest
-    NAME "ProlongatorScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    TransposeTest
-    NAME "TransposeTestEpetra"
-    ARGS "--linAlgebra=Epetra --nraps=2"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    SmootherScalingTest
+    Driver
     NAME "SmootherScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra --nx=10 --ny=10 --sweeps=30"
+    ARGS "--linAlgebra=Epetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
@@ -232,9 +169,17 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListTpetra"
+      Driver
+      NAME "DriverTpetra"
       ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetraILU"
+      ARGS "--linAlgebra=Tpetra --xml=sa_with_ilu.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
@@ -242,8 +187,8 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan2)
     TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListTpetra_Milestone"
+      Driver
+      NAME "DriverTpetra_Milestone"
       ARGS "--linAlgebra=Tpetra --xml=conchas_milestone_zoltan2.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -251,44 +196,21 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
   ENDIF()
 
   TRIBITS_ADD_TEST(
-    RAPScalingTest
+    Driver
     NAME "RAPScalingTestTpetra"
-    ARGS "--linAlgebra=Tpetra --nraps=2"
+    ARGS "--linAlgebra=Tpetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
 
   TRIBITS_ADD_TEST(
-    ProlongatorScalingTest
-    NAME "ProlongatorScalingTestTpetra"
-    ARGS "--linAlgebra=Tpetra"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    TransposeTest
-    NAME "TransposeTestTpetra"
-    ARGS "--linAlgebra=Tpetra --nraps=2"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-    SmootherScalingTest
+    Driver
     NAME "SmootherScalingTestTpetra"
-    ARGS "--linAlgebra=Tpetra --nx=10 --ny=10 --sweeps=30"
+    ARGS "--linAlgebra=Tpetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
 
-  TRIBITS_ADD_TEST(
-    ScalingTestParamList
-    NAME "ScalingTestParamListTpetra"
-    ARGS "--linAlgebra=Tpetra"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
-    )
 
   TRIBITS_ADD_TEST(
     ReadMatrix

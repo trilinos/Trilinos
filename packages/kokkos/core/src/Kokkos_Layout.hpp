@@ -51,6 +51,7 @@
 
 #include <stddef.h>
 #include <impl/Kokkos_Traits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 namespace Kokkos {
 
@@ -69,7 +70,10 @@ namespace Kokkos {
 /// Fortran stores multi-dimensional arrays.  For the special case of
 /// a two-dimensional array, "layout left" is also called "column
 /// major."
-struct LayoutLeft { typedef LayoutLeft array_layout ; };
+struct LayoutLeft {
+  //! Tag this class as a kokkos array layout
+  typedef LayoutLeft array_layout ;
+};
 
 //----------------------------------------------------------------------------
 /// \struct LayoutRight
@@ -85,13 +89,18 @@ struct LayoutLeft { typedef LayoutLeft array_layout ; };
 /// going left from there.  This layout imitates how C stores
 /// multi-dimensional arrays.  For the special case of a
 /// two-dimensional array, "layout right" is also called "row major."
-struct LayoutRight { typedef LayoutRight array_layout ; };
+struct LayoutRight {
+  //! Tag this class as a kokkos array layout
+  typedef LayoutRight array_layout ;
+};
 
 //----------------------------------------------------------------------------
 /// \struct LayoutStride
 /// \brief  Memory layout tag indicated arbitrarily strided
 ///         multi-index mapping into contiguous memory.
 struct LayoutStride {
+
+  //! Tag this class as a kokkos array layout
   typedef LayoutStride array_layout ;
 
   enum { MAX_RANK = 8 };
@@ -124,7 +133,8 @@ struct LayoutStride {
         size_t n = 1 ;
         for ( int r = 0 ; r < rank ; ++r ) {
           tmp.stride[ order[r] ] = n ;
-          n *= ( tmp.dimension[r] = dimen[r] );
+          n *= ( dimen[order[r]] );
+          tmp.dimension[r] = dimen[r];
         }
       }
       return tmp ;
@@ -153,7 +163,9 @@ template < unsigned ArgN0 , unsigned ArgN1 ,
                                  Impl::is_power_of_two<ArgN1>::value )
          >
 struct LayoutTileLeft {
+  //! Tag this class as a kokkos array layout
   typedef LayoutTileLeft<ArgN0,ArgN1,IsPowerOfTwo> array_layout ;
+
   enum { N0 = ArgN0 };
   enum { N1 = ArgN1 };
 };

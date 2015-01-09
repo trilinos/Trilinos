@@ -112,6 +112,14 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domainScalarProdVecSp
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::assignImpl(Scalar alpha)
+{
+  tpetraMultiVector_.getNonconstObj()->putScalar(alpha);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const VectorBase<Scalar> >
 TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::colImpl(Ordinal j) const
 {

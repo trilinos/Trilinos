@@ -1,5 +1,5 @@
 # Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 # retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -34,18 +34,52 @@
 #========================================================================
 # A platform must define:
 #
-# BITS either 32 or 64 depending on a 32-bit or 64-bit build
 # CC == the C compiler
 # FC == the Fortran compiler
 # CCOPTIONS == non-optimization related flags for C compiling on this platform
 # F77OPTIONS == non-optimization related flags for Fortran compiling on this platform
-# OS_TYPE == See listing in forbind/src/Imakefile
 # RANLIB == ranlib or 'true' if no ranlib
 # AR == command to build an archive library.
 #
 #========================================================================
 
 SYSTEM := $(shell uname)
+
+# Set this to yes if your netcdf is compiled with the netcdf4 extensions
+# which require linking with hdf5.  It is assumed that the netcdf and hdf5
+# library and include paths are the same.
+
+#========================================================================
+#       Netcdf
+#========================================================================
+USING_NETCDF4 = "YES"
+
+NETCDF = /Users/gdsjaar/src/SEACAS
+NETCDF_INC = -I$(NETCDF)/include
+NETCDF_LIB = -L$(NETCDF)/lib -lnetcdf
+NCDUMP = ${NETCDF}/bin/ncdump
+
+ifeq ($(USING_NETCDF4), "YES")
+LDFLAGS = -L$(NETCDF)/lib -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+else
+NETCDF_YES_NO = -DNOT_NETCDF4
+LDFLAGS = -L$(NETCDF)/lib -lnetcdf
+endif
+
+#========================================================================
+#       Darwin (Apple OSX)
+#========================================================================
+ifeq ($(SYSTEM),Darwin)
+RANLIB = ranlib
+
+AR        = ar -crsv
+CC        = /opt/local/bin/gcc-mp-4.8
+FC        = /opt/local/bin/gfortran-mp-4.8
+CCOPTIONS  = -DADDC_
+F77OPTIONS =
+F77PREC    = -fdefault-real-8 -fdefault-integer-8 
+endif
+#========================================================================
 
 #========================================================================
 #       Linux
@@ -55,157 +89,51 @@ ifeq ($(SYSTEM),Linux)
 # Default Compiler:
 COMPILER = GNU
 
-BITS = 32
 RANLIB = ranlib
-OS_TYPE = linux
 
 AR        = ar -rcv
 
 ifeq ($(COMPILER),Portland)
 CC       = pgcc
 FC       = pgf77
-CCOPTIONS  = -Mframe
+CCOPTIONS  = -Mframe -DADDC_
 F77OPTIONS = -fast
+F77PREC    = -r8 -i8
 endif
 
 ifeq ($(COMPILER),Intel)
 CC       = icc
-CCOPTIONS  = -Xc 
+FC       = ifort
+CCOPTIONS  = -Xc -DADDC_
+F77PREC    = -r8 -i8
 endif
 
 ifeq ($(COMPILER),GNU)
 CC	= gcc
-FC      = g77
-CCOPTIONS  = -O2 -Wall 
+FC      = gfortran
+CCOPTIONS  = -O2 -Wall -DADDC_
 F77OPTIONS = -O2
+F77PREC    = -fdefault-real-8 -fdefault-integer-8 
 endif
 
 endif
 
-#========================================================================
-#       SUN
-#========================================================================
-ifeq ($(SYSTEM),SunOS)
-RANLIB = ranlib
-OS_TYPE = sunos
-
-AR        = CC -xar -o
-
-ifeq ($(COMPILER),GNU)
-BITS    = 32
-CC	= gcc
-FC      = g77
-CCOPTIONS = -Wall
-else
-BITS      = 32
-CC        = cc
-FC        = f77
-CCOPTIONS  = -xtarget=ultra2 -xarch=v9 -g -ftrap=common -Xc
-F77OPTIONS = -xtarget=ultra2 -xarch=v9 -g -ftrap=common -errtags=INVOKE -C 
-endif
-endif
-
-#========================================================================
-#       SGI
-#========================================================================
-ifeq ($(SYSTEM),IRIX64)
-BITS = 64
-RANLIB = true
-OS_TYPE = irix
-
-AR        = ar -rcv 
-CC        = cc
-FC        = f77
-CCOPTIONS  = -64 -LANG:std 
-F77OPTIONS = -64
-F77PREC    =  -DBuild64 -r8 -i8
-endif
-
-#========================================================================
-#       IBM
-#========================================================================
-ifeq ($(SYSTEM),AIX)
-BITS = 64
-RANLIB = ranlib
-OS_TYPE = aix
-
-AR        = ar -rcv -X64
-CC        = xlc
-FC        = xlf
-CCOPTIONS  = -q64 -w 
-F77OPTIONS = -q64 -w 
-F77PREC = -WF,-DBuild64 -qintsize=8 -qrealsize=8
-LDFLAGS = -bmaxdata:0x06FFFFFFFFFFFFF8 -bmaxstack:0x10000000 
-endif
-
-#========================================================================
-
-#========================================================================
-#       TFLOP
-#========================================================================
-ifeq ($(SYSTEM),TFLOP)
-BITS = 32
-RANLIB = ranlib
-OS_TYPE = osf
-
-AR        = xar -rcv 
-CC        = icc
-FC        = if77
-CCOPTIONS  = -DPUMAGON -cougar
-F77OPTIONS = -cougar
-endif
-
-#========================================================================
-
-#========================================================================
-#       OSF (DEC Alpha)
-#========================================================================
-ifeq ($(SYSTEM),OSF1)
-BITS = 32
-RANLIB = ranlib
-OS_TYPE = osf
-
-AR        = ar -crsv
-CC        = cc
-FC        = f77
-CCOPTIONS  = -std
-endif
-#========================================================================
-
-#========================================================================
-#       Darwin (Apple OSX)
-#========================================================================
-ifeq ($(SYSTEM),Darwin)
-BITS = 32
-RANLIB = ranlib
-OS_TYPE = darwin
-
-AR        = ar -crsv
-CC        = gcc
-FC        = g77
-CCOPTIONS  = 
-F77OPTIONS = 
-endif
-#========================================================================
 
 OPTIMIZE_FLAG = -O2
 STD_DEFINES = -DVERBOSE
 
-CFLAGS = $(OPTIMIZE_FLAG) $(CCOPTIONS) $(STD_DEFINES) $(LOC_EXOII_INC) $(NETCDF_INC)
-FFLAGS = $(OPTIMIZE_FLAG) $(F77OPTIONS) $(LOC_EXOII_INC) $(F77PREC)
+
+CFLAGS = $(OPTIMIZE_FLAG) $(CCOPTIONS) $(STD_DEFINES) $(LOC_EXOII_INC) $(NETCDF_INC) $(NETCDF_YES_NO)
+FFLAGS = $(OPTIMIZE_FLAG) $(F77OPTIONS) $(LOC_EXOII_INC)
 
 # Use include files locates in exodusii/cbind/include
 LOC_EXOII_INC = -I../../cbind/include -I../../forbind/include
 
-NETCDF_INC = -I/usr/local/eng_sci/struct/x86_64/current64-gcc/inc
-
-NETCDF_LIB_DIR = /usr/local/eng_sci/struct/x86_64/current64-gcc/lib
-NETCDF_LIB = -L$(NETCDF_LIB_DIR) -lnetcdf
 
 
 SUBDIRS = cbind/src forbind/src cbind/test forbind/test
 
-all:: libexodus.a libexoIIv2for.a
+all:: libexodus.a libexoIIv2for.a libexoIIv2for32.a
 
 libexodus.a::
 	echo "making exodus in cbind/src"
@@ -215,20 +143,26 @@ libexodus.a::
 
 libexoIIv2for.a::
 	echo "making exoIIv2for in forbind/src"
-	(cd forbind/src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "BITS=$(BITS)" "AR=$(AR)"  "CC=$(CC)" "CFLAGS=$(CFLAGS)" "FC=$(FC)" "FFLAGS=$(FFLAGS)" "RANLIB=$(RANLIB)" "SYSTEM=$(SYSTEM)" "OS_TYPE=$(OS_TYPE)" libexoIIv2for.a)
+	(cd forbind/src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)"  "CC=$(CC)" "CFLAGS=$(CFLAGS)" "FC=$(FC)" "FFLAGS=$(FFLAGS)" "RANLIB=$(RANLIB)" "SYSTEM=$(SYSTEM)" libexoIIv2for.a)
 	cp forbind/src/libexoIIv2for.a .
 	$(RANLIB) libexoIIv2for.a
 
+libexoIIv2for32.a::
+	echo "making exoIIv2for32 in forbind/src"
+	(cd forbind/src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)"  "CC=$(CC)" "CFLAGS=$(CFLAGS)" "FC=$(FC)" "FFLAGS=$(FFLAGS)" "RANLIB=$(RANLIB)" "SYSTEM=$(SYSTEM)" libexoIIv2for32.a)
+	cp forbind/src/libexoIIv2for32.a .
+	$(RANLIB) libexoIIv2for32.a
+
 check: test
-test:: libexodus.a libexoIIv2for.a
+test:: libexodus.a libexoIIv2for.a 
 
 test::
 	echo "making test in cbind/test"
-	(cd cbind/test &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "LDFLAGS=$(LDFLAGS)" "RANLIB=$(RANLIB)" "NETCDF_LIB=$(NETCDF_LIB)" all)
+	(cd cbind/test &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "LDFLAGS=$(LDFLAGS)" "RANLIB=$(RANLIB)" "NCDUMP=$(NCDUMP)" all)
 
 test::
 	echo "making test in forbind/test"
-	(cd forbind/test &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "BITS=$(BITS)" "AR=$(AR)"  "CC=$(CC)" "CFLAGS=$(CFLAGS)" "FC=$(FC)" "FFLAGS=$(FFLAGS)" "LDFLAGS=$(LDFLAGS)" "RANLIB=$(RANLIB)" "NETCDF_LIB=$(NETCDF_LIB)"  "SYSTEM=$(SYSTEM)" all)
+	(cd forbind/test &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)"  "CC=$(CC)" "CFLAGS=$(CFLAGS)" "FC=$(FC)" "FFLAGS=$(FFLAGS)" "LDFLAGS=$(LDFLAGS)" "RANLIB=$(RANLIB)" "NCDUMP=$(NCDUMP)" all)
 
 clean::
 	@for flag in $(MAKEFLAGS) ''; do \

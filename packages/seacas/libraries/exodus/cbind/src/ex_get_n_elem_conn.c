@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"
+#include <stddef.h>                     // for NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_conn, etc
 
 /*!
  * \deprecated use ex_get_partial_conn()

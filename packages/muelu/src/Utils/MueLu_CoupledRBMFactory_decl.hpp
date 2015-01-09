@@ -62,11 +62,14 @@ namespace MueLu {
     @class CoupledRBMFactory class.
     @brief Nullspace Factory for coupled acoustic-elastic problems.
            Combines standard nullspace with rigid body modes.
-	   Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
-	   (so that there are 3 DOFs at each mesh grid point)
+           Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
+           (so that there are 3 DOFs at each mesh grid point)
     @ingroup MueLuTransferClasses
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class CoupledRBMFactory : public SingleLevelFactoryBase {
 #undef MUELU_COUPLEDRBMFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -82,7 +85,7 @@ namespace MueLu {
     //! Constructor
     CoupledRBMFactory(const std::string & nspName = "Nullspace")
       : nspName_(nspName),
-	numPDEs_(3)
+        numPDEs_(3)
     { }
 
     //! Destructor.

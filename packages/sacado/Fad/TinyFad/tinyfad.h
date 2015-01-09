@@ -3,15 +3,15 @@
 // ********** DO NOT REMOVE THIS BANNER **********
 //
 // SUMMARY: Tools for Automatic Differentiaton (order 1)
-// RELEASE: 0.1     
-// USAGE  : You may copy freely these files and use it for    
-//          teaching or research. These or part of these may   
-//          not be sold or used for a commercial purpose with- 
+// RELEASE: 0.1
+// USAGE  : You may copy freely these files and use it for
+//          teaching or research. These or part of these may
+//          not be sold or used for a commercial purpose with-
 //          out our consent : fax (33)1 44 27 72 00
-//			
+//
 // AUTHOR : Nicolas Di cesare
-// ORG    :          
-// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr     
+// ORG    :
+// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr
 //
 // ORIG-DATE: September 97
 // LAST-MOD : 28/07/98
@@ -45,7 +45,7 @@ public:
 template <int Num, class T = float> class TinyFad {
 protected:
 
-  int n;        // number of the control or zero for independant variables 
+  int n;        // number of the control or zero for independant variables
   T val_;       // value
 
   T df_[Num];   // vector of partial derivatives
@@ -54,10 +54,10 @@ protected:
 public:
   typedef T value_type;
 
-  // controls constructor  
+  // controls constructor
   TinyFad(const T& ind, const int ini);
 
-  // expressions constructors  
+  // expressions constructors
   TinyFad();
   TinyFad(const No_Initialization &): n(0) {;}
   TinyFad(const T& in);
@@ -79,13 +79,13 @@ public:
 
   const T& dx(int i) const;
   T& dx(int i);
-  
+
 
   // operators
   TinyFad<Num,T> & operator = (const TinyFad<Num,T> & in);
   TinyFad<Num,T> & operator = (const T & in);
 
-  TinyFad<Num,T> & operator += (const TinyFad<Num,T> & in); 
+  TinyFad<Num,T> & operator += (const TinyFad<Num,T> & in);
   TinyFad<Num,T> & operator -= (const TinyFad<Num,T> & in);
   TinyFad<Num,T> & operator *= (const TinyFad<Num,T> & in);
   TinyFad<Num,T> & operator /= (const TinyFad<Num,T> & in);
@@ -103,7 +103,7 @@ public:
 };
 
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T>::TinyFad(const T& ind, const int ini) : n(ini+1), val_(ind)
 {
 #ifdef DEBUG_TINYFAD
@@ -117,7 +117,7 @@ TinyFad<Num,T>::TinyFad(const T& ind, const int ini) : n(ini+1), val_(ind)
   df_[ini] = 1.;
 }
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T>::TinyFad() : n(0), val_(0.)
 {
 #ifdef DEBUG_TINYFAD
@@ -127,7 +127,7 @@ TinyFad<Num,T>::TinyFad() : n(0), val_(0.)
     df_[i] = 0.;
 }
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T>::TinyFad(const T& in) : n(0), val_(in)
 {
 #ifdef DEBUG_TINYFAD
@@ -137,8 +137,8 @@ TinyFad<Num,T>::TinyFad(const T& in) : n(0), val_(in)
     df_[i] = 0.;
 }
 
-template <int Num, class T> inline 
-TinyFad<Num,T>::TinyFad(const TinyFad<Num,T>& in) : n(0), val_(in.val_) 
+template <int Num, class T> inline
+TinyFad<Num,T>::TinyFad(const TinyFad<Num,T>& in) : n(0), val_(in.val_)
 {
 #ifdef DEBUG_TINYFAD
   cout << "TinyFad::TinyFad(const TinyFad& in)"  << endl;
@@ -148,54 +148,54 @@ TinyFad<Num,T>::TinyFad(const TinyFad<Num,T>& in) : n(0), val_(in.val_)
     df_[i] = in.df_[i];
 }
 
-template <int Num, class T> inline 
-TinyFad<Num,T>::~TinyFad() 
+template <int Num, class T> inline
+TinyFad<Num,T>::~TinyFad()
 {
 #ifdef DEBUG_TINYFAD
   cout << "TinyFad::~TinyFad()"  << endl;
 #endif
 }
 
-template <int Num, class T> inline 
-void TinyFad<Num,T>::diff(const int ith, const int n_) 
-{ 
+template <int Num, class T> inline
+void TinyFad<Num,T>::diff(const int ith, const int n_)
+{
 
   df_ = T(0.);
   df_[ith] = T(1.);
 
 }
 
-template <int Num, class T> 
-const T& TinyFad<Num,T>::dx(int i) const { 
+template <int Num, class T>
+const T& TinyFad<Num,T>::dx(int i) const {
   if ( (i<0) || (i>=Num ) ) {
-    cerr << "i = " << i << endl;
-    error("df_, partial derivative undefined"); 
-  } 
-
-  return df_[i];
-}
-
-template <int Num, class T> 
-T& TinyFad<Num,T>::dx(int i) { 
-  if ( (i<0) || (i>=Num ) ) {
-    cerr << "i = " << i << endl;
-    error("df_, partial derivative undefined"); 
+    std::cerr << "i = " << i << std::endl;
+    error("df_, partial derivative undefined");
   }
- 
+
+  return df_[i];
+}
+
+template <int Num, class T>
+T& TinyFad<Num,T>::dx(int i) {
+  if ( (i<0) || (i>=Num ) ) {
+    std::cerr << "i = " << i << std::endl;
+    error("df_, partial derivative undefined");
+  }
+
   return df_[i];
 }
 
 
 
-template <int Num, class T> inline 
-TinyFad<Num,T> & TinyFad<Num,T>::operator = (const TinyFad<Num,T> & in) 
+template <int Num, class T> inline
+TinyFad<Num,T> & TinyFad<Num,T>::operator = (const TinyFad<Num,T> & in)
 {
-#ifdef CHECK_VAR 
+#ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator = (const TinyFad & in), you do not change the value of control");
 #endif
 
   val_ = in.val_;
-  
+
   for (int i=0; i<Num; ++i)
     df_[i] = in.df_[i];
 
@@ -204,9 +204,9 @@ TinyFad<Num,T> & TinyFad<Num,T>::operator = (const TinyFad<Num,T> & in)
 
 
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator = (const T & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator = (const T & in)
 {
-#ifdef CHECK_VAR 
+#ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator = (const T & in), you do not change the value of control");
 #endif
   val_ = in;
@@ -218,7 +218,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator = (const T
 }
 
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const TinyFad<Num,T> & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const TinyFad<Num,T> & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator += (const TinyFad & in), you do not change the value of control");
@@ -232,7 +232,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const TinyFad<Num,T> & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const TinyFad<Num,T> & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator -= (const TinyFad & in), you do not change the value of control");
@@ -246,7 +246,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const TinyFad<Num,T> & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const TinyFad<Num,T> & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator *= (const TinyFad & in), you do not change the value of control");
@@ -260,7 +260,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const TinyFad<Num,T> & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const TinyFad<Num,T> & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator /= (const TinyFad & in), you do not change the value of control");
@@ -276,7 +276,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const T & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const T & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad<Num,T> & TinyFad<Num,T>::operator += (const T & in), you do not change the value of control");
@@ -287,7 +287,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator += (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const T & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const T & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator -= (const T & in), you do not change the value of control");
@@ -298,7 +298,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator -= (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const T & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const T & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator *= (const T & in), you do not change the value of control");
@@ -312,7 +312,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator *= (const 
   return *this;
 }
 
-template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const T & in) 
+template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const T & in)
 {
 #ifdef CHECK_VAR
   if (n) error("TinyFad & TinyFad::operator /= (const T & in), you do not change the value of control");
@@ -330,7 +330,7 @@ template <int Num, class T> TinyFad<Num,T> & TinyFad<Num,T>::operator /= (const 
 }
 
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T> TinyFad<Num,T>::operator++(int)
 {
   TinyFad<Num,T> tmp(*this);
@@ -338,7 +338,7 @@ TinyFad<Num,T> TinyFad<Num,T>::operator++(int)
   return tmp;
 }
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T> TinyFad<Num,T>::operator--(int)
 {
   TinyFad<Num,T> tmp(*this);
@@ -346,14 +346,14 @@ TinyFad<Num,T> TinyFad<Num,T>::operator--(int)
   return tmp;
 }
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T> & TinyFad<Num,T>::operator++()
 {
   ++val_;
   return *this;
 }
 
-template <int Num, class T> inline 
+template <int Num, class T> inline
 TinyFad<Num,T> & TinyFad<Num,T>::operator--()
 {
   --val_;
@@ -370,16 +370,16 @@ template <int Num, class T> inline TinyFad<Num,T> operator + (const TinyFad<Num,
 
 template <int Num, class T> inline TinyFad<Num,T> operator - (const TinyFad<Num,T>& in)
 {
-  TinyFad<Num,T> tmp; 
+  TinyFad<Num,T> tmp;
   tmp -= in;
 
-  return tmp; 
+  return tmp;
 }
 
 
-template <int Num, class T> ostream& operator << (ostream& os, const TinyFad<Num,T>& a)
+template <int Num, class T> std::ostream& operator << (std::ostream& os, const TinyFad<Num,T>& a)
 {
-  os.setf(ios::fixed,ios::floatfield);
+  os.setf(std::ios::fixed,std::ios::floatfield);
   os.width(12);
   os << a.val() << "  [";
 

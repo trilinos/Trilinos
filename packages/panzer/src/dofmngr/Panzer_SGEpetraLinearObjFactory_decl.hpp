@@ -187,6 +187,10 @@ public:
    //! get the block map needed by Stokhos to describe the parallel layout of the SG unknowns
    Teuchos::RCP<const Epetra_Map> getSGBlockMap() const;
 
+   //! Get the unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
+   { return epetraFact_->getUniqueGlobalIndexerBase(); }
+
 protected:
 
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > epetraFact_;

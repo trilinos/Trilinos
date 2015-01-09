@@ -357,7 +357,7 @@ Operator GetPtent1D(const MultiVector& D, const int offset = 0)
   MLDiag->getrow->Nrows = outvec_leng;
 
   // creates the domain space
-  vector<int> MyGlobalElements(invec_leng);
+  std::vector<int> MyGlobalElements(invec_leng);
   for (int i = 0 ; i < invec_leng ; ++i)
     MyGlobalElements[i] = D.GetVectorSpace()(i * 3) / 3;
   Space DomainSpace(invec_leng, -1, &MyGlobalElements[0]);

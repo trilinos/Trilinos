@@ -13,6 +13,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+#include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
@@ -163,9 +164,8 @@ int main(int argc, char *argv[]) {
   // ===================== //
   Epetra_CrsMatrix * Matrix;
   MatlabFileToCrsMatrix("elasticity.dat",Comm,Matrix);
-
   Epetra_Map NodeMap(Matrix->NumGlobalRows()/3,0,Comm);
-
+ 
   MatrixMarketFileToVector("c1.dat",NodeMap,coord1);
   MatrixMarketFileToVector("c2.dat",NodeMap,coord2);
   MatrixMarketFileToVector("c3.dat",NodeMap,coord3);
@@ -178,6 +178,8 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList MLList;
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
+
+
 
   // ====================== //
   // default options for SA //
@@ -228,6 +230,21 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
+
+  // =========================== //
+  // Autodetected Line SGS (trivial lines) 
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "line Gauss-Seidel");
+  MLList.set("smoother: line detection threshold",0.1);
+  MLList.set("x-coordinates",&((*coord1)[0]));
+  MLList.set("y-coordinates",&((*coord2)[0]));
+  MLList.set("z-coordinates",&((*coord3)[0]));
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+
   // ===================== //
   // print out total error //
   // ===================== //

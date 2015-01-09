@@ -123,13 +123,14 @@ bool Internals::read_last_time_attribute(double *value)
   // If not, don't change 'value' and return 'false'.
   bool found = false;
 
+  int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
   nc_type att_type = NC_NAT;
   size_t att_len = 0;
-  int status = nc_inq_att(exodusFilePtr, NC_GLOBAL, "last_written_time", &att_type, &att_len);
+  int status = nc_inq_att(rootid, NC_GLOBAL, "last_written_time", &att_type, &att_len);
   if (status == NC_NOERR && att_type == NC_DOUBLE) {
     // Attribute exists on this database, read it...
     double tmp = 0.0;
-    status = nc_get_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time", &tmp);
+    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
     if (status == NC_NOERR) {
       *value = tmp;
       found = true;
@@ -647,6 +648,7 @@ int Internals::put_metadata(const Mesh &mesh,
   int strdim     = 0;
   int namestrdim = 0;
   int varid = 0;
+  int timedim    = 0;
 
   int map_type  = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
   int bulk_type = get_type(exodusFilePtr, EX_BULK_INT64_DB);
@@ -655,7 +657,18 @@ int Internals::put_metadata(const Mesh &mesh,
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Internals::put_metadata()";
 
-  int status = nc_put_att_text(exodusFilePtr, NC_GLOBAL, ATT_TITLE,
+  int rootid = (unsigned)exodusFilePtr & EX_FILE_ID_MASK;
+
+  if (rootid == exodusFilePtr && nc_inq_dimid (exodusFilePtr, DIM_NUM_DIM, &numdimdim) == NC_NOERR) {
+    exerrval = EX_MSG;
+    sprintf(errmsg,
+	    "Error: initialization already done for file id %d",exodusFilePtr);
+    ex_err(routine,errmsg,exerrval);
+    return (EX_FATAL);
+  }
+
+
+  int status = nc_put_att_text(rootid, NC_GLOBAL, ATT_TITLE,
 			       (int)std::strlen(mesh.title)+1, mesh.title);
 
   // define some attributes...
@@ -673,7 +686,7 @@ int Internals::put_metadata(const Mesh &mesh,
     int ltempsv[2];
     ltempsv[0] = comm.processorCount;
     ltempsv[1] = comm.processorId;
-    status=nc_put_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", NC_INT, 2, ltempsv);
+    status=nc_put_att_int(rootid, NC_GLOBAL, "processor_info", NC_INT, 2, ltempsv);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
@@ -687,7 +700,7 @@ int Internals::put_metadata(const Mesh &mesh,
   // containing the last written time...
   {
     double fake_time = -1.0e38;
-    status=nc_put_att_double(exodusFilePtr, NC_GLOBAL, "last_written_time",
+    status=nc_put_att_double(rootid, NC_GLOBAL, "last_written_time",
 			     NC_DOUBLE, 1, &fake_time);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -703,7 +716,7 @@ int Internals::put_metadata(const Mesh &mesh,
   // size of any name.
   {
     int current_len = 0;
-    status=nc_put_att_int(exodusFilePtr, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+    status=nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       sprintf(errmsg,
@@ -714,7 +727,7 @@ int Internals::put_metadata(const Mesh &mesh,
   }
 
   // inquire previously defined dimensions
-  status=nc_inq_dimid (exodusFilePtr, DIM_STR, &strdim);
+  status=nc_inq_dimid (rootid, DIM_STR, &strdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
     sprintf(errmsg,
@@ -726,13 +739,15 @@ int Internals::put_metadata(const Mesh &mesh,
   /* create name string length dimension */
   if (maximumNameLength < 32)
     maximumNameLength = 32;
-  status = nc_def_dim (exodusFilePtr, DIM_STR_NAME, maximumNameLength+1, &namestrdim);
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to define name string length in file id %d",exodusFilePtr);
-    ex_err(routine,errmsg,status);
-    return(EX_FATAL);
+  if (nc_inq_dimid (rootid, DIM_STR_NAME, &namestrdim) != NC_NOERR) {
+    status = nc_def_dim (rootid, DIM_STR_NAME, maximumNameLength+1, &namestrdim);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define name string length in file id %d",exodusFilePtr);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
   }
 
   status=nc_def_dim(exodusFilePtr, DIM_NUM_DIM, mesh.dimensionality, &numdimdim);
@@ -742,6 +757,25 @@ int Internals::put_metadata(const Mesh &mesh,
 	    "Error: failed to define number of dimensions in file id %d",exodusFilePtr);
     ex_err(routine,errmsg,status);
     return(EX_FATAL);
+  }
+
+  if ((status = nc_def_dim(exodusFilePtr, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to define time dimension in file id %d", exodusFilePtr);
+    ex_err(routine,errmsg,exerrval);
+    return (EX_FATAL);
+  }
+
+  int dim[1];
+  dim[0] = timedim;
+  if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to define whole time step variable in file id %d",
+	    exodusFilePtr);
+    ex_err(routine,errmsg,exerrval);
+    return (EX_FATAL);
   }
 
   if (mesh.nodeblocks[0].entityCount > 0) {

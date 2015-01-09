@@ -95,7 +95,7 @@ using Teuchos::ParameterList;
  * <b>\anchor HumanReadableWithDocumentation Human readable format (with documentation) for valid parameters accepted by this class</b>
  *
  * \htmlonly
- * <iframe src="simple_stratimikos_example.options.xml" width="90%"height="400px"></iframe>
+ * <iframe src="stratimikos.xml" width="100%" scrolling="no" frameborder="0"></iframe>
  * <hr />
  * \endhtmlonly
  *

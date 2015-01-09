@@ -260,6 +260,10 @@ public:
    //! exclude a vector of pairs from the matrix
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
+   //! Get the unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
+   { return blockProvider_; }
+
 protected:
 /*************** Generic methods/members *******************/
 

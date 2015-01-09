@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -160,7 +160,7 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
 }
 
 //==============================================================================
-// Epetra_OffsetIndex copy constructor 
+// Epetra_OffsetIndex copy constructor
 Epetra_OffsetIndex::Epetra_OffsetIndex(const Epetra_OffsetIndex& Indexor)
   : Epetra_Object(Indexor),
     NumSame_(Indexor.NumSame_),
@@ -345,7 +345,7 @@ void Epetra_OffsetIndex::Print(std::ostream & os) const
   os << "Number of Same IDs = " << NumSame_ << std::endl;
   os << "Number of Permute IDs = " << NumPermute_ << std::endl;
   os << "Number of Remote IDs = " << NumRemote_ << std::endl;
-  
+
   return;
 }
 

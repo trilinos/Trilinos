@@ -40,6 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include <stk_mesh/base/GetBuckets.hpp>
+
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include "Teuchos_DefaultComm.hpp"
@@ -62,12 +64,12 @@
 
 #ifdef HAVE_IOSS
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 {
-   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    std::vector<Teuchos::RCP<STK_ExodusReaderFactory> > facts;
@@ -168,6 +170,58 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),15);
       }
    }
+}
+
+TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
+{
+  {
+    typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> CoordField;
+
+    // These should correspond to the node coordinates, in order, in the
+    // mesh file "basic.gen" as read above.
+    double good_node_coords[15][2] = {{0.0, 0.0},
+                                      {0.0, 0.5},
+                                      {0.5, 0.5},
+                                      {0.5, 0.0},
+                                      {0.0, 1.0},
+                                      {0.5, 1.0}, 
+                                      {1.0, 0.5},
+                                      {1.0, 0.0},
+                                      {1.0, 1.0},
+                                      {1.5, 0.5},
+                                      {1.5, 0.0},
+                                      {1.5, 1.0},
+                                      {2.0, 0.5},
+                                      {2.0, 0.0},
+                                      {2.0, 1.0}};
+    
+    STK_ExodusReaderFactory factory;
+
+    Teuchos::RCP<Teuchos::ParameterList> inp_pl = Teuchos::rcp(new Teuchos::ParameterList);
+    inp_pl->set("File Name", "meshes/basic.gen");
+    inp_pl->set("Scale Factor", 0.5);
+
+    TEST_NOTHROW(factory.setParameterList(inp_pl));
+
+    Teuchos::RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    TEST_ASSERT(mesh!=Teuchos::null);
+
+    // Make sure the node coordinates as they exist in the data
+    // structure have been scaled by the 1/"Scale Factor" from above.
+    double sf = 2.0;  // 1/(scale factor)
+    for (stk_classic::mesh::EntityId id=1; id <= 15; ++id)
+    {
+
+      stk_classic::mesh::Entity* node = mesh->getBulkData()->get_entity(mesh->getNodeRank(), id);
+      if (node) 
+      {
+        double const* coords = mesh->getNodeCoordinates(id);
+        TEST_EQUALITY(coords[0], sf*good_node_coords[id-1][0]);
+        TEST_EQUALITY(coords[1], sf*good_node_coords[id-1][1]);
+      }
+    }
+  }
+
 }
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, periodic_bc)

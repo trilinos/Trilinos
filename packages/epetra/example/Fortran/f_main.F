@@ -1,10 +1,10 @@
 
 C @HEADER
 C ************************************************************************
-C 
-C               Epetra: Linear Algebra Services Package 
+C
+C               Epetra: Linear Algebra Services Package
 C                 Copyright 2011 Sandia Corporation
-C 
+C
 C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 C the U.S. Government retains certain rights in this software.
 C
@@ -35,8 +35,8 @@ C LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 C NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 C SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
-C Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-C 
+C Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+C
 C ************************************************************************
 C @HEADER
 
@@ -59,7 +59,7 @@ C
        parameter (nlocal=10)
        double precision b_values(nlocal)
 C
-C 
+C
        call MPI_INIT(ierror)
 
 C     Create Epetra Comm Object
@@ -67,7 +67,7 @@ C     Create Epetra Comm Object
 
 C     Create Epetra Map with "n" element spread evenly across the machine
 C     and index base equal to 1.  Set nglobal to -1 to let map compute true nglobal value
-       nglobal = -1 
+       nglobal = -1
        map = epetra_map_create2(nglobal, nlocal, 1, comm)
        nglobal = epetra_map_numglobalelements(map)
 
@@ -81,14 +81,14 @@ C     Create vector b using storage I create and fill it with random numbers
 
 C     Create vector apb and define it to be a+b
        vec_apb = epetra_vector_create1(map)
-       ierror = epetra_vector_update(vec_apb, one, vec_a, one, 
+       ierror = epetra_vector_update(vec_apb, one, vec_a, one,
      $      vec_b, zero)
-       
+
 
 C     Compute one and two norm of vector a
        ierror = epetra_vector_norm1(vec_a, norm1a)
        ierror = epetra_vector_norm2(vec_a, norm2a)
-       
+
 C     Compute one norms of b and apb
        ierror = epetra_vector_norm1(vec_b, norm1b)
        ierror = epetra_vector_norm1(vec_apb, norm1apb)
@@ -101,17 +101,17 @@ C     Compute one norms of b and apb
           if (epetra_comm_mypid(comm).eq.0) print*,'Vector A + B = '
           call epetra_vector_print(vec_apb)
        endif
-       
+
        local_mynorm1b = 0.0
        do 10 i=1,nlocal
           local_mynorm1b = local_mynorm1b + abs(b_values(i))
  10    continue
 
-       call MPI_ALLREDUCE(local_mynorm1b, mynorm1b, 1, 
-     $                    MPI_DOUBLE_PRECISION, MPI_SUM, 
+       call MPI_ALLREDUCE(local_mynorm1b, mynorm1b, 1,
+     $                    MPI_DOUBLE_PRECISION, MPI_SUM,
      $                    MPI_COMM_WORLD, ierror)
 
-       
+
 C     write results
        if (epetra_comm_mypid(comm).eq.0) then
           write(*,99) 'One Norm of Vector A of 2s  = ', norm1a

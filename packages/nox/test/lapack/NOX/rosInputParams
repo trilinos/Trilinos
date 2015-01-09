@@ -1,6 +1,6 @@
 # comment
 
-"Nonlinear Solver" string 
+"Nonlinear Solver" string
 "Line Search Based"
 
 @ "Line Search"
@@ -12,8 +12,8 @@
 @@
 
 @ "Printing"
-"Output Precision" int 
+"Output Precision" int
 10
-"Output Information" int 
+"Output Information" int
 85
 @@

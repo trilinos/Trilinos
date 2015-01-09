@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -52,10 +52,10 @@
 #define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
 extern "C" {
-void DGEQPF_F77(const int*, const int*, double*, const int*, int*, double*, 
-		double*, int*);
-void DGEQP3_F77(const int*, const int*, double*, const int*, int*, 
-		double*, double*, const int*, int*);
+void DGEQPF_F77(const int*, const int*, double*, const int*, int*, double*,
+                double*, int*);
+void DGEQP3_F77(const int*, const int*, double*, const int*, int*,
+                double*, double*, const int*, int*);
 }
 
 #include "Stokhos_ConfigDefs.h"
@@ -81,7 +81,7 @@ namespace Stokhos {
       ordinal_type n = x.length();
       scalar_type t = 0;
       for (ordinal_type i=0; i<n; i++)
-	t += x[i]*w[i]*y[i];
+        t += x[i]*w[i]*y[i];
       return t;
     }
 
@@ -95,7 +95,7 @@ namespace Stokhos {
     {
       ordinal_type n = x.length();
       for (ordinal_type i=0; i<n; i++)
-	x[i] = alpha*x[i] + beta*y[i];
+        x[i] = alpha*x[i] + beta*y[i];
     }
 
   }
@@ -103,26 +103,26 @@ namespace Stokhos {
   // Print a matrix in matlab-esque format
   template <typename ordinal_type, typename scalar_type>
   void
-  print_matlab(std::ostream& os, 
-	       const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A)
+  print_matlab(std::ostream& os,
+               const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A)
   {
     os << "[ ";
     for (ordinal_type i=0; i<A.numRows(); i++) {
       for (ordinal_type j=0; j<A.numCols(); j++)
-	os << A(i,j) << " ";
+        os << A(i,j) << " ";
       if (i < A.numRows()-1)
-	os << ";" << std::endl << "  ";
+        os << ";" << std::endl << "  ";
     }
-    os << "];" << std::endl;  
+    os << "];" << std::endl;
   }
 
 #ifdef HAVE_STOKHOS_MATLABLIB
   // Save a matrix to matlab MAT file
   template <typename ordinal_type>
   void
-  save_matlab(const std::string& file_name, const std::string& matrix_name, 
-	      const Teuchos::SerialDenseMatrix<ordinal_type,double>& A,
-	      bool overwrite = true)
+  save_matlab(const std::string& file_name, const std::string& matrix_name,
+              const Teuchos::SerialDenseMatrix<ordinal_type,double>& A,
+              bool overwrite = true)
   {
     // Open matfile
     const char *mode;
@@ -191,15 +191,15 @@ namespace Stokhos {
       Q.shape(m,k);
     if (R.numRows() != k || R.numCols() != k)
       R.shape(k,k);
-  
+
     for (ordinal_type j=0; j<k; j++) {
       SDV Aj = getCol(Teuchos::View, Anc, j);
       SDV Qj = getCol(Teuchos::View, Q, j);
       Qj.assign(Aj);
       for (ordinal_type i=0; i<j; i++) {
-	SDV Qi = getCol(Teuchos::View, Q, i);
-	R(i,j) = detail::weighted_inner_product(Qi, Aj, w);
-	detail::saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
+        SDV Qi = getCol(Teuchos::View, Q, i);
+        R(i,j) = detail::weighted_inner_product(Qi, Aj, w);
+        detail::saxpy(1.0, Qj, -R(i,j), Qi);  // Q(:,j) = 1.0*Q(:,j) - R(i,j)*Q(:,i)
       }
       R(j,j) = std::sqrt(detail::weighted_inner_product(Qj, Qj, w));
       Qj.scale(1.0/R(j,j));
@@ -233,7 +233,7 @@ namespace Stokhos {
       Q.shape(m,k);
     if (R.numRows() != k || R.numCols() != k)
       R.shape(k,k);
-    
+
     for (ordinal_type i=0; i<k; i++) {
       SDV Ai = getCol(Teuchos::View, Anc, i);
       SDV Qi = getCol(Teuchos::View, Q, i);
@@ -242,10 +242,10 @@ namespace Stokhos {
     for (ordinal_type i=0; i<k; i++) {
       SDV Qi = getCol(Teuchos::View, Q, i);
       for (ordinal_type j=0; j<i; j++) {
-	SDV Qj = getCol(Teuchos::View, Q, j);
-	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
-	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
-	R(j,i) += v;
+        SDV Qj = getCol(Teuchos::View, Q, j);
+        scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+        detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+        R(j,i) += v;
       }
       R(i,i) = std::sqrt(detail::weighted_inner_product(Qi, Qi, w));
       Qi.scale(1.0/R(i,i));
@@ -278,7 +278,7 @@ namespace Stokhos {
       Q.shape(m,k);
     if (R.numRows() != k || R.numCols() != k)
       R.shape(k,k);
-    
+
     for (ordinal_type i=0; i<k; i++) {
       SDV Ai = getCol(Teuchos::View, Anc, i);
       SDV Qi = getCol(Teuchos::View, Q, i);
@@ -287,16 +287,16 @@ namespace Stokhos {
     for (ordinal_type i=0; i<k; i++) {
       SDV Qi = getCol(Teuchos::View, Q, i);
       for (ordinal_type j=0; j<i; j++) {
-	SDV Qj = getCol(Teuchos::View, Q, j);
-	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
-	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
-	R(j,i) += v;
+        SDV Qj = getCol(Teuchos::View, Q, j);
+        scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+        detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+        R(j,i) += v;
       }
       for (ordinal_type j=i-1; j>=0; j--) {
-	SDV Qj = getCol(Teuchos::View, Q, j);
-	scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
-	detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
-	R(j,i) += v;
+        SDV Qj = getCol(Teuchos::View, Q, j);
+        scalar_type v = detail::weighted_inner_product(Qi, Qj, w);
+        detail::saxpy(1.0, Qi, -v, Qj);  // Q(:,i) = 1.0*Q(:,i) - v*Q(:,j)
+        R(j,i) += v;
       }
       R(i,i) = std::sqrt(detail::weighted_inner_product(Qi, Qi, w));
       Qi.scale(1.0/R(i,i));
@@ -317,7 +317,7 @@ namespace Stokhos {
     const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
-    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R) 
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R)
   {
     Teuchos::LAPACK<ordinal_type,scalar_type> lapack;
     ordinal_type m = A.numRows();
@@ -329,8 +329,8 @@ namespace Stokhos {
     // Check that each component of w is 1
     for (ordinal_type i=0; i<w.size(); i++)
       TEUCHOS_TEST_FOR_EXCEPTION(
-	w[i] != 1.0, std::logic_error, 
-	"CPQR_Householder_threshold() requires unit weight vector!");
+        w[i] != 1.0, std::logic_error,
+        "CPQR_Householder_threshold() requires unit weight vector!");
 
     // Lapack routine overwrites A, so copy into temporary matrix
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> AA(
@@ -357,7 +357,7 @@ namespace Stokhos {
     R.putScalar(0.0);
     for (ordinal_type i=0; i<k; i++)
       for (ordinal_type j=i; j<n; j++)
-	R(i,j) = AA(i,j);
+        R(i,j) = AA(i,j);
 
     // Extract Q
     if (Q.numRows() != m || Q.numCols() != k)
@@ -375,7 +375,7 @@ namespace Stokhos {
       Q.shape(m, k);
     for (ordinal_type i=0; i<m; i++)
       for (ordinal_type j=0; j<k; j++)
-	Q(i,j) = AA(i,j);
+        Q(i,j) = AA(i,j);
   }
 
   //! Compute column-pivoted QR using Householder reflections
@@ -385,7 +385,7 @@ namespace Stokhos {
    * called the economy size QR) and P an m-by-n permutation matrix.  For
    * n >= m, computes A*P = Q*R with R m-by-n upper trapezoidal and Q
    * m-by-m upper trapezoidal (R = [R_1 R_2] with R_1 upper triangular and
-   * R_2 rectangular).  For k = min(m,n), both cases are handled with 
+   * R_2 rectangular).  For k = min(m,n), both cases are handled with
    * Q m-by-k and R k-by-n.
    *
    * The QR factorization is computed by the corresponding LAPACK function.
@@ -396,7 +396,7 @@ namespace Stokhos {
     const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv)
   {
     Teuchos::LAPACK<ordinal_type,scalar_type> lapack;
     ordinal_type m = A.numRows();
@@ -427,7 +427,7 @@ namespace Stokhos {
     R.putScalar(0.0);
     for (ordinal_type i=0; i<k; i++)
       for (ordinal_type j=i; j<n; j++)
-	R(i,j) = AA(i,j);
+        R(i,j) = AA(i,j);
 
     // Extract Q
     ordinal_type lwork = -1;
@@ -443,7 +443,7 @@ namespace Stokhos {
       Q.shape(m, k);
     for (ordinal_type i=0; i<m; i++)
       for (ordinal_type j=0; j<k; j++)
-	Q(i,j) = AA(i,j);
+        Q(i,j) = AA(i,j);
 
     // Transform piv to zero-based indexing
     for (ordinal_type i=0; i<n; i++)
@@ -457,7 +457,7 @@ namespace Stokhos {
    * called the economy size QR) and P an m-by-n permutation matrix.  For
    * n >= m, computes A*P = Q*R with R m-by-n upper trapezoidal and Q
    * m-by-m upper trapezoidal (R = [R_1 R_2] with R_1 upper triangular and
-   * R_2 rectangular).  For k = min(m,n), both cases are handled with 
+   * R_2 rectangular).  For k = min(m,n), both cases are handled with
    * Q m-by-k and R k-by-n.
    *
    * The QR factorization is computed by the corresponding LAPACK function.
@@ -469,7 +469,7 @@ namespace Stokhos {
     const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv)
   {
     Teuchos::LAPACK<ordinal_type,scalar_type> lapack;
     ordinal_type m = A.numRows();
@@ -491,16 +491,16 @@ namespace Stokhos {
     Teuchos::Array<scalar_type> work(1);
     ordinal_type lwork = -1;
     ordinal_type info;
-    DGEQP3_F77(&m, &n, AA.values(), &lda, &piv[0], &tau[0], &work[0], &lwork, 
-	     &info);
+    DGEQP3_F77(&m, &n, AA.values(), &lda, &piv[0], &tau[0], &work[0], &lwork,
+             &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgeqp3 returned info = " << info);
 
     // Column pivoted QR
     lwork = work[0];
     work.resize(lwork);
-    DGEQP3_F77(&m, &n, AA.values(), &lda, &piv[0], &tau[0], &work[0], &lwork, 
-	       &info);
+    DGEQP3_F77(&m, &n, AA.values(), &lda, &piv[0], &tau[0], &work[0], &lwork,
+               &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgeqp3 returned info = " << info);
 
@@ -510,7 +510,7 @@ namespace Stokhos {
     R.putScalar(0.0);
     for (ordinal_type i=0; i<k; i++)
       for (ordinal_type j=i; j<n; j++)
-	R(i,j) = AA(i,j);
+        R(i,j) = AA(i,j);
 
     // Extract Q
     lwork = -1;
@@ -526,7 +526,7 @@ namespace Stokhos {
       Q.shape(m, k);
     for (ordinal_type i=0; i<m; i++)
       for (ordinal_type j=0; j<k; j++)
-	Q(i,j) = AA(i,j);
+        Q(i,j) = AA(i,j);
 
     // Transform piv to zero-based indexing
     for (ordinal_type i=0; i<n; i++)
@@ -560,13 +560,13 @@ namespace Stokhos {
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv)
   {
     // Check that each component of w is 1
     for (ordinal_type i=0; i<w.size(); i++)
       TEUCHOS_TEST_FOR_EXCEPTION(
-	w[i] != 1.0, std::logic_error, 
-	"CPQR_Householder_threshold() requires unit weight vector!");
+        w[i] != 1.0, std::logic_error,
+        "CPQR_Householder_threshold() requires unit weight vector!");
 
     // Compute full QR
     CPQR_Householder(A, Q, R, piv);
@@ -578,11 +578,11 @@ namespace Stokhos {
     scalar_type r_min = std::abs(R(rank,rank));
     for (rank=1; rank<m; rank++) {
       if (std::abs(R(rank,rank)) > r_max)
-	r_max = std::abs(R(rank,rank));
+        r_max = std::abs(R(rank,rank));
       if (std::abs(R(rank,rank)) < r_min)
-	r_min = std::abs(R(rank,rank));
+        r_min = std::abs(R(rank,rank));
       if (r_min / r_max < rank_threshold)
-	break;
+        break;
     }
 
     // Extract blocks from Q and R
@@ -612,15 +612,14 @@ namespace Stokhos {
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv)
   {
     using Teuchos::getCol;
     typedef Teuchos::SerialDenseVector<ordinal_type,scalar_type> SDV;
-    typedef Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> SDM;
     ordinal_type m = A.numRows();
     ordinal_type n = A.numCols();
     ordinal_type k = std::min(m,n);
-    
+
     // Make sure Q is the right size
     if (Q.numRows() != m || Q.numCols() != n)
       Q.shape(m,n);
@@ -646,25 +645,25 @@ namespace Stokhos {
     ordinal_type nfixed = 0;
     for (ordinal_type j=0; j<n; j++) {
       if (piv_orig[j] != 0) {
-	if (j != nfixed) {
-	  scalar_type tmp = nrm(j);
-	  nrm(j) = nrm(nfixed);
-	  nrm(nfixed) = tmp;
-	  
-	  SDV Qpvt = getCol(Teuchos::View, Q, j);
-	  SDV Qj = getCol(Teuchos::View, Q, nfixed);
-	  Qtmp.assign(Qpvt);
-	  Qpvt.assign(Qj);
-	  Qj.assign(Qtmp);
-	  
-	  ordinal_type t = piv[j];
-	  piv[j] = piv[nfixed];
-	  piv[nfixed] = t;
-	}
-	++nfixed;
+        if (j != nfixed) {
+          scalar_type tmp = nrm(j);
+          nrm(j) = nrm(nfixed);
+          nrm(nfixed) = tmp;
+
+          SDV Qpvt = getCol(Teuchos::View, Q, j);
+          SDV Qj = getCol(Teuchos::View, Q, nfixed);
+          Qtmp.assign(Qpvt);
+          Qpvt.assign(Qj);
+          Qj.assign(Qtmp);
+
+          ordinal_type t = piv[j];
+          piv[j] = piv[nfixed];
+          piv[nfixed] = t;
+        }
+        ++nfixed;
       }
     }
-  
+
     scalar_type sigma = 1.0 + rank_threshold;
     scalar_type r_max = 0.0;
     ordinal_type j=0;
@@ -675,44 +674,44 @@ namespace Stokhos {
 
       // Find pivot column if we are passed the pre-pivot stage
       if (j >= nfixed) {
-	ordinal_type pvt = j;
-	for (ordinal_type l=j+1; l<n; l++)
-	  if (nrm(l) > nrm(pvt))
-	    pvt = l;
+        ordinal_type pvt = j;
+        for (ordinal_type l=j+1; l<n; l++)
+          if (nrm(l) > nrm(pvt))
+            pvt = l;
 
-	// Interchange column j and pvt
-	if (pvt != j) {
-	  SDV Qpvt = getCol(Teuchos::View, Q, pvt);
-	  Qtmp.assign(Qpvt);
-	  Qpvt.assign(Qj);
-	  Qj.assign(Qtmp);
+        // Interchange column j and pvt
+        if (pvt != j) {
+          SDV Qpvt = getCol(Teuchos::View, Q, pvt);
+          Qtmp.assign(Qpvt);
+          Qpvt.assign(Qj);
+          Qj.assign(Qtmp);
 
-	  SDV Rpvt = getCol(Teuchos::View, R, pvt);
-	  SDV Rj = getCol(Teuchos::View, R, j);
-	  Rtmp.assign(Rpvt);
-	  Rpvt.assign(Rj);
-	  Rj.assign(Rtmp);
+          SDV Rpvt = getCol(Teuchos::View, R, pvt);
+          SDV Rj = getCol(Teuchos::View, R, j);
+          Rtmp.assign(Rpvt);
+          Rpvt.assign(Rj);
+          Rj.assign(Rtmp);
 
-	  ordinal_type t = piv[pvt];
-	  piv[pvt] = piv[j];
-	  piv[j] = t;
-	}
+          ordinal_type t = piv[pvt];
+          piv[pvt] = piv[j];
+          piv[j] = t;
+        }
       }
-      
+
       R(j,j) = std::sqrt(detail::weighted_inner_product(Qj, Qj, w));
       Qj.scale(1.0/R(j,j));
       for (ordinal_type l=j+1; l<n; l++) {
-	SDV Ql = getCol(Teuchos::View, Q, l);
-	scalar_type t = detail::weighted_inner_product(Qj, Ql, w);
-	R(j,l) = t;
-	detail::saxpy(1.0, Ql, -t, Qj);
+        SDV Ql = getCol(Teuchos::View, Q, l);
+        scalar_type t = detail::weighted_inner_product(Qj, Ql, w);
+        R(j,l) = t;
+        detail::saxpy(1.0, Ql, -t, Qj);
 
-	// Update norms
-	nrm(l) = detail::weighted_inner_product(Ql, Ql, w);
-      }	
+        // Update norms
+        nrm(l) = detail::weighted_inner_product(Ql, Ql, w);
+      }
 
       if (std::abs(R(j,j)) > r_max)
-	r_max = R(j,j);
+        r_max = R(j,j);
       sigma = std::abs(R(j,j)/r_max);
       j++;
     }
@@ -746,7 +745,7 @@ namespace Stokhos {
     const Teuchos::Array<scalar_type>& w,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv) 
+    Teuchos::Array<ordinal_type>& piv)
   {
     // First do standard column-pivoted QR
     ordinal_type rank = CPQR_MGS_threshold(rank_threshold, A, w, Q, R, piv);
@@ -757,7 +756,7 @@ namespace Stokhos {
 
     return rank;
   }
-    
+
   //! Compute condition number of upper-triangular R
   template <typename ordinal_type, typename scalar_type>
   scalar_type
@@ -770,31 +769,31 @@ namespace Stokhos {
     scalar_type r_min = std::abs(R(0,0));
     for (ordinal_type i=1; i<k; i++) {
       if (std::abs(R(i,i)) > r_max)
-	r_max = R(i,i);
+        r_max = R(i,i);
       if (std::abs(R(i,i)) < r_min)
-	r_min = R(i,i);
+        r_min = R(i,i);
     }
     scalar_type cond_r = r_max / r_min;
     return cond_r;
   }
-    
+
   //! Compute weighted QR orthogonalization error
   /*!
-   * Computes ||Q^T*W*Q-I||_infinity for Q coming from a weighted QR 
+   * Computes ||Q^T*W*Q-I||_infinity for Q coming from a weighted QR
    * factorization.
    */
   template <typename ordinal_type, typename scalar_type>
   scalar_type
   weightedQROrthogonalizationError(
     const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
-    const Teuchos::Array<scalar_type>& w) 
+    const Teuchos::Array<scalar_type>& w)
   {
     ordinal_type m = Q.numRows();
     ordinal_type n = Q.numCols();
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> Qt(m,n);
     for (ordinal_type i=0; i<m; i++)
       for (ordinal_type j=0; j<n; j++)
-	Qt(i,j) = w[i]*Q(i,j);
+        Qt(i,j) = w[i]*Q(i,j);
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(n,n);
     err.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, Qt, 0.0);
     for (ordinal_type i=0; i<n; i++)
@@ -809,7 +808,7 @@ namespace Stokhos {
   template <typename ordinal_type, typename scalar_type>
   scalar_type
   QROrthogonalizationError(
-    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q) 
+    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q)
   {
     ordinal_type n = Q.numCols();
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(n,n);
@@ -830,14 +829,14 @@ namespace Stokhos {
   residualQRError(
     const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A,
     const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& Q,
-    const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& R) 
+    const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& R)
   {
     ordinal_type k = Q.numCols();
     ordinal_type m = Q.numRows();
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> AA(
       Teuchos::View, A, m, k, 0, 0);
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(m,k);
-    ordinal_type ret = 
+    ordinal_type ret =
       err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
     TEUCHOS_ASSERT(ret == 0);
     err -= AA;
@@ -846,7 +845,7 @@ namespace Stokhos {
 
   //! Compute column-pivoted QR residual error
   /*!
-   * Computes ||Q*R-A*P||_infinity for Q,R coming from a column-pivoted 
+   * Computes ||Q*R-A*P||_infinity for Q,R coming from a column-pivoted
    * QR factorization.
    *
    * Works with thin or full QR, weighted or not.
@@ -857,16 +856,16 @@ namespace Stokhos {
     const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& A,
     const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& Q,
     const Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>& R,
-    const Teuchos::Array<ordinal_type>& piv) 
+    const Teuchos::Array<ordinal_type>& piv)
   {
     ordinal_type k = Q.numCols();
     ordinal_type m = Q.numRows();
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> AP(m, k);
     for (ordinal_type j=0; j<k; j++)
       for (ordinal_type i=0; i<m; i++)
-	AP(i,j) = A(i,piv[j]);
+        AP(i,j) = A(i,piv[j]);
     Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> err(m,k);
-    ordinal_type ret = 
+    ordinal_type ret =
       err.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
     TEUCHOS_ASSERT(ret == 0);
     err -= AP;
@@ -883,7 +882,7 @@ namespace Stokhos {
   svd(const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
       Teuchos::Array<scalar_type>& s,
       Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& U,
-      Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Vt) 
+      Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Vt)
   {
     Teuchos::LAPACK<ordinal_type,scalar_type> lapack;
     ordinal_type m = A.numRows();
@@ -904,24 +903,24 @@ namespace Stokhos {
       s.resize(k);
     ordinal_type ldu = U.stride();
     ordinal_type ldv = Vt.stride();
-    
+
     // Workspace query
     Teuchos::Array<scalar_type> work(1);
     ordinal_type lwork = -1;
     ordinal_type info;
-    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu, 
-		 Vt.values(), ldv, &work[0], lwork, NULL, &info);
+    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu,
+                 Vt.values(), ldv, &work[0], lwork, NULL, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgesvd returned info = " << info);
 
     // Do SVD
     lwork = work[0];
     work.resize(lwork);
-    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu, 
-		 Vt.values(), ldv, &work[0], lwork, NULL, &info);
+    lapack.GESVD('A', 'A', m, n, AA.values(), lda, &s[0], U.values(), ldu,
+                 Vt.values(), ldv, &work[0], lwork, NULL, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(
       info < 0, std::logic_error, "dgesvd returned info = " << info);
-    
+
   }
 
   template <typename ordinal_type, typename scalar_type>
@@ -931,7 +930,7 @@ namespace Stokhos {
     const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
     Teuchos::Array<scalar_type>& s,
     Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& U,
-    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Vt) 
+    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Vt)
   {
     // Compute full SVD
     svd(A, s, U, Vt);

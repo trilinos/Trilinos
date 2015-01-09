@@ -81,8 +81,8 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   RCP<Rythmos::DefaultIntegrator<double> > stateIntegrator;
   RCP<Rythmos::StepperBase<double> > stateStepper;
   RCP<Rythmos::TimeStepNonlinearSolver<double> > timeStepSolver;
-  double initialTime;
-  double finalTime;
+  double initialTime = 0.0;
+  double finalTime = 0.0;
   RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
 
   Teuchos::EVerbosityLevel solnVerbLevel = Teuchos::VERB_DEFAULT;
@@ -326,7 +326,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,
@@ -349,7 +349,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   num_p(model->createInArgs().Np()),
   num_g(model->createOutArgs().Ng())
 {
-  thyraImplementation_ = rcp(new ThyraRythmosSolver(
+  thyraImplementation_ = Teuchos::rcp(new ThyraRythmosSolver(
         stateIntegrator,
         stateStepper,
         timeStepSolver,

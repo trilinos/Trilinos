@@ -70,19 +70,20 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GeoInterpFactory(){
-    std::cout << "I constructed a GeoInterpFactory object... Nothing else to do here." << std::endl;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GeoInterpFactory(){
+    GetOStream(Runtime1) << "I constructed a GeoInterpFactory object... Nothing else to do here." << std::endl;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~GeoInterpFactory(){
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~GeoInterpFactory(){
     // Should be empty. All destruction should be handled by Level-based get stuff and RCP
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
+    Input(fineLevel, "A");
     Input(fineLevel, "A00");
     Input(fineLevel, "A10");
     Input(fineLevel, "A20");
@@ -109,10 +110,10 @@ namespace MueLu {
     //currentLevel.DeclareInput(varName_,factory_,this);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
 
-    std::cout << "Starting 'build' routine...\n";
+    GetOStream(Runtime1) << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
@@ -124,15 +125,15 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
 
     typedef Teuchos::SerialDenseMatrix<GO,GO> SerialDenseMatrixType;
 
-    std::cout << "Starting 'BuildP' routine...\n";
+    GetOStream(Runtime1) << "Starting 'BuildP' routine...\n";
 
     //DEBUG
-    //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    //Teuchos::FancyOStream fout(*GetOStream(Runtime1));
     //fineLevel.print(fout,Teuchos::VERB_HIGH);
 
     // Get finegrid element lists
@@ -141,8 +142,8 @@ namespace MueLu {
     RCP<SerialDenseMatrixType> fineElementMDOFs = Get< RCP<SerialDenseMatrixType> > (fineLevel, "MElementList");
 
     //DEBUG
-    std::cout << "done getting fine level elements...\n";
-    std::cout << "getting coarse level elements...\n";
+    GetOStream(Runtime1) << "done getting fine level elements...\n";
+    GetOStream(Runtime1) << "getting coarse level elements...\n";
     //coarseLevel.print(fout,Teuchos::VERB_HIGH);
 
 
@@ -156,12 +157,12 @@ namespace MueLu {
     coarseLevel.Get("MElementList",coarseElementMDOFs,coarseLevel.GetFactoryManager()->GetFactory("MElementList").get());
 
 
-    std::cout << "computing various numbers...\n";
+    GetOStream(Runtime1) << "computing various numbers...\n";
     // Number of elements?
     GO totalFineElements = fineElementMDOFs->numRows();
-    LO nFineElements = sqrt(totalFineElements);
+    LO nFineElements = (int) sqrt(totalFineElements);
     GO totalCoarseElements = coarseElementMDOFs->numRows();
-    LO nCoarseElements = sqrt(totalCoarseElements);
+    LO nCoarseElements = (int) sqrt(totalCoarseElements);
 
     // Set sizes for *COARSE GRID*
     GO nM = (2*nCoarseElements+1)*(2*nCoarseElements+1);
@@ -173,7 +174,7 @@ namespace MueLu {
     RCP<Matrix> fineA10 = Get<RCP<Matrix> > (fineLevel,"A10");
     RCP<Matrix> fineA20 = Get<RCP<Matrix> > (fineLevel,"A20");
 
-    std::cout << "creating coarse grid maps...\n";
+    GetOStream(Runtime1) << "creating coarse grid maps...\n";
 
     RCP<const Map> rowMapforPV = fineA00->getRowMap();
     RCP<const Map> rowMapforPP = fineA10->getRowMap();
@@ -187,7 +188,8 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = rowMapforPV->getComm();
 
     // Create rowMap for P
-    RCP<const Map> rowMapforP  = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,fNV+fNP+fNM,comm);
+    RCP<Matrix> FineA = Factory::Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<const Map> rowMapforP  = FineA->getRowMap();
 
     // Create colMaps for the coarse grid
     RCP<const Map> colMapforPV = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nV,comm);
@@ -195,7 +197,7 @@ namespace MueLu {
     RCP<const Map> colMapforPM = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nM,comm);
 
 
-    std::cout << "creating coarse grid matrices...\n";
+    GetOStream(Runtime1) << "creating coarse grid matrices...\n";
     //Create our final output Ps for the coarseGrid
     size_t maxEntriesPerRowV = 9,//No overlap of VX and VY
       maxEntriesPerRowP = 4,
@@ -266,8 +268,8 @@ namespace MueLu {
     //About which fine-grid elements do we care?
     GO fineElement[4] = {0,1,nFineElements,nFineElements+1};
 
-    std::cout << "start building matrices...\n";
-    std::cout << "nCoarseElements = " << nCoarseElements << std::endl;
+    GetOStream(Runtime1) << "start building matrices...\n";
+    GetOStream(Runtime1) << "nCoarseElements = " << nCoarseElements << std::endl;
 
     for ( GO coarseElement=0; coarseElement<totalCoarseElements; coarseElement++)
       {

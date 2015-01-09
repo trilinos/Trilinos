@@ -1,45 +1,71 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_io_IossBridge_hpp
 #define stk_io_IossBridge_hpp
 
-#include <string>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/FEMMetaData.hpp>
-
-// TODO: remove this and uses of USE_FEMMETADATA once the migration is done (srkenno@sandia.gov)
-
-#define USE_FEMMETADATA
-#ifdef USE_FEMMETADATA
-#include <stk_mesh/fem/FEMHelpers.hpp>
-#endif
-
-#include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <Ioss_DBUsage.h>
-#include <Ioss_Field.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_ElementTopology.h>
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_topology/topology.hpp>    // for topology
+#include <string>                       // for string, basic_string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class EntityBlock; }
+namespace Ioss { class GroupingEntity; }
+namespace Ioss { class Region; }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class FieldRestriction; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 namespace Ioss {
-class Region;
-class GroupingEntity;
-class EntityBlock;
 class SideSet;
 class Field;
-class ElementTopology;
 }
 
-struct CellTopologyData;
+void STKIORequire(bool cond);
+void STKIORequireMsg(bool cond, const std::string &msg);
 
 namespace stk {
+  namespace mesh {
+  }
 
 /**
  * The stk::io namespace contains functions related to the
@@ -69,14 +95,8 @@ namespace io {
  */
 bool include_entity(const Ioss::GroupingEntity *entity);
 
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);
-
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta);
-
-//! \deprecated
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
 
-//! \deprecated
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
 
 /** This is the primary function used by an application to define
@@ -91,11 +111,11 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  */
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities,
-                             stk::mesh::fem::FEMMetaData &fem_meta)
+                             stk::mesh::MetaData &meta)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, fem_meta);
+    internal_part_processing(entity, meta);
   }
 }
 
@@ -104,8 +124,7 @@ template <typename T>
 void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
                              const stk::mesh::EntityRank)
 {
-  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
-  default_part_processing (entities, fem_meta);
+  default_part_processing (entities, meta);
 }
 
 /** Given the newly created Ioss::Region 'io_region', define the
@@ -124,15 +143,23 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
  * ordering.  Normally not necessary, since MetaData is created
  * from a parallel-consistent data base.  It is useful in cases
  * such as streaming refinement where each piece of a parallel-
- * decomposed mesh is read in sequentially and parts are thus 
+ * decomposed mesh is read in sequentially and parts are thus
  * possibly created in different orderings.
  *
+ * \param[in] use_nodeset_for_part_node_fields is used to determine
+ * how to output nodal fields that may be defined on a higher-rank
+ * part (e.g., element block or sideset).  If the argument is true,
+ * then a nodeset containing the nodes of that part is defined and
+ * the fields will be output on that nodeset. If false, the fields
+ * are output on all nodes in the model and zero-filled where the
+ * field is not defined.
  */
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const Ioss::Region *input_region = NULL,
-                       const stk::mesh::Selector *anded_selector = NULL,
-                       const bool sort_stk_parts = false);
+                       const stk::mesh::Selector *subset_selector = NULL,
+                       bool sort_stk_parts = false,
+                       bool use_nodeset_for_part_node_fields = true);
 
 
 /** Given an Ioss::Region 'io_region' which has already had its
@@ -144,7 +171,7 @@ void define_output_db( Ioss::Region & io_region,
  */
 void write_output_db( Ioss::Region & io_region ,
                       const mesh::BulkData& bulk,
-                      const stk::mesh::Selector *anded_selector = NULL);
+                      const stk::mesh::Selector *subset_selector = NULL);
 
 
 //----------------------------------------------------------------------
@@ -164,7 +191,7 @@ void write_output_db( Ioss::Region & io_region ,
  *
  * The 'filter_role' only selects fields with the specified role
  * (e.g., TRANSIENT, ATTRIBUTE, ..., see Ioss documentation for
- * valid roles) unless 'add_all == true' is specified.
+ * valid roles)
  *
  * The field's role is defined via a call to
  * 'stk::io::set_field_role'
@@ -172,20 +199,60 @@ void write_output_db( Ioss::Region & io_region ,
 bool is_valid_part_field(const stk::mesh::FieldBase *field,
                          const stk::mesh::EntityRank part_type,
                          const stk::mesh::Part &part,
-                         const stk::mesh::Part &universal,
-                         const Ioss::Field::RoleType filter_role,
-                         const bool add_all = false);
+                         const Ioss::Field::RoleType filter_role);
+
+bool is_field_on_part(const stk::mesh::FieldBase *field,
+		      const stk::mesh::EntityRank part_type,
+		      const stk::mesh::Part &part);
 
 /** Add all stk::Fields on the specified part of the specified
  * filter_role to the specified Ioss::GroupingEntity.  Retrieves
  * all fields; calls 'is_valid_part_field'; and adds those that
  * return true.
  */
+struct FieldAndName
+{
+public:
+  FieldAndName(stk::mesh::FieldBase *my_field, const std::string& my_db_name) :
+    m_field(my_field), m_dbName(my_db_name), m_wasFound(false) {}
+  stk::mesh::FieldBase *field() const {return m_field;};
+  std::string db_name() const {return m_dbName;}
+  void set_db_name(const std::string &name) {m_dbName = name;}
+private:
+  stk::mesh::FieldBase *m_field;
+  std::string m_dbName;
+public:
+  bool m_wasFound;
+};
+
+std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
+void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields);
+
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const Ioss::Field::RoleType filter_role,
-                     const bool add_all = false);
+                     const Ioss::Field::RoleType filter_role);
+
+void ioss_add_fields(const stk::mesh::Part &part,
+                     const stk::mesh::EntityRank part_type,
+                     Ioss::GroupingEntity *entity,
+                     const std::vector<FieldAndName> &namedFields);
+
+/**
+ * Iterate over all Ioss entities in the input mesh Ioss Region and
+ * define a stk field for each transient field found.  The stk field
+ * will have the same name as the field on the database.
+ *
+ * Note that all transient fields found on the mesh database will
+ * have a corresponding stk field defined.  If you want just a
+ * selected subset of the database fields defined in the stk mesh,
+ * you need to define the fields manually.
+ *
+ * To populate the stk field with data from the database, call
+ * StkMeshIoBroker::process_input_request().
+ *
+ */
+void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta);
 
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that
@@ -205,18 +272,17 @@ void define_io_fields(Ioss::GroupingEntity *entity,
                       stk::mesh::EntityRank part_type);
 
 /** Given an Ioss::ElementTopolgy, return the corresponding
- *  CellTopologyData. If a corresponding topology is not found, a
+ *  stk::topology. If a corresponding topology is not found, a
  *  runtime error exception will be thrown.
  */
-const CellTopologyData *map_topology_ioss_to_cell(const Ioss::ElementTopology *topology);
+stk::topology map_ioss_topology_to_stk(const Ioss::ElementTopology *topology);
 
-/** Given a CellTopologyData and a spatial_dimension, return the
- *	corresponding Ioss::ElementTopology. If a corresponding
+/** Given a stk::topology, return the
+ *	corresponding Ioss::ElementTopology string. If a corresponding
  *	topology is not found, a runtime error exception will be
  *	thrown.
  */
-std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
-                                       int spatial_dimension);
+std::string map_stk_topology_to_ioss(stk::topology topo);
 
 /**
  * For the given Ioss entity, create a vector of stk::mesh::Entity
@@ -232,7 +298,33 @@ std::string map_topology_cell_to_ioss( const CellTopologyData *cell_top,
 void get_entity_list(Ioss::GroupingEntity *io_entity,
                      stk::mesh::EntityRank part_type,
                      const stk::mesh::BulkData &bulk,
-                     std::vector<stk::mesh::Entity*> &entities);
+                     std::vector<stk::mesh::Entity> &entities);
+
+
+/**
+ * Delete the selector property (if it exists) which is used to get
+ * the entity list on an output database's GroupingEntitys
+ */
+template <typename T> void delete_selector_property(std::vector<T> &entities);
+void delete_selector_property(Ioss::Region &io_region);
+void delete_selector_property(Ioss::GroupingEntity *io_entity);
+
+std::string get_stated_field_name(const std::string &field_base_name, stk::mesh::FieldState state_identifier);
+
+void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
+                          std::vector<stk::mesh::Entity> &entity_list,
+                          Ioss::GroupingEntity *io_entity,
+                          const std::string &name,
+                          const size_t state_count);
+
+void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+					       const stk::mesh::FieldBase *field,
+					       std::vector<stk::mesh::Entity> &entity_list,
+					       Ioss::GroupingEntity *io_entity,
+					       const stk::mesh::Part *stk_part,
+					       const std::string &name,
+					       const size_t state_count);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named
@@ -240,19 +332,35 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
  * the meshobjects in the Ioss io_entity to the
  * stk::mesh::Entities is given by the 'entities' list.
  */
-void field_data_from_ioss(const stk::mesh::FieldBase *field,
-                          std::vector<stk::mesh::Entity*> &entities,
+void field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
+                          std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
+void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+				    const stk::mesh::FieldBase *field,
+				    std::vector<stk::mesh::Entity> &entities,
+				    Ioss::GroupingEntity *io_entity,
+				    const stk::mesh::Part *stk_part,
+				    const std::string &io_fld_name);
+
+void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
+                        std::vector<stk::mesh::Entity> &entities,
+                        Ioss::GroupingEntity *io_entity,
+                        const std::string &io_fld_name,
+                        Ioss::Field::RoleType filter_role,
+                        const size_t state_count);
 /**
  * Extract data from the specified 'field' and put it to the Ioss
  * field named 'io_fld_name' on the Ioss entity 'io_entity'. The
  * mapping from the meshobjects in the Ioss io_entity to the
  * stk::mesh::Entities is given by the 'entities' list.
  */
-void field_data_to_ioss(const stk::mesh::FieldBase *field,
-                        std::vector<stk::mesh::Entity*> &entities,
+void field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
+                        std::vector<stk::mesh::Entity> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,
                         Ioss::Field::RoleType filter_role);
@@ -262,13 +370,13 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
  *	factors for the specified part 'p'. Returns NULL if there is
  *	no such field.
  */
-const mesh::Field<double, mesh::ElementNode> *get_distribution_factor_field(const mesh::Part &p);
+const mesh::FieldBase *get_distribution_factor_field(const mesh::Part &p);
 
 /** Defines the stk::mesh::Field which contains the distribution
  *	factors for the specified part 'p'.
  */
 void set_distribution_factor_field(mesh::Part &p,
-                                   const mesh::Field<double, mesh::ElementNode> &df_field);
+                                   const mesh::FieldBase &df_field);
 
 /** Returns the Ioss::Field::RoleType of the mesh::Field 'f'.
  *	This must have earlier been defined using
@@ -282,6 +390,7 @@ const Ioss::Field::RoleType* get_field_role(const mesh::FieldBase &f);
  */
 void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
 
+
 /** Returns whether the mesh::Part 'p' should be output to a
  *	results or restart database. Or, in other words, whether the
  *	part should have an Ioss::GroupingEntity of the correct type
@@ -290,7 +399,7 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  *	attributed is defined via the stk::io::put_io_part_attribute()
  *	function.
  */
-bool is_part_io_part(mesh::Part &part);
+bool is_part_io_part(const mesh::Part &part);
 
 /** Define an attribute on the specified part 'part' indicating that
  * this part should be used for io.  \see is_part_io_part()
@@ -306,20 +415,8 @@ const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
-// To minimize ifdefs for the deprecated code:
-bool invalid_rank(mesh::EntityRank rank);
 mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);
-mesh::EntityRank element_rank(const mesh::MetaData &meta);
-mesh::EntityRank side_rank(const mesh::MetaData &meta);
-mesh::EntityRank face_rank(const mesh::MetaData &meta);
-mesh::EntityRank edge_rank(const mesh::MetaData &meta);
-mesh::EntityRank node_rank(const mesh::MetaData &meta);
-void set_cell_topology(mesh::Part &part, const CellTopologyData * const cell_topology);
-const CellTopologyData *get_cell_topology(const mesh::Part &part);
 
-void initialize_spatial_dimension(mesh::fem::FEMMetaData &fem_meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
-
-//! \deprecated
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,

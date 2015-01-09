@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -69,9 +69,12 @@
 * 
 *****************************************************************************/
 
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /* -------------------- local defines --------------------------- */
 #define PROCNAME "ex_get_coordinate_frames"
@@ -123,9 +126,9 @@
   int status;
   int dimid; /* ID of the dimension of # frames */
   char errmsg[MAX_ERR_LENGTH];
-  int varids;                      /* variable id for the frame ids  */
+  int varids;                    /* variable id for the frame ids  */
   size_t start=0;                /* start value for varputs        */
-  size_t count;                  /* number vars to put in varput   */
+  size_t count=0;                /* number vars to put in varput   */
 
   /* get the dimensions */
   assert( nframes !=NULL );
@@ -135,7 +138,7 @@
     return EX_NOERR;
   }
 
-  nc_inq_dimlen(exoid,dimid,&count);
+  (void)nc_inq_dimlen(exoid,dimid,&count);
   *nframes=(int)count;
 
   if ( count==0 )

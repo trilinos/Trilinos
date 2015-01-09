@@ -44,11 +44,37 @@
 #define IFPACK2_BLOCKRELAXATION_DEF_HPP
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
-#include "Ifpack2_LinearPartitioner_decl.hpp"
+#include "Ifpack2_LinearPartitioner.hpp"
+#include "Ifpack2_Details_UserPartitioner_decl.hpp"
+#include "Ifpack2_Details_UserPartitioner_def.hpp"
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
+
+template<class MatrixType,class ContainerType>
+void BlockRelaxation<MatrixType,ContainerType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
+    IsInitialized_ = false;
+    IsComputed_ = false;
+    Condest_ = -STM::one ();
+    Partitioner_ = Teuchos::null;
+    Importer_ = Teuchos::null;
+    W_ = Teuchos::null;
+
+    if (! A.is_null ()) {
+      IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
+    }
+
+    std::vector<Teuchos::RCP<ContainerType> > emptyVec;
+    std::swap (Containers_, emptyVec);
+    NumLocalBlocks_ = 0;
+
+    A_ = A;
+  }
+}
 
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
@@ -58,13 +84,13 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   OverlapLevel_ (0),
   PartitionerType_ ("linear"),
   NumSweeps_ (1),
+  NumLocalBlocks_(0),
   PrecType_ (Ifpack2::Details::JACOBI),
-  MinDiagonalValue_ (STS::zero ()),
   DampingFactor_ (STS::one ()),
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
-  Condest_ (STS::real(-STS::one ())),
+  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -126,7 +152,6 @@ setParameters (const Teuchos::ParameterList& List)
 
   Ifpack2::getParameter (List, "relaxation: sweeps",NumSweeps_);
   Ifpack2::getParameter (List, "relaxation: damping factor", DampingFactor_);
-  Ifpack2::getParameter (List, "relaxation: min diagonal value", MinDiagonalValue_);
   Ifpack2::getParameter (List, "relaxation: zero starting solution", ZeroStartingSolution_);
   Ifpack2::getParameter (List, "relaxation: backward mode",DoBackwardGS_);
   Ifpack2::getParameter (List, "partitioner: type",PartitionerType_);
@@ -312,8 +337,8 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const MV> X_copy;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = Teuchos::rcp (new MV (createCopy(X)));
+  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+    X_copy = Teuchos::rcp (new MV (X, Teuchos::Copy));
   } else {
     X_copy = Teuchos::rcpFromRef (X);
   }
@@ -383,6 +408,9 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
   if (PartitionerType_ == "linear") {
     Partitioner_ =
       rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+  } else if (PartitionerType_ == "user") {
+    Partitioner_ =
+      rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
   } else {
     // We should have checked for this in setParameters(), so it's a
     // logic_error, not an invalid_argument or runtime_error.
@@ -417,8 +445,10 @@ template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::compute()
 {
   using Teuchos::rcp;
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+  typedef Tpetra::Vector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> vector_type;
+  typedef Tpetra::Import<local_ordinal_type,
+    global_ordinal_type, node_type> import_type;
 
   // We should have checked for this in setParameters(), so it's a
   // logic_error, not an invalid_argument or runtime_error.
@@ -432,7 +462,7 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
   // reset values
   IsComputed_ = false;
-  Condest_ = STS::real(-STS::one ());
+  Condest_ = -STM::one ();
 
   // Extract the submatrices
   ExtractSubmatrices ();
@@ -447,6 +477,8 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
       for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
+        // FIXME (mfh 12 Sep 2014) Should this really be int?
+        // Perhaps it should be local_ordinal_type instead.
         int LID = (*Partitioner_)(i,j);
         w_ptr[LID]+= STS::one();
       }
@@ -478,12 +510,17 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
 {
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vec_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     Partitioner_.is_null (), std::runtime_error,
     "Ifpack2::BlockRelaxation::ExtractSubmatrices: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
+  vec_type D (A_->getRowMap ());
+  A_->getLocalDiagCopy (D);
+  DiagRCP = D.getData ();
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     const size_t numRows = Partitioner_->numRowsInPart (i);
@@ -493,11 +530,12 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
     for (size_t j = 0; j < numRows; ++j) {
       localRows[j] = (*Partitioner_) (i,j);
     }
-
-    Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
-    Containers_[i]->setParameters (List_);
-    Containers_[i]->initialize ();
-    Containers_[i]->compute ();
+    if(numRows>1) { // only do for non-singletons
+      Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
+      Containers_[i]->setParameters (List_);
+      Containers_[i]->initialize ();
+      Containers_[i]->compute ();
+    }
   }
 }
 
@@ -513,7 +551,7 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X,
   // Initial matvec not needed
   int starting_iteration = 0;
   if (ZeroStartingSolution_) {
-    DoJacobi(X,Y);
+    DoJacobi (X, Y);
     starting_iteration = 1;
   }
 
@@ -534,35 +572,50 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X,
 template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) const
 {
-  const size_t NumVectors = X.getNumVectors();
-  const scalar_type one = STS::one();
+  const size_t NumVectors = X.getNumVectors ();
+  const scalar_type one = STS::one ();
   // Note: Flop counts copied naively from Ifpack.
 
   if (OverlapLevel_ == 0) {
     // Non-overlapping Jacobi
     for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
       // may happen that a partition is empty
-      if (Containers_[i]->getNumRows () == 0) {
-        continue;
+      if( Partitioner_->numRowsInPart (i) != 1 ) {
+        if(Containers_[i]->getNumRows () == 0 ) continue;
+        Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
+        ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
       }
-      Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
-      ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
+      else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+        local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
+        Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+        scalar_type d = Diag[LRID];
+        for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
+          Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+          scalar_type x = xRCP[LRID];
+          Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
+
+          scalar_type newy= x/d;
+          yRCP[LRID]= newy;
+        }
+      }
     }
   }
   else {
     // Overlapping Jacobi
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; i++) {
       // may happen that a partition is empty
-      if (Containers_[i]->getNumRows() == 0) continue;
+      if(Containers_[i]->getNumRows() == 0) continue;
+      if ( Partitioner_->numRowsInPart (i)  != 1 ) {
+        try {
+          Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
+        } catch (std::exception& e) {
+          std::cerr << "BlockRelaxation::DoJacobi: Containers_[" << i
+                    << "]->weightedApply() threw an exception: " << e.what ()
+                    << std::endl;
+          throw;
+        }
+      } // end  Partitioner_->numRowsInPart (i)  != 1
 
-      try {
-        Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
-      } catch (std::exception& e) {
-        std::cerr << "BlockRelaxation::DoJacobi: Containers_[" << i
-                  << "]->weightedApply() threw an exception: " << e.what ()
-                  << std::endl;
-        throw;
-      }
       // NOTE: do not count (for simplicity) the flops due to overlapping rows
       ApplyFlops_ += NumVectors * 4 * NumGlobalRows_;
     }
@@ -574,11 +627,11 @@ template<class MatrixType,class ContainerType>
 void BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseGS (const MV& X, MV& Y) const
 {
-  MV Xcopy (X);
-  for (int j = 0; j < NumSweeps_ ; j++) {
+  MV Xcopy (X, Teuchos::Copy);
+  for (int j = 0; j < NumSweeps_; ++j) {
     DoGaussSeidel (Xcopy, Y);
     if (j != NumSweeps_ - 1) {
-      Xcopy = X;
+      Tpetra::deep_copy (Xcopy, X);
     }
   }
 }
@@ -598,21 +651,20 @@ DoGaussSeidel (MV& X, MV& Y) const
 
   // Note: Flop counts copied naively from Ifpack.
 
-  const scalar_type    one =  STS::one ();
-  const scalar_type negone = -STS::one ();
-  int Length = A_->getNodeMaxNumRowEntries();
+  const scalar_type one = STS::one ();
+  const size_t Length = A_->getNodeMaxNumRowEntries();
   const size_t NumVectors = X.getNumVectors();
-  Array<scalar_type>         Values;
-  Array<local_ordinal_type>   Indices;
-  Values.resize(Length);
-  Indices.resize(Length);
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices;
+  Values.resize (Length);
+  Indices.resize (Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
   // are always seen are serial)
   RCP<MV> Y2;
   if (IsParallel_) {
-    Y2 = rcp (new MV (Importer_->getTargetMap(), NumVectors));
+    Y2 = rcp (new MV (Importer_->getTargetMap (), NumVectors));
   } else {
     Y2 = rcpFromRef (Y);
   }
@@ -621,72 +673,75 @@ DoGaussSeidel (MV& X, MV& Y) const
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  MV Correction(X.getMap(),NumVectors,true);
-  MV TmpResidual(X.getMap(),NumVectors,false);
+  MV Residual (X.getMap (), NumVectors, false);
 
   ArrayRCP<ArrayRCP<scalar_type> >           x_ptr = X.get2dViewNonConst();
   ArrayRCP<ArrayRCP<scalar_type> >           y_ptr = Y.get2dViewNonConst();
   ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr = Y2->get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> >    residual_ptr = Residual.get2dViewNonConst();
 
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
-  // Replace X (the RHS) by the initial residual, if Y != 0
-  // Note: this will not change the RHS outside of this function
-  if (!ZeroStartingSolution_)
-    A_->apply(*Y2,X,Teuchos::NO_TRANS,negone,one);
-  // else r = b already, so nothing to do
-
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if (Containers_[i]->getNumRows () == 0) {
-      continue; // Skip empty partitions
-    }
+    if( Partitioner_->numRowsInPart (i) != 1 ) {
+      if (Containers_[i]->getNumRows () == 0) continue;
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows =
+        Containers_[i]->getLocalRows ();
+      const size_t localNumRows = Containers_[i]->getNumRows ();
+      for (size_t j = 0; j < localNumRows; ++j) {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-    // update from previous block
-    // i.e. write the appropriate elements of the temporary residual
-    ArrayView<const local_ordinal_type> localRows =
-      Containers_[i]->getLocalRows ();
-    const size_t localNumRows = Containers_[i]->getNumRows ();
-    for (size_t j = 0; j < localNumRows; ++j) {
-      const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
-      size_t NumEntries;
-      A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk)
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
-
-      for (size_t k = 0; k < NumEntries; ++k) {
-        const local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk)
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
+          r_local[LID] = x_local[LID];
+          for (size_t k = 0; k < NumEntries; ++k) {
+            const local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
+        }
       }
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      Containers_[i]->apply (Residual, *Y2, Teuchos::NO_TRANS,
+                             DampingFactor_,one);
+
+      // operations for all getrow's
+      ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
     }
-    // solve with this block
-    //
-    // Note: I'm abusing the ordering information, knowing that X/Y
-    // and Y2 have the same ordering for on-proc unknowns.
-    //
-    // Note: Add flop counts for inverse apply
-    Containers_[i]->apply (TmpResidual, Correction, Teuchos::NO_TRANS,
-                           DampingFactor_,one);
-
-    // operations for all getrow's
-    ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
+    else {       // singleton, can't access Containers_[i] as it was never filled and may be null.
+      // a singleton calculation is exact, all residuals should be zero.
+      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
+      Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+      scalar_type d = Diag[LRID];
+      ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr2 = Y2->get2dViewNonConst();
+      for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
+        Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+        scalar_type x = xRCP[LRID];
+        ArrayView<scalar_type>      y2_local = (y2_ptr2())[nv]();
+        scalar_type newy= x/d;
+        y2_local[LRID]= newy;
+      }
+    } // end else
   } // end for NumLocalBlocks_
-
-  // Now that the full sum of the corrections has been computed, add
-  // them to the initial guess
-  Y2->update(one,Correction,one);
-
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_) {
     for (size_t m = 0; m < NumVectors; ++m) {
+      ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+      ArrayView<scalar_type> y_local = (y_ptr())[m]();
       for (size_t i = 0; i < NumMyRows_; ++i) {
-        y_ptr[m][i] = y2_ptr[m][i];
+        y_local[i] = y2_local[i];
       }
     }
   }
@@ -698,11 +753,11 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseSGS (const MV& X, MV& Y) const
 {
-  MV Xcopy (X);
+  MV Xcopy (X, Teuchos::Copy);
   for (int j = 0; j < NumSweeps_; ++j) {
     DoSGS (Xcopy, Y);
     if (j != NumSweeps_ - 1) {
-      Xcopy = X;
+      Tpetra::deep_copy (Xcopy, X);
     }
   }
 }
@@ -719,12 +774,11 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
 
-  const scalar_type    one =  STS::one ();
-  const scalar_type negone = -STS::one ();
-  int Length = A_->getNodeMaxNumRowEntries();
+  const scalar_type one = STS::one ();
+  const size_t Length = A_->getNodeMaxNumRowEntries();
   const size_t NumVectors = X.getNumVectors();
-  Array<scalar_type>         Values;
-  Array<local_ordinal_type>   Indices;
+  Array<scalar_type> Values;
+  Array<local_ordinal_type> Indices;
   Values.resize(Length);
   Indices.resize(Length);
 
@@ -742,65 +796,72 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   // One to store the sum of the corrections (initialized to zero)
   // One to store the temporary residual (doesn't matter if it is zeroed or not)
   // My apologies for making the names clear and meaningful. (X=RHS, Y=guess?! Nice.)
-  MV Correction(X.getMap(),NumVectors,true);
-  MV TmpResidual(X.getMap(),NumVectors,false);
+  MV Residual (X.getMap (), NumVectors, false);
 
-  ArrayRCP<ArrayRCP<scalar_type> > x_ptr       = X.get2dViewNonConst();
-  //ArrayRCP<ArrayRCP<scalar_type> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >       y_ptr       = Y.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >       y2_ptr      = Y2->get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> >     x_ptr       = X.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> >     y_ptr       = Y.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> >     y2_ptr      = Y2->get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> >    residual_ptr = Residual.get2dViewNonConst();
 
   // data exchange is here, once per sweep
   if (IsParallel_) {
     Y2->doImport (Y, *Importer_, Tpetra::INSERT);
   }
 
-  // Replace X (the RHS) by the initial residual, if Y != 0
-  // Note: this will not change the RHS outside of this function
-  if (! ZeroStartingSolution_) {
-    A_->apply (*Y2, X, Teuchos::NO_TRANS, negone, one);
-  }
-
   // Forward Sweep
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if (Containers_[i]->getNumRows () == 0) {
-      continue; // Skip empty partitions
-    }
-    // update from previous block
-    ArrayView<const local_ordinal_type> localRows =
-      Containers_[i]->getLocalRows ();
-    for (size_t j = 0; j < Containers_[i]->getNumRows (); ++j) {
-      const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
-      size_t NumEntries;
-      A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
-
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk) {
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+    if( Partitioner_->numRowsInPart (i) != 1 ) {
+      if (Containers_[i]->getNumRows () == 0) {
+        continue; // Skip empty partitions
       }
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows =
+        Containers_[i]->getLocalRows ();
+      for (size_t j = 0; j < Containers_[i]->getNumRows (); ++j) {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-      //set tmpresid = initresid - A*correction
-      for (size_t k = 0 ; k < NumEntries ; k++) {
-        local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk) {
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
+        //set tmpresid = initresid - A*correction
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+
+          r_local[LID] = x_local[LID];
+          for (size_t k = 0 ; k < NumEntries ; k++) {
+            local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
         }
       }
-    }
-    // solve with this block
-    //
-    // Note: I'm abusing the ordering information, knowing that X/Y
-    // and Y2 have the same ordering for on-proc unknowns.
-    //
-    // Note: Add flop counts for inverse apply
-    Containers_[i]->apply (TmpResidual, Correction, Teuchos::NO_TRANS,
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      Containers_[i]->apply (Residual, *Y2, Teuchos::NO_TRANS,
                            DampingFactor_, one);
 
-    // operations for all getrow's
-    ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
-  }// end forward sweep
+      // operations for all getrow's
+      ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
+
+    }
+    else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+      local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
+      Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+      scalar_type d = Diag[LRID];
+      for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
+        Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
+        scalar_type x = xRCP[LRID];
+        Teuchos::ArrayRCP<  scalar_type > yRCP = Y.getDataNonConst(nv);
+
+        scalar_type newy= x/d;
+        yRCP[LRID]= newy;
+      }
+    } // end else
+  } // end forward sweep over NumLocalBlocks
 
   // Reverse Sweep
   //
@@ -810,58 +871,58 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   // i--" will loop forever if local_ordinal_type is unsigned, because
   // unsigned integers are (trivially) always nonnegative.
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
-    if (Containers_[i-1]->getNumRows () == 0) {
-      continue; // Skip empty partitions
-    }
-    // update from previous block
-    ArrayView<const local_ordinal_type> localRows =
-      Containers_[i-1]->getLocalRows ();
-    for (size_t j = 0; j < Containers_[i-1]->getNumRows (); ++j) {
-      const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
-      size_t NumEntries;
-      A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+    if( Partitioner_->numRowsInPart (i) != 1 ) {
+      if (Containers_[i-1]->getNumRows () == 0) continue;
 
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk) {
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+      // update from previous block
+      ArrayView<const local_ordinal_type> localRows =
+        Containers_[i-1]->getLocalRows ();
+      for (size_t j = 0; j < Containers_[i-1]->getNumRows (); ++j) {
+        const local_ordinal_type LID = localRows[j]; // Containers_[i-1]->ID (j);
+        size_t NumEntries;
+        A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
+
+        //set tmpresid = initresid - A*correction
+        for (size_t m = 0; m < NumVectors; ++m) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+          ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+          ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+
+          r_local [LID] = x_local[LID];
+          for (size_t k = 0; k < NumEntries; ++k)  {
+            local_ordinal_type col = Indices[k];
+            r_local[LID] -= Values[k] * y2_local[col];
+          }
+        }
       }
 
-      //set tmpresid = initresid - A*correction
-      for (size_t k = 0; k < NumEntries; ++k) {
-        local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk)
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
-      }
-    }
+      // solve with this block
+      //
+      // Note: I'm abusing the ordering information, knowing that X/Y
+      // and Y2 have the same ordering for on-proc unknowns.
+      //
+      // Note: Add flop counts for inverse apply
+      Containers_[i-1]->apply (Residual, *Y2, Teuchos::NO_TRANS,
+                               DampingFactor_, one);
 
-    // solve with this block
-    //
-    // Note: I'm abusing the ordering information, knowing that X/Y
-    // and Y2 have the same ordering for on-proc unknowns.
-    //
-    // Note: Add flop counts for inverse apply
-    Containers_[i]->apply (TmpResidual, Correction, Teuchos::NO_TRANS,
-                           DampingFactor_, one);
-
-    // operations for all getrow's
-    ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
+      // operations for all getrow's
+      ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
+    } // end  Partitioner_->numRowsInPart (i) != 1 ) {
+    // else do nothing, as by definition with a singleton, the residuals are zero.
   } //end reverse sweep
-
-  // Now that the full sum of the corrections has been computed, add
-  // them to the initial guess.
-  Y2->update (one, Correction, one);
 
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (though for ML it should be ok)
   if (IsParallel_) {
     for (size_t m = 0; m < NumVectors; ++m) {
+      ArrayView<scalar_type>       y_local = (y_ptr())[m]();
+      ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
       for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-        y_ptr[m][i] = y2_ptr[m][i];
+        y_local[i] = y2_local[i];
       }
     }
   }
 }
-
 
 template<class MatrixType, class ContainerType>
 std::string BlockRelaxation<MatrixType,ContainerType>::description () const
@@ -980,13 +1041,47 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 
 }//namespace Ifpack2
 
+
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+
 // For ETI
-#include "Ifpack2_SparseContainer.hpp"
+#include "Ifpack2_DenseContainer_decl.hpp"
+#include "Ifpack2_SparseContainer_decl.hpp"
+#include "Ifpack2_ILUT_decl.hpp"
+
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::BlockRelaxation< \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer<       \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      Ifpack2::ILUT< ::Tpetra::RowMatrix<S,LO,GO,N> > > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::DenseContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
-                              Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > > >;
+    Ifpack2::SparseContainer<       \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      Ifpack2::ILUT< ::Tpetra::CrsMatrix<S,LO,GO,N> > > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::DenseContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >;
+
+
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #endif // IFPACK2_BLOCKRELAXATION_DEF_HPP

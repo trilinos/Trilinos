@@ -31,11 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Bar3.h>
-#include <Ioss_ElementVariableType.h>
-#include <assert.h>
-#include <stddef.h>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for NULL
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 
-#include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity

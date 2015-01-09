@@ -45,6 +45,7 @@
 
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
+#include <Ifpack2_Chebyshev.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 namespace Ifpack2 {
@@ -536,32 +537,32 @@ applyImpl (const MV& X,
     return;
   }
 
-  // If beta != 0, then we need to keep a copy of the initial value of
-  // Y, so that we can add beta*it to the Chebyshev result at the end.
-  // Usually this method is called with beta == 0, so we don't have to
-  // worry about caching Y_org.
+  // If beta != 0, then we need to keep a (deep) copy of the initial
+  // value of Y, so that we can add beta*it to the Chebyshev result at
+  // the end.  Usually this method is called with beta == 0, so we
+  // don't have to worry about caching Y_org.
   RCP<MV> Y_orig;
   if (beta != zero) {
-    Y_orig = rcp (new MV (createCopy(Y)));
+    Y_orig = rcp (new MV (Y, Teuchos::Copy));
   }
 
   // If X and Y point to the same memory location, we need to use a
-  // copy of X (X_copy) as the input MV.  Otherwise, just let X_copy
-  // point to X.
+  // (deep) copy of X (X_copy) as the input MV.  Otherwise, just let
+  // X_copy point to X.
   //
   // This is hopefully an uncommon use case, so we don't bother to
   // optimize for it by caching X_copy.
   RCP<const MV> X_copy;
   bool copiedInput = false;
-  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = rcp (new MV (createCopy(X)));
+  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+    X_copy = rcp (new MV (X, Teuchos::Copy));
     copiedInput = true;
   }
   else {
     X_copy = rcpFromRef (X);
   }
 
-  // If alpha != 1, fold alpha into (a copy of) X.
+  // If alpha != 1, fold alpha into (a deep copy of) X.
   //
   // This is an uncommon use case, so we don't bother to optimize for
   // it by caching X_copy.  However, we do check whether we've already
@@ -569,7 +570,7 @@ applyImpl (const MV& X,
   if (alpha != one) {
     RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
     if (! copiedInput) {
-      X_copy_nonConst = rcp (new MV (createCopy(X)));
+      X_copy_nonConst = rcp (new MV (X, Teuchos::Copy));
       copiedInput = true;
     }
     X_copy_nonConst->scale (alpha);

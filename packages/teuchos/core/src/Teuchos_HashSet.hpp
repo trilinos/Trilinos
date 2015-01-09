@@ -102,8 +102,8 @@ namespace Teuchos
     };
 
 
-  /** \relates HashSet 
-      \brief Write HashSet to a stream 
+  /** \relates HashSet
+      \brief Write HashSet to a stream
   */
   template<class Key>
     std::ostream& operator<<(std::ostream& os, const HashSet<Key>& h);
@@ -243,8 +243,8 @@ namespace Teuchos
     {
       TEUCHOS_TEST_FOR_EXCEPTION(!containsKey(key),
                          std::runtime_error,
-                         "HashSet<Key>::remove: key " 
-                         << Teuchos::toString(key) 
+                         "HashSet<Key>::remove: key "
+                         << Teuchos::toString(key)
                          << " not found in HashSet"
                          << toString());
 

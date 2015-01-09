@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -59,7 +59,7 @@
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
                const Epetra_BlockMap& rowMap,
                int *NumBlockEntriesPerRow,
-               bool ignoreNonLocalEntries) 
+               bool ignoreNonLocalEntries)
   : Epetra_VbrMatrix(CV, rowMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
@@ -80,7 +80,7 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
                const Epetra_BlockMap& rowMap,
                int NumBlockEntriesPerRow,
-               bool ignoreNonLocalEntries) 
+               bool ignoreNonLocalEntries)
   : Epetra_VbrMatrix(CV, rowMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
@@ -102,7 +102,7 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
                const Epetra_BlockMap& rowMap,
                const Epetra_BlockMap& colMap,
                int *NumBlockEntriesPerRow,
-               bool ignoreNonLocalEntries) 
+               bool ignoreNonLocalEntries)
   : Epetra_VbrMatrix(CV, rowMap, colMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
@@ -124,7 +124,7 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
                const Epetra_BlockMap& rowMap,
                const Epetra_BlockMap& colMap,
                int NumBlockEntriesPerRow,
-               bool ignoreNonLocalEntries) 
+               bool ignoreNonLocalEntries)
   : Epetra_VbrMatrix(CV, rowMap, colMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
@@ -144,7 +144,7 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
                const Epetra_CrsGraph& graph,
-               bool ignoreNonLocalEntries) 
+               bool ignoreNonLocalEntries)
   : Epetra_VbrMatrix(CV, graph),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
@@ -244,7 +244,7 @@ void Epetra_FEVbrMatrix::destroyNonlocalData()
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVbrMatrix::PutScalar(double ScalarConstant) 
+int Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
 {
   for(int i=0; i<numNonlocalBlockRows_; ++i) {
     for(int j=0; j<nonlocalBlockRowLengths_[i]; ++j) {
@@ -263,7 +263,7 @@ int Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
 
 //----------------------------------------------------------------------------
 
-int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete) 
+int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
 {
   if(Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
     if(callFillComplete) {
@@ -572,7 +572,7 @@ int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow,
 //--------------------------------------------------------------------------
 int Epetra_FEVbrMatrix::SetupForNonlocalSubmits(int BlockRow,
             int NumBlockEntries,
-            int * BlockIndices, 
+            int * BlockIndices,
             bool indicesAreLocal,
             Epetra_CombineMode SubmitMode)
 {

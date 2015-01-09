@@ -56,7 +56,7 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 namespace periodic_helpers {
 
@@ -120,20 +120,31 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
   */
 Teuchos::RCP<std::vector<std::size_t> >
 getLocalSideIds(const STK_Interface & mesh,
-                const std::string & sideName)
+                const std::string & sideName, const std::string type_)
 {
-   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
    std::stringstream ss;
    ss << "Can't find part=\"" << sideName << "\"" << std::endl;
-   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
-   stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
+   stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
+   stk_classic::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
+
+   stk_classic::mesh::EntityRank rank;
+   unsigned int offset = 0; // offset to avoid giving nodes and edges the same sideId 
+   if(type_ == "coord"){
+     rank = mesh.getNodeRank();
+   } else if(type_ == "edge"){
+     rank = mesh.getEdgeRank();
+     offset = mesh.getMaxEntityId(mesh.getNodeRank());
+   } else {
+     ss << "Can't do BCs of type " << type_  << std::endl;
+   }
  
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
+   std::vector<stk_classic::mesh::Bucket*> nodeBuckets;
+   stk_classic::mesh::get_buckets(mySides,bulkData->buckets(rank),nodeBuckets);
 
    // build id vector
    ////////////////////////////////////////////
@@ -146,10 +157,10 @@ getLocalSideIds(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
+      stk_classic::mesh::Bucket & bucket = *nodeBuckets[b]; 
          
       for(std::size_t n=0;n<bucket.size();n++,index++)
-         (*sideIds)[index] = bucket[n].identifier();
+         (*sideIds)[index] = bucket[n].identifier() + offset;
    }
 
    return sideIds;
@@ -158,22 +169,36 @@ getLocalSideIds(const STK_Interface & mesh,
 std::pair<Teuchos::RCP<std::vector<std::size_t> >,
           Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
 getLocalSideIdsAndCoords(const STK_Interface & mesh,
-                         const std::string & sideName)
+                         const std::string & sideName, const std::string type_)
 {
    unsigned physicalDim = mesh.getDimension();
    
-   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
    std::stringstream ss;
    ss << "Can't find part=\"" << sideName << "\"" << std::endl;
-   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
-   stk::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
+   stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
+   stk_classic::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
+
+   stk_classic::mesh::EntityRank rank;
+   const STK_Interface::VectorFieldType * field;
+   unsigned int offset = 0;
+   if(type_ == "coord"){
+     rank = mesh.getNodeRank();
+     field = & mesh.getCoordinatesField();
+   } else if(type_ == "edge"){
+     rank = mesh.getEdgeRank();
+     field = & mesh.getEdgesField();
+     offset = mesh.getMaxEntityId(mesh.getNodeRank());
+   } else {
+     ss << "Can't do BCs of type " << type_  << std::endl;
+   }
  
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
+   std::vector<stk_classic::mesh::Bucket*> nodeBuckets;
+   stk_classic::mesh::get_buckets(mySides,bulkData->buckets(rank),nodeBuckets);
 
    // build id vector
    ////////////////////////////////////////////
@@ -188,11 +213,11 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
-      stk::mesh::BucketArray<STK_Interface::VectorFieldType> array(mesh.getCoordinatesField(),bucket);
+      stk_classic::mesh::Bucket & bucket = *nodeBuckets[b]; 
+      stk_classic::mesh::BucketArray<STK_Interface::VectorFieldType> array(*field,bucket);
          
       for(std::size_t n=0;n<bucket.size();n++,index++) {
-         (*sideIds)[index] = bucket[n].identifier();
+         (*sideIds)[index] = bucket[n].identifier() + offset;
          Teuchos::Tuple<double,3> & coord = (*sideCoords)[index];
          
          // copy coordinates into multi vector
@@ -207,7 +232,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 std::pair<Teuchos::RCP<std::vector<std::size_t> >,
           Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
 getSideIdsAndCoords(const STK_Interface & mesh,
-              const std::string & sideName)
+              const std::string & sideName, const std::string type_)
 {
    Epetra_MpiComm Comm(mesh.getBulkData()->parallel());
 
@@ -219,7 +244,7 @@ getSideIdsAndCoords(const STK_Interface & mesh,
 
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > > sidePair =
-          getLocalSideIdsAndCoords(mesh,sideName);
+          getLocalSideIdsAndCoords(mesh,sideName,type_);
 
    std::vector<std::size_t> & local_side_ids = *sidePair.first;
    std::vector<Teuchos::Tuple<double,3> > & local_side_coords = *sidePair.second;

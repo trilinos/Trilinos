@@ -53,6 +53,8 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Galeri_VectorTraits.hpp"
+#include "Galeri_Utils.h"
+#include "Galeri_Exception.h"
 
 #include <iostream>
 
@@ -145,19 +147,22 @@ namespace Galeri {
     } // CreateCartesianCoordinates()
 
     template <typename GlobalOrdinal>
-    static void getSubdomainData(GlobalOrdinal N, GlobalOrdinal M, GlobalOrdinal i, GlobalOrdinal& n, GlobalOrdinal& shift) {
-      GlobalOrdinal start, end;
-      GlobalOrdinal xpid = i % M;
+    static void getSubdomainData(GlobalOrdinal n, GlobalOrdinal m, GlobalOrdinal i, GlobalOrdinal& start, GlobalOrdinal& end) {
+      using Teuchos::as;
+      typedef GlobalOrdinal GO;
 
-      GlobalOrdinal PerProcSmallXDir = Teuchos::as<GlobalOrdinal>(Teuchos::as<double>(N)/Teuchos::as<double>(M));
-      GlobalOrdinal NBigXDir         = N - PerProcSmallXDir*M;
+      if (i >= m)
+        throw Exception(__FILE__, __LINE__,
+                        "Incorrect input parameter to getSubdomainData",
+                        "m = " + toString(m) + ", i = " + toString(i));
 
-      if (xpid < NBigXDir) start =                                        xpid*(PerProcSmallXDir+1);
-      else                 start = (xpid-NBigXDir)*PerProcSmallXDir + NBigXDir*(PerProcSmallXDir+1);
-      end = start + PerProcSmallXDir + ((xpid < NBigXDir) ? 1 : 0);
+      // If the number of points is not multiple of the number of subdomains, we assign
+      // extra points to the first few subdomains
+      GO minWidth = as<GO>(floor(as<double>(n)/m));
+      GO numWides = n - m*minWidth;
 
-      shift = start;
-      n = end - start;
+      if   (i < numWides) { start = i       *(minWidth+1);                           end = start + minWidth+1;  }
+      else                { start = numWides*(minWidth+1) + (i - numWides)*minWidth; end = start + minWidth;    }
     }
 
   }; // class Utils

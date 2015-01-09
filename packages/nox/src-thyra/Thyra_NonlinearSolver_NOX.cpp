@@ -57,7 +57,9 @@
 
 // ****************************************************************
 // ****************************************************************
-Thyra::NOXNonlinearSolver::NOXNonlinearSolver()
+Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
+  do_row_sum_scaling_(false),
+  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
@@ -164,7 +166,7 @@ solve(VectorBase<double> *x,
     if (function_scaling_ != "None") {
 
       if (function_scaling_ == "Row Sum")
-	this->setupRowSumScalingObjects();
+    this->setupRowSumScalingObjects();
 
       TEUCHOS_ASSERT(nonnull(scaling_vector_));
     }
@@ -198,7 +200,7 @@ solve(VectorBase<double> *x,
     t_status.extraParameters = Teuchos::parameterList("NOX Solver Status");
 
   t_status.extraParameters->set("Number of Iterations",
-				solver_->getNumIterations());
+                solver_->getNumIterations());
 
   // Get the solution and update
   const NOX::Abstract::Group& final_group = solver_->getSolutionGroup();

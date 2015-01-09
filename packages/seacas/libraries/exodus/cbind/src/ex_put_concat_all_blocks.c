@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -43,10 +43,15 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <string.h>                     // for strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
 
 /*!
@@ -186,6 +191,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to locate " TNAME " block status in file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
+	ex_safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\
@@ -197,6 +203,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to store " TNAME " block status array to file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
+	ex_safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\
@@ -214,7 +221,7 @@ int ex_put_concat_all_blocks (int    exoid,
       }									\
 									\
       /* then, write out id list */					\
-      if (ids_int64) {                  \
+      if (ids_int64) {                                                  \
          status = nc_put_var_longlong(exoid, varid, SIDNAME);		\
       } else {                                                          \
          status = nc_put_var_int(exoid, varid, SIDNAME);		\

@@ -6,8 +6,6 @@
 
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
-
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -19,6 +17,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "EpetraExt_BlockMapIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
@@ -56,6 +55,7 @@ int main(int argc, char *argv[])
   std::string nullspaceFile = ""; clp.setOption("nullspace", &nullspaceFile, "File containing nullspace modes. [OPTIONAL]");
   std::string coordFile = ""; clp.setOption("coord", &coordFile, "File containing coordinate vectors. [OPTIONAL]");
   std::string rhsFile = ""; clp.setOption("rhs", &rhsFile, "File containing right-hand side vector.  [OPTIONAL]");
+  std::string mapFile = ""; clp.setOption("map", &mapFile, "File containing matrix rowmap.  [OPTIONAL]");
   int numPDEs = 1; clp.setOption("npdes", &numPDEs, "Number of PDEs. [Default=1]");
   std::string krylovSolver = "gmres"; clp.setOption("krylov", &krylovSolver, "outer Krylov solver.");
   int output=10; clp.setOption("output", &output, "how often to print residual history.");
@@ -72,21 +72,28 @@ int main(int argc, char *argv[])
   int indexBase = 1;
   Epetra_Map *RowMap=NULL;
   int numGlobalRows = -999;
-  if (Comm.NumProc() > 1) {
-    // In parallel, get matrix dimension and create row map that
-    // will not break aggregation procedure.  (On a processor, the
-    // number of local rows must be divisible by #dof per node.)
-    // The main idea is that the dof's associated with a node should all
-    // reside on the same processor.
-    ML_Read_Matrix_Dimensions(matrixFile.c_str(), &numGlobalRows, Comm);
-    int numNodes = numGlobalRows / numPDEs;
-    if ((numGlobalRows - numNodes * numPDEs) != 0 && !mypid)
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Number of matrix rows is not divisible by #dofs");
-    int numMyNodes;
-    int nproc = Comm.NumProc();
-    if (Comm.MyPID() < nproc-1) numMyNodes = numNodes / nproc;
-    else numMyNodes = numNodes - (numNodes/nproc) * (nproc-1);
-    RowMap = new Epetra_Map(numGlobalRows,numMyNodes*numPDEs,indexBase,Comm);
+  if (mapFile != "") {
+    if (!mypid) std::cout << "reading rowmap from " << mapFile << std::endl;
+    EpetraExt::MatrixMarketFileToMap(mapFile.c_str(),Comm,RowMap);
+  } else {
+    if (Comm.NumProc() > 1) {
+      // If parallel and the rowmap hasn't been given explicitly,
+      // get the matrix dimensions and create a row map that
+      // will not break aggregation procedure.  (On a processor, the
+      // number of local rows must be divisible by #dof per node.)
+      // The main idea is that the dof's associated with a node should all
+      // reside on the same processor.
+      if (!mypid) std::cout << "creating compatible rowmap" << std::endl;
+      ML_Read_Matrix_Dimensions(matrixFile.c_str(), &numGlobalRows, Comm);
+      int numNodes = numGlobalRows / numPDEs;
+      if ((numGlobalRows - numNodes * numPDEs) != 0 && !mypid)
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Number of matrix rows is not divisible by #dofs");
+      int numMyNodes;
+      int nproc = Comm.NumProc();
+      if (Comm.MyPID() < nproc-1) numMyNodes = numNodes / nproc;
+      else numMyNodes = numNodes - (numNodes/nproc) * (nproc-1);
+      RowMap = new Epetra_Map(numGlobalRows,numMyNodes*numPDEs,indexBase,Comm);
+    }
   }
 
 
@@ -273,37 +280,3 @@ void ML_Read_Matrix_Dimensions(const char *filename, int *numGlobalRows, Epetra_
       TEUCHOS_TEST_FOR_EXCEPTION(sscanf(line, "%d %d %d", numGlobalRows, &N, &NZ)==0,
                                  std::runtime_error,"error opening matrix file");
 } //ML_Read_Matrix_Dimensions()
-
-#else
-
-#include <iostream>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
-
-  std::cout << "Please configure Trilinos with the following enabled: " << std::endl;
-# if !defined(HAVE_ML_EPETRA)
-  std::cout << "  Epetra" << std::endl;
-# endif
-# if !defined(HAVE_ML_TEUCHOS)
-  std::cout << "  Teuchos" << std::endl;
-# endif
-# if !defined(HAVE_ML_AZTECOO)
-  std::cout << "  AztecOO" << std::endl;
-# endif
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
-}
-
-
-
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) */

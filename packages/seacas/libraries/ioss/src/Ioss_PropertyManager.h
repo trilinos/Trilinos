@@ -33,12 +33,13 @@
 #ifndef IOSS_Ioss_PropertyManager_h
 #define IOSS_Ioss_PropertyManager_h
 
-#include <Ioss_CodeTypes.h>
-#include <map>
-#include <vector>
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string, operator<
+#include <vector>                       // for vector
 
-#include <Ioss_Property.h>
-#include <string>
 
 namespace Ioss {
   typedef std::vector<std::string> NameList;

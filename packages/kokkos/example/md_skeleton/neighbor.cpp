@@ -42,8 +42,8 @@
 */
 
 #include <system.h>
-#include <Kokkos_Atomic.hpp>
 #include <cstdio>
+#include <Kokkos_Core.hpp>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
@@ -140,7 +140,7 @@ struct BuildFunctor {
 
       // get subview of jbin
       const t_int_1d_const_um loc_bin =
-          Kokkos::subview<t_int_1d_const_um>(s.bins,jbin,Kokkos::ALL());
+          Kokkos::subview(s.bins,jbin,Kokkos::ALL());
 
       if(ibin == jbin)
         for(int m = 0; m < bincount_c[jbin]; m++) {

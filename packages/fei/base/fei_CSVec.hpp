@@ -45,6 +45,8 @@ class CSVec {
     return indices_!=rhs.indices_ || coefs_!=rhs.coefs_;
   }
 
+  void subtract(const CSVec& rhs);
+
  private:
   std::vector<int> indices_;
   std::vector<double> coefs_;

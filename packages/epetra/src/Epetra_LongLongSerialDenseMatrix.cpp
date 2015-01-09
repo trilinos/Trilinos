@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -78,7 +78,7 @@ Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(int NumRows, 
     throw ReportError("Shape returned non-zero (" + toString(errorcode) + ").", -2);
 }
 //=============================================================================
-Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(Epetra_DataAccess CV_in, long long* A_in, int lda, 
+Epetra_LongLongSerialDenseMatrix::Epetra_LongLongSerialDenseMatrix(Epetra_DataAccess CV_in, long long* A_in, int lda,
                                                          int NumRows, int NumCols)
   : Epetra_Object("Epetra::LongLongSerialDenseMatrix"),
     CV_(CV_in),
@@ -145,15 +145,15 @@ int Epetra_LongLongSerialDenseMatrix::Reshape(int NumRows, int NumCols) {
   if(newsize > 0) {
     // Allocate space for new matrix
     A_tmp = new long long[newsize];
-    for(int k = 0; k < newsize; k++) 
+    for(int k = 0; k < newsize; k++)
       A_tmp[k] = 0; // Zero out values
     int M_tmp = EPETRA_MIN(M_, NumRows);
     int N_tmp = EPETRA_MIN(N_, NumCols);
-    if(A_ != 0) 
+    if(A_ != 0)
       CopyMat(A_, LDA_, M_tmp, N_tmp, A_tmp, NumRows); // Copy principal submatrix of A to new A
   }
-  
-  CleanupData(); // Get rid of anything that might be already allocated  
+
+  CleanupData(); // Get rid of anything that might be already allocated
   M_ = NumRows;
   N_ = NumCols;
   LDA_ = M_;
@@ -192,8 +192,8 @@ Epetra_LongLongSerialDenseMatrix::~Epetra_LongLongSerialDenseMatrix()
 void Epetra_LongLongSerialDenseMatrix::CleanupData()
 {
   if(A_Copied_)
-    delete[] A_; 
-  A_ = 0; 
+    delete[] A_;
+  A_ = 0;
   A_Copied_ = false;
   M_ = 0;
   N_ = 0;
@@ -207,9 +207,9 @@ Epetra_LongLongSerialDenseMatrix& Epetra_LongLongSerialDenseMatrix::operator = (
     return(*this); // Special case of both are views to same data.
 
   if(std::strcmp(Label(), Source.Label()) != 0)
-    throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) + 
+    throw ReportError("operator= type mismatch (lhs = " + std::string(Label()) +
       ", rhs = " + std::string(Source.Label()) + ").", -5);
-  
+
   if(Source.CV_ == View) {
     if(CV_ == Copy) { // C->V only
       CleanupData();
@@ -255,7 +255,7 @@ Epetra_LongLongSerialDenseMatrix& Epetra_LongLongSerialDenseMatrix::operator = (
     }
     CopyMat(Source.A_, Source.LDA_, M_, N_, A_, LDA_); // V->C and C->C
   }
-  
+
   return(*this);
 }
 
@@ -298,8 +298,8 @@ int Epetra_LongLongSerialDenseMatrix::MakeViewOf(const Epetra_LongLongSerialDens
 }
 
 //=============================================================================
-void Epetra_LongLongSerialDenseMatrix::CopyMat(long long* Source, int Source_LDA, int NumRows, int NumCols, 
-                                          long long* Target, int Target_LDA) 
+void Epetra_LongLongSerialDenseMatrix::CopyMat(long long* Source, int Source_LDA, int NumRows, int NumCols,
+                                          long long* Target, int Target_LDA)
 {
   int i, j;
   long long* targetPtr = Target;
@@ -320,7 +320,7 @@ long long Epetra_LongLongSerialDenseMatrix::OneNorm() {
   for(int j = 0; j < N_; j++) {
     long long sum = 0;
     ptr = A_ + j*LDA_;
-    for(int i = 0; i < M_; i++) 
+    for(int i = 0; i < M_; i++)
     {
       const long long val = *ptr++;
       sum += (val > 0 ? val : -val); // No std::abs(long long) on VS2005.
@@ -331,10 +331,10 @@ long long Epetra_LongLongSerialDenseMatrix::OneNorm() {
 }
 
 //=============================================================================
-long long Epetra_LongLongSerialDenseMatrix::InfNorm() {  
+long long Epetra_LongLongSerialDenseMatrix::InfNorm() {
   long long anorm = 0;
   long long* ptr = 0;
-  // Loop across columns in inner loop.  Most expensive memory access, but 
+  // Loop across columns in inner loop.  Most expensive memory access, but
   // requires no extra storage.
   for(int i = 0; i < M_; i++) {
     long long sum = 0;
@@ -384,7 +384,7 @@ int Epetra_LongLongSerialDenseMatrix::Random() {
       *arrayPtr++ = util.RandomInt();
     }
   }
-  
+
   return(0);
 }
 

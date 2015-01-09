@@ -63,6 +63,7 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char *argv[]) {
   //
@@ -88,7 +89,10 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+bool verbose = false;
+bool success = true;
+try {
+bool proc_verbose = false;
   bool leftprec = true;      // left preconditioning or right.
   // LSQR applies the operator and the transposed operator.
   // A preconditioner must support transpose multiply.
@@ -105,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   MT relMatTol = 1.e-10;     // relative Matrix error, default value sqrt(eps)
   MT maxCond  = 1.e+5;       // maximum condition number default value 1/eps
-  MT damp = 0.;              // regularization (or damping) parameter 
+  MT damp = 0.;              // regularization (or damping) parameter
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -156,20 +160,20 @@ int main(int argc, char *argv[]) {
     }
     bool Trans = false;
     A->Multiply( Trans, *vecX, *vecB ); // Create a consistent linear system
-    // At this point, the initial guess is exact.  
+    // At this point, the initial guess is exact.
     bool zeroInitGuess = false; // annihilate initial guess
     bool goodInitGuess = true; // initial guess near solution
     if( zeroInitGuess )
       {
-        vecX->PutScalar( 0.0 ); 
+        vecX->PutScalar( 0.0 );
       }
-    else    
+    else
       {
         if( goodInitGuess )
           {
             double value = 1.e-2; // "Rel RHS Err" and "Rel Mat Err" apply to the residual equation,
             int numEntries = 1;   // norm( b - A x_k ) ?<? relResTol norm( b- Axo).
-            int index = 0;        // norm(b) is inaccessible to LSQR. 
+            int index = 0;        // norm(b) is inaccessible to LSQR.
             vecX->SumIntoMyValues(  numEntries, &value, &index);
           }
       }
@@ -242,7 +246,7 @@ int main(int argc, char *argv[]) {
     belosList.set( "Show Maximum Residual Norm Only", true );  // Show only the maximum residual norm
   }
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
 		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
@@ -259,18 +263,18 @@ int main(int argc, char *argv[]) {
   }
   else {
     problem->setRightPrec( belosPrec );
-  }    
+  }
   bool set = problem->setProblem();
   if (set == false) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
-  
+
   // Create an iterative solver manager.
   RCP< Belos::LSQRSolMgr<double,MV,OP> > solver
     = rcp( new Belos::LSQRSolMgr<double,MV,OP>(problem, rcp(&belosList,false)));
-  
+
   //
   // *******************************************************************
   // ******************Start the LSQR iteration*************************
@@ -281,7 +285,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl; 
+    std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl;
     std::cout << "Relative residual tolerance: " << relResTol << std::endl;
     std::cout << std::endl;
     std::cout << "Solver's Description: " << std::endl;
@@ -328,21 +332,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
-
-  if (ret!=Belos::Converged || badRes) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-    return -1;
-  }
-  //
-  // Default return value
-  //
+if (ret!=Belos::Converged || badRes) {
+  success = false;
+  if (proc_verbose)
+    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+} else {
+  success = true;
   if (proc_verbose)
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-  return 0;
+}
+}
+TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  //
-} 
+#ifdef EPETRA_MPI
+MPI_Finalize();
+#endif
+
+return success ? EXIT_SUCCESS : EXIT_FAILURE;
+}

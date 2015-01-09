@@ -40,10 +40,10 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_SPARSECONTAINER_DEF_HPP
-#define IFPACK2_SPARSECONTAINER_DEF_HPP
+#ifndef IFPACK2_DENSECONTAINER_DEF_HPP
+#define IFPACK2_DENSECONTAINER_DEF_HPP
 
-#include "Ifpack2_DenseContainer_def.hpp"
+#include "Ifpack2_DenseContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI
@@ -269,21 +269,21 @@ applyImpl (const local_mv_type& X,
       Y.putScalar (STS::zero ());
     }
     else { // beta != 0
-      Y.scale (STS::zero ());
+      Y.scale (beta);
     }
   }
   else { // alpha != 0; must solve the linear system
     Teuchos::LAPACK<int, local_scalar_type> lapack;
     // If beta is nonzero or Y is not constant stride, we have to use
-    // a temporary output multivector.  It gets a copy of X, since
-    // GETRS overwrites its (multi)vector input with its output.
+    // a temporary output multivector.  It gets a (deep) copy of X,
+    // since GETRS overwrites its (multi)vector input with its output.
     RCP<local_mv_type> Y_tmp;
-    if (beta == STS::zero () || Y.isConstantStride ()) {
-      Y = X;
+    if (beta == STS::zero () ){
+      Tpetra::deep_copy (Y, X);
       Y_tmp = rcpFromRef (Y);
     }
     else {
-      Y_tmp = rcp (new local_mv_type (X)); // constructor copies X
+      Y_tmp = rcp (new local_mv_type (X, Teuchos::Copy));
     }
     const int Y_stride = static_cast<int> (Y_tmp->getStride ());
     ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
@@ -304,7 +304,7 @@ applyImpl (const local_mv_type& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      Y = *Y_tmp;
+      Tpetra::deep_copy (Y, *Y_tmp);
     }
   }
 }
@@ -329,22 +329,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   // wants.  This class' X_ and Y_ internal fields are of the right
   // type for the local operator, so we can use those as targets.
 
-  // Tpetra::MultiVector specialization corresponding to MatrixType.
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> global_mv_type;
-  Details::MultiVectorLocalGatherScatter<global_mv_type, local_mv_type> mvgs;
-  const size_t numVecs = X.getNumVectors ();
+  // Tpetra::MultiVector specialization corresponding to the global operator.
+  typedef Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> global_mv_type;
 
+  const char prefix[] = "Ifpack2::DenseContainer::weightedApply: ";
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::DenseContainer::apply: "
-    "You must have called the compute() method before you may call apply().  "
-    "You may call the apply() method as many times as you want after calling "
-    "compute() once, but you must have called compute() at least once.");
+    ! IsComputed_, std::runtime_error, prefix << "You must have called the "
+    "compute() method before you may call this method.  You may call "
+    "apply() as many times as you want after calling compute() once, "
+    "but you must have called compute() at least once first.");
+  const size_t numVecs = X.getNumVectors ();
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVecs != Y.getNumVectors (), std::runtime_error,
-    "Ifpack2::DenseContainer::apply: X and Y have different numbers of "
-    "vectors.  X has " << X.getNumVectors ()
-    << ", but Y has " << X.getNumVectors () << ".");
+    prefix << "X and Y have different numbers of vectors (columns).  X has "
+    << X.getNumVectors () << ", but Y has " << X.getNumVectors () << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -386,6 +385,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
   ArrayView<const local_ordinal_type> localRows = this->getLocalRows ();
+
+  Details::MultiVectorLocalGatherScatter<global_mv_type, local_mv_type> mvgs;
   mvgs.gather (*X_local, X, localRows);
 
   // We must gather the contents of the output multivector Y even on
@@ -443,28 +444,25 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // as targets.
 
   // Tpetra::MultiVector specialization corresponding to the global operator.
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> global_mv_type;
+  typedef Tpetra::MultiVector<scalar_type,
+    local_ordinal_type, global_ordinal_type, node_type> global_mv_type;
   // Tpetra::Vector specialization corresponding to the local
   // operator.  We will use this for the subset permutation of the
   // diagonal scaling D.
   typedef Tpetra::Vector<local_scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> local_vec_type;
 
-  Details::MultiVectorLocalGatherScatter<global_mv_type, local_mv_type> mvgs;
-  const size_t numVecs = X.getNumVectors ();
-
+  const char prefix[] = "Ifpack2::DenseContainer::weightedApply: ";
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::DenseContainer::"
-    "weightedApply: You must have called the compute() method before you may "
-    "call apply().  You may call the apply() method as many times as you want "
-    "after calling compute() once, but you must have called compute() at least "
-    "once.");
+    ! IsComputed_, std::runtime_error, prefix << "You must have called the "
+    "compute() method before you may call this method.  You may call "
+    "weightedApply() as many times as you want after calling compute() once, "
+    "but you must have called compute() at least once first.");
+  const size_t numVecs = X.getNumVectors ();
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVecs != Y.getNumVectors (), std::runtime_error,
-    "Ifpack2::DenseContainer::weightedApply: X and Y have different numbers "
-    "of vectors.  X has " << X.getNumVectors () << ", but Y has "
-    << X.getNumVectors () << ".");
+    prefix << "X and Y have different numbers of vectors (columns).  X has "
+    << X.getNumVectors () << ", but Y has " << X.getNumVectors () << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -505,6 +503,8 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
   ArrayView<const local_ordinal_type> localRows = this->getLocalRows ();
+
+  Details::MultiVectorLocalGatherScatter<global_mv_type, local_mv_type> mvgs;
   mvgs.gather (*X_local, X, localRows);
 
   // We must gather the output multivector Y even on input to
@@ -534,16 +534,16 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // 2. Create a temporary X_scaled to hold diag(D_local) * X_local.
   // 3. Compute X_scaled := diag(D_loca) * X_local.
 
-  RCP<local_vec_type> D_local = rcp (new local_vec_type (localMap_));
+  local_vec_type D_local (localMap_);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    D_local->getLocalLength () != numRows_, std::logic_error,
+    D_local.getLocalLength () != numRows_, std::logic_error,
     "Ifpack2::DenseContainer::weightedApply: "
-    "D_local has length " << X_local->getLocalLength () << ", which does "
+    "D_local has length " << D_local.getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
-  mvgs.gather (*D_local, D, localRows);
-  RCP<local_mv_type> X_scaled = rcp (new local_mv_type (localMap_, numVecs));
-  X_scaled->elementWiseMultiply (STS::one (), *D_local, *X_local, STS::zero ());
+  mvgs.gather (D_local, D, localRows);
+  local_mv_type X_scaled (localMap_, numVecs);
+  X_scaled.elementWiseMultiply (STS::one (), D_local, *X_local, STS::zero ());
 
   // Y_temp will hold the result of M^{-1}*X_scaled.  If beta == 0, we
   // can write the result of Inverse_->apply() directly to Y_local, so
@@ -558,13 +558,13 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   }
 
   // Apply the local operator: Y_temp := M^{-1} * X_scaled
-  applyImpl (*X_scaled, *Y_temp, mode, STS::one (), STS::zero ());
+  this->applyImpl (X_scaled, *Y_temp, mode, STS::one (), STS::zero ());
   // Y_local := beta * Y_local + alpha * diag(D_local) * Y_temp.
   //
   // Note that we still use the permuted subset scaling D_local here,
   // because Y_temp has the same permuted subset Map.  That's good, in
   // fact, because it's a subset: less data to read and multiply.
-  Y_local->elementWiseMultiply (alpha, *D_local, *Y_temp, beta);
+  Y_local->elementWiseMultiply (alpha, D_local, *Y_temp, beta);
 
   // Copy the permuted subset output vector Y_local into the original
   // output multivector Y.
@@ -573,12 +573,13 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::ostream& DenseContainer<MatrixType,LocalScalarType>::print(std::ostream& os) const
+std::ostream& DenseContainer<MatrixType,LocalScalarType>::
+print (std::ostream& os) const
 {
-  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
-  fos.setOutputToRootOnly(0);
-  describe(fos);
-  return(os);
+  Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
+  fos.setOutputToRootOnly (0);
+  this->describe (fos);
+  return os;
 }
 
 //==============================================================================
@@ -770,7 +771,13 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 
 } // namespace Ifpack2
 
+// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
+// There's no need to instantiate for CrsMatrix too.  All Ifpack2
+// preconditioners can and should do dynamic casts if they need a type
+// more specific than RowMatrix.
+
 #define IFPACK2_DENSECONTAINER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::DenseContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::DenseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_SPARSECONTAINER_HPP

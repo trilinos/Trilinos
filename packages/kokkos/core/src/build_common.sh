@@ -192,6 +192,11 @@ then
 fi
 
 #-----------------------------------------------------------------------------
+# Option for enabling the Serial device
+
+KOKKOS_HAVE_SERIAL=1
+
+#-----------------------------------------------------------------------------
 # Attach options to compile lines
 
 CXX="${CXX} ${OPTFLAGS}"
@@ -248,6 +253,11 @@ fi
 if [ -n "${KOKKOS_HAVE_PTHREAD}" ] ;
 then
   echo "#define KOKKOS_HAVE_PTHREAD" >> ${CONFIG}
+fi
+
+if [ -n "${KOKKOS_HAVE_SERIAL}" ] ;
+then
+  echo "#define KOKKOS_HAVE_SERIAL" >> ${CONFIG}
 fi
 
 if [ -n "${KOKKOS_HAVE_HWLOC}" ] ;

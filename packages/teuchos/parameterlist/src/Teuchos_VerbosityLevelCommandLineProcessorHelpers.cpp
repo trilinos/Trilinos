@@ -104,7 +104,7 @@ void Teuchos::setVerbosityLevelOption(
       verbosityLevelNamesStorage[5].c_str()
       );
   }
-  
+
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT( optionName.length() );
   TEUCHOS_ASSERT( verbLevel );

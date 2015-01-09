@@ -58,18 +58,23 @@ namespace Zoltan2 {
 /*! \brief The class containing coloring solution.
 
     Template parameters:
-    \li \c gid_t    data type for application global Ids
-    \li \c lno_t    data type for local indices and local counts
+    \li \c adapter    input adapter
 
 The coloring solution contains an array of colors, one per id.
-Colors are represented as integers starting from 0. A special value,
-NO_COLOR, is used for vertices that have not been colored.
+Colors are represented as int (sufficient for any reasonable use case). 
+A special value, currently 0, is used for vertices that have not been colored.
 
 */
 
-template <typename gid_t, typename lno_t>
+template <typename Adapter>
   class ColoringSolution : public Solution
 {
+private: 
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::zgid_t zgid_t;
+
 public:
 
   /*! \brief Constructor allocates memory for the solution.
@@ -80,7 +85,6 @@ public:
   {
     HELLO;
     length_ = length;
-    gids_   = ArrayRCP<gid_t>(length_);
     colors_  = ArrayRCP<int>(length_);
   }
 
@@ -91,25 +95,39 @@ public:
 
   /*! \brief Get (local) size of color array.
    */
-  inline size_t getColorsSize() {return length_;}
+  inline size_t getColorsSize() {return length_;} // TODO Deprecate or rename? Should always be numVertices?
 
   /*! \brief Get (local) color array by RCP.
    */
   inline ArrayRCP<int>  &getColorsRCP()  {return colors_;}
 
-  /*! \brief Get local number of colors.
+  /*! \brief Get (local) color array by raw pointer (no RCP).
    */
-  int getLocalNumColors(); // TODO
+  inline int * getColors()  {return &(*colors_);}
+
+  /*! \brief Get local number of colors.
+   *  This is computed from the coloring each time, as this is cheap.
+   */
+  int getNumColors()  
+  { 
+    int maxColor = 0;
+    for (size_t i=0; i<length_; i++){
+      if (colors_[i] > maxColor)
+        maxColor = colors_[i];
+    }
+    return maxColor;
+  } 
 
   /*! \brief Get global number of colors.
    */
-  int getGlobalNumColors(); // TODO
-
+  //int getGlobalNumColors(); // TODO
+ 
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
-  ArrayRCP<gid_t>  gids_; // TODO: Remove?
-  ArrayRCP<int> colors_;    // zero-based local color array
+  ArrayRCP<int> colors_;   // zero-based local color array
+  //int numColors_;        // Number of colors (local on this proc)
+  //int numColorsGlobal_;  // For future distributed coloring
 };
 
 }

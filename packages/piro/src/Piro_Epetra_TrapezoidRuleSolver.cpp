@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -83,7 +83,7 @@ Piro::Epetra::TrapezoidRuleSolver::TrapezoidRuleSolver(
   t_final = trPL->get("Final Time", 0.1);
   t_init  = trPL->get("Initial Time", 0.0);
   delta_t = t_final / numTimeSteps;
-  
+
   *out << "\nB) Using Trapezoid Decorator and NOX Solver\n";
   model = Teuchos::rcp(new Piro::Epetra::TrapezoidDecorator(origModel_));
 
@@ -205,12 +205,12 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   }
 
   // Parse OutArgs: always 1 extra
-  RCP<Epetra_Vector> g_out; 
+  RCP<Epetra_Vector> g_out;
   if (num_g > 0) {
-    g_out = outArgs.get_g(0); 
+    g_out = outArgs.get_g(0);
     nox_outargs.set_g(0, g_out);
   }
-  RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+  RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g);
   if (Teuchos::is_null(gx_out)) {
     // Solution not requested by caller as a response, create local temporary instead
     gx_out = rcp(new Epetra_Vector(*model->get_x_map()));
@@ -225,7 +225,7 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> x_pred_v = rcp(new Epetra_Vector(*model->get_f_map()));
   RCP<Epetra_Vector> a_old = rcp(new Epetra_Vector(*model->get_f_map()));
 
-  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null,
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
@@ -259,9 +259,9 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
    double tdt  =  2.0 / delta_t;
 
    for (int timeStep = 1; timeStep <= numTimeSteps; timeStep++) {
- 
+
      t += delta_t;
- 
+
      *a_old = *a;
      *x_pred_a = *x;
      x_pred_a->Update(delta_t, *v, dt2f, *a, 1.0);
@@ -274,13 +274,13 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      *x =  *gx_out;
      // Compute a and v and new conditions
      a->Update(fdt2, *x,  -fdt2, *x_pred_a, 0.0);
-     v->Update(hdt, *a, hdt, *a_old, 1.0); 
-      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0); 
+     v->Update(hdt, *a, hdt, *a_old, 1.0);
+      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0);
 
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*x,t);
 
-     if (g_out != Teuchos::null) 
+     if (g_out != Teuchos::null)
        g_out->Print(*out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n");
    }
 }
@@ -302,7 +302,10 @@ Piro::Epetra::TrapezoidRuleSolver::getValidTrapezoidRuleParameters() const
 
 Piro::Epetra::TrapezoidDecorator::TrapezoidDecorator(
                           Teuchos::RCP<EpetraExt::ModelEvaluator>& model_) :
-  model(model_)
+  model(model_),
+  fdt2(0.0),
+  tdt(0.0),
+  time(0.0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -378,10 +381,10 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::TrapezoidDecorator::createOutAr
 }
 
 void Piro::Epetra::TrapezoidDecorator::injectData(
-    const Teuchos::RCP<Epetra_Vector>& x_, 
+    const Teuchos::RCP<Epetra_Vector>& x_,
     const Teuchos::RCP<Epetra_Vector>& x_pred_a_, double fdt2_,
     const Teuchos::RCP<Epetra_Vector>& x_pred_v_, double tdt_,
-    double time_) 
+    double time_)
 {
   *x_save = *x_;
   *x_pred_a = *x_pred_a_;
@@ -397,15 +400,15 @@ void Piro::Epetra::TrapezoidDecorator::evalModel( const InArgs& inArgs,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // Copy outArgs; add time term 
+  // Copy outArgs; add time term
   OutArgs modelOutArgs(outArgs);
   InArgs modelInArgs(inArgs);
 
   xDotDot->Update(fdt2, *inArgs.get_x(), -fdt2, *x_pred_a, 0.0);
-  modelInArgs.set_x_dotdot(xDotDot); 
+  modelInArgs.set_x_dotdot(xDotDot);
 
   xDot->Update(tdt, *inArgs.get_x(), -tdt, *x_pred_v, 0.0);
-  modelInArgs.set_x_dot(xDot); 
+  modelInArgs.set_x_dot(xDot);
 
   modelInArgs.set_omega(fdt2);  // fdt2 = 4/(dt)^2
   modelInArgs.set_alpha(tdt);    // tdt  = 2/dt

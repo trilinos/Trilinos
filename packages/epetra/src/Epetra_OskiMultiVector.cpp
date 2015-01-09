@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -48,16 +48,16 @@
 
 //=============================================================================
 
-Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source) 
-  : Epetra_MultiVector(Source), 
-  Epetra_View_(Source.Epetra_View_), 
+Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_OskiMultiVector& Source)
+  : Epetra_MultiVector(Source),
+  Epetra_View_(Source.Epetra_View_),
   Copy_Created_(Source.Copy_Created_) {
     Oski_View_ = oski_CopyVecView(Source.Oski_View_);
 }
 
-Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source) 
+Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source)
   : Epetra_MultiVector(Source),
-  Epetra_View_(&Source), 
+  Epetra_View_(&Source),
   Copy_Created_(false) {
     double* A;
     double** Aptr;

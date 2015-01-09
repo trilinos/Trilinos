@@ -68,7 +68,7 @@ namespace MueLu {
     @class RAPFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RAPFactory : public TwoLevelFactoryBase {
 #undef MUELU_RAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -86,25 +86,15 @@ namespace MueLu {
     //! @name Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
     //! @name Build methods.
     //@{
     void Build(Level& fineLevel, Level& coarseLevel) const;
-    //@}
-
-    //! @name Handling of user-defined transfer factories
-    //@{
-
-    //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
-    void SetImplicitTranspose(bool const &implicit) {
-      implicitTranspose_ = implicit;
-    }
-
     //@}
 
     //@{
@@ -129,8 +119,6 @@ namespace MueLu {
 
     //@{
 
-    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
-    bool implicitTranspose_;
 
     mutable
     bool hasDeclaredInput_;

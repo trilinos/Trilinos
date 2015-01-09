@@ -364,6 +364,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
   }
 
   // Verify nodemap...
+#ifndef NDEBUG
   std::vector<int> glob(node_count);
   for (size_t i=0; i<local_node_map.size(); i++) {
     if (local_node_map[i] >= 0)
@@ -372,6 +373,8 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
   for (size_t i=0; i<glob.size(); i++) {
     SMART_ASSERT(glob[i] == 1);
   }
+#endif
+
   // Transfer some common data...
   output_region.property_add(part_mesh[0]->get_property("title"));
   output_region.property_add(part_mesh[0]->get_property("spatial_dimension"));
@@ -1070,19 +1073,21 @@ namespace {
       Ioss::ElementBlockContainer::const_iterator J = iebs.begin();
       while (J != iebs.end()) {
 	Ioss::ElementBlock *ieb = *J;
-	std::string name = part_mesh[p]->name() + "_" + ieb->name();
-	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	if (oeb == NULL) {
-	  name = ieb->name();
-	  oeb = output_region.get_element_block(name);
-	}
-	if (oeb != NULL) {
-	  Ioss::NameList fields;
-	  ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
-	  Ioss::NameList::const_iterator IF;
-	  for (IF = fields.begin(); IF != fields.end(); ++IF) {
-	    if (oeb->field_exists(*IF)) {
-	      transfer_field_data_internal(ieb, oeb, *IF);
+	if (!entity_is_omitted(ieb)) {
+	  std::string name = part_mesh[p]->name() + "_" + ieb->name();
+	  Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	  if (oeb == NULL) {
+	    name = ieb->name();
+	    oeb = output_region.get_element_block(name);
+	  }
+	  if (oeb != NULL) {
+	    Ioss::NameList fields;
+	    ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
+	    Ioss::NameList::const_iterator IF;
+	    for (IF = fields.begin(); IF != fields.end(); ++IF) {
+	      if (oeb->field_exists(*IF)) {
+		transfer_field_data_internal(ieb, oeb, *IF);
+	      }
 	    }
 	  }
 	}
@@ -1237,10 +1242,11 @@ namespace {
     if (role == Ioss::Field::MESH) {
       for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
         std::string field_name = *IF;
-        assert(oge->field_exists(field_name));
-        if (field_name == "ids") {
-          transfer_field_data_internal(ige, oge, field_name);
-          break;
+        if (oge->field_exists(field_name)) {
+	  if (field_name == "ids") {
+	    transfer_field_data_internal(ige, oge, field_name);
+	    break;
+	  }
         }
       }
     }
@@ -1257,8 +1263,9 @@ namespace {
 
       if (field_name != "ids" &&
           (prefix.length() == 0 || std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
-        assert(oge->field_exists(field_name));
-        transfer_field_data_internal(ige, oge, field_name);
+        if (oge->field_exists(field_name)) {
+	  transfer_field_data_internal(ige, oge, field_name);
+	}
       }
     }
   }
@@ -1332,21 +1339,23 @@ namespace {
       Ioss::ElementBlockContainer iebs = part_mesh[p]->get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator J = iebs.begin();
       while (J != iebs.end()) {
-	std::string name = part_mesh[p]->name() + "_" + (*J)->name();
-	Ioss::ElementBlock *oeb = output_region.get_element_block(name);
-	if (oeb == NULL) {
-	  name = (*J)->name();
-	  oeb = output_region.get_element_block(name);
-	}
-	if (oeb != NULL) {
-	  size_t id = oeb->get_property("id").get_int();
-	  Ioss::NameList fields;
-	  (*J)->field_describe(Ioss::Field::TRANSIENT, &fields);
-	  Ioss::NameList::const_iterator IF;
-	  for (IF = fields.begin(); IF != fields.end(); ++IF) {
-	    if (valid_variable(*IF, id, variable_list)) {
-	      Ioss::Field field = (*J)->get_field(*IF);
-	      oeb->field_add(field);
+	if (!entity_is_omitted(*J)) {
+	  std::string name = part_mesh[p]->name() + "_" + (*J)->name();
+	  Ioss::ElementBlock *oeb = output_region.get_element_block(name);
+	  if (oeb == NULL) {
+	    name = (*J)->name();
+	    oeb = output_region.get_element_block(name);
+	  }
+	  if (oeb != NULL) {
+	    size_t id = oeb->get_property("id").get_int();
+	    Ioss::NameList fields;
+	    (*J)->field_describe(Ioss::Field::TRANSIENT, &fields);
+	    Ioss::NameList::const_iterator IF;
+	    for (IF = fields.begin(); IF != fields.end(); ++IF) {
+	      if (valid_variable(*IF, id, variable_list)) {
+		Ioss::Field field = (*J)->get_field(*IF);
+		oeb->field_add(field);
+	      }
 	    }
 	  }
 	}

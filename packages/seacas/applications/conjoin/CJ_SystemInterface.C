@@ -1,16 +1,16 @@
+
 #include "CJ_SystemInterface.h"
+#include <ctype.h>                      // for tolower
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for NULL, exit, strtol, etc
+#include <algorithm>                    // for sort, transform
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, vector<>::iterator
+#include "CJ_Version.h"                 // for qainfo
+#include "SL_tokenize.h"                // for tokenize
 
-#include <iostream>
-#include <algorithm>
-#include <functional>
-#include <vector>
 
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-
-#include "CJ_Version.h"
-#include "SL_tokenize.h"
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);

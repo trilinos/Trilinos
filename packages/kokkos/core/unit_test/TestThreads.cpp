@@ -47,10 +47,7 @@
 
 #if defined( KOKKOS_HAVE_PTHREAD )
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -60,16 +57,21 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
-#include <TestAggregate.hpp>
+#include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestRequest.hpp>
-#include <TestMultiReduce.hpp>
+#include <TestRange.hpp>
+#include <TestTeam.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -134,8 +136,52 @@ TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
 }
 
+
+TEST_F( threads, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::Threads >();
+}
+
+TEST_F( threads, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::Threads >();
+}
+
+
 TEST_F( threads, view_aggregate ) {
   TestViewAggregate< Kokkos::Threads >();
+  TestViewAggregateReduction< Kokkos::Threads >();
+}
+
+TEST_F( threads , range_tag )
+{
+  TestRange< Kokkos::Threads >::test_for(1000);
+  TestRange< Kokkos::Threads >::test_reduce(1000);
+  TestRange< Kokkos::Threads >::test_scan(1000);
+}
+
+TEST_F( threads , team_tag )
+{
+  TestTeamPolicy< Kokkos::Threads >::test_for(1000);
+  TestTeamPolicy< Kokkos::Threads >::test_reduce(1000);
 }
 
 TEST_F( threads, long_reduce) {
@@ -146,12 +192,12 @@ TEST_F( threads, double_reduce) {
   TestReduce< double ,   Kokkos::Threads >( 1000000 );
 }
 
-TEST_F( threads, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::Threads >( 1000000 );
+TEST_F( threads, team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::Threads >( 100000 );
 }
 
-TEST_F( threads, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::Threads >( 1000000 );
+TEST_F( threads, team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::Threads >( 100000 );
 }
 
 TEST_F( threads, long_reduce_dynamic ) {
@@ -166,10 +212,9 @@ TEST_F( threads, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Threads >( 1000000 );
 }
 
-TEST_F( threads, dev_shared_request) {
-  TestSharedRequest< Kokkos::Threads >();
+TEST_F( threads, team_shared_request) {
+  TestSharedTeam< Kokkos::Threads >();
 }
-
 
 TEST_F( threads , view_remap )
 {
@@ -212,86 +257,6 @@ TEST_F( threads , view_remap )
   }}}}
 }
 
-TEST_F( threads, long_multi_reduce) {
-  TestReduceMulti< long , Kokkos::Threads >( 1000000 , 7 );
-}
-
-#if 0
-
-//----------------------------------------------------------------------------
-
-struct HostFunctor
-  : public Kokkos::Impl::HostThreadWorker
-{
-  struct Finalize {
-
-    typedef int value_type ;
-
-    volatile int & flag ;
-
-    void operator()( const value_type & value ) const
-      { flag += value + 1 ; }
-
-    Finalize( int & f ) : flag(f) {}
-  };
-
-  struct Reduce {
-
-    typedef int value_type ;
-
-    static void init( int & update ) { update = 0 ; }
-
-    static void join( volatile int & update , const volatile int & input )
-      { update += input ; }
-  };
-
-  typedef Kokkos::Impl::ReduceOperator< Reduce > reduce_type ;
-
-  typedef int value_type ;
-
-  const reduce_type m_reduce ;
-
-  HostFunctor( int & f ) : m_reduce(f)
-    { Kokkos::Impl::HostThreadWorker::execute(); }
-
-  void execute_on_thread( Kokkos::Impl::HostThread & thread ) const
-    {
-      m_reduce.init( thread.reduce_data() );
-
-      thread.barrier();
-      thread.barrier();
-
-      // Reduce to master thread:
-      thread.reduce( m_reduce );
-      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
-
-      // Reduce to master thread:
-      thread.reduce( m_reduce );
-      if ( 0 == thread.rank() ) m_reduce.finalize( thread.reduce_data() );
-
-      thread.end_barrier();
-    }
-};
-
-TEST_F( threads , host_thread )
-{
-  const int N = 1000 ;
-  int flag = 0 ;
-
-  for ( int i = 0 ; i < N ; ++i ) {
-    HostFunctor tmp( flag );
-  }
-
-  ASSERT_EQ( flag , N * 2 );
-
-  for ( int i = 0 ; i < 10 ; ++i ) {
-    Kokkos::Threads::sleep();
-    Kokkos::Threads::wake();
-  }
-}
-
-#endif
-
 //----------------------------------------------------------------------------
 
 TEST_F( threads , atomics )
@@ -329,6 +294,7 @@ TEST_F( threads , atomics )
 
 //----------------------------------------------------------------------------
 
+#if 0
 TEST_F( threads , scan_small )
 {
   typedef TestScan< Kokkos::Threads , Kokkos::Impl::ThreadsExecUseScanSmall > TestScanFunctor ;
@@ -341,13 +307,11 @@ TEST_F( threads , scan_small )
 
   Kokkos::Threads::fence();
 }
+#endif
 
 TEST_F( threads , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::Threads >( 10 );
-    TestScan< Kokkos::Threads >( 10000 );
-  }
+  TestScan< Kokkos::Threads >::test_range( 1 , 1000 );
   TestScan< Kokkos::Threads >( 1000000 );
   TestScan< Kokkos::Threads >( 10000000 );
   Kokkos::Threads::fence();
@@ -357,8 +321,8 @@ TEST_F( threads , scan )
 
 TEST_F( threads , team_scan )
 {
-  TestScanRequest< Kokkos::Threads >( 10 );
-  TestScanRequest< Kokkos::Threads >( 10000 );
+  TestScanTeam< Kokkos::Threads >( 10 );
+  TestScanTeam< Kokkos::Threads >( 10000 );
 }
 
 //----------------------------------------------------------------------------
@@ -368,6 +332,48 @@ TEST_F( threads , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
 }
 
+TEST_F( threads , memory_space )
+{
+  TestMemorySpace< Kokkos::Threads >();
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( threads , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::Threads >();
+}
+
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
+TEST_F( threads , cxx11 )
+{
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Threads >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(4) ) );
+  }
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( threads , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(10) ) );
+}
+#endif
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

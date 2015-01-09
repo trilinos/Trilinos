@@ -45,31 +45,38 @@
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #include "Ifpack2_BlockRelaxation_def.hpp"
-#include "Ifpack2_SparseContainer_decl.hpp"
-#include "Ifpack2_SparseContainer_def.hpp"
-#include "Ifpack2_LinearPartitioner_decl.hpp"
-#include "Ifpack2_LinearPartitioner_def.hpp"
-#include "Ifpack2_OverlappingPartitioner_def.hpp"
-
-#include "Ifpack2_ILUT_decl.hpp"
-#include "Ifpack2_ILUT_def.hpp"
-
+#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
-// Note: Add similar explicit instantiation for SparseContainer<ILU> and DenseContainer when those get implemented
-
-#define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
-  template class BlockRelaxation<Tpetra::CrsMatrix<S,LO,GO>,		\
-				 Ifpack2::SparseContainer<Tpetra::CrsMatrix<S,LO,GO>, \
-							  Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO> > > >;
+// Explicit instantiation macro for BlockRelaxation.
+// Only instantiate in the Ifpack2 namespace.
+//
+// NOTE (mfh 24 May 2014) For some reason unbeknownst to me, all of
+// these explicit instantiations must be put on one line.  Otherwise,
+// the compiler silently ignores them and generates no symbols.
+#define LCLINST( S, LO, GO ) template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, SparseContainer<Tpetra::CrsMatrix<S, LO, GO>, ILUT<Tpetra::CrsMatrix<S, LO, GO> > > >; template class BlockRelaxation<Tpetra::CrsMatrix<S, LO, GO>, DenseContainer<Tpetra::CrsMatrix<S, LO, GO>, S > >; template class BlockRelaxation<Tpetra::RowMatrix<S, LO, GO>, SparseContainer<Tpetra::RowMatrix<S, LO, GO>, ILUT<Tpetra::RowMatrix<S, LO, GO> > > >; template class BlockRelaxation<Tpetra::RowMatrix<S, LO, GO>, DenseContainer<Tpetra::RowMatrix<S, LO, GO>, S > >;
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_SPARSE_ILUT)
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-}
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+
+  template class BlockRelaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, SparseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > > >;
+
+  template class BlockRelaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double > >;
+
+  template class BlockRelaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, SparseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, ILUT<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > > >;
+
+  template class BlockRelaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double > >;
 
 #endif
+#endif // HAVE_TPETRA_INST_DOUBLE
+
+} // namespace Ifpack2
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

@@ -2,8 +2,15 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
-TRIBITS_ADD_TEST_DIRECTORIES(longlong)
+# experimental data
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
+ENDIF()
+
+IF(Teuchos_ENABLE_LONG_LONG_INT AND HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+  TRIBITS_ADD_TEST_DIRECTORIES(longlong)
+ENDIF()
+TRIBITS_ADD_TEST_DIRECTORIES(maxwell)
 TRIBITS_ADD_TEST_DIRECTORIES(navierstokes)
 if (NOT MUELU_VALGRIND_TESTING)
   # JJH 4Feb2014:  This is failing the nightly MPI valgrind test.  It runs fine
@@ -20,16 +27,15 @@ TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 
 if (NOT MUELU_VALGRIND_TESTING)
   TRIBITS_ADD_TEST_DIRECTORIES(interface)
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     TRIBITS_ADD_TEST_DIRECTORIES(helmholtz)
   ENDIF()
 ELSE()
-  MESSAGE("Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
+  MESSAGE(STATUS "Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
 ENDIF()
 
 #TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 

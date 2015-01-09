@@ -1,0 +1,389 @@
+======================================
+Submitting a TribitsDriver dashboard:
+======================================
+
+
+A) Prerequisites:
+=================
+
+First, manually ensure that the following prerequisites are satisfied:
+
+(*) python version 2.4 or later
+
+(*) eg or git version 1.6.x or later
+
+
+B) Create a base directory:
+===========================
+
+Create a directory as a base and clone the sources
+
+  $ cd <somebasedir>
+  $ mkdir Dashboards
+  $ cd Dashboards
+  $ git clone something.blah.gov/<PROJECT>
+  # Also, clone any other sources as well needed.
+
+
+C) Create machine specific content:
+===================================
+
+Add a subdirectory (optionally) named after your machine in
+<PROJECT>/cmake/ctest/drivers. If you name the directory exactly as your
+machine is named by `uname -n` then you simply need to add some files to that
+directory. You can drop ".domain.gov" stuff from the end of the machine name,
+as long as the name does not conflict with any other directory names already
+in the drivers directory.
+
+Add some ctest -S scripts to run as tests. You can base the *.cmake
+files in this directory on those used on an existing machine that is
+substantially similar to yours. If there isn't one, just copy the
+files from the s903186 directory and work from there.
+
+Add a CMakeLists.txt file to the new directory for your machine. It
+should contain content something like this (from the flagship example,
+s903186):
+
+  # Initially:
+  #
+  TRIBITS_DRIVER_SETUP()
+
+  # Make one of these calls for each script
+  #
+  TRIBITS_DRIVER_ADD_DASHBOARD(
+    MPI_OPT
+    ctest_mac_nightly_mpi_opt_s903186.cmake
+  )
+
+  TRIBITS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG
+    ctest_mac_nightly_serial_debug_s903186.cmake
+  )
+
+  # Finally:
+  #
+  TRIBITS_ADD_REQUIRED_CMAKE_INSTALLS()
+
+The first argument to TRIBITS_DRIVER_ADD_DASHBOARD calls is the test
+name as it will appear on the <Project>Driver dashboard. The second
+argument is the name of the script in the same directory that will be
+run as a ctest -S script as a test on the driver dashboard.
+
+If you have a dashboard that must run all by itself, without any other
+dashboards being run in parallel, then you should pass the RUN_SERIAL
+argument.
+
+For more details on other optional arguments, see the comments at the
+function definition for TRIBITS_DRIVER_ADD_DASHBOARD in
+TribitsDriverSupport.cmake.
+
+WARNING: The name of the build (the first argument, e.g. MPI_OPT)
+should be the same as the name of the build set in the *.cmake driver
+file (the second argument,
+e.g. ctest_mac_nightly_mpi_opt_s903186.cmake).  There are no checks in
+place to make sure that this is true.  You have been warned!
+
+Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on
+Windows.)
+
+You can set the environment variable TDD_PARALLEL_LEVEL to control how
+many dashboards are run in parallel (as tests) by the <Project>Driver
+dashboard.
+
+By default, the TDD system will download the version of CMake/CTest using the
+download-cmake.py script.  This allows one to use specific versions of
+CMake/CTest for the build and also to have the versions upgraded automatically
+according to how download-cmake.py is set up (see download-cmake.py --help for
+details).  However, if TRIBITS_TDD_USE_SYSTEM_CTEST=1 is set in the env, then
+CTest/CMake as found in the default env at the time the TDD driver
+tdd_driver.py is run will be used instead of downloading and installing
+CMake/CTest.
+
+If TRIBITS_TDD_USE_SYSTEM_CTEST != 1, then the download of CMake/CTest will
+occur.  In this case, you may also need to set the environment variable
+TDD_HTTP_PROXY for your http proxy which is needed if the script
+download-cmake.py can't figure it out the proxy automatically.  For Sandia
+machines, this is http://wwwproxy.sandia.gov:80/.
+
+Typical cron_driver.sh contents:
+
+  export TDD_PARALLEL_LEVEL=2
+  export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
+  ../cron_driver.py
+
+Typical cron_driver.bat contents:
+
+  set TDD_PARALLEL_LEVEL=2
+  set TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
+  python "%~dp0..\cron_driver.py"
+
+
+D) Run the scripts manually to test them:
+=========================================
+
+Before setting up the final cron job, you should test the individual
+CTest driver scripts and the outer <Project>Driver script.
+
+
+D.1) Test out individual CTest dashboard builds first:
+------------------------------------------------------
+
+Before running your outer cron driver script, you would be wise to first test
+out your individual CTest driver scripts (e.g. MPI_OPT, SERIAL_DEBUG, etc.).
+You can test individual basic ctest driver scripts to clone the project and
+create the BUILD directroy by creating your own temp base directory and then
+overridding CTEST_DASHBOARD_ROOT for example as:
+
+  $ mkdir MOCK_MPI_OPT
+  $ cd MOCK_MPI_OPT
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
+     CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+Running the above will clone <Project> into MOCK_MPI_OPT/<Project> and will
+create the build directory in MOCK_MPI_OPT/BUILD.  After the initial clone is
+performed above, you can speed up subsequent testing by additionally setting
+CTEST_DO_UPDATES=FALSE and CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on
+the environment.  You can keep running this 'env ... ctest -S ...' command
+until you get everything working.  All of the info needed to debug problems
+should be present in the output from 'ctest -VV -S' (which you should pipe to
+a file and then examine).  The option
+CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE speeds up the run by skipping
+the generation of the <Proejct>PackageDependencies.xml file.  That file is
+only needed in CI iterations to detect changed files.  If you want to detect
+changed files, set it to TRUE.  The option
+CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE is set to avoid the generation
+of the file CDashSubprojectDependencies.xml.  There is no reason to generate
+or submit that file when you are just doing local testing.
+
+If you want to test the exact state of the local changes in <somedir>,
+you can avoid pulling commits by creating a symbolic link and running as:
+
+  $ mkdir MOCK_MPI_OPT
+  $ cd MOCK_MPI_OPT
+  $ ln -s  <somedir> <Project>
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     <Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON CTEST_DO_UPDATES=OFF \
+     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
+     CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it
+will not try to reset your repos and wipe out your changes or have merge
+conflicts for extra repos.  The option
+<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON allows you to be missing some
+extra repos so that you can test with just the extra repos that you have
+cloned.  Note that this will not test the exact state of the project that
+would be in automated testing.  If you want to assert that the exact list of
+repos is cloned already, then set
+<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=OFF or leave off that argument.
+
+After the local CTest processes are working, just to make sure the
+submit works, you can run a final trial build with:
+
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  <Project>_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FALSE \
+     <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
+     CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+If this submits to the 'Experimental' CDash dashbaord, you should be
+in good shape for the nightly test.  If you can't find you
+experimental build on the CDash dashboard, then something is wrong.
+
+NOTES:
+
+a) Different Trilinos git repos: When CTEST_TEST_TYPE=Experimental or
+CTEST_TEST_TYPE=Continuous then Trilinos is initially cloned from form the
+main development repo.  However, when CTEST_TEST_TYPE=Nightly then Trilinos
+will be initially cloned from a specially maintained 'nightly' repo.  (The
+purpose of the 'nightly' repo is to ensure that all Nightly builds use exactly
+the same version of the sources and report consistent results in case someone
+pushes in between the first Nightly pull and later Nightly pulls.)  Therefore,
+if you use CTEST_TEST_TYPE=Experimental when first testing in the actually
+final directory location for the Nightly dashboard (such as will occur when
+testing the cron_driver.sh script described below) then subsequent pulls will
+occur from the main development repo *NOT* the special 'nightly' repo.  To get
+back to the 'nightly' repo, you must delete the locally cloned Trilinos repo
+so that when the script runs with CTEST_TEST_TYPE=Nightly, it will clone from
+the 'nightly' repo and do subsequent updates form the 'nightly' repo.  If you
+want to totally override which repo gets pulled form, you can set that with
+the variable <Project>_REPOSITORY_LOCATION.
+
+
+D.2) Testing the outer cron driver script:
+------------------------------------------
+
+To test this script manually, you must move into the driver scripts directory
+and run from there:
+
+  $ cd <DRIVERS_BASE_DIR>
+  $ env \
+      <PROJECT_NAME>_PACKAGES=Teuchos \
+      TDD_IN_TESTING_MODE=ON \
+      TDD_CTEST_TEST_TYPE=Experimental \
+      CTEST_TEST_TYPE=Experimental \
+      CTEST_DO_UPDATES=TRUE \
+      TDD_DO_SUBMIT=FALSE \
+      CTEST_DO_SUBMIT=FALSE  \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+      ./cron_driver_somemachine.sh
+
+Once you are done with the initial run, you can test it out
+interactively in a rapid, iterative process by setting up the
+following additionial environment variables:
+
+  $ cd <DRIVERS_BASE_DIR>
+  $ env \
+      <Project>_PACKAGES=Teuchos \
+      CTEST_DO_UPDATES=FALSE \
+      CTEST_DO_SUBMIT=FALSE \
+      TDD_DO_SUBMIT=FALSE \
+      TDD_IN_TESTING_MODE=ON \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      TDD_CTEST_TEST_TYPE=Experimental \
+      CTEST_TEST_TYPE=Experimental \
+      TDD_FORCE_CMAKE_INSTALL=0 \
+      TDD_FORCE_INNER_CMAKE_INSTALL=0 \
+      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      ./cron_driver_somemachine.sh
+
+(of course you must use set commands on Windows).
+
+NOTES:
+
+(*) Set <Project>_PACKAGES=Teuchos to whatever your project name is and
+    some upstream package.  For Trilinos, this would be something like
+    Trilinos_PACKAGES=Teuchos.  For another project you would use its
+    project name and one of its upstream packages.
+(*) Set TDD_FORCE_CMAKE_INSTALL=0 to skip global CMake reinstall.
+(*) Set TDD_FORCE_INNER_CMAKE_INSTALL=0 to skip tests that install
+    the inner CMake/CTest used by individual builds.
+(*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
+    want to process the exact packages set with <Project>_PACKAGES
+(*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE after a first round of
+    builds to speed up subsequent builds.
+
+Work out any kinks you may have in your environment and your scripts
+by running this over and over again.
+
+Once you are confident that your driver script is working correctly,
+you should try to run this as a cron job using the command (see the
+entire command below in the "cron driver" section):
+
+  $ env  <Project>_PACKAGES=Teuchos  CTEST_DO_SUBMIT=ON  TDD_DO_SUBMIT=ON \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      CTEST_TEST_TYPE=Experimental \
+      TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
+      <yourdirverssroucedir>/cron_driver_somemachine.sh
+
+Note the submits variables are turned on which means that the inner and outer
+submits will be performed to the <Project> and <Project>Driver dashboards,
+respectively.  If this submits to the CDash dashboards, you should be ready to
+set up your final cron job driver (see below).
+
+WARNING: Blow away all of the base dashboard directories that get created
+during this process before running the final cron job!  You must do this so
+that the correct git nightly repository will get cloned in the inner CTest
+dashboards.  You would do this with:
+
+  $ cd ~/T
+  $ rm -rf MPI_DEBUG SERIAL_RELEASE ...
+
+
+E) Debugging problems:
+======================
+
+Debugging the inner CTest dashbaords should be more straightforward as
+described in D.1 above.
+
+When first getting the outer <Project>Driver script to run, there can be
+problems that you will have to debug.  The output to the console from the
+cron_driver.py script is very sparse but will be of some help.  Almost all of
+the output from the various stages are contained under the base build/test
+directory.  The base build directory for the outer CTest <Project>Driver
+script is in:
+
+  ~/T/TDD_BUILD
+
+You can find the output from the various configure, build, tests in
+the date-specific subdirectory under:
+
+  ~/T/TDD_BUILD/Testing/Temporary/
+
+Note that you will also find the output from the
+TribitsCTestDriverCore.cmake script as the test output in:
+
+  T/TDD_BUILD/Testing/Temporary/LastTest_XXX.log
+
+Also, of course all of the output for each build case (BUILD_CASE) is
+in:
+
+  T/BUILD_CASE/Testing/Temporary/
+
+where BUILD_CASE = MPI_OPT, SERIAL_DEBUG etc.
+
+Good luck in debugging!
+
+
+F) Set up a crontab entry (or a scheduled task on Windows):
+===========================================================
+
+After you have successfully manually testing the inner and outer
+driver scripts, you will be ready to create the final crontab entry.
+You can set this with 'crontab -e' or install the cron driver script
+in whole.
+
+The contents of your cron driver should look like:
+
+  MAILTO=youremail@yourorg.org
+  10 00 * * * cd  ~/T/<Project>/cmake/ctest/drivers/MACHINE_NAME && ./cron_driver.sh &> ~/T/cron_driver.log
+
+Typical values are MM=10 and HH=00 which starts things off at 10 minutes after
+midnight.  The testing day time may move earlier (e.g. 8 PM MST) but it will
+not start after Midnight so that value is safe.  You can start your cron
+driver at any time after the beginning of a new testing day (as defined by
+CTest/CDash configuration).
+
+
+G) Commit changes to the driver scripts:
+========================================
+
+You must commit and push changes in <Project>/cmake/ctest/drivers into the
+main Trilinos git repository.  To do this, do:
+
+  $ cd ~/T/<Project>
+  $ eg remote add trilinos software:/space/git/Trilinos
+  $ eg pull trilinos
+  $ eg commit
+  $ eg rebase --against trilinos/origin
+  $ eg push
+
+Hopefully, that should push your changes back and you should be ready
+to let the cron job run on its own every day.  If that does not work,
+cherry-pick your commits into a different local Trilinos repo cloned
+directly from software:/space/git/Trilinos and do the push from there
+(this is what I have had to do in the past).  Do this as:
+
+  $ cd $SOME_OTHER_BASE/Trilinos
+  $ eg remote add nighly_cdash ~/T/Trilinos
+  $ eg pull nighly_cdash master
+  $ eg pull
+  $ eg rebase --against origin/master
+  $ eg push
+
+Of course, if you change anything other than what is in your
+driver/MACHINE_NAME directory, you should use the checkin-test.py
+script to test and push your commits.

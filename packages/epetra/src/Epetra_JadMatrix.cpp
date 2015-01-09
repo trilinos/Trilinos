@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -53,7 +53,7 @@
 #include "Epetra_CrsMatrix.h"
 
 //==============================================================================
-Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix & Matrix) 
+Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix & Matrix)
   : Epetra_BasicRowMatrix(Matrix.RowMatrixRowMap().Comm()),
     Values_(0),
     Indices_(0),
@@ -86,7 +86,7 @@ int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckSt
     const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Matrix);
 
     for (int i1=0; i1<NumMyRows_; i1++) {
-      
+
       EPETRA_CHK_ERR(A.ExtractMyRowView(i1, NumEntries, Values, Indices)); // Get the current row based on the permutation
       int i = InvRowPerm_[i1]; // Determine permuted row location
       for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[j];
@@ -95,7 +95,7 @@ int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckSt
     }
   }
   catch (...) { // Otherwise just live with RowMatrix interface
-    
+
     Epetra_SerialDenseVector curValues(NumJaggedDiagonals_);
     Epetra_IntSerialDenseVector curIndices(NumJaggedDiagonals_);
     Indices = curIndices.Values();
@@ -310,10 +310,10 @@ void Epetra_JadMatrix::GeneralMM(bool TransA, double ** X, int LDX, double ** Y,
 //=======================================================================================================
 void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double ** Y, int ldy, int NumVectors) const {
 
-#ifdef _CRAY 
-#define Pragma(S) _Pragma(S) 
-#else 
-#define Pragma(S) 
+#ifdef _CRAY
+#define Pragma(S) _Pragma(S)
+#else
+#define Pragma(S)
 #endif
 
   // Routine for 3 or more RHS
@@ -333,10 +333,10 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
   int nv = NumVectors%5; if (nv==0) nv=5;
     double * x = X[0];
     double * y = Y[0];
- 
+
 
   for (int k=0; k<NumVectors; k+=5) {
-    
+
     for (int j=0; j<NumJaggedDiagonals_; j++) {
       const int * curIndices = Indices+IndexOffset[j];
       const double * curValues = Values+IndexOffset[j];
@@ -509,7 +509,7 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
   const int * Indices = Indices_.Values();
   const int * IndexOffset = IndexOffset_.Values();
   const int * RowPerm = RowPerm_.Values();
-  if (!TransA) 
+  if (!TransA)
     for (int i=0; i<NumMyRows_; i++) {
       y[i] = 0.0;
       y[i+ldy] = 0.0;
@@ -527,11 +527,11 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
     j++;
     // check if other diagonals have same length up to a max of 2
     while ((j<NumJaggedDiagonals_-1) && (IndexOffset[j+1]-IndexOffset[j]==jaggedDiagonalLength) && (j-j0<2)) j++;
-    
+
     int numDiags = j-j0;
     assert(numDiags<3 && numDiags>0);
     assert(j<NumJaggedDiagonals_+1);
-    
+
     switch (numDiags){
     case 1:
       {
@@ -571,11 +571,11 @@ Pragma("_CRI ivdep")
 	    int ix0 = curIndices0[i];
 	    int ix1 = curIndices1[i];
 	    int iy = RowPerm[i];
-	    y[iy] += 
+	    y[iy] +=
 	      curValues0[i]*x[ix0] +
 	      curValues1[i]*x[ix1];
 	    iy+=ldy; ix0+=ldx; ix1+=ldx;
-	    y[iy] += 
+	    y[iy] +=
 	      curValues0[i]*x[ix0] +
 	      curValues1[i]*x[ix1];
 	  }
@@ -603,7 +603,7 @@ Pragma("_CRI ivdep")
 }
 //=======================================================================================================
 void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
-  
+
   const double * Values = Values_.Values();
   const int * Indices = Indices_.Values();
   const int * IndexOffset = IndexOffset_.Values();
@@ -620,11 +620,11 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
     j++;
     // check if other diagonals have same length up to a max of 5
     while ((j<NumJaggedDiagonals_-1) && (IndexOffset[j+1]-IndexOffset[j]==jaggedDiagonalLength) && (j-j0<5)) j++;
-    
+
     int numDiags = j-j0;
     assert(numDiags<6 && numDiags>0);
     assert(j<NumJaggedDiagonals_+1);
-    
+
     switch (numDiags){
     case 1:
       {
@@ -651,7 +651,7 @@ Pragma("_CRI ivdep")
 	if (!TransA) {
 Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
+	    y[RowPerm[i]] +=
 	      curValues0[i]*x[curIndices0[i]] +
 	      curValues1[i]*x[curIndices1[i]];
 	  }
@@ -677,7 +677,7 @@ Pragma("_CRI ivdep")
 	if (!TransA) {
 Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
+	    y[RowPerm[i]] +=
 	      curValues0[i]*x[curIndices0[i]] +
 	      curValues1[i]*x[curIndices1[i]] +
 	      curValues2[i]*x[curIndices2[i]];
@@ -707,7 +707,7 @@ Pragma("_CRI ivdep")
 	if (!TransA) {
 Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
+	    y[RowPerm[i]] +=
 	      curValues0[i]*x[curIndices0[i]] +
 	      curValues1[i]*x[curIndices1[i]] +
 	      curValues2[i]*x[curIndices2[i]] +
@@ -741,7 +741,7 @@ Pragma("_CRI ivdep")
 	if (!TransA) {
 Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
+	    y[RowPerm[i]] +=
 	      curValues0[i]*x[curIndices0[i]] +
 	      curValues1[i]*x[curIndices1[i]] +
 	      curValues2[i]*x[curIndices2[i]] +

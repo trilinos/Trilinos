@@ -170,8 +170,8 @@ int Ifpack_IKLU::Initialize()
   NumMyNonzeros_ = Matrix().NumMyNonzeros();
 
   int RowNnz, Length = Matrix().MaxNumEntries();
-  vector<int>    RowIndices(Length);
-  vector<double> RowValues(Length);
+  std::vector<int>    RowIndices(Length);
+  std::vector<double> RowValues(Length);
 
   //cout << "Processor " << Comm().MyPID() << " owns " << NumMyRows_ << " rows and has " << NumMyNonzeros_ << " nonzeros " << endl;
   // get general symbolic structure of the matrix
@@ -243,8 +243,8 @@ int Ifpack_IKLU::Compute()
 #endif
 
   int RowNnz;
-  vector<int>    RowIndices(Length);
-  vector<double> RowValues(Length);
+  std::vector<int>    RowIndices(Length);
+  std::vector<double> RowValues(Length);
 
   // copy the values from A_ into csrA_
   int count = 0;
@@ -270,7 +270,7 @@ int Ifpack_IKLU::Compute()
   // Create L and U as a view of the information stored in csrnN_->L and csrnN_->U
   csr* L_tmp = csrnN_->L;
   csr* U_tmp = csrnN_->U;
-  vector<int> numEntriesL( NumMyRows_ ), numEntriesU( NumMyRows_ );
+  std::vector<int> numEntriesL( NumMyRows_ ), numEntriesU( NumMyRows_ );
   for (int i=0; i < NumMyRows_; ++i) {
     numEntriesL[i] = ( L_tmp->p[i+1] - L_tmp->p[i] );
     numEntriesU[i] = ( U_tmp->p[i+1] - U_tmp->p[i] );
@@ -339,7 +339,7 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
   //
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy and apply permutation.
-  vector<int> invq( NumMyRows_ );
+  std::vector<int> invq( NumMyRows_ );
 
   for (int i=0; i<NumMyRows_; ++i ) {
     csrnN_->perm[ csrnN_->pinv[i] ] = i;

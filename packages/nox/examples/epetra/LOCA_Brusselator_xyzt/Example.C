@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,17 +49,17 @@
 
 /* Solves the nonlinear equation:
  *
- * dT       d2T    
+ * dT       d2T
  * --- - D1 --- - alpha + (beta+1)*T - C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * T(t,0) = T(t,1) = alpha = 0.6
  * T(0,x) = alpha + sinusoidal perturbation
  *
  *
- * dC       d2C    
+ * dC       d2C
  * --- - D2 --- - beta*T + C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * C(t,0) = C(t,1) = beta / alpha = 2.0 / 0.6
  * C(0,x) = beta / alpha + sinusoidal perturbation
@@ -103,20 +103,21 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
 
-// Headers needed for FD coloring 
-#include <vector> 
+// Headers needed for FD coloring
+#include <vector>
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h" 
+#include "EpetraExt_MapColoringIndex.h"
 #endif
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
-#include "Brusselator.H"              
+#include "Brusselator.H"
 
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef HAVE_MPI
@@ -128,7 +129,7 @@
 #endif
 
 #ifdef DO_XYZT
-#include "LOCA_Epetra_Interface_xyzt.H"              
+#include "LOCA_Epetra_Interface_xyzt.H"
 #endif
 
 using namespace std;
@@ -138,6 +139,9 @@ int main(int argc, char *argv[])
   // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  bool verbose = true;
+  bool success = false;
+  try {
   // Get the number of elements from the command line
   int NumGlobalNodes = 100 + 1;
 
@@ -148,7 +152,7 @@ int main(int argc, char *argv[])
   int numTimeSteps= 1; // default
   if (argc>3) { numTimeSteps = atoi(argv[3]);}
 
-  Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm = 
+  Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm =
     Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, spatialProcs, numTimeSteps));
   Epetra_Comm& Comm = globalComm->SubDomainComm();
 
@@ -170,16 +174,16 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  // The number of unknowns must be at least equal to the 
+  // The number of unknowns must be at least equal to the
   // number of processors.
   if (NumGlobalNodes < NumProc) {
-    std::cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes
+     << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
   // Create the Brusselator problem class.  This creates all required
-  // Epetra objects for the problem and allows calls to the 
+  // Epetra objects for the problem and allows calls to the
   // function (F) and Jacobian evaluation routines.
   Brusselator::OverlapType OType = Brusselator::ELEMENTS;
   Brusselator Problem(NumGlobalNodes, Comm, OType);
@@ -241,7 +245,7 @@ int main(int argc, char *argv[])
   predictorList.set("Method", "Secant");
 
   // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList =
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "None");
 
@@ -258,9 +262,9 @@ int main(int argc, char *argv[])
   aList.set("Maximum Restarts",2);
   aList.set("Step Size",1);
   aList.set("Verbosity",
-	    Anasazi::Errors + 
-	    Anasazi::Warnings +
-	    Anasazi::FinalSummary);
+        Anasazi::Errors +
+        Anasazi::Warnings +
+        Anasazi::FinalSummary);
 #endif
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
@@ -271,20 +275,20 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-  printParams.set("Output Information", 
-			   NOX::Utils::OuterIteration + 
-			   NOX::Utils::OuterIterationStatusTest + 
-			   NOX::Utils::InnerIteration +
-			   NOX::Utils::Parameters + 
-			   NOX::Utils::Details + 
-			   NOX::Utils::Warning + 
-			   NOX::Utils::StepperIteration +
-			   NOX::Utils::StepperDetails);
+  printParams.set("Output Information",
+               NOX::Utils::OuterIteration +
+               NOX::Utils::OuterIterationStatusTest +
+               NOX::Utils::InnerIteration +
+               NOX::Utils::Parameters +
+               NOX::Utils::Details +
+               NOX::Utils::Warning +
+               NOX::Utils::StepperIteration +
+               NOX::Utils::StepperDetails);
 
-  // Sublist for line search 
+  // Sublist for line search
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
   //searchParams.set("Method", "Interval Halving");
@@ -316,32 +320,32 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
   lsParams.set("Tolerance", 1e-6);
-  lsParams.set("Output Frequency", 50);    
+  lsParams.set("Output Frequency", 50);
 #ifdef DO_XYZT_PREC
-  lsParams.set("Preconditioner", "User Defined"); 
+  lsParams.set("Preconditioner", "User Defined");
 #else
-  lsParams.set("Preconditioner", "Ifpack"); 
-  //lsParams.set("Preconditioner", "AztecOO"); 
-  //lsParams.set("Aztec Preconditioner", "ilu"); 
-  //lsParams.set("Overlap", 2);  
-  //lsParams.set("Graph Fill", 2); 
-  //lsParams.set("Aztec Preconditioner", "ilut"); 
-  //lsParams.set("Overlap", 2);   
-  //lsParams.set("Fill Factor", 2);   
-  //lsParams.set("Drop Tolerance", 1.0e-12);   
-  //lsParams.set("Aztec Preconditioner", "Polynomial"); 
-  //lsParams.set("Polynomial Order", 6); 
+  lsParams.set("Preconditioner", "Ifpack");
+  //lsParams.set("Preconditioner", "AztecOO");
+  //lsParams.set("Aztec Preconditioner", "ilu");
+  //lsParams.set("Overlap", 2);
+  //lsParams.set("Graph Fill", 2);
+  //lsParams.set("Aztec Preconditioner", "ilut");
+  //lsParams.set("Overlap", 2);
+  //lsParams.set("Fill Factor", 2);
+  //lsParams.set("Drop Tolerance", 1.0e-12);
+  //lsParams.set("Aztec Preconditioner", "Polynomial");
+  //lsParams.set("Polynomial Order", 6);
 #endif
 
   // Create the interface between the test problem and the nonlinear solver
-  Teuchos::RCP<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface =
     Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-  Teuchos::RCP<Epetra_RowMatrix> A = 
+  Teuchos::RCP<Epetra_RowMatrix> A =
     Teuchos::rcp(&Problem.getJacobian(),false);
 
 #ifdef DO_XYZT
@@ -352,61 +356,61 @@ int main(int argc, char *argv[])
   // Sublist for linear solver of the preconditioner
   Teuchos::RCP<Teuchos::ParameterList> precLSParams =
        Teuchos::rcp(new Teuchos::ParameterList(lsParams));
-  precLSParams->set("Aztec Solver", "GMRES");  
-  precLSParams->set("Preconditioner", "Ifpack");  
-  //precLSParams->set("Preconditioner", "AztecOO");  
-  precLSParams->set("Max Iterations", 800);  
+  precLSParams->set("Aztec Solver", "GMRES");
+  precLSParams->set("Preconditioner", "Ifpack");
+  //precLSParams->set("Preconditioner", "AztecOO");
+  precLSParams->set("Max Iterations", 800);
   precLSParams->set("Tolerance", 1e-6);
-  precLSParams->set("Output Frequency", 50);    
-  //precLSParams->set("XYZTPreconditioner", "None"); 
-  precLSParams->set("XYZTPreconditioner", "Global"); 
-  //precLSParams->set("XYZTPreconditioner", "Sequential"); 
-  //precLSParams->set("XYZTPreconditioner", "Parallel"); 
-  //precLSParams->set("XYZTPreconditioner", "Parareal"); 
-  //precLSParams->set("XYZTPreconditioner", "BlockDiagonal"); 
+  precLSParams->set("Output Frequency", 50);
+  //precLSParams->set("XYZTPreconditioner", "None");
+  precLSParams->set("XYZTPreconditioner", "Global");
+  //precLSParams->set("XYZTPreconditioner", "Sequential");
+  //precLSParams->set("XYZTPreconditioner", "Parallel");
+  //precLSParams->set("XYZTPreconditioner", "Parareal");
+  //precLSParams->set("XYZTPreconditioner", "BlockDiagonal");
 
   Teuchos::RCP<Teuchos::ParameterList> precPrintParams =
        Teuchos::rcp(new Teuchos::ParameterList(printParams));
-  precPrintParams->set("MyPID", MyPID); 
+  precPrintParams->set("MyPID", MyPID);
   precPrintParams->set("Output Precision", 3);
   precPrintParams->set("Output Processor", 0);
-  precPrintParams->set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+  precPrintParams->set("Output Information",
+            NOX::Utils::OuterIteration +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::InnerIteration +
+            NOX::Utils::Parameters +
+            NOX::Utils::Details +
+            NOX::Utils::Warning);
 
-  Teuchos::RCP<LOCA::Epetra::Interface::xyzt> ixyzt = 
-    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, 
-						   initGuess, A,
-						   globalComm, 
+  Teuchos::RCP<LOCA::Epetra::Interface::xyzt> ixyzt =
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface,
+                           initGuess, A,
+                           globalComm,
                                                    initCond, dt,
-						   precPrintParams.get(), precLSParams.get()));
+                           precPrintParams.get(), precLSParams.get()));
 
   Teuchos::RCP<Epetra_RowMatrix> Axyzt =
      Teuchos::rcp(&(ixyzt->getJacobian()),false);
   Epetra_Vector& solnxyzt = ixyzt->getSolution();
-  Teuchos::RCP<Epetra_Operator> Mxyzt = 
+  Teuchos::RCP<Epetra_Operator> Mxyzt =
      Teuchos::rcp(&(ixyzt->getPreconditioner()),false);
 
   Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = ixyzt;
 
   // Create the Linear System
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec =
     Teuchos::rcp(&(ixyzt->getPreconditioner()),false);
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iJac, Axyzt, iPrec, Mxyzt, 
-						      solnxyzt));
+                              iJac, Axyzt, iPrec, Mxyzt,
+                              solnxyzt));
 #else
-  Teuchos::RCP<LOCA::Epetra::Interface::xyzt> ixyzt = 
-    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, 
-						   initGuess, A,
+  Teuchos::RCP<LOCA::Epetra::Interface::xyzt> ixyzt =
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface,
+                           initGuess, A,
                                                    initCond, dt,
-						   globalComm));
+                           globalComm));
 
   Teuchos::RCP<Epetra_RowMatrix> Axyzt =
      Teuchos::rcp(&(ixyzt->getJacobian()),false);
@@ -418,13 +422,13 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, Axyzt, 
-						      solnxyzt));
+                              iReq, iJac, Axyzt,
+                              solnxyzt));
 #endif
   NOX::Epetra::Vector initialGuess(solnxyzt);
 #else
   // Use an Epetra Scaling object if desired
-  Teuchos::RCP<Epetra_Vector> scaleVec = 
+  Teuchos::RCP<Epetra_Vector> scaleVec =
     Teuchos::rcp(new Epetra_Vector(soln));
   NOX::Epetra::Scaling scaling;
   scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
@@ -433,15 +437,15 @@ int main(int argc, char *argv[])
 
   // Create the Linear System
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, A, soln));
-		                                      //&scaling);
+                              iReq, iJac, A, soln));
+                                              //&scaling);
 
   // Create the Group
-  NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false), 
-				   NOX::Epetra::Vector::CreateView,
-				   NOX::DeepCopy);
+  NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false),
+                   NOX::Epetra::Vector::CreateView,
+                   NOX::DeepCopy);
 #endif
 
   // Create and initialize the parameter vector
@@ -454,7 +458,7 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create global data object
-  Teuchos::RCP<LOCA::GlobalData> globalData = 
+  Teuchos::RCP<LOCA::GlobalData> globalData =
     LOCA::createGlobalData(paramList, epetraFactory);
 
   Teuchos::RCP<LOCA::Epetra::Group> grp =
@@ -464,9 +468,9 @@ int main(int argc, char *argv[])
   grp->computeF();
 
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
-					    NOX::StatusTest::NormF::Unscaled));
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8,
+                        NOX::StatusTest::NormF::Unscaled));
   //NOX::StatusTest::NormF relresid(*grp.get(), 1.0e-2);
   //NOX::StatusTest::NormUpdate update(1.0e-5);
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
@@ -475,7 +479,7 @@ int main(int argc, char *argv[])
   //converged.addStatusTest(relresid);
   //converged.addStatusTest(wrms);
   //converged.addStatusTest(update);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
   Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
@@ -494,16 +498,16 @@ int main(int argc, char *argv[])
 #endif
   int timeStep = 0;
   double time = 0.;
-  
+
   // Time integration loop
   while(timeStep < maxTimeSteps) {
 
     timeStep++;
     time += dt;
-  
-    globalData->locaUtils->out() 
+
+    globalData->locaUtils->out()
       << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
-  
+
 //    NOX::StatusTest::StatusType status = solver.solve();
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
@@ -514,9 +518,9 @@ int main(int argc, char *argv[])
 
 
     // Get the Epetra_Vector with the final solution from the solver
-    const LOCA::Epetra::Group& finalGroup = 
+    const LOCA::Epetra::Group& finalGroup =
       dynamic_cast<const LOCA::Epetra::Group&>(*(stepper.getSolutionGroup()));
-    const Epetra_Vector& finalSolution = 
+    const Epetra_Vector& finalSolution =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     // End Nonlinear Solver **************************************
@@ -533,20 +537,24 @@ int main(int argc, char *argv[])
 
   // Output the parameter list
   if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
 
   // Output timing info
-  globalData->locaUtils->out() << "\nTimings :\n\tWallTime --> " << 
+  globalData->locaUtils->out() << "\nTimings :\n\tWallTime --> " <<
     myTimer.WallTime() - startWallTime << " sec."
-	      << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-	      << " sec." << std::endl << std::endl;
+          << "\n\tElapsedTime --> " << myTimer.ElapsedTime()
+          << " sec." << std::endl << std::endl;
 
   LOCA::destroyGlobalData(globalData);
 
-return 0 ;
+  success = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

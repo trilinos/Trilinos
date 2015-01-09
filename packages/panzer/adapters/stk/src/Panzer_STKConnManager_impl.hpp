@@ -59,7 +59,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 // Object describing how to sort a vector of elements using
 // local ID as the key
@@ -68,7 +68,7 @@ public:
   LocalIdCompare(const RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
 
   // Compares two stk mesh entities based on local ID
-  bool operator() (stk::mesh::Entity * a,stk::mesh::Entity * b) 
+  bool operator() (stk_classic::mesh::Entity * a,stk_classic::mesh::Entity * b) 
   { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b);}
 
 private:
@@ -98,7 +98,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
 
    // build element block information
    //////////////////////////////////////////////
-   elements_ = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
+   elements_ = Teuchos::rcp(new std::vector<stk_classic::mesh::Entity*>);
 
    // defines ordering of blocks
    std::vector<std::string> blockIds;
@@ -110,7 +110,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
       std::string blockId = *idItr;
 
       // grab elements on this block
-      std::vector<stk::mesh::Entity*> blockElmts;
+      std::vector<stk_classic::mesh::Entity*> blockElmts;
       stkMeshDB_->getMyElements(blockId,blockElmts); 
 
       // concatenate them into element LID lookup table
@@ -130,7 +130,7 @@ void STKConnManager<GO>::buildLocalElementMapping()
       std::string blockId = *idItr;
 
       // grab elements on this block
-      std::vector<stk::mesh::Entity*> blockElmts;
+      std::vector<stk_classic::mesh::Entity*> blockElmts;
       stkMeshDB_->getNeighborElements(blockId,blockElmts); 
 
       // concatenate them into element LID lookup table
@@ -196,16 +196,16 @@ void STKConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & fp
 
 template <typename GO>
 typename STKConnManager<GO>::LocalOrdinal STKConnManager<GO>::addSubcellConnectivities(
-             stk::mesh::Entity * element,unsigned subcellRank,LocalOrdinal idCnt,GlobalOrdinal offset)
+             stk_classic::mesh::Entity * element,unsigned subcellRank,LocalOrdinal idCnt,GlobalOrdinal offset)
 {
    if(idCnt<=0) 
       return 0 ;
 
    // loop over all relations of specified type
    LocalOrdinal numIds = 0;
-   stk::mesh::PairIterRelation relations = element->relations(subcellRank);
+   stk_classic::mesh::PairIterRelation relations = element->relations(subcellRank);
    for(std::size_t sc=0;sc<relations.size();++sc) {
-      stk::mesh::Entity * subcell = relations[sc].entity();
+      stk_classic::mesh::Entity * subcell = relations[sc].entity();
 
       // add connectivities: adjust for STK indexing craziness
       for(LocalOrdinal i=0;i<idCnt;i++) 
@@ -218,7 +218,7 @@ typename STKConnManager<GO>::LocalOrdinal STKConnManager<GO>::addSubcellConnecti
 }
 
 template <typename GO>
-void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity * element,
+void STKConnManager<GO>::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk_classic::mesh::Entity * element,
                                                  unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,
                                                  GlobalOrdinal offset)
 {
@@ -256,7 +256,7 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
    // loop over elements and build global connectivity 
    for(std::size_t elmtLid=0;elmtLid!=elements_->size();++elmtLid) {
       GlobalOrdinal numIds = 0;
-      stk::mesh::Entity * element = (*elements_)[elmtLid];
+      stk_classic::mesh::Entity * element = (*elements_)[elmtLid];
 
       // get index into connectivity array
       elmtLidToConn_[elmtLid] = connectivity_.size();
@@ -285,7 +285,7 @@ template <typename GO>
 std::string STKConnManager<GO>::getBlockId(STKConnManager::LocalOrdinal localElmtId) const
 {
    // walk through the element blocks and figure out which this ID belongs to
-   stk::mesh::Entity * element = (*elements_)[localElmtId];
+   stk_classic::mesh::Entity * element = (*elements_)[localElmtId];
 
    return stkMeshDB_->containingBlockId(element);
 }
@@ -297,26 +297,42 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
    using Teuchos::RCP;
    using Teuchos::rcp;
 
+   std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > > matchedValues
+            = stkMeshDB_->getPeriodicNodePairing();
 
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > matchedNodes
-            = stkMeshDB_->getPeriodicNodePairing();
+            = matchedValues.first;
+   Teuchos::RCP<std::vector<unsigned int> > matchTypes
+            = matchedValues.second;
 
    // no matchedNodes means nothing to do!
    if(matchedNodes==Teuchos::null) return;
-      
+
    for(std::size_t m=0;m<matchedNodes->size();m++) {
-      stk::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
+      stk_classic::mesh::EntityId oldNodeId = (*matchedNodes)[m].first;
       std::size_t newNodeId = (*matchedNodes)[m].second;
 
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       std::vector<int> localIds;
 
+      GlobalOrdinal offset0 = 0; // to make numbering consistent with that in PeriodicBC_Matcher
+      GlobalOrdinal offset1 = 0; // offset for dof indexing
+      if((*matchTypes)[m] == 0)
+        offset1 = nodeOffset-offset0;
+      else if((*matchTypes)[m] == 1){
+        offset0 = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
+        offset1 = edgeOffset-offset0;
+      } else
+        TEUCHOS_ASSERT(false);
+
       // get relevent elements and node IDs
-      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId,elements,localIds);
+      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId-offset0,elements,localIds,(*matchTypes)[m]);
 
       // modify global numbering already built for each element
-      for(std::size_t e=0;e<elements.size();e++)
-         modifySubcellConnectivities(fp,elements[e],0,localIds[e],newNodeId,nodeOffset);
+      for(std::size_t e=0;e<elements.size();e++){
+         modifySubcellConnectivities(fp,elements[e],(*matchTypes)[m],localIds[e],newNodeId,offset1);
+      }
+
    }
 }
 

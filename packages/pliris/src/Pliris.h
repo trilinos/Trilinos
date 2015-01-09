@@ -55,7 +55,7 @@ class Epetra_MultiVector;
 
 //! Pliris: An Obect-Oriented Interface to a Dense LU Solver.
 /*! The Pliris class : Provides the functionality to interface to a dense LU
-*/  
+*/
 
 
 class Pliris {
@@ -77,29 +77,29 @@ class Pliris {
 
 
   //! Pliris RHS Set
-  /*! Associates an already defined Epetra_MultiVector (or Epetra_Vector) as the right-hand-side of 
+  /*! Associates an already defined Epetra_MultiVector (or Epetra_Vector) as the right-hand-side of
       the linear system.
    */
 
   int SetRHS(Epetra_MultiVector * B);
 
   //! Pliris Matrix Set
-  /*! Associates an already defined  Epetra_Vector as the matrix (column ordered) of 
+  /*! Associates an already defined  Epetra_Vector as the matrix (column ordered) of
       the linear system.
    */
   int SetMatrix(Epetra_Vector * A);
- 
+
   //! Pliris Matrix Set
   /*! Associates an already defined  Epetra_SerialDenseVector as the matrix (column ordered) of
       the linear system.
    */
-  int SetMatrix(Epetra_SerialDenseVector * A); 
+  int SetMatrix(Epetra_SerialDenseVector * A);
 
   //! Pliris GetDistirbution
   /*! Gives the distribution information that is required by the dense solver
    */
 
-    /*! 
+    /*!
      \param nprocs_row(In)   - number of processors for a row
      \param number_of_unknowns(In)  - order of the dense matrix
      \param nrhs(In)  - number of right hand sides
@@ -112,7 +112,7 @@ class Pliris {
      \param my_col(Out)  - column  number in processor mesh, 0 to the  number of processors for a row -1
     */
 
-  int GetDistribution( int * nprocs_row, 
+  int GetDistribution( int * nprocs_row,
                              int * number_of_unknowns,
                              int * nrhs,
                              int * my_rows,
@@ -127,14 +127,14 @@ class Pliris {
   /*! Factors and solves the dense matrix
    */
 
-    /*! 
+    /*!
      \param A(InOut) --  Epetra Vector that has the matrix and rhs packed( Note: matrix is overwritten)
      \param my_rows(In) --  number of rows of the matrix on this processor
-     \param my_cols(In) --  number of columns of the matrix on this processor  
+     \param my_cols(In) --  number of columns of the matrix on this processor
      \param matrix_size(In) -- order of the dense matrix
      \param num_procsr(In) --  number of processors for a row
-     \param num_rhs(In) --  number of right hand sides 
-     \param secs(Out) -- factor and solve time in seconds 
+     \param num_rhs(In) --  number of right hand sides
+     \param secs(Out) -- factor and solve time in seconds
     */
 
    int FactorSolve( Epetra_Vector * A,
@@ -149,14 +149,14 @@ class Pliris {
   /*! Factors and solves the dense matrix
    */
 
-    /*! 
+    /*!
      \param AA(In) --  Epetra Serial Dense Vector that has the matrix and rhs packed
      \param my_rows(In) --  number of rows of the matrix on this processor
-     \param my_cols(In) --  number of columns of the matrix on this processor 
+     \param my_cols(In) --  number of columns of the matrix on this processor
      \param matrix_size(In) -- order of the dense matrix
      \param num_procsr(In) --  number of processors for a row
-     \param num_rhs(In) --  number of right hand sides 
-     \param secs(Out) -- factor and solve time in seconds 
+     \param num_rhs(In) --  number of right hand sides
+     \param secs(Out) -- factor and solve time in seconds
     */
 
    int FactorSolve( Epetra_SerialDenseVector * AA,
@@ -171,12 +171,12 @@ class Pliris {
   /*! Factors the dense matrix
    */
 
-    /*! 
+    /*!
      \param A(In) --  Epetra Vector that has the matrix packed
      \param matrix_size(In) -- order of the dense matrix
      \param num_procsr(In) --  number of processors for a row
      \param permute(In) -- permutation matrix
-     \param secs(Out) -- factor and solve time in seconds 
+     \param secs(Out) -- factor and solve time in seconds
     */
 
 
@@ -191,11 +191,11 @@ class Pliris {
   /*! Solves the previously factored dense matrix
    */
 
-    /*! 
+    /*!
      \param permute(In) -- permutation matrix
-     \param num_rhs(In) -- factor and solve time in seconds 
+     \param num_rhs(In) -- factor and solve time in seconds
      \ Note that the matrix has been previously factored by Factor
-     \ The RHS has been set by SetRHS(Epetra_MultiVector * B) 
+     \ The RHS has been set by SetRHS(Epetra_MultiVector * B)
      \ On output the result is in the RHS
     */
 
@@ -204,9 +204,9 @@ class Pliris {
 
 
   //! Pliris Default Destructor.
-  /*! Completely deletes a Pliris object.  
+  /*! Completely deletes a Pliris object.
   */
-  virtual ~Pliris(void); 
+  virtual ~Pliris(void);
   //@
 
 
@@ -217,7 +217,7 @@ class Pliris {
   double *b_;
   int x_LDA_;
   int b_LDA_;
-  
+
     bool inConstructor_;
     Epetra_MultiVector * X_;
     Epetra_MultiVector * B_;

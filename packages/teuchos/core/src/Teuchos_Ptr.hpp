@@ -132,6 +132,12 @@ const Ptr<T>& Ptr<T>::assert_not_null() const
 
 
 template<class T> inline
+bool Ptr<T>::is_null () const {
+  return ptr_ == NULL;
+}
+
+
+template<class T> inline
 const Ptr<T> Ptr<T>::ptr() const
 {
   return *this;

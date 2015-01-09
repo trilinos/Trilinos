@@ -62,8 +62,8 @@ Tridiag(const Epetra_Map* Map, const double a, const double b, const double c)
   int_type* MyGlobalElements = 0;
   Map->MyGlobalElementsPtr(MyGlobalElements);
 
-  vector<double> Values(2);
-  vector<int_type> Indices(2);
+  std::vector<double> Values(2);
+  std::vector<int_type> Indices(2);
   int NumEntries;
 
   for (int i = 0 ; i < NumMyElements ; ++i) 

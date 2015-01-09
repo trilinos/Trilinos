@@ -840,7 +840,7 @@ void AZ_free_memory(int label)
 *******************************************************************************/
 
 {
-  (void) AZ_manage_memory((int) NULL, AZ_CLEAR, label, (char *) NULL,
+  (void) AZ_manage_memory((unsigned int) NULL, AZ_CLEAR, label, (char *) NULL,
                           (int *) NULL);
 }
 
@@ -1005,6 +1005,10 @@ double *dtmp;
         exit(-1);
       }
       temp = (struct mem_ptr *) &(dtmp[aligned_size/sizeof(double)]);
+      if ( (unsigned int) temp < (unsigned int) dtmp ) {
+        (void) AZ_printf_err( "Error: Something wrong here. Perhaps negative space has been requested? Could be a large number without enough bits to represent it.\n");
+        exit(-1);
+      }
       temp->name = (char *)     &(dtmp[(aligned_str_mem+aligned_size)/
 				          sizeof(double)]);
       temp->address = dtmp;
@@ -2603,6 +2607,7 @@ void AZ_matrix_destroy(AZ_MATRIX **Amat)
 {
   if ( (*Amat) == NULL) return;
    if ((*Amat)->must_free_data_org == 1) {
+      AZ_free_memory((*Amat)->data_org[AZ_name]);
       AZ_free((*Amat)->data_org);
       (*Amat)->data_org = NULL;
    }

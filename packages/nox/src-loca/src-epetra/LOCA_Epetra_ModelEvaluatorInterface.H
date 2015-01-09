@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -66,44 +66,44 @@ namespace LOCA {
     /*!
      * \brief Wrapper for an EpetraExt::ModelEvaluator
      *
-     * If an application interfaces their code to solvers using the 
-     * EpetraExt::ModelEvaluator, this class provides a wrapper so that the 
-     * model evaluator can be used instead of having the user write concrete 
+     * If an application interfaces their code to solvers using the
+     * EpetraExt::ModelEvaluator, this class provides a wrapper so that the
+     * model evaluator can be used instead of having the user write concrete
      * versions of the LOCA::Epetra::Interface objects.
      */
-    class ModelEvaluatorInterface : 
+    class ModelEvaluatorInterface :
       public LOCA::Epetra::Interface::TimeDependent,
       public NOX::Epetra::ModelEvaluatorInterface,
       public LOCA::DerivUtils {
-    
+
     public:
-    
+
       //! Constructor
       ModelEvaluatorInterface(
-		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		     const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
-		     double perturb = 1.0e-6);
-    
+             const Teuchos::RCP<LOCA::GlobalData>& global_data,
+             const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
+             double perturb = 1.0e-6);
+
       //! Destructor
       virtual ~ModelEvaluatorInterface();
 
       //! Return LOCA parameter vector
       const ParameterVector&  getLOCAParameterVector() const;
-    
-      virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
-			    const FillType fillFlag);
-    
+
+      virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F,
+                const FillType fillFlag);
+
       virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
-      
-      virtual bool computePreconditioner(const Epetra_Vector& x, 
-					 Epetra_Operator& M,
-					 Teuchos::ParameterList* precParams = 0);
+
+      virtual bool computePreconditioner(const Epetra_Vector& x,
+                     Epetra_Operator& M,
+                     Teuchos::ParameterList* precParams = 0);
 
       virtual void setParameters(const ParameterVector& p);
 
-      virtual bool computeShiftedMatrix(double alpha, double beta, 
-					const Epetra_Vector& x,
-					Epetra_Operator& A);
+      virtual bool computeShiftedMatrix(double alpha, double beta,
+                    const Epetra_Vector& x,
+                    Epetra_Operator& A);
 
       virtual void setXdot(const Epetra_Vector& xdot, const double time);
 
@@ -119,18 +119,18 @@ namespace LOCA {
       ModelEvaluatorInterface(const ModelEvaluatorInterface&);
 
       //! Clone
-      virtual Teuchos::RCP<DerivUtils> 
+      virtual Teuchos::RCP<DerivUtils>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-      /*! 
-       * \brief Compute derivative of f with respect to parameter, identified 
+      /*!
+       * \brief Compute derivative of f with respect to parameter, identified
        * by param_id
        */
-      virtual NOX::Abstract::Group::ReturnType 
-      computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
-		  const std::vector<int>& param_ids,
-		  NOX::Abstract::MultiVector& result,
-		  bool isValidF) const;
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
+          const std::vector<int>& param_ids,
+          NOX::Abstract::MultiVector& result,
+          bool isValidF) const;
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
@@ -141,7 +141,7 @@ namespace LOCA {
       postProcessContinuationStep(
                            LOCA::Abstract::Iterator::StepStatus stepStatus,
                            LOCA::Epetra::Group& group);
-    
+
     protected:
 
       //! Parameter vector as an Epetra_Vector
@@ -158,7 +158,7 @@ namespace LOCA {
 
       //! Observer for \c printSolution().
       Teuchos::RCP<NOX::Epetra::Observer> observer;
-    
+
     };
 
   } // namespace Epetra

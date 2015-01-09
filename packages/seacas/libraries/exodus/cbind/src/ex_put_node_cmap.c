@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -54,12 +54,14 @@
 /****************************************************************************/
 /****************************************************************************/
 
-#include <stdio.h>
+#include <exodusII.h>                   // for ex_err, exerrval, etc
+#include <exodusII_int.h>               // for EX_FATAL, DIM_NCNT_CMAP, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_varid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include <sys/types.h>                  // for int64_t
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_put_node_cmap(int  exoid,
                      ex_entity_id  map_id,
@@ -178,7 +180,7 @@ int ex_put_node_cmap(int  exoid,
     status = nc_put_vara_int(exoid, varid, start, count, node_ids);
   }
   if (status != NC_NOERR) {
-    fprintf(stderr, "Start, Count = "ST_ZU"\t"ST_ZU"\n", start[0], count[0]);
+    fprintf(stderr, "Start, Count = %"ST_ZU"\t%"ST_ZU"\n", start[0], count[0]);
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to output vector \"%s\" in file ID %d",

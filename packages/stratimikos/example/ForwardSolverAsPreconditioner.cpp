@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
   using Thyra::solve;
   typedef RCP<const Thyra::LinearOpBase<double> > LinearOpPtr;
   typedef RCP<Thyra::VectorBase<double> > VectorPtr;
-  
+
   bool success = true;
   bool verbose = true;
 
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     //
     *out << "\nA) Reading in the matrix ...\n";
     //
-    
+
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
       *out << "\nRead in parameter list:\n\n";
       paramList->print(*out, PLPrintOptions().indent(2).showTypes(true));
     }
-    
+
     //
     *out << "\nB) Get the preconditioner as a forward solver\n";
     //
@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
       const bool linearOpCheck = linearOpTester.check(*A_inv_prec, out.ptr());
       if (!linearOpCheck) { success = false; }
     }
-      
+
     //
     *out << "\nC) Create the forward solver using the created preconditioner ...\n";
     //
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
         unspecifiedPrec(A_inv_prec), A_lows.ptr());
     //A_lows->setVerbLevel(verbLevel);
     *out << "\nA_lows = " << describe(*A_lows, verbLevel) << "\n";
-    
+
     //
     *out << "\nD) Solve the linear system for a random RHS ...\n";
     //
@@ -286,12 +286,12 @@ int main(int argc, char* argv[])
     //
     *out << "\nF) Checking the error in the solution of r=b-A*x ...\n";
     //
-    
+
     VectorPtr Ax = Thyra::createMember(b->space());
     Thyra::apply( *A, Thyra::NOTRANS, *x, Ax.ptr() );
     VectorPtr r = Thyra::createMember(b->space());
     Thyra::V_VmV<double>(r.ptr(), *b, *Ax);
-    
+
     double
       Ax_nrm = Thyra::norm(*Ax),
       r_nrm = Thyra::norm(*r),
@@ -300,25 +300,23 @@ int main(int argc, char* argv[])
 
     bool resid_tol_check = ( r_nrm_over_b_nrm <= solveTol );
     if(!resid_tol_check) success = false;
-    
+
     *out
       << "\n||A*x|| = " << Ax_nrm << "\n";
-    
+
     *out
       << "\n||A*x-b||/||b|| = " << r_nrm << "/" << b_nrm
       << " = " << r_nrm_over_b_nrm << " <= " << solveTol
       << " : " << Thyra::passfail(resid_tol_check) << "\n";
-    
+
+    Teuchos::TimeMonitor::summarize(*out<<"\n");
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
-    
-  Teuchos::TimeMonitor::summarize(*out<<"\n");
-  
+
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
 
-  return ( success ? 0 : 1 );
-
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

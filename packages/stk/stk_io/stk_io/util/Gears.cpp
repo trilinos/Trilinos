@@ -1,28 +1,49 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_io/util/Gears.hpp>
+#include <math.h>                       // for acos, cos, sin
+#include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank
+namespace stk { namespace mesh { class Part; } }
 
-#include <math.h>
-#include <iostream>
-#include <limits>
-#include <stdexcept>
 
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_io/IossBridge.hpp>
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-
-#include <stk_mesh/fem/Stencils.hpp>
-
-#include <Shards_BasicTopologies.hpp>
 
 
 //----------------------------------------------------------------------
@@ -34,14 +55,14 @@ namespace util {
 
 //----------------------------------------------------------------------
 
-GearFields::GearFields( stk::mesh::fem::FEMMetaData & S )
-  : gear_coord(          S.get_meta_data(S).declare_field<CylindricalField>( std::string("gear_coordinates") ) ),
-    model_coord(         S.get_meta_data(S).declare_field<CartesianField>( std::string("coordinates") ) )
+GearFields::GearFields( stk::mesh::MetaData & S )
+  : gear_coord(          S.declare_field<CylindricalField>(stk::topology::NODE_RANK, std::string("gear_coordinates") ) ),
+    model_coord(         S.declare_field<CartesianField>(stk::topology::NODE_RANK, std::string("coordinates") ) )
 {
-  const stk::mesh::Part & universe = S.get_meta_data(S).universal_part();
+  const stk::mesh::Part & universe = S.universal_part();
 
-  stk::mesh::put_field( gear_coord    , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
-  stk::mesh::put_field( model_coord   , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
+  stk::mesh::put_field( gear_coord    , universe , SpatialDimension );
+  stk::mesh::put_field( model_coord   , universe , SpatialDimension );
 }
 
 //----------------------------------------------------------------------
@@ -61,7 +82,7 @@ identifier( size_t nthick ,  // Number of entities through the thickness
 }
 
 
-Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
+Gear::Gear( stk::mesh::MetaData & S ,
             const std::string & name ,
             const GearFields & gear_fields ,
             const double center[] ,
@@ -73,25 +94,20 @@ Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
             const size_t z_num ,
             const size_t angle_num ,
             const int      turn_direction )
-  : m_mesh_fem_meta_data( &S ),
-    m_mesh_meta_data( S.get_meta_data(S) ),
+  : m_mesh_meta_data( S ),
     m_mesh( NULL ),
-    m_gear( S.declare_part(std::string("Gear_").append(name), m_mesh_fem_meta_data->element_rank()) ),
-    m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_fem_meta_data->side_rank()) ),
+    m_gear( S.declare_part(std::string("Gear_").append(name), stk::topology::ELEMENT_RANK) ),
+    m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_meta_data.side_rank()) ),
     m_gear_coord( gear_fields.gear_coord ),
     m_model_coord(gear_fields.model_coord )
 {
-  typedef shards::Hexahedron<> Hex ;
-  typedef shards::Quadrilateral<> Quad ;
   enum { SpatialDimension = GearFields::SpatialDimension };
 
   stk::io::put_io_part_attribute(m_gear);
   stk::io::put_io_part_attribute(m_surf);
-  stk::mesh::fem::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-  stk::mesh::fem::set_cell_topology( m_gear, hex_top );
-  stk::mesh::fem::set_cell_topology( m_surf, quad_top );
+  stk::mesh::set_topology( m_gear, stk::topology::HEX_8 );
+  stk::mesh::set_topology( m_surf, stk::topology::QUAD_8 );
 
   // Meshing parameters for this gear:
 
@@ -120,7 +136,7 @@ Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
 
 //----------------------------------------------------------------------
 
-stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts ,
+stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts ,
                                      stk::mesh::EntityId node_id_base ,
                                      size_t iz ,
                                      size_t ir ,
@@ -140,10 +156,10 @@ stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts
   stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
   stk::mesh::EntityId id = node_id_base + id_gear ;
 
-  stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, id , parts );
+  stk::mesh::Entity node = m_mesh->declare_entity( stk::topology::NODE_RANK, id , parts );
 
-  double * const gear_data    = field_data( m_gear_coord , node );
-  double * const model_data   = field_data( m_model_coord , node );
+  double * const gear_data    = stk::mesh::field_data( m_gear_coord , node );
+  double * const model_data   = stk::mesh::field_data( m_model_coord , node );
 
   gear_data[0] = radius ;
   gear_data[1] = angle ;
@@ -160,17 +176,8 @@ stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts
 
 void Gear::mesh( stk::mesh::BulkData & M )
 {
-  stk::mesh::EntityRank element_rank;
-  stk::mesh::EntityRank side_rank    ;
-  if (m_mesh_fem_meta_data) {
-    element_rank = m_mesh_fem_meta_data->element_rank();
-    side_rank    = m_mesh_fem_meta_data->side_rank();
-  }
-  else {
-    stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(M);
-    element_rank = fem.element_rank();
-    side_rank    = fem.side_rank();
-  }
+  stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
+  stk::mesh::EntityRank side_rank = m_mesh_meta_data.side_rank();
 
   M.modification_begin();
 
@@ -185,7 +192,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
   // max_id is no longer available from comm_mesh_stats.
   // If we assume uniform numbering from 1.., then max_id
   // should be equal to counts...
-  const stk::mesh::EntityId node_id_base = counts[ stk::mesh::fem::FEMMetaData::NODE_RANK ] + 1 ;
+  const stk::mesh::EntityId node_id_base = counts[ stk::topology::NODE_RANK ] + 1 ;
   const stk::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
 
   const unsigned long elem_id_gear_max =
@@ -219,23 +226,23 @@ void Gear::mesh( stk::mesh::BulkData & M )
           const size_t ir_1 = ir + 1 ;
           const size_t iz_1 = iz + 1 ;
 
-          stk::mesh::Entity * node[8] ;
+          stk::mesh::Entity node[8] ;
 
-          node[0] = &create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
-          node[1] = &create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
-          node[2] = &create_node( node_parts, node_id_base, iz_1, ir  , ia   );
-          node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
-          node[4] = &create_node( node_parts, node_id_base, iz  , ir_1, ia_1 );
-          node[5] = &create_node( node_parts, node_id_base, iz_1, ir_1, ia_1 );
-          node[6] = &create_node( node_parts, node_id_base, iz_1, ir_1, ia   );
-          node[7] = &create_node( node_parts, node_id_base, iz  , ir_1, ia   );
+          node[0] = create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
+          node[1] = create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
+          node[2] = create_node( node_parts, node_id_base, iz_1, ir  , ia   );
+          node[3] = create_node( node_parts, node_id_base, iz  , ir  , ia   );
+          node[4] = create_node( node_parts, node_id_base, iz  , ir_1, ia_1 );
+          node[5] = create_node( node_parts, node_id_base, iz_1, ir_1, ia_1 );
+          node[6] = create_node( node_parts, node_id_base, iz_1, ir_1, ia   );
+          node[7] = create_node( node_parts, node_id_base, iz  , ir_1, ia   );
 #if 0 /* VERIFY_CENTROID */
 
           // Centroid of the element for verification
 
-          const double TWO_PI = 2.0 * acos( (double) -1.0 );
-          const double angle = m_ang_inc * ( 0.5 + (double) ia );
-          const double z = m_center[2] + m_z_min + m_z_inc * (0.5 + (double)iz);
+          const double TWO_PI = 2.0 * acos( -1.0 );
+          const double angle = m_ang_inc * (0.5 + ia);
+          const double z = m_center[2] + m_z_min + m_z_inc * (0.5 + iz);
 
           double c[3] = { 0 , 0 , 0 };
 
@@ -264,11 +271,11 @@ void Gear::mesh( stk::mesh::BulkData & M )
           }
 #endif
 
-          stk::mesh::Entity & elem =
+          stk::mesh::Entity elem =
             M.declare_entity( element_rank, elem_id, elem_parts );
 
           for ( size_t j = 0 ; j < 8 ; ++j ) {
-            M.declare_relation( elem , * node[j] ,
+            M.declare_relation( elem , node[j] ,
                                 static_cast<unsigned>(j) );
           }
         }
@@ -294,25 +301,25 @@ void Gear::mesh( stk::mesh::BulkData & M )
           unsigned face_ord = 5 ;
           stk::mesh::EntityId face_id = elem_id * 10 + face_ord + 1;
 
-          stk::mesh::Entity * node[4] ;
+          stk::mesh::Entity node[4] ;
 
           const size_t ia_1 = ( ia + 1 ) % m_angle_num ;
           const size_t iz_1 = iz + 1 ;
 
-          node[0] = &create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
-          node[1] = &create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
-          node[2] = &create_node( node_parts, node_id_base, iz_1, ir  , ia   );
-          node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
+          node[0] = create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
+          node[1] = create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
+          node[2] = create_node( node_parts, node_id_base, iz_1, ir  , ia   );
+          node[3] = create_node( node_parts, node_id_base, iz  , ir  , ia   );
 
-          stk::mesh::Entity & face =
+          stk::mesh::Entity face =
             M.declare_entity( side_rank, face_id, face_parts );
 
           for ( size_t j = 0 ; j < 4 ; ++j ) {
-            M.declare_relation( face , * node[j] ,
+            M.declare_relation( face , node[j] ,
                                 static_cast<unsigned>(j) );
           }
 
-          stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id);
+          stk::mesh::Entity elem = M.get_entity(element_rank, elem_id);
 
           M.declare_relation( elem , face , face_ord );
         }
@@ -330,9 +337,9 @@ void Gear::turn( double /* turn_angle */ ) const
 #if 0
   const unsigned Length = 3 ;
 
-  const std::vector<stk::mesh::Bucket*> & ks = m_mesh->buckets( stk::mesh::Node );
-  const std::vector<stk::mesh::Bucket*>::const_iterator ek = ks.end();
-  std::vector<stk::mesh::Bucket*>::const_iterator ik = ks.begin();
+  const stk::mesh::BucketVector & ks = m_mesh->buckets( stk::mesh::Node );
+  const stk::mesh::BucketVector::const_iterator ek = ks.end();
+  stk::mesh::BucketVector::const_iterator ik = ks.begin();
   for ( ; ik != ek ; ++ik ) {
     stk::mesh::Bucket & k = **ik ;
     if ( k.has_superset( m_gear ) ) {

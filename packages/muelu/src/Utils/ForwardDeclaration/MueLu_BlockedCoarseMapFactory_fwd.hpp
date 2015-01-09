@@ -46,11 +46,11 @@
 #ifndef MUELU_BLOCKEDCOARSEMAPFACTORY_FWD_HPP
 #define MUELU_BLOCKEDCOARSEMAPFACTORY_FWD_HPP
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class BlockedCoarseMapFactory;
 }
 
@@ -58,6 +58,6 @@ namespace MueLu {
 #define MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 #endif
 
-
+#endif
 
 #endif // MUELU_BLOCKEDCOARSEMAPFACTORY_FWD_HPP

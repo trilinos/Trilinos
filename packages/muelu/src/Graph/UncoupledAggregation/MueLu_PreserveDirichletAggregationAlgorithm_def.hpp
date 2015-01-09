@@ -43,13 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_PreserveDirichletAggregationAlgorithm_def.hpp
- *
- *  Created on: 12 Nov 2013
- *      Author: wiesner
- */
-
 #ifndef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DEF_HPP_
 #define MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_DEF_HPP_
 
@@ -67,32 +60,35 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
 
-    const LO  nRows  = graph.GetNodeNumVertices();
-    const int myRank = graph.GetComm()->getRank();
+    const LO  numRows = graph.GetNodeNumVertices();
+    const int myRank  = graph.GetComm()->getRank();
 
-    LO nLocalAggregates = aggregates.GetNumAggregates();
-    for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] == NodeStats::BOUNDARY ||
-          (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
-        // This is a boundary or an isolated node
-        aggregates.SetIsRoot(iNode);
+    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
 
-        aggStat[iNode]      = NodeStats::AGGREGATED;
-        vertex2AggId[iNode] = nLocalAggregates++;
-        procWinner[iNode]   = myRank;
+    LO numLocalAggregates = aggregates.GetNumAggregates();
 
+    for (LO i = 0; i < numRows; i++)
+      if (aggStat[i] == BOUNDARY) {
+        aggStat[i] = IGNORED;
         numNonAggregatedNodes--;
-      }
-    }
 
-    aggregates.SetNumAggregates(nLocalAggregates);
+        if (preserve) {
+          aggregates.SetIsRoot(i);
+
+          vertex2AggId[i] = numLocalAggregates++;
+          procWinner  [i] = myRank;
+        }
+      }
+
+    // update aggregate object
+    aggregates.SetNumAggregates(numLocalAggregates);
   }
 
 } // end namespace

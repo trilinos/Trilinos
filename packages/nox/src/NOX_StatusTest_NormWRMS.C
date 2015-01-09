@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,8 +63,8 @@
 using namespace NOX::StatusTest;
 
 NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
-		   double alpha_, double beta_,
-		   bool disable_implicit_weighting) :
+           double alpha_, double beta_,
+           bool disable_implicit_weighting) :
   value(0.0),
   rtol(rtol_),
   atolIsScalar(true),
@@ -83,10 +83,10 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
 
 }
 
-NormWRMS::NormWRMS(double rtol_, 
-		   const Teuchos::RCP<const NOX::Abstract::Vector>& atolVec_,
-		   double BDFmult_, double tol_, double alpha_, double beta_,
-		   bool disable_implicit_weighting) :
+NormWRMS::NormWRMS(double rtol_,
+           const Teuchos::RCP<const NOX::Abstract::Vector>& atolVec_,
+           double BDFmult_, double tol_, double alpha_, double beta_,
+           bool disable_implicit_weighting) :
   value(0.0),
   rtol(rtol_),
   atolIsScalar(false),
@@ -112,8 +112,8 @@ NormWRMS::~NormWRMS()
 }
 
 StatusType NormWRMS::
-checkStatus(const NOX::Solver::Generic& problem, 
-	    NOX::StatusTest::CheckType checkType)
+checkStatus(const NOX::Solver::Generic& problem,
+        NOX::StatusTest::CheckType checkType)
 {
   if (checkType == NOX::StatusTest::None) {
     status = Unevaluated;
@@ -126,17 +126,17 @@ checkStatus(const NOX::Solver::Generic& problem,
   const Abstract::Group& soln = problem.getSolutionGroup();
   const Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
   const Abstract::Vector& x = soln.getX();
-  
+
   // On the first iteration, the old and current solution are the same so
-  // we should return the test as unconverged until there is a valid 
+  // we should return the test as unconverged until there is a valid
   // old solution (i.e. the number of iterations is greater than zero).
   int niters = problem.getNumIterations();
-  if (niters == 0) 
+  if (niters == 0)
   {
     status = Unconverged;
     value = 1.0e+12;
     return status;
-  } 
+  }
 
   // **** Begin check for convergence criteria #1 ****
 
@@ -146,16 +146,16 @@ checkStatus(const NOX::Solver::Generic& problem,
     u = x.clone(NOX::ShapeCopy);
   if (Teuchos::is_null(v))
     v = x.clone(NOX::ShapeCopy);
-  
+
   // Create the weighting vector u = RTOL |x| + ATOL
   // |x| is evaluated at the old time step
   v->abs(oldsoln.getX());
-  if (atolIsScalar) 
-  {    
+  if (atolIsScalar)
+  {
     u->init(1.0);
     u->update(rtol, *v, atol);
   }
-  else 
+  else
   {
     u->update(rtol, *v, 1.0, *atolVec, 0.0);
   }
@@ -192,52 +192,52 @@ checkStatus(const NOX::Solver::Generic& problem,
 
   // **** Begin check for convergence criteria #2 ****
   StatusType status2 = Unconverged;
-  
+
   // Determine if the Generic solver is a LineSearchBased solver
   // If it is not then return a "Converged" status
   const Solver::Generic* test = 0;
   test = dynamic_cast<const Solver::LineSearchBased*>(&problem);
-  if (test == 0) 
+  if (test == 0)
   {
-    status2 = Converged; 
+    status2 = Converged;
   }
-  else 
+  else
   {
     printCriteria2Info = true;
-    computedStepSize = 
+    computedStepSize =
       (dynamic_cast<const Solver::LineSearchBased*>(&problem))->getStepSize();
-    
+
     if (computedStepSize >= alpha)
       status2 = Converged;
   }
 
   // **** Begin check for convergence criteria #3 ****
-  
+
   // First time through, make sure the output parameter list exists.
-  // Since the list is const, a sublist call to a non-existent sublist 
-  // throws an error.  Therefore we have to check the existence of each 
+  // Since the list is const, a sublist call to a non-existent sublist
+  // throws an error.  Therefore we have to check the existence of each
   // sublist before we call it.
   const Teuchos::ParameterList& p = problem.getList();
   if (niters == 1) {
     if (p.isSublist("Direction")) {
       if (p.sublist("Direction").isSublist("Newton")) {
-	if (p.sublist("Direction").sublist("Newton").isSublist("Linear Solver")) {
-	  if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isSublist("Output")) {
+    if (p.sublist("Direction").sublist("Newton").isSublist("Linear Solver")) {
+      if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isSublist("Output")) {
 
-	    const Teuchos::ParameterList& list = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output");
-	    
-	    if (Teuchos::isParameterType<double>(list, "Achieved Tolerance")) {
-	      
-	      printCriteria3Info = true;
-	      
-	      
-	    }
-	  }
-	}
+        const Teuchos::ParameterList& list = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output");
+
+        if (Teuchos::isParameterType<double>(list, "Achieved Tolerance")) {
+
+          printCriteria3Info = true;
+
+
+        }
+      }
+    }
       }
     }
   }
-  
+
   StatusType status3 = Converged;
   if (printCriteria3Info) {
     achievedTol = const_cast<Teuchos::ParameterList&>(problem.getList()).
@@ -248,11 +248,11 @@ checkStatus(const NOX::Solver::Generic& problem,
 
 
   // Determine status of test
-  if ((status1 == Converged) && 
+  if ((status1 == Converged) &&
       (status2 == Converged) &&
       (status3 == Converged))
     status = Converged;
-  
+
   return status;
 }
 
@@ -288,7 +288,7 @@ std::ostream& NormWRMS::print(std::ostream& stream, int indent) const
 double NormWRMS::getNormWRMS() const
 {
   return value;
-}   
+}
 
 double NormWRMS::getTolerance() const
 {
@@ -304,7 +304,7 @@ double NormWRMS::getATOL() const
 {
   if (atolIsScalar)
     return atol;
-  
+
   return (-1.0);
 }
 
@@ -312,12 +312,12 @@ double NormWRMS::getBDFMultiplier() const
 {
   return factor;
 }
- 
+
 double NormWRMS::getAlpha() const
 {
   return alpha;
 }
- 
+
 double NormWRMS::getBeta() const
 {
   return beta;

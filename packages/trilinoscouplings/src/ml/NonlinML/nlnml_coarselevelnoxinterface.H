@@ -19,9 +19,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
@@ -84,7 +84,6 @@
 // forward declarations
 class Epetra_CrsMatrix;
 
-using namespace std;
 using namespace Teuchos;
 namespace NLNML
 {
@@ -97,22 +96,22 @@ public:
   NLNML_CoarseLevelNoxInterface(
                      RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface,
                      int level,int outlevel,
-                     RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P,
+                     RefCountPtr< std::vector< RefCountPtr<Epetra_CrsMatrix> > > P,
                      const Epetra_BlockMap& this_bmap,
                      int maxlevel);
   void recreate();
-  
+
   virtual ~NLNML_CoarseLevelNoxInterface();
-  
-  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
-			const FillType fillFlag);
+
+  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F,
+      const FillType fillFlag);
 
   Epetra_Vector* restrict_fine_to_this(const Epetra_Vector& xfine);
   Epetra_Vector* prolong_this_to_fine(const Epetra_Vector& xcoarse);
-  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* thisvec, int current, int next); 
-  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next);                                  
-  
-  void setP();    
+  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* thisvec, int current, int next);
+  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next);
+
+  void setP();
 
   bool setModifiedSystem(bool flag, Epetra_Vector* fbar, Epetra_Vector* fxbar)
   { isFASmodfied_ = flag; fbar_ = fbar; fxbar_ = fxbar; return true; }
@@ -139,14 +138,14 @@ protected:
   int                                                    level_;
   int                                                    maxlevel_;
   int                                                    outputlevel_;
-  bool                                                   isFASmodfied_; 
+  bool                                                   isFASmodfied_;
   int                                                    nFcalls_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>        fineinterface_;
-  RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P_;
+  RefCountPtr< std::vector< RefCountPtr<Epetra_CrsMatrix> > > P_;
   RefCountPtr<Epetra_BlockMap>                           this_bmap_;
-  vector<RefCountPtr<Epetra_Vector> >                    wvec_;
+  std::vector<RefCountPtr<Epetra_Vector> >                    wvec_;
   Epetra_Vector*                                         fbar_;
-  Epetra_Vector*                                         fxbar_; 
+  Epetra_Vector*                                         fxbar_;
 }; // class NLNML_CoarseLevelNoxInterface
 } // namespace NLNML
 #endif

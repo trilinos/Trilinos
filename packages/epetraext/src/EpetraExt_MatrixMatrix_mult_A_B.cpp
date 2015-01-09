@@ -170,7 +170,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // **********************
   if(!B.Importer() || (B.Importer()->NumSameIDs() == DomainMap.NumMyElements())) {
     // B's colmap has all of the domain elements.  We can just copy those into the start of the array.
-    DomainMap.MyGlobalElements(&Cgids[0]);
+    DomainMap.MyGlobalElements(Cgids.size() ? &Cgids[0] : 0);
     Cstart=DomainMap.NumMyElements();
     Bstart=DomainMap.NumMyElements();
 
@@ -256,7 +256,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       }
 
       // Sort & record reindexing
-      int *Bptr2 = &Btemp2[0]; 
+      int *Bptr2 = Btemp2.size() ? &Btemp2[0] : 0; 
       util.Sort(true, tCsize, &Cgids[Cstart], 0, 0, 1, &Bptr2, 0, 0);
 
       for(i=0, j=Cstart; i<tCsize; i++){
@@ -284,7 +284,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       }
 
       // Sort & record reindexing
-      int *Iptr2 = &Itemp2[0]; 
+      int *Iptr2 = Itemp2.size() ? &Itemp2[0] : 0; 
       util.Sort(true, tCsize, &Cgids[Cstart], 0, 0, 1, &Iptr2, 0, 0);
 
       for(i=0, j=Cstart; i<tCsize; i++){
@@ -317,9 +317,9 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
       for(i=Istart; i<Inext; i++) {Itemp[i-Istart]=Igids[i]; Itemp2[i-Istart]=i;}
 
       // Sort & set_union
-      int *Bptr2 = &Btemp2[0]; int *Iptr2 = &Itemp2[0];
-      util.Sort(true, tBsize, &Btemp[0], 0, 0, 1, &Bptr2, 0, 0);
-      util.Sort(true, tIsize, &Itemp[0], 0, 0, 1, &Iptr2, 0, 0);
+      int *Bptr2 = Btemp2.size() ? &Btemp2[0] : 0; int *Iptr2 = Itemp2.size() ? &Itemp2[0] : 0;
+      util.Sort(true, tBsize, Btemp.size() ? &Btemp[0] : 0, 0, 0, 1, &Bptr2, 0, 0);
+      util.Sort(true, tIsize, Itemp.size() ? &Itemp[0] : 0, 0, 0, 1, &Iptr2, 0, 0);
       typename std::vector<int_type>::iterator mycstart = Cgids.begin()+Cstart;
       typename std::vector<int_type>::iterator last_el=std::set_union(Btemp.begin(),Btemp.begin()+tBsize,Itemp.begin(),Itemp.begin()+tIsize,mycstart);
 
@@ -352,7 +352,7 @@ int aztecoo_and_ml_compatible_map_union(const Epetra_CrsMatrix &B, const Lightwe
   // Stage 5: Call constructor
   // **********************
   // Make the map
-  unionmap=new Epetra_Map((int_type) -1,Cstart,&Cgids[0], (int_type) B.ColMap().IndexBase64(),
+  unionmap=new Epetra_Map((int_type) -1,Cstart,Cgids.size() ? &Cgids[0] : 0, (int_type) B.ColMap().IndexBase64(),
 	  B.Comm(),B.ColMap().DistributedGlobal(),(int_type) B.ColMap().MinAllGID64(),(int_type) B.ColMap().MaxAllGID64());
   return 0;
 #else
@@ -381,7 +381,7 @@ inline void resize_doubles(int nold,int nnew,double*& d){
 template<typename int_type>
 int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 			const Epetra_CrsMatrix & B,
-			CrsMatrixStruct& Bview,
+			const CrsMatrixStruct& Bview,
 			std::vector<int> & Bcol2Ccol,
 			std::vector<int> & Bimportcol2Ccol,
 			std::vector<int>& Cremotepids,
@@ -434,6 +434,7 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
   // Classic csr assembly (low memory edition)
   int CSR_alloc=C_estimate_nnz(A,B);
+  if(CSR_alloc < n) CSR_alloc = n;
   int CSR_ip=0,OLD_ip=0;
   Epetra_IntSerialDenseVector & CSR_rowptr = C.ExpertExtractIndexOffset();
   Epetra_IntSerialDenseVector & CSR_colind = C.ExpertExtractIndices();  
@@ -536,8 +537,12 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
     ExportPIDs = B.Importer()->ExportPIDs();    
   }
 
-  if(!C.ColMap().SameAs(B.DomainMap()))
+
+  if(B.Importer() && C.ColMap().SameAs(B.ColMap())) 
+    Cimport = new Epetra_Import(*B.Importer()); // Because the domain maps are the same
+  else if(!C.ColMap().SameAs(B.DomainMap()))
     Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
+
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM Newmatrix ESFC")));
@@ -1003,6 +1008,9 @@ int MatrixMatrix::Tmult_A_B(const Epetra_CrsMatrix & A,
 }
 
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 			   CrsMatrixStruct & Aview,
 			   const Epetra_CrsMatrix & B,
@@ -1487,6 +1495,9 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
 }
 
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 int MatrixMatrix::jacobi_A_B(double omega,
 			     const Epetra_Vector & Dinv,
 			     const Epetra_CrsMatrix & A,
@@ -1512,6 +1523,84 @@ int MatrixMatrix::jacobi_A_B(double omega,
 }
 
 
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+template<typename int_type>
+int MatrixMatrix::Tmult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+#ifdef ENABLE_MMM_TIMINGS
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T Transpose")));
+#endif
+
+
+  /*************************************************************/
+  /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
+  /*************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T AB-core")));
+#endif
+  RCP<Epetra_CrsMatrix> Ctemp;
+
+  // If Atrans has no Exporter, we can use C instead of having to create a temp matrix
+  bool needs_final_export = Atransview.origMatrix->Exporter() != 0;
+  if(needs_final_export) 
+    Ctemp = rcp(new Epetra_CrsMatrix(Copy,Atransview.origMatrix->RowMap(),Bview.origMatrix->ColMap(),0));
+  else {
+    EPETRA_CHK_ERR( C.ReplaceColMap(Bview.origMatrix->ColMap()) );
+    Ctemp = rcp(&C,false);// don't allow deallocation
+  }
+  
+  // Multiply
+  std::vector<int> Bcol2Ccol(Bview.origMatrix->NumMyCols());
+  for(int i=0; i<Bview.origMatrix->NumMyCols(); i++) 
+    Bcol2Ccol[i]=i;
+  std::vector<int> Bimportcol2Ccol,Cremotepids;
+  if(Bview.origMatrix->Importer()) 
+    EPETRA_CHK_ERR( Epetra_Util::GetRemotePIDs(*Bview.origMatrix->Importer(),Cremotepids));
+
+  EPETRA_CHK_ERR(mult_A_B_newmatrix<int_type>(*Atransview.origMatrix,*Bview.origMatrix,Bview,
+					      Bcol2Ccol,Bimportcol2Ccol,Cremotepids,
+					      *Ctemp));
+
+  /*************************************************************/
+  /* 4) ExportAndFillComplete matrix (if needed)               */
+  /*************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("EpetraExt: MMM-T ESFC")));
+#endif
+
+  if(needs_final_export) 
+    C.FusedExport(*Ctemp,*Ctemp->Exporter(),&Bview.origMatrix->DomainMap(),&Atransview.origMatrix->RangeMap(),false);
+
+  return 0;
+}
+
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int MatrixMatrix::mult_AT_B_newmatrix(const CrsMatrixStruct & Atransview, const CrsMatrixStruct & Bview, Epetra_CrsMatrix & C) {
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Atransview.origMatrix->RowMap().GlobalIndicesInt() && Bview.origMatrix->RowMap().GlobalIndicesInt()) {
+    return Tmult_AT_B_newmatrix<int>(Atransview,Bview,C);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Atransview.origMatrix->RowMap().GlobalIndicesLongLong() && Bview.origMatrix->RowMap().GlobalIndicesLongLong()) {
+    return Tmult_AT_B_newmatrix<long long>(Atransview,Bview,C);
+  }
+  else
+#endif
+    throw "EpetraExt::MatrixMatrix::mult_AT_B_newmatrix: GlobalIndices type unknown";
+}
 
 
 

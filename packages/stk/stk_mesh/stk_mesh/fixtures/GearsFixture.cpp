@@ -1,47 +1,65 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include <cmath>
-#include <sstream>
-#include <stdexcept>
-#include <limits>
-#include <iostream>
-#include <set>
-
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-
+#include <stk_util/stk_config.h>
 #include <stk_mesh/fixtures/GearsFixture.hpp>
-#include <stk_mesh/fixtures/Gear.hpp>
+#include <algorithm>                    // for min
+#include <cmath>                        // for fabs, floor
+#include <iostream>                     // for ostringstream, etc
+#include <set>                          // for set
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/Types.hpp>      // for BucketVector, EntityProcVec, etc
+#include <stk_mesh/fixtures/Gear.hpp>   // for Gear, TWO_PI
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class FieldBase; } }
 
-#include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/FEMHelpers.hpp>
-#include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
-#include <Shards_BasicTopologies.hpp>
+
+
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
-
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
-
-typedef shards::Hexahedron<8> Hex8 ;
-typedef shards::Wedge<6>      Wedge6 ;
 
 } // namespace
 
@@ -52,42 +70,37 @@ namespace fixtures {
 GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gear_params)
   : NUM_GEARS(num_gears)
   , meta_data( SpatialDimension )
-  , bulk_data( fem::FEMMetaData::get_meta_data(meta_data) , pm )
-  , element_rank( meta_data.element_rank() )
-  , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", element_rank))
-  , hex_part( fem::declare_part<Hex8>(meta_data, "hex8_part"))
-  , wedge_part( fem::declare_part<Wedge6>(meta_data, "wedge6_part"))
-  , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", ONE_STATE))
-  , displacement_field( meta_data.declare_field<CartesianField>("displacement", TWO_STATE))
-  , translation_field( meta_data.declare_field<CartesianField>("translation", ONE_STATE))
-  , cylindrical_coord_field( meta_data.declare_field<CylindricalField>("cylindrical_coordinates", ONE_STATE))
+  , bulk_data( meta_data , pm )
+  , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", stk::topology::ELEMENT_RANK))
+  , hex_part( meta_data.declare_part_with_topology("hex8_part", stk::topology::HEX_8))
+  , wedge_part( meta_data.declare_part_with_topology("wedge6_part", stk::topology::WEDGE_6))
+  , cartesian_coord_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "coordinates", ONE_STATE))
+  , displacement_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "displacement", TWO_STATE))
+  , translation_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "translation", ONE_STATE))
+  , cylindrical_coord_field( meta_data.declare_field<CylindricalField>(stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE))
   , m_gears()
   {
 
     put_field(
         cartesian_coord_field,
-        NODE_RANK,
         meta_data.universal_part(),
         SpatialDimension
         );
 
     put_field(
         displacement_field,
-        NODE_RANK,
         meta_data.universal_part(),
         SpatialDimension
         );
 
     put_field(
         translation_field,
-        NODE_RANK,
         cylindrical_coord_part,
         SpatialDimension
         );
 
     put_field(
         cylindrical_coord_field,
-        NODE_RANK,
         cylindrical_coord_part,
         SpatialDimension
         );
@@ -100,7 +113,7 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gea
       m_gears[i] = new Gear (
           meta_data,
           bulk_data,
-          meta_data.declare_part(oss.str(),SpatialDimension),
+          meta_data.declare_part(oss.str(),static_cast<EntityRank>(SpatialDimension)),
           cylindrical_coord_part,
           hex_part,
           wedge_part,
@@ -175,7 +188,9 @@ void GearsFixture::communicate_model_fields()
   fields.push_back(& displacement_field.field_of_state(stk::mesh::StateOld));
 
   // Parallel collective call:
-  communicate_field_data(bulk_data.shared_aura(), fields);
+#if defined( STK_HAS_MPI)
+  communicate_field_data(bulk_data.aura_ghosting(), fields);
+#endif
 }
 
 
@@ -191,24 +206,29 @@ double scale_angle_2pi(double angle) {
 
 
 void select_nodal_data(
-    GearsFixture::CylindricalField & cylindrical_coord_field, 
-    Entity & element, 
-    double & radius, 
-    double & angle, 
+    const BulkData& mesh,
+    GearsFixture::CylindricalField & cylindrical_coord_field,
+    Entity element,
+    double & radius,
+    double & angle,
     double & height
     )
 {
   radius = 0.0;
   angle = TWO_PI;
   height = 0.0;
-  PairIterRelation node_relations = element.relations(NODE_RANK);
-  int numNodes = node_relations.second - node_relations.first;
-  for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-    Entity * node = node_relations.first->entity();
-    EntityArray<GearsFixture::CylindricalField> cylindrical_data( cylindrical_coord_field, *node);
-    radius += cylindrical_data(0);
-    angle  = std::min(angle,cylindrical_data(1));
-    height += cylindrical_data(2);
+
+  int numNodes = mesh.num_nodes(element);
+  Entity const *elem_nodes = mesh.begin_nodes(element);
+  for (int i = 0; i < numNodes; ++i)
+  {
+    Entity node = elem_nodes[i];
+    const MeshIndex& mi = mesh.mesh_index(node);
+    const Bucket& bucket = *mi.bucket;
+    double *cylindrical_data = stk::mesh::field_data(cylindrical_coord_field, bucket, mi.bucket_ordinal);
+    radius += cylindrical_data[0];
+    angle  = std::min(angle,cylindrical_data[1]);
+    height += cylindrical_data[2];
   }
   radius /= numNodes;
   height /= numNodes;
@@ -221,28 +241,30 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
 
   const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
-  
+
   EntityProcVec elements_to_change_owner;
 
   Selector locally_owned = gear.meta_data.locally_owned_part();
   if (p_rank == 0) {
-    BucketVector all_elements;
-    stk::mesh::get_buckets(locally_owned,bulk_data.buckets(gear.meta_data.element_rank()),all_elements);
-    std::set<Entity *> node_set; // First come first serve nodal movement.
-    for (BucketVector::iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
+    BucketVector const& all_elements = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_owned);
+    std::set<Entity> node_set; // First come first serve nodal movement.
+    for (BucketVector::const_iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;
       for (size_t i=0 ; i<b.size() ; ++i) {
-        Entity * element = &b[i];
+        Entity element = b[i];
         double radius = 0.0;
         double angle  = 0.0;
         double height = 0.0;
-        select_nodal_data(cylindrical_coord_field, *element,radius,angle,height);
+        select_nodal_data(bulk_data, cylindrical_coord_field, element, radius, angle, height);
         unsigned destination_processor_rank = destination_processor(gear,radius,angle,height,p_rank,p_size);
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
+
         // Now add all related nodes to list to move to this processor:
-        PairIterRelation node_relations = element->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-        for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
-          Entity * node = node_relations.first->entity();
+        Entity const *elem_nodes_j = bulk_data.begin_nodes(element);
+        Entity const *elem_nodes_e = bulk_data.end_nodes(element);
+        for ( ; elem_nodes_j != elem_nodes_e; ++elem_nodes_j)
+        {
+          Entity node = *elem_nodes_j;
           if (node_set.count(node)==0) {
             elements_to_change_owner.push_back(EntityProc(node,destination_processor_rank));
             node_set.insert(node);
@@ -253,10 +275,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   }
 
   // Parallel collective call:
-  bulk_data.modification_begin();
   bulk_data.change_entity_owner(elements_to_change_owner);
-  // Parallel collective call:
-  bulk_data.modification_end();
 
   // Print out how many ended up on each processor:
   //{
@@ -276,7 +295,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   //  }
   //  std::cout << "Proc " << p_rank << ": element count = " << element_count << " node count = " << node_count << std::endl;
   //}
-  
+
 }
 
 
@@ -300,13 +319,13 @@ unsigned destination_processor(const Gear & gear, double rad, double angle, doub
   // Distribute elements across angles: (not working perfectly yet)
   angle = scale_angle_2pi(angle);
   result = static_cast<unsigned>(floor0((angle/TWO_PI)*p_size));
-  
+
   // Distribute elements across radius:
   //result = static_cast<unsigned>(floor0((rad-gear.rad_min)/(gear.rad_max-gear.rad_min)*p_size));
 
   // Distribute elements across height:
   //result = static_cast<unsigned>(floor0((height-gear.height_min)/(gear.height_max-gear.height_min)*p_size));
-  
+
   // Distribute elements randomly:
   //result = std::rand() % p_size;
 
@@ -318,7 +337,7 @@ unsigned destination_processor(const Gear & gear, double rad, double angle, doub
   //result = 1;
 
   scale_p_rank(result,p_size);
-  
+
   //std::cout << "P"<<p_rank<<"("<<p_size<<"):  (r,t,z) = ("<<rad<<", "<<angle<<", "<<height<<"), dest = " << result << std::endl;
 
   return result;
@@ -327,6 +346,3 @@ unsigned destination_processor(const Gear & gear, double rad, double angle, doub
 } // fixtures
 } // mesh
 } // stk
-
-
-

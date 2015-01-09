@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,17 +54,17 @@
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H" // base class
 #include "LOCA_MultiContinuation_CompositeConstraint.H"     // base class
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
-     * \brief Implementation of 
+    /*!
+     * \brief Implementation of
      * LOCA::MultiContinuation::ConstraintInterfaceMVDX for composite
      * constraints, i.e., a constraint comprised of multiple, separate
      * constraints.
      */
-    class CompositeConstraintMVDX : 
+    class CompositeConstraintMVDX :
       public virtual LOCA::MultiContinuation::ConstraintInterfaceMVDX,
       public virtual LOCA::MultiContinuation::CompositeConstraint {
 
@@ -75,17 +75,17 @@ namespace LOCA {
        const Teuchos::RCP<LOCA::GlobalData>& global_data,
        const std::vector< Teuchos::RCP<
        LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects);
-      
+
       //! Copy constructor
-      CompositeConstraintMVDX(const CompositeConstraintMVDX& source, 
-			      NOX::CopyType type = NOX::DeepCopy);
+      CompositeConstraintMVDX(const CompositeConstraintMVDX& source,
+                  NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor
       ~CompositeConstraintMVDX();
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface
+       * virtual methods
        */
       //@{
 
@@ -93,7 +93,7 @@ namespace LOCA {
       virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -110,9 +110,9 @@ namespace LOCA {
        * \endcode
        */
       virtual NOX::Abstract::Group::ReturnType
-      multiplyDX(double alpha, 
-	      const NOX::Abstract::MultiVector& input_x,
-	      NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
+      multiplyDX(double alpha,
+          const NOX::Abstract::MultiVector& input_x,
+          NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
       /*!
@@ -123,16 +123,16 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       addDX(Teuchos::ETransp transb,
-	    double alpha, 
-	    const NOX::Abstract::MultiVector::DenseMatrix& b,
-	    double beta,
-	    NOX::Abstract::MultiVector& result_x) const;
+        double alpha,
+        const NOX::Abstract::MultiVector::DenseMatrix& b,
+        double beta,
+        NOX::Abstract::MultiVector& result_x) const;
 
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX
+       * virtual methods
        */
       //@{
 
@@ -152,7 +152,7 @@ namespace LOCA {
 
       //! Array of constraintMVDX pointers
       std::vector< Teuchos::RCP<
-	LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintMVDXPtrs;
+    LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintMVDXPtrs;
 
       //! Composite constraint derivative
       Teuchos::RCP<NOX::Abstract::MultiVector> compositeDX;

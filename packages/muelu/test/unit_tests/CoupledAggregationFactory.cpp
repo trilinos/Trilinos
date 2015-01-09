@@ -57,23 +57,22 @@ namespace MueLuTests {
 
   //TODO: should go in the Aggregates class
   template <class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node,
-            class LocalMatOps>
-  void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& aggregates, Teuchos::FancyOStream& out) {
-    RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
+           class GlobalOrdinal,
+           class Node>
+             void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node>& aggregates, Teuchos::FancyOStream& out) {
+               RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
 
-    ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-    ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-    ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+               ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+               ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+               ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
 
-    for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
-      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+               for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+                 Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
-    out << *Final_ << std::endl;
-  }
+               out << *Final_ << std::endl;
+             }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoupledAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
 
@@ -83,7 +82,7 @@ namespace MueLuTests {
     }
   } // Constructor
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(CoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoupledAggregationFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
       //    typedef double Scalar;
@@ -91,7 +90,7 @@ namespace MueLuTests {
 
       out << "version: " << MueLu::Version() << std::endl;
 
-      RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
+      RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
       {
@@ -100,7 +99,7 @@ namespace MueLuTests {
         aggFact.SetPrintFlag(6);
         aggFact.SetMinNodesPerAggregate(2);
         aggFact.SetMaxNeighAlreadySelected(5);
-        aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+        aggFact.SetOrdering("natural");
         aggFact.SetPhase3AggCreation(0.5);
 
         RCP<Aggregates> aggregates;
@@ -141,9 +140,9 @@ namespace MueLuTests {
     }
   } // Build
 
-    //
-    // INSTANTIATIONS
-    //
+  //
+  // INSTANTIATIONS
+  //
 
   typedef double Scalar;                             // Scalar is not relevant for this test
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
@@ -153,20 +152,19 @@ namespace MueLuTests {
   typedef long long int LongLongInt;
 #endif
 
-#define UNIT_TEST_GROUP_5(SC, LO, GO, NO, LMO)                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Constructor, SC, LO, GO, NO, LMO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO, LMO)
+#define UNIT_TEST_GROUP_4(SC, LO, GO, NO)                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoupledAggregationFactory, Constructor, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO)
 
 #define UNIT_TEST_GROUP_2(LO, GO)                                       \
-  typedef KokkosClassic::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO;  \
-  UNIT_TEST_GROUP_5(Scalar, LO, GO, Node, LMO ## LO)
+  UNIT_TEST_GROUP_4(Scalar, LO, GO, Node)
 
   UNIT_TEST_GROUP_2(int, int)
-  UNIT_TEST_GROUP_2(int, LongInt)
-  UNIT_TEST_GROUP_2(LongInt, LongInt)
+    UNIT_TEST_GROUP_2(int, LongInt)
+    UNIT_TEST_GROUP_2(LongInt, LongInt)
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  UNIT_TEST_GROUP_2(LongInt, LongLongInt)
+    UNIT_TEST_GROUP_2(LongInt, LongLongInt)
 #endif
 
 } // namespace <anonymous>

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,7 +57,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
-#include "Teuchos_ParameterList.hpp"	   // class data element 
+#include "Teuchos_ParameterList.hpp"       // class data element
 #include "NOX_Abstract_Group.H"    // returnType
 #include "Teuchos_RCP.hpp"
 
@@ -70,11 +70,11 @@ namespace NOX {
 namespace Direction {
 
 //! %Tensor direction computation
-/*! 
-  Computes the Tensor direction by finding the root or smallest magnitude 
+/*!
+  Computes the Tensor direction by finding the root or smallest magnitude
   minimizer of the local model
   \f[ M_T(x_c+d) = F_c + Jd + a_c(s^Td)^2. \f]
-  
+
   To use this direction, specify that the "Method" is "%Tensor" in the
   "%Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
@@ -101,46 +101,46 @@ public:
 
   //! Constructor
   Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
-	 Teuchos::ParameterList& params);
+     Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Tensor();
 
   // derived
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params);
+             Teuchos::ParameterList& params);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
   //! Compute the curvilinear step dT(lambda) and return in dir.
   bool computeCurvilinearStep(NOX::Abstract::Vector& dir,
-			      const NOX::Abstract::Group& soln, 
-			      const NOX::Solver::Generic& solver,
-			      double lambda) const;
+                  const NOX::Abstract::Group& soln,
+                  const NOX::Solver::Generic& solver,
+                  double lambda) const;
 
   //! Compute the curvilinear step dT(lambda) and return in dir.
   bool computeCurvilinearStep2(NOX::Abstract::Vector& dir,
-			       const NOX::Abstract::Group& soln, 
-			       const NOX::Solver::Generic& solver,
-			       double lambda) const;
-  
-  //! Return the approximate Newton step generated alongside tensor step 
+                   const NOX::Abstract::Group& soln,
+                   const NOX::Solver::Generic& solver,
+                   double lambda) const;
+
+  //! Return the approximate Newton step generated alongside tensor step
   const NOX::Abstract::Vector& getNewton() const;
 
 protected:
 
 private:
 
-  //! Types of steps 
+  //! Types of steps
   enum stepType {NewtonStep, TensorStep3, TensorStep2, TensorStepFP};
 
-  //! Types of preconditioning 
+  //! Types of preconditioning
   enum preconditioningType {None, Left, Right};
 
   //! Types of reorthogonalization
@@ -150,16 +150,16 @@ private:
   void throwError(const std::string& functionName, const std::string& errorMsg) const;
 
   // Compute approximate Newton and tensor steps by solving the local models
-  bool solveModels(NOX::Abstract::Vector& dir, NOX::Abstract::Group& soln, 
-		   const NOX::Solver::Generic& solver, double& error,
-		   double*& yn);
+  bool solveModels(NOX::Abstract::Vector& dir, NOX::Abstract::Group& soln,
+           const NOX::Solver::Generic& solver, double& error,
+           double*& yn);
 
   // Compute the tensor step
-  bool computeTensorStep(const NOX::Abstract::Group& soln, 
-			 const NOX::Solver::Generic& solver,
-			 double lambda) const;
+  bool computeTensorStep(const NOX::Abstract::Group& soln,
+             const NOX::Solver::Generic& solver,
+             double lambda) const;
 
-  
+
 private:
 
   // Various functions that are taken from C to at least get a tensor
@@ -198,71 +198,71 @@ private:
 
   //!  Compute Givens sin and cos values
   void computeGivens(double a, double b,
-		     double& c, double& s) const;
+             double& c, double& s) const;
 
   //!  Apply Givens rotations to vector [a; b]
   void applyGivens(double c, double s,
-		   double& a, double& b) const;
+           double& a, double& b) const;
 
   //!  Compute Householder vector
-  void computeHouseholder(double** a, int j, 
-			  int i1, int i2,
-			  double* z) const;
+  void computeHouseholder(double** a, int j,
+              int i1, int i2,
+              double* z) const;
 
   //!  Apply Householder rotations to a column vector in a matrix
   void applyHouseholder(const double* z, double** a,
-			int j, int i1, int i2) const;
+            int j, int i1, int i2) const;
 
   //!  Apply Householder rotations to a vector
   void applyHouseholder(const double* z, double* a,
-			int i1, int i2) const;
+            int i1, int i2) const;
 
   //!  Find the smallest magnitude minimizer of quartic equation
   double minQuartic(double q1, double q2, double q3,
-		    double q4, double q5,
-		    bool chooseGlobal, double& qval) const;
-  
+            double q4, double q5,
+            bool chooseGlobal, double& qval) const;
+
   //!  Calculate beta by minimizing quartic equation
   double calculateBeta(double* vecg, double* vecq,
-		       double h1, int kk0, int kk,
-		       int pp, double normS, double& qval);
+               double h1, int kk0, int kk,
+               int pp, double normS, double& qval);
 
   //!  Calculate beta by solving the quadratic equation
   double calculateBeta(double qa, double qb, double qc,
-		       double& qval, double& lambdaBar,
-		       double normS = 1) const;
+               double& qval, double& lambdaBar,
+               double normS = 1) const;
 
   //!  Calculate norm of local model residual
   double getNormModelResidual(const NOX::Abstract::Vector& dir,
-			      const NOX::Abstract::Group& soln,
-			      const NOX::Solver::Generic& solver,
-			      bool isTensorModel) const;
+                  const NOX::Abstract::Group& soln,
+                  const NOX::Solver::Generic& solver,
+                  bool isTensorModel) const;
 
   //!  Calculate directional derivative
   double getDirectionalDerivative(const NOX::Abstract::Vector& dir,
-				  const NOX::Abstract::Group& soln) const;
+                  const NOX::Abstract::Group& soln) const;
 
   //!  Compute residuals and print out information
   void printDirectionInfo(const std::string& dirName,
-			  const NOX::Abstract::Vector& dir,
-			  const NOX::Abstract::Group& soln,
-			  const NOX::Solver::Generic& solver,
-			  bool isTensorModel=false) const;
-  
+              const NOX::Abstract::Vector& dir,
+              const NOX::Abstract::Group& soln,
+              const NOX::Solver::Generic& solver,
+              bool isTensorModel=false) const;
+
   //!  Apply the preconditioner to a vector
-  NOX::Abstract::Group::ReturnType 
+  NOX::Abstract::Group::ReturnType
   applyPreconditioner(bool useTranspose,
-		      const NOX::Abstract::Group& soln,
-		      Teuchos::ParameterList& params,
-		      const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result,
-		      const std::string& errLocation) const;
-    
-  
+              const NOX::Abstract::Group& soln,
+              Teuchos::ParameterList& params,
+              const NOX::Abstract::Vector& input,
+              NOX::Abstract::Vector& result,
+              const std::string& errLocation) const;
+
+
   //!  Backsolve an upper triangular system Ux=b.
   double* backsolve(double** U, double* b, int* p, int n, int dim=0,
-		    bool isTranspose=false) const;
-  
+            bool isTranspose=false) const;
+
 
 private:
 
@@ -272,12 +272,12 @@ private:
   //! Printing Utilities
   Teuchos::RCP<NOX::Utils> utils;
 
-  //! Flag for the base direction to compute after the first iteration 
+  //! Flag for the base direction to compute after the first iteration
   stepType requestedBaseStep;
 
-  //! Flag for the direction to be computed this iteration 
+  //! Flag for the direction to be computed this iteration
   stepType requestedStep;
-  
+
   //! Flag for type of preconditioning (left/right)
   preconditioningType precondition;
 
@@ -293,7 +293,7 @@ private:
 
   //! "Linear Solver" sublist inside "Direction"->"Tensor" sublist
   Teuchos::ParameterList* localParamsPtr;
-  
+
   bool isAugmentSubspace;
 
   //! Determined based on "Use Shortcut Method".
@@ -354,7 +354,7 @@ private:
   double dir0xsc;
 
   //! Problem size
-  int probSize;
+  NOX::size_type probSize;
 
   //! Maximum number of times to restart local solver
   int maxRestarts;
@@ -379,7 +379,7 @@ private:
   //! Threshold tolerance for tensor solve
   double tol;
 
-  //! Absolute threshold tolerance 
+  //! Absolute threshold tolerance
   double errTol;
 
   //! Band Hessenberg matrix from Arnoldi process
@@ -402,19 +402,19 @@ private:
 
   //! Temporary vector for right-hand side q
   double* qsave;
-  
+
   //! Vector for orthogonal Hessenberg matrix Q1, kth column
   double* qk;
-  
+
   //! Vector for orthogonal Hessenberg matrix Q1, subdiagonal
   double* q1subdiag;
-  
+
   //! Vector for orthogonal Hessenberg matrix Q1, norm-squared of column
   double* qNorm2;
-  
+
   //! Vector for ghost column of H
   double* hk;
-  
+
   //! Working vector for the new column of Hessenberg matrix
   double* newHessCol;
 
@@ -428,10 +428,10 @@ private:
   double* vecz;
 
   //! Vector for calculating the residual error
-  double* terrvec; 
+  double* terrvec;
 
   //! Permutation index vector
-  int* pindex; 
+  int* pindex;
 
   //! Number of Arnoldi iterations for last solve
   int iterations;
@@ -477,13 +477,13 @@ private:
 
   //! Counter for number of Jacobian-vector products
   mutable int multsJv;
-  
+
   //! Counter for number of Preconditioner-vector products
   mutable int multsMv;
 
   //! Inexact Newton solve utilities
   NOX::Direction::Utils::InexactNewton inexactNewtonUtils;
-  
+
 };
 } // namespace Direction
 } // namespace NOX

@@ -60,9 +60,6 @@ class Epetra_Distributor;
 namespace EpetraExt {
 class LightweightCrsMatrix;
 
-// Turn on to enable the special MMM timers
-//#define ENABLE_MMM_TIMINGS
-
 //#define HAVE_EPETRAEXT_DEBUG // for extra sanity checks
 
 // ==============================================================

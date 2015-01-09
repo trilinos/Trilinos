@@ -31,14 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>
-#include <cstdlib>
-
-#include "smart_assert.h"
 #include "node_set.h"
-#include "exodusII.h"
-#include "iqsort.h"
-#include "ED_SystemInterface.h"
+#include <cstdlib>                      // for NULL, exit
+#include <iostream>                     // for operator<<, endl, ostream, etc
+#include <vector>                       // for vector
+#include "ED_SystemInterface.h"         // for SystemInterface, interface
+#include "exodusII.h"                   // for ex_set, etc
+#include "iqsort.h"                     // for index_qsort
+#include "smart_assert.h"               // for SMART_ASSERT
+
 
 
 using namespace std;

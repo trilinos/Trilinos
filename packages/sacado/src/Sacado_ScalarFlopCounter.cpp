@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -38,8 +36,8 @@
 #include "Sacado_DynamicArrayTraits.hpp"
 
 // Initialization of static members
-const char* 
-Sacado::FlopCounterPack::FlopCounts::flopCountsNames[] = 
+const char*
+Sacado::FlopCounterPack::FlopCounts::flopCountsNames[] =
 {
   "="
   ,"+"
@@ -86,7 +84,7 @@ Sacado::FlopCounterPack::FlopCounts::summaryFlopCountsNames[] =
   ,"<,>,=="
   ,"nonlinear"
 };
-unsigned int 
+unsigned int
 Sacado::FlopCounterPack::FlopCounts::flopGranularity = 100000000;
 
 Sacado::FlopCounterPack::FlopCounts::FlopCounts()
@@ -94,18 +92,18 @@ Sacado::FlopCounterPack::FlopCounts::FlopCounts()
   reset();
 }
 
-void 
+void
 Sacado::FlopCounterPack::FlopCounts::reset()
 {
   ds_array<unsigned int>::zero( &partialFlopCounts[0], int(NUM_OPS) );
-  ds_array<unsigned int>::zero( &partialSummaryFlopCounts[0], 
-				int(NUM_SUMMARY_OPS) );
+  ds_array<unsigned int>::zero( &partialSummaryFlopCounts[0],
+                                int(NUM_SUMMARY_OPS) );
   ds_array<double>::zero( &flopCounts[0], int(NUM_OPS) );
   ds_array<double>::zero( &summaryFlopCounts[0], int(NUM_SUMMARY_OPS) );
   totalFlopCount = 0.0;
 }
 
-void 
+void
 Sacado::FlopCounterPack::FlopCounts::finalize()
 {
   for (int i=0; i<NUM_OPS; i++) {
@@ -130,7 +128,7 @@ Sacado::FlopCounterPack::FlopCounts::increment(Sacado::FlopCounterPack::FlopCoun
     partialFlopCounts[ft] =0;
   }
   if (partialSummaryFlopCounts[sft] > flopGranularity) {
-    summaryFlopCounts[sft] += 
+    summaryFlopCounts[sft] +=
       static_cast<double>(partialSummaryFlopCounts[sft]);
     partialSummaryFlopCounts[sft] = 0;
   }
@@ -138,7 +136,7 @@ Sacado::FlopCounterPack::FlopCounts::increment(Sacado::FlopCounterPack::FlopCoun
   ++partialSummaryFlopCounts[sft];
 }
 
-Sacado::FlopCounterPack::FlopCounts::ESummaryFlopType 
+Sacado::FlopCounterPack::FlopCounts::ESummaryFlopType
 Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::FlopCounts::EFlopType ft)
 {
   switch(ft) {
@@ -191,18 +189,18 @@ Sacado::FlopCounterPack::FlopCounts::getSummaryType(Sacado::FlopCounterPack::Flo
     default:
       assert(0);
   }
-  
+
   // This code is un-reachable, but some compilers will issue a warning
   // without it
   return SUMMARY_ASSIGN;
 }
 
-std::ostream& 
-Sacado::FlopCounterPack::printCountersTable(const int n, 
-					    const char* names[], 
-					    const char* abbr[],
-					    const FlopCounts counts[], 
-					    std::ostream &out)
+std::ostream&
+Sacado::FlopCounterPack::printCountersTable(const int n,
+                                            const char* names[],
+                                            const char* abbr[],
+                                            const FlopCounts counts[],
+                                            std::ostream &out)
 {
   assert( n >= 1 && names && abbr && counts );
   const int wo = 10;
@@ -248,7 +246,7 @@ Sacado::FlopCounterPack::printCountersTable(const int n,
     if(theseFlops) {
       out << "  " << std::setw(wo) << FlopCounts::summaryFlopCountsNames[i];
       for( int j = 0; j < n; ++j )
-	out << "  " << std::setw(wc) << counts[j].summaryFlopCounts[i];
+        out << "  " << std::setw(wc) << counts[j].summaryFlopCounts[i];
       out << std::endl;
     }
   }

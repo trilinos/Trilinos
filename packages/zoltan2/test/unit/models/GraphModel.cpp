@@ -78,13 +78,13 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> simpleUser_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> simpleUser_t;
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>      tcrsMatrix_t;
-typedef Tpetra::CrsGraph<lno_t, gno_t, node_t>                 tcrsGraph_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t>                      tmap_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>      tcrsMatrix_t;
+typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t>                 tcrsGraph_t;
+typedef Tpetra::Map<zlno_t, zgno_t, znode_t>                      tmap_t;
 
-typedef Zoltan2::StridedData<lno_t, scalar_t>                  input_t;
+typedef Zoltan2::StridedData<zlno_t, zscalar_t>                  input_t;
 
 typedef Zoltan2::BasicVectorAdapter<simpleUser_t>              simpleVAdapter_t;
 
@@ -98,9 +98,9 @@ using std::string;
 using std::vector;
 
 /////////////////////////////////////////////////////////////////////////////
-void printGraph(lno_t nrows, const gno_t *v,
-    const lno_t *elid, const gno_t *egid,
-    const int *owner, const lno_t *idx,
+void printGraph(zlno_t nrows, const zgno_t *v,
+    const zlno_t *elid, const zgno_t *egid,
+    const int *owner, const zlno_t *idx,
     const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
@@ -117,26 +117,26 @@ void printGraph(lno_t nrows, const gno_t *v,
     if (p == rank){
       std::cout << "Rank " << p << std::endl;
       if (owner){
-        for (lno_t i=0; i < nrows; i++){
+        for (zlno_t i=0; i < nrows; i++){
           std::cout << "  Vtx " << *v++ << ": ";
           if (elid)
-            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
               std::cout << *elid++ << " (" << *owner++ << ") ";
           else
-            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
               std::cout << *egid++ << " (" << *owner++ << ") ";
           std::cout << std::endl;
         }
         std::cout.flush();
       }
       else{
-        for (lno_t i=0; i < nrows; i++){
+        for (zlno_t i=0; i < nrows; i++){
           std::cout << "  Vtx " << i << ": ";
           if (elid)
-            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
               std::cout << *elid++ << " ";
           else
-            for (lno_t j=idx[i]; j < idx[i+1]; j++)
+            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
               std::cout << *egid++ << " ";
           std::cout << std::endl;
         }
@@ -152,10 +152,10 @@ void printGraph(lno_t nrows, const gno_t *v,
 template <typename BaseAdapter, typename Adapter, typename MatrixOrGraph>
 void testAdapter(
     RCP<const MatrixOrGraph> &M,
-    RCP<const Tpetra::CrsGraph<lno_t, gno_t> > &Mgraph,
+    RCP<const Tpetra::CrsGraph<zlno_t, zgno_t> > &Mgraph,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
-    int rowWeightDim, int edgeWeightDim, int nnzDim, int coordDim,
+    int nVtxWeights, int nEdgeWeights, int nnzWgtIdx, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int fail=0;
@@ -163,10 +163,10 @@ void testAdapter(
   int nprocs = comm->getSize();
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
-  lno_t nLocalRows = M->getNodeNumRows();
-  lno_t nLocalNZ = M->getNodeNumEntries();
-  gno_t nGlobalRows =  M->getGlobalNumRows();
-  gno_t nGlobalNZ = M->getGlobalNumEntries();
+  zlno_t nLocalRows = M->getNodeNumRows();
+  zlno_t nLocalNZ = M->getNodeNumEntries();
+  zgno_t nGlobalRows =  M->getGlobalNumRows();
+  zgno_t nGlobalNZ = M->getGlobalNumEntries();
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
@@ -175,55 +175,55 @@ void testAdapter(
     modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
 
   // Set up some fake input
-  scalar_t **coords=NULL;
-  scalar_t **rowWeights=NULL;
+  zscalar_t **coords=NULL;
+  zscalar_t **rowWeights=NULL;
 
   if (coordDim > 0){
-    coords = new scalar_t * [coordDim];
+    coords = new zscalar_t * [coordDim];
     for (int i=0; i < coordDim; i++){
-      coords[i] = new scalar_t [nLocalRows];
-      for (lno_t j=0; j < nLocalRows; j++){
+      coords[i] = new zscalar_t [nLocalRows];
+      for (zlno_t j=0; j < nLocalRows; j++){
         coords[i][j] = 100000*i + j;
       }
     }
   }
 
-  if (rowWeightDim > 0){
-    rowWeights = new scalar_t * [rowWeightDim];
-    for (int i=0; i < rowWeightDim; i++){
-      if (nnzDim == i)
+  if (nVtxWeights > 0){
+    rowWeights = new zscalar_t * [nVtxWeights];
+    for (int i=0; i < nVtxWeights; i++){
+      if (nnzWgtIdx == i)
         rowWeights[i] = NULL;
       else{
-        rowWeights[i] = new scalar_t [nLocalRows];
-        for (lno_t j=0; j < nLocalRows; j++){
+        rowWeights[i] = new zscalar_t [nLocalRows];
+        for (zlno_t j=0; j < nLocalRows; j++){
           rowWeights[i][j] = 200000*i + j;
         }
       }
     }
   }
 
-  if (edgeWeightDim > 0){
+  if (nEdgeWeights > 0){
     printf("TODO:  STILL NEED TO TEST EDGE WEIGHTS!\n");
   }
 
   // Create a matrix or graph input adapter.
 
-  Adapter tmi(M, rowWeightDim);
+  Adapter tmi(M, nVtxWeights);
 
-  for (int i=0; i < rowWeightDim; i++){
-    if (nnzDim == i)
+  for (int i=0; i < nVtxWeights; i++){
+    if (nnzWgtIdx == i)
       tmi.setWeightIsDegree(i);
     else
       tmi.setWeights(rowWeights[i], 1, i);
   }
 
-  gno_t *gids = NULL;
+  zzgid_t *gids = NULL;
 
   simpleVAdapter_t *via = NULL;
 
   if (coordDim > 0) {
-    gids = new gno_t[nLocalRows];
-    for (lno_t i = 0; i < nLocalRows; i++)
+    gids = new zzgid_t[nLocalRows];
+    for (zlno_t i = 0; i < nLocalRows; i++)
       gids[i] = M->getRowMap()->getGlobalElement(i);
     via = new simpleVAdapter_t(nLocalRows, gids, coords[0],
                                            (coordDim > 1 ? coords[1] : NULL), 
@@ -243,25 +243,25 @@ void testAdapter(
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
   bool *haveDiag = new bool [nLocalRows];
-  gno_t totalLocalNbors = 0;
+  zgno_t totalLocalNbors = 0;
 
-  for (lno_t i=0; i < nLocalRows; i++){
+  for (zlno_t i=0; i < nLocalRows; i++){
     numLocalNbors[i] = 0;
     haveDiag[i] = false;
-    ArrayView<const lno_t> idx;
+    ArrayView<const zlno_t> idx;
     Mgraph->getLocalRowView(i, idx);
     numNbors[i] = idx.size();
 
-    for (lno_t j=0; j < idx.size(); j++){
+    for (zlno_t j=0; j < idx.size(); j++){
       if (idx[j] == i){
         haveDiag[i] = true;
         numLocalNbors[i]++;
         totalLocalNbors++;
       }
       else{
-        gno_t gidVal = colMap->getGlobalElement(idx[j]);
+        zgno_t gidVal = colMap->getGlobalElement(idx[j]);
         if (rowMap->getLocalElement(gidVal) !=
-            Teuchos::OrdinalTraits<lno_t>::invalid()) {
+            Teuchos::OrdinalTraits<zlno_t>::invalid()) {
           // nbor is local to this process
           numLocalNbors[i]++;
           totalLocalNbors++;
@@ -315,20 +315,20 @@ void testAdapter(
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-  if (model->getVertexWeightDim() != rowWeightDim)
+  if (model->getNumWeightsPerVertex() != nVtxWeights)
     fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexWeightDim", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerVertex", 1)
 
-  if (model->getEdgeWeightDim() != 0)
+  if (model->getNumWeightsPerEdge() != 0)
     fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeWeightDim", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerEdge", 1)
 
   if (model->getCoordinateDim() != coordDim)
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getCoordinateDim", 1)
 
   if (rank == 0) std::cout << "        Checking vertices" << std::endl;
-  ArrayView<const gno_t> vertexGids;
+  ArrayView<const zgno_t> vertexGids;
   ArrayView<input_t> crds;
   ArrayView<input_t> wgts;
 
@@ -347,8 +347,8 @@ void testAdapter(
 
   // We know model stores things in same order we gave it.
   if (idsAreConsecutive){
-    int minLocalGID = rowMap->getMinGlobalIndex();
-    for (lno_t i=0; i < nLocalRows; i++){
+    zgno_t minLocalGID = rowMap->getMinGlobalIndex();
+    for (zlno_t i=0; i < nLocalRows; i++){
       if (vertexGids[i] != minLocalGID + i) {
         fail = 1;
         break;
@@ -357,11 +357,11 @@ void testAdapter(
   }
   else{  // round robin ids
     if (consecutiveIdsRequested) {
-      gno_t myFirstRow;
-      gno_t tnLocalRows = nLocalRows;
+      zgno_t myFirstRow;
+      zgno_t tnLocalRows = nLocalRows;
       scan(*comm, Teuchos::REDUCE_SUM, 1, &tnLocalRows, &myFirstRow);
       myFirstRow -= nLocalRows;
-      for (lno_t i=0; i < nLocalRows; i++){
+      for (zlno_t i=0; i < nLocalRows; i++){
         if (vertexGids[i] != myFirstRow+i){
           std::cout << rank << " Row " << i << " of " << nLocalRows
                     << " myFirstRow+i " << myFirstRow+i
@@ -373,8 +373,8 @@ void testAdapter(
       }
     }
     else {
-      gno_t myGid = rank;
-      for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
+      zgno_t myGid = rank;
+      for (zlno_t i=0; i < nLocalRows; i++, myGid += nprocs){
         if (vertexGids[i] != myGid){
           std::cout << rank << " Row " << i << " of " << nLocalRows
                     << " myGid " << myGid << " vertexGids " << vertexGids[i] 
@@ -388,12 +388,12 @@ void testAdapter(
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "vertex gids", 1)
 
-  if ((crds.size() != coordDim) || (wgts.size() != rowWeightDim))
+  if ((crds.size() != coordDim) || (wgts.size() != nVtxWeights))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "coord or weight array size", 1)
 
   for (int i=0; !fail && i < coordDim; i++){
-    for (lno_t j=0; j < nLocalRows; j++){
+    for (zlno_t j=0; j < nLocalRows; j++){
       if (crds[i][j] != 100000*i + j){
         fail = 1;
         break;
@@ -402,10 +402,10 @@ void testAdapter(
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "coord values", 1)
 
-  for (int i=0; !fail && i < rowWeightDim; i++){
-    if (nnzDim == i){
-      for (lno_t j=0; j < nLocalRows; j++){
-        scalar_t val = numNbors[j];
+  for (int i=0; !fail && i < nVtxWeights; i++){
+    if (nnzWgtIdx == i){
+      for (zlno_t j=0; j < nLocalRows; j++){
+        zscalar_t val = numNbors[j];
         if (removeSelfEdges && haveDiag[j])
           val -= 1;
         if (wgts[i][j] != val){
@@ -415,7 +415,7 @@ void testAdapter(
       }
     }
     else{
-      for (lno_t j=0; j < nLocalRows; j++){
+      for (zlno_t j=0; j < nLocalRows; j++){
         if (wgts[i][j] != 200000*i + j){
           fail = 1;
           break;
@@ -427,9 +427,9 @@ void testAdapter(
   TEST_FAIL_AND_EXIT(*comm, !fail, "row weight values", 1)
   
   if (rank == 0) std::cout << "        Checking edges" << std::endl;
-  ArrayView<const gno_t> edgeGids;
+  ArrayView<const zgno_t> edgeGids;
   ArrayView<const int> procIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const zlno_t> offsets;
   size_t numEdges=0;
 
   try{
@@ -444,7 +444,7 @@ void testAdapter(
   TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
   num = 0;
-  for (ArrayView<const lno_t>::size_type i=0; i < offsets.size()-1; i++){
+  for (ArrayView<const zlno_t>::size_type i=0; i < offsets.size()-1; i++){
     size_t edgeListSize = offsets[i+1] - offsets[i];
     num += edgeListSize;
     size_t val = numNbors[i];
@@ -472,8 +472,8 @@ void testAdapter(
   // Get graph restricted to this process
 
   if (rank == 0) std::cout << "        Checking local edges" << std::endl;
-  ArrayView<const lno_t> localEdges;
-  ArrayView<const lno_t> localOffsets;
+  ArrayView<const zlno_t> localEdges;
+  ArrayView<const zlno_t> localOffsets;
   size_t numLocalNeighbors=0;
 
   try{
@@ -489,7 +489,7 @@ void testAdapter(
                      "getLocalEdgeList localOffsets.size", 1)
 
   num = 0;
-  for (lno_t i=0; i < nLocalRows; i++){
+  for (zlno_t i=0; i < nLocalRows; i++){
     size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
     num += edgeListSize;
     size_t val = numLocalNbors[i];
@@ -533,8 +533,8 @@ void testAdapter(
     delete [] numLocalNbors;
     delete [] haveDiag;
 
-    if (rowWeightDim > 0){
-      for (int i=0; i < rowWeightDim; i++){
+    if (nVtxWeights > 0){
+      for (int i=0; i < nVtxWeights; i++){
         if (rowWeights[i])
           delete [] rowWeights[i];
       }
@@ -556,9 +556,9 @@ void testAdapter(
 }
 
 /////////////////////////////////////////////////////////////////////////////
-void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
+void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
     const RCP<const Comm<int> > &comm,
-    int rowWeightDim, int nnzDim, int coordDim,
+    int nVtxWeights, int nnzWgtIdx, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int rank = comm->getRank();
@@ -572,9 +572,9 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
       cout  << xdim << "x" << ydim << "x" << zdim << endl;
     }
 
-    cout << "Vertex weight dim: " << rowWeightDim << endl;
-    if (nnzDim >= 0)
-     cout << "  Dimension " << nnzDim << " is number of neighbors" << endl;
+    cout << "Num Vertex Weights: " << nVtxWeights << endl;
+    if (nnzWgtIdx >= 0)
+     cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << endl;
 
     cout << "Coordinate dim: " << coordDim << endl;
     cout << "Request consecutive vertex gids: ";
@@ -583,25 +583,23 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     cout << (removeSelfEdges ? "yes" : "no") << endl;
   }
 
-  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
-
   // Input generator
-  UserInputForTests *input;
+  UserInputForTests *uinput;
 
   if (fname.size() > 0)
-    input = new UserInputForTests(testDataFilePath, fname, comm, true);
+    uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
+    uinput = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true, true);
 
-  RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
+  RCP<tcrsMatrix_t> M = uinput->getUITpetraCrsMatrix();
 
   // Row Ids of test input are already consecutive
 
   RCP<const tcrsMatrix_t> Mconsec = rcp_const_cast<const tcrsMatrix_t>(M);
 
-  RCP<const Tpetra::CrsGraph<lno_t, gno_t> > graph = Mconsec->getCrsGraph();
+  RCP<const Tpetra::CrsGraph<zlno_t, zgno_t> > graph = Mconsec->getCrsGraph();
 
-  printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
+  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
     "Graph with consecutive IDs");
 
   if (rank == 0) 
@@ -610,22 +608,22 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mconsec, graph, comm,
                                                        idsAreConsecutive,
-                                                       rowWeightDim, 0, 
-                                                       nnzDim, coordDim,
+                                                       nVtxWeights, 0, 
+                                                       nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
                                                        removeSelfEdges);
   if (rank == 0) 
     std::cout << "   TEST GraphAdapter with Consecutive IDs" << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
-                                                      rowWeightDim, 1, 
-                                                      nnzDim, coordDim,
+                                                      nVtxWeights, 1, 
+                                                      nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
                                                       removeSelfEdges);
 
   // Do a round robin migration so that global IDs are not consecutive.
 
-  Array<gno_t> myNewRows;
+  Array<zgno_t> myNewRows;
   int nprocs = comm->getSize();
   for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
@@ -636,7 +634,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   graph = Mnonconsec->getCrsGraph();
 
-  printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
+  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
     "Graph with non-consecutive IDs");
 
   if (rank == 0)
@@ -645,8 +643,8 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mnonconsec, graph, comm,
                                                        idsAreConsecutive,
-                                                       rowWeightDim, 0, 
-                                                       nnzDim, coordDim,
+                                                       nVtxWeights, 0, 
+                                                       nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
                                                        removeSelfEdges);
 
@@ -654,12 +652,12 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     std::cout << "   TEST GraphAdapter with Round-Robin IDs" << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
-                                                      rowWeightDim, 0, 
-                                                      nnzDim, coordDim,
+                                                      nVtxWeights, 0, 
+                                                      nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
                                                       removeSelfEdges);
 
-  delete input;
+  delete uinput;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -671,8 +669,8 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  int rowWeightDim=0;
-  int nnzDim = -1; 
+  int nVtxWeights=0;
+  int nnzWgtIdx = -1; 
   int coordDim=0;
   bool consecutiveIdsRequested=false, removeSelfEdges=false;
   string fname("simple");
@@ -680,32 +678,32 @@ int main(int argc, char *argv[])
   if (rank == 0)
     std::cout << "TESTING base case" << std::endl;
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with row weights" << std::endl;
-  rowWeightDim = 1;
+  nVtxWeights = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with weights = nnz" << std::endl;
-  nnzDim = 1;
+  nnzWgtIdx = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with multiple row weights and coords" << std::endl;
-  rowWeightDim = 2;
+  nVtxWeights = 2;
   coordDim = 3;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -713,7 +711,7 @@ int main(int argc, char *argv[])
   consecutiveIdsRequested = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -721,7 +719,7 @@ int main(int argc, char *argv[])
   removeSelfEdges = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -729,7 +727,7 @@ int main(int argc, char *argv[])
   consecutiveIdsRequested = false;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank==0)

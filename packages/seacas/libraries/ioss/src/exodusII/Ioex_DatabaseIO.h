@@ -86,7 +86,7 @@ namespace Ioex {
   // Used for persistent entity IDs
   // The set contains a pair of <ex_entity_type, int>.
   // The ex_entity_type is the exodus entity type defined in
-  // exodus's exodusII_int.h. A couple examples are:
+  // exodus's exodusII.h. A couple examples are:
   // EX_ELEM_BLOCK element block and EX_NODE_SET nodeset.
   //
   // The 'int' is the entity id.  The set is used for output databases
@@ -117,6 +117,9 @@ namespace Ioex {
       // together. If "return_value & Ioss::EntityType" is set, then the
       // database supports that type (e.g. return_value & Ioss::FACESET)
       unsigned entity_field_support() const;
+
+      bool open_group(const std::string &group_name);
+      bool create_subgroup(const std::string &group_name);
 
       bool begin(Ioss::State state);
       bool   end(Ioss::State state);
@@ -211,7 +214,11 @@ namespace Ioex {
         free_file_pointer();
       }
 
+  public:
+      // Temporarily made public for use during Salinas transition
+      // to using Ioss
       int get_file_pointer() const; // Open file and set exodusFilePtr.
+  private:
       int free_file_pointer() const; // Close file and set exodusFilePtr.
 
       int get_current_state() const; // Get current state with error checks and usage message.
@@ -354,6 +361,8 @@ namespace Ioex {
 
       // Private member data...
       mutable int exodusFilePtr;
+      mutable std::string m_groupName;
+      
       mutable EntityIdSet ids_;
 
       std::string databaseTitle;
@@ -409,6 +418,12 @@ namespace Ioex {
       mutable std::vector<std::vector<bool> > blockAdjacency;
       mutable std::vector<unsigned char> nodeConnectivityStatus;
 
+      // For a database with omitted blocks, this map contains the indices of the
+      // active nodes for each nodeset.  If the nodeset is not reduced in size,
+      // the map's vector will be empty for that nodeset. If the vector is not
+      // empty, then some nodes on that nodeset are only connected to omitted elements.
+      mutable std::map<std::string, Int64Vector> activeNodesetNodesIndex;
+	
       time_t timeLastFlush;
 
       mutable bool fileExists; // False if file has never been opened/created

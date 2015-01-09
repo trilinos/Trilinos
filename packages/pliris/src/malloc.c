@@ -43,7 +43,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include "malloc.h" 
+#include "malloc.h"
 
 #define ALIGNED_TO   ((unsigned)32) /* number of bytes to align to */
 #define EXTRA        (ALIGNED_TO)

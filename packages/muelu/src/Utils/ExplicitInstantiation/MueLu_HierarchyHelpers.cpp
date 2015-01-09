@@ -48,16 +48,24 @@
 #include "MueLu_HierarchyHelpers_def.hpp"
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::TopRAPFactory<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-template class MueLu::TopSmootherFactory<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::TopRAPFactory<double, int, int>;
+template class MueLu::TopSmootherFactory<double, int, int>;
+template class MueLu::HierarchyUtils<double, int, int>;
 #else
 #error
 #endif
 
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGINT
+template class MueLu::TopRAPFactory<double, int, long>;
+template class MueLu::TopSmootherFactory<double, int, long>;
+template class MueLu::HierarchyUtils<double, int, long>;
+#endif
+
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::TopRAPFactory<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-template class MueLu::TopSmootherFactory<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::TopRAPFactory<double, int, long long int>;
+template class MueLu::TopSmootherFactory<double, int, long long int>;
+template class MueLu::HierarchyUtils<double, int, long long int>;
 #else
 # warning To compile MueLu with 'long long int' support, please turn on HAVE_TEUCHOS_LONG_LONG_INT
 # endif
@@ -66,22 +74,10 @@ template class MueLu::TopSmootherFactory<double, int, long long int, KokkosClass
 #ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
 # ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
-template class MueLu::TopRAPFactory<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
-template class MueLu::TopSmootherFactory<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::TopRAPFactory<std::complex<double>, int, int>;
+template class MueLu::TopSmootherFactory<std::complex<double>, int, int>;
+template class MueLu::HierarchyUtils<std::complex<double>, int, int>;
 # else
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::TopRAPFactory<double, int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
-template class MueLu::TopSmootherFactory<double, int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
-
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-template class MueLu::TopRAPFactory<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
-template class MueLu::TopSmootherFactory<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
-
-#endif
-

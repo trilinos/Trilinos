@@ -1,13 +1,12 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/src)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/src)
 
 IF (WIN32 AND BUILD_SHARED_LIBS)
 ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FECrsMatrix_test_LL
     SOURCES cxx_main.cpp ExecuteTestProblems.cpp
-    DEPLIBS epetratest
+    TESTONLYLIBS epetratest
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1
@@ -16,7 +15,7 @@ ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FEmatrix2_LL
     SOURCES fematrix2.cpp
-    DEPLIBS epetratest
+    TESTONLYLIBS epetratest
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

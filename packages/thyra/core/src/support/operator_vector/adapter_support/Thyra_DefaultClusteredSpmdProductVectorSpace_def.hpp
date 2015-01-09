@@ -69,7 +69,9 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
   ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm_in
   ,const int                                                       numBlocks_in
   ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
-  )
+  ):
+  globalDim_(0),
+  clusterOffset_(-1)
 {
   initialize(intraClusterComm_in,clusterRootRank_in,interClusterComm_in,numBlocks_in,vecSpaces);
 }

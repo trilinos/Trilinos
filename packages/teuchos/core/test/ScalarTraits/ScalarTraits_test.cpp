@@ -110,9 +110,9 @@ bool testScalarTraits(
   Teuchos::FancyOStream &out
   )
 {
-  
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  
+
   bool success = true;
   bool result;
 
@@ -145,7 +145,7 @@ bool testScalarTraits(
       << "squareroot("<<negNan<<") = " << sqrtNegNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   if (ST::isComplex == false)
   {
     out << "\nTesting that squareroot(-1) == NaN! ...\n";
@@ -161,7 +161,7 @@ bool testScalarTraits(
   }
 
 #ifdef HAVE_NUMERIC_LIMITS
-    
+
   out << "\nTesting that squareroot(quiet_NaN) == NaN! ...\n";
   {
     const Scalar nan = std::numeric_limits<Scalar>::quiet_NaN();
@@ -172,7 +172,7 @@ bool testScalarTraits(
       << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   out << "\nTesting that squareroot(signaling_NaN) == NaN! ...\n";
   {
     const Scalar nan = std::numeric_limits<Scalar>::signaling_NaN();
@@ -183,7 +183,7 @@ bool testScalarTraits(
       << "squareroot("<<nan<<") = " << sqrtNan << " == " << nan << " : "
       << passfail(result) << "\n";
   }
-    
+
   out << "\nTesting that squareroot(inf) == NaN! ...\n";
   {
     const Scalar inf = std::numeric_limits<Scalar>::infinity();
@@ -196,7 +196,7 @@ bool testScalarTraits(
   }
 
 #endif // HAVE_NUMERIC_LIMITS
-    
+
   return success;
 
 }
@@ -207,9 +207,9 @@ bool testOrdinalTraits(
   Teuchos::FancyOStream &out
   )
 {
-  
+
   typedef Teuchos::OrdinalTraits<Ordinal> OT;
-  
+
   bool success = true;
   bool result;
 
@@ -271,9 +271,9 @@ bool testOrdinalTraits(
     result = (zero < one) && (one <= max) && (zero < max);
     if (!result) success = false;
     out
-      << "(zero < one) = " << (zero < one) << " == " 
-      << "(one <= max) = " << (one <= max) << " == " 
-      << "(zero < max) = " << (zero < max) << " == " 
+      << "(zero < one) = " << (zero < one) << " == "
+      << "(one <= max) = " << (one <= max) << " == "
+      << "(zero < max) = " << (zero < max) << " == "
       << true << " : "
       << passfail(result) << "\n";
   }
@@ -300,13 +300,13 @@ int main( int argc, char* argv[] ) {
 
 	bool success = true;
   bool result;
-  
+
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
-  
+
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  
+
 	try {
 
 		// Read options from the commandline
@@ -355,22 +355,22 @@ int main( int argc, char* argv[] ) {
 //     result = testScalarTraits<std::complex<double> >(*out);
 //     if(!result) success = false;
 // #endif
-    
+
 #ifdef HAVE_TEUCHOS_QD
     result = testScalarTraits<dd_real>(*out);
     if(!result) success = false;
     result = testScalarTraits<qd_real>(*out);
     if(!result) success = false;
 #endif
-    
+
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-  
+
   if(success)
     *out << "\nEnd Result: TEST PASSED\n" << std::endl;	
   else
     *out << "\nEnd Result: TEST FAILED\n" << std::endl;
-  
+
   return ( success ? 0 : 1 );
-  
+
 }

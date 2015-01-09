@@ -44,6 +44,7 @@
 // @HEADER
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
@@ -56,8 +57,6 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-
-//#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
 
 using Teuchos::RCP;
 using namespace std;
@@ -76,18 +75,26 @@ using namespace std;
 // GO.  For now, we set them at compile time based on whether Tpetra
 // is built with explicit instantiation on.  (in Zoltan2_TestHelpers.hpp)
 
-typedef lno_t z2TestLO;
-typedef gno_t z2TestGO;
-typedef scalar_t Scalar;
+typedef zlno_t z2TestLO;
+typedef zgno_t z2TestGO;
+typedef zscalar_t Scalar;
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
+typedef Tpetra::CrsGraph<z2TestLO, z2TestGO> SparseGraph;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
+typedef Zoltan2::XpetraCrsGraphAdapter<SparseGraph> SparseGraphAdapter;
 typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
 
+
+// Integer vector
+typedef Tpetra::Vector<int, z2TestLO, z2TestGO> IntVector;
+typedef Zoltan2::XpetraMultiVectorAdapter<IntVector> IntVectorAdapter;
+
 #define epsilon 0.00000001
+#define NNZ_IDX 1
 
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
@@ -95,8 +102,12 @@ int main(int narg, char** arg)
   std::string inputFile = "";        // Matrix Market or Zoltan file to read
   std::string outputFile = "";       // Matrix Market or Zoltan file to write
   std::string inputPath = testDataFilePath;  // Directory with input file
+  std::string method = "scotch";
   bool verbose = false;              // Verbosity of output
   bool distributeInput = true;
+  bool haveFailure = false;
+  int nVwgts = 0;
+  int nEwgts = 0;
   int testReturn = 0;
 
   ////// Establish session.
@@ -116,10 +127,15 @@ int main(int narg, char** arg)
   cmdp.setOption("outputFile", &outputFile,
                  "Name of the Matrix Market sparse matrix file to write, "
                  "echoing the input/generated matrix.");
+  cmdp.setOption("method", &method,
+                 "Partitioning method to use:  scotch or parmetis.");
+  cmdp.setOption("vertexWeights", &nVwgts,
+                 "Number of weights to generate for each vertex");
+  cmdp.setOption("edgeWeights", &nEwgts,
+                 "Number of weights to generate for each edge");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
   cmdp.setOption("distribute", "no-distribute", &distributeInput,
-                "for Zoltan input files only, "
                 "indicate whether or not to distribute "
                 "input across the communicator");
 
@@ -157,9 +173,9 @@ int main(int narg, char** arg)
   
   else                  // Let MueLu generate a default matrix
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, string(""), comm,
-                                       true));
+                                       true, distributeInput));
 
-  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
+  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (origMatrix->getGlobalNumRows() < 40) {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
@@ -190,20 +206,75 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   
   params.set("partitioning_approach", "partition");
-  params.set("algorithm", "scotch");
+  params.set("algorithm", method);
 
-  ////// Create an input adapter for the Tpetra matrix.
-  SparseMatrixAdapter adapter(origMatrix);
+  ////// Create an input adapter for the graph of the Tpetra matrix.
+  SparseGraphAdapter adapter(origMatrix->getCrsGraph(), nVwgts, nEwgts);
 
+  ////// Add weights, if requested.
+  ////// Generate some artificial weights.  
+  ////// Maybe this code should go into UserInputForTests.
+
+  zscalar_t *vwgts = NULL, *ewgts = NULL;
+  if (nVwgts) {
+    // Test vertex weights with stride nVwgts.
+    size_t nrows = origMatrix->getNodeNumRows();
+    if (nrows) {
+      vwgts = new zscalar_t[nVwgts * nrows];
+      for (size_t i = 0; i < nrows; i++) {
+        size_t idx = i * nVwgts;
+        vwgts[idx] = zscalar_t(origMatrix->getRowMap()->getGlobalElement(i))
+  ;//                 + zscalar_t(0.5);
+        for (int j = 1; j < nVwgts; j++) vwgts[idx+j] = 1.;
+      }
+      for (int j = 0; j < nVwgts; j++) {
+        if (j != NNZ_IDX) adapter.setVertexWeights(&vwgts[j], nVwgts, j);
+        else              adapter.setVertexWeightIsDegree(NNZ_IDX);
+      }
+    }
+  }
+
+  if (nEwgts) {
+    // Test edge weights with stride 1.
+    size_t nnz = origMatrix->getNodeNumEntries();
+    if (nnz) {
+      size_t nrows = origMatrix->getNodeNumRows();
+      size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
+      ewgts = new zscalar_t[nEwgts * nnz];
+      size_t cnt = 0;
+      Array<z2TestGO> egids(maxnzrow);
+      Array<zscalar_t> evals(maxnzrow);
+      for (size_t i = 0; i < nrows; i++) {
+        size_t nnzinrow;
+        z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
+        origMatrix->getGlobalRowCopy(gid, egids(), evals(), nnzinrow);
+        for (size_t k = 0; k < nnzinrow; k++) {
+          ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
+          if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
+          for (int j = 2; j < nEwgts; j++) ewgts[cnt+nnz*j] = 1.;
+          cnt++;
+        }
+      }
+      for (int j = 0; j < nEwgts; j++) {
+        adapter.setEdgeWeights(&ewgts[j*nnz], 1, j);
+      }
+    }
+  }
+
+  
   ////// Create and solve partitioning problem
-  Zoltan2::PartitioningProblem<SparseMatrixAdapter> problem(&adapter, &params);
+  Zoltan2::PartitioningProblem<SparseGraphAdapter> problem(&adapter, &params);
 
   try {
     if (me == 0) cout << "Calling solve() " << endl;
+
     problem.solve();
+
     if (me == 0) cout << "Done solve() " << endl;
   }
   catch (std::runtime_error &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
@@ -217,16 +288,22 @@ int main(int narg, char** arg)
     }
   }
   catch (std::logic_error &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Logic exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
   catch (std::bad_alloc &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Bad_alloc exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
   catch (std::exception &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Unknown exception returned from solve(). " << e.what()
          << " FAIL" << endl;
     return -1;
@@ -237,19 +314,32 @@ int main(int narg, char** arg)
   size_t checkNparts = comm->getSize();
   
   size_t  checkLength = problem.getSolution().getLocalNumberOfIds();
-  const zoltan2_partId_t *checkParts = problem.getSolution().getPartList();
+  const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartList();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];
   size_t *globalCountPerPart = new size_t[checkNparts];
+  zscalar_t *wtPerPart = (nVwgts ? new zscalar_t[checkNparts*nVwgts] : NULL);
+  zscalar_t *globalWtPerPart = (nVwgts ? new zscalar_t[checkNparts*nVwgts] : NULL);
   for (size_t i = 0; i < checkNparts; i++) countPerPart[i] = 0;
+  for (size_t i = 0; i < checkNparts * nVwgts; i++) wtPerPart[i] = 0.;
+
   for (size_t i = 0; i < checkLength; i++) {
     if (size_t(checkParts[i]) >= checkNparts) 
-      cout << "Invalid Part:  FAIL" << endl;
+      cout << "Invalid Part " << checkParts[i] << ": FAIL" << endl;
     countPerPart[checkParts[i]]++;
+    for (int j = 0; j < nVwgts; j++) {
+      if (j != NNZ_IDX)
+        wtPerPart[checkParts[i]*nVwgts+j] += vwgts[i*nVwgts+j];
+      else
+        wtPerPart[checkParts[i]*nVwgts+j] += origMatrix->getNumEntriesInLocalRow(i);
+    }
   }
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
                                   countPerPart, globalCountPerPart);
+  Teuchos::reduceAll<int, zscalar_t>(*comm, Teuchos::REDUCE_SUM,
+                                    checkNparts*nVwgts,
+                                    wtPerPart, globalWtPerPart);
 
   size_t min = std::numeric_limits<std::size_t>::max();
   size_t max = 0;
@@ -260,27 +350,55 @@ int main(int narg, char** arg)
     if (globalCountPerPart[i] > max) {max = globalCountPerPart[i]; maxrank = i;}
     sum += globalCountPerPart[i];
   }
-  delete [] countPerPart;
-  delete [] globalCountPerPart;
 
   if (me == 0) {
     float avg = (float) sum / (float) checkNparts;
-    cout << "Minimum load:  " << min << " on rank " << minrank << endl;
-    cout << "Maximum load:  " << max << " on rank " << maxrank << endl;
-    cout << "Average load:  " << avg << endl;
-    cout << "Total load:    " << sum 
+    cout << "Minimum count:  " << min << " on rank " << minrank << endl;
+    cout << "Maximum count:  " << max << " on rank " << maxrank << endl;
+    cout << "Average count:  " << avg << endl;
+    cout << "Total count:    " << sum 
          << (sum != origMatrix->getGlobalNumRows()
                  ? "Work was lost; FAIL"
                  : " ")
          << endl;
     cout << "Imbalance:     " << max / avg << endl;
+    if (nVwgts) {
+      std::vector<zscalar_t> minwt(nVwgts, std::numeric_limits<zscalar_t>::max());
+      std::vector<zscalar_t> maxwt(nVwgts, 0.);
+      std::vector<zscalar_t> sumwt(nVwgts, 0.);
+      for (size_t i = 0; i < checkNparts; i++) {
+        for (int j = 0; j < nVwgts; j++) {
+          size_t idx = i*nVwgts+j;
+          if (globalWtPerPart[idx] < minwt[j]) minwt[j] = globalWtPerPart[idx];
+          if (globalWtPerPart[idx] > maxwt[j]) maxwt[j] = globalWtPerPart[idx];
+          sumwt[j] += globalWtPerPart[idx];
+        }
+      }
+      for (int j = 0; j < nVwgts; j++) {
+        float avgwt = (float) sumwt[j] / (float) checkNparts;
+        cout << endl;
+        cout << "Minimum weight[" << j << "]:  " << minwt[j] << endl;
+        cout << "Maximum weight[" << j << "]:  " << maxwt[j] << endl;
+        cout << "Average weight[" << j << "]:  " << avgwt << endl;
+        cout << "Imbalance:       " << maxwt[j] / avgwt << endl;
+      }
+    }
   }
+
+  delete [] countPerPart;
+  delete [] wtPerPart;
+  delete [] globalCountPerPart;
+  delete [] globalWtPerPart;
+  delete [] vwgts;
+  delete [] ewgts;
+
 
   ////// Redistribute matrix and vector into new matrix and vector.
   if (me == 0) cout << "Redistributing matrix..." << endl;
   SparseMatrix *redistribMatrix;
-  adapter.applyPartitioningSolution(*origMatrix, redistribMatrix,
-                                    problem.getSolution());
+  SparseMatrixAdapter adapterMatrix(origMatrix);
+  adapterMatrix.applyPartitioningSolution(*origMatrix, redistribMatrix,
+                                          problem.getSolution());
   if (redistribMatrix->getGlobalNumRows() < 40) {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
     redistribMatrix->describe(out, Teuchos::VERB_EXTREME);
@@ -288,9 +406,9 @@ int main(int narg, char** arg)
 
   if (me == 0) cout << "Redistributing vectors..." << endl;
   Vector *redistribVector;
-  std::vector<const scalar_t *> weights;
-  std::vector<int> weightStrides;
-  MultiVectorAdapter adapterVector(origVector, weights, weightStrides);
+//  std::vector<const zscalar_t *> weights;
+//  std::vector<int> weightStrides;
+  MultiVectorAdapter adapterVector(origVector); //, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 
@@ -298,6 +416,28 @@ int main(int narg, char** arg)
   redistribProd = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
                                        redistribMatrix->getRangeMap());
 
+  // Test redistributing an integer vector with the same solution.
+  // This test is mostly to make sure compilation always works.
+  RCP<IntVector> origIntVec;
+  IntVector *redistIntVec;
+  origIntVec = Tpetra::createVector<int,z2TestLO,z2TestGO>(
+                                        origMatrix->getRangeMap());
+  for (size_t i = 0; i < origIntVec->getLocalLength(); i++)
+    origIntVec->replaceLocalValue(i, me);
+
+  IntVectorAdapter int_vec_adapter(origIntVec);
+  int_vec_adapter.applyPartitioningSolution(*origIntVec, redistIntVec,
+                                             problem.getSolution());
+  int origIntNorm = origIntVec->norm1();
+  int redistIntNorm = redistIntVec->norm1();
+  if (me == 0) std::cout << "IntegerVectorTest:  " << origIntNorm << " == "
+                         << redistIntNorm << " ?";
+  if (origIntNorm != redistIntNorm) {
+    if (me == 0) std::cout << " FAIL" << std::endl;
+    haveFailure = true;
+  }
+  else if (me == 0) std::cout << " OK" << std::endl;
+  delete redistIntVec;
 
   ////// Verify that redistribution is "correct"; perform matvec with 
   ////// original and redistributed matrices/vectors and compare norms.
@@ -314,16 +454,20 @@ int main(int narg, char** arg)
   if (me == 0)
     cout << "Norm of Redistributed matvec prod:  " << redistribNorm << endl;
 
-  if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) 
+  if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon) {
     testReturn = 1;
+    haveFailure = true;
+  }
 
   delete redistribVector;
   delete redistribMatrix;
 
   if (me == 0) {
-    if (testReturn)
+    if (testReturn) {
       std::cout << "Mat-Vec product changed; FAIL" << std::endl;
-    else
+      haveFailure = true;
+    }
+    if (!haveFailure)
       std::cout << "PASS" << std::endl;
   }
 

@@ -21,7 +21,8 @@ TAGFILES += \
 # Package options
 #
 PROJECT_NAME           = "Stratimikos"
-OUTPUT_DIRECTORY       = .
+HTML_OUTPUT            = html
+HTML_FOOTER            = ../../common/footer.html
 #
 # What and how documentation is extracted
 #

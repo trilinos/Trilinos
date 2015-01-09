@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -50,7 +50,7 @@
 
 #include "Epetra_Comm.h"
 
-#include "Epetra_Operator.h"	           // base class
+#include "Epetra_Operator.h"               // base class
 #include "NOX_Epetra_Interface_Jacobian.H" // base class
 #include "NOX_Utils.H"
 
@@ -92,7 +92,7 @@ where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is th
 where \f$ \lambda = 1.0e-6 \f$.
  */
 class MatrixFree : public Epetra_Operator,
-		   public virtual NOX::Epetra::Interface::Jacobian {
+           public virtual NOX::Epetra::Interface::Jacobian {
 
  public:
 
@@ -103,10 +103,10 @@ class MatrixFree : public Epetra_Operator,
 
     The vector \c x is used to clone the solution vector.
   */
-  MatrixFree(Teuchos::ParameterList& printParams, 
-	     const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
-	     const NOX::Epetra::Vector& cloneVector, 
-	     bool useNewPerturbation = false);
+  MatrixFree(Teuchos::ParameterList& printParams,
+         const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
+         const NOX::Epetra::Vector& cloneVector,
+         bool useNewPerturbation = false);
 
   //! Pure virtual destructor
   virtual ~MatrixFree();

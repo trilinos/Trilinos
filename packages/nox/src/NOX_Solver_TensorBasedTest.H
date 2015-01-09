@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,10 +55,10 @@
 
 #ifdef WITH_PRERELEASE
 
-#include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_Solver_PrePostOperator.H"	 // class data element
+#include "NOX_Solver_Generic.H"        // base class
+#include "NOX_Solver_PrePostOperator.H"     // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
-#include "Teuchos_ParameterList.hpp"	    // class data element
+#include "Teuchos_ParameterList.hpp"        // class data element
 #include "NOX_LineSearch_Tensor.H"  // class data element
 
 // Forward declarations
@@ -71,7 +71,7 @@ namespace Solver {
 
 /*!
   \brief Linesearch-based solver that uses tensor methods.
-  
+
   The following parameters are valid for this solver:
 <ul>
 <li>   "%Direction" - Sublist of the direction parameters, passed to the
@@ -86,16 +86,16 @@ namespace Solver {
      computeNewton().
 
 <ul>
-<li>    "Max Iterations" - Maximum number of Arnoldi iterations (also 
+<li>    "Max Iterations" - Maximum number of Arnoldi iterations (also
         max Krylov space dimension)
 <li>    "Output Frequency" - Print output at every number of iterations
         [default = 20]
 <li>    "Preconditioning" - Name of preconditioning type.
-<li>    "PreconditioningSide" - Side to apply preconditioning 
+<li>    "PreconditioningSide" - Side to apply preconditioning
         (None, Left, Right)
 <li>    "Reorthogonalize" - When to reorthogonalize Krylov basis vectors
         (None, As Needed, Always)
-<li>    "Tolerance" - Relative tolerance for solving local model 
+<li>    "Tolerance" - Relative tolerance for solving local model
         [default = 1e-4]
 </ul>
 <br>
@@ -108,12 +108,12 @@ namespace Solver {
 <ul>
 <li> "Method" - Name of the line search available to tensor methods
      Valid choices are
-   <ul> 
-   <li> "Standard" - Backtrack along tensor direction unless it is not a 
+   <ul>
+   <li> "Standard" - Backtrack along tensor direction unless it is not a
    descent direction, in which case backtrack along Newton direction.
    <li> "Dual" - Backtrack along both the Newton and tensor directions
    and choose the better of the two.
-   <li> "Curvilinear" - Backtrack along the "curvilinear" path that 
+   <li> "Curvilinear" - Backtrack along the "curvilinear" path that
    spans the tensor direction and the Newton direction and that maintains
    monotonicity on the tensor model. [Default]
    </ul>
@@ -125,13 +125,13 @@ namespace Solver {
      (defaults to value for "Default Step")
 <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
 </ul>
-<li> "Solver Options" - Sublist of general solver options.  
+<li> "Solver Options" - Sublist of general solver options.
      <ul>
      <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
      </ul>
 </ul>
 
-    \author Brett W. Bader (CU-Boulder) bader&nbsp;\@&nbsp;cs.colorado.edu 
+    \author Brett W. Bader (CU-Boulder) bader&nbsp;\@&nbsp;cs.colorado.edu
 
 */
 
@@ -139,16 +139,16 @@ class TensorBasedTest : public Generic {
 
 public:
 
-  //! %TensorBasedTest-method constructor. 
+  //! %TensorBasedTest-method constructor.
   TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& grp,
-		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
-		  const Teuchos::RCP<Teuchos::ParameterList>& params);
+          const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+          const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TensorBasedTest();
 
   virtual void reset(const NOX::Abstract::Vector& initialGuess,
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
@@ -162,7 +162,7 @@ public:
   virtual const NOX::Direction::Tensor& getDirection() const;
 
 protected:
-  
+
   //! Print out initialization information and calcuation the RHS.
   virtual void init();
 
@@ -170,39 +170,39 @@ protected:
   virtual void printUpdate();
 
 protected:
-  
+
   //! Pointer to the global data object.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
   Teuchos::RCP<NOX::Utils> utilsPtr;
-  
-  //! Current solution.
-  Teuchos::RCP<NOX::Abstract::Group> solnptr;		
 
-  //! Previous solution pointer. 
+  //! Current solution.
+  Teuchos::RCP<NOX::Abstract::Group> solnptr;
+
+  //! Previous solution pointer.
   Teuchos::RCP<NOX::Abstract::Group> oldsolnptr;
 
   //! Current search direction.pointer.
   Teuchos::RCP<NOX::Abstract::Vector> dirptr;
 
   //! Stopping test.
-  Teuchos::RCP<NOX::StatusTest::Generic> testptr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testptr;
 
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
   //! Linesearch
   NOX::LineSearch::Tensor lineSearch;
-  
-  //! %Search %Direction. 
+
+  //! %Search %Direction.
   NOX::Direction::Tensor direction;  // This is Direction::Manager in LSBased
 
   //! Current step.
-  double stepSize;			
+  double stepSize;
 
   //! Number of nonlinear iterations.
   int niter;

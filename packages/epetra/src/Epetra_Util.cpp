@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -82,7 +82,7 @@ unsigned int Epetra_Util::RandomInt() {
     Seed_ = test;
   else
     Seed_ = test + m;
-  
+
   return(Seed_);
 }
 
@@ -111,8 +111,8 @@ int Epetra_Util::SetSeed(unsigned int Seed_in) {
 
 //=============================================================================
 template<typename T>
-void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys, 
-           int NumDoubleCompanions,double ** DoubleCompanions, 
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys,
+           int NumDoubleCompanions,double ** DoubleCompanions,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
@@ -121,14 +121,14 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys,
   int n = NumKeys;
   T * const list = Keys;
   int m = n/2;
-  
+
   while (m > 0) {
     int max = n - m;
     for (int j=0; j<max; j++)
       {
   for (int k=j; k>=0; k-=m)
     {
-      if ((SortAscending && list[k+m] >= list[k]) || 
+      if ((SortAscending && list[k+m] >= list[k]) ||
     ( !SortAscending && list[k+m] <= list[k]))
         break;
       T temp = list[k+m];
@@ -155,30 +155,42 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys,
   }
 }
 
-void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
-           int NumDoubleCompanions,double ** DoubleCompanions, 
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
+           int NumDoubleCompanions,double ** DoubleCompanions,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  Sort<int>(SortAscending, NumKeys, Keys, 
-           NumDoubleCompanions, DoubleCompanions, 
+  Sort<int>(SortAscending, NumKeys, Keys,
+           NumDoubleCompanions, DoubleCompanions,
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
 }
 
-void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys, 
-           int NumDoubleCompanions,double ** DoubleCompanions, 
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys,
+           int NumDoubleCompanions,double ** DoubleCompanions,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  Sort<long long>(SortAscending, NumKeys, Keys, 
-           NumDoubleCompanions, DoubleCompanions, 
+  Sort<long long>(SortAscending, NumKeys, Keys,
+           NumDoubleCompanions, DoubleCompanions,
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
 }
 
-void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
-           int NumDoubleCompanions,double ** DoubleCompanions, 
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, double * Keys,
+           int NumDoubleCompanions,double ** DoubleCompanions,
+           int NumIntCompanions, int ** IntCompanions,
+           int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+  Sort<double>(SortAscending, NumKeys, Keys,
+	       NumDoubleCompanions, DoubleCompanions,
+	       NumIntCompanions, IntCompanions,
+	       NumLongLongCompanions, LongLongCompanions);
+}
+
+
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
+           int NumDoubleCompanions,double ** DoubleCompanions,
            int NumIntCompanions, int ** IntCompanions)
 {
   int i;
@@ -186,14 +198,14 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
   int n = NumKeys;
   int * const list = Keys;
   int m = n/2;
-  
+
   while (m > 0) {
     int max = n - m;
     for (int j=0; j<max; j++)
       {
   for (int k=j; k>=0; k-=m)
     {
-      if ((SortAscending && list[k+m] >= list[k]) || 
+      if ((SortAscending && list[k+m] >= list[k]) ||
     ( !SortAscending && list[k+m] <= list[k]))
         break;
       int temp = list[k+m];
@@ -289,12 +301,12 @@ static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
     if (usermap.NumMyElements()==0) quickreturn = 1;
   }
   usermap.Comm().MinAll(&quickreturn, &globalquickreturn, 1);
-  
+
   if (globalquickreturn==1) {
     Epetra_Map newmap(usermap);
     return(newmap);
   }
-  
+
   // Linear map: Simple case, just put all GIDs linearly on root processor
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
@@ -305,7 +317,7 @@ static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
     return(newmap);
   }
 
-  if (!usermap.UniqueGIDs()) 
+  if (!usermap.UniqueGIDs())
     throw usermap.ReportError("usermap must have unique GIDs",-1);
 
   // General map
@@ -315,7 +327,7 @@ static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
   Epetra_Map allGidsMap((int_type) -1, numMyElements, (int_type) 0, comm);
   typename Epetra_GIDTypeVector<int_type>::impl allGids(allGidsMap);
   for (int i=0; i<numMyElements; i++) allGids[i] = (int_type) usermap.GID64(i);
-  
+
   if(usermap.MaxAllGID64() > std::numeric_limits<int>::max())
     throw "Epetra_Util::Create_Root_Map: cannot fit all gids in int";
   int numGlobalElements = (int) usermap.NumGlobalElements64();
@@ -325,7 +337,7 @@ static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
     typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
-    
+
     Epetra_Map rootMap((int_type)-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
     return(rootMap);
   }
@@ -335,7 +347,7 @@ static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
     typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
-    
+
     Epetra_Map rootMap((int_type) -1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
 
     return(rootMap);
@@ -419,7 +431,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
   // For each row, sort column entries from smallest to largest.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
-  // Code copied from  Epetra_CrsMatrix::SortEntries() 
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
   int nnz = CRS_rowptr[NumRows];
 
   for(int i = 0; i < NumRows; i++){
@@ -432,7 +444,7 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
 		
     int n = NumEntries;
     int m = n/2;
-    
+
     while(m > 0) {
       int max = n - m;
       for(int j = 0; j < max; j++) {
@@ -451,6 +463,67 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
     }
   }
   return(0);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util::SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+
+  int nnz = CRS_rowptr[NumRows];
+  int new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+
+  for(int i = 0; i < NumRows; i++){
+    int start=CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = CRS_rowptr[i+1] - start;
+    int* locIndices   = &CRS_colind[start];
+
+    // Sort phase
+    int n = NumEntries;
+    int m = n/2;
+
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+
+    // Merge & shrink
+    for(int j=CRS_rowptr[i]; j < CRS_rowptr[i+1]; j++) {
+      if(j > CRS_rowptr[i] && CRS_colind[j]==CRS_colind[new_curr-1]) {
+	CRS_vals[new_curr-1] += CRS_vals[j];
+      }
+      else if(new_curr==j) {
+	new_curr++;
+      }
+      else {
+	CRS_colind[new_curr] = CRS_colind[j];
+	CRS_vals[new_curr]   = CRS_vals[j];
+	new_curr++;
+      }
+    }
+
+    CRS_rowptr[i] = old_curr;
+    old_curr=new_curr;
+  }
+
+  CRS_rowptr[NumRows] = new_curr;
+  return (0);
 }
 
 
@@ -491,7 +564,7 @@ int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std:
     for(k=0;k<LengthsFrom[i];k++){
       if(pid!=mypid) gpids[RemoteLIDs[j]].first=pid;
       j++;
-    }    
+    }
   }
   return 0;
 #else
@@ -537,7 +610,7 @@ int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std:
     for(k=0;k<LengthsFrom[i];k++){
       if(pid!=mypid) gpids[RemoteLIDs[j]].first=pid;
       j++;
-    }    
+    }
   }
   return 0;
 #else
@@ -564,7 +637,7 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
   int NumReceives        = D->NumReceives();
   const int *ProcsFrom   = D->ProcsFrom();
   const int *LengthsFrom = D->LengthsFrom();
-  
+
   // Resize the outgoing data structure
   pids.resize(N);
 
@@ -581,7 +654,7 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
     for(k=0;k<LengthsFrom[i];k++){
       if(pid!=mypid) pids[RemoteLIDs[j]]=pid;
       j++;
-    }    
+    }
   }
   return 0;
 #else
@@ -594,7 +667,7 @@ int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> 
 #ifdef HAVE_MPI
   Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
   if(!D) {
-    RemotePIDs.resize(0); 
+    RemotePIDs.resize(0);
     return 0;
   }
 
@@ -604,18 +677,18 @@ int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> 
   int NumReceives        = D->NumReceives();
   const int *ProcsFrom   = D->ProcsFrom();
   const int *LengthsFrom = D->LengthsFrom();
-  
+
   // Resize the outgoing data structure
   RemotePIDs.resize(Importer.NumRemoteIDs());
 
   // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
   // MpiDistributor so it ought to duplicate that effect.
   for(i=0,j=0;i<NumReceives;i++){
-    int pid=ProcsFrom[i];    
+    int pid=ProcsFrom[i];
     for(k=0;k<LengthsFrom[i];k++){
       RemotePIDs[j]=pid;
       j++;
-    }    
+    }
   }
   return 0;
 #else
@@ -746,15 +819,15 @@ int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
     EPETRA_CHK_ERR(A->MakeDataContiguous()); // Call MakeDataContiguous() method on the matrix
     ierr = 1; // Warn User that we changed the matrix
   }
-  
+
   M = A->NumMyRows();
   N = A->NumMyCols();
   nz = A->NumMyNonzeros();
-  val = (*A)[0];        // Dangerous, but cheap and effective way to access first element in 
-  
+  val = (*A)[0];        // Dangerous, but cheap and effective way to access first element in
+
   const Epetra_CrsGraph & Graph = A->Graph();
   ind = Graph[0];  // list of values and indices
-  
+
   Nrhs = 0; // Assume no rhs, lhs
 
   if (RHS!=0) {
@@ -772,9 +845,9 @@ int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
   ldlhs = LHS->Stride();
   lhs = (*LHS)[0];
   }
-  
+
   // Finally build ptr vector
-  
+
   if (ptr==0) {
     ptr = new int[M+1];
     ptr[0] = 0;

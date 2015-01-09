@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTANINTERFACE_DEF_HPP
 #define MUELU_ZOLTANINTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_ZoltanInterface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
@@ -65,8 +60,8 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
@@ -76,14 +71,14 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
@@ -189,8 +184,8 @@ namespace MueLu {
   // GetLocalNumberOfRows
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLocalNumberOfRows(void *data, int *ierr) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::GetLocalNumberOfRows(void *data, int *ierr) {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return -1;
@@ -208,8 +203,8 @@ namespace MueLu {
   // GetLocalNumberOfNonzeros
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
   GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
                            ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr) {
     if (data == NULL || NumGidEntries < 1) {
@@ -253,8 +248,8 @@ namespace MueLu {
   // GetProblemDimension
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
   GetProblemDimension(void *data, int *ierr)
   {
     int dim = *((int*)data);
@@ -267,8 +262,8 @@ namespace MueLu {
   // GetProblemGeometry
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
   GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs,
                      ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
   {

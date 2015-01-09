@@ -52,10 +52,12 @@
 
 namespace Teuchos {
 
+
 bool GlobalMPISession::haveMPIState_ = false;
 bool GlobalMPISession::mpiIsFinalized_ = false;
 int GlobalMPISession::rank_ = 0 ;
 int GlobalMPISession::nProc_ = 1 ;
+
 
 GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 {
@@ -65,45 +67,63 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // jumbled parallel output between processors
 
 #ifdef HAVE_MPI
-  // initialize MPI
-        int mpiHasBeenStarted = 0, mpierr = 0;
-        MPI_Initialized(&mpiHasBeenStarted);
-        TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpiHasBeenStarted, std::runtime_error
-    ,"Error, you can only call this constructor once!"
-    ,out
-    );
 
-  mpierr = ::MPI_Init (argc, (char ***) argv);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in GlobalMPISession::GlobalMPISession(argc,argv)"
-    ,out
-    );
+  int mpierr = 0;
+
+  // Assert that MPI is not already initialized
+  int mpiHasBeenStarted = 0;
+  MPI_Initialized(&mpiHasBeenStarted);
+  if (mpiHasBeenStarted) {
+    if (out) {
+      *out << "GlobalMPISession(): Error, MPI_Intialized() return true,"
+           << " calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
+
+  // Initialize MPI
+  mpierr = ::MPI_Init(argc, (char ***) argv);
+  if (mpierr != 0) {
+    if (out) {
+      *out << "GlobalMPISession(): Error, MPI_Init() returned error code="
+           << mpierr << "!=0, calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
 
   initialize(out); // Get NProc_ and rank_
 
   int nameLen;
-        char procName[MPI_MAX_PROCESSOR_NAME];
-  mpierr = ::MPI_Get_processor_name(procName,&nameLen);
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Get_processor_name()"
-    ,out
-    );
+  char procName[MPI_MAX_PROCESSOR_NAME];
+  mpierr = ::MPI_Get_processor_name(procName, &nameLen);
+  if (mpierr != 0) {
+    if (out) {
+      *out << "GlobalMPISession():  Error, MPI_Get_processor_name() error code="
+           << mpierr << "!=0, calling std::terminate()!\n"
+           << std::flush;
+    }
+    std::terminate();
+  }
 
   oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
       << procName << " and rank " << rank_ << "!" << std::endl;
 
 #else
-  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << std::endl;
+
+  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run"
+      << std::endl;
+
 #endif
+
 #ifndef TEUCHOS_SUPPRESS_PROC_STARTUP_BANNER
+
   // See if we should suppress the startup banner
   bool printStartupBanner = true;
   const std::string suppress_option("--teuchos-suppress-startup-banner");
-  for( int opt_i = 0; opt_i < *argc; ++opt_i ) {
-    if( suppress_option == (*argv)[opt_i] ) {
+  for ( int opt_i = 0; opt_i < *argc; ++opt_i ) {
+    if ( suppress_option == (*argv)[opt_i] ) {
       // We are suppressing the output!
       printStartupBanner = false;
       // Remove this option!
@@ -113,22 +133,25 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
       --*argc;
     }
   }
-  if( out && printStartupBanner )
+  if (out && printStartupBanner) {
     *out << oss.str() << std::flush;
+  }
+
 #endif
+
 }
+
 
 GlobalMPISession::~GlobalMPISession()
 {
   haveMPIState_ = false;
-  mpiIsFinalized_ = true;
 #ifdef HAVE_MPI
-  int mpierr = ::MPI_Finalize();
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Finalize()"
-    ,&std::cerr
-    );
+  const int mpierr = ::MPI_Finalize();
+  mpiIsFinalized_ = (mpierr == 0);
+  if (mpierr != 0)
+    std::cerr << "Error code " << mpierr << " returned from MPI_Finalize()\n";
+#else
+  mpiIsFinalized_ = true;
 #endif
 }
 
@@ -172,7 +195,7 @@ int GlobalMPISession::sum(int localVal)
   justInTimeInitialize();
 #ifdef HAVE_MPI
   int globalSum = -1;
-  MPI_Allreduce(&localVal, &globalSum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
+  MPI_Allreduce(&localVal, &globalSum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   return globalSum;
 #else
   return localVal;
@@ -186,7 +209,7 @@ void GlobalMPISession::allGather(int localVal, const ArrayView<int> &allVals)
   TEUCHOS_ASSERT_EQUALITY(allVals.size(), getNProc());
 #ifdef HAVE_MPI
   MPI_Allgather( &localVal, 1, MPI_INT, allVals.getRawPtr(), 1, MPI_INT,
-    MPI_COMM_WORLD); 
+    MPI_COMM_WORLD);
 #else
   allVals[0] = localVal;
 #endif
@@ -207,34 +230,36 @@ void GlobalMPISession::initialize( std::ostream *out )
     return;
   }
 
-  if(haveMPIState_)
+  if(haveMPIState_) {
     return; // We already have what we need!
+  }
 
   // We don't have the state of MPI so the constructor for this class must not
   // have been called.  However, if MPI has been called in another way we
   // can still get the state of MPI_COMM_WORLD here.
 
-  int mpiHasBeenStarted = 0, mpierr = 0;
+  int mpiHasBeenStarted = 0;
   MPI_Initialized(&mpiHasBeenStarted);
 
   if(!mpiHasBeenStarted)
     return;  // We have to give up and just leave NProc_ and rank_ at the default values.
 
   // Get the state of MPI
-
+  // Don't throw exceptions here since this part of the code
+  // is used by TEUCHOS_STANDARD_CATCH_STATEMENTS().
+  // See bug #6192 <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6192>.
+  int mpierr = 0;
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
-    ,out
-    );
+  if (mpierr != 0) {
+    *out << "Error code=" << mpierr << " detected in MPI_Comm_rank()"
+         << std::endl;
+  }
 
   mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
-  TEUCHOS_TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, std::runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_size()"
-    ,out
-    );
+  if (mpierr != 0) {
+    *out << "Error code=" << mpierr << " detected in MPI_Comm_size()"
+         << std::endl;
+  }
 
   haveMPIState_ = true;
   mpiIsFinalized_ = false;

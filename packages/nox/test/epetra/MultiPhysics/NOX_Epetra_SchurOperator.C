@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Epetra_SchurOperator.H"
 #include "Problem_Manager.H"
 
@@ -70,7 +70,7 @@ SchurOp::~SchurOp()
 int
 SchurOp::SetUseTranspose( bool UseTranspose )
 {
-  if (UseTranspose == true) 
+  if (UseTranspose == true)
   {
     std::string msg = "ERROR: NOX::Epetra::SchurOp::SetUseTranspose() - Transpose is unavailable for this operator!";
     throw msg;
@@ -129,7 +129,7 @@ SchurOp::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 //-----------------------------------------------------------------------------
 
-double 
+double
 SchurOp::NormInf() const
 {
   std::cout << "ERROR: NOX::Epetra::SchurOp::NormInf() - Not Available for "
@@ -141,7 +141,7 @@ SchurOp::NormInf() const
 
 //-----------------------------------------------------------------------------
 
-const char* 
+const char*
 SchurOp::Label () const
 {
   return label.c_str();
@@ -149,7 +149,7 @@ SchurOp::Label () const
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 SchurOp::UseTranspose() const
 {
   return false;
@@ -157,7 +157,7 @@ SchurOp::UseTranspose() const
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 SchurOp::HasNormInf() const
 {
   return false;
@@ -165,7 +165,7 @@ SchurOp::HasNormInf() const
 
 //-----------------------------------------------------------------------------
 
-const Epetra_Comm & 
+const Epetra_Comm &
 SchurOp::Comm() const
 {
 
@@ -183,13 +183,13 @@ SchurOp::OperatorDomainMap() const
 
   if( !schurInterface.hasExplicitOperator( probId, probId ) )
     throw "ERROR: NOX::Epetra::SchurOp::OperatorDomainMap() - No available explicit operator for this block.";
-  
+
   return schurInterface.getExplicitOperator(probId, probId)->OperatorDomainMap();
 }
 
 //-----------------------------------------------------------------------------
 
-const Epetra_Map & 
+const Epetra_Map &
 SchurOp::OperatorRangeMap() const
 {
   //Problem_Manager & problemManager =  dynamic_cast<Problem_Manager&>(schurInterface);

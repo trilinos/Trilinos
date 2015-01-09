@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
   Epetra_Map Map;
 #endif
 
-  vector<int> Indices(NumPoints);
-  vector<double> Values(NumPoints);
+  std::vector<int> Indices(NumPoints);
+  std::vector<double> Values(NumPoints);
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
   for (int i = 0 ; i < NumPoints ; ++i) {

@@ -88,8 +88,6 @@
 
 namespace Zoltan2{
 
-using namespace std;
-
 using Teuchos::ENull;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -124,21 +122,6 @@ typedef size_t global_size_t;
 // Our data types
 //   Prepend API types with zoltan2_.
 //////////////////////////////////////////////////////
-
-/*! \brief a data type for part IDs
- *
- * Partitioning algorithms deal with part lists, which
- * have length on the order of the number of objects.
- * Defining a part ID data type to be "integer"
- * can save significant storage at runtime, but
- * in some cases, it needs to be defined as "long long".
- */
-
-typedef int zoltan2_partId_t;  // should be int or long or long long
-
-namespace Zoltan2{
-  typedef zoltan2_partId_t partId_t;
-}
 
 //////////////////////////////////////////////////////
 // For debugging

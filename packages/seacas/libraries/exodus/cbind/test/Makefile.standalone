@@ -1,5 +1,5 @@
 # Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 # retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -33,106 +33,133 @@
 
 EXOIITEST = -L../.. -lexodus
 LOCALEXO = ../../libexodus.a
-LIBS = $(EXOIITEST) $(NETCDF_LIB) -lm
+LIBS = $(LOCALEXO) $(NETCDF_LIB) -lm
 
 PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
-	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd \
-        testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
-	testrdv testwt-one-attrib create_mesh rd_wt_mesh testcef \
-        testref testwt-nsided testrd-nsided testwt-nfaced testrd-nfaced
+	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
+	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
+	testwt-one-attrib create_mesh rd_wt_mesh \
+	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
+	testrd-nfaced testwt-long-name testrd-long-name \
+	oned twod MakeTestData test_nemesis 
 
 all:: check
 
+oned:       oned.o       $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)       oned.o   $(LIBS) $(LDFLAGS) 
+
+twod:       twod.o       $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)       twod.o   $(LIBS) $(LDFLAGS) 
+
+MakeTestData: MakeTestData.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) MakeTestData.o   $(LIBS) $(LDFLAGS) 
+
 testwt:     testwt.o     $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@      testwt.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)     testwt.o   $(LIBS) $(LDFLAGS) 
 
 testwt_clb: testwt_clb.o $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@  testwt_clb.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS) testwt_clb.o   $(LIBS) $(LDFLAGS) 
 
 testwtd:    testwtd.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testwtd.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testwtd.o   $(LIBS) $(LDFLAGS) 
 
 testrd:     testrd.o     $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@      testrd.o     $(LDFLAGS) $(LIBS)
-
-testrdv:     testrdv.o     $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@      testrdv.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)     testrd.o   $(LIBS) $(LDFLAGS) 
 
 testrd1:    testrd1.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testrd1.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testrd1.o   $(LIBS) $(LDFLAGS) 
 
 testrdd:    testrdd.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testrdd.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testrdd.o   $(LIBS) $(LDFLAGS) 
 
 testwt1:    testwt1.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testwt1.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testwt1.o   $(LIBS) $(LDFLAGS) 
 
 testwt2:    testwt2.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testwt2.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testwt2.o   $(LIBS) $(LDFLAGS) 
 
 testwtm:    testwtm.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testwtm.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testwtm.o   $(LIBS) $(LDFLAGS) 
 
 testwt_ss:  testwt_ss.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt_ss.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt_ss.o   $(LIBS) $(LDFLAGS) 
 
 testwt_nossnsdf:  testwt_nossnsdf.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt_nossnsdf.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt_nossnsdf.o   $(LIBS) $(LDFLAGS) 
 
 testrd_ss:  testrd_ss.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testrd_ss.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testrd_ss.o   $(LIBS) $(LDFLAGS) 
 
 testrdwt:   testrdwt.o   $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@    testrdwt.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)   testrdwt.o   $(LIBS) $(LDFLAGS) 
 
 testcp:     testcp.o     $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@      testcp.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)     testcp.o   $(LIBS) $(LDFLAGS) 
 
 testcpd:    testcpd.o    $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@     testcpd.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)    testcpd.o   $(LIBS) $(LDFLAGS) 
+
+testcp_nl : testcp_nl.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testcp_nl.o   $(LIBS) $(LDFLAGS) 
+
+testcp_ln : testcp_ln.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testcp_ln.o   $(LIBS) $(LDFLAGS) 
 
 testwt_nc:  testwt_nc.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt_nc.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt_nc.o   $(LIBS) $(LDFLAGS) 
 
 testrd_nc:  testrd_nc.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testrd_nc.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testrd_nc.o   $(LIBS) $(LDFLAGS) 
+
+testwt-long-name: testwt-long-name.o $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testwt-long-name.o   $(LIBS) $(LDFLAGS) 
+
+testrd-long-name: testrd-long-name.o $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS) testrd-long-name.o   $(LIBS) $(LDFLAGS) 
 
 testwt-zeroe:  testwt-zeroe.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt-zeroe.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt-zeroe.o   $(LIBS) $(LDFLAGS) 
 
 testwt-zeron:  testwt-zeron.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt-zeron.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt-zeron.o   $(LIBS) $(LDFLAGS) 
 
 testwt-one-attrib:  testwt-one-attrib.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt-one-attrib.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt-one-attrib.o   $(LIBS) $(LDFLAGS) 
+
+testwt-partial:  testwt-partial.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  testwt-partial.o   $(LIBS) $(LDFLAGS) 
 
 testwt-nsided:  testwt-nsided.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt-nsided.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt-nsided.o   $(LIBS) $(LDFLAGS) 
 
 testrd-nsided:  testrd-nsided.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testrd-nsided.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testrd-nsided.o   $(LIBS) $(LDFLAGS) 
 
 testwt-nfaced:  testwt-nfaced.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testwt-nfaced.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testwt-nfaced.o   $(LIBS) $(LDFLAGS) 
 
 testrd-nfaced:  testrd-nfaced.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   testrd-nfaced.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  testrd-nfaced.o   $(LIBS) $(LDFLAGS) 
 
 create_mesh:  create_mesh.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   create_mesh.o     $(LDFLAGS) $(LIBS) 
+	$(CC) -o $@ $(CFLAGS)  create_mesh.o   $(LIBS) $(LDFLAGS) 
 
-rd_wt_mesh:  rd_wt_mesh.o  $(LOCALEXO)
-	$(CC) $(CFLAGS) -o $@   rd_wt_mesh.o     $(LDFLAGS) $(LIBS) 
+rd_wt_mesh:   rd_wt_mesh.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)   rd_wt_mesh.o   $(LIBS) $(LDFLAGS) 
 
-testcef:  CreateEdgeFace.c  $(LOCALEXO)
-	$(CC) $(CFLAGS) -DCreateEdgeFace=main -o $@   CreateEdgeFace.c     $(LDFLAGS) $(LIBS) 
+CreateEdgeFace:  CreateEdgeFace.o  $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)  CreateEdgeFace.o   $(LIBS) $(LDFLAGS) 
 
-testref:  ReadEdgeFace.c  $(LOCALEXO)
-	$(CC) $(CFLAGS) -DReadEdgeFace=main -o $@   ReadEdgeFace.c     $(LDFLAGS) $(LIBS) 
+ReadEdgeFace:    ReadEdgeFace.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    ReadEdgeFace.o   $(LIBS) $(LDFLAGS) 
+
+test_nemesis:    test_nemesis.o    $(LOCALEXO)
+	$(CC) -o $@ $(CFLAGS)    test_nemesis.o   $(LIBS) $(LDFLAGS) 
+
 
 test:  check
 check: $(PROGS)
-	csh ./testall
+	csh ./testall.standalone ${NCDUMP}
 
 clean::
 	rm -f  *.res $(PROGS)

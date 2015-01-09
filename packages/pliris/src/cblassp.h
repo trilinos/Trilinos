@@ -41,12 +41,12 @@
 //@HEADER
 */
 
-#ifdef CBLAS 
+#ifdef CBLAS
 #define XCOPY ccopy
 #define XSCAL cscal
 #define XAXPY caxpy
 #define IXAMAX icamax
-#define XASUM scasum 
+#define XASUM scasum
 #define XDOT cdotu
 
 #else

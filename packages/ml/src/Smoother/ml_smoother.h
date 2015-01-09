@@ -286,7 +286,7 @@ extern  int ML_Smoother_Hiptmair(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_BlockHiptmair(ML_Smoother *, int, double *, int, double *);
 extern int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,
 					    double x[],int outlen, double b[]);
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 extern int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
                       double rhs[]);
 #endif

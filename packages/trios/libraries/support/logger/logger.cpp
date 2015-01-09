@@ -263,9 +263,10 @@ int logger_fini(void)
 {
     int rc = 0;
 
-    if (log_file) {
+    if ((log_file) && (log_file != stdout) && (log_file != stderr)) {
         fclose(log_file);
     }
+    log_file=NULL;
 
     if (mutex_initialized) {
         nthread_lock_fini(&logger_mutex);

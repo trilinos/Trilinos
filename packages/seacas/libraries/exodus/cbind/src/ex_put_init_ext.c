@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -49,11 +49,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <string.h>                     // for strlen
+#include "exodusII.h"                   // for ex_init_params, ex_err, etc
+#include "exodusII_int.h"               // for nc_flt_code, EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_dim, etc
 
 static void write_dummy_names(int exoid, ex_entity_type obj_type)
 {
@@ -218,8 +220,8 @@ static void invalidate_id_status(int exoid, const char *var_stat,
       for (i=0; i < count; i++) {
 	ids[i] = EX_INVALID_ID;
       }
-      nc_inq_varid(exoid, var_id,   &id_var);
-      nc_put_var_int(exoid, id_var,   ids);
+      (void)nc_inq_varid(exoid, var_id,   &id_var);
+      (void)nc_put_var_int(exoid, id_var,   ids);
     }
 
     if (var_stat != 0) {
@@ -227,8 +229,8 @@ static void invalidate_id_status(int exoid, const char *var_stat,
 	ids[i] = 0;
       }
 
-      nc_inq_varid(exoid, var_stat, &stat_var);
-      nc_put_var_int(exoid, stat_var, ids);
+      (void)nc_inq_varid(exoid, var_stat, &stat_var);
+      (void)nc_put_var_int(exoid, stat_var, ids);
     }
   }
 }
@@ -244,8 +246,8 @@ int ex_put_init_ext (int   exoid,
 {
   int numdimdim, numnoddim, elblkdim, edblkdim, fablkdim, esetdim,
     fsetdim, elsetdim, nsetdim, ssetdim, dim_str_name, dim[2], temp;
+  int nmapdim,edmapdim,famapdim,emapdim,timedim;
   int status;
-  int nmapdim,edmapdim,famapdim,emapdim;
   int title_len;
 #if 0
   /* used for header size calculations which are turned off for now */
@@ -253,9 +255,11 @@ int ex_put_init_ext (int   exoid,
 #endif  
   char errmsg[MAX_ERR_LENGTH];
 
-  exerrval = 0; /* clear error code */
+  int rootid = exoid & EX_FILE_ID_MASK;
 
-  if (nc_inq_dimid (exoid, DIM_NUM_DIM, &temp) == NC_NOERR)
+  exerrval = 0; /* clear error code */
+  
+  if (rootid == exoid && nc_inq_dimid (exoid, DIM_NUM_DIM, &temp) == NC_NOERR)
     {
       exerrval = EX_MSG;
       sprintf(errmsg,
@@ -266,7 +270,6 @@ int ex_put_init_ext (int   exoid,
 
 
   /* put file into define mode */
-
   if ((status = nc_redef (exoid)) != NC_NOERR)
     {
       exerrval = status;
@@ -277,14 +280,13 @@ int ex_put_init_ext (int   exoid,
     }
 
   /* define some attributes... */
-  title_len = strlen(model->title) < MAX_LINE_LENGTH ?
-    strlen(model->title) : MAX_LINE_LENGTH;
-  if ((status = nc_put_att_text(exoid, NC_GLOBAL, (const char*)ATT_TITLE, 
+  title_len = strlen(model->title) < MAX_LINE_LENGTH ? strlen(model->title) : MAX_LINE_LENGTH;
+  if ((status = nc_put_att_text(rootid, NC_GLOBAL, (const char*)ATT_TITLE, 
 				title_len+1, model->title)) != NC_NOERR)
     {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to define model->title attribute to file id %d", exoid);
+              "Error: failed to define model->title attribute to file id %d", rootid);
       ex_err("ex_put_init_ext",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
     }
@@ -292,28 +294,37 @@ int ex_put_init_ext (int   exoid,
   /* ...and some dimensions... */
 
   /* create name string length dimension */
-  {
+  if (nc_inq_dimid (rootid, DIM_STR_NAME, &dim_str_name) != NC_NOERR) {
     int max_name = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
     if (max_name < ex_default_max_name_length) max_name = ex_default_max_name_length;
-    if ((status=nc_def_dim (exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
+
+    if ((status=nc_def_dim (rootid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to define name string length in file id %d",exoid);
+	      "Error: failed to define name string length in file id %d",rootid);
       ex_err("ex_put_init_ext",errmsg,exerrval);
       goto error_ret;
     }
+  }
+  
+  if ((status = nc_def_dim(exoid, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to define time dimension in file id %d", exoid);
+    ex_err("ex_create",errmsg,exerrval);
+    return (EX_FATAL);
   }
 
-  {
-    int max_so_far = 32;
-    if ((status=nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to add maximum_name_length attribute in file id %d",exoid);
-      ex_err("ex_put_init_ext",errmsg,exerrval);
-      goto error_ret;
-    }
+  dim[0] = timedim;
+  if ((status = nc_def_var(exoid, VAR_WHOLE_TIME, nc_flt_code(exoid), 1, dim, &temp)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to define whole time step variable in file id %d",
+	    exoid);
+    ex_err("ex_create",errmsg,exerrval);
+    return (EX_FATAL);
   }
+  ex_compress_variable(exoid, temp, 2);
 
   if ((status = nc_def_dim(exoid, DIM_NUM_DIM, model->num_dim, &numdimdim)) != NC_NOERR)
     {

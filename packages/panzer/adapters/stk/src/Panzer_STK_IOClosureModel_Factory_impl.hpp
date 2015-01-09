@@ -51,20 +51,22 @@
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-panzer_stk::IOClosureModelFactory<EvalT>::
+panzer_stk_classic::IOClosureModelFactory<EvalT>::
 IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF,
                       const Teuchos::RCP<STK_Interface> & mesh,
                       const Teuchos::ParameterList & outputList)
    : mesh_(mesh), userCMF_(userCMF)
 {
    parseOutputList(outputList.sublist("Cell Average Quantities"),blockIdToCellAvgFields_);
+   parseOutputList(outputList.sublist("Cell Average Vectors"),blockIdToCellAvgVectors_);
    parseOutputList(outputList.sublist("Cell Quantities"),blockIdToCellFields_);
+   parseOutputList(outputList.sublist("Nodal Quantities"),blockIdToNodalFields_);
 }
 
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
-void panzer_stk::IOClosureModelFactory<EvalT>::
+void panzer_stk_classic::IOClosureModelFactory<EvalT>::
 parseOutputList(const Teuchos::ParameterList & pl,
                 std::map<std::string,std::vector<std::string> > & blockIdToFields) const
 {
@@ -85,7 +87,7 @@ parseOutputList(const Teuchos::ParameterList & pl,
 // ********************************************************************
 template<typename EvalT>
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
-panzer_stk::IOClosureModelFactory<EvalT>::
+panzer_stk_classic::IOClosureModelFactory<EvalT>::
 buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models, 
 		   const panzer::FieldLayoutLibrary& fl,
@@ -95,6 +97,8 @@ buildClosureModels(const std::string& model_id,
 		   const Teuchos::RCP<panzer::GlobalData>& global_data,
 		   PHX::FieldManager<panzer::Traits>& fm) const
 {
+  // Note that the Residual version of this is in the cpp file!!!!
+
   return userCMF_->buildClosureModels(model_id,models,fl,ir,default_params,user_data,global_data,fm);
 }
 

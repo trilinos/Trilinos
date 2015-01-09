@@ -77,7 +77,7 @@ TInterlaced(Epetra_Comm& Comm, int_type NumGlobalElements)
   if (MyPID < NumGlobalElements % NumProcs) NumMyElements++;
 
   int count = 0;
-  vector<int_type> MyGlobalElements(NumMyElements);
+  std::vector<int_type> MyGlobalElements(NumMyElements);
 
   for (int_type i = 0 ; i < NumGlobalElements ; ++i) 
   {

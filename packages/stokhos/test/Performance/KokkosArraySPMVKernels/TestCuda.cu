@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
@@ -28,7 +28,7 @@
 
 #include "TestStochastic.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Cuda_CrsMatrix.hpp"
 #include "Stokhos_Cuda_BlockCrsMatrix.hpp"
@@ -94,7 +94,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
   Kokkos::Cuda::print_configuration( std::cout );
 
@@ -110,7 +110,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_lin, test_block, symmetric);
 
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   cudaDeviceReset();

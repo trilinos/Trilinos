@@ -1,14 +1,12 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Chan_Continuation_Example
-    SOURCES 
+    SOURCES
     ChanProblemInterface.H
     ChanProblemInterface.C
     ChanContinuation.C
@@ -20,7 +18,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Chan_TurningPoint_Example
-    SOURCES 
+    SOURCES
     ChanProblemInterface.H
     ChanProblemInterface.C
     ChanTPContinuation.C
@@ -32,7 +30,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Chan_Homotopy_Example
-    SOURCES 
+    SOURCES
     ChanProblemInterface.H
     ChanProblemInterface.C
     ChanHomotopy.C
@@ -46,7 +44,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       LOCA_Chan_MultiContinuation_Example
-      SOURCES 
+      SOURCES
       ChanProblemInterface.H
       ChanProblemInterface.C
       ChanMultiContinuation.C

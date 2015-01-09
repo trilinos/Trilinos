@@ -523,12 +523,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
   if (maxUnsignedIntVal < maxVal) {
     TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
     try {
-      std::cerr << std::endl 
+      std::cerr << std::endl
 		<< "*** RealType = " << TypeNameTraits<RealType>::name ()
 		<< ", UnsignedIntType = " << TypeNameTraits<UnsignedIntType>::name ()
 		<< ", maxVal = " << maxVal
                 << ", maxUnsignedIntVal = " << maxUnsignedIntVal
-		<< ", asSafe (maxVal) = " << asSafe<UnsignedIntType> (maxVal) 
+		<< ", asSafe (maxVal) = " << asSafe<UnsignedIntType> (maxVal)
 		<< std::endl;
     } catch (...) {
       std::cerr << "(asSafe threw an exception)" << std::endl;

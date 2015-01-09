@@ -70,8 +70,8 @@ using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 using Teuchos::CommandLineProcessor;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
 typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
 
 enum weightTypes{
@@ -81,31 +81,31 @@ enum weightTypes{
   numWeightTypes
 };
 
-ArrayRCP<scalar_t> makeWeights(
+ArrayRCP<zscalar_t> makeWeights(
   const RCP<const Teuchos::Comm<int> > & comm,
-  lno_t len, weightTypes how, scalar_t scale, int rank)
+  zlno_t len, weightTypes how, zscalar_t scale, int rank)
 {
-  scalar_t *wgts = new scalar_t [len];
+  zscalar_t *wgts = new zscalar_t [len];
   if (!wgts)
     throw bad_alloc();
 
-  ArrayRCP<scalar_t> weights(wgts, 0, len, true);
+  ArrayRCP<zscalar_t> weights(wgts, 0, len, true);
 
   if (how == upDown){
-    scalar_t val = scale + rank%2;
-    for (lno_t i=0; i < len; i++)
+    zscalar_t val = scale + rank%2;
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
-      scalar_t val = (i + 10)*scale;
-      for (int j=i; j < len; j += 10)
+      zscalar_t val = (i + 10)*scale;
+      for (zlno_t j=i; j < len; j += 10)
          weights[j] = val;
     }
   }
   else if (how == increasing){
-    scalar_t val = scale + rank;
-    for (lno_t i=0; i < len; i++)
+    zscalar_t val = scale + rank;
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
 
@@ -118,19 +118,19 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    gno_t numGlobalCoords)
+    zgno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  gno_t xdim = static_cast<int>(floor(xdimf));
-  gno_t ydim = xdim;
-  gno_t zdim = numGlobalCoords / (xdim*ydim);
-  gno_t num=xdim*ydim*zdim;
-  gno_t diff = numGlobalCoords - num;
-  gno_t newdiff = 0;
+  ssize_t xdim = static_cast<ssize_t>(floor(xdimf));
+  ssize_t ydim = xdim;
+  ssize_t zdim = numGlobalCoords / (xdim*ydim);
+  ssize_t num=xdim*ydim*zdim;
+  ssize_t diff = numGlobalCoords - num;
+  ssize_t newdiff = 0;
 
   while (diff > 0){
     if (zdim > xdim && zdim > ydim){
@@ -174,56 +174,56 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  gno_t numLocalCoords = num / nprocs;
-  gno_t leftOver = num % nprocs;
-  gno_t gid0 = 0;
+  ssize_t numLocalCoords = num / nprocs;
+  ssize_t leftOver = num % nprocs;
+  ssize_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = gno_t(rank) * (numLocalCoords+1);
+    gid0 = zgno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((gno_t(rank) - leftOver) * numLocalCoords);
+           ((zgno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
 
-  gno_t gid1 = gid0 + numLocalCoords;
+  ssize_t gid1 = gid0 + numLocalCoords;
 
-  gno_t *ids = new gno_t [numLocalCoords];
+  zgno_t *ids = new zgno_t [numLocalCoords];
   if (!ids)
     throw bad_alloc();
-  ArrayRCP<gno_t> idArray(ids, 0, numLocalCoords, true);
+  ArrayRCP<zgno_t> idArray(ids, 0, numLocalCoords, true);
 
-  for (gno_t i=gid0; i < gid1; i++)
-    *ids++ = i;   
+  for (ssize_t i=gid0; i < gid1; i++)
+    *ids++ = zgno_t(i);   
 
   RCP<const tMap_t> idMap = rcp(
     new tMap_t(num, idArray.view(0, numLocalCoords), 0, comm));
 
   // Create a Tpetra::MultiVector of coordinates.
 
-  scalar_t *x = new scalar_t [numLocalCoords*3]; 
+  zscalar_t *x = new zscalar_t [numLocalCoords*3]; 
   if (!x)
     throw bad_alloc();
-  ArrayRCP<scalar_t> coordArray(x, 0, numLocalCoords*3, true);
+  ArrayRCP<zscalar_t> coordArray(x, 0, numLocalCoords*3, true);
 
-  scalar_t *y = x + numLocalCoords;
-  scalar_t *z = y + numLocalCoords;
+  zscalar_t *y = x + numLocalCoords;
+  zscalar_t *z = y + numLocalCoords;
 
-  gno_t xStart = 0;
-  gno_t yStart = 0;
-  gno_t xyPlane = xdim*ydim;
-  gno_t zStart = gid0 / xyPlane;
-  gno_t rem = gid0 % xyPlane;
+  zgno_t xStart = 0;
+  zgno_t yStart = 0;
+  zgno_t xyPlane = xdim*ydim;
+  zgno_t zStart = gid0 / xyPlane;
+  zgno_t rem = gid0 % xyPlane;
   if (rem > 0){
     yStart = rem / xdim;
     xStart = rem % xdim;
   }
 
-  lno_t next = 0;
-  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
-    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
-      for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
+  zlno_t next = 0;
+  for (zscalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
+    for (zscalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
+      for (zscalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
         x[next] = xval;
         y[next] = yval;
         z[next] = zval;
@@ -234,16 +234,16 @@ const RCP<tMVector_t> getMeshCoordinates(
     yStart = 0;
   }
 
-  ArrayView<const scalar_t> xArray(x, numLocalCoords);
-  ArrayView<const scalar_t> yArray(y, numLocalCoords);
-  ArrayView<const scalar_t> zArray(z, numLocalCoords);
-  ArrayRCP<ArrayView<const scalar_t> > coordinates =
-    arcp(new ArrayView<const scalar_t> [3], 0, 3);
+  ArrayView<const zscalar_t> xArray(x, numLocalCoords);
+  ArrayView<const zscalar_t> yArray(y, numLocalCoords);
+  ArrayView<const zscalar_t> zArray(z, numLocalCoords);
+  ArrayRCP<ArrayView<const zscalar_t> > coordinates =
+    arcp(new ArrayView<const zscalar_t> [3], 0, 3);
   coordinates[0] = xArray;
   coordinates[1] = yArray;
   coordinates[2] = zArray;
 
-  ArrayRCP<const ArrayView<const scalar_t> > constCoords =
+  ArrayRCP<const ArrayView<const zscalar_t> > constCoords =
    coordinates.getConst();
 
   RCP<tMVector_t> meshCoords = rcp(new tMVector_t(
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
   // Default values
   double numGlobalCoords = 1000;
   int numTestCuts = 1;
-  int weightDim = 0;
+  int nWeights = 0;
   string timingType("no_timers");
   string debugLevel("basic_status");
   string memoryOn("memoryOn");
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
     "Number of test cuts to make when looking for bisector.");
   commandLine.setOption("numParts", &numGlobalParts, 
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim, 
+  commandLine.setOption("nWeights", &nWeights, 
     "Number of weights per coordinate, zero implies uniform weights.");
 
   string balanceCount("balance_object_count");
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 
   //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
-  gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
+  zgno_t globalSize = static_cast<zgno_t>(numGlobalCoords);
 
   RCP<tMVector_t> coordinates = getMeshCoordinates(comm, globalSize);
   size_t numLocalCoords = coordinates->getLocalLength();
@@ -352,10 +352,10 @@ int main(int argc, char *argv[])
   for (int p=0; p < nprocs; p++){
     if (p==rank){
       cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
-      const scalar_t *x = coordinates->getData(0).getRawPtr();
-      const scalar_t *y = coordinates->getData(1).getRawPtr();
-      const scalar_t *z = coordinates->getData(2).getRawPtr();
-      for (lno_t i=0; i < numLocalCoords; i++)
+      const zscalar_t *x = coordinates->getData(0).getRawPtr();
+      const zscalar_t *y = coordinates->getData(1).getRawPtr();
+      const zscalar_t *z = coordinates->getData(2).getRawPtr();
+      for (zlno_t i=0; i < numLocalCoords; i++)
         cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
     }
     cout.flush();
@@ -363,12 +363,12 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  Array<ArrayRCP<scalar_t> > weights(weightDim);
+  Array<ArrayRCP<zscalar_t> > weights(nWeights);
 
-  if (weightDim > 0){
+  if (nWeights > 0){
     int wt = 0;
-    scalar_t scale = 1.0;
-    for (int i=0; i < weightDim; i++){
+    zscalar_t scale = 1.0;
+    for (int i=0; i < nWeights; i++){
       weights[i] = 
         makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
       if (wt == numWeightTypes){
@@ -382,24 +382,24 @@ int main(int argc, char *argv[])
 
   // Create an input adapter.
   const RCP<const tMap_t> &coordmap = coordinates->getMap();
-  ArrayView<const gno_t> ids = coordmap->getNodeElementList();
-  const gno_t *globalIds = ids.getRawPtr();
+  ArrayView<const zgno_t> ids = coordmap->getNodeElementList();
+  const zgno_t *globalIds = ids.getRawPtr();
   
   size_t localCount = coordinates->getLocalLength();
   RCP<inputAdapter_t> ia;
   
-  if (weightDim == 0){
+  if (nWeights == 0){
     ia = rcp(new inputAdapter_t (localCount, globalIds, 
       coordinates->getData(0).getRawPtr(), coordinates->getData(1).getRawPtr(),
       coordinates->getData(2).getRawPtr(), 1,1,1));
   }
   else{
-    vector<const scalar_t *> values(3);
+    vector<const zscalar_t *> values(3);
     for (int i=0; i < 3; i++)
       values[i] = coordinates->getData(i).getRawPtr();
     vector<int> valueStrides(0);  // implies stride is one
-    vector<const scalar_t *> weightPtrs(weightDim);
-    for (int i=0; i < weightDim; i++)
+    vector<const zscalar_t *> weightPtrs(nWeights);
+    for (int i=0; i < nWeights; i++)
       weightPtrs[i] = weights[i].getRawPtr();
     vector<int> weightStrides(0); // implies stride is one
 

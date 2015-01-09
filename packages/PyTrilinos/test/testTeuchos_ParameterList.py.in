@@ -2,35 +2,50 @@
 # -*- python -*-
 
 # @HEADER
-# ************************************************************************
+# ***********************************************************************
 #
-#                PyTrilinos: Python Interface to Trilinos
-#                   Copyright (2005) Sandia Corporation
+#          PyTrilinos: Python Interfaces to Trilinos Packages
+#                 Copyright (2014) Sandia Corporation
 #
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia
+# Corporation, the U.S. Government retains certain rights in this
+# software.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
 #
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
 #
-# ************************************************************************
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+#
+# ***********************************************************************
 # @HEADER
 
 #
 # System imports
+import numpy
 import sys
 import unittest
 
@@ -57,6 +72,35 @@ Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
 class ParameterListTestCase(unittest.TestCase):
     "TestCase class for Teuchos.ParameterList"
 
+    ########################################################
+
+    # assertEqual() needs to be redefined to handle comparison of ndarrays and
+    # dicts, lists or tuples that contain ndarrays
+    def assertEqual(self, obj1, obj2):
+        if isinstance(obj1, (dict,Teuchos.ParameterList)):
+            self.assertDictsEqual(obj1, obj2)
+        elif isinstance(obj1, (list,tuple)):
+            self.assertSequenceEqual(obj1, obj2)
+        else:
+            result = (obj1 == obj2)
+            if hasattr(result, "all"):
+                self.assertTrue(result.all())
+            else:
+                self.assertTrue(result)
+
+    def assertDictsEqual(self, dict1, dict2):
+        keys1 = dict1.keys()
+        keys2 = dict2.keys()
+        self.assertEqual(keys1, keys2)
+        for key in keys1:
+            self.assertEqual(dict1[key], dict2[key])
+
+    def assertSequenceEqual(self, seq1, seq2):
+        for items in zip(seq1, seq2):
+            self.assertEqual(items[0], items[1])
+
+    ########################################################
+
     def setUp(self):
         self.comm  = Teuchos.DefaultComm.getComm()
         if ('MpiComm' in dir(Teuchos)):
@@ -69,7 +113,9 @@ class ParameterListTestCase(unittest.TestCase):
                       "i" : 2,
                       "f" : 3.14,
                       "d" : {"a":1, "b":2},
-                      "s" : "Sandia"
+                      "s" : "Sandia",
+                      "a" : (7, 8, 9),
+                      "A" : [0.0, 1.0, 2.718, 3.14]
                       }
         self.fName = "testParameterList%d.dat" % self.comm.getRank()
         self.comm.barrier()
@@ -79,12 +125,12 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testConstructor0(self):
         "Test Teuchos.ParameterList default constructor"
-        self.assertEqual(isinstance(self.plist,Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(self.plist,Teuchos.ParameterList))
 
     def testConstructor1(self):
         "Test Teuchos.ParameterList string constructor"
         plist = Teuchos.ParameterList(self.name)
-        self.assertEqual(isinstance(plist,Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(plist,Teuchos.ParameterList))
         self.assertEqual(plist.name(), self.name)
 
     def testConstructor2(self):
@@ -100,8 +146,7 @@ class ParameterListTestCase(unittest.TestCase):
     def testConstructor3(self):
         "Test Teuchos.ParameterList nested dictionary constructor"
         plist = Teuchos.ParameterList(self.dict)
-        for key in self.dict.keys():
-            self.assertEqual(plist.get(key), self.dict[key])
+        self.assertEqual(plist, self.dict)
 
     def testConstructor4(self):
         "Test Teuchos.ParameterList dictionary constructor, bad key"
@@ -117,14 +162,14 @@ class ParameterListTestCase(unittest.TestCase):
         d = {"i" : 5,
              "f" : 3.14,
              "s" : "New Mexico",
-             "b" : (1,2,3)
+             "b" : ("1", "2", "3")
              }
         self.assertRaises(ValueError, Teuchos.ParameterList, d)
 
     def testConstructor6(self):
         "Test Teuchos.ParameterList copy constructor"
         plist_copy = Teuchos.ParameterList(self.plist)
-        self.assertEqual(isinstance(plist_copy,Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(plist_copy,Teuchos.ParameterList))
 
     def testConstructor7(self):
         "Test Teuchos.ParameterList constructor with bad argument"
@@ -175,7 +220,7 @@ class ParameterListTestCase(unittest.TestCase):
         name = "dict parameter"
         self.plist.set(name, self.dict)
         sublist = self.plist.get(name)
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(sublist, Teuchos.ParameterList))
         for key in self.dict.keys():
             self.assertEqual(sublist.get(key), self.dict[key])
  
@@ -184,9 +229,9 @@ class ParameterListTestCase(unittest.TestCase):
         name    = "sublist"
         sublist = Teuchos.ParameterList()
         self.plist.set(name, sublist)
-        self.assertEqual(isinstance(self.plist.get(name),
-                                    Teuchos.ParameterList), True)
-        self.assertEqual(self.plist.isSublist(name), True)
+        self.assertTrue(isinstance(self.plist.get(name),
+                                   Teuchos.ParameterList))
+        self.assertTrue(self.plist.isSublist(name))
 
     def testSetNone(self):
         "Test Teuchos.ParameterList set method for None"
@@ -194,7 +239,8 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testSetBadType(self):
         "Test Teuchos.ParameterList set method for an unsupported type"
-        self.assertRaises(TypeError, self.plist.set, "bad parameter", (1,2,3))
+        self.assertRaises(TypeError, self.plist.set, "bad parameter",
+                          ("1.2","3"))
 
     def testSetBadKey(self):
         "Test Teuchos.ParameterList set method with bad key"
@@ -215,7 +261,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testSetParametersBad(self):
         "Test Teuchos.ParameterList setParameters method for unsupported type"
-        d = dict(i=5,f=10.0,t=(1,2,3,5,7))
+        d = dict(i=5,f=10.0,t=(1,2,"3",5,7))
         self.assertRaises(ValueError, self.plist.setParameters, d)
 
     def testGetDefault(self):
@@ -226,15 +272,15 @@ class ParameterListTestCase(unittest.TestCase):
     def testSublistNew(self):
         "Test Teuchos.ParameterList sublist method for new sublist"
         sublist = self.plist.sublist("new")
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(sublist, Teuchos.ParameterList))
         sublist = self.plist.get("new")
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(sublist, Teuchos.ParameterList))
 
     def testSublistOld(self):
         "Test Teuchos.ParameterList sublist method for existing sublist"
         self.plist.set("old",self.dict)
         sublist = self.plist.sublist("old")
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(sublist, Teuchos.ParameterList))
 
     def testSublistBad(self):
         "Test Teuchos.ParameterList sublist method for non-sublist"
@@ -245,7 +291,7 @@ class ParameterListTestCase(unittest.TestCase):
         "Test Teuchos.ParameterList isParameter method existing parameter"
         name = "string parameter"
         self.plist.set(name,"Hello")
-        self.assertEqual(self.plist.isParameter(name), True)
+        self.assertTrue(self.plist.isParameter(name))
 
     def testIsParameterFalse(self):
         "Test Teuchos.ParameterList isParameter method nonexisting parameter"
@@ -256,7 +302,7 @@ class ParameterListTestCase(unittest.TestCase):
         "Test Teuchos.ParameterList isSublist method for existing sublist"
         name = "sublist"
         self.plist.sublist(name)
-        self.assertEqual(self.plist.isSublist(name), True)
+        self.assertTrue(self.plist.isSublist(name))
 
     def testIsSublistFalse1(self):
         "Test Teuchos.ParameterList isSublist method for existing non-sublist parameter"
@@ -416,7 +462,7 @@ class ParameterListTestCase(unittest.TestCase):
     def test__getitem__bad1(self):
         "Test Teuchos.ParameterList __getitem__ method for nonexisting parameter"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertRaises(KeyError, plist.__getitem__, "a")
+        self.assertRaises(KeyError, plist.__getitem__, "c")
 
     def test__getitem__bad2(self):
         "Test Teuchos.ParameterList __getitem__ method for bad key"
@@ -448,8 +494,11 @@ class ParameterListTestCase(unittest.TestCase):
     def test__repr__(self):
         "Test Teuchos.ParameterList __repr__ method"
         plist = Teuchos.ParameterList(self.dict)
-        d = eval("Teuchos." + repr(plist))
-        self.assertEqual(isinstance(d, Teuchos.ParameterList), True)
+        r = "Teuchos." + repr(plist)
+        r = r.replace("array","numpy.array")
+        r = r.replace("dtype=","dtype=numpy.")
+        d = eval(r)
+        self.assertTrue(isinstance(d, Teuchos.ParameterList))
 
     def test__setitem__1(self):
         "Test Teuchos.ParameterList __setitem__ method"
@@ -466,8 +515,8 @@ class ParameterListTestCase(unittest.TestCase):
         "Test Teuchos.ParameterList __setitem__ method for a ParameterList"
         plist = Teuchos.ParameterList()
         self.plist[self.name] = plist
-        self.assertEqual(isinstance(self.plist.get(self.name),
-                                    Teuchos.ParameterList), True)
+        self.assertTrue(isinstance(self.plist.get(self.name),
+                                   Teuchos.ParameterList))
 
     def test__setitem__bad1(self):
         "Test Teuchos.ParameterList __setitem__ method for bad key"
@@ -475,25 +524,28 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__setitem__bad2(self):
         "Test Teuchos.ParameterList __setitem__ method for bad value"
-        self.assertRaises(TypeError, self.plist.__setitem__, "Hello", (9,4,1))
+        self.assertRaises(TypeError, self.plist.__setitem__, "Hello", (9,"4",1))
 
     def test__str__(self):
         "Test Teuchos.ParameterList __str__ method"
         # This does not work under MPI on my MacBook Pro yet...
-        if self.commType == "MPI": return
+        #if self.commType == "MPI": return
         plist = Teuchos.ParameterList(self.dict)
-        d = eval(str(plist))
-        self.assertEqual(isinstance(d, dict), True)
+        s = str(plist)
+        s = s.replace("array","numpy.array")
+        s = s.replace("dtype=","dtype=numpy.")
+        d = eval(s)
+        self.assertTrue(isinstance(d, dict))
 
     def testAsDict(self):
         "Test Teuchos.ParameterList asDict method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertEqual(plist.asDict(), self.dict)
+        self.assertItemsEqual(plist.asDict(), self.dict)
 
     def testItems(self):
         "Test Teuchos.ParameterList items method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertEqual(plist.items(), self.dict.items())
+        self.assertItemsEqual(plist, self.dict)
 
     def testKeys(self):
         "Test Teuchos.ParameterList keys method"
@@ -510,21 +562,23 @@ class ParameterListTestCase(unittest.TestCase):
         self.plist.setParameters(self.dict)
         items = self.dict.items()
         for i in self.plist.iteritems():
-            self.assertEqual(i in items, True)
+            if not isinstance(i[1], numpy.ndarray):
+                self.assertTrue(i in items)
 
     def testIterkeys(self):
         "Test Teuchos.ParameterList iterkeys method"
         self.plist.setParameters(self.dict)
         keys = self.dict.keys()
         for i in self.plist.iterkeys():
-            self.assertEqual(i in keys, True)
+            self.assertTrue(i in keys)
 
     def testItervalues(self):
         "Test Teuchos.ParameterList itervalues method"
         self.plist.setParameters(self.dict)
         values = self.dict.values()
         for i in self.plist.itervalues():
-            self.assertEqual(i in values, True)
+            if not isinstance(i, numpy.ndarray):
+                self.assertTrue(i in values)
 
     def testUpdate1(self):
         "Test Teuchos.ParameterList update method for a ParameterList"
@@ -546,7 +600,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testUpdateBad(self):
         "Test Teuchos.ParameterList update method for unsupported type"
-        d = dict(i=5,f=10.0,t=(1,2,3,5,7))
+        d = dict(i=5,f=10.0,t=(1,2,"3",5,7))
         self.assertRaises(ValueError, self.plist.update, d)
 
     def test__iter__(self):
@@ -556,7 +610,7 @@ class ParameterListTestCase(unittest.TestCase):
             self.plist.set(str(i), i)
         keys = self.plist.keys()
         for p in self.plist:        # This invokes the __iter__ method
-            self.assertEqual(p in keys, True)
+            self.assertTrue(p in keys)
 
 ####################################################################
 

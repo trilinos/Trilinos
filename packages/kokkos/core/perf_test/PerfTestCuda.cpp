@@ -41,35 +41,47 @@
 //@HEADER
 */
 
+#include <iostream>
+#include <iomanip>
 #include <gtest/gtest.h>
-#include <Kokkos_Cuda.hpp>
+
+#include <Kokkos_Core.hpp>
+
+#if defined( KOKKOS_HAVE_CUDA )
+
+#include <impl/Kokkos_Timer.hpp>
+
+#include <PerfTestHexGrad.hpp>
+#include <PerfTestBlasKernels.hpp>
+#include <PerfTestGramSchmidt.hpp>
+#include <PerfTestDriver.hpp>
+
 
 namespace Test {
-
-extern void test_device_cuda_init();
 
 class cuda : public ::testing::Test {
   protected:
     static void SetUpTestCase() {
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::HostSpace::execution_space::initialize();
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     }
     static void TearDownTestCase() {
       Kokkos::Cuda::finalize();
-      Kokkos::Cuda::host_mirror_device_type::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
     }
 };
 
-extern void test_cuda_hexgrad(int exp_beg, int exp_end);
-extern void test_cuda_gramschmidt(int exp_beg, int exp_end);
-
-TEST_F( cuda, hexgrad ) {
-  EXPECT_NO_THROW(test_cuda_hexgrad( 10, 20 ));
+TEST_F( cuda, hexgrad )
+{
+  EXPECT_NO_THROW( run_test_hexgrad< Kokkos::Cuda >( 10 , 20, "Kokkos::Cuda" ) );
 }
 
-TEST_F( cuda, gramschmidt ) {
-  EXPECT_NO_THROW(test_cuda_gramschmidt( 10, 20 ));
+TEST_F( cuda, gramschmidt )
+{
+  EXPECT_NO_THROW( run_test_gramschmidt< Kokkos::Cuda >( 10 , 20, "Kokkos::Cuda" ) );
 }
 
 } // namespace Test
+
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 

@@ -1,0 +1,281 @@
+// @HEADER
+// ***********************************************************************
+//
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+//
+// ***********************************************************************
+// @HEADER
+#include <iostream>
+
+// Kokkos CrsMatrix
+#include "Kokkos_CrsMatrix.hpp"
+
+// Utilities
+#include "impl/Kokkos_Timer.hpp"
+
+template< typename IntType >
+inline
+IntType map_fem_graph_coord( const IntType & N ,
+                             const IntType & i ,
+                             const IntType & j ,
+                             const IntType & k )
+{
+  return k + N * ( j + N * i );
+}
+
+inline
+size_t generate_fem_graph( size_t N ,
+                           std::vector< std::vector<size_t> > & graph )
+{
+  graph.resize( N * N * N , std::vector<size_t>() );
+
+  size_t total = 0 ;
+
+  for ( int i = 0 ; i < (int) N ; ++i ) {
+  for ( int j = 0 ; j < (int) N ; ++j ) {
+  for ( int k = 0 ; k < (int) N ; ++k ) {
+
+    const size_t row = map_fem_graph_coord((int)N,i,j,k);
+
+    graph[row].reserve(27);
+
+    for ( int ii = -1 ; ii < 2 ; ++ii ) {
+    for ( int jj = -1 ; jj < 2 ; ++jj ) {
+    for ( int kk = -1 ; kk < 2 ; ++kk ) {
+      if ( 0 <= i + ii && i + ii < (int) N &&
+           0 <= j + jj && j + jj < (int) N &&
+           0 <= k + kk && k + kk < (int) N ) {
+        size_t col = map_fem_graph_coord((int)N,i+ii,j+jj,k+kk);
+
+        graph[row].push_back(col);
+      }
+    }}}
+    total += graph[row].size();
+  }}}
+
+  return total ;
+}
+
+template <typename ScalarType, typename OrdinalType, typename Device>
+void
+test_spmm(const OrdinalType ensemble_length,
+          const OrdinalType nGrid,
+          const OrdinalType iterCount,
+          std::vector<double>& scalar_perf,
+          std::vector<double>& block_left_perf,
+          std::vector<double>& block_right_perf)
+{
+  typedef ScalarType value_type;
+  typedef OrdinalType ordinal_type;
+  typedef Device device_type;
+  typedef Kokkos::View< value_type*, device_type > vector_type;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > left_multivec_type;
+  //typedef Kokkos::View< value_type**, Kokkos::LayoutRight, device_type > right_multivec_type;
+  typedef Kokkos::CrsMatrix< value_type, ordinal_type, device_type > matrix_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+
+  //------------------------------
+  // Generate graph for "FEM" box structure:
+
+  std::vector< std::vector<size_t> > fem_graph;
+  const size_t fem_length = nGrid * nGrid * nGrid;
+  const size_t graph_length = generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+  // Generate input vectors:
+
+  std::vector<vector_type> x(ensemble_length);
+  std::vector<vector_type> y(ensemble_length);
+  for (ordinal_type e=0; e<ensemble_length; ++e) {
+    x[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length);
+    y[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length);
+
+    Kokkos::deep_copy( x[e] , value_type(1.0) );
+    Kokkos::deep_copy( y[e] , value_type(0.0) );
+  }
+  left_multivec_type xl(Kokkos::ViewAllocateWithoutInitializing("xl"), fem_length, ensemble_length);
+  left_multivec_type yl(Kokkos::ViewAllocateWithoutInitializing("yl"), fem_length, ensemble_length);
+  // right_multivec_type xr(Kokkos::ViewAllocateWithoutInitializing("xr"), fem_length, ensemble_length);
+  // right_multivec_type yr(Kokkos::ViewAllocateWithoutInitializing("yr"), fem_length, ensemble_length);
+  Kokkos::deep_copy(xl, value_type(1.0));
+  //Kokkos::deep_copy(xr, value_type(1.0));
+  Kokkos::deep_copy(yl, value_type(0.0));
+  //Kokkos::deep_copy(yr, value_type(0.0));
+
+  //------------------------------
+  // Generate matrix
+
+  matrix_graph_type matrix_graph =
+    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      std::string("test crs graph"), fem_graph);
+  matrix_values_type matrix_values =
+    matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);
+  matrix_type matrix("matrix", fem_length, matrix_values, matrix_graph);
+  Kokkos::deep_copy( matrix_values , value_type(1.0) );
+
+  //------------------------------
+  // Scalar multiply
+
+  {
+    // warm up
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      for (ordinal_type e=0; e<ensemble_length; ++e) {
+        Kokkos::MV_Multiply( y[e], matrix, x[e] );
+      }
+    }
+
+    device_type::fence();
+    Kokkos::Impl::Timer clock ;
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      for (ordinal_type e=0; e<ensemble_length; ++e) {
+        Kokkos::MV_Multiply( y[e], matrix, x[e] );
+      }
+    }
+    device_type::fence();
+
+    const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+    const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
+
+    scalar_perf.resize(5);
+    scalar_perf[0] = fem_length;
+    scalar_perf[1] = ensemble_length;
+    scalar_perf[2] = graph_length;
+    scalar_perf[3] = seconds_per_iter;
+    scalar_perf[4] = flops / seconds_per_iter;
+  }
+
+  //------------------------------
+  // Block-left multiply
+
+  {
+    // warm up
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yl, matrix, xl );
+    }
+
+    device_type::fence();
+    Kokkos::Impl::Timer clock ;
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yl, matrix, xl );
+    }
+    device_type::fence();
+
+    const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+    const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
+
+    block_left_perf.resize(5);
+    block_left_perf[0] = fem_length;
+    block_left_perf[1] = ensemble_length;
+    block_left_perf[2] = graph_length;
+    block_left_perf[3] = seconds_per_iter;
+    block_left_perf[4] = flops / seconds_per_iter;
+  }
+
+#if 0
+  //------------------------------
+  // Block-right multiply
+
+  {
+    // warm up
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yr, matrix, xr );
+    }
+
+    device_type::fence();
+    Kokkos::Impl::Timer clock ;
+    for (ordinal_type iter = 0; iter < iterCount; ++iter) {
+      Kokkos::MV_Multiply( yr, matrix, xr );
+    }
+    device_type::fence();
+
+    const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+    const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
+
+    block_right_perf.resize(5);
+    block_right_perf[0] = fem_length;
+    block_right_perf[1] = ensemble_length;
+    block_right_perf[2] = graph_length;
+    block_right_perf[3] = seconds_per_iter;
+    block_right_perf[4] = flops / seconds_per_iter;
+  }
+#endif
+
+}
+
+template <typename Scalar, typename Ordinal, typename Device>
+void performance_test_driver( const Ordinal nGrid,
+                              const Ordinal nIter,
+                              const Ordinal ensemble_min,
+                              const Ordinal ensemble_max,
+                              const Ordinal ensemble_step )
+{
+  std::cout.precision(8);
+  std::cout << std::endl
+            << "\"Grid Size\" , "
+            << "\"FEM Size\" , "
+            << "\"FEM Graph Size\" , "
+            << "\"Ensemble Size\" , "
+            << "\"Scalar SpMM Time\" , "
+            << "\"Scalar SpMM Speedup\" , "
+            << "\"Scalar SpMM GFLOPS\" , "
+            << "\"Block-Left SpMM Speedup\" , "
+            << "\"Block-Left SpMM GFLOPS\" , "
+    //<< "\"Block_Right SpMM Speedup\" , "
+    //<< "\"Block_Right SpMM GFLOPS\" , "
+            << std::endl;
+
+  std::vector<double> perf_scalar, perf_block_left, perf_block_right;
+  for (Ordinal e=ensemble_min; e<=ensemble_max; e+=ensemble_step) {
+
+    test_spmm<Scalar,Ordinal,Device>(
+      e, nGrid, nIter, perf_scalar, perf_block_left, perf_block_right );
+
+    std::cout << nGrid << " , "
+              << perf_scalar[0] << " , "
+              << perf_scalar[2] << " , "
+              << perf_scalar[1] << " , "
+              << perf_scalar[3] << " , "
+              << perf_scalar[4] / perf_scalar[4] << " , "
+              << perf_scalar[4] << " , "
+              << perf_block_left[4]/ perf_scalar[4] << " , "
+              << perf_block_left[4] << " , "
+      //<< perf_block_right[4]/ perf_scalar[4] << " , "
+      //<< perf_block_right[4] << " , "
+              << std::endl;
+
+  }
+}

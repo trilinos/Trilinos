@@ -73,7 +73,7 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MapTransferFactory : public TwoLevelFactoryBase {
 #undef MUELU_MAPTRANSFERFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
@@ -83,10 +83,12 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    MapTransferFactory(std::string mapName, Teuchos::RCP<const FactoryBase> mapFact = Teuchos::null);
+    MapTransferFactory();
 
     //! Destructor.
     virtual ~MapTransferFactory() {}
+
+    RCP<const ParameterList> GetValidParameterList() const;
     //@}
 
     //! Input
@@ -106,8 +108,8 @@ namespace MueLu {
 
   private:
 
-    std::string              mapName_;   ///< name of input and output variable
-    RCP<const FactoryBase>   mapFact_;   ///< generating factory of input variable
+    //std::string              mapName_;      ///< name of input and output variable
+    mutable RCP<const FactoryBase>   mapFact_;      ///< generating factory of input variable
 
   }; // class MapTransferFactory
 

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Solver_Wrapper.H"	// class definition
+#include "LOCA_Solver_Wrapper.H"    // class definition
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_Extended_MultiAbstractGroup.H"
 
@@ -72,30 +72,30 @@ LOCA::Solver::Wrapper::~Wrapper()
 {
 }
 
-void 
+void
 LOCA::Solver::Wrapper::
-reset(const NOX::Abstract::Vector& initialGuess, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& tests) 
+reset(const NOX::Abstract::Vector& initialGuess,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests)
 {
   solverPtr->reset(initialGuess, tests);
   resetWrapper();
 }
 
-void 
+void
 LOCA::Solver::Wrapper::
-reset(const NOX::Abstract::Vector& initialGuess) 
+reset(const NOX::Abstract::Vector& initialGuess)
 {
   solverPtr->reset(initialGuess);
   resetWrapper();
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::Solver::Wrapper::getStatus()
 {
   return solverPtr->getStatus();
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::Solver::Wrapper::step()
 {
   NOX::StatusTest::StatusType status = solverPtr->step();
@@ -103,7 +103,7 @@ LOCA::Solver::Wrapper::step()
   return status;
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::Solver::Wrapper::solve()
 {
   NOX::StatusTest::StatusType status = solverPtr->solve();
@@ -111,7 +111,7 @@ LOCA::Solver::Wrapper::solve()
   return status;
 }
 
-const NOX::Abstract::Group& 
+const NOX::Abstract::Group&
 LOCA::Solver::Wrapper::getSolutionGroup() const
 {
   return *solnGrpPtr;
@@ -123,7 +123,7 @@ LOCA::Solver::Wrapper::getSolutionGroupPtr() const
   return solnGrpPtr;
 }
 
-const NOX::Abstract::Group& 
+const NOX::Abstract::Group&
 LOCA::Solver::Wrapper::getPreviousSolutionGroup() const
 {
   return *oldSolnGrpPtr;
@@ -135,13 +135,13 @@ LOCA::Solver::Wrapper::getPreviousSolutionGroupPtr() const
   return oldSolnGrpPtr;
 }
 
-int 
+int
 LOCA::Solver::Wrapper::getNumIterations() const
 {
   return constSolverPtr->getNumIterations();
 }
 
-const Teuchos::ParameterList& 
+const Teuchos::ParameterList&
 LOCA::Solver::Wrapper::getList() const
 {
   return constSolverPtr->getList();
@@ -153,16 +153,15 @@ LOCA::Solver::Wrapper::getListPtr() const
   return constSolverPtr->getListPtr();
 }
 
-void 
+void
 LOCA::Solver::Wrapper::resetWrapper()
 {
   // Get current and old solution groups
   const NOX::Abstract::Group& soln = constSolverPtr->getSolutionGroup();
-  const NOX::Abstract::Group& oldSoln = 
+  const NOX::Abstract::Group& oldSoln =
     constSolverPtr->getPreviousSolutionGroup();
 
   const LOCA::Extended::MultiAbstractGroup* eGrpPtr;
-  const LOCA::Extended::MultiAbstractGroup* oldEGrpPtr;
 
   // Cast soln group to an extended group
   eGrpPtr = dynamic_cast<const LOCA::Extended::MultiAbstractGroup*>(&soln);
@@ -171,14 +170,12 @@ LOCA::Solver::Wrapper::resetWrapper()
     // soln group is not extended, so set points to original groups
     solnGrpPtr = Teuchos::rcp(&soln, false);
     oldSolnGrpPtr = Teuchos::rcp(&oldSoln, false);
-  }
-
-  else {
+  } else {
     // soln group is extended so get underlying groups
-    oldEGrpPtr = 
-      dynamic_cast<const LOCA::Extended::MultiAbstractGroup*>(&oldSoln);
+    const LOCA::Extended::MultiAbstractGroup & oldEGrp =
+      dynamic_cast<const LOCA::Extended::MultiAbstractGroup&>(oldSoln);
     solnGrpPtr = eGrpPtr->getUnderlyingGroup();
-    oldSolnGrpPtr = oldEGrpPtr->getUnderlyingGroup();
+    oldSolnGrpPtr = oldEGrp.getUnderlyingGroup();
   }
 
   return;

@@ -1,17 +1,19 @@
+
 #include "EJ_SystemInterface.h"
-#include "EJ_vector3d.h"
+#include <SL_tokenize.h>                // for tokenize
+#include <ctype.h>                      // for tolower
+#include <limits.h>                     // for INT_MAX
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for sort, find, transform
+#include <cstdlib>                      // for NULL, exit, strtod, strtoul, etc
+#include <cstring>                      // for strchr, strlen
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, allocator, etc
+#include "EJ_Version.h"                 // for qainfo
+#include "EJ_vector3d.h"                // for vector3d
 
-#include <iostream>
-#include <algorithm>
-#include <functional>
-#include <vector>
 
-#include <limits.h>
-#include <cstdlib>
-#include <cstring>
-
-#include "EJ_Version.h"
-#include <SL_tokenize.h>
 
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)

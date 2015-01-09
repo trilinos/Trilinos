@@ -25,9 +25,9 @@
 
         The solver uses between 10 and 13 blocks of vectors, compared to the
         requirements by SIRTR of 6 to 8 blocks of vectors. The base requirement
-        is 10 blocks of vectors, where a block of vectors contains a number of vectors equal to the 
+        is 10 blocks of vectors, where a block of vectors contains a number of vectors equal to the
         block size specified for the solver (see RTRBase::getBlockSize()).
-        Additional blocks are required when solving a generalized eigenvalue problem or when using a preconditioiner. 
+        Additional blocks are required when solving a generalized eigenvalue problem or when using a preconditioiner.
 
         For more information, see RTRBase.
 
@@ -43,12 +43,12 @@
 namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
-  class IRTR : public RTRBase<ScalarType,MV,OP> { 
+  class IRTR : public RTRBase<ScalarType,MV,OP> {
   public:
-    
+
     //! @name Constructor/Destructor
-    //@{ 
-    
+    //@{
+
     /*! \brief %IRTR constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the eigensolver, in addition
@@ -60,12 +60,12 @@ namespace Anasazi {
      *   - "Kappa Convergence" - a \c MagnitudeType specifing the rate of convergence for the linear convergence regime. Default: 0.1
      *   - "Theta Convergence" - a \c MagnitudeType specifing the order of convergence for the linear convergence regime. theta implies a convergence order of theta+1. Default: 1.0
      */
-    IRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+    IRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem,
           const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
           const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
           const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
           const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
-          Teuchos::ParameterList                                 &params 
+          Teuchos::ParameterList                                 &params
         );
 
     //! %IRTR destructor
@@ -75,7 +75,7 @@ namespace Anasazi {
 
     //! @name Solver methods
     //@{
-    
+
     //! \brief Impemements Eigensolver. The outer %IRTR iteration. See RTRBase::iterate().
     void iterate();
 
@@ -109,7 +109,7 @@ namespace Anasazi {
     };
     // these correspond to above
     std::vector<std::string> stopReasons_;
-    // 
+    //
     // Consts
     //
     const MagnitudeType ZERO;
@@ -120,18 +120,18 @@ namespace Anasazi {
     //! \brief The inner %IRTR iteration. See RTRBase::solveTRSubproblem().
     void solveTRSubproblem();
     //
-    // rho_prime 
+    // rho_prime
     MagnitudeType rho_prime_;
-    // 
+    //
     // norm of initial gradient: this is used for scaling
     MagnitudeType normgradf0_;
     //
     // tr stopping reason
     trRetType innerStop_;
-    // 
+    //
     // number of inner iterations
     int innerIters_, totalInnerIters_;
-    // 
+    //
     // use 2D subspace acceleration of X+Eta to generate new iterate?
     bool useSA_;
   };
@@ -143,18 +143,18 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   IRTR<ScalarType,MV,OP>::IRTR(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem,
         const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList                                 &params
-        ) : 
-    RTRBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params,"IRTR",false), 
+        ) :
+    RTRBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params,"IRTR",false),
     ZERO(MAT::zero()),
     ONE(MAT::one()),
     totalInnerIters_(0)
-  {     
+  {
     // set up array of stop reasons
     stopReasons_.push_back("n/a");
     stopReasons_.push_back("maximum iterations");
@@ -174,10 +174,10 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // TR subproblem solver
   //
-  // FINISH: 
+  // FINISH:
   //   define pre- and post-conditions
   //
-  // POST: 
+  // POST:
   //   delta_,Adelta_,Bdelta_,Hdelta_ undefined
   //
   template <class ScalarType, class MV, class OP>
@@ -207,7 +207,7 @@ namespace Anasazi {
     const int d = n*p - (p*p+p)/2;
 
     // We have the following:
-    // 
+    //
     // X'*B*X = I
     // X'*A*X = theta_
     //
@@ -215,7 +215,7 @@ namespace Anasazi {
     // { eta : rho_Y(eta) \geq rho_prime }
     // where
     // rho_Y(eta) = 1/(1+eta'*B*eta)
-    // Therefore, the trust-region is 
+    // Therefore, the trust-region is
     // { eta : eta'*B*eta \leq 1/rho_prime - 1 }
     //
     const double D2 = ONE/rho_prime_ - ONE;
@@ -238,7 +238,7 @@ namespace Anasazi {
     // We will do this in place.
     // For seeking the rightmost, we want to maximize f
     // This is the same as minimizing -f
-    // Substitute all f with -f here. In particular, 
+    // Substitute all f with -f here. In particular,
     //    grad -f(X) = -grad f(X)
     //    Hess -f(X) = -Hess f(X)
     //
@@ -269,18 +269,18 @@ namespace Anasazi {
     // MagnitudeType tconv = r0_norm * MAT::pow(r0_norm/normgradf0_,this->conv_theta_);
     MagnitudeType tconv = MAT::pow(r0_norm,this->conv_theta_+ONE);
     if (this->om_->isVerbosity(Debug)) {
-      this->om_->stream(Debug) 
+      this->om_->stream(Debug)
         << " >> |r0|       : " << r0_norm << endl
         << " >> kappa conv : " << kconv << endl
         << " >> theta conv : " << tconv << endl;
     }
 
-    // 
-    // For Olsen preconditioning, the preconditioner is 
+    //
+    // For Olsen preconditioning, the preconditioner is
     // Z = P_{Prec^-1 BX, BX} Prec^-1 R
     // for efficiency, we compute Prec^-1 BX once here for use later
     // Otherwise, we don't need PBX
-    if (this->hasPrec_ && this->olsenPrec_) 
+    if (this->hasPrec_ && this->olsenPrec_)
     {
       std::vector<int> ind(this->blockSize_);
       for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
@@ -299,7 +299,7 @@ namespace Anasazi {
     //    Prec^-1 BV in PBV
     // or
     // Z = P_{BV,BV} Prec^-1 R
-    if (this->hasPrec_) 
+    if (this->hasPrec_)
     {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
       TimeMonitor prectimer( *this->timerPrec_ );
@@ -389,7 +389,7 @@ namespace Anasazi {
           eg[j] = -this->theta_[j] - 2*eg[j] + .5*eHe[j];
         }
       }
-      this->om_->stream(Debug) 
+      this->om_->stream(Debug)
         << " Debugging checks: IRTR inner iteration " << innerIters_ << endl
         << " >> m_X(eta) : " << std::accumulate(eg.begin(),eg.end(),0.0) << endl;
       for (int j=0; j<this->blockSize_; ++j) {
@@ -405,7 +405,7 @@ namespace Anasazi {
 
       //
       // [Hdelta,Adelta,Bdelta] = Hess*delta = 2 Proj(A*delta - B*delta*X'*A*X)
-      // X'*A*X = diag(theta), so that 
+      // X'*A*X = diag(theta), so that
       // (B*delta)*diag(theta) can be done on the cheap
       //
       {
@@ -456,25 +456,25 @@ namespace Anasazi {
 
 
       // compute update step
-      for (unsigned int j=0; j<alpha.size(); ++j) 
+      for (unsigned int j=0; j<alpha.size(); ++j)
       {
         alpha[j] = z_r[j]/d_Hd[j];
       }
 
       // compute new B-norms
-      for (unsigned int j=0; j<alpha.size(); ++j) 
+      for (unsigned int j=0; j<alpha.size(); ++j)
       {
         new_eBe[j] = eBe[j] + 2*alpha[j]*eBd[j] + alpha[j]*alpha[j]*dBd[j];
       }
 
       if (this->om_->isVerbosity(Debug)) {
         for (unsigned int j=0; j<alpha.size(); j++) {
-          this->om_->stream(Debug) 
-            << "     >> z_r[" << j << "]  : " << z_r[j] 
+          this->om_->stream(Debug)
+            << "     >> z_r[" << j << "]  : " << z_r[j]
             << "    d_Hd[" << j << "]  : " << d_Hd[j] << endl
-            << "     >> eBe[" << j << "]  : " << eBe[j] 
+            << "     >> eBe[" << j << "]  : " << eBe[j]
             << "    neweBe[" << j << "]  : " << new_eBe[j] << endl
-            << "     >> eBd[" << j << "]  : " << eBd[j] 
+            << "     >> eBd[" << j << "]  : " << eBd[j]
             << "    dBd[" << j << "]  : " << dBd[j] << endl;
         }
       }
@@ -482,7 +482,7 @@ namespace Anasazi {
       // check truncation criteria: negative curvature or exceeded trust-region
       std::vector<int> trncstep;
       trncstep.reserve(p);
-      // trncstep will contain truncated step, due to 
+      // trncstep will contain truncated step, due to
       //   negative curvature or exceeding implicit trust-region
       bool atleastonenegcur = false;
       for (unsigned int j=0; j<d_Hd.size(); ++j) {
@@ -500,7 +500,7 @@ namespace Anasazi {
         // compute step to edge of trust-region, for trncstep vectors
         if (this->om_->isVerbosity(Debug)) {
           for (unsigned int j=0; j<trncstep.size(); ++j) {
-            this->om_->stream(Debug) 
+            this->om_->stream(Debug)
               << " >> alpha[" << trncstep[j] << "]  : " << alpha[trncstep[j]] << endl;
           }
         }
@@ -510,7 +510,7 @@ namespace Anasazi {
         }
         if (this->om_->isVerbosity(Debug)) {
           for (unsigned int j=0; j<trncstep.size(); ++j) {
-            this->om_->stream(Debug) 
+            this->om_->stream(Debug)
               << " >> tau[" << trncstep[j] << "]  : " << alpha[trncstep[j]] << endl;
           }
         }
@@ -544,7 +544,7 @@ namespace Anasazi {
       // store new eBe
       eBe = new_eBe;
 
-      // 
+      //
       // print some debugging info
       if (this->om_->isVerbosity(Debug)) {
         RCP<MV> Heta = MVT::Clone(*this->eta_,this->blockSize_);
@@ -586,7 +586,7 @@ namespace Anasazi {
             eg[j] = -this->theta_[j] - 2*eg[j] + .5*eHe[j];
           }
         }
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " Debugging checks: IRTR inner iteration " << innerIters_ << endl
           << " >> m_X(eta) : " << std::accumulate(eg.begin(),eg.end(),0.0) << endl;
         for (int j=0; j<this->blockSize_; ++j) {
@@ -623,13 +623,13 @@ namespace Anasazi {
       MagnitudeType r_norm = MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->R_,*this->R_));
 
       //
-      // check local convergece 
+      // check local convergece
       //
       // kappa (linear) convergence
       // theta (superlinear) convergence
       //
       if (this->om_->isVerbosity(Debug)) {
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " >> |r" << innerIters_ << "|        : " << r_norm << endl;
       }
       if ( r_norm <= ANASAZI_MIN(tconv,kconv) ) {
@@ -685,13 +685,13 @@ namespace Anasazi {
       // below, we need to perform
       //   delta = -Z + delta*diag(beta)
       // however, delta_ currently stores delta*diag(alpha)
-      // therefore, set 
-      //   beta_ to beta/alpha 
-      // so that 
+      // therefore, set
+      //   beta_ to beta/alpha
+      // so that
       //   delta_ = delta_*diag(beta_)
-      // will in fact result in 
+      // will in fact result in
       //   delta_ = delta_*diag(beta_)
-      //          = delta*diag(alpha)*diag(beta/alpha) 
+      //          = delta*diag(alpha)*diag(beta/alpha)
       //          = delta*diag(beta)
       // i hope this is numerically sound...
       for (unsigned int j=0; j<beta.size(); ++j) {
@@ -703,13 +703,13 @@ namespace Anasazi {
       }
       MVT::MvAddMv(-ONE,*this->Z_,ONE,*this->delta_,*this->delta_);
 
-    } 
+    }
     // end of the inner iteration loop
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     if (innerIters_ > d) innerIters_ = d;
 
-    this->om_->stream(Debug) 
+    this->om_->stream(Debug)
       << " >> stop reason is " << stopReasons_[innerStop_] << endl
       << endl;
 
@@ -728,8 +728,8 @@ namespace Anasazi {
     using Teuchos::TimeMonitor;
 #endif
     using std::endl;
-    typedef Teuchos::RCP<const MV> PCMV;
-    typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
+    //typedef Teuchos::RCP<const MV> PCMV; // unused
+    //typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM; // unused
 
     //
     // Allocate/initialize data structures
@@ -776,12 +776,12 @@ namespace Anasazi {
       if (this->om_->isVerbosity( Debug ) ) {
         typename RTRBase<ScalarType,MV,OP>::CheckList chk;
         // this is the residual of the model, should still be in the tangent plane
-        chk.checkBR  = true;   
+        chk.checkBR  = true;
         chk.checkEta = true;
         chk.checkAEta = true;
         chk.checkBEta = true;
         this->om_->print( Debug, this->accuracyCheck(chk, "in iterate() after solveTRSubproblem()") );
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " >> norm(Eta) : " << MAT::squareroot(RTRBase<ScalarType,MV,OP>::ginner(*this->eta_)) << endl
           << endl;
       }
@@ -808,9 +808,9 @@ namespace Anasazi {
             E(this->blockSize_,this->blockSize_);
           MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,XE);
           MVT::MvTransMv(ONE,*this->eta_,*this->Beta_,E);
-          this->om_->stream(Debug) 
-            << " >> Error in AX+AEta == A(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Adelta_,this->AOp_) << endl 
-            << " >> Error in BX+BEta == B(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Bdelta_,this->BOp_) << endl 
+          this->om_->stream(Debug)
+            << " >> Error in AX+AEta == A(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Adelta_,this->AOp_) << endl
+            << " >> Error in BX+BEta == B(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Bdelta_,this->BOp_) << endl
             << " >> norm( (X+Eta)^T B (X+Eta) )  : " << XE.normFrobenius() << endl
             << " >> norm( Eta^T B Eta )          : " << E.normFrobenius() << endl
             << endl;
@@ -829,10 +829,10 @@ namespace Anasazi {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerLocalProj_ );
 #endif
-        Teuchos::SerialDenseMatrix<int,ScalarType> AA11(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,0), 
+        Teuchos::SerialDenseMatrix<int,ScalarType> AA11(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,0),
                                                    AA12(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,this->blockSize_),
                                                    AA22(Teuchos::View,AA,this->blockSize_,this->blockSize_,this->blockSize_,this->blockSize_);
-        Teuchos::SerialDenseMatrix<int,ScalarType> BB11(Teuchos::View,BB,this->blockSize_,this->blockSize_,0,0), 
+        Teuchos::SerialDenseMatrix<int,ScalarType> BB11(Teuchos::View,BB,this->blockSize_,this->blockSize_,0,0),
                                                    BB12(Teuchos::View,BB,this->blockSize_,this->blockSize_,0,this->blockSize_),
                                                    BB22(Teuchos::View,BB,this->blockSize_,this->blockSize_,this->blockSize_,this->blockSize_);
         MVT::MvTransMv(ONE,*this->X_  ,*this->AX_  ,AA11);
@@ -874,7 +874,7 @@ namespace Anasazi {
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
       }
-      // 
+      //
       // save the first blockSize values into this->theta_
       std::copy(newtheta.begin(), newtheta.begin()+this->blockSize_, this->theta_.begin());
       //
@@ -886,9 +886,9 @@ namespace Anasazi {
       if (this->om_->isVerbosity( Debug ) ) {
         //
         // compute rho
-        //        f(X) - f(newX)           f(X) - f(newX)     
+        //        f(X) - f(newX)           f(X) - f(newX)
         // rho = ---------------- = ---------------------------
-        //         m(0) - m(eta)    -<2AX,eta> - .5*<Heta,eta> 
+        //         m(0) - m(eta)    -<2AX,eta> - .5*<Heta,eta>
         //
         //            f(X) - f(newX)
         //     = ---------------------------------------
@@ -902,14 +902,14 @@ namespace Anasazi {
         rhonum = oldfx - this->fx_;
         //
         // compute rhoden
-        rhoden = -2.0*RTRBase<ScalarType,MV,OP>::ginner(*this->AX_  ,*this->eta_) 
+        rhoden = -2.0*RTRBase<ScalarType,MV,OP>::ginner(*this->AX_  ,*this->eta_)
                  -RTRBase<ScalarType,MV,OP>::ginner(*this->Aeta_,*this->eta_);
         for (int i=0; i<this->blockSize_; ++i) {
           rhoden += eBe[i]*oldtheta[i];
         }
         mxeta = oldfx - rhoden;
         this->rho_ = rhonum / rhoden;
-        this->om_->stream(Debug) 
+        this->om_->stream(Debug)
           << " >> old f(x) is : " << oldfx << endl
           << " >> new f(x) is : " << this->fx_ << endl
           << " >> m_x(eta) is : " << mxeta << endl
@@ -918,14 +918,14 @@ namespace Anasazi {
           << " >> rho is      : " << this->rho_ << endl;
         // compute individual rho
         for (int j=0; j<this->blockSize_; ++j) {
-          this->om_->stream(Debug) 
+          this->om_->stream(Debug)
             << " >> rho[" << j << "]     : " << 1.0/(1.0+eBe[j]) << endl;
         }
       }
 
-      // form new X as Ritz vectors, using the primitive Ritz vectors in S and 
+      // form new X as Ritz vectors, using the primitive Ritz vectors in S and
       // either [X eta] or X+eta
-      // we will clear the const views of X,BX into V,BV and 
+      // we will clear the const views of X,BX into V,BV and
       // work from non-const temporary views
       {
         // release const views to X, BX
@@ -940,7 +940,7 @@ namespace Anasazi {
           BX = MVT::CloneViewNonConst(*this->BV_,ind);
         }
         if (useSA_ == false) {
-          // multiply delta=(X+eta),Adelta=...,Bdelta=... 
+          // multiply delta=(X+eta),Adelta=...,Bdelta=...
           // by primitive Ritz vectors back into X,AX,BX
           // compute ritz vectors, A,B products into X,AX,BX
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
@@ -1027,11 +1027,11 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
-  void 
-  IRTR<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
+  void
+  IRTR<ScalarType,MV,OP>::currentStatus(std::ostream &os)
   {
     using std::endl;
-    os.setf(std::ios::scientific, std::ios::floatfield);  
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
     os <<endl;
     os <<"================================================================================" << endl;
@@ -1057,7 +1057,7 @@ namespace Anasazi {
     if (this->initialized_) {
       os << endl;
       os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      os << std::setw(20) << "Eigenvalue" 
+      os << std::setw(20) << "Eigenvalue"
          << std::setw(20) << "Residual(B)"
          << std::setw(20) << "Residual(2)"
          << endl;

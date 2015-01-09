@@ -46,7 +46,7 @@ public:
      case 5 : dx5_ = T(1.);break;
      case 6 : dx6_ = T(1.);break;
      case 7 : dx7_ = T(1.);break;
-     default : cout << "ith = " << ith << "  out of definition set" << endl;exit(1);
+     default : std::cout << "ith = " << ith << "  out of definition set" << std::endl;exit(1);
      }
   }
 
@@ -69,7 +69,7 @@ public:
      case 5 : dx5_ = T(1.);break;
      case 6 : dx6_ = T(1.);break;
      case 7 : dx7_ = T(1.);break;
-     default : cout << "ini = " << ini << "  out of definition set" << endl;exit(1);
+     default : std::cout << "ini = " << ini << "  out of definition set" << std::endl;exit(1);
      }
   }
   TinyFad() : n(0), val_(0.) {
@@ -145,7 +145,7 @@ public:
      case 5 : return dx5_;
      case 6 : return dx6_;
      case 7 : return dx7_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   const T& dx(int i) const {
@@ -158,7 +158,7 @@ public:
      case 5 : return dx5_;
      case 6 : return dx6_;
      case 7 : return dx7_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   T& d(int i){
@@ -171,7 +171,7 @@ public:
      case 5 : return dx5_;
      case 6 : return dx6_;
      case 7 : return dx7_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
   const T& d(int i) const {
@@ -184,7 +184,7 @@ public:
      case 5 : return dx5_;
      case 6 : return dx6_;
      case 7 : return dx7_;
-     default : cout << "i out of bounds" << endl;exit(1);
+     default : std::cout << "i out of bounds" << std::endl;exit(1);
      }
   }
 
@@ -851,9 +851,9 @@ template <class T> TinyFad<8,T> abs (const TinyFad<8,T>& in)
   else return (-in);
 }
 
-template <class T> ostream& operator << (ostream& os, const TinyFad<8,T>& a)
+template <class T> std::ostream& operator << (std::ostream& os, const TinyFad<8,T>& a)
 {
-  os.setf(ios::fixed,ios::scientific);
+  os.setf(std::ios::fixed,std::ios::scientific);
   os.width(12);
   os << a.val() << "  [";
 

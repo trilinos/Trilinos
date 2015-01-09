@@ -53,7 +53,7 @@
   INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE_S(INSTMACRO, LO, GO, N) \
-  typedef typename Stokhos::DeviceForNode2<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
+  typedef Stokhos::DeviceForNode2<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_UQ_PCE_S_D(INSTMACRO, DFN_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE(INSTMACRO, LO, GO, N) \
@@ -62,21 +62,21 @@
 #define INSTANTIATE_TPETRA_UQ_PCE_N(INSTMACRO, N)  \
   INSTANTIATE_UQ_PCE_S(INSTMACRO, int, int, N)
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosThreadsWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_THREADS(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosOpenMPWrapperNode)
 #else
 #define INSTANTIATE_TPETRA_UQ_PCE_OPENMP(INSTMACRO)
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
 #define INSTANTIATE_TPETRA_UQ_PCE_CUDA(INSTMACRO) \
   INSTMACRO(Kokkos_Compat_KokkosCudaWrapperNode)
 #else

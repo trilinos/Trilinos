@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@
 **  trouble using the const direction.  Need to investigate...
 **     //NOX::Abstract::Vector dir2 = dir.clone(ShapeCopy);
 **     //const NOX::Direction::Tensor& direction = s.getDirection();
-**  
+**
 **  (.)  Should change to *sufficient* decrease condition instead of
 **  just "fprime<0"
 **
@@ -81,7 +81,7 @@
 
 #ifdef WITH_PRERELEASE
 
-#include "NOX_Solver_TensorBasedTest.H"	// class definition
+#include "NOX_Solver_TensorBasedTest.H"    // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "Teuchos_ParameterList.hpp"
@@ -94,15 +94,15 @@
 
 NOX::Solver::TensorBasedTest::
 TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
-		const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-		const Teuchos::RCP<Teuchos::ParameterList>& p) :
+        const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+        const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()), 
-  solnptr(xgrp),		
-  oldsolnptr(xgrp->clone(DeepCopy)), 
-  dirptr(xgrp->getX().clone(ShapeCopy)), 
-  testptr(t),			
-  paramsPtr(p),			      
+  utilsPtr(globalDataPtr->getUtils()),
+  solnptr(xgrp),
+  oldsolnptr(xgrp->clone(DeepCopy)),
+  dirptr(xgrp->getX().clone(ShapeCopy)),
+  testptr(t),
+  paramsPtr(p),
   lineSearch(globalDataPtr, paramsPtr->sublist("Line Search")),
   direction(globalDataPtr, paramsPtr->sublist("Direction")),
   prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
@@ -113,7 +113,7 @@ TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
 // Protected
 void NOX::Solver::TensorBasedTest::init()
 {
-  // Initialize 
+  // Initialize
   stepSize = 0;
   niter = 0;
   status = NOX::StatusTest::Unconverged;
@@ -146,7 +146,7 @@ reset(const NOX::Abstract::Vector& initialGuess)
   init();
 }
 
-NOX::Solver::TensorBasedTest::~TensorBasedTest() 
+NOX::Solver::TensorBasedTest::~TensorBasedTest()
 {
 
 }
@@ -168,20 +168,20 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     NOX::Abstract::Group::ReturnType rtype = solnptr->computeF();
     if (rtype != NOX::Abstract::Group::Ok)    {
       utilsPtr->out() << "NOX::Solver::TensorBasedTest::init - "
-		      << "Unable to compute F" << std::endl;
+              << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
     // Test the initial guess
     status = testptr->checkStatus(*this, checkType);
     if ((status == NOX::StatusTest::Converged) &&
-	(utilsPtr->isPrintType(NOX::Utils::Warning)))  {
+    (utilsPtr->isPrintType(NOX::Utils::Warning)))  {
       utilsPtr->out() << "Warning: NOX::Solver::TensorBasedTest::init() - "
-		      << "The solution passed into the solver (either "
-		      << "through constructor or reset method) "
-		      << "is already converged!  The solver will not "
-		      << "attempt to solve this system since status is "
-		      << "flagged as converged." << std::endl;
+              << "The solution passed into the solver (either "
+              << "through constructor or reset method) "
+              << "is already converged!  The solver will not "
+              << "attempt to solve this system since status is "
+              << "flagged as converged." << std::endl;
     }
 
     printUpdate();
@@ -204,7 +204,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
   ok = direction.compute(dir, soln, *this);
   if (!ok) {
     utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - "
-	 << "unable to calculate direction" << std::endl;
+     << "unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -228,24 +228,24 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
        utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - "
-	    << "using recovery step for line search" << std::endl;
+        << "using recovery step for line search" << std::endl;
   }
-      
+
 
   // Compute F for new current solution.
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
   if (rtype != NOX::Abstract::Group::Ok)  {
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - "
-	 << "unable to compute F" << std::endl;
+     << "unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
   }
 
-  
+
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
- 
+
   prePostOperator.runPostIterate(*this);
 
   // Return status.
@@ -302,16 +302,16 @@ NOX::Solver::TensorBasedTest::getDirection() const
 }
 
 // protected
-void NOX::Solver::TensorBasedTest::printUpdate() 
+void NOX::Solver::TensorBasedTest::printUpdate()
 {
   double normSoln = 0;
   double normStep = 0;
 
-  // Print the status test parameters at each iteration if requested  
+  // Print the status test parameters at each iteration if requested
   if ((status == NOX::StatusTest::Unconverged) &&
       (utilsPtr->isPrintType(NOX::Utils::OuterIterationStatusTest))) {
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "-- Status Test Results --\n";    
+    utilsPtr->out() << "-- Status Test Results --\n";
     testptr->print(utilsPtr->out());
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
@@ -337,10 +337,10 @@ void NOX::Solver::TensorBasedTest::printUpdate()
   }
 
   // Print the final parameter values of the status test
-  if ((status != NOX::StatusTest::Unconverged) && 
+  if ((status != NOX::StatusTest::Unconverged) &&
       (utilsPtr->isPrintType(NOX::Utils::OuterIteration))) {
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "-- Final Status Test Results --\n";    
+    utilsPtr->out() << "-- Final Status Test Results --\n";
     testptr->print(utilsPtr->out());
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }

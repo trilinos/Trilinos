@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,8 +52,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t, ptrdiff_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_get_dimension, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /*!
  * reads the specified attribute for a subsect of a block
@@ -173,7 +178,7 @@ int ex_get_partial_one_attr( int   exoid,
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities ("ST_ZU") in file id %d",
+	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities (%"ST_ZU") in file id %d",
 	    start_num, num_ent, num_entries_this_obj, exoid);
     ex_err("ex_get_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);

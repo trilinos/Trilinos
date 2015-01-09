@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -44,21 +44,21 @@
 #ifndef EPETRA_INTSERIALDENSEVECTOR_H
 #define EPETRA_INTSERIALDENSEVECTOR_H
 
-#include "Epetra_Object.h" 
+#include "Epetra_Object.h"
 #include "Epetra_IntSerialDenseMatrix.h"
 
 //! Epetra_IntSerialDenseVector: A class for constructing and using dense vectors.
 
-/*! The Epetra_IntSerialDenseVector class enables the construction and use of integer-valued, 
+/*! The Epetra_IntSerialDenseVector class enables the construction and use of integer-valued,
     dense vectors.  It derives from the Epetra_IntSerialDenseMatrix class.
 
-The Epetra_IntSerialDenseVector class is intended to provide convenient vector notation but derives all signficant 
+The Epetra_IntSerialDenseVector class is intended to provide convenient vector notation but derives all signficant
 functionality from Epetra_IntSerialDenseMatrix.
 
 <b>Constructing Epetra_IntSerialDenseVector Objects</b>
 
 There are three Epetra_IntSerialDenseVector constructors.  The first constructs a zero-length object which should be made
-to appropriate length using the Size() or Resize() functions and then filled with the [] or () operators. 
+to appropriate length using the Size() or Resize() functions and then filled with the [] or () operators.
 The second constructs an object sized to the dimension specified, which should be filled with the [] or () operators.
 The third is a constructor that accepts user
 data as a 1D array, and the fourth is a copy constructor. The third constructor has
@@ -71,7 +71,7 @@ two data access modes (specified by the Epetra_DataAccess argument):
 </ol>
 
 \warning View mode is \e extremely dangerous from a data hiding perspective.
-Therefore, we strongly encourage users to develop code using Copy mode first and 
+Therefore, we strongly encourage users to develop code using Copy mode first and
 only use the View mode in a secondary optimization phase.
 
 <b>Extracting Data from Epetra_IntSerialDenseVector Objects</b>
@@ -87,22 +87,22 @@ Once a Epetra_IntSerialDenseVector is constructed, it is possible to view the da
 class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
   public:
-  
+
   //! Default constructor; defines a zero size object.
   /*!
-    Epetra_IntSerialDenseVector objects defined by the default constructor should be sized with the 
-    Size() or Resize functions.  
+    Epetra_IntSerialDenseVector objects defined by the default constructor should be sized with the
+    Size() or Resize functions.
     Values should be defined by using the [] or () operators.
    */
   Epetra_IntSerialDenseVector();
-  
+
   //! Sized constructor; defines a variable-sized object
   /*!
-    \param In 
+    \param In
            Length - Length of vector.
 
     Epetra_IntSerialDenseVector objects defined by the sized constructor are already sized to the
-		dimension given as a parameter. All values are initialized to 0. Calling this constructor 
+		dimension given as a parameter. All values are initialized to 0. Calling this constructor
 		is equivalent to using the default constructor, and then calling the Size function on it.
     Values should be defined by using the [] or () operators.
    */
@@ -110,24 +110,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
 
   //! Set object values from one-dimensional array.
   /*!
-    \param In 
+    \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
     \param In
            Values - Pointer to an array of integer numbers containing the values.
-    \param In 
+    \param In
            Length - Length of vector.
 
 	   See Detailed Description section for further discussion.
   */
   Epetra_IntSerialDenseVector(Epetra_DataAccess CV_in, int* Values_in, int Length_in);
-  
+
   //! Epetra_IntSerialDenseVector copy constructor.
-  
+
   Epetra_IntSerialDenseVector(const Epetra_IntSerialDenseVector& Source);
-  
+
   //! Set length of a Epetra_IntSerialDenseVector object; init values to zero.
   /*!
-    \param In 
+    \param In
            Length - Length of vector object.
 
 	   Allows user to define the dimension of a Epetra_IntSerialDenseVector. This function can
@@ -137,10 +137,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
     \return Integer error code, set to 0 if successful.
   */
   int Size(int Length_in) {return(Epetra_IntSerialDenseMatrix::Shape(Length_in, 1));};
-  
+
   //! Resize a Epetra_IntSerialDenseVector object.
   /*!
-    \param In 
+    \param In
            Length - Length of vector object.
 
 	   Allows user to define the dimension of a Epetra_IntSerialDenseVector. This function can
@@ -152,7 +152,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
   */
   int Resize(int Length_in) {return(Epetra_IntSerialDenseMatrix::Reshape(Length_in, 1));};
 
-  //! Epetra_IntSerialDenseVector destructor.  
+  //! Epetra_IntSerialDenseVector destructor.
   virtual ~Epetra_IntSerialDenseVector ();
 
   //bring the base-class operator() into the current scope, in order to tell the
@@ -194,9 +194,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
     \warning No bounds checking is done unless Epetra is compiled with HAVE_EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator [] (int Index) const;
-    
+
   //! Set vector values to random numbers.
-  /*! 
+  /*!
 		IntSerialDenseVector uses the random number generator provided by Epetra_Util.
 		The vector values will be set to random values on the interval (0, 2^31 - 1).
 
@@ -219,20 +219,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
 	//! Copy from one vector to another.
   /*!
     The operator= allows one to copy the values from one existing IntSerialDenseVector to another.
-		The left hand side vector will take on the data access mode of the right hand side vector. 
+		The left hand side vector will take on the data access mode of the right hand side vector.
 
     \return Values of the left hand side vector are modified by the values of the right hand side vector.
   */
     Epetra_IntSerialDenseVector& operator = (const Epetra_IntSerialDenseVector& Source);
 
     //! @name I/O methods
-  //@{ 
+  //@{
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(std::ostream& os) const;
   //@}
 
   //! @name Expert-only unsupported methods
-  //@{ 
+  //@{
 
   //Bring the base-class MakeViewOf method into the current scope so that the
   //compiler knows we intend to overload it, rather than hide it.
@@ -241,7 +241,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
   //! Reset an existing IntSerialDenseVector to point to another Vector.
   /*! Allows an existing IntSerialDenseVector to become a View of another
     vector's data, regardless of the DataAccess mode of the Source vector.
-    It is assumed that the Source vector is an independent vector, and 
+    It is assumed that the Source vector is an independent vector, and
     no checking is done to verify this.
 
     This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used
@@ -263,8 +263,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSeria
 //=========================================================================
 inline int& Epetra_IntSerialDenseVector::operator() (int Index) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
+  if(Index >= M_ || Index < 0)
+		throw ReportError("Index = " + toString(Index) +
 											" Out of Range 0 - " + toString(M_-1),-1);
 #endif
   return(A_[Index]);
@@ -272,8 +272,8 @@ inline int& Epetra_IntSerialDenseVector::operator() (int Index) {
 //=========================================================================
 inline const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
+  if(Index >= M_ || Index < 0)
+		throw ReportError("Index = " + toString(Index) +
 											" Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);
@@ -281,8 +281,8 @@ inline const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
 //=========================================================================
 inline int& Epetra_IntSerialDenseVector::operator [] (int Index) {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
+  if(Index >= M_ || Index < 0)
+		throw ReportError("Index = " + toString(Index) +
 											" Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);
@@ -290,8 +290,8 @@ inline int& Epetra_IntSerialDenseVector::operator [] (int Index) {
 //=========================================================================
 inline const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
-	if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
+	if(Index >= M_ || Index < 0)
+		throw ReportError("Index = " + toString(Index) +
 											" Out of Range 0 - " + toString(M_-1),-1);
 #endif
    return(A_[Index]);

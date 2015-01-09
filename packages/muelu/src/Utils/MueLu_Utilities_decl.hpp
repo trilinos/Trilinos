@@ -47,6 +47,7 @@
 #define MUELU_UTILITIES_DECL_HPP
 
 #include <unistd.h> //necessary for "sleep" function in debugging methods
+#include <string>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -63,13 +64,13 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
+#include <Xpetra_ExportFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
-namespace Xpetra {
-  class EpetraCrsMatrix; // TODO: replace by include of _fwd.hpp
-}
+#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
 
 // needed because of inlined function
 //TODO: remove inline function?
@@ -87,19 +88,15 @@ class Epetra_Vector;
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraMultiVector_fwd.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
-
-namespace Tpetra {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> class CrsMatrix;
-}
-
+#include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
 
-namespace MueLu {
 
+namespace MueLu {
 // MPI helpers
 #define sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
@@ -110,8 +107,9 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
-  template<typename SC,typename LO,typename GO,typename NO, typename LMO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
 
   /*!
@@ -124,8 +122,7 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class Utils {
 #undef MUELU_UTILITIES_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -162,11 +159,15 @@ namespace MueLu {
     static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
     static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
 
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2TpetraCrs(RCP<const Matrix> Op);
-    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2TpetraCrs(RCP<const Matrix> Op);
+    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
 
-    static const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2TpetraCrs(const Matrix& Op);
-    static       Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>&        Op2NonConstTpetraCrs(Matrix& Op);
+    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2TpetraCrs(const Matrix& Op);
+    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2NonConstTpetraCrs(Matrix& Op);
+
+    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2TpetraRow(RCP<const Matrix> Op);
+    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraRow(RCP<Matrix> Op);
+
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif
@@ -188,16 +189,18 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true){
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string()){
+      return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
-			      const Vector& D,
-			      const Matrix& A,
-			      const Matrix& B,
-			      RCP<Matrix> C_in,
-			      Teuchos::FancyOStream &fos);
+                              const Vector& D,
+                              const Matrix& A,
+                              const Matrix& B,
+                              RCP<Matrix> C_in,
+                              Teuchos::FancyOStream &fos,
+			      const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -224,8 +227,8 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true
-                                );
+                                bool doOptimizeStorage        = true,
+				const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -246,6 +249,7 @@ namespace MueLu {
     */
     static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                                                         BlockedCrsMatrix& B, bool transposeB,
+                                                        Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true);
 
@@ -300,9 +304,9 @@ namespace MueLu {
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
-    static Teuchos::Array<Magnitude> ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static Teuchos::Array<Magnitude> ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
-    static RCP<MultiVector> Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS);
+    static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS);
 
     // NOTE:
     // A better place for the Read/Write function is probably Xpetra
@@ -331,6 +335,7 @@ namespace MueLu {
                                      const RCP<const Map> domainMap        = Teuchos::null,
                                      const RCP<const Map> rangeMap         = Teuchos::null,
                                      const bool           callFillComplete = true,
+                                     const bool           binary           = false,
                                      const bool           tolerant         = false,
                                      const bool           debug            = false);
     //@}
@@ -377,25 +382,57 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+
+    /*! @brief Set seed for random number generator.
+
+      Distribute the seeds evenly in [1,INT_MAX-1].  This guarantees nothing
+      about where random number streams on difference processes will intersect.
+      This does avoid overflow situations in parallel when multiplying by a PID.
+      It also avoids the pathological case of having the *same* random number stream
+      on each process.
+    */
+
+    static void SetRandomSeed(const Teuchos::Comm<int> &comm);
+
+    static void findDirichletRows(Teuchos::RCP<Matrix> A,
+                                  std::vector<LO>& dirichletRows);
+    static void findDirichletCols(Teuchos::RCP<Matrix> A,
+                                  std::vector<LO>& dirichletRows,
+                                  std::vector<LO>& dirichletCols);
+    static void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+                                      std::vector<LO>& dirichletRows);
+    static void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+                                      std::vector<LO>& dirichletCols);
+    static void Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol=1.0e-14);
+
   }; // class Utils
+
+  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
+    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
+    for which non-serializable data was provided.
+  */
+  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
+
+
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
-  template<class SC,class LO,class GO,class NO, class LMO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB) {
+  template<class SC,class LO,class GO,class NO>
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB)
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
-  typedef KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
 
   //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
   template<>
-  inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
+  inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT > (RCP<Epetra_CrsMatrix> &epAB) {
     RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
-    RCP<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT,KDKSO> >(tmpC1);
-    RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT,KDKSO>(tmpC2));
+    RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
+    RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
     return tmpC3;
   }
 #endif
@@ -417,8 +454,7 @@ namespace MueLu {
   template <class Scalar,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class Utils2 {
 
 #include "MueLu_UseShortNames.hpp"
@@ -476,9 +512,8 @@ namespace MueLu {
     typedef int                                                        LO;
     typedef int                                                        GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
-    typedef KokkosClassic::DefaultKernels<double,int,NO>::SparseOps    LMO;
     typedef Xpetra::Map<int,int,NO>                                    Map;
-    typedef Xpetra::Matrix<double,int,int,NO,LMO>                      Matrix;
+    typedef Xpetra::Matrix<double,int,int,NO>                          Matrix;
     typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;
 
   public:
@@ -491,6 +526,7 @@ namespace MueLu {
                                                      RCP<Matrix>& C,  Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow = false);
     static RCP<MultiVector> ReadMultiVector         (const std::string& fileName, const RCP<const Map>& map);
     static RCP<const Map>   ReadMap                 (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm);
+
   };
 
 

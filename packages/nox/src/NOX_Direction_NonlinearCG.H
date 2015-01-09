@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef SOLVER_NONLINEARCG_H
 #define SOLVER_NONLINEARCG_H
 
-#include "NOX_Direction_Generic.H"	    // base class
+#include "NOX_Direction_Generic.H"        // base class
 
 // Forward declaration
 namespace NOX {
@@ -98,11 +98,11 @@ d = - M^{-1}(x) F(x) + \beta d_{prev}
 
     <ul>
     <li>"Fletcher-Reeves" [default] - \f$ \beta =  \frac{F(x)^T M^{-1}(x)
-    F(x)}{F(x_{prev})^T M^{-1}(x_{prev}) F(x_{prev})}\f$ 
+    F(x)}{F(x_{prev})^T M^{-1}(x_{prev}) F(x_{prev})}\f$
 
     <li>"Polak-Ribiere" - \f$ \beta =  max \left\{ \beta^{PR}, 0 \right\} \f$ ,
-    
-    where 
+
+    where
     \f$ \beta^{PR} = \frac{F(x)^T \left[M^{-1}(x) F(x)
     - M^{-1}(x_{prev}) F(x_{prev})\right]}{F(x_{prev})^T M^{-1}(x_{prev})
     F(x_{prev})}\f$
@@ -123,7 +123,7 @@ d = - M^{-1}(x) F(x) + \beta d_{prev}
   in the Group.
 
 
-<li> "Restart Frequency" - An integer specification of the number of nonlinear 
+<li> "Restart Frequency" - An integer specification of the number of nonlinear
   iterations between restarts [default = 10].  Restart corresponds to
   setting \f$\beta = 0\f$.  A good heuristic is to limit this value to
   the number of problem degrees of freedom.  Setting this value to 1
@@ -139,17 +139,17 @@ d = - M^{-1}(x) F(x) + \beta d_{prev}
   Additional information about both linear and nonlinear conjugate gradient
   methods can be found in Chapter 5 of:
 
-  <li>Nocedal & Wright, "Numerical Optimization", Springer-Verlag, 
+  <li>Nocedal & Wright, "Numerical Optimization", Springer-Verlag,
   New York, 1999.</li>
   Though presented within the context of nonlinear optimization, the connection
-  to nonlinear systems of equations is made by the correspondence 
+  to nonlinear systems of equations is made by the correspondence
   \f$ \nabla f(x) \leftrightarrow F(x) \f$ (cf Algorithm 5.4).
 
   Another useful useful reference is:
 
-  <li>Jonathan Richard Shewchuk, 
+  <li>Jonathan Richard Shewchuk,
   <A HREF="http://www-2.cs.cmu.edu/~jrs/jrspapers.html"/>
-  "An Introduction to the Conjugate Gradient Method Without the Agonizing 
+  "An Introduction to the Conjugate Gradient Method Without the Agonizing
   Pain</A>," 1994.</li> Chapter 14 provides a summary of issues in generalizing
   linear CG to the nonlinear case.  Correspondence to NOX notation
   is made by the equivalence \f$ r \leftrightarrow f' \leftrightarrow F(x) \f$
@@ -164,42 +164,42 @@ class NonlinearCG : public Generic {
 
 public:
 
-  //! Constructor. 
+  //! Constructor.
   NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
-	      Teuchos::ParameterList& params);
+          Teuchos::ParameterList& params);
 
   //! Destructor.
   virtual ~NonlinearCG();
 
   //! derived
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& p);
+             Teuchos::ParameterList& p);
 
   //! derived
-  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
+  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp,
                        const Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 private:
-  
+
   //! Global data pointer.  Keep this so the parameter list remains valid.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
   Teuchos::RCP<NOX::Utils> utils;
 
-  //! Previous solution pointer. 
-  const Abstract::Group* oldSolnPtr;	
+  //! Previous solution pointer.
+  const Abstract::Group* oldSolnPtr;
 
   //! Temporary vector used in applying preconditioner.
   Teuchos::RCP<Abstract::Vector> tmpVecPtr;
 
   //! Previous search direction pointer.
   /*! The current search direction is found by orthogonalizing against the
-      previous search direction.  This vector provides storage for the 
+      previous search direction.  This vector provides storage for the
       old search direction. */
   Teuchos::RCP<Abstract::Vector> oldDirPtr;
 
@@ -207,28 +207,28 @@ private:
   /*! This vector stores the old descent direction which was orthogonalized
       to determine the old search direction.  It is needed in the numerator
       of the expression for Polak-Ribiere \f$ \beta \f$. */
-  Teuchos::RCP<Abstract::Vector> oldDescentDirPtr;  
+  Teuchos::RCP<Abstract::Vector> oldDescentDirPtr;
 
   //! Temporary vector used in computing the numerator of Polak-Ribiere \f$ \beta \f$.
-  Teuchos::RCP<Abstract::Vector> diffVecPtr;  
+  Teuchos::RCP<Abstract::Vector> diffVecPtr;
 
   //! Input parameters.
-  Teuchos::ParameterList* paramsPtr;	
+  Teuchos::ParameterList* paramsPtr;
 
   //! Orthogonalization parameter \f$ \beta \f$.
-  double beta;			
+  double beta;
 
   //! Number of nonlinear iterations.
-  int niter;                    
+  int niter;
 
   //! Restart frequency.
-  int restartFrequency;                    
+  int restartFrequency;
 
   //! Boolean flag indicating whether or not to use preconditioning
-  bool doPrecondition;                    
+  bool doPrecondition;
 
   //! Boolean flag indicating if beta is computed using Polak-Ribiere
-  bool usePRbeta;                    
+  bool usePRbeta;
 
 };
 } // namespace Direction

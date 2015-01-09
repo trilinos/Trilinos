@@ -1,0 +1,181 @@
+/*! 
+\mainpage Trilinos/Tpetra: Next-generation distributed linear algebra
+
+\section tpetra_outline Outline
+
+<ul>
+<li>\ref tpetra_intro
+<li>\ref tpetra_startup
+  <ul>
+  <li>\ref tpetra_templated_types
+  <li>\ref tpetra_formulations
+  <li>\ref tpetra_trilinos
+  </ul>
+<li>\ref tpetra_tutorial
+</ul>
+
+\section tpetra_intro Introduction
+
+%Tpetra implements linear algebra objects, such as sparse matrices and
+dense vectors.  %Tpetra is "hybrid parallel," meaning that it uses at
+least two levels of parallelism:
+
+- MPI (the Message Passing Interface) for distributed-memory parallelism, and 
+- any of various shared-memory parallel programming models within an MPI process.
+
+We say "distributed linear algebra" because %Tpetra objects may be
+distributed over one or more parallel MPI processes.  The
+shared-memory programming models that %Tpetra may use within a process
+include 
+
+<ul>
+<li> OpenMP </li>
+<li> POSIX Threads (Pthreads) </li>
+<li> Nvidia's CUDA programming model for graphics processing units (GPUs) </li>
+<li> Intel's Threading Building Blocks </li>
+</ul>
+
+%Tpetra differs from %Epetra, Trilinos' previous distributed linear
+algebra package, in the following ways:
+
+<ol>
+<li> %Tpetra has native support for solving very large problems (with
+    over 2 billion unknowns). </li>
+
+<li> %Tpetra lets you construct matrices and vectors with different kinds
+   of data, such as floating-point types of different precision, or
+   complex-valued types.  Our goal is for Tpetra objects to be able to
+   contain any type of data that implements a minimal compile-time
+   interface.  %Epetra objects only support double-precision
+   floating-point data (of type \c double). </li>
+
+<li> %Tpetra can exploit many different kinds of hybrid parallelism, and
+   most of its kernels do so natively.  %Epetra only supports OpenMP
+   shared-memory parallelism for a few kernels.  %Tpetra also has
+   optimizations for shared-memory parallel systems with nonuniform
+   memory access (NUMA).  All effort in supporting future node-level
+   computer architectures will go into %Tpetra. </li>
+</ol>
+
+\section tpetra_startup Overview of Tpetra
+
+\subsection tpetra_templated_types Templated Types in Tpetra
+
+All of all classes in %Tpetra utilize templates, which allows the user
+to specify any type they want. In some cases, the choice of data type
+allows increased functionality. For example, 64-bit ordinals allow for
+problem sizes to break the 2 billion element barrier present in
+Epetra, whereas complex scalar types allow the native description and
+solution of complex-valued problems.
+
+Most of the classes in %Tpetra are templated according to the data
+types which constitute the class.  These are the following:
+
+<ul>
+<li>
+\c Scalar: A \c Scalar is the type of values in the sparse matrix or
+dense vector.  This is the type most likely to be changed by many
+users. The most common use cases are \c float, \c double,
+<tt>std::complex<float></tt> and
+<tt>std::complex<double></tt>. However, many other data types can be
+used, as long as they have specializations for Teuchos::ScalarTraits
+and Teuchos::SerializationTraits, and support the necessary arithmetic
+operations, such as addition, subtraction, division and
+multiplication.
+</li>
+
+<li> 
+\c LocalOrdinal: A \c LocalOrdinal is used to store indices
+representing local IDs. The standard use case, as well as the default
+for most classes, is \c int. Any signed built-in integer type may be
+used.  The reason why local and global ordinals may have different
+types is for efficiency.  If the application allows it, using smaller
+local ordinals requires less storage and may improve performance of
+computational kernels such as sparse matrix-vector multiply.
+</li>
+
+<li>
+\c GlobalOrdinal: A \c GlobalOrdinal is used to store global indices
+and to describe global properties of a distributed object (e.g.,
+global number of entries in a sparse matrix, or global number of rows
+in a vector.) The \c GlobalOrdinal therefore dictates the maximum size
+of a distributed object.
+</li>
+
+<li>
+\c Node: Computational classes in %Tpetra will also be templated on a
+\c Node type. This node fulfills the \ref kokkos_node_api "Kokkos Node
+API" and allows the %Tpetra objects to perform parallel computation on
+one of a number of shared-memory nodes, including multi-core CPUs and
+GPUs.  You can set the Node type to control what shared-memory
+parallel programming model %Tpetra will use.
+</li>
+</ul>
+
+\subsection tpetra_formulations Tpetra Classes
+
+Most %Tpetra users will want to learn about the following classes.
+
+<ul>
+<li>
+Parallel distributions: Tpetra::Map - Contains information used to
+distribute vectors, matrices and other objects. This class is
+analogous to Epetra's Epetra_Map class.
+</li>
+
+<li>
+Distributed dense vectors: Tpetra::MultiVector, Tpetra::Vector -
+Provides vector services such as scaling, norms, and dot products.
+</li>
+
+<li>
+Distributed sparse matrices: Tpetra::RowMatrix, Tpetra::CrsMatrix -
+Tpetra::RowMatrix is a abstract interface for row-distributed sparse
+matrices. Tpetra::CrsMatrix is a specific implementation of
+Tpetra::RowMatrix, utilizing compressed row storage format. Both of
+these classes derive from Tpetra::Operator, the base class for linear
+operators.
+</li>
+
+<li>   
+Import/Export classes: Tpetra::Import and Tpetra::Export - Allows
+efficient transfer of objects built using one mapping to a new object
+with a new mapping.  Supports local and global permutations,
+overlapping Schwarz operations and many other data movement
+operations.
+</li>
+
+<li>
+Platform classes: These are mainly of legacy interest.
+Tpetra::DefaultPlatform is useful for getting a default communicator
+wrapper that wraps <tt>MPI_COMM_WORLD</tt> if building with MPI, and
+provides stub communication functionality if not building with MPI.
+</li>
+</ul>
+
+\subsection tpetra_trilinos Trilinos and Tpetra
+
+%Tpetra can be used mostly as a stand-alone package, with explicit
+dependencies on Teuchos and Kokkos. There are adapters allowing the
+use of %Tpetra operators and multivectors in both the Belos linear
+solver package and the Anasazi eigensolver package.  
+
+\section tpetra_tutorial Tutorial lessons
+
+Tpetra includes five lessons.  The first shows how to initialize an
+application using Tpetra, with or without MPI.  Following lessons
+demonstrate how to create and modify Tpetra data structures, and how
+to use Tpetra's abstractions to move data between different parallel
+distributions.  The lessons include both sections meant for reading,
+and example code that builds and runs.  In fact, the code passes
+nightly tests on many different platforms.
+
+<ul>
+<li> \ref Tpetra_Lesson01 </li>
+<li> \ref Tpetra_Lesson02 </li>
+<li> \ref Tpetra_Lesson03 </li>
+<li> \ref Tpetra_Lesson04 </li>
+<li> \ref Tpetra_Lesson05 </li>
+</ul>
+
+*/

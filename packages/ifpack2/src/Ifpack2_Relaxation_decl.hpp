@@ -51,6 +51,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
+#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
 
 namespace Teuchos {
   // forward declarations
@@ -96,15 +97,15 @@ pp. 2864-2887.
 
 Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
-spent a lot of effort tuning Tpetra's kernels.  Depending on the
-Kokkos Node type of your Tpetra matrix, it may also exploit threads
-for additional parallelism within each MPI process.  In contrast,
-Gauss-Seidel and symmetric Gauss-Seidel are intrinsically sequential
-methods within an MPI process.  This prevents us from exposing more
-parallelism via threads.  The difference should become more apparent
-as your code moves away from a "one MPI process per core" model, to a
-"one MPI process per socket or node" model, assuming that you are
-using a threaded Kokkos Node type.
+spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
+type of your Tpetra matrix, it may also exploit threads for additional
+parallelism within each MPI process.  In contrast, Gauss-Seidel and
+symmetric Gauss-Seidel are intrinsically sequential methods within an
+MPI process.  This prevents us from exposing more parallelism via
+threads.  The difference should become more apparent as your code
+moves away from a "one MPI process per core" model, to a "one MPI
+process per socket or node" model, assuming that you are using a
+thread-parallel Node type.
 
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
@@ -259,7 +260,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -427,6 +428,7 @@ public:
   /// initialize() has not yet been called, this method will call
   /// initialize() for you.
   void compute ();
+
 
   //! Return true if compute() has been called.
   inline bool isComputed() const {
@@ -625,21 +627,12 @@ private:
   ///
   /// We use this for dynamic casts to dispatch to the most efficient
   /// implementation of various relaxation kernels.
-  ///
-  /// \note This typedef isn't ideal because it won't catch
-  ///   Tpetra::CrsMatrix specializations with nondefault LocalMatOps
-  ///   (fifth) template parameter.  The code will still be correct if
-  ///   the cast fails, but it won't pick up the "cached offsets"
-  ///   optimization.  An alternate approach would be to push kernels
-  ///   (like Gauss-Seidel) to the RowMatrix interface, so that
-  ///   RowMatrix's polymorphism can dispatch to the most efficient
-  ///   implementation.  We accept this as reasonable because (a) the
-  ///   fifth template parameter of Tpetra::CrsMatrix and
-  ///   Tpetra::CrsGraph will be deprecated soon, and (b) very few
-  ///   users had interest in anything other than the default value of
-  ///   the fifth template parameter.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_multivector_type;
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -665,6 +658,11 @@ private:
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply Jacobi to X, returning the result in Y.
+  void ApplyInverseJacobi_BlockCrsMatrix(
+        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
   //! Apply Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -681,6 +679,12 @@ private:
                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
+  //! Apply Gauss-Seidel for a Tpetra::Experimental::BlockCrsMatrix specialization.
+  void
+  ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
+
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -696,6 +700,15 @@ private:
   ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
                              const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+
+  //! Apply symmetric Gauss-Seidel for a Tpetra::ExperimentalBlockCrsMatrix specialization.
+  void
+  ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
+                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
+
+  void computeBlockCrs ();
+
 
   //@}
   //! @name Internal data and parameters
@@ -717,6 +730,11 @@ private:
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
+
+  Teuchos::RCP<block_crs_matrix_type> BlockDiagonal_;
+  Teuchos::Array<int> blockDiagonalFactorizationPivots;
+  Teuchos::RCP<block_multivector_type> yBlockColumnPointMap_;
+
 
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
@@ -792,6 +810,8 @@ private:
   /// diagOffsets_ has size zero.  It is perfectly legitimate for the
   /// matrix to have zero rows on the calling process.
   bool savedDiagOffsets_;
+
+  bool hasBlockCrsMatrix_;
 
   /// \brief In case of local/reordered smoothing, the unknowns to use
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;

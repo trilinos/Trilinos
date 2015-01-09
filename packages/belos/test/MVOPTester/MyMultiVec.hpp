@@ -212,9 +212,8 @@ public:
     assert (B.numRows() == A.GetNumberVecs());
     assert (B.numCols() <= NumberVecs_);
 
-    MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
-    assert(MyA!=NULL);
+    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    TEUCHOS_ASSERT(MyA != NULL);
 
     if ((*this)[0] == (*MyA)[0]) {
       // If this == A, then need additional storage ...
@@ -259,13 +258,11 @@ public:
   void MvAddMv (const ScalarType alpha, const Belos::MultiVec<ScalarType>& A, 
                 const ScalarType beta,  const Belos::MultiVec<ScalarType>& B)
   {
-    MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
-    assert (MyA != 0);
+    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    TEUCHOS_ASSERT(MyA != NULL);
     
-    MyMultiVec* MyB;
-    MyB = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(B)); 
-    assert (MyB != 0);
+    MyMultiVec* MyB = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(B)); 
+    TEUCHOS_ASSERT(MyB != NULL);
     
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (NumberVecs_ == B.GetNumberVecs());
@@ -307,7 +304,7 @@ public:
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
-    assert (MyA != 0);
+    TEUCHOS_ASSERT(MyA != NULL);
     
     assert (A.GetVecLength() == Length_);
     assert (NumberVecs_ <= B.numCols());
@@ -330,7 +327,7 @@ public:
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
-    assert (MyA != 0);
+    TEUCHOS_ASSERT(MyA != NULL);
     
     assert (NumberVecs_ <= (int)b.size());
     assert (NumberVecs_ == A.GetNumberVecs());
@@ -372,7 +369,7 @@ public:
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
-    assert (MyA != 0);
+    TEUCHOS_ASSERT(MyA != NULL);
     
     assert (A.GetNumberVecs() >= (int)index.size());
     assert (A.GetVecLength() == Length_);

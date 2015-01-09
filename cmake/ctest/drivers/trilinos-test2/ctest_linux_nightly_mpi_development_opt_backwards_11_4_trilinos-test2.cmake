@@ -81,24 +81,23 @@ SET(Trilinos_BRANCH "trilinos-release-11-4-branch")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite RBGen TrilinosFramework)
+SET(EXTRA_EXCLUDE_PACKAGES Mesquite RBGen TriBITS)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${INSTALLATION_DIR}"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
-  "-DMPI_BASE_DIR:PATH=/home/trilinos"
+  "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
   "-DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   "-DTrilinos_ENABLE_Mesquite=OFF"
   "-DTrilinos_ENABLE_RBGen=OFF"
-  "-DTrilinos_ENABLE_TrilinosFramework=OFF"
+  "-DTrilinos_ENABLE_TriBITS=OFF"
   "-DTPL_ENABLE_SuperLU=OFF"
   )
 

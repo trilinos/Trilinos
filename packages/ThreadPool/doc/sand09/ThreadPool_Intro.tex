@@ -1,11 +1,11 @@
 \section{Introduction}
 
-A ``manycore revolution'' is underway in high performance computing (HPC) to move from model of interconnected single-core nodes with a single thread of execution to many-core nodes with many threads execution 
-\cite{SciDAC:ManycoreRevolution:WebSite}. 
+A ``manycore revolution'' is underway in high performance computing (HPC) to move from model of interconnected single-core nodes with a single thread of execution to many-core nodes with many threads execution
+\cite{SciDAC:ManycoreRevolution:WebSite}.
 %
 This revolution leaves HPC application programmers with the challenge of maximizing parallel performance at both the interconnect level (\emph{i.e.} process parallelism) and the manycore level (\emph{i.e.} thread parallelism).
 %
-The ThreadPool library has been developed within the Trilinos Project 
+The ThreadPool library has been developed within the Trilinos Project
 \cite{Trilinos:WebSite} to provide HPC applications with a simple interface to make effective use of thread parallelism on CPU-based manycore nodes.
 
 
@@ -15,7 +15,7 @@ Research is in progress to effectively exploit parallelism at the manycore level
 %
 The architecture of the HPC node drives manycore programming models in two directions: homogeneous thread parallelism versus heterogeneous thread parallelism.
 %
-In homonegenous manycore parallelism all processing cores of a node are equivalent---they have equal capabilities and access to the node's resources 
+In homonegenous manycore parallelism all processing cores of a node are equivalent---they have equal capabilities and access to the node's resources
 (\emph{e.g.}, memory, interconnect, disks).
 %
 In heterogeneous manycore parallelism the processing cores residing within a node have different compute capabilities and different means of accessing the node's resources.
@@ -25,7 +25,7 @@ Homogeneous manycore and heterogeneous manycore programming models have fundamen
 %
 \begin{figure}[h]
 \begin{center}
-\includegraphics[viewport=0.5in 0.75in 3in 4.5in,angle=0,scale=1]{HybridParallelLayers.eps}
+\includegraphics[viewport=0.5in 0.75in 3in 4.5in,angle=0,scale=1]{figures/HybridParallelLayers}
 \caption{Software layers for the separation of concerns within HPC applications exploiting both distributed and manycore parallelism}
 \label{fig:HybridParallelArchitecture}
 \end{center}
@@ -42,9 +42,9 @@ This is the intended functionality of the ThreadPool library, as well as other l
 %
 A well-known library supporting homogeneous manycore parallelism is the Intel Threading Building Blocks (TBB) \cite{TBB:Book}, which provides a C++ interface to manage thread-parallel execution of C++ functions.
 %
-A well-known language supporting heterogeneous manycore parallelism is 
-CUDA \cite{CUDA:WebSite}, 
-which supports thread-parallel execution of functions written in the CUDA language on GPGPU manycores manufactured by 
+A well-known language supporting heterogeneous manycore parallelism is
+CUDA \cite{CUDA:WebSite},
+which supports thread-parallel execution of functions written in the CUDA language on GPGPU manycores manufactured by
 NVIDIA \cite{NVIDIA:Website}.
 
 
@@ -52,6 +52,6 @@ The ThreadPool library provides a simple, minimalistic, and highly portable pack
 %
 It is written in the standard C programming language and utilizes a small portion of the standard \textbf{pthreads} \cite{pthreads:Standard} in Linux environments.
 %
-This report describes the application programmer interface (API) and performance of the ThreadPool library available through the Trilinos project \cite{Trilinos:WebSite}. 
+This report describes the application programmer interface (API) and performance of the ThreadPool library available through the Trilinos project \cite{Trilinos:WebSite}.
 
 

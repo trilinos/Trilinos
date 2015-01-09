@@ -43,14 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
-
- * MueLu_UncoupledAggregationFactory_decl.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DECL_HPP_
 
@@ -65,12 +57,15 @@
 
 #include "MueLu_AggregationAlgorithmBase.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
-#include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
+
+#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase3Algorithm_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
@@ -81,7 +76,9 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+template <class LocalOrdinal = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class UncoupledAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -96,7 +93,7 @@ public:
   //! Destructor.
   virtual ~UncoupledAggregationFactory() { }
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
   //@}
 
@@ -106,43 +103,37 @@ public:
   // Options shared by all aggregation algorithms
 
   // deprecated
-  void SetOrdering(AggOptions::Ordering ordering) {
-    SetParameter("Ordering", ParameterEntry(ordering)); // revalidate
+  void SetOrdering(const std::string& ordering) {
+    SetParameter("aggregation: ordering", ParameterEntry(ordering));
   }
   // deprecated
   void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
-    SetParameter("MaxNeighAlreadySelected", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
+    SetParameter("aggregation: max selected neighbors", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
   }
   // deprecated
   void SetMinNodesPerAggregate(int minNodesPerAggregate) {
-    SetParameter("MinNodesPerAggregate", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
+    SetParameter("aggregation: min agg size", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
   }
   // set information about 1-node aggregates (map name and generating factory)
   void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
     SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
     SetFactory("OnePt aggregate map factory",mapFact);
   }
-  // set information about small aggregates
-  void SetSmallAggMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    SetParameter("SmallAgg aggregate map name", ParameterEntry(std::string(name))); // revalidate
-    SetFactory("SmallAgg aggregate map factory",mapFact);
-  }
 
   // deprecated
-  Ordering GetOrdering() const {
+  const std::string& GetOrdering() const {
     const ParameterList& pL = GetParameterList();
-    Ordering ordering = pL.get<Ordering>("Ordering");
-    return ordering;
+    return pL.get<std::string>("aggregation: ordering");
   }
   // deprecated
   int GetMaxNeighAlreadySelected() const {
-    const ParameterList & pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("MaxNeighAlreadySelected"));
+    const ParameterList& pL = GetParameterList();
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: max selected neighbors"));
   }
   // deprecated
   int GetMinNodesPerAggregate() const {
-    const ParameterList & pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("MinNodesPerAggregate"));
+    const ParameterList& pL = GetParameterList();
+    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: min agg size"));
   }
 
   //@}
@@ -166,7 +157,7 @@ public:
   //@{
 
   /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
-  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & alg);
+  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > & alg);
 
   /*! @brief Remove all aggregation algorithms from list */
   //void ClearAggregationAlgorithms() { algos_.clear(); }
@@ -176,7 +167,7 @@ private:
 
   //! aggregation algorithms
   // will be filled in Build routine
-  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > > algos_;
+  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
 
   //! boolean flag: definition phase
   //! if true, the aggregation algorithms still can be set and changed.

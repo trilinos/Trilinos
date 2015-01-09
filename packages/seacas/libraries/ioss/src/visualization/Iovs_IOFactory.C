@@ -7,9 +7,13 @@
 /*--------------------------------------------------------------------*/
 
 #include <visualization/Iovs_IOFactory.h>
-#include <visualization/Iovs_DatabaseIO.h>
+#include <stddef.h>                     // for NULL
+#include <visualization/Iovs_DatabaseIO.h>  // for DatabaseIO
+#include <string>                       // for string
+#include "Ioss_DBUsage.h"               // for DatabaseUsage
+#include "Ioss_IOFactory.h"             // for IOFactory
+namespace Ioss { class PropertyManager; }
 // #include <visualization/Iovs_Internals.h>
-#include <string>
 
 namespace Iovs {
 

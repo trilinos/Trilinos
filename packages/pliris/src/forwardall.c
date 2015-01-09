@@ -106,24 +106,24 @@ extern MPI_Comm row_comm;
 #define MAXDIST 1
 
 void
-forwardall(DATA_TYPE *mat, int *permutations, DATA_TYPE *rhs_copy, 
+forwardall(DATA_TYPE *mat, int *permutations, DATA_TYPE *rhs_copy,
         DATA_TYPE *rhs)
 {
   int colcnt; /* number of columns stored for BLAS 3 ops */
- 
+
   int col_len,row_len,rows_used,cols_used;
   int *sav_pivot_ptr;
-  
+
 
   DATA_TYPE *sav_col_ptr,*sav_row_ptr,*sav_piv_row_ptr;
   DATA_TYPE *cur_col1_row_ptr;
   DATA_TYPE *temp_row_ptr;
   DATA_TYPE *act_col_ptr,*act_row_ptr;
- 
-  
+
+
   int numprocs;
 
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs); 
+  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
   if ( (numprocs/nprocs_row) * nprocs_row != numprocs )
   {
      if (me == 0)
@@ -139,27 +139,27 @@ forwardall(DATA_TYPE *mat, int *permutations, DATA_TYPE *rhs_copy,
   sav_col_ptr = col1;   /* location to store next active column */
   act_col_ptr = col1;   /* location of matrix of columns being saved for dgemm update */
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including 
+  row_len = my_cols + my_rhs;  /* length of row in local matrix including
 			          rhs's*/
 
   rows_used = 0;      /* haven't used any local rows yet */
   cols_used = 0;
   cur_col1_row_ptr = col1;  /* location of first row in col1 matrix */
-  act_row_ptr = row1; /* location of matrix of rows being saved for dgemm 
+  act_row_ptr = row1; /* location of matrix of rows being saved for dgemm
 			 update */
 
-  sav_piv_row_ptr = row1; /* location for next row being saved for dgemm 
+  sav_piv_row_ptr = row1; /* location for next row being saved for dgemm
 	                 update */
 
-  temp_row_ptr = row3; /* location for pivot row while being sent and 
+  temp_row_ptr = row3; /* location for pivot row while being sent and
 		         before transposing */
- 
-  sav_row_ptr = row2;  /* location to save current row and send to 
+
+  sav_row_ptr = row2;  /* location to save current row and send to
 			 owner of pivot row */
 
   sav_pivot_ptr = pivot_vec; /* location to store name of pivot row */
 
- 
+
   exchange_pivots(permutations);
   permute_mat(mat,permutations);
   permute_rhs(rhs,permutations);

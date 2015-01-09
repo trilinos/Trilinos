@@ -44,6 +44,7 @@ XCOMM Imakefile for ACCESS/svdi
 SUBDIRS = \
 $(CDRSRC) \
 $(CGISRC) \
+$(VDI_DRIVERSSRC) \
 $(POSTSRC) 
 
 MakeAllInstall($(SUBDIRS),PassDebugFlags)

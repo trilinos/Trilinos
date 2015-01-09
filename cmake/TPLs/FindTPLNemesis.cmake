@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Nemesis
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Nemesis
   REQUIRED_HEADERS ne_nemesisI.h
   REQUIRED_LIBS_NAMES nemIc
   )

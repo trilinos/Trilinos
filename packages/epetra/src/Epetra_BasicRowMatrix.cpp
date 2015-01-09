@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -55,7 +55,7 @@
 
 
 //==============================================================================
-Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & comm) 
+Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & comm)
   : Comm_(comm.Clone()),
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     OperatorDomainMap_(Epetra_Map(0,0,comm)),
@@ -104,7 +104,7 @@ void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map 
 }
 
 //==============================================================================
-void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
+void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap,
 			const Epetra_Map & DomainMap, const Epetra_Map & RangeMap) {
 
   RowMatrixRowMap_ = RowMap;
@@ -124,9 +124,9 @@ void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map 
 void Epetra_BasicRowMatrix::SetImportExport() {
 
   // Check if non-trivial import/export operators
-  if (!(RowMatrixRowMap().SameAs(OperatorRangeMap()))) 
+  if (!(RowMatrixRowMap().SameAs(OperatorRangeMap())))
     Exporter_ = new Epetra_Export(RowMatrixRowMap(), OperatorRangeMap());
-  
+
   if (!(RowMatrixColMap().SameAs(OperatorDomainMap())))
     Importer_ = new Epetra_Import(RowMatrixColMap(), OperatorDomainMap());
 
@@ -191,7 +191,7 @@ void Epetra_BasicRowMatrix::ComputeNumericConstants() const {
 //=============================================================================
 int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 
-  if(!RowMatrixRowMap().SameAs(Diagonal.Map())) 
+  if(!RowMatrixRowMap().SameAs(Diagonal.Map()))
     EPETRA_CHK_ERR(-2); // Maps must be the same
 
   // Crude implementation in terms of ExtractMyRowCopy
@@ -203,7 +203,7 @@ int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   for(int i = 0; i < NumMyRows_; i++) {
     EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
     long long ii = RowMatrixRowMap().GID64(i);
-    
+
     Diagonal[i] = 0.0;
     for(int j = 0; j < NumEntries; j++) {
       if(ii == RowMatrixColMap().GID64(Indices[j])) {
@@ -233,7 +233,7 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Add)); //Export partial row sums to x.
     int myLength = x.MyLength();
-    for (i=0; i<myLength; i++) { 
+    for (i=0; i<myLength; i++) {
       if (xp[i]<Epetra_MinDouble) {
         if (xp[i]==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
         else if (ierr!=1) ierr = 2;
@@ -260,7 +260,7 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
   else { // x.Map different than both RowMatrixRowMap() and OperatorRangeMap()
     EPETRA_CHK_ERR(-2); // The map of x must be the RowMap or RangeMap of A.
   }
-  EPETRA_CHK_ERR(ierr);  
+  EPETRA_CHK_ERR(ierr);
   UpdateFlops(NumGlobalNonzeros64());
   return(0);
 }
@@ -304,7 +304,7 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
     double * x_tmp_p = (double*)x_tmp.Values();
     for(i = 0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-      for(j = 0; j < NumEntries; j++) 
+      for(j = 0; j < NumEntries; j++)
         x_tmp_p[Indices[j]] += std::abs(Values[j]);
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Importer(), Add)); // Fill x with partial column sums
@@ -312,7 +312,7 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
   else if(RowMatrixColMap().SameAs(x.Map())) {
     for(i = 0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-      for(j = 0; j < NumEntries; j++) 
+      for(j = 0; j < NumEntries; j++)
         xp[Indices[j]] += std::abs(Values[j]);
     }
   }
@@ -324,9 +324,9 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
   for(i = 0; i < MapNumMyElements; i++) {
     double scale = xp[i];
     if(scale < Epetra_MinDouble) {
-      if(scale == 0.0) 
+      if(scale == 0.0)
 	ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
-      else if(ierr != 1) 
+      else if(ierr != 1)
 	ierr = 2;
       xp[i] = Epetra_MaxDouble;
     }
@@ -406,7 +406,7 @@ int Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Ep
 	Yp[k][i] = sum;
       }
     }
-    
+
     if (Exporter()!=0) {
       Y.PutScalar(0.0);  // Make sure target is zero
       Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
@@ -440,7 +440,7 @@ int Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Ep
 	  Yp[k][Indices[j]] += Values[j]*xtmp;
       }
     }
-    
+
     if (Importer()!=0) {
       Y.PutScalar(0.0);  // Make sure target is zero
       EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
@@ -495,21 +495,21 @@ void Epetra_BasicRowMatrix::Print(std::ostream& os) const {
     os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals64(); os << std::endl;
 	os <<    "Number of Global Nonzeros     = "; os << NumGlobalNonzeros_; os << std::endl;
       }
-      
+
       os <<  "\nNumber of My Rows               = "; os << NumMyRows_; os << std::endl;
       os <<    "Number of My Cols               = "; os << NumMyCols_; os << std::endl;
       os <<    "Number of My Diagonals          = "; os << NumMyDiagonals(); os << std::endl;
       os <<    "Number of My Nonzeros           = "; os << NumMyNonzeros_; os << std::endl;
       os <<    "My Maximum Num Entries          = "; os << MaxNumEntries_; os << std::endl; os << std::endl;
       os << std::flush;
-      
+
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();
     Comm().Barrier();
     Comm().Barrier();
   }
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (MyPID==0) {
@@ -526,12 +526,12 @@ void Epetra_BasicRowMatrix::Print(std::ostream& os) const {
       Epetra_SerialDenseVector Values(MaxNumEntries());
       Epetra_IntSerialDenseVector Indices(MaxNumEntries());
       int NumEntries;
-      
+
       for(int i = 0; i < NumMyRows_; i++) {
 	ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
 	long long Row = RowMatrixRowMap().GID64(i); // Get global row number
 	
-	for (int j = 0; j < NumEntries ; j++) {   
+	for (int j = 0; j < NumEntries ; j++) {
 	  long long Index = RowMatrixColMap().GID64(Indices[j]);
 	  os.width(8);
 	  os <<  MyPID ; os << "    ";	
@@ -544,9 +544,9 @@ void Epetra_BasicRowMatrix::Print(std::ostream& os) const {
 	  os << std::endl;
 	}
       }
-    
+
       os << std::flush;
-      
+
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();

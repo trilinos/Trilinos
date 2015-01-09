@@ -74,7 +74,7 @@ const std::string& XMLObject::getTag() const
 }
 
 
-bool XMLObject::hasAttribute(const std::string& name) const 
+bool XMLObject::hasAttribute(const std::string& name) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::hasAttribute: XMLObject is empty");
@@ -82,7 +82,7 @@ bool XMLObject::hasAttribute(const std::string& name) const
 }
 
 
-const std::string& XMLObject::getAttribute(const std::string& name) const 
+const std::string& XMLObject::getAttribute(const std::string& name) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::getAttribute: XMLObject is empty");
@@ -90,10 +90,10 @@ const std::string& XMLObject::getAttribute(const std::string& name) const
 }
 
 
-const std::string& XMLObject::getRequired(const std::string& name) const 
+const std::string& XMLObject::getRequired(const std::string& name) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!hasAttribute(name), std::runtime_error,
-                     "XMLObject::getRequired: key " 
+                     "XMLObject::getRequired: key "
                      << name << " not found");
   return getAttribute(name);
 }
@@ -130,21 +130,21 @@ std::string XMLObject::getRequired<std::string>(const std::string& name) const
 bool XMLObject::getRequiredBool(const std::string& name) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!hasAttribute(name), std::runtime_error,
-                     "XMLObject::getRequired: key " 
+                     "XMLObject::getRequired: key "
                      << name << " not found");
   std::string val = StrUtils::allCaps(getRequired(name));
 
   TEUCHOS_TEST_FOR_EXCEPTION( val!="TRUE" && val!="YES" && val!="1"
     && val!="FALSE" && val!="NO" && val!="0",
     std::runtime_error,
-		"XMLObject::getRequiredBool value [" << val 
+		"XMLObject::getRequiredBool value [" << val
 		<< "] should have been {TRUE|FALSE|YES|NO|0|1}");
-    
+
   if (val=="TRUE" || val=="YES" || val=="1")
   {
     return true;
   }
-  else 
+  else
   {
     return false;
   }
@@ -243,11 +243,11 @@ std::string XMLObject::footer() const
 }
 
 
-void XMLObject::checkTag(const std::string& expected) const 
+void XMLObject::checkTag(const std::string& expected) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(getTag() != expected, std::runtime_error,
                      "XMLObject::checkTag error: expected <"
-                     << expected << ">, found <" 
+                     << expected << ">, found <"
                      << getTag() << ">");
 }
 

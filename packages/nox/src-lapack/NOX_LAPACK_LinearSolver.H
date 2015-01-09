@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,11 +63,11 @@ namespace NOX {
 
     //! A simple linear solver for use by NOX::LAPACK::Group
     /*!
-     * This class provides a simple linear solver class that stores a 
+     * This class provides a simple linear solver class that stores a
      * NOX::LAPACK::Matrix and provides routines to apply the matrix
      * and solve it using BLAS and LAPACK routines.  It is templated
      * so that it can be used to solve both real and complex matrices.
-     * It also stores an LU factorization of the matrix so repeated 
+     * It also stores an LU factorization of the matrix so repeated
      * solves are more efficient.  The group should signal that the
      * matrix has changed by calling reset().
      */
@@ -102,15 +102,15 @@ namespace NOX {
 
       //! Apply matrix
       /*!
-       * Set \c trans to \c true to apply the transpose.  \c ncols is the 
-       * number of columns in \c input and \c output, which should be stored 
+       * Set \c trans to \c true to apply the transpose.  \c ncols is the
+       * number of columns in \c input and \c output, which should be stored
        * column-wise.
        */
       void apply(bool trans, int ncols, const T* input, T* output) const;
 
       //! Solve inverse
       /*!
-       * Set \c trans to \c true to solve the transpose.  \c ncols is the 
+       * Set \c trans to \c true to solve the transpose.  \c ncols is the
        * number of columns in \c output, which should be stored column-
        * wise.  The right-hand-side is passed through \c output, which is
        * then overwritten with the result.
@@ -136,7 +136,7 @@ namespace NOX {
 
       //! LAPACK wrappers
       Teuchos::LAPACK<int,T> lapack;
-      
+
     };
 
   } // namespace LAPACK
@@ -207,8 +207,8 @@ NOX::LAPACK::LinearSolver<T>::reset()
 
 template <typename T>
 void
-NOX::LAPACK::LinearSolver<T>::apply(bool trans, int ncols, const T* input, 
-			      T* output) const
+NOX::LAPACK::LinearSolver<T>::apply(bool trans, int ncols, const T* input,
+                  T* output) const
 {
   Teuchos::ETransp tr = Teuchos::NO_TRANS;
   if (trans) {
@@ -219,8 +219,8 @@ NOX::LAPACK::LinearSolver<T>::apply(bool trans, int ncols, const T* input,
   }
 
   int n = mat.numRows();
-  blas.GEMM(tr, Teuchos::NO_TRANS, n, ncols, n, 1.0, &mat(0,0), n, 
-	    input, n, 0.0, output, n);
+  blas.GEMM(tr, Teuchos::NO_TRANS, n, ncols, n, 1.0, &mat(0,0), n,
+        input, n, 0.0, output, n);
 }
 
 template <typename T>

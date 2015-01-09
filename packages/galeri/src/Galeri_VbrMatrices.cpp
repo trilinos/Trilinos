@@ -105,8 +105,8 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
   int* CrsIndices;
   double* CrsValues;
 
-  vector<int>    VbrIndices(MaxNnzPerRow);
-  vector<double> VbrValues(MaxBlockSize);
+  std::vector<int>    VbrIndices(MaxNnzPerRow);
+  std::vector<double> VbrValues(MaxBlockSize);
   int BlockRows = NumPDEs;
   int ierr;
 

@@ -51,7 +51,7 @@ public:
   // @{ \name Constructors and destructors
 
   //! Constructs the hierarchy for given Operator and parameters.
-  MultiLevelSA(const Operator FineMatrix, Teuchos::ParameterList& List,
+  MultiLevelSA(const Operator & FineMatrix, Teuchos::ParameterList& List,
                const bool ConstructNow = true) :
     IsComputed_(false)
   {

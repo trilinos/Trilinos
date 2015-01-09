@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   petra_power_method_LL
@@ -7,4 +6,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial
 #  FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
-  
+

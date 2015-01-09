@@ -30,16 +30,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementBlock.h>
-#include <Ioss_Field.h>
-#include <Ioss_Property.h>
-#include <stddef.h>
-#include <string>
-#include <vector>
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_Field.h>                 // for Field, etc
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_BoundingBox.h"           // for AxisAlignedBoundingBox
+#include "Ioss_EntityBlock.h"           // for EntityBlock
+#include "Ioss_FieldManager.h"          // for FieldManager
 
-#include "Ioss_EntityBlock.h"
-#include "Ioss_FieldManager.h"
 
 namespace Ioss {
   class Field;

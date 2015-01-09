@@ -67,7 +67,7 @@ public:
 
   /** \brief The virtual function. */
   virtual void soundOff(const T& obj) const = 0;
-  
+
   /** \brief The factory in the interface. */
   static RCP<EvilBase<T> >
   createEvil(const std::string& concreteEvilName);

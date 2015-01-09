@@ -186,15 +186,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , N >::type shape ;
 
-  typedef typename nested::array_type   array_type[ N ];
+  typedef typename nested::array_intrinsic_type   array_intrinsic_type[ N ];
   typedef Test::Array< T , N >          value_type ;
   typedef Test::Array< T , N >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type                    non_const_array_type[ N ];
+  typedef typename nested::non_const_array_intrinsic_type          non_const_array_intrinsic_type[ N ];
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , N > non_const_type ;
 };
@@ -211,15 +211,15 @@ public:
 
   typedef typename ShapeInsert< typename nested::shape , 0 >::type shape ;
 
-  typedef typename nested::array_type * array_type ;
+  typedef typename nested::array_intrinsic_type * array_intrinsic_type ;
   typedef Test::Array< T , 0 >          value_type ;
   typedef Test::Array< T , 0 >          type ;
 
-  typedef const array_type  const_array_type ;
+  typedef const array_intrinsic_type  const_array_intrinsic_type ;
   typedef const value_type  const_value_type ;
   typedef const type        const_type ;
 
-  typedef typename nested::non_const_array_type  * non_const_array_type ;
+  typedef typename nested::non_const_array_intrinsic_type  * non_const_array_intrinsic_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_value_type ;
   typedef Test::Array< typename nested::non_const_value_type , 0 > non_const_type ;
 };
@@ -261,13 +261,13 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                     )>::type * = 0
                   )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -283,13 +283,13 @@ struct ViewAssignment< ViewDefault , Test::EmbedArray , void >
                 , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 )
   {
-    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_tracking.increment( dst.m_ptr_on_device );
+    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 
@@ -324,15 +324,17 @@ private:
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
+  typedef Impl::ViewDataManagement< traits > view_data_management ;
+
   // traits::value_type = Test::Array< T , N >
 
   typename traits::value_type::value_type * m_ptr_on_device ;
   offset_map_type                           m_offset_map ;
-  Impl::ViewTracking< traits >              m_tracking ;
+  view_data_management                      m_management ;
 
 public:
 
-  typedef View< typename traits::array_type ,
+  typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
@@ -349,7 +351,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type::host_mirror_device_type ,
+                typename traits::host_mirror_space ,
                 void > HostMirror ;
 
   //------------------------------------
@@ -388,7 +390,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_tracking.decrement( m_ptr_on_device ); }
+  ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
@@ -435,14 +437,10 @@ public:
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class AllocationProperties >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
+  View( const AllocationProperties & prop ,
+        const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
         const size_t n3 = 0 ,
@@ -452,47 +450,19 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
+      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+
       typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
       typedef typename traits::value_type::value_type   scalar_type ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_offset_map.set_padding();
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
+        memory_space::allocate( Alloc::label( prop ) , sizeof(scalar_type) * m_offset_map.capacity() );
 
-      Impl::ViewFill< View > init( *this , typename traits::value_type() );
-    }
-
-  explicit inline
-  View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
-        const size_t n0 = 0 ,
-        const size_t n1 = 0 ,
-        const size_t n2 = 0 ,
-        const size_t n3 = 0 ,
-        const size_t n4 = 0 ,
-        const size_t n5 = 0 ,
-        const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
-    {
-      typedef typename traits::memory_space  memory_space ;
-      //typedef typename traits::shape_type    shape_type ; // unused
-      typedef typename traits::value_type::value_type   scalar_type ;
-
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_offset_map.set_padding();
-
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
-                                typeid(scalar_type) ,
-                                sizeof(scalar_type) ,
-                                m_offset_map.capacity() );
+      (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
+        ( m_ptr_on_device , m_offset_map.capacity() );
     }
 
   //------------------------------------

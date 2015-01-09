@@ -91,10 +91,10 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 
   int Length = 2 * Graph.MaxMyNumEntries();
   int NumIndices;
-  vector<int> Indices;
+  std::vector<int> Indices;
   Indices.resize(Length);
 
-  vector<int> options;
+  std::vector<int> options;
   options.resize(8);
   options[0] = 0; // default values
 
@@ -163,10 +163,10 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   }
 
   // convert to METIS format
-  vector<idxtype> xadj;
+  std::vector<idxtype> xadj;
   xadj.resize(NumMyRows_ + 1);
 
-  vector<idxtype> adjncy;
+  std::vector<idxtype> adjncy;
   adjncy.resize(Graph.NumMyNonzeros());
    
   int count = 0; 

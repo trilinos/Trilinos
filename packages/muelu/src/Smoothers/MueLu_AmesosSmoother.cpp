@@ -91,14 +91,14 @@ namespace MueLu {
 #elif defined(HAVE_AMESOS_UMFPACK)
       type_ = "Umfpack";
 #else
-      throw Exceptions::RuntimeError("Amesos have been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries"
-                                     "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
-                                     "a valid Amesos solver have to be specified explicitly.");
+      throw Exceptions::RuntimeError("Amesos has been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries"
+                                     "to use one of these libraries. Amesos must be compiled with one of these solvers,  "
+                                     "or a valid Amesos solver has to be specified explicitly.");
 #endif
       if (oldtype != "")
-        this->GetOStream(Warnings0) << "Warning: MueLu::AmesosSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+        this->GetOStream(Warnings0) << "MueLu::AmesosSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
       else
-        this->GetOStream(Warnings0) << "MueLu::AmesosSmoother: using \"" << type_ << "\"" << std::endl;
+        this->GetOStream(Runtime1) << "MueLu::AmesosSmoother: using \"" << type_ << "\"" << std::endl;
     }
   }
 
@@ -112,7 +112,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      GetOStream(Warnings0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
+      GetOStream(Warnings0) << "MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
     A_ = Get< RCP<Matrix> >(currentLevel, "A");
 

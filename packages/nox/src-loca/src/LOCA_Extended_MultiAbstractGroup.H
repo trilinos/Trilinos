@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,33 +61,33 @@ namespace LOCA {
   }
 }
 
-namespace LOCA { 
+namespace LOCA {
 
   //! %Extended groups and vectors
-  namespace Extended { 
+  namespace Extended {
 
-    /*! 
-     * \brief %LOCA abstract interface for extended groups, derived from the 
+    /*!
+     * \brief %LOCA abstract interface for extended groups, derived from the
      * NOX::Abstract::Group, i.e., an abstract interface for "super" groups
      * that have an underlying group component.
     */
-    /*! 
-     * Concrete implemenations of this interface must provide implementations 
-     * of all of the methods in the NOX::Abstract::Group interface as well as 
+    /*!
+     * Concrete implemenations of this interface must provide implementations
+     * of all of the methods in the NOX::Abstract::Group interface as well as
      * the additional interface defined here.
     */
     class MultiAbstractGroup : public virtual NOX::Abstract::Group {
 
     public:
-  
+
       //! Default constructor.
       MultiAbstractGroup() {}
- 
+
       //! Destructor.
       virtual ~MultiAbstractGroup() {}
 
-      /*! 
-       * @name Pure virtual methods 
+      /*!
+       * @name Pure virtual methods
        * These methods must be defined by any concrete implementation
        */
       //@{
@@ -96,23 +96,23 @@ namespace LOCA {
       /*!
        * This method should the underlying group data member.
        */
-      virtual 
+      virtual
       Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() const = 0;
-      
+
       //! Return underlying group
       /*!
        * This method should the underlying group data member.
        */
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() = 0;
 
       //@}
 
-      
-      /*! 
-       * @name Virtual methods with default implementations 
+
+      /*!
+       * @name Virtual methods with default implementations
        * These methods should be overloaded in a concrete implementation
        * if more appropriate/efficient approaches are available.
        */
@@ -122,23 +122,23 @@ namespace LOCA {
       /*!
        * This method is intended
        * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method is supposed 
-       * to return the base level group and has a default recursive 
+       * have an underlying group as a data member.  This method is supposed
+       * to return the base level group and has a default recursive
        * implementation that should work in most cases.
        */
-      virtual 
-      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+      virtual
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getBaseLevelUnderlyingGroup() const;
-      
+
       //! Return base-level underlying group
        /*!
        * This method is intended
        * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method is supposed 
-       * to return the base level group and has a default recursive 
+       * have an underlying group as a data member.  This method is supposed
+       * to return the base level group and has a default recursive
        * implementation that should work in most cases.
        */
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getBaseLevelUnderlyingGroup();
 

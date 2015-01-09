@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -58,7 +58,7 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
   if (verbose && Comm.MyPID()==0)
     cout << Epetra_Version() << endl << endl;
 
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-              << " is alive."<<endl;
+  if (verbose)
+    cout << "Processor " << MyPID << " of " << NumProc << " is alive." << endl;
 
   bool verbose1 = verbose;
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   int NumMyEquations = 10000;
 
-  long long NumGlobalEquations = NumMyEquations*NumProc;
+  long long NumGlobalEquations = (long long)(NumMyEquations) * NumProc;
   long long NumGlobalVariables = 2 * NumGlobalEquations+1;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   Epetra_Map RowMap(NumGlobalEquations, 0LL, Comm);
   Epetra_Map XMap(NumGlobalVariables, 0LL, Comm);
   Epetra_Map& YMap = RowMap;
-  
+
   // Get update list and number of local equations from newly created Map
   long long * MyGlobalElements = new long long[RowMap.NumMyElements()];
   RowMap.MyGlobalElements(MyGlobalElements);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   // We need vectors to compute:
   // X = A^T*Y
   // AATY = A*A^T*Y = A*X
-  //  and 
+  //  and
   // BY = B*Y
 
   Epetra_Vector Y(YMap);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix A(Copy, RowMap, 3);
   Epetra_CrsMatrix ATAssembly(Copy, ATAssemblyMap, 2);
   Epetra_CrsMatrix AT(Copy, XMap, 2);
-  
+
   //cout << "ATAssemblyMap = "<< endl<< ATAssemblyMap << endl
   //     << "XMap = " << endl << XMap << endl
   //     << "RowMap = " << endl << RowMap << endl;
@@ -170,29 +170,29 @@ int main(int argc, char *argv[])
   long long *Indices = new long long[3];
   int NumEntries;
   /*
-  Values[0] = 0.25;
-  Values[1] = 0.5;
-  Values[2] = 0.25;
-  */
+     Values[0] = 0.25;
+     Values[1] = 0.5;
+     Values[2] = 0.25;
+     */
   Values[0] = 0.5;
   Values[1] = 0.25;
   Values[2] = 0.25;
   forierr = 0;
   for (i=0; i<NumMyEquations; i++)
-    {
-  /*
-      Indices[0] = 2*MyGlobalElements[i];
-      Indices[1] = 2*MyGlobalElements[i]+1;
-      Indices[2] = 2*MyGlobalElements[i]+2;
-   */
-      Indices[0] = 2*MyGlobalElements[i]+1;
-      Indices[1] = 2*MyGlobalElements[i]+2;
-      Indices[2] = 2*MyGlobalElements[i];
-      NumEntries = 3;
-      forierr += !(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
-      for (j=0; j<3; j++)
-	forierr += !(ATAssembly.InsertGlobalValues(Indices[j],1, &(Values[j]), &(MyGlobalElements[i]))>=0);
-    }
+  {
+    /*
+       Indices[0] = 2*MyGlobalElements[i];
+       Indices[1] = 2*MyGlobalElements[i]+1;
+       Indices[2] = 2*MyGlobalElements[i]+2;
+       */
+    Indices[0] = 2*MyGlobalElements[i]+1;
+    Indices[1] = 2*MyGlobalElements[i]+2;
+    Indices[2] = 2*MyGlobalElements[i];
+    NumEntries = 3;
+    forierr += !(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+    for (j=0; j<3; j++)
+      forierr += !(ATAssembly.InsertGlobalValues(Indices[j],1, &(Values[j]), &(MyGlobalElements[i]))>=0);
+  }
   EPETRA_TEST_ERR(forierr,ierr);
 
 
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(AT.FillComplete(YMap, XMap)==0),ierr);
 
 
-  if (verbose1 && NumGlobalEquations<20) { 
+  if (verbose1 && NumGlobalEquations<20) {
     if (verbose) cout << "\n\n Matrix A\n" << endl;
     cout << A << endl;
     if (verbose) cout << " \n\n Matrix A Transpose\n" << endl;
@@ -227,23 +227,23 @@ int main(int argc, char *argv[])
   int Valstart;
   forierr = 0;
   for (i=0; i<NumMyEquations; i++)
-    {
-      if (MyGlobalElements[i] == 0) {
+  {
+    if (MyGlobalElements[i] == 0) {
       Indices[0] = MyGlobalElements[i];
       Indices[1] = MyGlobalElements[i]+1;
       NumEntries = 2;
       Valstart = 1;
-      }
-      else {
-	Indices[0] = MyGlobalElements[i]-1;
-	Indices[1] = MyGlobalElements[i];
-	Indices[2] = MyGlobalElements[i]+1;
-	NumEntries = 3;
-	Valstart = 0;
-      }
-      if (MyGlobalElements[i] == NumGlobalEquations-1) NumEntries--;
-      forierr += !(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+Valstart, Indices)==0);
     }
+    else {
+      Indices[0] = MyGlobalElements[i]-1;
+      Indices[1] = MyGlobalElements[i];
+      Indices[2] = MyGlobalElements[i]+1;
+      NumEntries = 3;
+      Valstart = 0;
+    }
+    if (MyGlobalElements[i] == NumGlobalEquations-1) NumEntries--;
+    forierr += !(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+Valstart, Indices)==0);
+  }
   EPETRA_TEST_ERR(forierr,ierr);
 
   // Finish up
@@ -262,13 +262,13 @@ int main(int argc, char *argv[])
   double elapsed_time = timer.ElapsedTime();
   double total_flops = B.Flops();
   counter.ResetFlops();
-  
+
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for B*Y = " << MFLOPs << endl<< endl;
   if (verbose && NumGlobalEquations<20) cout << "\n\nVector Z = B*Y \n";
   if (verbose1 && NumGlobalEquations<20) cout << BY << endl;
- 
+
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -344,10 +344,10 @@ int main(int argc, char *argv[])
   {
     Epetra_CrsMatrix AL(Copy, RowMap, 3);
     for (i=0; i<NumMyEquations; i++)
-      {
-	forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
-	forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
-      }
+    {
+      forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
+      forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+    }
     EPETRA_TEST_ERR(forierr,ierr);
 
     Epetra_LocalMap YLMap(NumGlobalEquations, 0LL, Comm);
@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
     AL.SetFlopCounter(A);
     Epetra_Vector YL(YLMap);
     Epetra_Vector ALX(YLMap);
-  
+
     timer.ResetStartTime();
     for (i=0; i<ntrials; i++) {
       EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
@@ -396,9 +396,9 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(YL.Update(-1.0, ALX, 1.0)==0),ierr);
     EPETRA_TEST_ERR(!(YL.Norm2(&residual)==0),ierr);
     if (verbose) cout << "Residual = " << residual << endl<< endl;
-			
 
-    // 
+
+    //
     // Multiply by transpose
     //
 
@@ -438,17 +438,17 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(X1.Norm2(&residual)==0),ierr);
     if (verbose) cout << "Residual = " << residual << endl<< endl;
   }
-			
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Finally test use of Epetra_LocalMap vectors using local replicated domain vector
 
   {
     Epetra_CrsMatrix AL(Copy, RowMap, 3);
     for (i=0; i<NumMyEquations; i++)
-      {
-	forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
-	forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
-      }
+    {
+      forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
+      forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+    }
     EPETRA_TEST_ERR(forierr,ierr);
 
     Epetra_LocalMap XLMap(NumGlobalVariables, 0LL, Comm);
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
     AL.SetFlopCounter(A);
     Epetra_Vector XL(XLMap);
     Epetra_Vector ALX(XLMap);
-  
+
     timer.ResetStartTime();
     for (i=0; i<ntrials; i++) {
       EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
     //if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist X range map\n";
     //if (verbose1 && NumGlobalEquations<20) cout << A << endl;
 
-    // Now gather X values from the distributed X 
+    // Now gather X values from the distributed X
     Epetra_Import g2limporter(XLMap, XMap); // Import from distributed X map to local X map
     EPETRA_TEST_ERR(!(XL.Import(X, g2limporter, Insert)==0),ierr);
     if (verbose && NumGlobalEquations<20) cout << "\n\nVector XL = imported from distributed X \n";
@@ -498,12 +498,11 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(Y1.Update(-1.0, Y, 1.0)==0),ierr);
     EPETRA_TEST_ERR(!(Y1.Norm2(&residual)==0),ierr);
     if (verbose) cout << "Residual = " << residual << endl<< endl;
-			
 
-    // 
+
+    //
     // Multiply by transpose
     //
-
     timer.ResetStartTime();
     for (i=0; i<ntrials; i++) {
       EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^TY
@@ -512,7 +511,6 @@ int main(int argc, char *argv[])
     total_flops = A.Flops();
     counter.ResetFlops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-
 
 
     if (verbose) cout << "\n\nTotal MFLOPs for X=A^TY using global distributed X = " << MFLOPs << endl<< endl;
@@ -539,7 +537,7 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(XL1.Update(-1.0, XL, 1.0)==0),ierr);
     EPETRA_TEST_ERR(!(XL1.Norm2(&residual)==0),ierr);
     if (verbose) cout << "Residual = " << residual << endl<< endl;
-  }			
+  }
   // Release all objects
   delete [] Values;
   delete [] Indices;
@@ -548,13 +546,11 @@ int main(int argc, char *argv[])
   delete [] YGlobalElements;
   delete [] ATAssemblyGlobalElements;
 
-
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-/* end main
-*/
-return ierr ;
+  /* end main
+  */
+  return ierr ;
 }
-

@@ -78,6 +78,15 @@ public:
                             const UniqueGlobalIndexerBase & indexerSrc,
                             const UniqueGlobalIndexerBase & indexerDest);
 
+  ReorderADValues_Evaluator(const std::string & outPrefix,
+                            const std::vector<std::string> & inFieldNames,
+                            const std::vector<std::string> & inDOFs,
+                            const std::vector<std::string> & outDOFs,
+                            const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
+                            const std::string & elementBlock,
+                            const UniqueGlobalIndexerBase & indexerSrc,
+                            const UniqueGlobalIndexerBase & indexerDest);
+
   void postRegistrationSetup(typename Traits::SetupData d, PHX::FieldManager<Traits>& vm);
 
   void evaluateFields(typename Traits::EvalData d);
@@ -113,6 +122,15 @@ public:
                             const std::string & elementBlock,
                             const UniqueGlobalIndexerBase & indexerSrc,
                             const UniqueGlobalIndexerBase & indexerDest);
+
+  ReorderADValues_Evaluator(const std::string & outPrefix,
+                            const std::vector<std::string> & inFieldNames,
+                            const std::vector<std::string> & inDOFs,
+                            const std::vector<std::string> & outDOFs,
+                            const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
+                            const std::string & elementBlock,
+                            const UniqueGlobalIndexerBase & indexerSrc,
+                            const UniqueGlobalIndexerBase & indexerDest);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -123,6 +141,13 @@ private:
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
 
   void buildSrcToDestMap(const std::string & elementBlock,
+                         const UniqueGlobalIndexerBase & indexerSrc,
+                         const UniqueGlobalIndexerBase & indexerDest);
+
+  // Build a source to destination map using all the pairs
+  // of field numers in the <code>fieldNumberMaps</code>
+  void buildSrcToDestMap(const std::string & elementBlock,
+                         const std::map<int,int> & fieldNumberMaps,
                          const UniqueGlobalIndexerBase & indexerSrc,
                          const UniqueGlobalIndexerBase & indexerDest);
 

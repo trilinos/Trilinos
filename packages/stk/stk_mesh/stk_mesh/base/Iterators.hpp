@@ -1,13 +1,47 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef Toolkit_Iterators_hpp
 #define Toolkit_Iterators_hpp
 
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Selector.hpp>
+#include <iterator>                     // for iterator_traits, etc
+#include <stk_mesh/base/Bucket.hpp>     // for BucketIterator
+#include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <utility>                      // for pair
+#include <vector>                       // for vector<>::const_iterator, etc
+#include "stk_mesh/base/Types.hpp"      // for BucketVector
 
-#include <boost/iterator/filter_iterator.hpp>
 
-#include <vector>
-#include <algorithm>
 
 namespace stk {
 namespace mesh {
@@ -20,10 +54,12 @@ namespace mesh {
 // Incrementing this iterator will take us to the next valid low-level iterator, skipping past
 // empty high-level containers, until the end iterator.
 template<typename HighLevelItrType, typename LowLevelItrType>
-class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typename LowLevelItrType::value_type>
+class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typename std::iterator_traits<LowLevelItrType>::value_type>
 {
  public:
   typedef TwoLevelIterator<HighLevelItrType, LowLevelItrType>  self;
+  typedef typename std::iterator_traits<LowLevelItrType>::reference reference;
+  typedef typename std::iterator_traits<LowLevelItrType>::pointer pointer;
 
   // Construct an iterator from a starting point specified by high_itr and low_itr
   TwoLevelIterator(HighLevelItrType high_itr, LowLevelItrType low_itr, HighLevelItrType high_end_itr) :
@@ -74,12 +110,12 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
     return *this;
   }
 
-  typename LowLevelItrType::reference operator*() const
+  reference operator*() const
   {
     return *m_low_itr;
   }
 
-  typename LowLevelItrType::pointer operator->() const
+  pointer operator->() const
   {
     return &*m_low_itr;
   }
@@ -261,20 +297,20 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
 };
 
 // Iterator for iterating over all entities within each bucket of a vector of buckets
-typedef TwoLevelIterator<std::vector<Bucket*>::const_iterator, BucketPtrIterator> BucketVectorEntityIterator;
-typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>         BucketVectorEntityIteratorRange;
+typedef TwoLevelIterator<BucketVector::const_iterator, BucketIterator> BucketVectorEntityIterator;
+typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      BucketVectorEntityIteratorRange;
 
 // Iterator for iterating over selected buckets within a vector of buckets
-typedef SelectedBucketIterator<std::vector<Bucket*>::const_iterator>                      SelectedBucketVectorIterator;
-//typedef boost::filter_iterator<Selector, std::vector<Bucket*>::const_iterator>            SelectedBucketVectorIterator;
+typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
+//typedef boost::filter_iterator<Selector, BucketVector::const_iterator>            SelectedBucketVectorIterator;
 typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
-typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketPtrIterator>                 SelectedBucketVectorEntityIterator;
+typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketIterator>                 SelectedBucketVectorEntityIterator;
 typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
 
 // Iterator for iterating over all buckets in a vector of vectors of buckets
-typedef TwoLevelIterator<std::vector<std::vector<Bucket*> >::const_iterator, std::vector<Bucket*>::const_iterator> AllBucketsIterator;
+typedef TwoLevelIterator<std::vector<BucketVector >::const_iterator, BucketVector::const_iterator> AllBucketsIterator;
 typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                          AllBucketsRange;
 
 // Iterator for iterating over all *selected* buckets in a bucket range
@@ -283,11 +319,11 @@ typedef SelectedBucketIterator<AllBucketsIterator>                         AllSe
 typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range
-typedef TwoLevelIterator<AllBucketsIterator, BucketPtrIterator>         BucketRangeEntityIterator;
+typedef TwoLevelIterator<AllBucketsIterator, BucketIterator>            BucketRangeEntityIterator;
 typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator> BucketRangeEntityIteratorRange;
 
 // Iterator for iterating over all *selected* entities withing a bucket range
-typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketPtrIterator>                  SelectedBucketRangeEntityIterator;
+typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketIterator>                     SelectedBucketRangeEntityIterator;
 typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>  SelectedBucketRangeEntityIteratorRange;
 
 //
@@ -295,28 +331,8 @@ typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIt
 //       GetBuckets.hpp, GetEntities.hpp or their BulkData object.
 //
 
-// Get a range allowing you to iterate over all entities withing a collection of buckets
-BucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets);
-
-// Get a range allowing you to iterate over all *selected* entities withing a collection of buckets
-SelectedBucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets, const Selector& selector);
-
-// Get a range allowing you to iterate over all buckets within a collection of collections of buckets
-AllBucketsRange get_bucket_range(const std::vector<std::vector<Bucket*> >& buckets);
-
-// Get a range allowing you to iterate over a single collection of buckets within a collection of collections of buckets;
-// the single collection is specified by the itr argument.
-AllBucketsRange get_bucket_range(const std::vector<std::vector<Bucket*> >& buckets,
-                                 std::vector<std::vector<Bucket*> >::const_iterator itr);
-
-// Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
-AllSelectedBucketsRange get_selected_bucket_range(const AllBucketsRange& bucket_range, const Selector& selector);
-
 // Get a range allowing you iterate over selected buckets in a vector
-SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector);
-
-// Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
-SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const AllBucketsRange& bucket_range, const Selector& selector);
+SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector);
 
 } //namespace mesh
 } //namespace stk

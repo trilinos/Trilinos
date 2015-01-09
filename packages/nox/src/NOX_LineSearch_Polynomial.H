@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -73,14 +73,14 @@ namespace LineSearch {
   A polynomial line search, either quadratic or cubic.
 
   This line search can be called via NOX::LineSearch::Manager.
- 
+
   The goal of the line search is to find a step \f$\lambda\f$ for the
   calculation \f$x_{\rm new} = x_{\rm old} + \lambda d\f$, given
   \f$x_{\rm old}\f$ and \f$ d \f$.  To accomplish this goal, we
   minimize a merit function \f$ \phi(\lambda) \f$ that measures the
   "goodness" of the step \f$\lambda\f$.  The standard merit function is
 
-  \f[ 
+  \f[
   \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2,
   \f]
 
@@ -101,15 +101,15 @@ namespace LineSearch {
   <li>The sufficient decrease condition is met; see checkConvergence()
   for details.
 
-  <li>The maximum iterations are reached; see parameter 
-  "Max Iters". 
+  <li>The maximum iterations are reached; see parameter
+  "Max Iters".
   This is considered a failure and the recovery step is
   used; see parameter "Recovery Step".
 
-  <li>The minimum step length is reached; see parameter 
-  "Minimum Step". 
+  <li>The minimum step length is reached; see parameter
+  "Minimum Step".
   This is considered a line search failure
-  and the recovery step is used; see parameter 
+  and the recovery step is used; see parameter
   "Recovery Step".
 
   </ul>
@@ -124,27 +124,27 @@ namespace LineSearch {
 
   The steps are calculated iteratively as follows, depending on the
   choice of "Interpolation Type".
-  
+
   <ul>
 
   <li> "Quadratic" - We construct a quadratic model of \f$\phi\f$, and solve for \f$\lambda\f$ to get
 
-  \f[ 
-  \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0) 
-  -\phi'(0) \lambda_{k-1} \right]} 
+  \f[
+  \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0)
+  -\phi'(0) \lambda_{k-1} \right]}
   \f]
 
   <li> "Cubic" - We construct a cubic model of \f$\phi\f$, and solve for
   \f$\lambda\f$. We use the quadratic model to solve for \f$\lambda_1\f$; otherwise,
 
-  \f[ 
-  \lambda_k = \frac{-b+\sqrt{b^2-3a \phi'(0)}}{3a} 
+  \f[
+  \lambda_k = \frac{-b+\sqrt{b^2-3a \phi'(0)}}{3a}
   \f]
 
   where
 
   \f[
-      \left[ \begin{array}{c} a \\ \\ b \end{array} \right] = 
+      \left[ \begin{array}{c} a \\ \\ b \end{array} \right] =
       \frac{1}{\lambda_{k-1} - \lambda_{k-2}} \left[ \begin{array}{cc}
       \lambda_{k-1}^{-2} & -\lambda_{k-2}^{-2} \\ & \\
       -\lambda_{k-2}\lambda_{k-1}^{-2} & \lambda_{k-1}\lambda_{k-2}^{-2}
@@ -159,7 +159,7 @@ namespace LineSearch {
   \f$\phi(0)\f$, \f$ \phi(\lambda_{k-1}) \f$ , and
   \f$\phi(\lambda_{k-2})\f$. No derivative information for \f$\phi\f$
   is used. We let \f$\lambda_1 = \frac{1}{2} \lambda_0\f$, and otherwise
-  
+
   \f[
 
   \lambda_k = - \frac{1}{2}
@@ -174,31 +174,31 @@ namespace LineSearch {
   For "Quadratic" and "Cubic", see computeSlope() for details on how
   \f$ \phi'(0) \f$ is calculated.
 
-  <B> Bounds on the step length </B> 
- 
+  <B> Bounds on the step length </B>
+
   We do not allow the step to grow or shrink too quickly by enforcing
   the following bounds:
 
-  \f[ 
+  \f[
   \gamma_{min} \; \lambda_{k-1} \leq \lambda_k \le \gamma_{max} \; \lambda_{k-1}
   \f]
 
   Here \f$ \gamma_{min} \f$ and \f$ \gamma_{max} \f$ are defined by
-  parameters "Min Bounds Factor" and 
+  parameters "Min Bounds Factor" and
   "Max Bounds Factor".
 
-  <B> Input Parameters </B> 
+  <B> Input Parameters </B>
 
-  "Line Search": 
+  "Line Search":
 
   <ul>
   <li>"Method" = "Polynomial" [required]
   </ul>
 
-  "Line Search"/"Polynomial": 
+  "Line Search"/"Polynomial":
 
   <ul>
- 
+
   <li> "Default Step" - Starting step length, i.e., \f$\lambda_0\f$.
   Defaults to 1.0.
 
@@ -210,22 +210,22 @@ namespace LineSearch {
   fails if the computed \f$\lambda_k\f$ is less than this
   value. Defaults to 1.0e-12.
 
-  <li> "Recovery Step Type" - Determines the step size to take when the 
+  <li> "Recovery Step Type" - Determines the step size to take when the
     line search fails.  Choices are:
 
      <ul>
      <li> "Constant" [default] - Uses a constant value set in "Recovery Step".
-     <li> "Last Computed Step" - Uses the last value computed by the 
-                                 line search algorithm. 
+     <li> "Last Computed Step" - Uses the last value computed by the
+                                 line search algorithm.
      </ul>
 
-  <li> "Recovery Step" - The value of the step to take when the line 
-    search fails. Only used if the "Recovery Step Type" is set to 
+  <li> "Recovery Step" - The value of the step to take when the line
+    search fails. Only used if the "Recovery Step Type" is set to
     "Constant". Defaults to value for "Default Step".
 
   <li> "Interpolation Type" - Type of interpolation that should be
     used. Choices are
-    
+
      <ul>
      <li> "Cubic" [default]
      <li> "Quadratic"
@@ -242,11 +242,11 @@ namespace LineSearch {
 
   <li> "Sufficient Decrease Condition" - See checkConvergence() for
   details. Choices are:
-    
+
     <ul>
 
     <li> "Armijo-Goldstein" [default]
-    <li> "Ared/Pred" 
+    <li> "Ared/Pred"
     <li> "None"
 
     </ul>
@@ -279,9 +279,9 @@ namespace LineSearch {
     used in the Ared/Pred sufficient decrease condition; see
     computeValue() and NOX::Parameter::UserNorm for details.
 
-  </ul>   
+  </ul>
 
-  \anchor outputparameters <B> Output Parameters </B> 
+  \anchor outputparameters <B> Output Parameters </B>
 
   If the "Use Counters" parameter is set to true, then a sublist
   for output parameters called "Output" will be created in the
@@ -320,8 +320,8 @@ namespace LineSearch {
   - Section 3.4 of Jorge Nocedal and Stephen J. Wright, "Numerical
     Optimization,"Springer, 1999.
 
-  - "An Inexact Newton Method for Fully Coupled Solution of the Navier-Stokes 
-    Equations with Heat and Mass Transfer", Shadid, J. N., Tuminaro, R. S., 
+  - "An Inexact Newton Method for Fully Coupled Solution of the Navier-Stokes
+    Equations with Heat and Mass Transfer", Shadid, J. N., Tuminaro, R. S.,
     and Walker, H. F., Journal of Computational Physics, 137, 155-185 (1997)
 
   \author Russ Hooper, Roger Pawlowski, Tammy Kolda
@@ -333,28 +333,28 @@ public:
 
   //! Constructor
   Polynomial(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
-  
+         Teuchos::ParameterList& params);
+
   //! Destructor
   ~Polynomial();
-  
-  // derived
-  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
 
   // derived
-  bool compute(NOX::Abstract::Group& newgrp, double& step, 
-	       const NOX::Abstract::Vector& dir,
-	       const NOX::Solver::Generic& s);
-	       
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+         Teuchos::ParameterList& params);
+
+  // derived
+  bool compute(NOX::Abstract::Group& newgrp, double& step,
+           const NOX::Abstract::Vector& dir,
+           const NOX::Solver::Generic& s);
+
 protected:
 
   //! Returns true if converged.
-  /*!  
+  /*!
     We go through the following checks for convergence.
 
     <ol>
-  
+
     <li> If the "Force Interpolation" parameter is true and this is the
     first inner iteration (i.e., nIters is 1), then we return \b false.
 
@@ -372,9 +372,9 @@ protected:
 
     <li> Last, we check the sufficient decrease condition. We return
     \b true if it's satisfied, and \b false otherwise. The condition
-    depends on the value of "Sufficient Decrease Condition", 
+    depends on the value of "Sufficient Decrease Condition",
     as follows.
-    
+
     <ul>
     <li> "Armijo-Goldstein": Return true if
     \f[
@@ -394,18 +394,18 @@ protected:
     parameter "Alpha Factor".
 
     </ol>
-    
+
     \param newValue Depends on the "Sufficient Decrease Condition" parameter.
     <ul>
     <li>"Armijo-Goldstein" - \f$ \phi(\lambda) \f$
-    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} + \lambda d )\| \f$ 
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} + \lambda d )\| \f$
     <li>"None" - N/A
     </ul>
-    
+
     \param oldValue Depends on the "Sufficient Decrease Condition" parameter.
     <ul>
     <li>"Armijo-Goldstein" - \f$ \phi(0) \f$
-    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} )\| \f$ 
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} )\| \f$
     <li>"None" - N/A
     </ul>
 
@@ -417,7 +417,7 @@ protected:
     \param eta Only applicable to "Ared/Pred", in which case it
     should be the value of \f$\eta\f$ for last forcing term
     calculation in NOX::Direction::Newton
-  
+
     \param nIters Number of inner iterations.
 
     \param nNonlinearIters Number of nonlinear iterations.
@@ -427,17 +427,17 @@ protected:
     object derived from NOX::Parameter::UserNorm.
 
   */
-  bool checkConvergence(double newValue, double oldValue, double oldSlope, 
-			double step, double eta, int nIters, int nNonlinearIters) const;
+  bool checkConvergence(double newValue, double oldValue, double oldSlope,
+            double step, double eta, int nIters, int nNonlinearIters) const;
 
   //! Updates the newGrp by computing a new x and a new F(x)
   /*!
     Let
-    
+
     - \f$x_{\rm new}\f$ denote the new solution to be calculated (corresponding to \c newGrp)
     - \f$x_{\rm old}\f$ denote the previous solution (i.e., the result of oldGrp.getX())
     - \f$d\f$ denotes the search direction (\c dir).
-    - \f$\lambda\f$ denote the step (\c step), 
+    - \f$\lambda\f$ denote the step (\c step),
 
     We compute
     \f[
@@ -445,10 +445,10 @@ protected:
     \f]
     and \f$ F(x_{\rm new})\f$. The results are stored in \c newGrp.
    */
-  bool updateGrp(NOX::Abstract::Group& newGrp, 
-		 const NOX::Abstract::Group& oldGrp,
-		 const NOX::Abstract::Vector& dir, 
-		 double step) const;
+  bool updateGrp(NOX::Abstract::Group& newGrp,
+         const NOX::Abstract::Group& oldGrp,
+         const NOX::Abstract::Vector& dir,
+         double step) const;
 
 
   //! Compute the value used to determine sufficient decrease
@@ -477,7 +477,7 @@ protected:
   //! Types of sufficient decrease conditions used by checkConvergence()
   enum SufficientDecreaseType {
     //! Armijo-Goldstein conditions
-    ArmijoGoldstein, 
+    ArmijoGoldstein,
     //! Ared/Pred condition
     AredPred,
     //! No condition
@@ -488,7 +488,7 @@ protected:
   enum InterpolationType {
 
     //! Use quadratic interpolation throughout
-    Quadratic, 
+    Quadratic,
 
     //! Use quadratic interpolation in the first inner iteration and cubic interpolation otherwise
     Cubic,
@@ -511,12 +511,12 @@ protected:
   //! Choice of interpolation type; uses "Interpolation Type" parameter
   InterpolationType interpolationType;
 
-  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter
   RecoveryStepType recoveryStepType;
 
    //! Minimum step length (i.e., when we give up); uses "Mimimum Step" parameter
   double minStep;
- 
+
   //! Default step; uses "Default Step"  parameter
   double defaultStep;
 
@@ -563,9 +563,9 @@ protected:
   //! Global data pointer.  Keep this so the parameter list remains valid.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
-  //! Pointer to the input parameter list. 
+  //! Pointer to the input parameter list.
   /*! We need this to later create an "Output" sublist to store output
-      parameters from #counter. 
+      parameters from #counter.
   */
   Teuchos::ParameterList* paramsPtr;
 

@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan)
 
@@ -19,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+IF (${PACKAGE_NAME}_ENABLE_Teuchos AND ${PACKAGE_NAME}_ENABLE_Zoltan)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   scalingtest
   SOURCES ml_scalingtest.cpp
@@ -51,6 +49,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XHOSTTYPE AIX
   )
 
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Teuchos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   read_MatrixMarket
   SOURCES ml_read_MatrixMarket.cpp
@@ -58,6 +57,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_ml_basic_examples
   SOURCE_FILES A.mm

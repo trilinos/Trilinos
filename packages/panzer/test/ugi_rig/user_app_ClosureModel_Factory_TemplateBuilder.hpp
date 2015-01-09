@@ -47,7 +47,6 @@
 #include <string>
 #include "boost/mpl/apply.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Panzer_Base.hpp"
 #include "user_app_ClosureModel_Factory.hpp"
 
 namespace user_app {
@@ -57,8 +56,8 @@ namespace user_app {
   public:
     
     template <typename EvalT>
-    Teuchos::RCP<panzer::Base> build() const {
-      return Teuchos::rcp( static_cast<panzer::Base*>
+    Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
+      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new user_app::MyModelFactory<EvalT>) );
     }
     

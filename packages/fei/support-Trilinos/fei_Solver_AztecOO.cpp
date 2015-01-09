@@ -276,7 +276,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   std::string param2;
   parameterSet.getStringParamValue("FEI_OUTPUT_LEVEL", param2);
 
-  if (olevel >= 3 || param2 == "MATRIX_FILES") {
+  if (olevel >= 3 || param2 == "MATRIX_FILES" || param2 == "ALL") {
     std::string param1;
     parameterSet.getStringParamValue("debugOutput", param1);
 

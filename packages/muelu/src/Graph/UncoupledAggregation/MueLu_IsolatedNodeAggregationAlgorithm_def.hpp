@@ -68,24 +68,19 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregates");
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+    Monitor m(*this, "BuildAggregates");
 
-  Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    const LO  numRows = graph.GetNodeNumVertices();
 
-  const LO nRows = graph.GetNodeNumVertices();
-
-  for (LO iNode=0; iNode<nRows; iNode++) {
-    if (aggStat[iNode] == NodeStats::BOUNDARY ||
-        (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
-      // This is a boundary or an isolated node
-      aggStat[iNode] = NodeStats::AGGREGATED;
-      numNonAggregatedNodes--;
-    }
+    // Remove all isolated nodes
+    for (LO i = 0; i < numRows; i++)
+      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).size() == 1) {
+        aggStat[i] = IGNORED;
+        numNonAggregatedNodes--;
+      }
   }
-}
 
 } // end namespace
 

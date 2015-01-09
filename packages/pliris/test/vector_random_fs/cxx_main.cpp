@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   int i, m;
   int k;
   int l;
-  
+
   int mlen;   // Message length for input data
 
   int ierror;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
   if( comm.MyPID() == 0 ) {
 
 
-    // Check for commandline input 
+    // Check for commandline input
 
      if (argc > 1) {
        // argv[1] should be size of matrix
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
           buf[1] = atoi(argv[2]);
        }
        else
-          // default is 1, but sqrt(p) would be better 
+          // default is 1, but sqrt(p) would be better
           buf[1] = 1;
      }
      else {
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 	  cout << "Enter size of matrix " << endl;
 	  std::cin >> buf[0];
 	}
-	if (buf[1] < 0) { 
+	if (buf[1] < 0) {
 	  cout << "Enter number of processors to which each row is assigned "  << endl;
 	  std::cin >> buf[1];
 	}
@@ -177,9 +177,9 @@ int main(int argc, char *argv[])
 
     /* Send the initilization data to each processor    */
 
-    // Using Epetra Communicator 
+    // Using Epetra Communicator
 
-    comm.Broadcast(buf,mlen,0); 
+    comm.Broadcast(buf,mlen,0);
 
 
      // Set the values where needed
@@ -201,10 +201,10 @@ int main(int argc, char *argv[])
 
 
    Pliris solver;
- 
+
    // Get Info to build the matrix on a processor
 
-   solver.GetDistribution( &nprocs_row, 
+   solver.GetDistribution( &nprocs_row,
                             &matrix_size,
 			    &nrhs,
                             &my_rows,
@@ -218,8 +218,8 @@ int main(int argc, char *argv[])
 
    //   Define a new communicator
 
-   MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm); 
- 
+   MPI_Comm_split(MPI_COMM_WORLD,my_row,my_col,&rowcomm);
+
    //if( comm.MyPID() == 0 ){
    cout << " ------ PARALLEL Distribution Info for : ---------" <<endl;
 
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
         << "    my_col  " << my_col << endl;
 
    //}
-   
+
    //  Local size -- my_rows  * (my_cols + my_rhs)
 
 
@@ -257,22 +257,22 @@ int main(int argc, char *argv[])
      num_global_length = -1 ;
 
 
-     // Define Epetra_map 
+     // Define Epetra_map
 
 
-     Epetra_Map map(num_global_length,num_my_length, 
+     Epetra_Map map(num_global_length,num_my_length,
   			 0, comm);
 
 
      Epetra_Vector A(map);
 
 
-     // Set Random values 
+     // Set Random values
 
      if( comm.MyPID() == 0 )
               cout << " ****   Setting Random Matrix    ****" << endl;
 
-      
+
      ierror = A.SetSeed(seed+comm.MyPID() );
 
      ierror = A.Random();
@@ -292,12 +292,12 @@ int main(int argc, char *argv[])
        for (m=0; m < my_cols; m++) {
         temp[k] = temp[k] + A[m*my_rows+k];
        }
-     }  
-     
-    // Sum to Processor 0      
+     }
+
+    // Sum to Processor 0
 
 
-     MPI_Allreduce(temp,temp2,my_rows,MPI_DOUBLE,MPI_SUM,rowcomm); 
+     MPI_Allreduce(temp,temp2,my_rows,MPI_DOUBLE,MPI_SUM,rowcomm);
 
       if( comm.MyPID() == 0 )
             cout << " ****   Packing RHS in Matrix   ****" << endl;
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 
        indices[k]=k;
 
-     }  
+     }
 
      B.ReplaceMyValues(my_rows, temp2,indices);
 
@@ -331,9 +331,9 @@ int main(int argc, char *argv[])
 
       rhs[k+ my_first_row - 1]= temp2[k];
 
-     } 
-    }  
-    
+     }
+    }
+
      // Globally Sum the RHS needed for testing later
 
 
@@ -364,13 +364,13 @@ int main(int argc, char *argv[])
 
 
       if( comm.MyPID() == 0)   {
-         cout << " ----  Factor Time  ----   " 
+         cout << " ----  Factor Time  ----   "
 	 << secs << "  in secs. " << endl;
 
-         
+
 	 mflops = 2./3.*pow(matrix_size,3.)/secs/1000000.;
 
-	   cout << " *****   MFLOPS   *****  " << mflops << endl; 
+	   cout << " *****   MFLOPS   *****  " << mflops << endl;
 
       }
 
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 
      delete [] temp2;
 
-    
+
      temp = new double[matrix_size];
 
      temp2 = new double[matrix_size];
@@ -422,20 +422,20 @@ int main(int argc, char *argv[])
 
       solinf = fabs(temp2[0]);
 
-      xh = fabs(temp2[0] -one); 
-  
+      xh = fabs(temp2[0] -one);
+
       for (k= 0; k < matrix_size; k++) {
-  
+
 
        if ( fabs (temp2[k]) > solinf ) solinf = fabs(temp2[k]);
 
        if ( fabs (temp2[k]- one) > xh ) xh = fabs(temp2[k]-one);
 
       }
-      
+
      // Reset the matrix Random values
 
-      
+
      ierror = A.SetSeed(seed + comm.MyPID() );
 
 
@@ -461,11 +461,11 @@ int main(int argc, char *argv[])
 
         temp3[k]=0. ;
       }
-     
-          
-   //   Epetra_Map map(numGlobalEquations, numLocalEquations, 
+
+
+   //   Epetra_Map map(numGlobalEquations, numLocalEquations,
    //			update, 0, comm);
- 
+
      MPI_Allreduce(temp,temp3,matrix_size,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 
 
@@ -473,15 +473,15 @@ int main(int argc, char *argv[])
 
        cout <<  "======================================" << endl;
         cout << " ---- Error Calculation ----" << endl;
-        
+
         axbinf = fabs(temp3[0]-rhs[0]);
 
         for (k= 0; k < matrix_size; k++) {
-	  
+	
            if ( fabs (temp3[k]-rhs[k]) > axbinf ) axbinf = fabs(temp3[k]-rhs[k]);
-      
+
          }
-      
+
      }
 
 
@@ -500,10 +500,10 @@ int main(int argc, char *argv[])
       }
 
 
-      
-     if ( comm.MyPID() == 0 ) {   
 
-     
+     if ( comm.MyPID() == 0 ) {
+
+
 
        cout << "   ||Ax - b||_oo = " << axbinf << endl;
 
@@ -519,13 +519,13 @@ int main(int argc, char *argv[])
 
         cout << " ****    Solution Fails   ****" <<  endl;
 
-      else 
+      else
 
 	cout << " ****   Solution Passes   ****" << endl;
 
       cout <<  "======================================" << endl;
 
-      
+
      }
 
 
@@ -535,9 +535,9 @@ int main(int argc, char *argv[])
      delete [] temp2;
 
      delete [] temp;
- 
+
      delete [] rhs;
- 
+
      delete [] temp3;
 
      delete [] permute;

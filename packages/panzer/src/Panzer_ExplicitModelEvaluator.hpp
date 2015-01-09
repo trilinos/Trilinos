@@ -114,6 +114,15 @@ private: // data members
 
   //@}
 
+  /** Set one time dirichlet beta using the underlying model evaluator.
+    * If this model evaluator is a MEDelegator then this method is called
+    * recursively, until the call succeeds (finding a panzer::ME) or fails
+    * because a delegator is no longer used. If it fails an exception is thrown.
+    * Note: The me used in this recursion is constant. This is consistent with the
+    * one time dirichlet beta call in the model evaluators.
+    */
+  void setOneTimeDirichletBeta(double beta,const Thyra::ModelEvaluator<Scalar> & me) const;
+
   //! Is the mass matrix constant
   bool constantMassMatrix_;
 

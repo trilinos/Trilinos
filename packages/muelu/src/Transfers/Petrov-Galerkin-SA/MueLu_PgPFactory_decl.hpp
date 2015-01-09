@@ -77,7 +77,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class PgPFactory : public PFactory {
 #undef MUELU_PGPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -90,7 +90,7 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    PgPFactory();
+    PgPFactory() { }
 
     //! Destructor.
     virtual ~PgPFactory() { }
@@ -100,10 +100,7 @@ namespace MueLu {
     //! @name Set methods.
     //@{
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
-
-    //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default)
     void SetMinimizationMode(MinimizationNorm minnorm);
@@ -112,18 +109,10 @@ namespace MueLu {
     MinimizationNorm GetMinimizationMode();
     //@}
 
-    //! @name Get methods.
-    //@{
-
-    //! Returns current view of diagonal.
-    std::string GetDiagonalView();
-
-    //@}
-
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
     //@}
 
     //! @name Build methods.
@@ -134,9 +123,9 @@ namespace MueLu {
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
     */
-    void Build(Level& fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const;
+    void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -148,7 +137,7 @@ namespace MueLu {
 
     void MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& InnerProdVec) const;
 
-    void ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
+    void ComputeRowBasedOmega(Level& fineLevel, Level& coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & RowBasedOmega) const;
 
   private:
 

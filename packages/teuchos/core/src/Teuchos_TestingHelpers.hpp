@@ -433,9 +433,12 @@ bool compareFloatingArrays(
   }
 
 
-/** \brief Compare two objects using an input comparion operator.
+/** \brief Compare two objects using an input comparsion operator.
  *
- * This macro is not complicated so take a look for yourself!
+ * The test succeeds (passes) if and only if "(v1) comp (v2)".
+ * For example, TEUCHOS_TEST_COMPARE( 2, <, 3, out, success )
+ * succeeds, but TEUCHOS_TEST_COMPARE( 2, >, 3, out, success )
+ * and TEUCHOS_TEST_COMPARE( 3, <, 2, out, success ) both fail.
  *
  * \ingroup teuchos_testing_grp
  */

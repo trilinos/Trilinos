@@ -168,13 +168,24 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
 
   // Create and compute the initial preconditioner
 
+  // Create a copy, as we may remove some things from the list
+  Teuchos::ParameterList paramList = *paramList_;
+
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  Teuchos::RCP<MV> coords, null_space;
-  if(paramList_->isType<Teuchos::RCP<MV> >("Coordinates")) coords = paramList_->get<Teuchos::RCP<MV> >("Coordinates");
-  if(paramList_->isType<Teuchos::RCP<MV> >("Null Space")) null_space = paramList_->get<Teuchos::RCP<MV> >("Null Space");
+  Teuchos::RCP<MV> coords;
+  if (paramList.isType<Teuchos::RCP<MV> >("Coordinates")) {
+    coords = paramList.get<Teuchos::RCP<MV> >("Coordinates");
+    paramList.remove("Coordinates");
+  }
+
+  Teuchos::RCP<MV> null_space;
+  if (paramList.isType<Teuchos::RCP<MV> >("Nullspace")) {
+    null_space = paramList.get<Teuchos::RCP<MV> >("Nullspace");
+    paramList.remove("Nullspace");
+  }
 
   typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
-  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, *paramList_,coords,null_space);
+  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, coords, null_space);
 
   timer.stop();
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {

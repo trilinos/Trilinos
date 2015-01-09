@@ -312,7 +312,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
 }
 
 template<class T> inline
-ArrayRCP<const T>& 
+ArrayRCP<const T>&
 ArrayRCP<const T>::operator= (const ArrayRCP<const T>& r_ptr)
 {
   if (this == &r_ptr) {
@@ -761,7 +761,7 @@ ArrayView<T> ArrayRCP<T>::view( size_type lowerOffset_in, size_type size_in ) co
 }
 
 template<class T> inline
-ArrayView<const T> 
+ArrayView<const T>
 ArrayRCP<const T>::view (size_type lowerOffset_in, size_type size_in) const
 {
   if (size_in == 0) {
@@ -785,7 +785,7 @@ ArrayView<T> ArrayRCP<T>::operator()( size_type lowerOffset_in, size_type size_i
 }
 
 template<class T> inline
-ArrayView<const T> 
+ArrayView<const T>
 ArrayRCP<const T>::operator() (size_type lowerOffset_in, size_type size_in) const
 {
   return view (lowerOffset_in, size_in);

@@ -67,10 +67,10 @@ public:
 
   /** \name Public types */
   //@{
-  
+
   /** \brief . */
   typedef unsigned int ValidatorID;
-  
+
   /** \brief . */
   typedef RCP<const Array<std::string> > ValidStringsList;
 
@@ -93,9 +93,9 @@ public:
    *
    * \param out [out] The std::ostream used for the output
    *
-   * The purpose of this function is to augment what is 
+   * The purpose of this function is to augment what is
    * in <tt>docString</tt>
-   * with some description of what valid values this parameter 
+   * with some description of what valid values this parameter
    * validator will accept.
    */
   virtual void printDoc(

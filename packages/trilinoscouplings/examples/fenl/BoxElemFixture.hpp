@@ -47,8 +47,7 @@
 #include <stdio.h>
 #include <utility>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Parallel.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <HexElement.hpp>
 #include <BoxElemPart.hpp>
@@ -66,13 +65,13 @@ struct MapGridUnitCube {
   const float m_a ;
   const float m_b ;
   const float m_c ;
-  const unsigned m_max_x ;
-  const unsigned m_max_y ;
-  const unsigned m_max_z ;
+  const size_t m_max_x ;
+  const size_t m_max_y ;
+  const size_t m_max_z ;
 
-  MapGridUnitCube( const unsigned grid_max_x ,
-                   const unsigned grid_max_y ,
-                   const unsigned grid_max_z ,
+  MapGridUnitCube( const size_t grid_max_x ,
+                   const size_t grid_max_y ,
+                   const size_t grid_max_z ,
                    const float bubble_x ,
                    const float bubble_y ,
                    const float bubble_z )
@@ -138,64 +137,66 @@ private:
   Kokkos::Example::BoxElemPart m_box_part ;
   CoordinateMap                m_coord_map ;
 
-  Kokkos::View< double  *[SpaceDim] , Device > m_node_coord ;
-  Kokkos::View< unsigned*[SpaceDim] , Device > m_node_grid ;
-  Kokkos::View< unsigned*[ElemNode] , Device > m_elem_node ;
-  Kokkos::View< unsigned*[2] ,        Device > m_recv_node ;
-  Kokkos::View< unsigned*[2] ,        Device > m_send_node ;
-  Kokkos::View< unsigned* ,           Device > m_send_node_id ;
+  Kokkos::View< double *[SpaceDim] , Device > m_node_coord ;
+  Kokkos::View< size_t *[SpaceDim] , Device > m_node_grid ;
+  Kokkos::View< size_t *[ElemNode] , Device > m_elem_node ;
+  Kokkos::View< size_t *[2] ,        Device > m_recv_node ;
+  Kokkos::View< size_t *[2] ,        Device > m_send_node ;
+  Kokkos::View< size_t * ,           Device > m_send_node_id ;
 
   unsigned char m_elem_node_local[ ElemNode ][4] ;
 
 public:
 
-  typedef Kokkos::View< const unsigned * [ElemNode], Device > elem_node_type ;
-  typedef Kokkos::View< const double   * [SpaceDim], Device > node_coord_type ;
-  typedef Kokkos::View< const unsigned * [SpaceDim], Device > node_grid_type ;
-  typedef Kokkos::View< const unsigned * [2] , Device > comm_list_type ;
-  typedef Kokkos::View< const unsigned *     , Device > send_nodeid_type ;
+  typedef Kokkos::View< const size_t  * [ElemNode], Device > elem_node_type ;
+  typedef Kokkos::View< const double  * [SpaceDim], Device > node_coord_type ;
+  typedef Kokkos::View< const size_t  * [SpaceDim], Device > node_grid_type ;
+  typedef Kokkos::View< const size_t  * [2] , Device > comm_list_type ;
+  typedef Kokkos::View< const size_t  *     , Device > send_nodeid_type ;
+
+  inline bool ok() const { return m_box_part.ok(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_count() const { return m_node_grid.dimension_0(); }
+  size_t node_count() const { return m_node_grid.dimension_0(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_count_owned() const { return m_box_part.owns_node_count(); }
+  size_t node_count_owned() const { return m_box_part.owns_node_count(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_count_global() const { return m_box_part.global_node_count(); }
+  size_t node_count_global() const { return m_box_part.global_node_count(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_count() const { return m_elem_node.dimension_0(); }
+  size_t elem_count() const { return m_elem_node.dimension_0(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_count_global() const { return m_box_part.global_elem_count(); }
+  size_t elem_count_global() const { return m_box_part.global_elem_count(); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_node_local( unsigned inode , unsigned k ) const
+  size_t elem_node_local( size_t inode , int k ) const
     { return m_elem_node_local[inode][k] ; }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_grid( unsigned inode , unsigned iaxis ) const
+  size_t node_grid( size_t inode , int iaxis ) const
     { return m_node_grid(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  size_t node_global_index( unsigned local ) const
+  size_t node_global_index( size_t local ) const
     {
-      const unsigned node_grid[SpaceDim] =
+      const size_t node_grid[SpaceDim] =
         { m_node_grid(local,0) , m_node_grid(local,1) , m_node_grid(local,2) };
       return m_box_part.global_node_id( node_grid );
     }
 
   KOKKOS_INLINE_FUNCTION
-  double node_coord( unsigned inode , unsigned iaxis ) const
+  double node_coord( size_t inode , int iaxis ) const
     { return m_node_coord(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_grid_max( unsigned iaxis ) const
+  size_t node_grid_max( int iaxis ) const
     { return m_box_part.global_coord_max(iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_node( unsigned ielem , unsigned inode ) const
+  size_t elem_node( size_t ielem , size_t inode ) const
     { return m_elem_node(ielem,inode); }
 
   elem_node_type   elem_node()   const { return m_elem_node ; }
@@ -216,7 +217,7 @@ public:
     , m_send_node(  rhs.m_send_node )
     , m_send_node_id( rhs.m_send_node_id )
     {
-      for ( unsigned i = 0 ; i < ElemNode ; ++i ) {
+      for ( int i = 0 ; i < ElemNode ; ++i ) {
         m_elem_node_local[i][0] = rhs.m_elem_node_local[i][0] ;
         m_elem_node_local[i][1] = rhs.m_elem_node_local[i][1] ;
         m_elem_node_local[i][2] = rhs.m_elem_node_local[i][2] ;
@@ -235,7 +236,7 @@ public:
       m_send_node     = rhs.m_send_node ;
       m_send_node_id  = rhs.m_send_node_id ;
      
-      for ( unsigned i = 0 ; i < ElemNode ; ++i ) {
+      for ( int i = 0 ; i < ElemNode ; ++i ) {
         m_elem_node_local[i][0] = rhs.m_elem_node_local[i][0] ;
         m_elem_node_local[i][1] = rhs.m_elem_node_local[i][1] ;
         m_elem_node_local[i][2] = rhs.m_elem_node_local[i][2] ;
@@ -245,11 +246,11 @@ public:
     }
 
   BoxElemFixture( const BoxElemPart::Decompose decompose ,
-                  const unsigned global_size ,
-                  const unsigned global_rank ,
-                  const unsigned elem_nx ,
-                  const unsigned elem_ny ,
-                  const unsigned elem_nz ,
+                  const size_t global_size ,
+                  const size_t global_rank ,
+                  const size_t elem_nx ,
+                  const size_t elem_ny ,
+                  const size_t elem_nz ,
                   const float bubble_x = 1.1f ,
                   const float bubble_y = 1.2f ,
                   const float bubble_z = 1.3f )
@@ -270,7 +271,7 @@ public:
     {
       const hex_data elem_data ;
 
-      for ( unsigned i = 0 ; i < ElemNode ; ++i ) {
+      for ( int i = 0 ; i < ElemNode ; ++i ) {
         m_elem_node_local[i][0] = elem_data.eval_map[i][0] ;
         m_elem_node_local[i][1] = elem_data.eval_map[i][1] ;
         m_elem_node_local[i][2] = elem_data.eval_map[i][2] ;
@@ -299,8 +300,8 @@ public:
       const size_t ielem = i / ElemNode ;
       const size_t inode = i % ElemNode ;
 
-      unsigned elem_grid[SpaceDim] ;
-      unsigned node_grid[SpaceDim] ;
+      size_t elem_grid[SpaceDim] ;
+      size_t node_grid[SpaceDim] ;
 
       m_box_part.uses_elem_coord( ielem , elem_grid );
 
@@ -315,7 +316,7 @@ public:
     }
 
     if ( i < m_node_grid.dimension_0() ) {
-      unsigned node_grid[SpaceDim] ;
+      size_t node_grid[SpaceDim] ;
       m_box_part.local_node_coord( i , node_grid );
       m_node_grid(i,0) = node_grid[0] ;
       m_node_grid(i,1) = node_grid[1] ;

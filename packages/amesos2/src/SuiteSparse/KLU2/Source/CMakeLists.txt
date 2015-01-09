@@ -42,9 +42,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 
 #
@@ -119,5 +116,4 @@ TRIBITS_ADD_EXECUTABLE(
   klu2_simple
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS amesos
   )

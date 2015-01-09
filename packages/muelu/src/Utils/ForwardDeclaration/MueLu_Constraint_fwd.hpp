@@ -46,11 +46,11 @@
 #ifndef MUELU_CONSTRAINT_FWD_HPP
 #define MUELU_CONSTRAINT_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+
+
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class Constraint;
 }
 
@@ -58,6 +58,6 @@ namespace MueLu {
 #define MUELU_CONSTRAINT_SHORT
 #endif
 
-#endif
+
 
 #endif // MUELU_CONSTRAINT_FWD_HPP

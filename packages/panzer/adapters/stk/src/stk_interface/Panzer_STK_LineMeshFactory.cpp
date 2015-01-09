@@ -47,7 +47,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 LineMeshFactory::LineMeshFactory()
 {
@@ -60,7 +60,7 @@ LineMeshFactory::~LineMeshFactory()
 }
 
 //! Build the mesh object
-Teuchos::RCP<STK_Interface> LineMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> LineMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::buildMesh()");
 
@@ -76,14 +76,14 @@ Teuchos::RCP<STK_Interface> LineMeshFactory::buildMesh(stk::ParallelMachine para
    return mesh;
 }
 
-Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::buildUncomittedMesh()");
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface(1));
 
-   machRank_ = stk::parallel_machine_rank(parallelMach);
-   machSize_ = stk::parallel_machine_size(parallelMach);
+   machRank_ = stk_classic::parallel_machine_rank(parallelMach);
+   machSize_ = stk_classic::parallel_machine_size(parallelMach);
 
    procTuple_ = procRankToProcTuple(machRank_);
 
@@ -95,7 +95,7 @@ Teuchos::RCP<STK_Interface> LineMeshFactory::buildUncommitedMesh(stk::ParallelMa
    return mesh;
 }
 
-void LineMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+void LineMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::LineMeshFactory::completeMeshConstruction()");
 
@@ -162,7 +162,7 @@ void LineMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void LineMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void LineMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
    typedef shards::Line<2> LineTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<LineTopo>();
@@ -186,7 +186,7 @@ void LineMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Inter
    mesh.addSideset("right",side_ctd);
 }
 
-void LineMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
+void LineMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    mesh.beginModification();
       // build each block
@@ -196,7 +196,7 @@ void LineMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interf
    mesh.endModification();
 }
 
-void LineMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,STK_Interface & mesh) const
+void LineMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,int xBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,machSize_,machRank_);
@@ -216,12 +216,12 @@ void LineMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,ST
 
    std::stringstream blockName;
    blockName << "eblock-" << xBlock;
-   stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
+   stk_classic::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
 
    // build the elements
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
-      stk::mesh::EntityId gid = nx+1;
-      std::vector<stk::mesh::EntityId> nodes(2);
+      stk_classic::mesh::EntityId gid = nx+1;
+      std::vector<stk_classic::mesh::EntityId> nodes(2);
       nodes[0] = nx+1;
       nodes[1] = nodes[0]+1;
 
@@ -253,7 +253,7 @@ std::pair<int,int> LineMeshFactory::determineXElemSizeAndStart(int xBlock,unsign
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-const stk::mesh::Relation * LineMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
+const stk_classic::mesh::Relation * LineMeshFactory::getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation relations) const
 {
    for(std::size_t i=0;i<relations.size();i++) 
       if(relations[i].identifier()==ID)
@@ -269,18 +269,18 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
    std::size_t totalXElems = nXElems_*xBlocks_;
 
    // get all part vectors
-   stk::mesh::Part * left = mesh.getSideset("left");
-   stk::mesh::Part * right = mesh.getSideset("right");
+   stk_classic::mesh::Part * left = mesh.getSideset("left");
+   stk_classic::mesh::Part * right = mesh.getSideset("right");
 
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk_classic::mesh::Entity*> localElmts;
    mesh.getMyElements(localElmts);
 
    // loop over elements adding edges to sidesets
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk::mesh::Entity * element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+      stk_classic::mesh::Entity * element = (*itr);
+      stk_classic::mesh::EntityId gid = element->identifier();      
+      stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
       std::size_t nx = gid-1;
 
@@ -288,7 +288,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_)
@@ -296,7 +296,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx==0) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(0,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_)

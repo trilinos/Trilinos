@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -62,7 +62,7 @@ class Epetra_Export;
 
 /*! The Epetra_BasicRowMatrix is an adapter class for Epetra_RowMatrix that implements most of the Epetra_RowMatrix
     methods using reasonable default implementations.  The Epetra_RowMatrix class has 39 pure virtual methods, requiring
-    the adapter class to implement all of them. 
+    the adapter class to implement all of them.
     Epetra_BasicRowMatrix has only 4 pure virtual methods that must be implemented (See Epetra_JadMatrix for an example):
 <ol>
 <li> ExtractMyRowCopy: Provide a row of values and indices for a specified local row.
@@ -72,7 +72,7 @@ class Epetra_Export;
 <li> NumMyRowEntries: Provide the number of entries for a specified local row.
 </ol>
 
-     An alternative is possible if you do not want to provide a non-trivial implementation of the ExtraMyEntryView 
+     An alternative is possible if you do not want to provide a non-trivial implementation of the ExtraMyEntryView
      methods (See Epetra_VbrRowMatrix for an example):
 <ol>
 <li> Implement ExtractMyRowCopy and NumMyRowEntries as above.
@@ -90,7 +90,7 @@ by the adapter.
 
 In addition to implementing the above methods, an adapter must inherit the Epetra_BasicRowMatrix interface and call the Epetra_BasicRowMatrix
 constructor as part of the adapter constructor.  There are two constructors.  The first requires the user to pass in the RowMap and ColMap, both
-of which are Epetra_Map objects.  On each processor the RowMap (ColMap) must contain the global IDs (GIDs) of the rows (columns) that the processor cares about.  
+of which are Epetra_Map objects.  On each processor the RowMap (ColMap) must contain the global IDs (GIDs) of the rows (columns) that the processor cares about.
 The first constructor requires only these two maps, assuming that the RowMap will also serve as the DomainMap and RangeMap.  In this case, the
 RowMap must be 1-to-1, meaning that if a global ID appears on one processor, it appears only once on that processor and does not appear on any other
 processor.  For many sparse matrix data structures, it is the case that a given row is completely owned by one processor and that the global matrix
@@ -105,14 +105,14 @@ for Epetra_BasicRowMatrix (or Epetra_RowMatrix) is also an adapter for Epetra_Op
 
 An example of how to provide an adapter for Epetra_BasicRowMatrix can be found by looking at Epetra_JadMatrix.
 
-*/    
+*/
 
 class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
-      
+
  public:
 
    //! @name Constructor/Destructor
-  //@{ 
+  //@{
   /*! @brief Epetra_BasicRowMatrix constructor.
 
      This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
@@ -125,18 +125,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   //! Epetra_BasicRowMatrix Destructor
   virtual ~Epetra_BasicRowMatrix();
   //@}
-  
+
   //! @name Setup functions
-  //@{ 
+  //@{
   /*! @brief Set maps (Version 1); call this function or the next, but not both.
 
-     This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
+     This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp,
      that the processor will care about.  Note that the ColMap does not have to be one-to-one.  In other words, a column ID can appear
      on more than one processor.  The RowMap \e must be 1-to-1.
      \param[in] RowMap An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
      \param[in] ColMap An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
 
-     In this method, the domain and range maps are assumed to be the same as the row map.  Note that this requires that 
+     In this method, the domain and range maps are assumed to be the same as the row map.  Note that this requires that
      the global matrix be square.  If the matrix is not square, or the domain vectors or range vectors do not have the same layout
      as the rows, then the second constructor should be called.
   */
@@ -154,45 +154,45 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
      \param[in] RangeMap An Epetra_Map describing the distribution of range vectors and multivectors.
 
   */
-  void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
+  void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap,
          const Epetra_Map & DomainMap, const Epetra_Map & RangeMap);
 
   //@}
 
-  
+
   //! @name User-required implementation methods
-  //@{ 
+  //@{
 
     //! Returns a copy of the specified local row in user-provided arrays.
-    /*! 
+    /*!
     \param MyRow (In) - Local row to extract.
     \param Length (In) - Length of Values and Indices.
     \param NumEntries (Out) - Number of nonzero entries extracted.
     \param Values (Out) - Extracted values for this row.
     \param Indices (Out) - Extracted global column indices for the corresponding values.
-    
+
     \return Integer error code, set to 0 if successful, set to -1 if MyRow not valid, -2 if Length is too short (NumEntries will have required length).
   */
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const = 0;
 
     //! Returns a reference to the ith entry in the matrix, along with its row and column index.
-    /*! 
+    /*!
     \param CurEntry (In) - Index of local entry (from 0 to NumMyNonzeros()-1) to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
-    
+
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
     virtual int ExtractMyEntryView(int CurEntry, double * & Value, int & RowIndex, int & ColIndex) = 0;
 
     //! Returns a const reference to the ith entry in the matrix, along with its row and column index.
-    /*! 
+    /*!
     \param CurEntry (In) - Index of local entry (from 0 to NumMyNonzeros()-1) to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
-    
+
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
     virtual int ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const = 0;
@@ -202,17 +202,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
       and error checking is done on the input value MyRow.
       \param MyRow (In) - Local row.
       \param NumEntries (Out) - Number of nonzero values.
-      
+
       \return Integer error code, set to 0 if successful, set to -1 if MyRow not valid.
     */
     virtual int NumMyRowEntries(int MyRow, int & NumEntries) const = 0;
     //@}
 
     //! @name Computational methods
-  //@{ 
+  //@{
 
     //! Returns the result of a Epetra_BasicRowMatrix multiplied by a Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param TransA (In) - If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param X (Out) - An Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Y (Out) - An Epetra_MultiVector of dimension NumVectorscontaining result.
@@ -222,7 +222,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns the result of a Epetra_BasicRowMatrix solve with a Epetra_MultiVector X in Y (not implemented).
-    /*! 
+    /*!
     \param Upper (In) - If true, solve Ux = y, otherwise solve Lx = y.
     \param Trans (In) - If true, solve transpose problem.
     \param UnitDiagonal (In) - If true, assume diagonal is unit (whether it's stored or not).
@@ -244,7 +244,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     }
 
     //! Returns a copy of the main diagonal in a user-provided vector.
-    /*! 
+    /*!
     \param Diagonal (Out) - Extracted main diagonal.
 
     \return Integer error code, set to 0 if successful.
@@ -252,11 +252,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
 
     //! Computes the sum of absolute values of the rows of the Epetra_BasicRowMatrix, results returned in x.
-    /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
+    /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
   will make the infinity norm of the resulting matrix exactly 1.
-    \param x (Out) - An Epetra_Vector containing the row sums of the \e this matrix. 
+    \param x (Out) - An Epetra_Vector containing the row sums of the \e this matrix.
      \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
@@ -273,11 +273,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     virtual int LeftScale(const Epetra_Vector& x);
 
     //! Computes the sum of absolute values of the columns of the Epetra_BasicRowMatrix, results returned in x.
-    /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
+    /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the
         \e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
-        and j denotes the global column number of A.  Using the resulting vector from this function as input to 
+        and j denotes the global column number of A.  Using the resulting vector from this function as input to
   RighttScale() will make the one norm of the resulting matrix exactly 1.
-    \param x (Out) - An Epetra_Vector containing the column sums of the \e this matrix. 
+    \param x (Out) - An Epetra_Vector containing the column sums of the \e this matrix.
      \warning It is assumed that the distribution of x is the same as the rows of \e this.
 
     \return Integer error code, set to 0 if successful.
@@ -295,7 +295,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   //@}
 
   //! @name Matrix Properties Query Methods
-  //@{ 
+  //@{
 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false, presently always returns true.
@@ -308,9 +308,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     virtual bool UpperTriangular() const {if (!HaveNumericConstants_) ComputeNumericConstants(); return(UpperTriangular_);}
 
   //@}
-  
+
   //! @name Attribute access functions
-  //@{ 
+  //@{
 
     /*! @brief Returns the infinity norm of the global matrix.
 
@@ -319,7 +319,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
 
      @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
-    */ 
+    */
     virtual double NormInf() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormInf_);}
 
     /*! @brief Returns the one norm of the global matrix.
@@ -329,7 +329,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
 
      @warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
-    */ 
+    */
     virtual double NormOne() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormOne_);}
 
     /*! @brief Returns the number of nonzero entries in the global matrix.
@@ -386,7 +386,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     }
 #endif
     virtual long long NumGlobalDiagonals64() const{return(OperatorDomainMap().NumGlobalPoints64());}
-    
+
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumMyNonzeros_);}
 
@@ -423,23 +423,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     virtual const Epetra_Comm & Comm() const {return(*Comm_);}
   //@}
-  
-  
+
+
   //! @name I/O Methods
-  //@{ 
+  //@{
 
   //! Print method
   virtual void Print(std::ostream & os) const;
   //@}
 
   //! @name Additional methods required to support the Epetra_RowMatrix interface
-  //@{ 
-    
+  //@{
+
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
   does not support transpose use, this method should return a value of -1.
-      
+
     \param use_transpose (In) - If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
@@ -448,19 +448,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
 
   //! Returns a character string describing the operator
   virtual const char* Label() const {return(Epetra_Object::Label());}
-  
+
   //! Returns the result of a Epetra_RowMatrix applied to a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param X (In) - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Y (Out) - A Epetra_MultiVector of dimension NumVectors containing result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(Multiply(Epetra_BasicRowMatrix::UseTranspose(), X, Y));}
 
     //! Returns the result of a Epetra_RowMatrix inverse applied to an Epetra_MultiVector X in Y.
-    /*! 
+    /*!
 
     \param X (In) - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Y (Out) - A Epetra_MultiVector of dimension NumVectors containing result.
@@ -478,14 +478,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
 
   //! Returns true because this class can compute an Inf-norm.
   bool HasNormInf() const {return(true);}
-  
+
   //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const {return(UseTranspose_);}
 
   //@}
-  
+
   //! @name Additional accessor methods
-  //@{ 
+  //@{
 
   //! Returns the Epetra_Import object that contains the import operations for distributed operations, returns zero if none.
     /*! If RowMatrixColMap!=OperatorDomainMap, then this method returns a pointer to an Epetra_Import object that imports objects
@@ -497,7 +497,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
     \return Raw pointer to importer.  This importer will be valid as long as the Epetra_RowMatrix object is valid.
   */
   virtual const Epetra_Import* Importer() const {return(Importer_);}
-  
+
   //! Returns the Epetra_Export object that contains the export operations for distributed operations, returns zero if none.
     /*! If RowMatrixRowMap!=OperatorRangeMap, then this method returns a pointer to an Epetra_Export object that exports objects
         from an RowMatrixRowMap layout to a OperatorRangeMap layout.  This operation is needed for sparse matrix-vector
@@ -515,17 +515,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
  protected:
 
   //! @name Post-construction modifications
-  //@{ 
+  //@{
   //! Update the constants associated with the structure of the matrix: Call only if structure changes from the initial RowMatrix.
   /* Several constants are pre-computed to save excess computations.  However, if the structure of the
      problem changes, specifically if the nonzero count in any given row changes, then this function should be called
      to update these constants.
-  */ 
+  */
   virtual void ComputeStructureConstants() const;
   //! Update the constants associated with the values of the matrix: Call only if values changes from the initial RowMatrix.
   /* Several numeric constants are pre-computed to save excess computations.  However, if the values of the
      problem change, then this function should be called to update these constants.
-  */ 
+  */
   virtual void ComputeNumericConstants() const;
   //@}
 
@@ -538,7 +538,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   Epetra_Map OperatorRangeMap_;
   Epetra_Map RowMatrixRowMap_;
   Epetra_Map RowMatrixColMap_;
-  
+
   mutable int NumMyNonzeros_;
   mutable long long NumGlobalNonzeros_;
   mutable int MaxNumEntries_;
@@ -554,7 +554,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   mutable bool HaveStructureConstants_;
   mutable bool HaveNumericConstants_;
   mutable bool HaveMaps_;
-    
+
 
   mutable Epetra_MultiVector * ImportVector_;
   mutable Epetra_MultiVector * ExportVector_;

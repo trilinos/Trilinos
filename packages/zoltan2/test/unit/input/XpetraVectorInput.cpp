@@ -69,12 +69,12 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
 typedef UserInputForTests uinput_t;
-typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tvector_t;
-typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> xvector_t;
+typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
+typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
 typedef Epetra_Vector evector_t;
 
-void printVector(RCP<const Comm<int> > &comm, lno_t vlen,
-    const gno_t *vtxIds, const scalar_t *vals)
+void printVector(RCP<const Comm<int> > &comm, zlno_t vlen,
+    const zgno_t *vtxIds, const zscalar_t *vals)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -82,7 +82,7 @@ void printVector(RCP<const Comm<int> > &comm, lno_t vlen,
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (lno_t i=0; i < vlen; i++){
+      for (zlno_t i=0; i < vlen; i++){
         std::cout << " " << vtxIds[i] << ": " << vals[i] << std::endl;
       }
       std::cout.flush();
@@ -95,7 +95,7 @@ void printVector(RCP<const Comm<int> > &comm, lno_t vlen,
 template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraMultiVectorAdapter<User> &ia, tvector_t &vector, int wdim, 
-    scalar_t **weights, int *strides)
+    zscalar_t **weights, int *strides)
 {
   RCP<const Comm<int> > comm = vector.getMap()->getComm();
   int fail = 0, gfail=0;
@@ -112,8 +112,8 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   if (!gfail){
-    const gno_t *vtxIds=NULL;
-    const scalar_t *vals=NULL;
+    const zgno_t *vtxIds=NULL;
+    const zscalar_t *vals=NULL;
     int stride;
 
     size_t nvals = ia.getLocalNumIDs();
@@ -134,7 +134,7 @@ int verifyInputAdapter(
   }
 
   if (!gfail && wdim){
-    const scalar_t *wgt =NULL;
+    const zscalar_t *wgt =NULL;
     int stride;
 
     for (int w=0; !fail && w < wdim; w++){
@@ -178,9 +178,9 @@ int main(int argc, char *argv[])
   RCP<tvector_t> tV;     // original vector (for checking)
   RCP<tvector_t> newV;   // migrated vector
 
-  tV = uinput->getTpetraVector();
+  tV = uinput->getUITpetraVector();
   size_t vlen = tV->getLocalLength();
-  Teuchos::ArrayView<const gno_t> rowGids = tV->getMap()->getNodeElementList();
+  Teuchos::ArrayView<const zgno_t> rowGids = tV->getMap()->getNodeElementList();
 
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
@@ -189,21 +189,23 @@ int main(int argc, char *argv[])
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
-  ArrayRCP<const gno_t> gidArray = arcpFromArrayView(rowGids);
+  ArrayRCP<const zgno_t> gidArray = arcpFromArrayView(rowGids);
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
-  int weightDim = 1;
-
-  zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
-  memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
-
-  std::vector<const scalar_t *> emptyWeights;
-  std::vector<int> emptyStrides;
+  int nWeights = 1;
 
   typedef Zoltan2::XpetraMultiVectorAdapter<tvector_t> adapter_t;
+  typedef adapter_t::part_t part_t;
+
+  part_t *p = new part_t [vlen];
+  memset(p, 0, sizeof(part_t) * vlen);
+  ArrayRCP<part_t> solnParts(p, 0, vlen, true);
+
+  std::vector<const zscalar_t *> emptyWeights;
+  std::vector<int> emptyStrides;
+
   Zoltan2::PartitioningSolution<adapter_t> solution(
-    env, comm, idMap, weightDim);
+    env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);
 
   /////////////////////////////////////////////////////////////
@@ -272,7 +274,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::Vector
   if (!gfail){ 
-    RCP<xvector_t> xV = uinput->getXpetraVector();
+    RCP<xvector_t> xV = uinput->getUIXpetraVector();
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -336,7 +338,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_Vector
   if (!gfail){ 
-    RCP<evector_t> eV = uinput->getEpetraVector();
+    RCP<evector_t> eV = uinput->getUIEpetraVector();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   

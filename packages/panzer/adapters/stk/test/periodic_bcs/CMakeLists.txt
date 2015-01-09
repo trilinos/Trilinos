@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -19,3 +18,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
+
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   periodic_mesh_nosubcells
+#   SOURCES periodic_mesh_nosubcells.cpp ${UNIT_TEST_DRIVER}
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   )

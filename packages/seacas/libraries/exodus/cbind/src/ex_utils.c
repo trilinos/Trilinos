@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -42,14 +42,16 @@
 #include <assert.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
+#include <ctype.h>                      /* for tolower, isspace */
+#include <errno.h>                      /* for errno */
+#include <stddef.h>                     /* for size_t */
+#include <stdio.h>                      /* for sprintf, NULL, fprintf, etc */
+#include <stdlib.h>                     /* for free, calloc, malloc, etc */
+#include <string.h>                     /* for strcpy, strlen */
+#include <sys/types.h>                  /* for int64_t */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   /* for exerrval, ex_err, etc */
+#include "exodusII_int.h"               /* for obj_stats, EX_FATAL, etc */
 
 struct obj_stats*  exoII_eb = 0;
 struct obj_stats*  exoII_ed = 0;
@@ -149,8 +151,10 @@ void ex_update_max_name_length(int exoid, int length)
 {
   int status;
   int db_length = 0;
+  int rootid = exoid & EX_FILE_ID_MASK;
+
   /* Get current value of the maximum_name_length attribute... */
-  if ((status = nc_get_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
+  if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = status;
     sprintf(errmsg,
@@ -161,8 +165,8 @@ void ex_update_max_name_length(int exoid, int length)
 
   if (length > db_length) {
     /* Update with new value... */
-    nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length);
-    nc_sync(exoid);
+    nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length);
+    nc_sync(rootid);
   }
 }
 
@@ -773,7 +777,7 @@ int ex_id_lkup( int exoid,
   if (i >= dim_len) /* failed to find id number */
   {
     if ( !(tmp_stats->valid_ids) ) {
-       free (id_vals);
+      if (id_vals) free (id_vals); 
     }
     exerrval = EX_LOOKUPFAIL;
     return(EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
@@ -793,6 +797,7 @@ int ex_id_lkup( int exoid,
 
       if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
+        if (id_vals) free (id_vals); 
         sprintf(errmsg,
                  "Error: failed to allocate memory for %s array for file id %d",
                   id_table,exoid);
@@ -802,6 +807,7 @@ int ex_id_lkup( int exoid,
 
       if ((status = nc_get_var_int (exoid, varid, stat_vals)) != NC_NOERR) {
         exerrval = status;
+        if (id_vals) free (id_vals); 
         free(stat_vals);
         sprintf(errmsg,
                "Error: failed to get %s array from file id %d",
@@ -1250,14 +1256,18 @@ static void ex_swap64 (int64_t v[], int64_t i, int64_t j)
  * See Sedgewick for further details
  * Define DEBUG_QSORT at the top of this file and recompile to compile
  * in code that verifies that the array is sorted.
+ *
+ * NOTE: The 'int' implementation below assumes that *both* the items
+ *       being sorted and the *number* of items being sorted are both 
+ *       representable as 'int'.
  */
 
 #define EX_QSORT_CUTOFF 12
 
-static int ex_int_median3(int v[], int iv[], int left, int right)
+static int ex_int_median3(int v[], int iv[], int64_t left, int64_t right)
 {
-  ssize_t center;
-  center = ((ssize_t)left + (ssize_t)right) / 2;
+  int64_t center;
+  center = (left + right) / 2;
 
   if (v[iv[left]] > v[iv[center]])
     ex_swap(iv, left, center);
@@ -1535,6 +1545,18 @@ void ex_compress_variable(int exoid, int varid, int type)
     if (deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
       nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
+#if 0
+    if (type != 3) {
+      nc_var_par_access(exoid, varid, NC_COLLECTIVE);
+    }
+#endif
   }
 #endif
 }
+
+void *ex_safe_free(void *array)
+{
+  if (array != 0) free(array);
+  return 0;
+}
+

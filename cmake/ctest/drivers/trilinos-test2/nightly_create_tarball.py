@@ -131,6 +131,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Xpetra", True),
   ("Zoltan", True),
   ("Zoltan2", True),
+  ("Gtest", True),
 ]
 
 #Make reporting errors easier to make consistent between all system calls
@@ -187,11 +188,11 @@ def get_options(workingDir):
   parser.add_option("-r", "--repository", dest="repository", action="store",
     default=repositoryDefault, 
     help="Sets the repository to pull Trilinos from. Default=%default")
-  parser.add_option("--cxx-compiler", dest="cxx", action="store", default="g++", 
+  parser.add_option("--cxx-compiler", dest="cxx", action="store", default="/home/trilinos/gcc4.7.2/openmpi-1.6.5/bin/g++", 
     help="Sets the C++ compiler to use. Default=%default")
-  parser.add_option("--c-compiler", dest="cc", action="store", default="gcc", 
+  parser.add_option("--c-compiler", dest="cc", action="store", default="/home/trilinos/gcc4.7.2/openmpi-1.6.5/bin/gcc", 
     help="Sets the C compiler to use. Default=%default")
-  parser.add_option("--fortran-compiler", dest="fortran", action="store", default="gfortran", 
+  parser.add_option("--fortran-compiler", dest="fortran", action="store", default="/home/trilinos/gcc4.7.2/openmpi-1.6.5/bin/gfortran", 
     help="Sets the Fortran compiler to use. Default=%default")
   parser.add_option("--enable-mpi", dest="enableMpi", action="store_true", default=False, 
     help="Enable an MPI build of Trilinos. Default=%default")

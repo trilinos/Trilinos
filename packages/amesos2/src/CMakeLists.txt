@@ -42,7 +42,6 @@
 # @HEADER
 
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -80,6 +79,13 @@ APPEND_SET(HEADERS
 # will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU2/Source)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/AMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/COLAMD/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/BTF/Include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../amesos/src/SuiteSparse/UFconfig)
 
 APPEND_SET(HEADERS
   Amesos2.hpp
@@ -145,6 +151,8 @@ APPEND_SET(SOURCES
 # configuration options.  In Amesos2, each solver interface should be
 # added only if that solver has been enabled by the user.
 
+SET(AMESOS2_CU_SOURCES "")
+
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   APPEND_SET(HEADERS
     Amesos2_Lapack.hpp
@@ -157,19 +165,111 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
     )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_SuperLU)
+IF (${PACKAGE_NAME}_ENABLE_KLU2)
   APPEND_SET(HEADERS
-    Amesos2_Superlu.hpp
-    Amesos2_Superlu_decl.hpp
-    Amesos2_Superlu_def.hpp
-    Amesos2_Superlu_FunctionMap.hpp
-    Amesos2_Superlu_TypeMap.hpp
+    Amesos2_KLU2.hpp
+    Amesos2_KLU2_decl.hpp
+    Amesos2_KLU2_def.hpp
+    Amesos2_KLU2_FunctionMap.hpp
+    Amesos2_KLU2_TypeMap.hpp
     )
 
-  APPEND_SET(SOURCES
-    Amesos2_Superlu.cpp
-    Amesos2_Superlu_TypeMap.cpp
+   APPEND_SET(SOURCES
+     Amesos2_KLU2_TypeMap.cpp
+     )
+
+   APPEND_SET(SOURCES
+      Amesos2_KLU2.cpp
+      )
+
+    APPEND_SET(HEADERS
+        SuiteSparse/KLU2/Source/klu2_analyze_given.hpp
+        SuiteSparse/KLU2/Source/klu2_analyze.hpp
+        SuiteSparse/KLU2/Source/klu2_defaults.hpp
+        SuiteSparse/KLU2/Source/klu2_diagnostics.hpp 
+        SuiteSparse/KLU2/Source/klu2_dump.hpp
+        SuiteSparse/KLU2/Source/klu2_extract.hpp
+        SuiteSparse/KLU2/Source/klu2_factor.hpp
+        SuiteSparse/KLU2/Source/klu2_free_numeric.hpp 
+        SuiteSparse/KLU2/Source/klu2_free_symbolic.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2.hpp
+        SuiteSparse/KLU2/Source/klu2_kernel.hpp
+        SuiteSparse/KLU2/Source/klu2_memory.hpp
+        SuiteSparse/KLU2/Source/klu2_refactor.hpp
+        SuiteSparse/KLU2/Source/klu2_scale.hpp
+        SuiteSparse/KLU2/Source/klu2_solve.hpp
+        SuiteSparse/KLU2/Source/klu2_sort.hpp
+        SuiteSparse/KLU2/Source/klu2_tsolve.hpp
+        SuiteSparse/KLU2/Include/klu2_ext.hpp
+        SuiteSparse/KLU2/Include/klu2.h
+        SuiteSparse/KLU2/Include/klu2_internal.h
+        SuiteSparse/KLU2/Include/klu2_ordinaltraits.h
+        SuiteSparse/KLU2/Include/klu2_scalartraits.h
+        SuiteSparse/KLU2/Include/klu2_version.h
+     )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Basker)
+  APPEND_SET(HEADERS
+    Amesos2_Basker.hpp
+    Amesos2_Basker_decl.hpp
+    Amesos2_Basker_def.hpp
+    Amesos2_Basker_FunctionMap.hpp
+    Amesos2_Basker_TypeMap.hpp
     )
+
+   APPEND_SET(SOURCES
+     Amesos2_Basker_TypeMap.cpp
+     )
+
+   APPEND_SET(SOURCES
+      Amesos2_Basker.cpp
+      )
+
+    APPEND_SET(HEADERS
+        basker/basker.hpp
+        basker/basker_decl.hpp
+        basker/basker_def.hpp
+        basker/basker_scalartraits.hpp 
+        basker/basker_types.hpp
+       
+     )
+
+ENDIF()
+
+
+
+
+
+
+
+    IF (${PACKAGE_NAME}_ENABLE_SuperLU)
+      APPEND_SET(HEADERS
+        Amesos2_Superlu.hpp
+        Amesos2_Superlu_decl.hpp
+        Amesos2_Superlu_def.hpp
+        Amesos2_Superlu_FunctionMap.hpp
+        Amesos2_Superlu_TypeMap.hpp
+        )
+
+       APPEND_SET(SOURCES
+         Amesos2_Superlu_TypeMap.cpp
+     )
+
+  IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
+    APPEND_SET(AMESOS2_CU_SOURCES
+      Amesos2_Superlu.cu
+      )
+  ELSE()
+    APPEND_SET(SOURCES
+      Amesos2_Superlu.cpp
+      )
+  ENDIF()
+
+
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
@@ -242,9 +342,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
-#IF (Trilinos_ENABLE_Amesos)
-    #ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
-#ENDIF()
+IF (Trilinos_ENABLE_Amesos)
+    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
    IF (${PACKAGE_NAME}_ENABLE_Cholmod)	
@@ -273,3 +373,14 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
+  IF( TPL_ENABLE_MPI )
+    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+  TRIBITS_ADD_LIBRARY(
+    amesos2_cuda
+    SOURCES ${AMESOS2_CU_SOURCES}
+    CUDALIBRARY
+    )
+ENDIF()

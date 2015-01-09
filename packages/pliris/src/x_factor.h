@@ -49,7 +49,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void X_FACTOR_ (DATA_TYPE *, int *,int *, int *, double *);
 

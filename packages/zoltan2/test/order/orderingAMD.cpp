@@ -75,9 +75,9 @@ using namespace std;
 // GO.  For now, we set them at compile time based on whether Tpetra
 // is built with explicit instantiation on.  (in Zoltan2_TestHelpers.hpp)
 
-typedef lno_t z2TestLO;
-typedef gno_t z2TestGO;
-typedef scalar_t Scalar;
+typedef zlno_t z2TestLO;
+typedef zgno_t z2TestGO;
+typedef zscalar_t Scalar;
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
@@ -172,9 +172,9 @@ int main(int narg, char** arg)
     uinput = rcp(new UserInputForTests(testDataFilePath, inputFile, comm, true));
   
   else                  // Let MueLu generate a matrix
-    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true));
+    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
 
-  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
+  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (outputFile != "") {
     // Just a sanity check.

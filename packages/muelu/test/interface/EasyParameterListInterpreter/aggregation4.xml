@@ -1,4 +1,4 @@
 <ParameterList name="MueLu">
-  <Parameter name="aggregation: drop scheme" type="string" value="laplacian"/>
+  <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
   <Parameter name="aggregation: drop tol"    type="double" value="0.05"/>
 </ParameterList>

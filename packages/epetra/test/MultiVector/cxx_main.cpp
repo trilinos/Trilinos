@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   //  Comm.Barrier();
 
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc(); 
+  int NumProc = Comm.NumProc();
 
   if (verbose && MyPID==0)
     cout << Epetra_Version() << endl << endl;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   int IndexBase = 0;
   int ElementSize = 7;
   int NumVectors = 4;
-  
+
   // Test LocalMap constructor
   // and Petra-defined uniform linear distribution constructor
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   int * ElementSizeList = new int[NumMyElements];
   int NumMyEquations = 0;
   int NumGlobalEquations = 0;
-  for (i = 0; i<NumMyElements; i++) 
+  for (i = 0; i<NumMyElements; i++)
     {
       ElementSizeList[i] = i%6+2; // blocksizes go from 2 to 7
       NumMyEquations += ElementSizeList[i];
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     {
       if (Comm.MyPID()>2)
 	NumGlobalEquations += 3*((NumMyElements)%6+2);
-      else 
+      else
 	NumGlobalEquations -= (Comm.NumProc()-3)*((NumMyElements-1)%6+2);
     }
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
   if (verbose) cout << "*********************************************************" << endl;
 
-  Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
+  Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,
 		      IndexBase, Comm);
   EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
 
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
   if (verbose) cout << "*********************************************************" << endl;
- 
+
   Epetra_Map Map1(*Map);
 
   EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
       int K = 10000;
       Epetra_Map Map2(-1, K, IndexBase, Comm);
       Epetra_LocalMap Map3(M, IndexBase, Comm);
-      
+
       Epetra_MultiVector A(Map2,N);A.Random();
       Epetra_MultiVector B(Map2,N);B.Random();
       Epetra_MultiVector C(Map3,N);C.Random();
@@ -293,9 +293,9 @@ int main(int argc, char *argv[]) {
       cout << "On PE "<< MyPID << "  A[1][1] should equal = " << tmp1;
       if (tmp1==tmp2) cout << " and it does!" << endl;
       else cout << " but it equals " << tmp2;
- 
+
       Comm.Barrier();
-	  
+	
       if (verbose) cout << "Testing MFLOPs" << endl;
       Epetra_Flops counter;
       C.SetFlopCounter(counter);
@@ -308,24 +308,24 @@ int main(int argc, char *argv[]) {
       if (verbose) cout << "MFLOPs      = " << Multiply_flops/Multiply_time/1000000.0 << endl;
 
       Comm.Barrier();
-	  
+	
       // Test MultiVector ostream operator with Petra-defined uniform linear distribution constructor
       // and a small vector
-      
+
       Epetra_Map Map4(100, IndexBase, Comm);
-      double * Dp = new double[200]; 
+      double * Dp = new double[200];
       for (j=0; j<2; j++)
 	for (i=0; i<100; i++)
 	  Dp[i+j*100] = i+j*100;
       Epetra_MultiVector D(View, Map4,Dp, 100, 2);
-	  
-      if (verbose) cout << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices" 
+	
+      if (verbose) cout << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices"
 	   << endl << endl;
       cout << D << endl;
 
       Epetra_BlockMap Map5(-1, 25, 4, IndexBase, Comm);
       Epetra_MultiVector D1(View, Map5,Dp, 100, 2);
-      if (verbose) cout << "\n\nTesting ostream operator:  Same Multivector as before except using BlockMap of 25x4" 
+      if (verbose) cout << "\n\nTesting ostream operator:  Same Multivector as before except using BlockMap of 25x4"
 	   << endl << endl;
       cout << D1 << endl;
 

@@ -1,7 +1,3 @@
-
-# Required modules
-INCLUDE(TribitsAddExecutableAndTest)
-
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
 IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 

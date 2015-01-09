@@ -47,6 +47,7 @@ enum DatabaseUsage {
  enum IfDatabaseExistsBehavior {
    DB_OVERWRITE,
    DB_APPEND,
+   DB_APPEND_GROUP,
    DB_ABORT,
    DB_ADD_SUFFIX,
    DB_ADD_SUFFIX_OVERWRITE}; // Used if topology change in DB_OVERWRITE mode

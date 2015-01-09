@@ -188,8 +188,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
   Y.PutScalar(0.0);
 
-  vector<int> Indices(MaxNumEntries_);
-  vector<double> Values(MaxNumEntries_);
+  std::vector<int> Indices(MaxNumEntries_);
+  std::vector<double> Values(MaxNumEntries_);
 
   // cycle over all rows of the original matrix
   for (int i = 0 ; i < A_->NumMyRows() ; ++i) {

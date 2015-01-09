@@ -67,7 +67,7 @@ setPartitionParameters (Teuchos::ParameterList& List) {}
 
 
 template<class GraphType>
-void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
+void LinearPartitioner<GraphType>::computePartitions()
 {
   using Teuchos::as;
   // Partition_ is an array of local_ordinal_type.  local_ordinal_type
@@ -89,9 +89,6 @@ void LinearPartitioner<GraphType>::LinearPartitioner::computePartitions()
 
 
 }// namespace Ifpack2
-
-// For ETI
-#include "Tpetra_CrsGraph.hpp"
 
 #define IFPACK2_LINEARPARTITIONER_INSTANT(LO,GO,N) \
   template class Ifpack2::LinearPartitioner<Tpetra::CrsGraph< LO, GO, N > >; \

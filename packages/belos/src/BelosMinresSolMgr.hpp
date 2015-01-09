@@ -175,6 +175,11 @@ namespace Belos {
     ///     information is ever written to the output stream)
     ///   - "Timer Label" - an \c std::string to use as a prefix for the timer
     ///     labels.  Default value: "Belos"
+    ///
+    /// We accept the "Num Blocks" parameter for compatibility with
+    /// other Belos solvers, but ignore it, since it is not relevant
+    /// to MINRES.  ("Num Blocks" specifies the restart length, but
+    /// our MINRES implementation does not restart.)
     MinresSolMgr (const Teuchos::RCP<LinearProblem< ScalarType, MV, OP> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &params);
 
@@ -193,7 +198,7 @@ namespace Belos {
     //! Return the list of default parameters for this object.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
       if (defaultParams_.is_null()) {
-	defaultParams_ = defaultParameters ();
+        defaultParams_ = defaultParameters ();
       }
       return defaultParams_;
     }
@@ -260,7 +265,7 @@ namespace Belos {
     reset (const ResetType type)
     {
       if ((type & Belos::Problem) && ! problem_.is_null()) {
-	problem_->setProblem ();
+        problem_->setProblem ();
       }
     }
     //@}
@@ -406,34 +411,37 @@ namespace Belos {
     RCP<ParameterList> pl = parameterList ("MINRES");
 
     pl->set ("Convergence Tolerance", MST::squareroot (MST::eps()),
-	     "Relative residual tolerance that needs to be achieved by "
-	     "the iterative solver, in order for the linear system to be "
-	     "declared converged.",
-	     rcp (new EnhancedNumberValidator<MT> (MST::zero(), MST::rmax())));
+             "Relative residual tolerance that needs to be achieved by "
+             "the iterative solver, in order for the linear system to be "
+             "declared converged.",
+             rcp (new EnhancedNumberValidator<MT> (MST::zero(), MST::rmax())));
     pl->set ("Maximum Iterations", static_cast<int>(1000),
-	     "Maximum number of iterations allowed for each right-hand "
-	     "side solved.",
-	     rcp (new EnhancedNumberValidator<int> (0, INT_MAX)));
-    pl->set ("Block Size", static_cast<int>(1),
-	     "Number of vectors in each block.  WARNING: The current "
-	     "implementation of MINRES only accepts a block size of 1, "
-	     "since it can only solve for 1 right-hand side at a time.",
-	     rcp (new EnhancedNumberValidator<int> (1, 1)));
+             "Maximum number of iterations allowed for each right-hand "
+             "side solved.",
+             rcp (new EnhancedNumberValidator<int> (0, INT_MAX)));
+    pl->set ("Num Blocks", static_cast<int> (-1),
+             "Ignored, but permitted, for compatibility with other Belos "
+             "solvers.");
+    pl->set ("Block Size", static_cast<int> (1),
+             "Number of vectors in each block.  WARNING: The current "
+             "implementation of MINRES only accepts a block size of 1, "
+             "since it can only solve for 1 right-hand side at a time.",
+             rcp (new EnhancedNumberValidator<int> (1, 1)));
     pl->set ("Verbosity", (int) Belos::Errors,
-	     "The type(s) of solver information that should "
-	     "be written to the output stream.");
+             "The type(s) of solver information that should "
+             "be written to the output stream.");
     pl->set ("Output Style", (int) Belos::General,
-	     "What style is used for the solver information written "
-	     "to the output stream.");
+             "What style is used for the solver information written "
+             "to the output stream.");
     pl->set ("Output Frequency", static_cast<int>(-1),
-	     "How often (in terms of number of iterations) intermediate "
-	     "convergence information should be written to the output stream."
-	     "  -1 means never.");
+             "How often (in terms of number of iterations) intermediate "
+             "convergence information should be written to the output stream."
+             "  -1 means never.");
     pl->set ("Output Stream", rcpFromRef(std::cout),
-	     "A reference-counted pointer to the output stream where all "
-	     "solver output is sent.  The output stream defaults to stdout.");
+             "A reference-counted pointer to the output stream where all "
+             "solver output is sent.  The output stream defaults to stdout.");
     pl->set ("Timer Label", std::string("Belos"),
-	     "The string to use as a prefix for the timer labels.");
+             "The string to use as a prefix for the timer labels.");
     return pl;
   }
 
@@ -442,7 +450,14 @@ namespace Belos {
   //
   template<class ScalarType, class MV, class OP>
   MinresSolMgr<ScalarType,MV,OP>::MinresSolMgr () :
+    convtol_(0.0),
+    achievedTol_(0.0),
+    maxIters_(0),
     numIters_ (0),
+    blockSize_(0),
+    verbosity_(0),
+    outputStyle_(0),
+    outputFreq_(0),
     parametersSet_ (false)
   {}
 
@@ -452,15 +467,15 @@ namespace Belos {
   template<class ScalarType, class MV, class OP>
   MinresSolMgr<ScalarType, MV, OP>::
   MinresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> > &problem,
-		const Teuchos::RCP<Teuchos::ParameterList>& params) :
+                const Teuchos::RCP<Teuchos::ParameterList>& params) :
     problem_ (problem),
     numIters_ (0),
     parametersSet_ (false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(problem_.is_null(), std::invalid_argument,
-			       "MinresSolMgr: The version of the constructor "
-			       "that takes a LinearProblem to solve was given a "
-			       "null LinearProblem.");
+                               "MinresSolMgr: The version of the constructor "
+                               "that takes a LinearProblem to solve was given a "
+                               "null LinearProblem.");
     setParameters (params);
   }
 
@@ -529,15 +544,15 @@ namespace Belos {
     const string newLabel = pl->get<string> ("Timer Label");
     {
       if (newLabel != label_ || timerSolve_.is_null()) {
-	label_ = newLabel;
+        label_ = newLabel;
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-	const string solveLabel = label_ + ": MinresSolMgr total solve time";
-	// Unregister the old timer before creating a new one.
-	if (! timerSolve_.is_null()) {
-	  Teuchos::TimeMonitor::clearCounter (label_);
-	  timerSolve_ = Teuchos::null;
-	}
-	timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
+        const string solveLabel = label_ + ": MinresSolMgr total solve time";
+        // Unregister the old timer before creating a new one.
+        if (! timerSolve_.is_null()) {
+          Teuchos::TimeMonitor::clearCounter (label_);
+          timerSolve_ = Teuchos::null;
+        }
+        timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif // BELOS_TEUCHOS_TIME_MONITOR
       }
     }
@@ -631,7 +646,7 @@ namespace Belos {
     if (outputTest_.is_null() || needToRecreateFullStatusTest || recreatedPrinter) {
       StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
       outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
-				       Passed+Failed+Undefined);
+                                       Passed+Failed+Undefined);
     } else {
       outputTest_->setOutputFrequency (outputFreq_);
     }
@@ -704,7 +719,7 @@ namespace Belos {
       problem_->setLSIndex (currentIndices);
 
       dbg << "-- Current right-hand side index being solved: "
-	  << currentRHS << endl;
+          << currentRHS << endl;
 
       // Reset the number of iterations.
       minres_iter->resetNumIters();
@@ -721,38 +736,38 @@ namespace Belos {
       // Attempt to solve for the solution corresponding to the
       // current right-hand side.
       while (true) {
-	try {
-	  minres_iter->iterate();
+        try {
+          minres_iter->iterate();
 
-	  // First check for convergence
-	  if (convTest_->getStatus() == Passed) {
-	    dbg << "---- Converged after " << maxIterTest_->getNumIters()
-		<< " iterations" << endl;
-	    break;
-	  }
-	  // Now check for max # of iterations
-	  else if (maxIterTest_->getStatus() == Passed) {
-	    dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
-		<< " iterations" << endl;
-	    // This right-hand side didn't converge!
-	    notConverged.push_back (currentRHS);
-	    break;
-	  } else {
-	    // If we get here, we returned from iterate(), but none of
-	    // our status tests Passed.  Something is wrong, and it is
-	    // probably our fault.
-	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          // First check for convergence
+          if (convTest_->getStatus() == Passed) {
+            dbg << "---- Converged after " << maxIterTest_->getNumIters()
+                << " iterations" << endl;
+            break;
+          }
+          // Now check for max # of iterations
+          else if (maxIterTest_->getStatus() == Passed) {
+            dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
+                << " iterations" << endl;
+            // This right-hand side didn't converge!
+            notConverged.push_back (currentRHS);
+            break;
+          } else {
+            // If we get here, we returned from iterate(), but none of
+            // our status tests Passed.  Something is wrong, and it is
+            // probably our fault.
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
               "Belos::MinresSolMgr::solve(): iterations neither converged, "
-	      "nor reached the maximum number of iterations " << maxIters_
-	      << ".  That means something went wrong.");
-	  }
-	} catch (const std::exception &e) {
-	  printer_->stream (Errors)
-	    << "Error! Caught std::exception in MinresIter::iterate() at "
-	    << "iteration " << minres_iter->getNumIters() << endl
-	    << e.what() << endl;
-	  throw e;
-	}
+              "nor reached the maximum number of iterations " << maxIters_
+              << ".  That means something went wrong.");
+          }
+        } catch (const std::exception &e) {
+          printer_->stream (Errors)
+            << "Error! Caught std::exception in MinresIter::iterate() at "
+            << "iteration " << minres_iter->getNumIters() << endl
+            << e.what() << endl;
+          throw e;
+        }
       }
 
       // Inform the linear problem that we are finished with the
@@ -791,11 +806,11 @@ namespace Belos {
     {
       const std::vector<MagnitudeType>* pTestValues = expConvTest_->getTestValue();
       if (pTestValues == NULL || pTestValues->size() < 1) {
-	pTestValues = impConvTest_->getTestValue();
+        pTestValues = impConvTest_->getTestValue();
       }
       TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
         "Belos::MinresSolMgr::solve(): The implicit convergence test's getTestValue() "
-	"method returned NULL.  Please report this bug to the Belos developers.");
+        "method returned NULL.  Please report this bug to the Belos developers.");
       TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
         "Belos::MinresSolMgr::solve(): The implicit convergence test's getTestValue() "
         "method returned a vector of length zero.  Please report this bug to the "
@@ -820,8 +835,8 @@ namespace Belos {
   {
     std::ostringstream oss;
     oss << "Belos::MinresSolMgr< "
-	<< Teuchos::ScalarTraits<ScalarType>::name()
-	<<", MV, OP >";
+        << Teuchos::ScalarTraits<ScalarType>::name()
+        <<", MV, OP >";
     // oss << "{";
     // oss << "Block Size=" << blockSize_;
     // oss << "}";

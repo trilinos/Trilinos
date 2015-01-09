@@ -53,7 +53,7 @@
 
 #include "Panzer_STK_Utilities.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   class RythmosObserverFactory {
 
@@ -65,7 +65,7 @@ namespace panzer_stk {
     virtual bool useNOXObserver() const = 0;
 
     virtual Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
-    buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    buildRythmosObserver(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
 			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
   };

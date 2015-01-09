@@ -337,14 +337,14 @@ namespace Tpetra {
                                  "inputs that do not have constant stride.");
 
       typedef typename Teuchos::ArrayRCP<mp_scalar_type>::size_type size_type;
-      typedef typename MV::view_type view_type;
+      typedef typename MV::dual_view_type view_type;
       typedef typename view_type::t_dev::array_type flat_array_type;
 
       // Create new Kokkos::MultiVector reinterpreting the data as a longer
       // array of the base scalar type
 
       // Create new ArrayRCP holding data
-      view_type pce_mv = A.getLocalView();
+      view_type pce_mv = A.getDualView();
       flat_array_type flat_mv = pce_mv.d_view;
       const size_t num_rows = flat_mv.dimension_0();
       const size_t num_cols = flat_mv.dimension_1();

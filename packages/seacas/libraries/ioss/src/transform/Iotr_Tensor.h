@@ -33,11 +33,12 @@
 #ifndef IOSS_Iotr_Tensor_h
 #define IOSS_Iotr_Tensor_h
 
-#include <Ioss_Transform.h>
-#include <string>
+#include <Ioss_Transform.h>             // for Transform, Factory
+#include <string>                       // for string
+#include "Ioss_VariableType.h"          // for VariableType
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class Field;
 }
 
 namespace Iotr {
@@ -54,7 +55,7 @@ namespace Iotr {
   class Tensor: public Ioss::Transform
     {
       friend class Tensor_Factory;
-      enum TranType {TRACE, SPHERICAL, DEVIATOR, MAGNITUDE,
+      enum TranType {INVALID, TRACE, SPHERICAL, DEVIATOR, MAGNITUDE,
 		     INVARIANTS, INVARIANT1, INVARIANT2, INVARIANT3};
     public:
       const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;

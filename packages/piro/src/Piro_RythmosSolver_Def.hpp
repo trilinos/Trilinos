@@ -731,6 +731,8 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       if (num_p > 0) {
         modelInArgs.set_p(l, p_in);
       }
+      //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
+      modelInArgs.set_t(fwdStateStepper->getTimeRange().lower()); 
     }
 
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();

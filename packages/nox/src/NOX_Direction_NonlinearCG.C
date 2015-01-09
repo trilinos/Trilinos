@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Direction_NonlinearCG.H"	// class definition
+#include "NOX_Direction_NonlinearCG.H"    // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
@@ -60,9 +60,12 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-NonlinearCG::NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd, 
-			 Teuchos::ParameterList& params) :
-  paramsPtr(0)
+NonlinearCG::NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
+             Teuchos::ParameterList& params) :
+  paramsPtr(0),
+  oldSolnPtr(NULL),
+  beta(0.0),
+  niter(0)
 {
   reset(gd, params);
 }
@@ -70,7 +73,7 @@ NonlinearCG::NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
 
 bool NonlinearCG::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-      Teuchos::ParameterList& params) 
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
@@ -87,7 +90,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-NonlinearCG::~NonlinearCG() 
+NonlinearCG::~NonlinearCG()
 {
 }
 
@@ -114,24 +117,24 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   niter = solver.getNumIterations();
 
-  // Construct Residual and precondition (if desired) as first step in 
+  // Construct Residual and precondition (if desired) as first step in
   // getting new search direction
 
   ok = soln.computeF();
-  if (ok != Abstract::Group::Ok) 
+  if (ok != Abstract::Group::Ok)
   {
     if (utils->isPrintType(Utils::Warning))
       utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute F." << std::endl;
     return false;
   }
 
-  dir = soln.getF();  
+  dir = soln.getF();
 
-  if(doPrecondition) 
+  if(doPrecondition)
   {
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
-    if (ok != Abstract::Group::Ok) 
+    if (ok != Abstract::Group::Ok)
     {
       if (utils->isPrintType(Utils::Warning))
         utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to compute Jacobian." << std::endl;
@@ -141,7 +144,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     *tmpVecPtr = dir;
 
     ok = soln.applyRightPreconditioning(false, paramsPtr->sublist("Nonlinear CG").sublist("Linear Solver"), *tmpVecPtr, dir);
-    if( ok != Abstract::Group::Ok ) 
+    if( ok != Abstract::Group::Ok )
     {
       if (utils->isPrintType(Utils::Warning))
         utils->out() << "NOX::Direction::NonlinearCG::compute - Unable to apply Right Preconditioner." << std::endl;
@@ -156,26 +159,26 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   beta = 0.0;
 
   if( niter!=0 )
-  {  
+  {
     // Two choices (for now) for orthogonalizing descent direction with previous:
     if( usePRbeta )
     {
       // Polak-Ribiere beta
       *diffVecPtr = dir;
-      diffVecPtr->update(-1.0, *oldDescentDirPtr, 1.0); 
+      diffVecPtr->update(-1.0, *oldDescentDirPtr, 1.0);
 
       double denominator = oldDescentDirPtr->innerProduct(oldSoln.getF());
 
       beta = diffVecPtr->innerProduct(soln.getF()) / denominator;
 
       // Constrain beta >= 0
-      if( beta < 0.0 ) 
+      if( beta < 0.0 )
       {
         if (utils->isPrintType(Utils::OuterIteration))
           utils->out() << "BETA < 0, (" << beta << ") --> Resetting to zero" << std::endl;
         beta = 0.0;
       }
-    } 
+    }
     else
     {
       // Fletcher-Reeves beta
@@ -183,7 +186,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
       beta = dir.innerProduct(soln.getF()) / denominator;
 
-    } 
+    }
 
     //  Allow for restart after specified number of nonlinear iterations
     if( (niter % restartFrequency) == 0 )

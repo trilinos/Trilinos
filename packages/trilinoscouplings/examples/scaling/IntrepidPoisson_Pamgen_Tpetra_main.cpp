@@ -1,7 +1,8 @@
-/** \file  example_IntrepidPoisson_Pamgen_Tpetra.cpp
-    \brief Example setup of a discretization of a Poisson equation on
-           a hexahedral mesh using nodal (Hgrad) elements.  The
-           system is assembled but not solved.
+/** \file  IntrepidPoisson_Pamgen_Tpetra_main.cpp
+    \brief Example: Discretize Poisson's equation with Dirichlet
+           boundary conditions on a hexahedral mesh using nodal
+           (Hgrad) elements.  The system is assembled into Tpetra data
+           structures, and optionally solved.
 
            This example uses the following Trilinos packages:
     \li    Pamgen to generate a Hexahedral mesh.
@@ -62,11 +63,15 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
-// MueLu includes
-#include "MueLu_CreateTpetraPreconditioner.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#  include "MueLu_CreateTpetraPreconditioner.hpp"
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
+
+#include <MatrixMarket_Tpetra.hpp>
 
 int
 main (int argc, char *argv[])
@@ -78,9 +83,10 @@ main (int argc, char *argv[])
   using TpetraIntrepidPoissonExample::solveWithBelos;
   using TpetraIntrepidPoissonExample::solveWithBelosGPU;
   using IntrepidPoissonExample::makeMeshInput;
-  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
-  using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
+  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
+  using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
+  using IntrepidPoissonExample::setUpCommandLineArguments;
   using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
@@ -94,8 +100,10 @@ main (int argc, char *argv[])
   using std::endl;
   // Pull in typedefs from the example's namespace.
   typedef TpetraIntrepidPoissonExample::ST ST;
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::LO LO;
   typedef TpetraIntrepidPoissonExample::GO GO;
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
@@ -123,14 +131,27 @@ main (int argc, char *argv[])
     int nx, ny, nz;
     std::string xmlInputParamsFile;
     bool verbose, debug;
+    int maxNumItersFromCmdLine = -1; // -1 means "read from XML file"
+    double tolFromCmdLine = -1.0; // -1 means "read from XML file"
+    std::string solverName = "GMRES";
+    ST materialTensorOffDiagonalValue = 0.0;
 
     // Set default values of command-line arguments.
     setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
-                                    verbose, debug);
+                                    solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+                               solverName, tolFromCmdLine,
+                               maxNumItersFromCmdLine,
                                verbose, debug);
+    cmdp.setOption ("materialTensorOffDiagonalValue",
+                    &materialTensorOffDiagonalValue, "Off-diagonal value in "
+                    "the material tensor.  This controls the iteration count.  "
+                    "Be careful with this if you use CG, since you can easily "
+                    "make the matrix indefinite.");
+
+    // Additional command-line arguments for GPU experimentation.
     bool gpu = false;
     cmdp.setOption ("gpu", "no-gpu", &gpu,
                     "Run example using GPU node (if supported)");
@@ -144,6 +165,12 @@ main (int argc, char *argv[])
     cmdp.setOption ("device_offset", &device_offset,
                     "Offset for attaching MPI ranks to CUDA devices");
 
+    // Additional command-line arguments for dumping the generated
+    // matrix or its row Map to output files.
+    //
+    // FIXME (mfh 09 Apr 2014) Need to port these command-line
+    // arguments to the Epetra version.
+
     // If matrixFilename is nonempty, dump the matrix to that file
     // in MatrixMarket format.
     std::string matrixFilename;
@@ -156,15 +183,38 @@ main (int argc, char *argv[])
     cmdp.setOption ("rowMapFilename", &rowMapFilename, "If nonempty, dump the "
                     "generated matrix's row Map to that file in a format that "
                     "Tpetra::MatrixMarket::Reader can read.");
+    // Option to exit after building A and b (and dumping stuff to
+    // files, if requested).
+    bool exitAfterAssembly = false;
+    cmdp.setOption ("exitAfterAssembly", "dontExitAfterAssembly",
+                    &exitAfterAssembly, "If true, exit after building the "
+                    "sparse matrix and dense right-hand side vector.  If either"
+                    " --matrixFilename or --rowMapFilename are nonempty strings"
+                    ", dump the matrix resp. row Map to their respective files "
+                    "before exiting.");
+
+    // Option to exit after building the preconditioner
+    bool exitAfterPrecond = false;
+    cmdp.setOption ("exitAfterPrecond", "dontExitAfterPrecond",
+                    &exitAfterPrecond, "If true, exit after building the "
+                    "preconditioner.");
+
+
+     // If matrixFilename is nonempty, dump the matrix to that file
+    // in MatrixMarket format.
+    int numMueluRebuilds=0;
+    cmdp.setOption ("rebuild", &numMueluRebuilds, "Number of times to rebuild the MueLu hierarchy.");
 
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
-                               xmlInputParamsFile, verbose, debug);
+                               xmlInputParamsFile, solverName, verbose, debug);
     if (printedHelp) {
       // The user specified --help at the command line to print help
       // with command-line arguments.  We printed help already, so quit
       // with a happy return code.
       return EXIT_SUCCESS;
     }
+
+    setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
 
     // Both streams only print on MPI Rank 0.  "out" only prints if the
     // user specified --verbose.
@@ -224,8 +274,14 @@ main (int argc, char *argv[])
           writer_type::writeSparseFile (matrixFilename, A);
         }
         if (rowMapFilename != "") {
-          writer_type::writeMapFile (rowMapFilename, A->getRowMap ());
+          writer_type::writeMapFile (rowMapFilename, * (A->getRowMap ()));
         }
+      }
+
+      if (exitAfterAssembly) {
+        // Users might still be interested in assembly time.
+        Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+        return EXIT_SUCCESS;
       }
 
       const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
@@ -237,27 +293,65 @@ main (int argc, char *argv[])
            << "||A||_F = " << norms[2] << endl;
 
       // Setup preconditioner
-      std::string prec_type = inputList.get("Preconditioner", "None");
+      std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
-          if (inputList.isSublist("MueLu")) {
-            ParameterList mueluParams = inputList.sublist("MueLu");
-            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
-          } else {
-            M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
-          }
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+	  for(int i=0; i<numMueluRebuilds+1; i++) {
+	    if (inputList.isSublist("MueLu")) {
+	      ParameterList mueluParams = inputList.sublist("MueLu");
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+	    } else {
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+	    }
+	  }
+#else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "
+            "In order to precondition with MueLu, you must have built Trilinos "
+            "with the MueLu package enabled.");
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
         }
+      } // setup preconditioner
+
+
+      // exit if we only wanted the preconditioner
+      if(exitAfterPrecond) {
+        Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+        return EXIT_SUCCESS;
       }
 
+
+      // Get the convergence tolerance for each linear solve.
+      // If the user provided a nonnegative value at the command
+      // line, it overrides any value in the input ParameterList.
+      MT tol = STM::squareroot (STM::eps ()); // default value
+      if (tolFromCmdLine < STM::zero ()) {
+        tol = inputList.get ("Convergence Tolerance", tol);
+      } else {
+        tol = tolFromCmdLine;
+      }
+
+      // Get the maximum number of iterations for each linear solve.
+      // If the user provided a value other than -1 at the command
+      // line, it overrides any value in the input ParameterList.
+      int maxNumIters = 200; // default value
+      if (maxNumItersFromCmdLine == -1) {
+        maxNumIters = inputList.get ("Maximum Iterations", maxNumIters);
+      } else {
+        maxNumIters = maxNumItersFromCmdLine;
+      }
+
+      // Get the number of "time steps."  We imitate a time-dependent
+      // PDE by doing this many linear solves.
+      const int num_steps = inputList.get ("Number of Time Steps", 1);
+
+      // Do the linear solve(s).
       bool converged = false;
       int numItersPerformed = 0;
-      const MT tol = inputList.get("Convergence Tolerance",
-                                   STM::squareroot (STM::eps ()));
-      const int maxNumIters = inputList.get("Maximum Iterations", 200);
-      const int num_steps = inputList.get("Number of Time Steps", 1);
       if (gpu) {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
         solveWithBelosGPU (converged, numItersPerformed, tol, maxNumIters,
@@ -266,16 +360,16 @@ main (int argc, char *argv[])
       }
       else {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-        solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
-                        num_steps, X, A, B, Teuchos::null, M);
+        solveWithBelos (converged, numItersPerformed, solverName, tol,
+                        maxNumIters, num_steps, X, A, B, Teuchos::null, M);
       }
 
       // Compute ||X-X_exact||_2
-      MT norm_x = X_exact->norm2 ();
+      const MT norm_x = X_exact->norm2 ();
       X_exact->update (-1.0, *X, 1.0);
-      MT norm_error = X_exact->norm2 ();
+      const MT norm_error = X_exact->norm2 ();
       *out << endl
-           << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
+           << "||X - X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
            << endl;
     } // total time block
 
@@ -284,7 +378,9 @@ main (int argc, char *argv[])
   } // try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  if (success)
+  if (success) {
     return EXIT_SUCCESS;
-  return EXIT_FAILURE;
+  } else {
+    return EXIT_FAILURE;
+  }
 }

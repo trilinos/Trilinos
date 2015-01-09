@@ -290,7 +290,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
     case SEQUENCE:
       for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = i;
+        (*this)[i] = static_cast<T>(i);
       }
       break;
 
@@ -401,6 +401,42 @@ TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
     (*this)[i] -= X[i];
   }
 
+  return *this;
+}
+
+//
+// Component scale
+//
+template<typename T, typename ST>
+template<typename S>
+inline
+TensorBase<T, ST> &
+TensorBase<T, ST>::operator*=(S const & X)
+{
+  Index const
+  number_components = get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] *= X;
+  }
+  return *this;
+}
+
+//
+// Component divide
+//
+template<typename T, typename ST>
+template<typename S>
+inline
+TensorBase<T, ST> &
+TensorBase<T, ST>::operator/=(S const & X)
+{
+  Index const
+  number_components = get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] /= X;
+  }
   return *this;
 }
 

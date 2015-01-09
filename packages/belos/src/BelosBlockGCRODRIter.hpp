@@ -527,8 +527,8 @@ namespace Belos{
 	TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, BlockGCRODRIterInitFailure,"Belos::BlockGCRODRIter::iterate(): GCRODRIter class not initialized." );
 
 // MLP
-sleep(1);
-std::cout << "Calling setSize" << std::endl;
+//sleep(1);
+//std::cout << "Calling setSize" << std::endl;
 	// Force call to setsize to ensure internal storage is correct dimension
 	setSize( recycledBlocks_, numBlocks_ );
 
@@ -543,8 +543,8 @@ std::cout << "Calling setSize" << std::endl;
 	for(int i = 0; i<blockSize_; i++){curind[i] = i;};
 	
 // MLP
-sleep(1);
-std::cout << "Calling normalize" << std::endl;
+//sleep(1);
+//std::cout << "Calling normalize" << std::endl;
 	Vnext = MVT::CloneViewNonConst(*V_,curind);
 	//Orthonormalize Initial Columns
 	//Store orthogonalization coefficients in Z0
@@ -553,8 +553,8 @@ std::cout << "Calling normalize" << std::endl;
 	int rank = ortho_->normalize(*Vnext,Z0);
 
 // MLP
-sleep(1);
-std::cout << "Assigning Z" << std::endl;
+//sleep(1);
+//std::cout << "Assigning Z" << std::endl;
 	TEUCHOS_TEST_FOR_EXCEPTION(rank != blockSize_,BlockGCRODRIterOrthoFailure, "Belos::BlockGCRODRIter::iterate(): couldn't generate basis of full rank at the initial step.");
 	// Copy Z0 into the leading blockSize_ by blockSize_ block of Z_
 	Teuchos::RCP<SDM > Z_block = Teuchos::rcp( new SDM(Teuchos::View, Z_, blockSize_,blockSize_) );
@@ -734,14 +734,14 @@ std::cout << "Assigning Z" << std::endl;
 		SDM Y( Teuchos::Copy, Z_, curDim_-blockSize_, blockSize_ );
 		Teuchos::RCP<SDM> Rtmp = Teuchos::rcp(new SDM(Teuchos::View, *R_, curDim_, curDim_-blockSize_));
 //KMS
-sleep(1);
-std::cout << "Before TRSM" << std::endl;
-sleep(1);
-std::cout << "The size of Rtmp is " << Rtmp -> numRows() << " by " << Rtmp -> numCols() << std::endl;
-std::cout << "The size of Y is " << Y.numRows() << " by " << Y.numCols() << std::endl;
-std::cout << "blockSize_ = " << blockSize_ << std::endl;
-std::cout << "curDim_ =  " << curDim_ << std::endl;
-std::cout << "curDim_ - blockSize_ =  " << curDim_ - blockSize_ << std::endl;
+//sleep(1);
+//std::cout << "Before TRSM" << std::endl;
+//sleep(1);
+//std::cout << "The size of Rtmp is " << Rtmp -> numRows() << " by " << Rtmp -> numCols() << std::endl;
+//std::cout << "The size of Y is " << Y.numRows() << " by " << Y.numCols() << std::endl;
+//std::cout << "blockSize_ = " << blockSize_ << std::endl;
+//std::cout << "curDim_ =  " << curDim_ << std::endl;
+//std::cout << "curDim_ - blockSize_ =  " << curDim_ - blockSize_ << std::endl;
 		//
 		// Solve the least squares problem.
 		// Observe that in calling TRSM, we use the value
@@ -753,8 +753,8 @@ std::cout << "curDim_ - blockSize_ =  " << curDim_ - blockSize_ << std::endl;
                 Teuchos::NON_UNIT_DIAG, curDim_-blockSize_, blockSize_, one,
                 Rtmp->values(), Rtmp->stride(), Y.values(), Y.stride() );
 //KMS
-sleep(1);
-std::cout << "After TRSM" << std::endl;
+//sleep(1);
+//std::cout << "After TRSM" << std::endl;
       		//
               	//  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
                 //
@@ -789,6 +789,8 @@ std::cout << "After TRSM" << std::endl;
 	int i;
 	const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 	const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+
+    using Teuchos::rcp;
 
 	// Get correct dimension based on input "dim"
 	// Remember that ortho failures result in an exit before updateLSQR() is called.
@@ -912,7 +914,7 @@ std::cout << "After TRSM" << std::endl;
 				//workvec = Teuchos::rcp(new SDV(2*blockSize_));
 				workmatrix = Teuchos::rcp(new SDM (Teuchos::View, *Rblock, blockSize_+1, blockSize_ - i -1, lclCurcol, lclCurcol +1 ) );
 				blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix->values(), workmatrix->stride(), v_refl->values(), 1, zero, workvec->values(), 1);
-				blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.*one/nvs, v_refl->values(),1,workvec->values(),1,workmatrix->values(),workmatrix->stride());
+				blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.0*one/nvs, v_refl->values(),1,workvec->values(),1,workmatrix->values(),workmatrix->stride());
 			}
 
 
@@ -922,7 +924,7 @@ std::cout << "After TRSM" << std::endl;
 			workvec = Teuchos::rcp(new SDV(2*blockSize_));
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, House_[lclIter_ -1], blockSize_+1, 2*blockSize_, i, 0 ) );
 			blas.GEMV(Teuchos::TRANS,workmatrix->numRows(),workmatrix->numCols(),one,workmatrix->values(),workmatrix->stride(), v_refl->values(), 1,zero,workvec->values(),1);
-			blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2*one/nvs, v_refl -> values(),1,workvec->values(),1,workmatrix->values(),(*workmatrix).stride());
+			blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.0*one/nvs, v_refl -> values(),1,workvec->values(),1,workmatrix->values(),(*workmatrix).stride());
 
                         //
                         //3.
@@ -930,7 +932,7 @@ std::cout << "After TRSM" << std::endl;
 			workvec = Teuchos::rcp(new SDV(blockSize_));
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, Z_, blockSize_+1, blockSize_, curcol, 0 ) );
 			blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix-> values(), workmatrix->stride(), v_refl -> values(), 1, zero, workvec->values(), 1);
-                        blas.GER((*workmatrix).numRows(),(*workmatrix).numCols(), -2*one/nvs,v_refl -> values(), 1,&((*workvec)[0]),1,(*workmatrix)[0],(*workmatrix).stride());
+                        blas.GER((*workmatrix).numRows(),(*workmatrix).numCols(), -2.0*one/nvs,v_refl -> values(), 1,&((*workvec)[0]),1,(*workmatrix)[0],(*workmatrix).stride());
 
 			//
 			//4.

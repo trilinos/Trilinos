@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,7 +57,7 @@
 
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
 UpperTriangularBlockElimination(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+     const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -78,7 +78,7 @@ solve(Teuchos::ParameterList& params,
       NOX::Abstract::MultiVector& X,
       NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
- std::string callingFunction = 
+ std::string callingFunction =
     "LOCA::BorderedSolver::UpperTriangularBlockElimination::solve()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -99,27 +99,27 @@ solve(Teuchos::ParameterList& params,
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;
-    
+
     Y.assign(*G);
     L.GETRF(M.numRows(), M.numCols(), M.values(), M.stride(), ipiv, &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							      status, 
-							      finalStatus,
-							      callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                  status,
+                                  finalStatus,
+                                  callingFunction);
     }
-    L.GETRS('N', M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
-	    Y.values(), Y.stride(), &info);
+    L.GETRS('N', M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv,
+        Y.values(), Y.stride(), &info);
     delete [] ipiv;
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							    status, 
-							    finalStatus,
-							    callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                status,
+                                finalStatus,
+                                callingFunction);
     }
   }
 
@@ -129,10 +129,10 @@ solve(Teuchos::ParameterList& params,
   else if (isZeroA || isZeroY) {
     // Solve X = J^-1 F, note F must be nonzero
     status = op.applyInverse(params, *F, X);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   else {
     Teuchos::RCP<NOX::Abstract::MultiVector> RHS;
@@ -147,10 +147,10 @@ solve(Teuchos::ParameterList& params,
     }
     // Solve X = J^-1 (F-A*Y)
     status = op.applyInverse(params, *RHS, X);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   return finalStatus;
@@ -159,15 +159,15 @@ solve(Teuchos::ParameterList& params,
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
 solveTranspose(Teuchos::ParameterList& params,
-	       const LOCA::BorderedSolver::AbstractOperator& op,
-	       const NOX::Abstract::MultiVector* A,
-	       const NOX::Abstract::MultiVector::DenseMatrix& C,
-	       const NOX::Abstract::MultiVector* F,
-	       const NOX::Abstract::MultiVector::DenseMatrix* G,
-	       NOX::Abstract::MultiVector& X,
-	       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+           const LOCA::BorderedSolver::AbstractOperator& op,
+           const NOX::Abstract::MultiVector* A,
+           const NOX::Abstract::MultiVector::DenseMatrix& C,
+           const NOX::Abstract::MultiVector* F,
+           const NOX::Abstract::MultiVector::DenseMatrix* G,
+           NOX::Abstract::MultiVector& X,
+           NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
- std::string callingFunction = 
+ std::string callingFunction =
     "LOCA::BorderedSolver::UpperTriangularBlockElimination::solveTranspose()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -188,27 +188,27 @@ solveTranspose(Teuchos::ParameterList& params,
     int *ipiv = new int[M.numRows()];
     Teuchos::LAPACK<int,double> L;
     int info;
-    
+
     Y.assign(*G);
     L.GETRF(M.numRows(), M.numCols(), M.values(), M.stride(), ipiv, &info);
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							      status, 
-							      finalStatus,
-							      callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                  status,
+                                  finalStatus,
+                                  callingFunction);
     }
-    L.GETRS('T', M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv, 
-	    Y.values(), Y.stride(), &info);
+    L.GETRS('T', M.numRows(), Y.numCols(), M.values(), M.stride(), ipiv,
+        Y.values(), Y.stride(), &info);
     delete [] ipiv;
     if (info != 0) {
       status = NOX::Abstract::Group::Failed;
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							    status, 
-							    finalStatus,
-							    callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                status,
+                                finalStatus,
+                                callingFunction);
     }
   }
 
@@ -218,10 +218,10 @@ solveTranspose(Teuchos::ParameterList& params,
   else if (isZeroA || isZeroY) {
     // Solve X = J^-T F, note F must be nonzero
     status = op.applyInverseTranspose(params, *F, X);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   else {
     Teuchos::RCP<NOX::Abstract::MultiVector> RHS;
@@ -236,10 +236,10 @@ solveTranspose(Teuchos::ParameterList& params,
     }
     // Solve X = J^-T (F-A*Y)
     status = op.applyInverseTranspose(params, *RHS, X);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   return finalStatus;

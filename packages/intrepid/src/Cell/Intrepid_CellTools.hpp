@@ -70,7 +70,10 @@
 #include "Intrepid_HGRAD_TET_C2_FEM.hpp"
 #include "Intrepid_HGRAD_TET_COMP12_FEM.hpp"
 #include "Intrepid_HGRAD_WEDGE_C2_FEM.hpp"
+#include "Intrepid_HGRAD_WEDGE_I2_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_I2_FEM.hpp"
+#include "Intrepid_HGRAD_PYR_I2_FEM.hpp"
 
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"

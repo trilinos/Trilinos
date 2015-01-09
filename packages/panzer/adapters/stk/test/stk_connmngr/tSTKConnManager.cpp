@@ -69,7 +69,7 @@ using Teuchos::rcp;
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 typedef shards::Quadrilateral<4> QuadTopo;
 
@@ -103,8 +103,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -212,8 +212,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -294,8 +294,8 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
 {
    using Teuchos::RCP;
 
-   int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   // int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   // int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
    RCP<STK_Interface> mesh = build2DMesh(2,2,2,2); // 4x4 elements
    TEST_ASSERT(mesh!=Teuchos::null);

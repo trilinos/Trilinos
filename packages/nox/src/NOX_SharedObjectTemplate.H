@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,26 +57,26 @@
 namespace NOX {
 
   /*! \brief Holder for objects that are shared between NOX::Abstract::Groups.
-   * 
-   * Due to the size of certain operators (i.e. the Jacobian and 
+   *
+   * Due to the size of certain operators (i.e. the Jacobian and
    * Preconditioning Matrices), we cannot afford to have
    * multiple copies. Instead we implement a shared object class that
-   * that all groups use. 
+   * that all groups use.
    */
-template <class Object, class Owner> 
+template <class Object, class Owner>
 class SharedObject {
 
 public:
 
   //! Constructor
-  SharedObject(const Teuchos::RCP<Object>& newObject) : 
+  SharedObject(const Teuchos::RCP<Object>& newObject) :
     object(newObject), owner(NULL) {};
 
   //! Destructor
   ~SharedObject(){};
 
   //! Get a non-const reference to the underlying object
-  Teuchos::RCP<Object> 
+  Teuchos::RCP<Object>
   getObject(const Owner* newOwner)
   {
     owner = newOwner;
@@ -84,11 +84,11 @@ public:
   };
 
   //! Return a const reference to the underlying object
-  Teuchos::RCP<const Object> getObject() const 
+  Teuchos::RCP<const Object> getObject() const
   { return object;};
 
   //! Return true if testOwner is the owner of the Jacobian
-  bool isOwner(const Owner* checkOwner) const 
+  bool isOwner(const Owner* checkOwner) const
   {return (owner == checkOwner);};
 
 protected:

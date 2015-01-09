@@ -33,16 +33,15 @@
 #ifndef IOSS_Ioss_Super_h
 #define IOSS_Ioss_Super_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_Super.h>
-#include <string>
+#include <Ioss_CodeTypes.h>             // for IntVector
+#include <Ioss_ElementTopology.h>       // for ElementTopology
+#include <string>                       // for string
+#include "Ioss_Super.h"
+namespace Ioss { class ElementVariableType; }
 
 // STL Includes
-#include <vector>
 
 namespace Ioss {
-  class ElementVariableType;
 
   class Super : public Ioss::ElementTopology {
 

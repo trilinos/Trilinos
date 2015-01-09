@@ -1,12 +1,12 @@
 /*
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,12 +34,12 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 */
 
-#include <Kokkos_Cuda.hpp>
+#include <Kokkos_Core.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 
@@ -47,24 +47,11 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template
-Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
-
-
-template
-Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
+INST_FENL( double , Cuda , BoxElemPart::ElemLinear ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
+INST_FENL( double , Cuda , BoxElemPart::ElemQuadratic ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
 
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
-

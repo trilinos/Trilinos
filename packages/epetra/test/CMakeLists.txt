@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
 
 # Library with test functions.
 ADD_SUBDIRECTORY(src)
@@ -32,6 +30,7 @@ IF (NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
 	ADD_SUBDIRECTORY(SerialSpdDense)
 	ADD_SUBDIRECTORY(VbrMatrix)
 	ADD_SUBDIRECTORY(Vector)
+	ADD_SUBDIRECTORY(Bugs)
 ENDIF()
 
 IF (NOT Trilinos_NO_64BIT_GLOBAL_INDICES)

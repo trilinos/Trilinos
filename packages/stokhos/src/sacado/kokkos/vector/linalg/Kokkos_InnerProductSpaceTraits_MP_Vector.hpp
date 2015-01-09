@@ -67,12 +67,19 @@ public:
   typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef base_dot_type dot_type;
 
-  static KOKKOS_DEVICE_FUNCTION
+  static KOKKOS_FORCEINLINE_FUNCTION
   mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+    //return ArithTraits<val_type>::abs (x);
+    const ordinal_type sz = x.size();
+    mag_type nrm = mag_type(0);
+    for (ordinal_type i=0; i<sz; ++i) {
+      const mag_type n = BIT::norm( x.fastAccessCoeff(i) );
+      nrm += n*n;
+    }
+    return std::sqrt(nrm);
   }
 
-  static KOKKOS_DEVICE_FUNCTION
+  static KOKKOS_FORCEINLINE_FUNCTION
   dot_type dot (const val_type& x, const val_type& y) {
     const ordinal_type xsz = x.size();
     const ordinal_type ysz = y.size();
@@ -104,12 +111,19 @@ public:
   typedef typename ArithTraits<val_type>::mag_type mag_type;
   typedef base_dot_type dot_type;
 
-  static KOKKOS_DEVICE_FUNCTION
+  static KOKKOS_FORCEINLINE_FUNCTION
   mag_type norm (const val_type& x) {
-    return ArithTraits<val_type>::abs (x);
+    //return ArithTraits<val_type>::abs (x);
+    const ordinal_type sz = x.size();
+    mag_type nrm = mag_type(0);
+    for (ordinal_type i=0; i<sz; ++i) {
+      const mag_type n = BIT::norm( x.fastAccessCoeff(i) );
+      nrm += n*n;
+    }
+    return std::sqrt(nrm);
   }
 
-  static KOKKOS_DEVICE_FUNCTION
+  static KOKKOS_FORCEINLINE_FUNCTION
   dot_type dot (const val_type& x, const val_type& y) {
     const ordinal_type xsz = x.size();
     const ordinal_type ysz = y.size();

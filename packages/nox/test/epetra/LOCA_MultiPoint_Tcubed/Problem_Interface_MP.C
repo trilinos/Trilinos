@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@
 Problem_Interface_MP::Problem_Interface_MP(FiniteElementProblem& Problem) :
   problem(Problem),
   numFillsF(0)
-{ 
+{
 }
 
 Problem_Interface_MP::~Problem_Interface_MP()
@@ -74,7 +74,7 @@ bool Problem_Interface_MP::computeF(const Epetra_Vector& x, Epetra_Vector& F, Fi
 }
 
 bool Problem_Interface_MP::computeJacobian(const Epetra_Vector& x,
-					Epetra_Operator& Jac)
+                    Epetra_Operator& Jac)
 {
   return problem.evaluate(MATRIX_ONLY, &x, NULL,&problem.getJacobian());
 }
@@ -82,7 +82,7 @@ bool Problem_Interface_MP::computeJacobian(const Epetra_Vector& x,
 void Problem_Interface_MP::setParameters(const LOCA::ParameterVector& params)
 {
   for (int i = 0; i < params.length(); i++ ) {
-    problem.setParameter(params.getLabel(i), params.getValue(i)); 
+    problem.setParameter(params.getLabel(i), params.getValue(i));
   }
 }
 
@@ -97,7 +97,7 @@ void Problem_Interface_MP::dataForPrintSolution(const int conStep,
 // The parameter that is varied in the multipoint run is set here
 void Problem_Interface_MP::setMultiPointParameter(const int stepNum)
 {
-  problem.setParameter("Nonlinear Factor", 1.0 + 0.2*stepNum); 
+  problem.setParameter("Nonlinear Factor", 1.0 + 0.2*stepNum);
 }
 
 //-----------------------------------------------------------------------------

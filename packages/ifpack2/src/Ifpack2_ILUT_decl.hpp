@@ -79,11 +79,15 @@ namespace Ifpack2 {
 /// domain decomposition over the MPI processes, with ILUT as the
 /// subdomain solver on each process.
 ///
-/// See the documentation of setParameters() for a list of valid
+/// @remark See the documentation of setParameters() for a list of valid
 /// parameters.
 ///
-/// This version of ILUT is a translation of Aztec's ILUT
+/// @remark This version of ILUT is a translation of Aztec's ILUT
 /// implementation, which was written by Ray Tuminaro.
+///
+/// @remark There is an important difference between this implementation and the version
+/// described in Saad's paper.  See setParameters() for details.
+///
 template<class MatrixType>
 class ILUT :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -120,7 +124,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -183,11 +187,14 @@ public:
   /// </ul>
   /// "fact: drop tolerance" is the magnitude threshold for dropping
   /// entries.  It corresponds to the \f$\tau\f$ parameter in Saad's
-  /// original description of ILUT.  "fact: ilut level-of-fill" is the
+  /// original description of ILUT.  "fact: ilut level-of-fill" controls the
   /// number of entries to keep in the strict upper triangle of the
   /// current row, and in the strict lower triangle of the current
-  /// row.  It corresponds to the \f$p\f$ parameter in Saad's original
-  /// description.  ILUT always keeps the diagonal entry in the
+  /// row.  It does <B>not</B> correspond to the \f$p\f$ parameter in Saad's original
+  /// description.
+  /// Each row has at most \f$level-of-fill + nnz(A(i; 1 : i))\f$
+  /// nonzero elements.
+  /// ILUT always keeps the diagonal entry in the
   /// current row, regardless of the drop tolerance or fill level.
   ///
   /// The absolute and relative threshold parameters affect how this

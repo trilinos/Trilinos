@@ -152,7 +152,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
 {
   ML_Aggregate *aggregates = agg_;
 
-  char filename[80];
+  char filename[80] = "";
   int NumDimensions = 0;
   ML_Aggregate_Viz_Stats *grid_info =
         (ML_Aggregate_Viz_Stats *) ml_->Grid[LevelID_[0]].Grid;

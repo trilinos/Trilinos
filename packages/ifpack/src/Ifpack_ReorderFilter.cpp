@@ -147,5 +147,6 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_ReorderFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
+  int ierr = Multiply(UseTranspose(),X,Y);
+  IFPACK_RETURN(ierr);
 }

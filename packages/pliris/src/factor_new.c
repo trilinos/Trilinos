@@ -56,7 +56,7 @@
 
 
 extern int myrow;
-extern int mycol; 
+extern int mycol;
 extern int me;	               /* processor id information */
 extern int nprocs_row;         /* num of procs to which a row is assigned */
 extern int nprocs_col;         /* num of procs to which a col is assigned */
@@ -77,7 +77,7 @@ extern int blksz;              /* block size for BLAS 3 operations */
 extern int ringnext,ringprev,ringnex2,ringpre2,ringnex3,ringpre3,ringnex4,ringpre4;
 #define LUSTATUSINT 64
 
-extern MPI_Comm col_comm; 
+extern MPI_Comm col_comm;
 
 #define LUPIVOTTYPE (1<<19)
 #define LUCOLTYPE (1<<20)
@@ -98,7 +98,7 @@ factor(DATA_TYPE *seg)
     DATA_TYPE current;          /*   current row entry */
     int row;                    /*   pivot row number */
   } pivot;              /* pivot info and some temporary pivot infor */
-  
+
   DATA_TYPE d_zero = CONST_ZERO;/* constant for initializations */
   int one = 1;                  /* constant for the daxpy routines */
   DATA_TYPE d_one = CONST_ONE;  /* constant for the daxpy routines */
@@ -110,7 +110,7 @@ factor(DATA_TYPE *seg)
   int c_owner,r_owner,pivot_owner;
   int col_len,row_len,length,row_size,rows_used,cols_used;
   int rel_lpivot_row,lpivot_row,*sav_pivot_ptr;
- 
+
   double pivot_mag;
   DATA_TYPE invpiv;
   DATA_TYPE *cur_col_ptr,*cur_row_ptr,*update_ptr,*piv_row_ptr;
@@ -124,7 +124,7 @@ factor(DATA_TYPE *seg)
   long type,bytes;
 
 
-#ifdef DREAL 
+#ifdef DREAL
   struct {
     double  val;
     int proc;
@@ -150,9 +150,9 @@ factor(DATA_TYPE *seg)
 #endif
   DATA_TYPE entry,current;
   int row;
- 
+
   int numprocs;
- 
+
 #ifdef TIMING0
   double updatetime,colupdtime,rowupdtime,scaltime;
   double xpivmsgtime,bcastpivstime,bcastpivrtime,bcastcolstime,bcastcolrtime,bcastcolwtime,bcastrowtime,sendrowtime,recvrowtime;
@@ -165,7 +165,7 @@ factor(DATA_TYPE *seg)
   MPI_Status msgstatus;
   /* Distribution for the matrix on me */
 
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs); 
+  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
   if ( (numprocs/nprocs_row) * nprocs_row != numprocs )
   {
      if (me == 0)
@@ -185,23 +185,23 @@ factor(DATA_TYPE *seg)
   sav_col_ptr = col1;   /* location to store next active column */
   act_col_ptr = col1;   /* location of matrix of columns being saved for dgemm update */
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including 
+  row_len = my_cols + my_rhs;  /* length of row in local matrix including
 			          rhs's*/
 
   rows_used = 0;      /* haven't used any local rows yet */
   cols_used = 0;
   cur_row_ptr = seg;  /* location of first row in local matrix */
   cur_col1_row_ptr = col1;  /* location of first row in col1 matrix */
-  act_row_ptr = row1; /* location of matrix of rows being saved for dgemm 
+  act_row_ptr = row1; /* location of matrix of rows being saved for dgemm
 			 update */
 
-  sav_piv_row_ptr = row1; /* location for next row being saved for dgemm 
+  sav_piv_row_ptr = row1; /* location for next row being saved for dgemm
 	                 update */
 
-  temp_row_ptr = row3; /* location for pivot row while being sent and 
+  temp_row_ptr = row3; /* location for pivot row while being sent and
 		         before transposing */
- 
-  sav_row_ptr = row2;  /* location to save current row and send to 
+
+  sav_row_ptr = row2;  /* location to save current row and send to
 			 owner of pivot row */
 
   sav_pivot_ptr = pivot_vec; /* location to store name of pivot row */
@@ -223,7 +223,7 @@ factor(DATA_TYPE *seg)
     printf("Column updates within block done one column at a time \n");
 #endif
   }
-#endif  
+#endif
 
   for (j=0; j<ncols_matrix; j++) {
     c_owner = col_owner(j); r_owner = row_owner(j);
@@ -251,7 +251,7 @@ factor(DATA_TYPE *seg)
 	/* find maximum local pivot */
 
         pivot.entry = *(cur_col_ptr);
-#ifdef CBLAS 
+#ifdef CBLAS
 	rel_lpivot_row = IXAMAX(col_len, cur_col_ptr, one);
 #else
     /*   Shift for the fortran to C array definitions   */
@@ -261,9 +261,9 @@ factor(DATA_TYPE *seg)
 #endif
 	pivot.entry = *(cur_col_ptr + rel_lpivot_row);
 	pivot.row = lrow_to_grow(rows_used+rel_lpivot_row);
-	if (me == r_owner) 
-          pivot.current = *(cur_col_ptr);  
-        else 
+	if (me == r_owner)
+          pivot.current = *(cur_col_ptr);
+        else
           pivot.current = d_zero;
       } else {
 	pivot.row = 0;  pivot.entry = d_zero;  pivot.current = d_zero;
@@ -282,7 +282,7 @@ factor(DATA_TYPE *seg)
        bytes = sizeof(DATA_TYPE);
 #ifdef DEBUG
        printf("Node %d: pivot val %g, pivot row %d \n",me,pivot_in.val,pivot.row);
-#endif  
+#endif
 
        /* Exchange to find global pivot value */
        MPI_Allreduce(&pivot_in,&pivot_out,1,MPI_DATA_TYPE2,MPI_MAXLOC,col_comm);
@@ -295,9 +295,9 @@ factor(DATA_TYPE *seg)
        pivot.row = row;
        MPI_Bcast(&entry,bytes,MPI_BYTE,mesh_row(pivot_out.proc),col_comm);
        MPI_Barrier(col_comm);
-       pivot.entry = entry;  
-  
-      
+       pivot.entry = entry;
+
+
 #ifdef TIMING0
       xpivmsgtime += (MPI_Wtime()-t1);
 #endif
@@ -365,7 +365,7 @@ factor(DATA_TYPE *seg)
 
       row_len--;
       update_ptr += mat_stride; cur_col_ptr += mat_stride;
-      cur_row_ptr += mat_stride; 
+      cur_row_ptr += mat_stride;
       sav_pivot_ptr++;
       act_row_ptr += blksz;  sav_piv_row_ptr += blksz;
       cols_used++;
@@ -375,7 +375,7 @@ factor(DATA_TYPE *seg)
      bytes=col_len*sizeof(DATA_TYPE);
        MPI_Irecv(sav_col_ptr,bytes,MPI_BYTE,
                 MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
-  
+
 
 #ifdef TIMING0
       t1 = MPI_Wtime();
@@ -408,7 +408,7 @@ factor(DATA_TYPE *seg)
 #ifdef TIMING0
 	t1 = MPI_Wtime();
 #endif
-        MPI_Wait(&msgrequest,&msgstatus);    
+        MPI_Wait(&msgrequest,&msgstatus);
 #ifdef TIMING0
 	bcastcolrtime += (MPI_Wtime()-t1);
 #endif
@@ -493,7 +493,7 @@ factor(DATA_TYPE *seg)
 
       XCOPY(row_len, piv_row_ptr, mat_stride, temp_row_ptr, one);
       XCOPY(colcnt, piv_col1_row_ptr, col1_stride, temp_row_ptr+row_len, one);
-      
+
 #ifdef TIMING0
       copypivrowtime += (MPI_Wtime()-t1);
 #endif
@@ -505,8 +505,8 @@ factor(DATA_TYPE *seg)
 #endif
 
     bytes=sizeof(DATA_TYPE)*row_size ;
-    MPI_Bcast((char *) temp_row_ptr, row_size, MPI_CHAR, mesh_row(pivot_owner), col_comm);   
-    MPI_Barrier(col_comm);  
+    MPI_Bcast((char *) temp_row_ptr, row_size, MPI_CHAR, mesh_row(pivot_owner), col_comm);
+    MPI_Barrier(col_comm);
 #ifdef TIMING0
     bcastrowtime += (MPI_Wtime()-t1);
 #endif
@@ -521,7 +521,7 @@ factor(DATA_TYPE *seg)
     copypivrowtime += (MPI_Wtime()-t1);
 #endif
     if (gpivot_row != j){
-        if (me != pivot_owner && me == r_owner) 
+        if (me != pivot_owner && me == r_owner)
 	  {
 #ifdef TIMING0
 	    t1 = MPI_Wtime();
@@ -584,7 +584,7 @@ factor(DATA_TYPE *seg)
     }
     /* saved this active row and column so get ready for next ones */
 
-    if (me == r_owner) { /* finished with this row so update all 
+    if (me == r_owner) { /* finished with this row so update all
 	                    column pointers */
 
       col_len--; rows_used++; update_ptr++; cur_row_ptr++; cur_col1_row_ptr++;
@@ -606,7 +606,7 @@ factor(DATA_TYPE *seg)
              sav_col_ptr, &col1_stride,
              sav_piv_row_ptr, &blksz, &d_one,
              cur_col_ptr, &mat_stride);
-      
+
 #ifdef TIMING0
       colupdtime += (MPI_Wtime()-t1);
 #endif
@@ -651,7 +651,7 @@ factor(DATA_TYPE *seg)
   showtime("Time to xchgpivot",&xpivmsgtime);
   showtime("Time to do send in bcast pivot",&bcastpivstime);
   showtime("Time to do recv in bcast pivot",&bcastpivrtime);
-  tmp = bcastpivrtime+bcastpivstime; 
+  tmp = bcastpivrtime+bcastpivstime;
   showtime("Time to do bcast pivot",&tmp);
   showtime("Time to do send in bcast cur col",&bcastcolstime);
   showtime("Time to do recv bcast cur col",&bcastcolrtime);
@@ -681,5 +681,5 @@ factor(DATA_TYPE *seg)
   tmp = 100*dgemmtime/totaltime;
   showtime("Percent update time",&tmp);
   showtime("Total time in factor",&totaltime);
-#endif   
+#endif
 }

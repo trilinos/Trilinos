@@ -1,5 +1,5 @@
 XCOMM Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 XCOMM retains certain rights in this software.
 XCOMM 
 XCOMM Redistribution and use in source and binary forms, with or without
@@ -58,13 +58,8 @@ XCOMM Building ExodusII libraries for installation
 INCLIST1 = exodusII.h exodusII_int.h 
 INCLIST2 = exodusII_int.inc exodusII.inc
 
-#if defined(BuildParallelAwareExodus)
-CBIND_PARALLEL=cbind/parallel
-#endif
-
 SUBDIRS = cbind/include \
 	  cbind/src \
-	  $(CBIND_PARALLEL) \
 	  forbind/include \
 	  forbind/src \
 	  cbind/test \
@@ -74,14 +69,6 @@ SUBDIRS = cbind/include \
 AllTarget(libexodus.a libexoIIv2for.a libexoIIv2for32.a)
 #else
 AllTarget(libexodus.a libexoIIv2for.a)
-#endif
-
-#if defined(BuildParallelAwareExodus)
-AllTarget(libexodus_par.a)
-INCLIST3 = exodusII_par.h
-InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST3),$(INCDIR))
-NamedTargetSubdirs(libexodus_par.a,cbind/parallel,"making parallel exodus ",PassDebugFlags ExtraOptions,all)
-InstallLibrary(exodus_par,$(LIBDIR))
 #endif
 
 InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST1),$(INCDIR))

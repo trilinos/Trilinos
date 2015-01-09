@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_PROBLEM_MANAGER_H
 #define NOX_PROBLEM_MANAGER_H
 
@@ -62,7 +62,7 @@
 class OffBlock_Manager;
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
-#endif  
+#endif
 
 #include <vector>
 
@@ -105,7 +105,7 @@ public:
   map<int, std::string> & getNames() { return Names; }
 
   // Return my Problems container
-  map<int, Teuchos::RCP<GenericEpetraProblem> > & getProblems() 
+  map<int, Teuchos::RCP<GenericEpetraProblem> > & getProblems()
   { return Problems; }
 
   // Get a problem given its unique id
@@ -153,7 +153,7 @@ public:
   void createDependency(std::string nameA, std::string nameB, bool interfacialCoupling = false);
 
   // Create a dependence of Problem A equations on Problem B variables
-  void createDependency(GenericEpetraProblem& problemA, GenericEpetraProblem& problemB, 
+  void createDependency(GenericEpetraProblem& problemA, GenericEpetraProblem& problemB,
                         bool interfacialCoupling = false);
 
   // Register NLSolver parameter list
@@ -166,14 +166,14 @@ public:
   // regitrations and trigger the problem setup
   void registerComplete();
 
-  // Have each problem receive dependent data from every other problem 
+  // Have each problem receive dependent data from every other problem
   // on which it depends
   void syncAllProblems();
 
   // Set all problems with the same time step size
   void setAlldt( double dt);
 
-  // Set the solver group solution using the current solution contained 
+  // Set the solver group solution using the current solution contained
   // in the problem
   void setGroupX(int id);
 
@@ -209,7 +209,7 @@ public:
   // the problem variables on which it depends
   Teuchos::RCP<Epetra_CrsMatrix> getBlockJacobianMatrix(int i, int j = -1);
 
-  // Get an individual block Jacobian inverse operator 
+  // Get an individual block Jacobian inverse operator
   Teuchos::RCP<Epetra_Operator> getBlockInverseOperator(int i);
 
   // Compute sum of norms of each problem residual
@@ -241,11 +241,11 @@ public:
   void copyVectorToComposite(Epetra_Vector& compositeVec, int id,
                              const Epetra_Vector& problemVec);
 
-  // Copy problem Jacobians as block diagonal contributions to 
+  // Copy problem Jacobians as block diagonal contributions to
   // composite Jacobian
   void copyProblemJacobiansToComposite();
 
-  // Copy problem Jacobians as block diagonal contributions to 
+  // Copy problem Jacobians as block diagonal contributions to
   // specified composite matrix
   void copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat );
 
@@ -272,11 +272,11 @@ public:
   { return doOffBlocks; }
 
   // Return my name
-  std::string getName() const 
+  std::string getName() const
   { return GenericEpetraProblem::getName(); };
 
   // Return the problem name queries
-  std::string getProblemName(int id) 
+  std::string getProblemName(int id)
   { return Names[id]; };
 
   // These allow inheritance from GenericEpetraProblem base class
@@ -291,19 +291,19 @@ public:
   virtual bool exchangeDataTo(int solverId);
 
   // Inherited method to allow matrix replacement with BroydenOperator
-  virtual Teuchos::RCP<const Epetra_CrsMatrix> 
+  virtual Teuchos::RCP<const Epetra_CrsMatrix>
   getReplacementValuesMatrix( const Epetra_Vector & x, NOX::Epetra::BroydenOperator::ReplacementInterface::FILL_TYPE );
 
   // method to generate only a diagonal block composite graph
-  virtual Teuchos::RCP<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph>
   generateBlockDiagonalGraph( const Epetra_Map &, bool includeProblemOffContribs = false );
 
   // method to generate only off-diagonal block composite graph
-  virtual Teuchos::RCP<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph>
   generateOffDiagonalBlockGraph( const Epetra_Map & );
 
   // method to combine (compose) two composite graphs into a new one
-  virtual Teuchos::RCP<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph>
   composeGraphs( const Epetra_CrsGraph &, const Epetra_CrsGraph & );
 
   // Inherited from NOX::Epetra::SchurInterface
@@ -340,17 +340,17 @@ public:
 private:
 
   int problemCount;                         // Number of registered Problems
-  bool doOffBlocks;	// Flag to specify whether or not to compute
-			// off-diagonal composite Jacobian blocks via FDC
-  bool useMatlab;	// Flag to specify whether or not to use a Matlab interactive session
+  bool doOffBlocks;    // Flag to specify whether or not to compute
+            // off-diagonal composite Jacobian blocks via FDC
+  bool useMatlab;    // Flag to specify whether or not to use a Matlab interactive session
 
-  Teuchos::RCP<Epetra_Map> compositeMap;	// Composite map for all registered problems
-  Teuchos::RCP<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
+  Teuchos::RCP<Epetra_Map> compositeMap;    // Composite map for all registered problems
+  Teuchos::RCP<Epetra_Vector> compositeSoln;    // Composite map for all registered problems
   map<int, Teuchos::RCP<GenericEpetraProblem> > Problems; // Problem container
   map<int, std::string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
   map<int, Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
-  					    // Linear Systems container
+                          // Linear Systems container
   map<int, Teuchos::RCP<NOX::Epetra::Group> >Groups;     // Groups container
   map<int, Teuchos::RCP<Problem_Interface>  >Interfaces; // Interfaces container
   map<int, Teuchos::RCP<NOX::Solver::Generic> > Solvers; // Solvers container
@@ -374,7 +374,7 @@ private:
 
   // These containers allow off-diagonal block contributions representing
   // inter-problem coupling
-  map<int, std::vector<OffBlock_Manager*> > OffBlock_Managers;    
+  map<int, std::vector<OffBlock_Manager*> > OffBlock_Managers;
 #endif
 
   map<int, Teuchos::RCP<Epetra_Operator> > BlockInverseOperators; // inverses (or approximations) to diagonal blocks

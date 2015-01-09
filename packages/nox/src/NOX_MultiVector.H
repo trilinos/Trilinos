@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -65,50 +65,50 @@ namespace NOX {
 
   public:
 
-    /*! 
-     * \brief Create %MultiVector with \c numVecs columns out of a single 
+    /*!
+     * \brief Create %MultiVector with \c numVecs columns out of a single
      * NOX::Abstract::Vector.
      */
     MultiVector(const NOX::Abstract::Vector& v, int numVecs = 1,
-		NOX::CopyType type = NOX::DeepCopy);
+        NOX::CopyType type = NOX::DeepCopy);
 
     //! Create %MultiVector out of array of NOX::Abstract::Vector's
-    MultiVector(const NOX::Abstract::Vector* const* vs, int numVecs, 
-		NOX::CopyType type = NOX::DeepCopy);
+    MultiVector(const NOX::Abstract::Vector* const* vs, int numVecs,
+        NOX::CopyType type = NOX::DeepCopy);
 
     //! Copy constructor
-    MultiVector(const MultiVector& source, 
-		NOX::CopyType type = NOX::DeepCopy);
+    MultiVector(const MultiVector& source,
+        NOX::CopyType type = NOX::DeepCopy);
 
-    //! Destructor.  
+    //! Destructor.
     virtual ~MultiVector();
 
     //@{ \name Initialization methods.
 
     //! Initialize every element of this multi-vector with \c gamma.
-    virtual NOX::Abstract::MultiVector& 
+    virtual NOX::Abstract::MultiVector&
     init(double gamma);
 
     //! Initialize each element of this multi-vector with a random value
-    virtual NOX::Abstract::MultiVector& 
+    virtual NOX::Abstract::MultiVector&
     random(bool useSeed = false, int seed = 1);
 
     //! Copy source multi-vector \c source into this multi-vector.
-    virtual NOX::Abstract::MultiVector& 
+    virtual NOX::Abstract::MultiVector&
     operator=(const NOX::Abstract::MultiVector& source);
 
     //! Copy source multi-vector \c source into this multi-vector.
-    virtual NOX::Abstract::MultiVector& 
+    virtual NOX::Abstract::MultiVector&
     operator=(const NOX::MultiVector& source);
 
-    /*! 
+    /*!
      * \brief Copy the vectors in \c source to a set of vectors in \c *this.
-     * The \c index.size() vectors in \c source are copied to a subset of 
+     * The \c index.size() vectors in \c source are copied to a subset of
      * vectors in \c *this indicated by the indices given in \c index.
      */
     virtual NOX::Abstract::MultiVector&
-    setBlock(const NOX::Abstract::MultiVector& source, 
-	     const std::vector<int>& index);
+    setBlock(const NOX::Abstract::MultiVector& source,
+         const std::vector<int>& index);
     virtual NOX::Abstract::MultiVector&
     setBlock(const NOX::MultiVector& source, const std::vector<int>& index);
 
@@ -124,13 +124,13 @@ namespace NOX {
 
     /*!
      * \brief Return a reference to the i-th column of the multivector as
-     * an abstract vector.  
+     * an abstract vector.
      */
     virtual NOX::Abstract::Vector& operator [] (int i);
-    
+
     /*!
      * \brief Return a const reference to the i-th column of the multivector as
-     * an abstract vector.  
+     * an abstract vector.
      */
     virtual const NOX::Abstract::Vector& operator [] (int i) const;
 
@@ -139,83 +139,83 @@ namespace NOX {
     //@{ \name Update methods.
 
     //! Scale each element of this multivector by \c gamma.
-    virtual NOX::Abstract::MultiVector& 
+    virtual NOX::Abstract::MultiVector&
     scale(double gamma);
 
-    /*! 
-     * \brief Compute x = (alpha * a) + (gamma * x) where \c a is a 
+    /*!
+     * \brief Compute x = (alpha * a) + (gamma * x) where \c a is a
      * multi-vector and \c x = \c *this.
      */
-    virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::Abstract::MultiVector& a, 
-	   double gamma = 0.0);
-    virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::MultiVector& a, 
-	   double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(double alpha, const NOX::Abstract::MultiVector& a,
+       double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(double alpha, const NOX::MultiVector& a,
+       double gamma = 0.0);
 
-    /*! 
+    /*!
      * \brief Compute x = (alpha * a) + (beta * b) + (gamma * x) where
      * \c a and \c b are multi-vectors and \c x = \c *this.
      */
-    virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::Abstract::MultiVector& a, 
-	   double beta, const NOX::Abstract::MultiVector& b,
-	   double gamma = 0.0);
-    virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::MultiVector& a, 
-	   double beta, const NOX::MultiVector& b,
-	   double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(double alpha, const NOX::Abstract::MultiVector& a,
+       double beta, const NOX::Abstract::MultiVector& b,
+       double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(double alpha, const NOX::MultiVector& a,
+       double beta, const NOX::MultiVector& b,
+       double gamma = 0.0);
 
-    /*! 
-     * \brief Compute x = (alpha * a * b) + (gamma * x) where 
+    /*!
+     * \brief Compute x = (alpha * a * b) + (gamma * x) where
      * \c a is a multivector, \c b is a dense matrix, \c x = \c *this,
        * and op(b) = b if transb = Teuchos::NO_TRANS and op(b) is b transpose
        * if transb = Teuchos::TRANS.
      */
-    virtual NOX::Abstract::MultiVector& 
-    update(Teuchos::ETransp transb, double alpha, 
-	   const NOX::Abstract::MultiVector& a, 
-	   const NOX::Abstract::MultiVector::DenseMatrix& b, 
-	   double gamma = 0.0);
-    virtual NOX::Abstract::MultiVector& 
-    update(Teuchos::ETransp transb, double alpha, 
-	   const NOX::MultiVector& a, 
-	   const NOX::Abstract::MultiVector::DenseMatrix& b, 
-	   double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(Teuchos::ETransp transb, double alpha,
+       const NOX::Abstract::MultiVector& a,
+       const NOX::Abstract::MultiVector::DenseMatrix& b,
+       double gamma = 0.0);
+    virtual NOX::Abstract::MultiVector&
+    update(Teuchos::ETransp transb, double alpha,
+       const NOX::MultiVector& a,
+       const NOX::Abstract::MultiVector::DenseMatrix& b,
+       double gamma = 0.0);
 
     //@}
 
     //@{ \name Creating new MultiVectors.
 
-    /*! 
+    /*!
      * \brief Create a new %Vector of the same underlying type by
-     * cloning "this", and return a pointer to the new vector.  
+     * cloning "this", and return a pointer to the new vector.
      *
      * If type is NOX::DeepCopy, then we need to create an exact replica
      * of "this". Otherwise, if type is NOX::ShapeCopy, we need only
-     * replicate the shape of "this". Note that there is 
-     * <em>no assumption</em> that a vector created by ShapeCopy is 
+     * replicate the shape of "this". Note that there is
+     * <em>no assumption</em> that a vector created by ShapeCopy is
      * initialized to zeros.
-     * 
-     * \return Pointer to newly created vector or NULL if clone is not 
-     * supported. 
+     *
+     * \return Pointer to newly created vector or NULL if clone is not
+     * supported.
      */
-    virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
     clone(NOX::CopyType type = NOX::DeepCopy) const;
 
     //! Creates a new multi-vector with \c numvecs columns
-    virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
     clone(int numvecs) const;
 
-    /*! 
-     * \brief Creates a new multi-vector with \c index.size() columns whose 
+    /*!
+     * \brief Creates a new multi-vector with \c index.size() columns whose
      * columns are copies of the columns of \c *this given by \c index.
      */
-    virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
     subCopy(const std::vector<int>& index) const;
 
-    /*! 
-     * \brief Creates a new multi-vector with \c index.size() columns that 
+    /*!
+     * \brief Creates a new multi-vector with \c index.size() columns that
      * shares the columns of \c *this given by \c index.
      */
     virtual Teuchos::RCP<NOX::Abstract::MultiVector>
@@ -228,34 +228,34 @@ namespace NOX {
     //! Norm.
     virtual void
     norm(std::vector<double>& result,
-	 NOX::Abstract::Vector::NormType type = 
-	 NOX::Abstract::Vector::TwoNorm) const;
+     NOX::Abstract::Vector::NormType type =
+     NOX::Abstract::Vector::TwoNorm) const;
 
     //@}
 
     //@{ \name Matrix products.
 
-    /*! 
+    /*!
      * \brief Computes the matrix-matrix product \f$\alpha * y^T * (*this)\f$
      */
     virtual void multiply(double alpha, const NOX::Abstract::MultiVector& y,
-			  NOX::Abstract::MultiVector::DenseMatrix& b) const;
+              NOX::Abstract::MultiVector::DenseMatrix& b) const;
     virtual void multiply(double alpha, const NOX::MultiVector& y,
-			  NOX::Abstract::MultiVector::DenseMatrix& b) const;
-  
+              NOX::Abstract::MultiVector::DenseMatrix& b) const;
+
     //@}
 
     //! Return the length of multi-vector.
-    virtual int length() const;
+    virtual NOX::size_type length() const;
 
     //! Return the number of vectors in the multi-vector.
     virtual int numVectors() const;
 
-    //! Print the vector.  This is meant for debugging purposes only 
+    //! Print the vector.  This is meant for debugging purposes only
     virtual void print(std::ostream& stream) const;
 
   protected:
-    
+
     //! Stores pointers to NOX::Abstract::Vector's
     std::vector< Teuchos::RCP<NOX::Abstract::Vector> > vecs;
 
@@ -265,7 +265,7 @@ namespace NOX {
     //! Checks whether an index is valid.  Throws an error if invalid
     void checkIndex(int idx) const;
 
-    /*! 
+    /*!
      * \brief Checks whether the given multivector size is compatible with this
      * multivector.  Throws an error if invalid.
      */

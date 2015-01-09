@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -50,9 +50,9 @@ namespace Anasazi {
 
   template<class MagnitudeType>
   class BasicSort : public SortManager<MagnitudeType> {
-    
+
   public:
-    
+
     /*! \brief Parameter list driven constructor
 
         This constructor accepts a paramter list with the following options:
@@ -74,16 +74,16 @@ namespace Anasazi {
        @param which [in] The eigenvalues of interest for this eigenproblem.
        - \c "LM" - Largest Magnitude [ default ]
        - \c "SM" - Smallest Magnitude
-       - \c "LR" - Largest Real 
-       - \c "SR" - Smallest Real 
-       - \c "LI" - Largest Imaginary 
-       - \c "SI" - Smallest Imaginary 
+       - \c "LR" - Largest Real
+       - \c "SR" - Smallest Real
+       - \c "LI" - Largest Imaginary
+       - \c "SI" - Smallest Imaginary
     */
     void setSortType( const std::string &which );
-    
+
     /*! \brief Sort real eigenvalues, optionally returning the permutation vector.
 
-       \note This method is not valid when the sort manager is configured for "LI" or "SI" sorting 
+       \note This method is not valid when the sort manager is configured for "LI" or "SI" sorting
        (i.e., sorting by the imaginary components). Calling this method in that scenario will result
        in a SortManagerError exception.
 
@@ -115,13 +115,13 @@ namespace Anasazi {
 
        @param n [in] Number of values in \c r_evals, \c i_evals to be sorted. If <tt>n == -1</tt>, all values will be sorted, as decided by the minimum of the length of \c r_evals and the length of \c i_evals.
     */
-    void sort(std::vector<MagnitudeType> &r_evals, 
-              std::vector<MagnitudeType> &i_evals, 
+    void sort(std::vector<MagnitudeType> &r_evals,
+              std::vector<MagnitudeType> &i_evals,
               Teuchos::RCP<std::vector<int> > perm = Teuchos::null,
               int n = -1) const;
-    
-  protected: 
-    
+
+  protected:
+
     // enum for sort type
     enum SType {
       LM, SM,
@@ -158,13 +158,13 @@ namespace Anasazi {
     };
 
     template <typename pair_type>
-    struct sel1st 
+    struct sel1st
     {
       const typename pair_type::first_type &operator()(const pair_type &v) const;
     };
 
     template <typename pair_type>
-    struct sel2nd 
+    struct sel2nd
     {
       const typename pair_type::second_type &operator()(const pair_type &v) const;
     };
@@ -176,7 +176,7 @@ namespace Anasazi {
   ////////////////////////////////////////////////////////////////////////
 
   template<class MagnitudeType>
-  BasicSort<MagnitudeType>::BasicSort(Teuchos::ParameterList &pl) 
+  BasicSort<MagnitudeType>::BasicSort(Teuchos::ParameterList &pl)
   {
     std::string which = "LM";
     which = pl.get("Sort Strategy",which);
@@ -184,18 +184,18 @@ namespace Anasazi {
   }
 
   template<class MagnitudeType>
-  BasicSort<MagnitudeType>::BasicSort(const std::string &which) 
+  BasicSort<MagnitudeType>::BasicSort(const std::string &which)
   {
     setSortType(which);
   }
 
   template<class MagnitudeType>
-  BasicSort<MagnitudeType>::~BasicSort() 
+  BasicSort<MagnitudeType>::~BasicSort()
   {}
 
   template<class MagnitudeType>
-  void BasicSort<MagnitudeType>::setSortType(const std::string &which) 
-  { 
+  void BasicSort<MagnitudeType>::setSortType(const std::string &which)
+  {
     // make upper case
     std::string whichlc(which);
     std::transform(which.begin(),which.end(),whichlc.begin(),(int(*)(int)) std::toupper);
@@ -260,7 +260,7 @@ namespace Anasazi {
       }
     }
     else {
-      // 
+      //
       // if permutation index is required, we must sort the two at once
       // in this case, we arrange a pair structure: <value,index>
       // default comparison operator for pair<t1,t2> is lexographic:
@@ -307,14 +307,14 @@ namespace Anasazi {
 
 
   template<class MagnitudeType>
-  void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &r_evals, 
-                                      std::vector<MagnitudeType> &i_evals, 
+  void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &r_evals,
+                                      std::vector<MagnitudeType> &i_evals,
                                       Teuchos::RCP< std::vector<int> > perm,
-                                      int n) const 
+                                      int n) const
   {
 
-    typedef typename std::vector<MagnitudeType>::iterator r_eval_iter_t;
-    typedef typename std::vector<MagnitudeType>::iterator i_eval_iter_t;
+    //typedef typename std::vector<MagnitudeType>::iterator r_eval_iter_t; // unused
+    //typedef typename std::vector<MagnitudeType>::iterator i_eval_iter_t; // unused
 
     TEUCHOS_TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r,i): n must be n >= 0 or n == -1.");
     if (n == -1) {
@@ -336,7 +336,7 @@ namespace Anasazi {
     if (perm == Teuchos::null) {
       //
       // not permuting, so we don't need indices in the pairs
-      // 
+      //
       std::vector< std::pair<MagnitudeType,MagnitudeType> > pairs(n);
       // for LM,SM, the order doesn't matter
       // for LI,SI, the imaginary goes first
@@ -382,7 +382,7 @@ namespace Anasazi {
     else {
       //
       // permuting, we need indices in the pairs
-      // 
+      //
       std::vector< std::pair< std::pair<MagnitudeType,MagnitudeType>, int > > pairs(n);
       // for LM,SM, the order doesn't matter
       // for LI,SI, the imaginary goes first
@@ -453,7 +453,7 @@ namespace Anasazi {
 
   template<class MagnitudeType>
   template<class LTorGT>
-  bool BasicSort<MagnitudeType>::compAlg<LTorGT>::operator()(MagnitudeType v1, MagnitudeType v2) 
+  bool BasicSort<MagnitudeType>::compAlg<LTorGT>::operator()(MagnitudeType v1, MagnitudeType v2)
   {
     LTorGT comp;
     return comp( v1, v2 );
@@ -483,7 +483,7 @@ namespace Anasazi {
   template <class MagnitudeType>
   template <typename pair_type>
   const typename pair_type::first_type &
-  BasicSort<MagnitudeType>::sel1st<pair_type>::operator()(const pair_type &v) const 
+  BasicSort<MagnitudeType>::sel1st<pair_type>::operator()(const pair_type &v) const
   {
     return v.first;
   }
@@ -491,7 +491,7 @@ namespace Anasazi {
   template <class MagnitudeType>
   template <typename pair_type>
   const typename pair_type::second_type &
-  BasicSort<MagnitudeType>::sel2nd<pair_type>::operator()(const pair_type &v) const 
+  BasicSort<MagnitudeType>::sel2nd<pair_type>::operator()(const pair_type &v) const
   {
     return v.second;
   }

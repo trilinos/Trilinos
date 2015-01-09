@@ -1,2 +1,3 @@
 #!/bin/sh
-find . -type f -exec string-replace.pl $1 $2 '{}' '{}' ';'
+_SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/string-replace-r/\1/g"`
+find . -type f -exec $_SCRIPT_DIR/string-replace.pl $1 $2 '{}' '{}' ';'

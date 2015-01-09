@@ -89,12 +89,14 @@ namespace panzer {
   template <typename> class LinearObjFactory;
 
   template <typename,typename> class BlockedDOFManager;
+#ifdef PANZER_HAVE_FEI
   template <typename,typename> class DOFManagerFEI;
+#endif
   template <typename,typename> class DOFManager;
   template <typename> class ConnManagerBase;
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
   template <typename GO> class STKConnManager;
   class NOXObserverFactory;
@@ -130,9 +132,9 @@ namespace panzer_stk {
     /** @name Methods for building the solver */
     //@{
 
-    void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory);
+    void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory>& nox_observer_factory);
 
-    void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory);
+    void setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory>& rythmos_observer_factory);
 
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
@@ -147,8 +149,8 @@ namespace panzer_stk {
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
 				    const Teuchos::RCP<panzer::GlobalData>& global_data,
 				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
+                    const Teuchos::Ptr<const panzer_stk_classic::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
+                    const Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
     //@}
 
@@ -157,7 +159,7 @@ namespace panzer_stk {
     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & getPhysicsBlocks() const;
 
     //! Get mesh object used to build model evaluator
-    Teuchos::RCP<panzer_stk::STK_Interface> getMesh() const 
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> getMesh() const 
     { return m_mesh; }
 
     //! Get global indexer used to build model evaluator
@@ -185,7 +187,8 @@ namespace panzer_stk {
                               const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                               const panzer::BCStrategyFactory & bc_factory,
                               const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
-                              bool is_transient,bool is_explicit) const;
+                              bool is_transient,bool is_explicit,
+                              const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
 
   protected:
  
@@ -214,9 +217,6 @@ namespace panzer_stk {
                              const Teuchos::ParameterList& user_data,
                              bool writeGraph,const std::string & graphPrefix) const;
 
-    void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
-                            const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
-
     //! build STK mesh factory from a mesh parameter list
     Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
 
@@ -242,6 +242,7 @@ namespace panzer_stk {
     void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
+#ifdef PANZER_HAVE_FEI
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
       * \param[in] fieldName Field to fill associative container with
@@ -251,6 +252,7 @@ namespace panzer_stk {
     template <typename GO>
     void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
+#endif
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -268,7 +270,7 @@ namespace panzer_stk {
      * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
     */
     double getInitialTime(Teuchos::ParameterList& transient_ic_params,
-			  const panzer_stk::STK_Interface& mesh) const;
+			  const panzer_stk_classic::STK_Interface& mesh) const;
 
     /**
       */
@@ -276,7 +278,7 @@ namespace panzer_stk {
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
                                                                 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
                                                                 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
-                                                                const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const;
+                                                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh) const;
 
     /**
       */
@@ -290,7 +292,7 @@ namespace panzer_stk {
     buildLOWSFactory(bool blockedAssembly,
                      const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                      const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
     /** Build LOWS factory.
@@ -298,15 +300,17 @@ namespace panzer_stk {
     template <typename GO>
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > buildLOWSFactory(bool blockedAssembly,
                                                                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                                                                                const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
-                                                                                const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                                                                                const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
+                                                                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                                                                                 const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
     template <typename GO>
     void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const;
 
+#ifdef PANZER_HAVE_FEI
     template <typename GO>
     void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
+#endif
 
   private:
 
@@ -316,7 +320,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > m_physics_blocks;
 
-    Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
@@ -327,8 +331,8 @@ namespace panzer_stk {
     bool m_is_transient;
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
-    Teuchos::RCP<const panzer_stk::NOXObserverFactory> m_nox_observer_factory;
-    Teuchos::RCP<const panzer_stk::RythmosObserverFactory> m_rythmos_observer_factory;
+    Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory> m_nox_observer_factory;
+    Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> m_rythmos_observer_factory;
  
     bool useDynamicCoordinates_;
   };

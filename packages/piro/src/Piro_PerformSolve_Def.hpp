@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -77,16 +77,21 @@ void PerformSolveImpl(
         responses[j] = g;
 
         if(Teuchos::nonnull(observer))
-           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs), 
+           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs),
                 Teuchos::rcpFromRef(responses), g);
 
         if (computeSensitivities) {
           for (int l = 0; l < parameterCount; ++l) {
             const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
               outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-            if (dgdp_support.supports(dgdp_orient)) {
+            Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient;
+            if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM)||dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+              //Somehow, when DERIV_MV_JACOBIAN_FORM is supported, also  DERIV_MV_GRADIENT_FORM is.
+              //When p is a distributed parameter, only DERIV_MV_GRADIENT_FORM is supported.
+              dgdp_orient =  (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) ?
+                Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM:
+                Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM;
+
               const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
                 Thyra::create_DgDp_mv(model, j, l, dgdp_orient);
               outArgs.set_DgDp(j, l, dgdp);
@@ -98,9 +103,27 @@ void PerformSolveImpl(
     }
   }
 
+/*
+   TODO: This improper use of "reportFinalPoint" needs to be redone, but will
+   require redesign of this section of code.
+*/
+
+  Thyra::ModelEvaluator<Scalar>* mutable_modelPtr =
+         const_cast<Thyra::ModelEvaluator<Scalar>* >(&model);
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> finalPoint;
+
+  mutable_modelPtr->reportFinalPoint(finalPoint, /*unused*/ true);
+
   // Solve the problem using the default values for the parameters
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
   model.evalModel(inArgs, outArgs);
+
+  // If the model has set that it provides IN_ARG_x, get the final solution
+  if(finalPoint.supports(Thyra::ModelEvaluatorBase::IN_ARG_x)){
+        Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_init = finalPoint.get_x();
+        responses[responseCount-1] = Teuchos::rcp_const_cast< Thyra::VectorBase<Scalar> >(x_init);
+  }
 
 }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -36,8 +36,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Questions? Contact Karen Devine	kddevin@sandia.gov
- *                    Erik Boman	egboman@sandia.gov
+ * Questions? Contact Karen Devine      kddevin@sandia.gov
+ *                    Erik Boman        egboman@sandia.gov
  *
  * ***********************************************************************
  *
@@ -145,6 +145,7 @@ Zoltan_PHG_2ways_hyperedge_partition (
   if (*numParts && (*sizeParts) == NULL) MEMORY_ERROR;
 
   offset = hg->dist_y[hg->comm->myProc_y];
+  (void) offset; /* forestall warning for "variable set but unused" */
   /* Then we search we is the hyperedge in the tree */
   for (hEdge = 0 ; hEdge < nEdge ; ++hEdge) {
     int node;
@@ -173,7 +174,7 @@ Zoltan_PHG_2ways_hyperedge_partition (
   rowGID = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdge);
   if (nEdge && rowGID == NULL) MEMORY_ERROR;
   ierr = Zoltan_DD_Find (gnoToGID , (ZOLTAN_ID_PTR)rowGNO, rowGID, NULL, NULL,
-			 nEdge, NULL);
+                         nEdge, NULL);
   ZOLTAN_FREE(&rowGNO);
 
   ierr = Zoltan_DD_Create (dd, zz->Communicator, zz->Num_GID, 1, 0, nEdge, 0);

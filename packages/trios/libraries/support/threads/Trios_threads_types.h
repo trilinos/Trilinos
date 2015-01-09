@@ -51,17 +51,25 @@
 
 #include "Trios_config.h"
 
-
 #include <stdint.h>
+
+#if defined(HAVE_TRIOS_PTHREAD_H)
+#include <pthread.h>
+#endif
+
 #if defined(HAVE_TRIOS_SEMAPHORE_H)
 #include <semaphore.h>
 #endif
 
 typedef struct {
     char  *name;
-#if defined(HAVE_TRIOS_SEM_T)
+#if defined(HAVE_TRIOS_PTHREAD_MUTEX_T)
+    pthread_mutex_t lock;
+#elif defined(HAVE_TRIOS_SEM_T)
     sem_t  lock;
     sem_t *lock_ptr;
+#else
+#warning No locking mechanism available on this system.
 #endif
 } nthread_lock_t;
 
@@ -69,6 +77,14 @@ typedef struct {
     nthread_lock_t lock;
     int64_t        value;
 } nthread_counter_t;
+
+typedef struct {
+#if defined(HAVE_TRIOS_PTHREAD_COND_T)
+    pthread_cond_t condvar;
+#elif defined(HAVE_TRIOS_SEM_T)
+/* #warning The semaphores implementation of NSSI threads does not have conditional variables.  Sorry. */
+#endif
+} nthread_cond_t;
 
 
 #endif /* _TRIOS_THREADS_TYPES_H_ */

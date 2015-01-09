@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,31 +49,31 @@
 //! Epetra_Data:  The Epetra Base Data Class.
 /*! The Epetra_Data class is a base class for all Epetra Data Classes.
 	  It provides a mechanism so that one data object can be shared by multiple
-		class instances. However, it is meant only to be used internally by 
+		class instances. However, it is meant only to be used internally by
 		another Epetra class. It does not provide smart pointer like capabilities.
-		Incrementing and decrementing the reference count, and deleting the 
-		data class instance (if necessary), are duties of the Epetra class 
+		Incrementing and decrementing the reference count, and deleting the
+		data class instance (if necessary), are duties of the Epetra class
 		utilizing Epetra_Data.
 
-		All of Epetra_Data's methods are protected. This is because Epetra_Data 
+		All of Epetra_Data's methods are protected. This is because Epetra_Data
 		should never be used directly. Rather, a class that derives from
-		Epetra_Data should be used instead. For example, Epetra_MpiCommData or 
+		Epetra_Data should be used instead. For example, Epetra_MpiCommData or
 		Epetra_BlockMapData.
 
-		DEVELOPER NOTES: 
-		(1) Any class that inherits from Epetra_Data may need to define an 
-		assignment operator, if it adds pointers. Epetra_Data doesn't have any, 
-		and so the default (compiler-generated) assignment operator is good enough. 
-		(2) The behavior of a derived class is left up to the 
-		implementer(s) of that class. As such, it cannot be assumed that 
-		just because a class inherits from Epetra_Data, that it supports copy 
-		construction or assignment, or that it will perform as expected. 
+		DEVELOPER NOTES:
+		(1) Any class that inherits from Epetra_Data may need to define an
+		assignment operator, if it adds pointers. Epetra_Data doesn't have any,
+		and so the default (compiler-generated) assignment operator is good enough.
+		(2) The behavior of a derived class is left up to the
+		implementer(s) of that class. As such, it cannot be assumed that
+		just because a class inherits from Epetra_Data, that it supports copy
+		construction or assignment, or that it will perform as expected.
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Data {
  protected:
    //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_Data Serial Constructor.
   Epetra_Data();
@@ -88,7 +88,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Data {
   //@}
 
   //! @name Reference-Counting Methods
-	//@{ 
+	//@{
 
 	//! Increment reference count
 	void IncrementReferenceCount();
@@ -102,7 +102,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Data {
 	//@}
 
 	int ReferenceCount_;
-  
+
 };
 
 #endif /* EPETRA_DATA_H */

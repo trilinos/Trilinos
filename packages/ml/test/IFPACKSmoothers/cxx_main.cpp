@@ -2,6 +2,8 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
 
+#include <vector>
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -69,17 +71,17 @@ int main(int argc, char *argv[]) {
 
   bool TestPassed = true;
 
-  vector<string> TestList;
+  std::vector<string> TestList;
   TestList.push_back("Jacobi");
   TestList.push_back("Gauss-Seidel");
   TestList.push_back("symmetric Gauss-Seidel");
 
-  vector<string> PreOrPost;
+  std::vector<string> PreOrPost;
   PreOrPost.push_back("pre");
   PreOrPost.push_back("post");
   PreOrPost.push_back("both");
 
-  vector<double> Damping;
+  std::vector<double> Damping;
   Damping.push_back(0.67);
   Damping.push_back(1.00);
 

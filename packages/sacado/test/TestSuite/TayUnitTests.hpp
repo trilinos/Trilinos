@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -50,235 +48,242 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
 // Cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 
-#define COMPARE_DOUBLES(a, b)				\
+#define COMPARE_DOUBLES(a, b)                           \
   CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
 
-#define COMPARE_POLYS(x_dtay, x_adolc)				\
-  CPPUNIT_ASSERT(x_dtay.degree() == d);				\
-  for (int i=0; i<=d; i++) {				\
-    COMPARE_DOUBLES(x_dtay.coeff(i), x_adolc[i]);		\
-  }								\
+#define COMPARE_POLYS(x_dtay, x_adolc)                          \
+  CPPUNIT_ASSERT(x_dtay.degree() == d);                         \
+  for (int i=0; i<=d; i++) {                                    \
+    COMPARE_DOUBLES(x_dtay.coeff(i), x_adolc[i]);               \
+  }                                                             \
   ;
 
-#define BINARY_OP2_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {			    \
-    c_dtay = a_dtay OP b_dtay;		    \
-    trace_on(0);			    \
-    adouble aa, ab, ac;			    \
-    aa <<= X[0][0];			    \
-    ab <<= X[1][0];			    \
-    ac = aa OP ab;			    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,2,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+#define COMPARE_TAYS(x_dtay, y_dtay)                            \
+  CPPUNIT_ASSERT(x_dtay.degree() == y_dtay.degree());           \
+  for (int i=0; i<=x_dtay.degree(); i++) {                      \
+    COMPARE_DOUBLES(x_dtay.coeff(i), y_dtay.coeff(i));          \
+  }                                                             \
+  ;
+
+#define BINARY_OP2_TEST(TESTNAME,OP)        \
+  void TESTNAME () {                        \
+    c_dtay = a_dtay OP b_dtay;              \
+    trace_on(0);                            \
+    adouble aa, ab, ac;                     \
+    aa <<= X[0][0];                         \
+    ab <<= X[1][0];                         \
+    ac = aa OP ab;                          \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,2,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
-#define BINARY_OPRC_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {			    \
-    double val = urand.number();	    \
-    c_dtay = a_dtay OP val;		    \
-    trace_on(0);			    \
-    adouble aa, ac;			    \
-    aa <<= X[0][0];			    \
-    ac = aa OP val;			    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,1,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+#define BINARY_OPRC_TEST(TESTNAME,OP)       \
+  void TESTNAME () {                        \
+    double val = urand.number();            \
+    c_dtay = a_dtay OP val;                 \
+    trace_on(0);                            \
+    adouble aa, ac;                         \
+    aa <<= X[0][0];                         \
+    ac = aa OP val;                         \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,1,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
-#define BINARY_OPLC_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {			    \
-    double val = urand.number();	    \
-    c_dtay = val OP a_dtay;		    \
-    trace_on(0);			    \
-    adouble aa, ac;			    \
-    aa <<= X[0][0];			    \
-    ac = val OP aa;			    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,1,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+#define BINARY_OPLC_TEST(TESTNAME,OP)       \
+  void TESTNAME () {                        \
+    double val = urand.number();            \
+    c_dtay = val OP a_dtay;                 \
+    trace_on(0);                            \
+    adouble aa, ac;                         \
+    aa <<= X[0][0];                         \
+    ac = val OP aa;                         \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,1,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
-#define BINARY_OP_TEST(TESTNAME,OP)			\
-  BINARY_OP2_TEST(TESTNAME,OP);				\
-  BINARY_OPLC_TEST(TESTNAME ## LeftConstant,OP);	\
+#define BINARY_OP_TEST(TESTNAME,OP)                     \
+  BINARY_OP2_TEST(TESTNAME,OP);                         \
+  BINARY_OPLC_TEST(TESTNAME ## LeftConstant,OP);        \
   BINARY_OPRC_TEST(TESTNAME ## RightConstant,OP)
 
-#define CPPUNIT_BINARY_OP_TEST(TESTNAME)	\
-  CPPUNIT_TEST(TESTNAME);			\
-  CPPUNIT_TEST(TESTNAME ## LeftConstant);	\
+#define CPPUNIT_BINARY_OP_TEST(TESTNAME)        \
+  CPPUNIT_TEST(TESTNAME);                       \
+  CPPUNIT_TEST(TESTNAME ## LeftConstant);       \
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
-#define RELOP_OP2_TEST(TESTNAME,OP)	                \
-  void TESTNAME () {			                \
-    bool r1 = a_dtay OP b_dtay;		                \
-    bool r2 = a_dtay.coeff(0) OP b_dtay.coeff(0);	\
-    CPPUNIT_ASSERT(r1 == r2);				\
+#define RELOP_OP2_TEST(TESTNAME,OP)                     \
+  void TESTNAME () {                                    \
+    bool r1 = a_dtay OP b_dtay;                         \
+    bool r2 = a_dtay.coeff(0) OP b_dtay.coeff(0);       \
+    CPPUNIT_ASSERT(r1 == r2);                           \
   }
 
-#define RELOP_OPLC_TEST(TESTNAME,OP)	                \
-  void TESTNAME () {			                \
+#define RELOP_OPLC_TEST(TESTNAME,OP)                    \
+  void TESTNAME () {                                    \
     double val = urand.number();                        \
-    bool r1 = val OP b_dtay;		                \
-    bool r2 = val OP b_dtay.coeff(0);	                \
-    CPPUNIT_ASSERT(r1 == r2);				\
+    bool r1 = val OP b_dtay;                            \
+    bool r2 = val OP b_dtay.coeff(0);                   \
+    CPPUNIT_ASSERT(r1 == r2);                           \
   }
 
-#define RELOP_OPRC_TEST(TESTNAME,OP)	                \
-  void TESTNAME () {			                \
+#define RELOP_OPRC_TEST(TESTNAME,OP)                    \
+  void TESTNAME () {                                    \
     double val = urand.number();                        \
-    bool r1 = a_dtay OP val;		                \
-    bool r2 = a_dtay.coeff(0) OP val;	                \
-    CPPUNIT_ASSERT(r1 == r2);				\
+    bool r1 = a_dtay OP val;                            \
+    bool r2 = a_dtay.coeff(0) OP val;                   \
+    CPPUNIT_ASSERT(r1 == r2);                           \
   }
 
-#define RELOP_OP_TEST(TESTNAME,OP)			\
+#define RELOP_OP_TEST(TESTNAME,OP)                      \
   RELOP_OP2_TEST(TESTNAME,OP);                          \
-  RELOP_OPLC_TEST(TESTNAME ## LeftConstant,OP);	        \
+  RELOP_OPLC_TEST(TESTNAME ## LeftConstant,OP);         \
   RELOP_OPRC_TEST(TESTNAME ## RightConstant,OP)
 
-#define CPPUNIT_RELOP_OP_TEST(TESTNAME)	                \
-  CPPUNIT_TEST(TESTNAME);			        \
-  CPPUNIT_TEST(TESTNAME ## LeftConstant);	        \
+#define CPPUNIT_RELOP_OP_TEST(TESTNAME)                 \
+  CPPUNIT_TEST(TESTNAME);                               \
+  CPPUNIT_TEST(TESTNAME ## LeftConstant);               \
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
 #define BINARY_FUNC2_TEST(TESTNAME,FUNC)    \
-  void TESTNAME () {			    \
-    c_dtay = FUNC (a_dtay, b_dtay);	    \
-    trace_on(0);			    \
-    adouble aa, ab, ac;			    \
-    aa <<= X[0][0];			    \
-    ab <<= X[1][0];			    \
-    ac = FUNC (aa, ab);			    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,2,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+  void TESTNAME () {                        \
+    c_dtay = FUNC (a_dtay, b_dtay);         \
+    trace_on(0);                            \
+    adouble aa, ab, ac;                     \
+    aa <<= X[0][0];                         \
+    ab <<= X[1][0];                         \
+    ac = FUNC (aa, ab);                     \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,2,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
 #define BINARY_FUNCRC_TEST(TESTNAME,FUNC)   \
-  void TESTNAME () {			    \
-    double val = urand.number();	    \
-    c_dtay = FUNC (a_dtay, val);	    \
-    trace_on(0);			    \
-    adouble aa, ac;			    \
-    aa <<= X[0][0];			    \
-    ac = FUNC (aa, val);		    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,1,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+  void TESTNAME () {                        \
+    double val = urand.number();            \
+    c_dtay = FUNC (a_dtay, val);            \
+    trace_on(0);                            \
+    adouble aa, ac;                         \
+    aa <<= X[0][0];                         \
+    ac = FUNC (aa, val);                    \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,1,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
 #define BINARY_FUNCLC_TEST(TESTNAME,FUNC)   \
-  void TESTNAME () {			    \
-    double val = urand.number();	    \
-    c_dtay = FUNC (val, a_dtay);	    \
-    trace_on(0);			    \
-    adouble aa, ac;			    \
-    aa <<= X[0][0];			    \
-    ac = FUNC (val, aa);		    \
-    ac >>= Y[0][0];			    \
-    trace_off();			    \
-    forward(0,1,1,d,0,X,Y);		    \
-    COMPARE_POLYS(c_dtay,Y[0]);		    \
+  void TESTNAME () {                        \
+    double val = urand.number();            \
+    c_dtay = FUNC (val, a_dtay);            \
+    trace_on(0);                            \
+    adouble aa, ac;                         \
+    aa <<= X[0][0];                         \
+    ac = FUNC (val, aa);                    \
+    ac >>= Y[0][0];                         \
+    trace_off();                            \
+    forward(0,1,1,d,0,X,Y);                 \
+    COMPARE_POLYS(c_dtay,Y[0]);             \
   }
 
-#define BINARY_FUNC_TEST(TESTNAME,FUNC)				\
-  BINARY_FUNC2_TEST(TESTNAME,FUNC);				\
-  BINARY_FUNCLC_TEST(TESTNAME ## LeftConstant,FUNC);		\
+#define BINARY_FUNC_TEST(TESTNAME,FUNC)                         \
+  BINARY_FUNC2_TEST(TESTNAME,FUNC);                             \
+  BINARY_FUNCLC_TEST(TESTNAME ## LeftConstant,FUNC);            \
   BINARY_FUNCRC_TEST(TESTNAME ## RightConstant,FUNC)
 
-#define CPPUNIT_BINARY_FUNC_TEST(TESTNAME)	\
-  CPPUNIT_TEST(TESTNAME);			\
-  CPPUNIT_TEST(TESTNAME ## LeftConstant);	\
+#define CPPUNIT_BINARY_FUNC_TEST(TESTNAME)      \
+  CPPUNIT_TEST(TESTNAME);                       \
+  CPPUNIT_TEST(TESTNAME ## LeftConstant);       \
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
-#define UNARY_OP_TEST(TESTNAME,OP)		    \
-  void TESTNAME () {				    \
-    c_dtay = OP a_dtay;				    \
-    trace_on(0);				    \
-    adouble aa, ac;				    \
-    aa <<= X[0][0];				    \
-    ac = OP aa;					    \
-    ac >>= Y[0][0];				    \
-    trace_off();				    \
-    forward(0,1,1,d,0,X,Y);			    \
-    COMPARE_POLYS(c_dtay,Y[0]);			    \
+#define UNARY_OP_TEST(TESTNAME,OP)                  \
+  void TESTNAME () {                                \
+    c_dtay = OP a_dtay;                             \
+    trace_on(0);                                    \
+    adouble aa, ac;                                 \
+    aa <<= X[0][0];                                 \
+    ac = OP aa;                                     \
+    ac >>= Y[0][0];                                 \
+    trace_off();                                    \
+    forward(0,1,1,d,0,X,Y);                         \
+    COMPARE_POLYS(c_dtay,Y[0]);                     \
   }
 
-#define UNARY_FUNC_TEST(TESTNAME,FUNC)		    \
-  void TESTNAME () {				    \
-    c_dtay = FUNC (a_dtay);			    \
-    trace_on(0);				    \
-    adouble aa, ac;				    \
-    aa <<= X[0][0];				    \
-    ac = FUNC (aa);				    \
-    ac >>= Y[0][0];				    \
-    trace_off();				    \
-    forward(0,1,1,d,0,X,Y);			    \
-    COMPARE_POLYS(c_dtay,Y[0]);			    \
+#define UNARY_FUNC_TEST(TESTNAME,FUNC)              \
+  void TESTNAME () {                                \
+    c_dtay = FUNC (a_dtay);                         \
+    trace_on(0);                                    \
+    adouble aa, ac;                                 \
+    aa <<= X[0][0];                                 \
+    ac = FUNC (aa);                                 \
+    ac >>= Y[0][0];                                 \
+    trace_off();                                    \
+    forward(0,1,1,d,0,X,Y);                         \
+    COMPARE_POLYS(c_dtay,Y[0]);                     \
   }
 
-#define UNARY_ASSIGNOP2_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {				    \
-    c_dtay = a_dtay;				    \
-    c_dtay OP b_dtay;				    \
-    trace_on(0);				    \
-    adouble aa, ab, ac;				    \
-    aa <<= X[0][0];				    \
-    ab <<= X[1][0];				    \
-    ac = aa;					    \
-    ac OP ab;					    \
-    ac >>= Y[0][0];				    \
-    trace_off();				    \
-    forward(0,1,2,d,0,X,Y);			    \
-    COMPARE_POLYS(c_dtay,Y[0]);			    \
+#define UNARY_ASSIGNOP2_TEST(TESTNAME,OP)           \
+  void TESTNAME () {                                \
+    c_dtay = a_dtay;                                \
+    c_dtay OP b_dtay;                               \
+    trace_on(0);                                    \
+    adouble aa, ab, ac;                             \
+    aa <<= X[0][0];                                 \
+    ab <<= X[1][0];                                 \
+    ac = aa;                                        \
+    ac OP ab;                                       \
+    ac >>= Y[0][0];                                 \
+    trace_off();                                    \
+    forward(0,1,2,d,0,X,Y);                         \
+    COMPARE_POLYS(c_dtay,Y[0]);                     \
   }
 
-#define UNARY_ASSIGNOPRC_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {				    \
-    double val = urand.number();		    \
-    c_dtay = a_dtay;				    \
-    c_dtay OP val;				    \
-    trace_on(0);				    \
-    adouble aa, ac;				    \
-    aa <<= X[0][0];				    \
-    ac = aa;					    \
-    ac OP val;					    \
-    ac >>= Y[0][0];				    \
-    trace_off();				    \
-    forward(0,1,1,d,0,X,Y);			    \
-    COMPARE_POLYS(c_dtay,Y[0]);			    \
+#define UNARY_ASSIGNOPRC_TEST(TESTNAME,OP)          \
+  void TESTNAME () {                                \
+    double val = urand.number();                    \
+    c_dtay = a_dtay;                                \
+    c_dtay OP val;                                  \
+    trace_on(0);                                    \
+    adouble aa, ac;                                 \
+    aa <<= X[0][0];                                 \
+    ac = aa;                                        \
+    ac OP val;                                      \
+    ac >>= Y[0][0];                                 \
+    trace_off();                                    \
+    forward(0,1,1,d,0,X,Y);                         \
+    COMPARE_POLYS(c_dtay,Y[0]);                     \
   }
 
-#define UNARY_ASSIGNOPLC_TEST(TESTNAME,OP)	    \
-  void TESTNAME () {				    \
-    double val = urand.number();		    \
-    c_dtay = val;				    \
-    c_dtay OP a_dtay;				    \
-    trace_on(0);				    \
-    adouble aa, ac;				    \
-    aa <<= X[0][0];				    \
-    ac = val;					    \
-    ac OP aa;					    \
-    ac >>= Y[0][0];				    \
-    trace_off();				    \
-    forward(0,1,1,d,0,X,Y);			    \
-    COMPARE_POLYS(c_dtay,Y[0]);			    \
+#define UNARY_ASSIGNOPLC_TEST(TESTNAME,OP)          \
+  void TESTNAME () {                                \
+    double val = urand.number();                    \
+    c_dtay = val;                                   \
+    c_dtay OP a_dtay;                               \
+    trace_on(0);                                    \
+    adouble aa, ac;                                 \
+    aa <<= X[0][0];                                 \
+    ac = val;                                       \
+    ac OP aa;                                       \
+    ac >>= Y[0][0];                                 \
+    trace_off();                                    \
+    forward(0,1,1,d,0,X,Y);                         \
+    COMPARE_POLYS(c_dtay,Y[0]);                     \
   }
 
-#define UNARY_ASSIGNOP_TEST(TESTNAME,OP)		\
-  UNARY_ASSIGNOP2_TEST(TESTNAME,OP);			\
-  UNARY_ASSIGNOPLC_TEST(TESTNAME ## LeftConstant,OP);	\
+#define UNARY_ASSIGNOP_TEST(TESTNAME,OP)                \
+  UNARY_ASSIGNOP2_TEST(TESTNAME,OP);                    \
+  UNARY_ASSIGNOPLC_TEST(TESTNAME ## LeftConstant,OP);   \
   UNARY_ASSIGNOPRC_TEST(TESTNAME ## RightConstant,OP)
 
-#define CPPUNIT_UNARY_ASSIGNOP_TEST(TESTNAME)	\
-  CPPUNIT_TEST(TESTNAME);			\
-  CPPUNIT_TEST(TESTNAME ## LeftConstant);	\
+#define CPPUNIT_UNARY_ASSIGNOP_TEST(TESTNAME)   \
+  CPPUNIT_TEST(TESTNAME);                       \
+  CPPUNIT_TEST(TESTNAME ## LeftConstant);       \
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
 // A class for testing each Taylor operation
@@ -305,7 +310,7 @@ class TaylorOpsUnitTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST(testUnaryPlus);
   CPPUNIT_TEST(testUnaryMinus);
-  
+
   CPPUNIT_TEST(testExp);
   CPPUNIT_TEST(testLog);
   CPPUNIT_TEST(testLog10);
@@ -328,14 +333,17 @@ class TaylorOpsUnitTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST(testComposite1);
 
+  CPPUNIT_TEST(testDiff1);
+  CPPUNIT_TEST(testDiff3);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
 
   TaylorOpsUnitTest();
 
-  TaylorOpsUnitTest(int degree, double absolute_tolerance, 
-		     double relative_tolerance);
+  TaylorOpsUnitTest(int degree, double absolute_tolerance,
+                     double relative_tolerance);
 
   ~TaylorOpsUnitTest();
 
@@ -392,7 +400,7 @@ public:
     t1 -= acos((6.+asin(pow(fabs(a),b)/t2))/t3) * asin(pow(fabs(b),2.)*1.0/t4) * atan((b*pow(2.,log(fabs(a))))/(t3*t4));
     t1 /= cosh(b - 0.7) + 7.*sinh(t1 + 0.8)*tanh(9./(a+1.)) - 9.;
     t1 += pow(fabs(a*4.),b-8.)/cos(a*b*a);
-    
+
   return t1;
 }
 
@@ -407,6 +415,20 @@ public:
     trace_off();
     forward(0,1,2,d,0,X,Y);
     COMPARE_POLYS(c_dtay,Y[0]);
+  }
+
+  void testDiff1() {
+    TaylorType a_diff1 = diff(a_dtay);
+    TaylorType a_diff2(d-1);
+    for (int i=1; i<=d; ++i)
+      a_diff2.fastAccessCoeff(i-1) = a_dtay.fastAccessCoeff(i)*i;
+    COMPARE_TAYS(a_diff1, a_diff2);
+  }
+
+  void testDiff3() {
+    TaylorType a_diff1 = diff(a_dtay, 3);
+    TaylorType a_diff2 = diff( diff( diff(a_dtay) ) );
+    COMPARE_TAYS(a_diff1, a_diff2);
   }
 
   void print_poly(double *x);
@@ -434,7 +456,7 @@ protected:
 
 template <class TaylorType>
 TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest() :
-  urand(), d(5), tol_a(1.0e-11), tol_r(1.0e-10) 
+  urand(), d(5), tol_a(1.0e-11), tol_r(1.0e-10)
 {
   X = new double*[2];
   X[0] = new double[d+1];
@@ -445,13 +467,13 @@ TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest() :
 }
 
 template <class TaylorType>
-TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(int degree, 
-						 double absolute_tolerance, 
-						 double relative_tolerance) :
-  urand(), 
-  d(degree), 
-  tol_a(absolute_tolerance), 
-  tol_r(relative_tolerance) 
+TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(int degree,
+                                                 double absolute_tolerance,
+                                                 double relative_tolerance) :
+  urand(),
+  d(degree),
+  tol_a(absolute_tolerance),
+  tol_r(relative_tolerance)
 {
   X = new double*[2];
   X[0] = new double[d+1];
@@ -478,7 +500,7 @@ void TaylorOpsUnitTest<TaylorType>::setUp() {
 
   a_dtay = TaylorType(d,0.0);
   b_dtay = TaylorType(d,0.0);
-  
+
   for (int i=0; i<=d; i++) {
     val = urand.number();
     a_dtay.fastAccessCoeff(i) = val;
@@ -500,7 +522,7 @@ void TaylorOpsUnitTest<TaylorType>::print_poly(double *x) {
   std::cout.setf(std::ios::fixed,std::ios::floatfield);
   std::cout.width(12);
   std::cout << "[";
-      
+
   for (int i=0; i<=d; i++) {
     std::cout.width(12);
     std::cout << x[i];
@@ -511,11 +533,11 @@ void TaylorOpsUnitTest<TaylorType>::print_poly(double *x) {
 
 template <class TaylorType>
 void TaylorOpsUnitTest<TaylorType>::print_diff(const TaylorType& x_dtay,
-					       double *x) {
+                                               double *x) {
   std::cout.setf(std::ios::scientific,std::ios::floatfield);
   //std::cout.width(12);
   std::cout << "[";
-      
+
   for (int i=0; i<=d; i++) {
     //std::cout.width(12);
     std::cout << x_dtay.coeff(i) - x[i] << " ";
@@ -527,7 +549,7 @@ void TaylorOpsUnitTest<TaylorType>::print_diff(const TaylorType& x_dtay,
 #include "Sacado_Tay_CacheTaylor.hpp"
 // CacheTaylor unit tests that don't test max/min, since this class
 // doesn't define those yet
-class CacheTaylorOpsUnitTest : 
+class CacheTaylorOpsUnitTest :
   public TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> > {
 
   CPPUNIT_TEST_SUITE( CacheTaylorOpsUnitTest );
@@ -550,7 +572,7 @@ class CacheTaylorOpsUnitTest :
 
   CPPUNIT_TEST(testUnaryPlus);
   CPPUNIT_TEST(testUnaryMinus);
-  
+
   CPPUNIT_TEST(testExp);
   CPPUNIT_TEST(testLog);
   CPPUNIT_TEST(testLog10);
@@ -579,11 +601,11 @@ public:
 
   CacheTaylorOpsUnitTest() {}
 
-  CacheTaylorOpsUnitTest(int degree, double absolute_tolerance, 
-			 double relative_tolerance) :
-    TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> >(degree, 
-							  absolute_tolerance, 
-							  relative_tolerance) {}
+  CacheTaylorOpsUnitTest(int degree, double absolute_tolerance,
+                         double relative_tolerance) :
+    TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> >(degree,
+                                                          absolute_tolerance,
+                                                          relative_tolerance) {}
 
   ~CacheTaylorOpsUnitTest() {}
 

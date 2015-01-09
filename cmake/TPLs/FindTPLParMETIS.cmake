@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( ParMETIS
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( ParMETIS
   REQUIRED_HEADERS parmetis.h
   REQUIRED_LIBS_NAMES "parmetis;metis"
   )

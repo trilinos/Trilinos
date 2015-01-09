@@ -105,7 +105,8 @@ public:
 
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
   {
-    IFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
+    int ierr = A_->ExtractDiagonalCopy(Diagonal);
+    IFPACK_RETURN(ierr);
   }
 
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
@@ -121,7 +122,8 @@ public:
   virtual int Apply(const Epetra_MultiVector& X,
 		    Epetra_MultiVector& Y) const
   {
-    IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
+    int ierr = Multiply(UseTranspose(),X,Y);
+    IFPACK_RETURN(ierr);
   }
 
   virtual int ApplyInverse(const Epetra_MultiVector& X,

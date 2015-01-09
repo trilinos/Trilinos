@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_ALGRCM_HPP_
 #define _ZOLTAN2_ALGRCM_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_Sort.hpp>
@@ -59,35 +60,33 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgRCM
+class AlgRCM : public Algorithm<Adapter>
 {
   private:
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
+
+  const RCP<GraphModel<Adapter> > model;
+  const RCP<Teuchos::ParameterList> &pl;
+  const RCP<Teuchos::Comm<int> > &comm;
+
   public:
-  AlgRCM()
+
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::zgid_t zgid_t;
+  typedef typename Adapter::scalar_t scalar_t;
+
+  AlgRCM(
+    const RCP<GraphModel<Adapter> > &model__,
+    const RCP<Teuchos::ParameterList> &pl__,
+    const RCP<Teuchos::Comm<int> > &comm__
+  ) : model(model__), pl(pl__), comm(comm__)
   {
   }
 
-  int order(
-    const RCP<GraphModel<Adapter> > &model,
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-  			     typename Adapter::lno_t> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
-  )
+  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution)
   {
     int ierr= 0;
-  
+
     HELLO;
-  
-    // Check size of communicator: serial only.
-    // TODO: Remove this test when RCM works on local graph.
-    //if (comm->getSize() > 1){
-    //  throw std::runtime_error("RCM currently only works in serial.");
-    //}
   
     // Get local graph.
     ArrayView<const lno_t> edgeIds;
@@ -96,6 +95,10 @@ class AlgRCM
   
     const size_t nVtx = model->getLocalNumVertices();
     model->getLocalEdgeList(edgeIds, offsets, wgts); 
+    const int numWeightsPerEdge = model->getNumWeightsPerEdge();
+    if (numWeightsPerEdge > 1){
+      throw std::runtime_error("Multiple weights not supported.");
+    }
   
 #if 0
     // Debug
@@ -141,11 +144,11 @@ class AlgRCM
       // Select root method. Pseudoperipheral usually gives the best
       // ordering, but the user may choose a faster method.
       std::string root_method = pl->get("root_method", "pseudoperipheral");
-      if (root_method == string("first"))
+      if (root_method == std::string("first"))
         root = next;
-      else if (root_method == string("smallest_degree"))
+      else if (root_method == std::string("smallest_degree"))
         root = findSmallestDegree(next, nVtx, edgeIds, offsets);
-      else if (root_method == string("pseudoperipheral"))
+      else if (root_method == std::string("pseudoperipheral"))
         root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
       else {
         // This should never happen if pl was validated.

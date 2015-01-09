@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,9 +60,9 @@ namespace NOX {
     \brief A class to compute uniformly distributed random numbers in (-1,1).
   */
   /*!
-    The %Random class computes pseudo-random (double precision) numbers 
+    The %Random class computes pseudo-random (double precision) numbers
     uniformly distributed between -1.0 and 1.0 using a multiplicative
-    congruential generator with modulus 2^31-1 (a Lehmer generator).  
+    congruential generator with modulus 2^31-1 (a Lehmer generator).
     For a numerical and mathematical treatment of the algorithm, see
     "Random number generators:  good ones are hard to find" by Stephen
     K. Park and Keith W. Miller, Communications of the ACM, Vol. 31 No. 10
@@ -78,17 +78,17 @@ namespace NOX {
     //! Initialize random number generator with the given seed
     /*! The seed should be an integer between 1 and 2147483646 = 2^32-2
         (inclusive).  If the supplied seed is invalid, an error message
-	is printed and the seed is replaced by 1.
+    is printed and the seed is replaced by 1.
     */
     Random(int s);
 
     //! Set the seed to s
     /*! The seed should be an integer between 1 and 2147483646 = 2^32-2
         (inclusive).  If the supplied seed is invalid, an error message
-	is printed and the seed is replaced by 1.
+    is printed and the seed is replaced by 1.
     */
     static void setSeed(int s);
-      
+
     //! Compute a random number
     static double number();
 
@@ -101,7 +101,7 @@ namespace NOX {
     static int checkSeed(const std::string& func, int s);
 
   protected:
-      
+
     //! Seed value
     static double seed;
   };

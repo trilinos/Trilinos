@@ -278,9 +278,9 @@ char     *inname,		/* name of input file */
 int     **start,		/* start of edge list for each vertex */
 int     **adjacency,		/* edge list data */
 int      *nvtxs,		/* number of vertices in graph */
-int      *vwgt_dim,		/* # of vertex weights per node */
+int      *nVwgts,		/* # of vertex weights per node */
 float   **vweights,		/* vertex weight list data */
-int      *ewgt_dim,		/* # of edge weights per edge */
+int      *nEwgts,		/* # of edge weights per edge */
 float   **eweights 		/* edge weight list data */
 )
 {
@@ -351,18 +351,18 @@ float   **eweights 		/* edge weight list data */
   option /= 10;
   vtxnums = option - 10 * (option / 10);
 
-  /* Get weight dimensions from Chaco option */
-  (*vwgt_dim) = using_vwgts;
-  (*ewgt_dim) = using_ewgts;
+  /* Get weight info from Chaco option */
+  (*nVwgts) = using_vwgts;
+  (*nEwgts) = using_ewgts;
 
-  /* Read weight dimensions if they are specified separately */
+  /* Read numbers of weights if they are specified separately */
   if (!end_flag && using_vwgts==1){
      j = chaco_read_int(fin, &end_flag);
-     if (!end_flag) (*vwgt_dim) = j;
+     if (!end_flag) (*nVwgts) = j;
   }
   if (!end_flag && using_ewgts==1){
      j = chaco_read_int(fin, &end_flag);
-     if (!end_flag) (*ewgt_dim) = j;
+     if (!end_flag) (*nEwgts) = j;
   }
 
   /* Discard rest of line */
@@ -377,13 +377,13 @@ float   **eweights 		/* edge weight list data */
 	*adjacency = NULL;
 
   if (using_vwgts)
-	*vweights = (float *) malloc((unsigned) (*nvtxs) * (*vwgt_dim) * sizeof(float));
+	*vweights = (float *) malloc((unsigned) (*nvtxs) * (*nVwgts) * sizeof(float));
   else
 	*vweights = NULL;
 
   if (using_ewgts)
 	*eweights = (float *)
-                   malloc((unsigned) (2 * narcs + 1) * (*ewgt_dim) * sizeof(float));
+                   malloc((unsigned) (2 * narcs + 1) * (*nEwgts) * sizeof(float));
   else
 	*eweights = NULL;
 
@@ -431,7 +431,7 @@ float   **eweights 		/* edge weight list data */
 
 	/* If vertices are weighted, read vertex weight. */
 	if (using_vwgts && new_vertex) {
-          for (j=0; j<(*vwgt_dim); j++){
+          for (j=0; j<(*nVwgts); j++){
 	  	weight = chaco_read_val(fin, &end_flag);
 	  	if (end_flag) {
 			printf("ERROR in graph file `%s':", inname);
@@ -439,7 +439,7 @@ float   **eweights 		/* edge weight list data */
 			fclose(fin);
 			return (1);
 	  	}
-	  	(*vweights)[(vertex-1)*(*vwgt_dim)+j] = weight;
+	  	(*vweights)[(vertex-1)*(*nVwgts)+j] = weight;
 	  }
 	}
 
@@ -452,7 +452,7 @@ float   **eweights 		/* edge weight list data */
 	  skip_flag = 0;
 
 	  if (using_ewgts) {	/* Read edge weight if it's being input. */
-              for (j=0; j<(*ewgt_dim); j++){
+              for (j=0; j<(*nEwgts); j++){
 		  eweight = chaco_read_val(fin, &end_flag);
 
 		  if (end_flag) {

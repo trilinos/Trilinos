@@ -44,12 +44,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Version.hpp"
 
-class A { 
- public: 
+class A {
+ public:
    A() {}
-   virtual ~A(){} 
-   virtual void f(){} 
-};   
+   virtual ~A(){}
+   virtual void f(){}
+};
 class B1 : virtual public A {};
 class B2 : virtual public A {};
 class C : public B1, public B2 {};
@@ -69,9 +69,9 @@ int main(int argc, char* argv[])
   // Create a reference-counted pointer of const type A.
   RCP<const A>       ca_ptr  = rcp(new A);
   // Create a const reference-counted pointer of non-const type A.
-  const RCP<A>       a_cptr  = rcp(new A); 
+  const RCP<A>       a_cptr  = rcp(new A);
   // Create a const reference-counted pointer of const type A.
-  const RCP<const A> ca_cptr = rcp(new A); 
+  const RCP<const A> ca_cptr = rcp(new A);
 
   // Perform implicit conversions between a derived class and its base class.
   RCP<B1> b1_ptr  = rcp(new B1);
@@ -82,13 +82,13 @@ int main(int argc, char* argv[])
   */
   RCP<const C>  c_ptr     = rcp(new C);
   // Implicit cast from C to B2.
-  RCP<const B2> b2_ptr    = c_ptr;                              
+  RCP<const B2> b2_ptr    = c_ptr;
   // Safe cast, type-checked, from C to A.
-  RCP<const A>  ca_ptr1   = rcp_dynamic_cast<const A>(c_ptr); 
+  RCP<const A>  ca_ptr1   = rcp_dynamic_cast<const A>(c_ptr);
   // Unsafe cast, non-type-checked, from C to A.
-  RCP<const A>  ca_ptr2   = rcp_static_cast<const A>(c_ptr);  
+  RCP<const A>  ca_ptr2   = rcp_static_cast<const A>(c_ptr);
   // Cast away const from B2.
-  RCP<B2>       nc_b2_ptr = rcp_const_cast<B2>(b2_ptr);           
+  RCP<B2>       nc_b2_ptr = rcp_const_cast<B2>(b2_ptr);
 
   /* Using a reference-counted pointer is very similar to using a raw C++ pointer.  Some
      of the operations that are common to both are:

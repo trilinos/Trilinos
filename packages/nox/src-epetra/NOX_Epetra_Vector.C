@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,7 +55,7 @@
 
 NOX::Epetra::Vector::
 Vector(const Teuchos::RCP<Epetra_Vector>& source,
-       NOX::Epetra::Vector::MemoryType memoryType, 
+       NOX::Epetra::Vector::MemoryType memoryType,
        NOX::CopyType type,
        Teuchos::RCP<NOX::Epetra::VectorSpace> vs)
 {
@@ -69,23 +69,23 @@ Vector(const Teuchos::RCP<Epetra_Vector>& source,
   else {
 
     switch (type) {
-      
-    case DeepCopy:		// default behavior
-      
+
+    case DeepCopy:        // default behavior
+
       epetraVec = Teuchos::rcp(new Epetra_Vector(*source));
       break;
-      
+
     case ShapeCopy:
-      
-      epetraVec = Teuchos::rcp(new Epetra_Vector(source->Map())); 
-      break;  
+
+      epetraVec = Teuchos::rcp(new Epetra_Vector(source->Map()));
+      break;
     }
 
   }
 }
 
 NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type,
-			    Teuchos::RCP<NOX::Epetra::VectorSpace> vs)
+                Teuchos::RCP<NOX::Epetra::VectorSpace> vs)
 {
   if (Teuchos::is_null(vs))
     vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
@@ -94,36 +94,36 @@ NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type,
 
   switch (type) {
 
-  case DeepCopy:		// default behavior
+  case DeepCopy:        // default behavior
 
-    epetraVec = Teuchos::rcp(new Epetra_Vector(source)); 
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source));
     break;
 
   case ShapeCopy:
 
-    epetraVec = Teuchos::rcp(new Epetra_Vector(source.Map())); 
-    break;  
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source.Map()));
+    break;
 
   }
 }
 
-NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, 
-			    NOX::CopyType type)
+NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source,
+                NOX::CopyType type)
 {
   vectorSpace = source.vectorSpace;
 
   switch (type) {
 
-  case DeepCopy:		// default behavior
+  case DeepCopy:        // default behavior
 
-    epetraVec = Teuchos::rcp(new Epetra_Vector(source.getEpetraVector())); 
+    epetraVec = Teuchos::rcp(new Epetra_Vector(source.getEpetraVector()));
     break;
 
   case ShapeCopy:
 
-    epetraVec = 
-      Teuchos::rcp(new Epetra_Vector(source.getEpetraVector().Map())); 
-    break;  
+    epetraVec =
+      Teuchos::rcp(new Epetra_Vector(source.getEpetraVector().Map()));
+    break;
 
   }
 }
@@ -216,16 +216,16 @@ update(double alpha, const NOX::Epetra::Vector& a, double gamma)
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::
-update(double alpha, const NOX::Abstract::Vector& a, 
+update(double alpha, const NOX::Abstract::Vector& a,
        double beta, const NOX::Abstract::Vector& b,
        double gamma)
 {
-  return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a), 
-		beta, dynamic_cast<const NOX::Epetra::Vector&>(b), gamma);
+  return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a),
+        beta, dynamic_cast<const NOX::Epetra::Vector&>(b), gamma);
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::
-update(double alpha, const NOX::Epetra::Vector& a, 
+update(double alpha, const NOX::Epetra::Vector& a,
        double beta, const NOX::Epetra::Vector& b,
        double gamma)
 {
@@ -234,12 +234,12 @@ update(double alpha, const NOX::Epetra::Vector& a,
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Abstract::Vector& a)
-{  
+{
   return scale(dynamic_cast<const Epetra::Vector&>(a));
 }
 
 NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Epetra::Vector& a)
-{  
+{
   epetraVec->Multiply(1.0, *epetraVec, a.getEpetraVector(), 0.0);
   return *this;
 }
@@ -247,37 +247,37 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Epetra::Vector& a)
 Teuchos::RCP<NOX::Abstract::Vector> NOX::Epetra::Vector::
 clone(CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::Vector> newVec = 
+  Teuchos::RCP<NOX::Abstract::Vector> newVec =
     Teuchos::rcp(new NOX::Epetra::Vector(*epetraVec, type, vectorSpace));
   return newVec;
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(
-				    const NOX::Abstract::Vector* const* vecs,
-				    int numVecs, NOX::CopyType type) const
+                    const NOX::Abstract::Vector* const* vecs,
+                    int numVecs, NOX::CopyType type) const
 {
   if (numVecs < 0) {
-    std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
   double** v = new double*[numVecs+1];
   const Epetra_BlockMap& map = epetraVec->Map();
-  const NOX::Epetra::Vector* noxEpetraVecPtr;
   const Epetra_Vector* vecPtr;
- 
+
   epetraVec->ExtractView(&(v[0]));
   for (int i=0; i<numVecs; i++) {
-    noxEpetraVecPtr = dynamic_cast<const NOX::Epetra::Vector*>(vecs[i]);
-    vecPtr = &(noxEpetraVecPtr->getEpetraVector());
+    const NOX::Epetra::Vector & noxEpetraVecPtr =
+      dynamic_cast<const NOX::Epetra::Vector&>(*vecs[i]);
+    vecPtr = &(noxEpetraVecPtr.getEpetraVector());
     vecPtr->ExtractView(&(v[i+1]));
   }
 
   Epetra_MultiVector epetra_mv(View, map, v, numVecs+1);
 
-  Teuchos::RCP<NOX::Epetra::MultiVector> mv = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> mv =
     Teuchos::rcp(new NOX::Epetra::MultiVector(epetra_mv, type));
 
   delete [] v;
@@ -289,14 +289,14 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
-    std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
   const Epetra_BlockMap& map = epetraVec->Map();
   Epetra_MultiVector *epetra_mv;
-  
+
   if (type == NOX::ShapeCopy)
     epetra_mv = new Epetra_MultiVector(map, numVecs, true);
   else {
@@ -308,7 +308,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
     }
   }
 
-  Teuchos::RCP<NOX::Epetra::MultiVector> mv = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> mv =
     Teuchos::rcp(new NOX::Epetra::MultiVector(*epetra_mv, type));
 
   delete epetra_mv;
@@ -342,9 +342,9 @@ double NOX::Epetra::Vector::innerProduct(const NOX::Epetra::Vector& y) const
   return vectorSpace->innerProduct(*epetraVec, y.getEpetraVector());
 }
 
-int NOX::Epetra::Vector::length() const
+NOX::size_type NOX::Epetra::Vector::length() const
 {
-  return epetraVec->GlobalLength();
+  return epetraVec->GlobalLength64();
 }
 
 void NOX::Epetra::Vector::print(std::ostream& stream) const
@@ -353,7 +353,7 @@ void NOX::Epetra::Vector::print(std::ostream& stream) const
   return;
 }
 
-Teuchos::RCP<NOX::Epetra::VectorSpace> 
+Teuchos::RCP<NOX::Epetra::VectorSpace>
 NOX::Epetra::Vector::getVectorSpace() const
 {
   return vectorSpace;

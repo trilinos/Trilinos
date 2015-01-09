@@ -388,17 +388,17 @@ public:
 #ifdef Z2_OMIT_ALL_PROFILING
 
   void timerStart(TimerType tt, const char * timerName) const  {return;}
-  void timerStart(TimerType tt, const string &timerName) const  {return;}
+  void timerStart(TimerType tt, const std::string &timerName) const  {return;}
   void timerStart(TimerType tt, const char * timerName, int, 
     int fieldWidth=0) const  {return;}
-  void timerStart(TimerType tt, const string &timerName, int, 
+  void timerStart(TimerType tt, const std::string &timerName, int, 
     int fieldWidth=0) const  {return;}
 
   void timerStop(TimerType tt, const char * timerName) const {return;}
-  void timerStop(TimerType tt, const string &timerName) const {return;}
+  void timerStop(TimerType tt, const std::string &timerName) const {return;}
   void timerStop(TimerType tt, const char * timerName, int, 
     int fieldWidth=0) const {return;}
-  void timerStop(TimerType tt, const string &timerName, int, 
+  void timerStop(TimerType tt, const std::string &timerName, int, 
     int fieldWidth=0) const {return;}
 
 #else
@@ -408,7 +408,7 @@ public:
   void timerStart(TimerType tt, const char *timerName) const  {
     if (timingOn_) timerOut_->start(tt, timerName); }
 
-  void timerStart(TimerType tt, const string &timerName) const  {
+  void timerStart(TimerType tt, const std::string &timerName) const  {
     if (timingOn_) timerOut_->start(tt, timerName); }
 
   /*! \brief  Start a named timer, with a number as part of the name.
@@ -416,7 +416,7 @@ public:
   void timerStart(TimerType tt, const char *timerName, int num, 
     int fieldWidth=0) const  {
     if (timingOn_){
-      ostringstream oss;
+      std::ostringstream oss;
       oss << timerName << " ";
       if (fieldWidth > 0){
         oss.width(fieldWidth);
@@ -427,10 +427,10 @@ public:
     }
   }
 
-  void timerStart(TimerType tt, const string &timerName, int num, 
+  void timerStart(TimerType tt, const std::string &timerName, int num, 
     int fieldWidth=0) const  {
     if (timingOn_){
-      ostringstream oss;
+      std::ostringstream oss;
       oss << timerName << " ";
       if (fieldWidth > 0){
         oss.width(fieldWidth);
@@ -447,7 +447,7 @@ public:
   void timerStop(TimerType tt, const char *timerName) const {
     if (timingOn_) timerOut_->stop(tt, timerName); }
 
-  void timerStop(TimerType tt, const string &timerName) const {
+  void timerStop(TimerType tt, const std::string &timerName) const {
     if (timingOn_) timerOut_->stop(tt, timerName); }
 
   /*! \brief  Stop a named timer, with a number as part of the name.
@@ -456,7 +456,7 @@ public:
   void timerStop(TimerType tt, const char *timerName, int num, 
     int fieldWidth=0) const {
     if (timingOn_){
-      ostringstream oss;
+      std::ostringstream oss;
       oss << timerName << " ";
       if (fieldWidth > 0){
         oss.width(fieldWidth);
@@ -467,10 +467,10 @@ public:
     }
   }
 
-  void timerStop(TimerType tt, const string &timerName, int num, 
+  void timerStop(TimerType tt, const std::string &timerName, int num, 
     int fieldWidth=0) const {
     if (timingOn_){
-      ostringstream oss;
+      std::ostringstream oss;
       oss << timerName << " ";
       if (fieldWidth > 0){
         oss.width(fieldWidth);
@@ -533,12 +533,19 @@ public:
    *     this process is not printing out debug messages.
    */
 #ifdef Z2_OMIT_ALL_STATUS_MESSAGES
-  bool doStatus() const { return false;}
-  MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
+  inline bool doStatus() const { return false;}
+  inline MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
+  inline std::ostream *getDebugOStream() const {return std::cout;}
 #else
-  bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
-
-  MessageOutputLevel getDebugLevel() const {return debugOut_->getDebugLevel(); }
+  inline bool doStatus() const {
+     return (debugOut_->getDebugLevel() > NO_STATUS);
+  }
+  inline MessageOutputLevel getDebugLevel() const {
+    return debugOut_->getDebugLevel();
+  }
+  inline std::ostream *getDebugOStream() const {
+    return debugOut_->getOStream();
+  }
 #endif
 
   /*! \brief Return true if memory usage output was requested, even if

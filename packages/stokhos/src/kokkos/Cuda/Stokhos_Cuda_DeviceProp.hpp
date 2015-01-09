@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CUDA_DEVICE_PROP_HPP
 #define STOKHOS_CUDA_DEVICE_PROP_HPP
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Teuchos_TestForException.hpp"
 

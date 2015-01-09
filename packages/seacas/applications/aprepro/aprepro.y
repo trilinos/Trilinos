@@ -1,7 +1,7 @@
 %{
 /* 
  * Copyright 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -323,12 +323,18 @@ exp:      NUM                   { $$ = $1;                              }
       
         | AVAR '[' exp ',' exp ']' { $$ = array_value($1->value.avar, $3, $5); }
         | AVAR '[' exp ',' exp ']' '=' exp 
-                                  { array *arr = $1->value.avar;
+                                  { $$ = $8;
+				    array *arr = $1->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-				    $$ = $8;
-				    if ($3 < rows && $5 < cols) {
-                                      int offset = $3*cols+$5;
+				    int row = $3;
+				    int col = $5;
+				    if (ap_options.one_based_index == True) {
+				      row--;
+				      col--;
+				    }
+				    if (row < rows && col < cols) {
+                                      int offset = row*cols+col;
                                       $1->value.avar->data[offset] = $8;
                                     }
                                     else {

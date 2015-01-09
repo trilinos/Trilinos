@@ -1,3 +1,9 @@
+Release notes for Amesos2 in Trilinos 11.8 (Apr. 2014):
+--------------------------------------------------------
+ - Amesos2's adapter for Tpetra now caches Import and Export objects,
+   so that it doesn't have to recreate them on every solve.  This
+   fixes Bug 6011 and should improve performance of solves.
+
 Release notes for Amesos2 in Trilinos 11.6 (Sept. 2013):
 --------------------------------------------------------
  - Added experimental support for Cholmod, a sparse Cholesky solver.

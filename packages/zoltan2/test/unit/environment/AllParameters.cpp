@@ -107,7 +107,7 @@ static string strParams[NUMSTR][3]={
   {"objects_to_partition", "graph_vertices", "nothing"},
   {"model", "graph", "manifold"},
   {"algorithm", "rcb", "xyz"},
-  {"rectilinear_blocks", "yes", "dont_know"},
+  {"rectilinear", "yes", "dont_know"},
   {"average_cuts", "false", "dont_know"},
   {"symmetrize_input", "transpose", "dont_know"},
   {"subset_graph", "1", "dont_know"},

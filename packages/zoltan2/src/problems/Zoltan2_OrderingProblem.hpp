@@ -63,7 +63,6 @@
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
-using namespace std;
 
 namespace Zoltan2{
 
@@ -93,7 +92,7 @@ class OrderingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -149,7 +148,7 @@ public:
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  OrderingSolution<gid_t, lno_t> *getSolution() {
+  OrderingSolution<zgid_t, lno_t> *getSolution() {
     // cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << endl;
     // Compute Perm or InvPerm, if one is missing.
     if (!(solution_->havePerm()))
@@ -162,7 +161,7 @@ public:
 private:
   void createOrderingProblem();
 
-  RCP<OrderingSolution<gid_t, lno_t> > solution_;
+  RCP<OrderingSolution<zgid_t, lno_t> > solution_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -183,7 +182,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx));
+      this->solution_ = rcp(new OrderingSolution<zgid_t, lno_t>(nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -195,39 +194,43 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("order_method", "rcm");
+  std::string method = this->params_->template get<std::string>("order_method", "rcm");
 
   // TODO: Ignore case
   try
   {
   if (method.compare("rcm") == 0)
   {
-      AlgRCM<base_adapter_t> alg;
-      alg.order(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgRCM<base_adapter_t> alg(this->graphModel_,
+                                 this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("natural") == 0)
   {
-      AlgNatural<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgNatural<base_adapter_t> alg(this->identifierModel_,
+                                     this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("random") == 0)
   {
-      AlgRandom<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgRandom<base_adapter_t> alg(this->identifierModel_,
+                                    this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("sorted_degree") == 0)
   {
-      AlgSortedDegree<base_adapter_t> alg;
-      alg.order(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgSortedDegree<base_adapter_t> alg(this->graphModel_,
+                                          this->params_, problemComm_);
+      alg.order(this->solution_);
   }
   else if (method.compare("minimum_degree") == 0)
   {
-      string pkg = this->params_->template get<string>("order_package", "amd");
+      std::string pkg = this->params_->template get<std::string>("order_package", "amd");
       if (pkg.compare("amd") == 0)
       {
-          AlgAMD<base_adapter_t> alg;
-          alg.order (this->graphModel_, this->solution_, this->params_,
-                          problemComm_);
+          AlgAMD<base_adapter_t> alg(this->graphModel_,
+                                     this->params_, problemComm_);
+          alg.order(this->solution_);
       }
   }
   }
@@ -264,7 +267,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__ << " input adapter type " 
+//  cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
 
@@ -300,11 +303,11 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   //   ALGORITHM = rcm, random, amd
 
   ModelType modelType = IdentifierModelType; //default, change later
-  string method = this->params_->template get<string>("order_method", "rcm");
+  std::string method = this->params_->template get<std::string>("order_method", "rcm");
 
-  if ((method == string("rcm")) || 
-      (method == string("sorted_degree")) || 
-      (method == string("minimum_degree"))) {
+  if ((method == std::string("rcm")) || 
+      (method == std::string("sorted_degree")) || 
+      (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
 
@@ -338,12 +341,12 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__ << " Model type " << modelType << " not yet supported." 
+    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
 
   default:
-    cout << __func__ << " Invalid model" << modelType << endl;
+    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
     break;
   }
 }

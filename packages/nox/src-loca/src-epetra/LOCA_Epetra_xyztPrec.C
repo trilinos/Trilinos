@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,21 +55,21 @@
 
 //! Constructor
 LOCA::Epetra::xyztPrec::
-xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_, 
-	 Epetra_CrsMatrix &splitJac_,
-	 EpetraExt::BlockVector &solution_,
+xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
+     Epetra_CrsMatrix &splitJac_,
+     EpetraExt::BlockVector &solution_,
          EpetraExt::BlockVector &solutionOverlap_,
-	 Epetra_Import &overlapImporter_,
-	 Teuchos::ParameterList &precPrintParams_, 
-	 Teuchos::ParameterList &precLSParams_, 
-	 const Teuchos::RCP<EpetraExt::MultiComm> globalComm_) :  
+     Epetra_Import &overlapImporter_,
+     Teuchos::ParameterList &precPrintParams_,
+     Teuchos::ParameterList &precLSParams_,
+     const Teuchos::RCP<EpetraExt::MultiComm> globalComm_) :
   jacobian(jacobian_),
   splitJac(splitJac_),
   solution(solution_),
   solutionOverlap(solutionOverlap_),
   overlapImporter(overlapImporter_),
-  printParams(precPrintParams_), 
-  lsParams(precLSParams_), 
+  printParams(precPrintParams_),
+  lsParams(precLSParams_),
   globalComm(globalComm_),
   linSys(std::vector<NOX::Epetra::LinearSystemAztecOO*>(globalComm_->NumTimeStepsOnDomain())),
   jacobianBlock(std::vector<Teuchos::RCP<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
@@ -80,9 +80,9 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 
   std::string prec = lsParams.get("XYZTPreconditioner","None");
 
-  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq =
     Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
-  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = 
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac =
     Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
 
   if (prec == "Global") {
@@ -91,8 +91,8 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
     //std::cout << "LOCA::Epetra::xyztPrec = Global" << std::endl;
 
     // Create the Linear System
-    linSys[0] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
-				iReq, iJac, Teuchos::rcp(&jacobian,false), solution);
+    linSys[0] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+                iReq, iJac, Teuchos::rcp(&jacobian,false), solution);
 
     linSys[0]->setJacobianOperatorForSolve(Teuchos::rcp(&jacobian,false));
   }
@@ -123,15 +123,15 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       // TODO: pass in globalData and use output stream
       //std::cout << "LOCA::Epetra::xyztPrec = Parareal" << std::endl;
     }
-    
+
     // Create temporary space for Epetra vectors and NOX vies of same space
     splitVecOld = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
     splitVec = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
     splitRes = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
     splitRes_NEV = Teuchos::rcp(new NOX::Epetra::Vector(splitRes,
-		                           NOX::Epetra::Vector::CreateView));
+                                   NOX::Epetra::Vector::CreateView));
     splitVec_NEV = Teuchos::rcp(new NOX::Epetra::Vector(splitVec,
-		                           NOX::Epetra::Vector::CreateView));
+                                   NOX::Epetra::Vector::CreateView));
     residual = Teuchos::rcp(new EpetraExt::BlockVector(solution));
 
     // Create the Linear System
@@ -145,13 +145,13 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
         massBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitJac));
         massBlock[i]->PutScalar(0.0);
       }
-      linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
-			iReq, iJac, jacobianBlock[i], solution);
+      linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+            iReq, iJac, jacobianBlock[i], solution);
       if (prec == "BDSDT") {
         diagBlockSubdiag[i] = Teuchos::rcp(new Epetra_Vector(*splitVec));
       }
     }
-	
+
   }
   else if (prec == "None") {
     label = "LOCA::Epetra::xyztPrec::None";
@@ -172,11 +172,11 @@ LOCA::Epetra::xyztPrec::
   std::string prec = lsParams.get("XYZTPreconditioner","None");
 
   int imax=0;
-  if (prec == "Global") 
+  if (prec == "Global")
      imax =  1;
-  else if (prec == "Sequential" || prec == "Parallel" || prec == "BlockDiagonal" || prec == "BDSDT") 
+  else if (prec == "Sequential" || prec == "Parallel" || prec == "BlockDiagonal" || prec == "BDSDT")
      imax =  globalComm->NumTimeStepsOnDomain();
-  else if (prec == "Parareal") 
+  else if (prec == "Parareal")
      imax =  1 + globalComm->NumTimeStepsOnDomain();
 
   for (int i=0; i < imax; i++) {
@@ -205,7 +205,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 int LOCA::Epetra::xyztPrec::
 ApplyInverse(const Epetra_MultiVector& input,
-	     Epetra_MultiVector& result) const
+         Epetra_MultiVector& result) const
 {
 
   std::string prec = lsParams.get("XYZTPreconditioner","None");
@@ -213,106 +213,106 @@ ApplyInverse(const Epetra_MultiVector& input,
   if (prec == "None") {
     return 0;
   }
-  
+
   if (prec == "Global") {
-    // create NOX vectors as views of input and results vectors 
+    // create NOX vectors as views of input and results vectors
     const NOX::Epetra::Vector input_NEV(Teuchos::rcp( const_cast<Epetra_Vector*>(input(0)), false),
-		                        NOX::Epetra::Vector::CreateView);
+                                NOX::Epetra::Vector::CreateView);
     NOX::Epetra::Vector result_NEV(Teuchos::rcp(result(0), false), NOX::Epetra::Vector::CreateView);
-    
+
     // apply preconditioner as specified in lsParams
     linSys[0]->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
 
     //    return (stat) ? 0 : 1;
-  }    
+  }
   else if (prec == "Sequential") {
-    
+
     // residual needs to be in BlockVector and contain values from input
     solution.PutScalar(0.0);
     residual->Epetra_Vector::operator=(*input(0));  // populate with input values
 
     for (int isd=0; isd < globalComm->NumSubDomains(); isd++) {
-      
+
       // Communicate data from other time domains into overlapped vector
       // This serves as a barrier as well.
       solutionOverlap.Import(solution, overlapImporter, Insert);
-      
+
       //Work only on active time domain
       if ( isd == globalComm->SubDomainRank() ) {
-	
-	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
 
-	  bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
+    for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
 
-	  // This line is needed or else Aztec error -11
-	  linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
-	  
-	  // get x and residual (r) corresponding to current block
-	  residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+      bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
 
-	  if (!isFirstGlobalTimeStep)  {
-	    // update RHS with mass matrix * solution from previous time step 
-	    // (which will be from previous time domain if i==0)
-	    //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]  
-	    if (i==0) 
-	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	    else      
-	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	    massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
-	    splitRes->Update(-1.0, *splitVec, 1.0);
-	  }	
-	  
-	  // solve the problem, and put solution into slution vector
+      // This line is needed or else Aztec error -11
+      linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
+
+      // get x and residual (r) corresponding to current block
+      residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+
+      if (!isFirstGlobalTimeStep)  {
+        // update RHS with mass matrix * solution from previous time step
+        // (which will be from previous time domain if i==0)
+        //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]
+        if (i==0)
+          solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+        else
+          solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+        massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
+        splitRes->Update(-1.0, *splitVec, 1.0);
+      }
+
+      // solve the problem, and put solution into slution vector
           splitVec->PutScalar(0.0);
-	  linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
-	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
-	}
+      linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
+    }
       }
     }
 
     result = solution;
-  }    
+  }
   else if (prec == "Parallel") {
-    
+
     // residual needs to be in BlockVector and contain values from input
     solution.PutScalar(0.0);
     residual->Epetra_Vector::operator=(*input(0));  // populate with input values
-    
+
     for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-    
+
       // This line is needed or else Aztec error -11
       linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
-  
+
       // get x and residual (r) corresponding to current block
       residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 
       if (i > 0)  {
-        // update RHS with mass matrix * solution from previous time step 
+        // update RHS with mass matrix * solution from previous time step
         // First step on each time domain doesn't feel previous time domain
         solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
         massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
         splitRes->Update(-1.0, *splitVec, 1.0);
-      }	
-  
+      }
+
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
       linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
-   
+
     result = solution;
-  }    
+  }
   else if (prec == "BlockDiagonal") {
-    
+
     // residual needs to be in BlockVector and contain values from input
     solution.PutScalar(0.0);
     residual->Epetra_Vector::operator=(*input(0));  // populate with input values
-    
+
     for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-    
+
       // This line is needed or else Aztec error -11
       linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
-  
+
       // get x and residual (r) corresponding to current block
       residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 
@@ -321,59 +321,59 @@ ApplyInverse(const Epetra_MultiVector& input,
       linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
-   
+
     result = solution;
-  }    
+  }
   else if (prec == "BDSDT") {
-    
+
     // 1. Sequential solve with I on diag blocks and diagonal matrix on subdiagonal
-    
+
     // residual needs to be in BlockVector and contain values from input
     solution.PutScalar(0.0);
     residual->Epetra_Vector::operator=(*input(0));  // populate with input values
 
     for (int isd=0; isd < globalComm->NumSubDomains(); isd++) {
-      
+
       // Communicate data from other time domains into overlapped vector
       // This serves as a barrier as well.
       solutionOverlap.Import(solution, overlapImporter, Insert);
-      
+
       //Work only on active time domain
       if ( isd == globalComm->SubDomainRank() ) {
-	
-	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
 
-	  bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
+    for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
 
-	  // get x and residual (r) corresponding to current block
-	  residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+      bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
 
-	  if (!isFirstGlobalTimeStep)  {
-	    // update RHS with mass matrix * solution from previous time step 
-	    // (which will be from previous time domain if i==0)
-	    //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]  
-	    if (i==0) 
-	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	    else      
-	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	    splitRes->Multiply(-1.0, *diagBlockSubdiag[i], *splitVecOld, 1.0);
-	  }	
-	  
-	  // Update this block of the solution vector
-	  solution.LoadBlockValues(*splitRes, jacobian.RowIndex(i));
-	}
+      // get x and residual (r) corresponding to current block
+      residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+
+      if (!isFirstGlobalTimeStep)  {
+        // update RHS with mass matrix * solution from previous time step
+        // (which will be from previous time domain if i==0)
+        //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]
+        if (i==0)
+          solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+        else
+          solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+        splitRes->Multiply(-1.0, *diagBlockSubdiag[i], *splitVecOld, 1.0);
+      }
+
+      // Update this block of the solution vector
+      solution.LoadBlockValues(*splitRes, jacobian.RowIndex(i));
+    }
       }
     }
 
     // Move result of first preconditioning step into initial vector of next
 
     // 2. BlockDiagonal Preconsitioner witrh this modified vector
-    
+
     for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-    
+
       // This line is needed or else Aztec error -11
       linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
-  
+
       // get x and residual (r) corresponding to current block
       // updated residual in "solution" after first prec step
       solution.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
@@ -383,78 +383,78 @@ ApplyInverse(const Epetra_MultiVector& input,
       linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
       solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
     }
-   
+
     result = solution;
-  }    
+  }
   else if (prec == "Parareal") {
-    
+
     // residual needs to be in BlockVector and contain values from input
     solution.PutScalar(0.0);
     residual->Epetra_Vector::operator=(*input(0));  // populate with input values
-    
+
     int N = globalComm->NumTimeStepsOnDomain();
 
     // Do sequential over all time domains, just 1 step per domain
     for (int isd=0; isd < globalComm->NumSubDomains(); isd++) {
-      
+
       // Communicate data from other time domains into overlapped vector
       // This serves as a barrier as well.
       if (isd>0) solutionOverlap.Import(solution, overlapImporter, Insert);
-      
-      //Work only on active time domain, and skip the last domain if not periodic
-      if ( isd == globalComm->SubDomainRank() && 
-           ((isd != globalComm->NumSubDomains()-1) && !isPeriodic)) {
-	
-	  // Get extra matrix for 1 big time step per time domain
-	  linSys[N]->setJacobianOperatorForSolve(jacobianBlock[N]);
-	  
-	  // get and residual for last time step on this domain
-	  residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(N-1));
 
-	  if (isd > 0)  {
-	    // Get solution vector from end of previous time domain,
-	    // Don't do this for first domain, even if periodic, because 
-	    //   we are doing a xssequential sweep
-	    solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(0) - 1));
-	    massBlock[N]->Multiply(false, *splitVecOld, *splitVec);
-	    splitRes->Update(-1.0, *splitVec, 1.0);
-	  }	
-	  
-	  // solve the problem, and put solution into last solution vector on this domain
+      //Work only on active time domain, and skip the last domain if not periodic
+      if ( isd == globalComm->SubDomainRank() &&
+           ((isd != globalComm->NumSubDomains()-1) && !isPeriodic)) {
+
+      // Get extra matrix for 1 big time step per time domain
+      linSys[N]->setJacobianOperatorForSolve(jacobianBlock[N]);
+
+      // get and residual for last time step on this domain
+      residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(N-1));
+
+      if (isd > 0)  {
+        // Get solution vector from end of previous time domain,
+        // Don't do this for first domain, even if periodic, because
+        //   we are doing a xssequential sweep
+        solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(0) - 1));
+        massBlock[N]->Multiply(false, *splitVecOld, *splitVec);
+        splitRes->Update(-1.0, *splitVec, 1.0);
+      }
+
+      // solve the problem, and put solution into last solution vector on this domain
           splitVec->PutScalar(0.0);
-	  linSys[N]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
-	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(N-1));
-	}
+      linSys[N]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      solution.LoadBlockValues(*splitVec, jacobian.RowIndex(N-1));
+    }
     }
     // Final communication of big Sequential steps
     solutionOverlap.Import(solution, overlapImporter, Insert);
 
     // Now launch into parallel algorithm, but with non-zero initial guess
-    
+
     for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-    
+
       // This line is needed or else Aztec error -11
       linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
-  
+
       // get x and residual (r) corresponding to current block
       residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 
       bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
       if (!isFirstGlobalTimeStep || isPeriodic)  {
-        // update RHS with mass matrix * solution from previous time step 
+        // update RHS with mass matrix * solution from previous time step
         // (which will be from previous time domain if i==0)
         if (i==0) {
           //solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	  int offsetToPrevSolution = jacobian.Stencil(i)[0];
+      int offsetToPrevSolution = jacobian.Stencil(i)[0];
 std::cout << "In Parareal, OFFSET  " << offsetToPrevSolution << " for time domain " <<  globalComm->SubDomainRank() << std::endl;
           solutionOverlap.ExtractBlockValues(*splitVecOld, jacobian.RowIndex(i) + offsetToPrevSolution);
-	}
-        else      
+    }
+        else
           solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
         massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
         splitRes->Update(-1.0, *splitVec, 1.0);
-      }	
-  
+      }
+
       // solve the problem, and put solution into slution vector
       splitVec->PutScalar(0.0);
       linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
@@ -462,7 +462,7 @@ std::cout << "In Parareal, OFFSET  " << offsetToPrevSolution << " for time domai
     }
 
     result = solution;
-  }    
+  }
 
   return 0;
 }
@@ -519,8 +519,8 @@ OperatorRangeMap () const
 }
 
 bool LOCA::Epetra::xyztPrec::
-computeF(const Epetra_Vector&, Epetra_Vector&, 
-	 const NOX::Epetra::Interface::Required::FillType)
+computeF(const Epetra_Vector&, Epetra_Vector&,
+     const NOX::Epetra::Interface::Required::FillType)
 {
   //std::cout << "LOCA::Epetra::xyztPrec::computeF called." << std::endl;
   return false;
@@ -535,8 +535,8 @@ computeJacobian(const Epetra_Vector&, Epetra_Operator&)
 
 bool LOCA::Epetra::xyztPrec::
 computePreconditioner(const Epetra_Vector& x,
-		      Epetra_Operator& Prec,
-		      Teuchos::ParameterList* p)
+              Epetra_Operator& Prec,
+              Teuchos::ParameterList* p)
 {
   //std::cout << "LOCA::Epetra::xyztPrec::computePreconditioner called - ";
   std::string prec = lsParams.get("XYZTPreconditioner","None");
@@ -545,7 +545,7 @@ computePreconditioner(const Epetra_Vector& x,
     linSys[0]->destroyPreconditioner();
     linSys[0]->createPreconditioner(x, lsParams, false);
     return true;
-  }    
+  }
   else if (prec == "Sequential"  || prec == "Parallel" ||
            prec == "BlockDiagonal" || prec == "Parareal" || prec == "BDSDT") {
     for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
@@ -575,13 +575,13 @@ computePreconditioner(const Epetra_Vector& x,
     }
     if (prec == "BDSDT") {
       for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
-	int j=i-1;
+    int j=i-1;
         if (globalComm->FirstTimeStepOnDomain() + i != 0) {
-	   if (j<0) j=0; // Jac is from previous block, but don't go off proc to get it
+       if (j<0) j=0; // Jac is from previous block, but don't go off proc to get it
           (*jacobianBlock[j]).ExtractDiagonalCopy(*splitVec);
           (*massBlock[i]).ExtractDiagonalCopy(*splitRes);
-	  (*diagBlockSubdiag[i]).ReciprocalMultiply(1.0, *splitVec, *splitRes, 0.0);
-	}
+      (*diagBlockSubdiag[i]).ReciprocalMultiply(1.0, *splitVec, *splitRes, 0.0);
+    }
       }
     }
     return true;
@@ -595,8 +595,8 @@ computePreconditioner(const Epetra_Vector& x,
 void LOCA::Epetra::xyztPrec::
 throwError(const std::string& functionName, const std::string& errorMsg) const
 {
-  std::cout << "LOCA::Epetra::xyztPrec" << functionName 
-	 << " - " << errorMsg << std::endl;
+  std::cout << "LOCA::Epetra::xyztPrec" << functionName
+     << " - " << errorMsg << std::endl;
   throw "LOCA Error";
 }
 

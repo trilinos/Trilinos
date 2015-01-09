@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,13 +62,13 @@ namespace LOCA {
   }
 }
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
-     * \brief Implementation of 
-     * LOCA::MultiContinuation::ConstraintInterfaceMVDX for arclength 
+    /*!
+     * \brief Implementation of
+     * LOCA::MultiContinuation::ConstraintInterfaceMVDX for arclength
      * continuation.
      */
     /*!
@@ -78,13 +78,13 @@ namespace LOCA {
      *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
      *         (x-x^\ast)^Tv_x + (p-p^\ast) v_p - \Delta s
      * \f]
-     * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components 
+     * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components
      * of the predictor direction \f$v\f$ respectively.  Since the derivative
      * of \f$g\f$ with respect to \f$x\f$ is just \f$v\f$, the predictor
-     * tangent, this class implements the MVDX version of the 
+     * tangent, this class implements the MVDX version of the
      * constraint interface.
      */
-    class ArcLengthConstraint : 
+    class ArcLengthConstraint :
       public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
 
     public:
@@ -95,8 +95,8 @@ namespace LOCA {
      const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp);
 
       //! Copy constructor
-      ArcLengthConstraint(const ArcLengthConstraint& source, 
-			  NOX::CopyType type = NOX::DeepCopy);
+      ArcLengthConstraint(const ArcLengthConstraint& source,
+              NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor
       ~ArcLengthConstraint();
@@ -104,9 +104,9 @@ namespace LOCA {
       //! Set pointer to arclength group
       virtual void setArcLengthGroup(const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp);
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface
+       * virtual methods
        */
       //@{
 
@@ -114,7 +114,7 @@ namespace LOCA {
       virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -129,8 +129,8 @@ namespace LOCA {
 
       //! Sets parameters indexed by paramIDs
       virtual void setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Compute continuation constraint equations
       virtual NOX::Abstract::Group::ReturnType
@@ -147,9 +147,9 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const std::vector<int>& paramIDs, 
-		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-		bool isValidG);
+      computeDP(const std::vector<int>& paramIDs,
+        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+        bool isValidG);
 
       //! Return \c true if constraint residuals are valid
       virtual bool isConstraints() const;
@@ -165,8 +165,8 @@ namespace LOCA {
       virtual const NOX::Abstract::MultiVector*
       getDX() const;
 
-      /*! 
-       * \brief Return \c true if solution component of constraint 
+      /*!
+       * \brief Return \c true if solution component of constraint
        * derivatives is zero
        */
       virtual bool isDXZero() const;
@@ -185,7 +185,7 @@ namespace LOCA {
 
       //! Pointer to arc-length group
       Teuchos::RCP<
-	LOCA::MultiContinuation::ArcLengthGroup> arcLengthGroup;
+    LOCA::MultiContinuation::ArcLengthGroup> arcLengthGroup;
 
       //! Constraint values
       NOX::Abstract::MultiVector::DenseMatrix constraints;

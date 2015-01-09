@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -89,7 +89,7 @@ bool Thyra::test_single_stratimikos_solver(
     validParamList.set("Solve Adjoint",false);
     validParamList.sublist("Linear Solver Builder").disableRecursiveValidation();
     validParamList.sublist("LinearOpWithSolveTester").disableRecursiveValidation();
-    
+
     if(out) *out << "\nValidating top-level input parameters ...\n";
     paramList->validateParametersAndSetDefaults(validParamList);
 
@@ -102,7 +102,7 @@ bool Thyra::test_single_stratimikos_solver(
       lowsTesterSL     = sublist(paramList,"LinearOpWithSolveTester",true);
 
     if(out) *out << "\nReading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
-  
+
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -115,7 +115,7 @@ bool Thyra::test_single_stratimikos_solver(
       A = Thyra::epetraLinearOp(epetra_A);
 
     if(out) *out << "\nCreating a Stratimikos::DefaultLinearSolverBuilder object ...\n";
-    
+
     RCP<Thyra::LinearSolverBuilderBase<double> >
       linearSolverBuilder = rcp(new Stratimikos::DefaultLinearSolverBuilder);
 
@@ -132,6 +132,8 @@ bool Thyra::test_single_stratimikos_solver(
     if(out) *out << "\nlowsFactory described as:\n" << describe(*lowsFactory,Teuchos::VERB_MEDIUM) << std::endl;
 
     if(out) *out << "\nRunning example use cases for not externally preconditioned ...\n";
+
+    TEUCHOS_ASSERT(out != NULL);
     nonExternallyPreconditionedLinearSolveUseCases(
       *A, *lowsFactory, solveAdjoint, *out
       );
@@ -152,18 +154,18 @@ bool Thyra::test_single_stratimikos_solver(
       lowsA = Thyra::linearOpWithSolve<Scalar>(*lowsFactory, A);
     result = linearOpWithSolveTester.check(*lowsA, out);
     if (!result) success = false;
-    
+
     if(out) {
       *out << "\nPrinting the parameter list (showing what was used) ...\n";
       paramList->print(*out,1,true,true);
     }
-    
+
   }
   catch( const std::exception &excpt ) {
     std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
     success = false;
   }
-  
+
   return success;
-  
+
 }

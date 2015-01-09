@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,9 +64,9 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const std::vector<int>& paramIDs)
-  : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams, 
-					   continuationParams,
-					   grp, pred, paramIDs),
+  : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams,
+                       continuationParams,
+                       grp, pred, paramIDs),
     theta(paramIDs.size(), 1.0),
     doArcLengthScaling(true),
     gGoal(0.5),
@@ -74,30 +74,30 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
     thetaMin(1.0e-3),
     isFirstRescale(true)
 {
-  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons 
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons
     = Teuchos::rcp(new LOCA::MultiContinuation::ArcLengthConstraint(
-	globalData, Teuchos::rcp(this, false)));
+    globalData, Teuchos::rcp(this, false)));
   LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons, false);
 
-  double theta0 = 
+  double theta0 =
     continuationParams->get("Initial Scale Factor", 1.0);
-  doArcLengthScaling = 
-    continuationParams->get("Enable Arc Length Scaling",true); 
-  gGoal = 
+  doArcLengthScaling =
+    continuationParams->get("Enable Arc Length Scaling",true);
+  gGoal =
     continuationParams->get("Goal Arc Length Parameter Contribution",
-				     0.5);
-  gMax = 
-    continuationParams->get("Max Arc Length Parameter Contribution", 
-				     0.8);
+                     0.5);
+  gMax =
+    continuationParams->get("Max Arc Length Parameter Contribution",
+                     0.8);
   thetaMin = continuationParams->get("Min Scale Factor", 1.0e-3);
-  
+
   for (int i=0; i<numParams; i++)
     theta[i] = theta0;
 }
 
 LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
-			 const LOCA::MultiContinuation::ArcLengthGroup& source,
-			 NOX::CopyType type)
+             const LOCA::MultiContinuation::ArcLengthGroup& source,
+             NOX::CopyType type)
   : LOCA::MultiContinuation::ExtendedGroup(source, type),
     theta(source.theta),
     doArcLengthScaling(source.doArcLengthScaling),
@@ -110,13 +110,13 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
 }
 
 
-LOCA::MultiContinuation::ArcLengthGroup::~ArcLengthGroup() 
+LOCA::MultiContinuation::ArcLengthGroup::~ArcLengthGroup()
 {
 }
 
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ArcLengthGroup::operator=(
-					  const NOX::Abstract::Group& source)
+                      const NOX::Abstract::Group& source)
 {
   copy(source);
   return *this;
@@ -125,15 +125,15 @@ LOCA::MultiContinuation::ArcLengthGroup::operator=(
 Teuchos::RCP<NOX::Abstract::Group>
 LOCA::MultiContinuation::ArcLengthGroup::clone(NOX::CopyType type) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::MultiContinuation::ArcLengthGroup(*this, type));
 }
 
 void
-LOCA::MultiContinuation::ArcLengthGroup::copy(const NOX::Abstract::Group& src) 
+LOCA::MultiContinuation::ArcLengthGroup::copy(const NOX::Abstract::Group& src)
 {
 
-  const LOCA::MultiContinuation::ArcLengthGroup& source = 
+  const LOCA::MultiContinuation::ArcLengthGroup& source =
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthGroup&>(src);
 
   // Protect against A = A
@@ -153,7 +153,6 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 {
   double dpdsOld, dpdsNew;
   double thetaOld, thetaNew;
-  LOCA::MultiContinuation::ExtendedVector *v, *sv;
 
   scaledTangentMultiVec = tangentMultiVec;
 
@@ -161,73 +160,73 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
   if (predictor->isTangentScalable()) {
 
     for (int i=0; i<numParams; i++) {
-      v = 
-	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&tangentMultiVec[i]);
-      sv = 
-	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(*(sv->getXVec()));
-      grpPtr->scaleVector(*(sv->getXVec()));
-      
+      LOCA::MultiContinuation::ExtendedVector & v =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(tangentMultiVec[i]);
+      LOCA::MultiContinuation::ExtendedVector & sv =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(scaledTangentMultiVec[i]);
+      grpPtr->scaleVector(*(sv.getXVec()));
+      grpPtr->scaleVector(*(sv.getXVec()));
+
       if (doArcLengthScaling) {
-	
-	// Estimate dpds
-	thetaOld = theta[i];
-	sv->getScalars()->scale(thetaOld*thetaOld);
-	dpdsOld = 1.0/sqrt(sv->innerProduct(*v));
 
-	if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-	  globalData->locaUtils->out() << 
-	    std::endl << "\t" << 
-	    globalData->locaUtils->fill(64, '+') << std::endl << "\t" << 
-	    "Arc-length scaling calculation for parameter " << 
-	    getContinuationParameterName(i) << ": " << std::endl << "\t" << 
-	    "Parameter component of predictor before rescaling = " << 
-	    globalData->locaUtils->sciformat(dpdsOld) << std::endl << "\t" << 
-	    "Scale factor from previous step " << 
-	    globalData->locaUtils->sciformat(thetaOld) << std::endl << "\t" << 
-	    "Parameter contribution to arc-length equation     = " << 
-	    globalData->locaUtils->sciformat(thetaOld*dpdsOld) << std::endl;
-	}
+    // Estimate dpds
+    thetaOld = theta[i];
+    sv.getScalars()->scale(thetaOld*thetaOld);
+    dpdsOld = 1.0/sqrt(sv.innerProduct(v));
 
-	// Recompute scale factor
-	recalculateScaleFactor(dpdsOld, thetaOld, thetaNew);
-	
-	sv->getScalars()->scale(thetaNew*thetaNew / (thetaOld*thetaOld));
-	
-	// Calculate new dpds using new scale factor
-	dpdsNew = 1.0/sqrt(sv->innerProduct(*v));
-	
-	if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-	  globalData->locaUtils->out() << std::endl << "\t" << 
-	    "Parameter component of predictor after rescaling  = " << 
-	    globalData->locaUtils->sciformat(dpdsNew) << std::endl << "\t" << 
-	    "New scale factor (theta)                          = " << 
-	    globalData->locaUtils->sciformat(thetaNew) << std::endl << "\t" << 
-	    "Parameter contribution to arc-length equation     = " << 
-	    globalData->locaUtils->sciformat(thetaNew*dpdsNew) << std::endl << 
-	    "\t" << globalData->locaUtils->fill(64, '+') << std::endl;
-	}
-      
-	// Rescale predictor vector
-	v->scale(dpdsNew);
-	sv->scale(dpdsNew);
-	
-	theta[i] = thetaNew;
-	
-	// Adjust step size scaling factor to reflect changes in 
-	// arc-length parameterization
-	// The first time we rescale (first continuation step) we use a 
-	// different step size scale factor so that dpds*deltaS = step size 
-	// provided by user
-	if (isFirstRescale) {
-	  stepSizeScaleFactor[i] = 1.0/dpdsNew;
-	}
-	else
-	  stepSizeScaleFactor[i] = dpdsOld/dpdsNew;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+      globalData->locaUtils->out() <<
+        std::endl << "\t" <<
+        globalData->locaUtils->fill(64, '+') << std::endl << "\t" <<
+        "Arc-length scaling calculation for parameter " <<
+        getContinuationParameterName(i) << ": " << std::endl << "\t" <<
+        "Parameter component of predictor before rescaling = " <<
+        globalData->locaUtils->sciformat(dpdsOld) << std::endl << "\t" <<
+        "Scale factor from previous step " <<
+        globalData->locaUtils->sciformat(thetaOld) << std::endl << "\t" <<
+        "Parameter contribution to arc-length equation     = " <<
+        globalData->locaUtils->sciformat(thetaOld*dpdsOld) << std::endl;
+    }
+
+    // Recompute scale factor
+    recalculateScaleFactor(dpdsOld, thetaOld, thetaNew);
+
+    sv.getScalars()->scale(thetaNew*thetaNew / (thetaOld*thetaOld));
+
+    // Calculate new dpds using new scale factor
+    dpdsNew = 1.0/sqrt(sv.innerProduct(v));
+
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+      globalData->locaUtils->out() << std::endl << "\t" <<
+        "Parameter component of predictor after rescaling  = " <<
+        globalData->locaUtils->sciformat(dpdsNew) << std::endl << "\t" <<
+        "New scale factor (theta)                          = " <<
+        globalData->locaUtils->sciformat(thetaNew) << std::endl << "\t" <<
+        "Parameter contribution to arc-length equation     = " <<
+        globalData->locaUtils->sciformat(thetaNew*dpdsNew) << std::endl <<
+        "\t" << globalData->locaUtils->fill(64, '+') << std::endl;
+    }
+
+    // Rescale predictor vector
+    v.scale(dpdsNew);
+    sv.scale(dpdsNew);
+
+    theta[i] = thetaNew;
+
+    // Adjust step size scaling factor to reflect changes in
+    // arc-length parameterization
+    // The first time we rescale (first continuation step) we use a
+    // different step size scale factor so that dpds*deltaS = step size
+    // provided by user
+    if (isFirstRescale) {
+      stepSizeScaleFactor[i] = 1.0/dpdsNew;
+    }
+    else
+      stepSizeScaleFactor[i] = dpdsOld/dpdsNew;
       }
     }
 
-    if (doArcLengthScaling && isFirstRescale) 
+    if (doArcLengthScaling && isFirstRescale)
       isFirstRescale = false;
 
   }
@@ -235,12 +234,12 @@ LOCA::MultiContinuation::ArcLengthGroup::scaleTangent()
 
 double
 LOCA::MultiContinuation::ArcLengthGroup::computeScaledDotProduct(
-			 const NOX::Abstract::Vector& x,
-			 const NOX::Abstract::Vector& y) const
+             const NOX::Abstract::Vector& x,
+             const NOX::Abstract::Vector& y) const
 {
-  const LOCA::MultiContinuation::ExtendedVector& mx = 
+  const LOCA::MultiContinuation::ExtendedVector& mx =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
-  const LOCA::MultiContinuation::ExtendedVector& my = 
+  const LOCA::MultiContinuation::ExtendedVector& my =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
   double val = grpPtr->computeScaledDotProduct(*mx.getXVec(), *my.getXVec());
@@ -252,14 +251,14 @@ LOCA::MultiContinuation::ArcLengthGroup::computeScaledDotProduct(
 
 void
 LOCA::MultiContinuation::ArcLengthGroup::recalculateScaleFactor(
-							    double dpds,
-							    double thetaOld,
-							    double& thetaNew) 
+                                double dpds,
+                                double thetaOld,
+                                double& thetaNew)
 {
   double g = dpds*thetaOld;
 
   if (g > gMax) {
-    thetaNew = gGoal/dpds * sqrt( fabs(1.0 - g*g) / fabs(1.0 - gGoal*gGoal) ); 
+    thetaNew = gGoal/dpds * sqrt( fabs(1.0 - g*g) / fabs(1.0 - gGoal*gGoal) );
 
     if (thetaNew < thetaMin)
       thetaNew = thetaMin;

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,16 +54,16 @@
 namespace NOX_UNIT_TEST {
 
   class MockPPOp : public NOX::Abstract::PrePostOperator {
-    
+
   private:
-    
+
     int pre_it_count_;
     int post_it_count_;
     int pre_solve_count_;
     int post_solve_count_;
-    
+
   public:
-    
+
     MockPPOp() :
       pre_it_count_(0),
       post_it_count_(0),
@@ -73,16 +73,16 @@ namespace NOX_UNIT_TEST {
 
     void runPreIterate(const NOX::Solver::Generic& solver)
     {pre_it_count_ += 1;}
-    
+
     void runPostIterate(const NOX::Solver::Generic& solver)
     {post_it_count_ += 1;}
-    
+
     void runPreSolve(const NOX::Solver::Generic& solver)
     {pre_solve_count_ += 1;}
-      
+
     void runPostSolve(const NOX::Solver::Generic& solver)
     {post_solve_count_ += 1;}
-    
+
     int preIterateCount() const
     {return pre_it_count_;}
 
@@ -91,33 +91,33 @@ namespace NOX_UNIT_TEST {
 
     int preSolveCount() const
     {return pre_solve_count_;}
-      
+
     int postSolveCount() const
     {return post_solve_count_;}
-    
+
   };
-    
+
   class MockSolver : public NOX::Solver::Generic {
-    
+
   public:
 
     void reset(const NOX::Abstract::Vector& initial_guess){}
-    
+
     void reset(const NOX::Abstract::Vector& initial_guess,
-	       const Teuchos::RCP<NOX::StatusTest::Generic>& test){}
-    
+           const Teuchos::RCP<NOX::StatusTest::Generic>& test){}
+
     NOX::StatusTest::StatusType getStatus(){return NOX::StatusTest::Failed;}
-    
+
     NOX::StatusTest::StatusType step(){return NOX::StatusTest::Failed;}
-    
+
     NOX::StatusTest::StatusType solve(){return NOX::StatusTest::Failed;}
-    
+
     const NOX::Abstract::Group& getSolutionGroup() const{}
-    
+
     const NOX::Abstract::Group& getPreviousSolutionGroup() const{}
-    
-    int getNumIterations() const{}
-    
+
+    int getNumIterations() const{return 0;}
+
     const Teuchos::ParameterList& getList() const {}
 
   };

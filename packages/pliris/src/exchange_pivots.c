@@ -89,13 +89,13 @@ exchange_pivots(int *permutations)
 { int j,k;                        /* loop counter */
 
 
-  
+
 
 
   int colcnt;        /* number of columns stored for BLAS 3 ops */
   int col_len;
-  
- 
+
+
 
   MPI_Status msgstatus;
 
@@ -106,7 +106,7 @@ exchange_pivots(int *permutations)
   col_len = my_rows;    /* length of column in remaining local matrix */
 
 /*  First gather the permutation vector to processor 0 in row_comm   */
- 
+
   if (myrow == 0 || mycol == 0)
   {
 	for (k=0;k<=nrows_matrix-1;k++)

@@ -79,7 +79,7 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // Test of createTwoLevelHierarchy: to be moved...
     TEST_EQUALITY(fineLevel.GetLevelID(), 0);
@@ -88,7 +88,7 @@ namespace MueLuTests {
     //TEST_EQUALITY(coarseLevel.GetPreviousLevel().get(), &fineLevel);
     // --
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     SaPFactory sapFactory;

@@ -54,8 +54,9 @@
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> user_t;
 typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
+typedef idInput_t::part_t part_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -64,13 +65,12 @@ using Teuchos::rcp;
 using Teuchos::arcp;
 
 
-typedef zoltan2_partId_t partId_t;
 
-void makeArrays(int wdim, int *lens, partId_t **ids, scalar_t **sizes,
-  ArrayRCP<ArrayRCP<partId_t> > &idList, ArrayRCP<ArrayRCP<scalar_t> > &sizeList)
+void makeArrays(int wdim, int *lens, part_t **ids, zscalar_t **sizes,
+  ArrayRCP<ArrayRCP<part_t> > &idList, ArrayRCP<ArrayRCP<zscalar_t> > &sizeList)
 {
-  ArrayRCP<partId_t> *idArrays = new ArrayRCP<partId_t> [wdim];
-  ArrayRCP<scalar_t> *sizeArrays = new ArrayRCP<scalar_t> [wdim];
+  ArrayRCP<part_t> *idArrays = new ArrayRCP<part_t> [wdim];
+  ArrayRCP<zscalar_t> *sizeArrays = new ArrayRCP<zscalar_t> [wdim];
 
   for (int w=0; w < wdim; w++){
     idArrays[w] = arcp(ids[w], 0, lens[w], false);
@@ -91,18 +91,18 @@ int main(int argc, char *argv[])
   double epsilon = 10e-6;
 
   ////////////////
-  // Arrays to hold part Ids and part Sizes for each weight dimension.
+  // Arrays to hold part Ids and part Sizes for each weight
 
   int numIdsPerProc = 10;
-  int maxWeightDim = 3;
+  int maxNumWeights = 3;
   int maxNumPartSizes = nprocs;
-  int *lengths = new int [maxWeightDim];
-  partId_t **idLists = new partId_t * [maxWeightDim];
-  scalar_t **sizeLists = new scalar_t * [maxWeightDim];
+  int *lengths = new int [maxNumWeights];
+  part_t **idLists = new part_t * [maxNumWeights];
+  zscalar_t **sizeLists = new zscalar_t * [maxNumWeights];
 
-  for (int w=0; w < maxWeightDim; w++){
-    idLists[w] = new partId_t [maxNumPartSizes];
-    sizeLists[w] = new scalar_t [maxNumPartSizes];
+  for (int w=0; w < maxNumWeights; w++){
+    idLists[w] = new part_t [maxNumPartSizes];
+    sizeLists[w] = new zscalar_t [maxNumPartSizes];
   }
 
   /////////////
@@ -112,28 +112,28 @@ int main(int argc, char *argv[])
   /////////////
   // A simple identifier map.
 
-  gno_t *myGids = new gno_t [numIdsPerProc];
+  zgno_t *myGids = new zgno_t [numIdsPerProc];
   for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++){
     myGids[i] = x++;
   }
 
-  ArrayRCP<const gno_t> gidArray(myGids, 0, numIdsPerProc, true);
+  ArrayRCP<const zgno_t> gidArray(myGids, 0, numIdsPerProc, true);
 
   RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
     rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
 
   /////////////
   // TEST:
-  // One weight dimension, one part per proc.
+  // One weight, one part per proc.
   // Some part sizes are 2 and some are 1.
 
   int numGlobalParts = nprocs;
-  int weightDim = 1;
+  int nWeights = 1;
 
-  ArrayRCP<ArrayRCP<partId_t> > ids;
-  ArrayRCP<ArrayRCP<scalar_t> > sizes;
+  ArrayRCP<ArrayRCP<part_t> > ids;
+  ArrayRCP<ArrayRCP<zscalar_t> > sizes;
 
-  memset(lengths, 0, sizeof(int) * maxWeightDim);
+  memset(lengths, 0, sizeof(int) * maxNumWeights);
 
   lengths[0] = 1;                    // We give a size for 1 part.
   idLists[0][0] = rank;              // The part is my part.
@@ -143,8 +143,8 @@ int main(int argc, char *argv[])
 
   // Normalized part size for every part, for checking later on
 
-  scalar_t *normalizedPartSizes = new scalar_t [numGlobalParts];
-  scalar_t sumSizes=0;
+  zscalar_t *normalizedPartSizes = new zscalar_t [numGlobalParts];
+  zscalar_t sumSizes=0;
   for (int i=0; i < numGlobalParts; i++){
     normalizedPartSizes[i] = 1.0;
     if (i % 2) normalizedPartSizes[i] = 2.0;
@@ -163,9 +163,9 @@ int main(int argc, char *argv[])
       env,                // application environment info
       comm,               // problem communicator
       idMap,              // problem identifiers (global Ids, local Ids)
-      weightDim,                  // weight dimension
-      ids.view(0,weightDim),      // part ids
-      sizes.view(0,weightDim))); // part sizes
+      nWeights,                  // number of weights
+      ids.view(0,nWeights),      // part ids
+      sizes.view(0,nWeights))); // part sizes
   }
   catch (std::exception &e){
     fail=1;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
   if (!fail){
     for (int partId=0; !fail && partId < numGlobalParts; partId++){
-      scalar_t psize = solution->getCriteriaPartSize(0, partId);
+      zscalar_t psize = solution->getCriteriaPartSize(0, partId);
 
       if ( psize < normalizedPartSizes[partId] - epsilon ||
            psize > normalizedPartSizes[partId] + epsilon )
@@ -214,11 +214,11 @@ int main(int argc, char *argv[])
 
   // Test the Solution set method that is called by algorithms
 
-  partId_t *partAssignments = new partId_t [numIdsPerProc];
+  part_t *partAssignments = new part_t [numIdsPerProc];
   for (int i=0; i < numIdsPerProc; i++){
     partAssignments[i] = myGids[i] % numGlobalParts;  // round robin
   }
-  ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
+  ArrayRCP<part_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   try{
     solution->setParts(gidArray, partList, true);
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
     fail = 11;
 
   if (!fail){
-    const gno_t *gids = solution->getIdList();
+    const zgno_t *gids = solution->getIdList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (gids[i] != myGids[i])
         fail = 12;
@@ -247,9 +247,9 @@ int main(int argc, char *argv[])
   }
 
   if (!fail){
-    const partId_t *parts = solution->getPartList();
+    const part_t *parts = solution->getPartList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
-      if (parts[i] != myGids[i] % numGlobalParts)
+      if (parts[i] != part_t(myGids[i] % numGlobalParts))
         fail = 13;
     }
   }
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
   // Specify a list of parts of size 0.  (The rest should be uniform.)
 
   delete [] lengths;
-  for (int w=0; w < maxWeightDim; w++){
+  for (int w=0; w < maxNumWeights; w++){
     delete [] idLists[w];
     delete [] sizeLists[w];
   }

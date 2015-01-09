@@ -71,8 +71,9 @@ namespace MueLu {
   */
 
   //FIXME: this class should not be templated
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal = typename Xpetra::Matrix<double>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<double, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<double, LocalOrdinal, GlobalOrdinal>::node_type>
   class Zoltan2Interface : public SingleLevelFactoryBase {
 
     typedef double Scalar; // FIXME
@@ -91,7 +92,7 @@ namespace MueLu {
     virtual ~Zoltan2Interface() { }
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

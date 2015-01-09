@@ -36,7 +36,6 @@ Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
    csrKdd(),
    fi_(),
    fd_(),
-   csfi(),
    csvec(),
    csvec_i(),
    tmpMat1_(),
@@ -562,17 +561,16 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     //form tmpVec1_ = Kid_*g_
     fei::multiply_CSRMat_CSVec(csrKid, csg_, tmpVec1_);
 
-    //add tmpVec1_ to fi_
-    csfi = fi_;
-    fei::add_CSVec_CSVec(tmpVec1_, csfi);
+    //subtract tmpVec1_ from fi_
+    fi_.subtract(tmpVec1_);
 
     //we already have tmpMat1_ = D^T*Kdd which was computed above, and we need
     //to form tmpVec1_ = D^T*Kdd*g_.
     //So we can simply form tmpVec1_ = tmpMat1_*g_.
     fei::multiply_CSRMat_CSVec(tmpMat1_, csg_, tmpVec1_);
 
-    //now add tmpVec1_ to the right-hand-side fi_
-    fei::add_CSVec_CSVec(tmpVec1_, csfi);
+    //now subtract tmpVec1_ from the right-hand-side fi_
+    fi_.subtract(tmpVec1_);
   }
 
   //accumulate tmpMat2_ = D^T*Kdd_*D into the global system matrix.
@@ -921,13 +919,14 @@ Reducer::copyOutVectorValues(int numValues,
 
   if (tmpVec1_.size() > 0) {
     fei::multiply_trans_CSRMat_CSVec(csrD_, tmpVec1_, tmpVec2_);
-    int* tmpVec2Indices = &(tmpVec2_.indices()[0]);
+    int* tmpVec2Indices = tmpVec2_.indices().empty() ? NULL : &(tmpVec2_.indices()[0]);
+    double* tmpVec2Coefs = tmpVec2_.coefs().empty() ? NULL : &(tmpVec2_.coefs()[0]);
     for(size_t i=0; i<tmpVec2_.size(); ++i) {
       reduced_indices.push_back(translateToReducedEqn(tmpVec2Indices[i]));
     }
 
-    feivec.copyOut(tmpVec2_.size(), &reduced_indices[0],
-                   &(tmpVec2_.coefs()[0]), vectorIndex);
+    int* reduced_indices_ptr = reduced_indices.empty() ? NULL : &reduced_indices[0];
+    feivec.copyOut(tmpVec2_.size(), reduced_indices_ptr, tmpVec2Coefs, vectorIndex);
 
     fei::multiply_CSRMat_CSVec(csrD_, tmpVec2_, tmpVec1_);
 
@@ -935,7 +934,7 @@ Reducer::copyOutVectorValues(int numValues,
       int* ginds = &(csg_.indices()[0]);
       double* gcoefs = &(csg_.coefs()[0]);
       for(size_t ii=0; ii<csg_.size(); ++ii) {
-        fei::add_entry(tmpVec1_, ginds[ii], -gcoefs[ii]);
+        fei::add_entry(tmpVec1_, ginds[ii], gcoefs[ii]);
       }
     }
 

@@ -8,7 +8,6 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Galeri
   )
 
-INCLUDE(TribitsAddExecutable)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
@@ -25,35 +24,30 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       Helmholtz1D
       SOURCES Helmholtz1D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz2D
       SOURCES Helmholtz2D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz3D
       SOURCES Helmholtz3D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       HelmholtzFEM2D
       SOURCES HelmholtzFEM2D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       HelmholtzFEM3D
       SOURCES HelmholtzFEM3D.cpp
       COMM serial
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -61,7 +55,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       SOURCES Helmholtz1D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -69,7 +62,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       SOURCES Helmholtz2D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -77,7 +69,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       SOURCES Helmholtz3D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -85,7 +76,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       SOURCES HelmholtzFEM2D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -93,11 +83,10 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       SOURCES HelmholtzFEM3D.cpp
       NUM_MPI_PROCS 4
       COMM mpi
-      DEPLIBS muelu xpetra muelu-adapters
     )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Helmholtz_cp
-    SOURCE_FILES helm2D.xml helm3D.xml
+    SOURCE_FILES helm2D.inp helm3D.inp
     )
 
   ENDIF()

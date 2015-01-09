@@ -100,7 +100,7 @@
 template<class T>
 bool testArrayView( const int n, Teuchos::FancyOStream &out )
 {
-  
+
   using Teuchos::ArrayView;
   using Teuchos::arrayView;
   using Teuchos::arrayViewFromVector;
@@ -110,20 +110,33 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   using Teuchos::getConst;
   using Teuchos::as;
   typedef typename ArrayView<T>::size_type size_type;
+  // mfh 03 Apr 2014: The point of the above line of code is to ensure
+  // that ArrayView<T> has a public size_type typedef.  However, the
+  // above line of code in isolation causes some compilers to warn
+  // about a declared but unused typedef.  We deal with this by
+  // declaring a variable (actually, the oxymoron "const variable") of
+  // type size_type, then using the "cast to void" trick to forestall
+  // compiler warnings for the declared but unused variable.  (Fun
+  // fact: "oxymoron" means "sharp dull" and is itself an oxymoron.)
+  // The "cast to void" trick doesn't always work, but if it doesn't,
+  // it's easy to make it go away by printing it to the output stream
+  // 'out'.
+  const size_type arbitrarySizeTypeValue = 0;
+  (void) arbitrarySizeTypeValue;
 
   bool success = true;
- 
+
   out
     << "\n***"
     << "\n*** Testing "<<TypeNameTraits<ArrayView<T> >::name()<<" of size = "<<n
     << "\n***\n";
-  
+
   Teuchos::OSTab tab(out);
 
   //
   out << "\nA) Initial setup testing ...\n\n";
   //
-  
+
   {
     out << "\nTesting basic null construction!\n\n";
     ArrayView<T> av2 = Teuchos::null;
@@ -139,7 +152,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
     TEST_THROW(av2.front(), Teuchos::NullReferenceError);
     TEST_THROW(av2.back(), Teuchos::NullReferenceError);
 #endif
-    ArrayView<const T> cav2(av2); // Tests copy constructor and implicit conversion operator! 
+    ArrayView<const T> cav2(av2); // Tests copy constructor and implicit conversion operator!
     TEST_EQUALITY_CONST(cav2.size(),0);
     TEST_EQUALITY_CONST(cav2.getRawPtr(),0);
     TEST_ITER_EQUALITY(cav2.begin(),av2.end());
@@ -161,7 +174,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   TEST_EQUALITY( as<int>(av.size()), n );
 
   const ArrayView<const T> cav = av;
- 
+
   {
     out << "\nInitializing data for std::vector v through view av ...\n";
     for( int i = 0; i < n; ++i )
@@ -373,17 +386,17 @@ int main( int argc, char* argv[] )
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   using Teuchos::CommandLineProcessor;
-	
-	bool success = true;
+
+        bool success = true;
   bool result;
- 
+
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
- 
-	try {
-    
+
+        try {
+
     //
-		// Read options from the commandline
+                // Read options from the commandline
     //
 
     CommandLineProcessor clp(false); // Don't throw exceptions
@@ -391,15 +404,15 @@ int main( int argc, char* argv[] )
     int n = 4;
     clp.setOption( "n", &n, "Number of elements in the array" );
 
-		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+                CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
-		if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << std::endl;
-			return parse_return;
-		}
+                if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
+                        *out << "\nEnd Result: TEST FAILED" << std::endl;
+                        return parse_return;
+                }
 
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
- 
+
     result = testArrayView<int>(n,*out);
     if (!result) success = false;
 
@@ -411,15 +424,15 @@ int main( int argc, char* argv[] )
 
     result = testArrayView<std::complex<double> >(n,*out);
     if (!result) success = false;
- 
-	}
+
+        }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
- 
+
   if (success)
     *out << "\nEnd Result: TEST PASSED" << std::endl;
   else
     *out << "\nEnd Result: TEST FAILED" << std::endl;
- 
+
   return ( success ? 0 : 1 );
- 
+
 }

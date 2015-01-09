@@ -59,22 +59,20 @@ static NNTI_result_t create_buffer(
         NNTI_buffer_t         **buffer)
 {
     NNTI_result_t nnti_rc;
-    char *b;
+//    char *b;
 
     log_debug(bq_debug_level, "enter");
 
-    b=(char *)malloc(buffer_size);
-    assert(b);
-    memset(b, 0, buffer_size);
+//    b=(char *)malloc(buffer_size);
+//    assert(b);
+//    memset(b, 0, buffer_size);
     *buffer=(NNTI_buffer_t *)malloc(sizeof(NNTI_buffer_t));
     assert(*buffer);
-    nnti_rc=NNTI_register_memory(
+    nnti_rc=NNTI_alloc(
             trans_hdl,
-            b,
             buffer_size,
             1,
             op,
-            NULL,
             *buffer);
     if (nnti_rc != NNTI_OK) {
         log_error(bq_debug_level, "failed registering queue buffer: %d", nnti_rc);
@@ -88,18 +86,18 @@ static NNTI_result_t create_buffer(
 static NNTI_result_t destroy_buffer(NNTI_buffer_t **buffer)
 {
     NNTI_result_t nnti_rc;
-    char *b;
+//    char *b;
 
     log_debug(bq_debug_level, "enter");
 
-    b=NNTI_BUFFER_C_POINTER(*buffer);
-    nnti_rc=NNTI_unregister_memory(*buffer);
+//    b=NNTI_BUFFER_C_POINTER(*buffer);
+    nnti_rc=NNTI_free(*buffer);
     if (nnti_rc != NNTI_OK) {
         log_error(bq_debug_level, "failed unregistering queue buffer: %d", nnti_rc);
     }
     free(*buffer);
     *buffer=NULL;
-    free(b);
+//    free(b);
 
     log_debug(bq_debug_level, "exit");
 

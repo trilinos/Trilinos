@@ -33,7 +33,7 @@
 
 using namespace ML_Epetra;
 
-static map<void*, bool> MemoryManager;
+static std::map<void*, bool> MemoryManager;
 
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
                   Teuchos::ParameterList& List,

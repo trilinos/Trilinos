@@ -1,297 +1,405 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_Selector_hpp
 #define stk_mesh_Selector_hpp
 
-#include <iosfwd>
-#include <algorithm>
-#include <stk_mesh/base/Types.hpp>
-#include <string>
-
-namespace stk {
-namespace mesh {
-
-//An operator to obtain a part-ordinal from a part-iterator.
-//This general template handles cases where the part-iterator
-//iterates either stk::mesh::Part or Fmwk::MeshPart objects.
-//Specializations for part-ordinal-pointers follow below.
-template<typename PartIterator>
-struct GetPartIterOrdinal {
-unsigned operator()(PartIterator p_it) const
-{ return (*p_it)->mesh_meta_data_ordinal(); }
-};
-
-template<>
-struct GetPartIterOrdinal<const unsigned*> {
-unsigned operator()(const unsigned* p_it) const
-{ return *p_it; }
-};
-
-template<>
-struct GetPartIterOrdinal<unsigned*> {
-unsigned operator()(unsigned* p_it) const
-{ return *p_it; }
-};
+#include <stddef.h>                     // for NULL
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssert
+#include <vector>                       // for vector, operator!=, etc
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class Part; } }
 
 
-struct PartOrdLess {
 
-bool operator()(unsigned lhs, unsigned rhs) const
-{ return lhs < rhs; }
 
-};
+namespace stk { namespace mesh {
 
-//Function to determine whether a specified part-ordinal is present
-//in a given range of parts.
-//Caller-provided comparison-operator compares a part-ordinal with
-//one obtained from whatever a PartIterator dereferences to.
-template<typename PartIterator, class Compare>
-bool part_is_present(unsigned part_ord,
-                     const std::pair<PartIterator, PartIterator>& part_range,
-                     Compare comp)
+// Specify what can be in the expression tree of a selector
+struct SelectorNodeType
 {
-  GetPartIterOrdinal<PartIterator> get_part_ordinal;
-
-  // Search for 'part_ord' in the bucket's list of sorted integer part ords
-  PartIterator p_it = std::lower_bound(part_range.first, part_range.second, part_ord, comp);
-  return (p_it != part_range.second && get_part_ordinal(p_it) == part_ord);
-}
-
-enum Op{
-        INVALID = 0,
-        COMPOUND = 1,
-        PART_ID = 2
-       };
-
-struct OpType {
-  unsigned       m_part_id ; ///< Id of part under consideration
-  unsigned short m_unary ;   ///< Unary NOT operator: m_unary ^ expression
-  unsigned short m_count ;   ///< Compound statement length
-  Op             m_op      ; ///< Does the OpType reference a part
-
-  OpType() : m_part_id(0), m_unary(0), m_count(0), m_op(INVALID) {}
-  OpType( unsigned part_id , unsigned unary , unsigned count, Op op=INVALID )
-    : m_part_id( part_id ), m_unary( unary ), m_count( count ), m_op(op)  {}
-
-  bool operator == (const OpType & opType ) const
-  {
-    return m_part_id == opType.m_part_id &&
-           m_unary == opType.m_unary &&
-           m_count == opType.m_count &&
-           m_op == opType.m_op;
-  }
-  bool operator != (const OpType & opType ) const
-  { return !(*this == opType); }
+  enum node_type {
+    PART,
+    UNION,
+    INTERSECTION,
+    DIFFERENCE,
+    COMPLEMENT
+  };
 };
 
-/** \addtogroup stk_mesh_module
- *  \{
+namespace impl {
+
+// A node in the expression tree of a selector
+struct SelectorNode
+{
+  SelectorNode(Part const* arg_part = NULL) : m_type(SelectorNodeType::PART)
+  {
+    m_value.part_ptr = arg_part;
+  }
+
+  // Either leaf (part_ptr) or unary (no data) or binary (offset from current pos to rhs)
+  union value_type
+  {
+    enum { left_offset = 1 };
+    enum { unary_offset = 1 };
+
+    Part const* part_ptr;
+    unsigned right_offset; // for binary op
+    // no storage required for unary op
+  };
+
+  SelectorNode const* lhs() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    return this + m_value.left_offset;
+  }
+
+  SelectorNode const* rhs() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    return this + m_value.right_offset;
+  }
+
+  SelectorNode const* unary() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
+    return this + m_value.unary_offset;
+  }
+
+  Part const* part() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::PART);
+    return m_value.part_ptr;
+  }
+
+  SelectorNodeType::node_type node_type() const
+  {
+      return m_type;
+  }
+
+  bool operator==(SelectorNode const& arg_rhs) const
+  {
+    if (m_type != arg_rhs.m_type) {
+      return false;
+    }
+    else if (m_type == SelectorNodeType::COMPLEMENT) {
+      // there's no rhs for a SelectorNode of type Complement
+      return true;
+    }
+    else if (m_type == SelectorNodeType::PART) {
+      return m_value.part_ptr == arg_rhs.m_value.part_ptr;
+    }
+    else {
+      return m_value.right_offset == arg_rhs.m_value.right_offset;
+    }
+  }
+
+  SelectorNodeType::node_type  m_type;
+  value_type                   m_value;
+};
+
+} // namespace impl
+
+/**
+ * Selects subsets of the mesh. Allows for creating set expressions from
+ * parts and set operators (union |, intersection &, difference -, complement !).
  */
-
-/** \brief This is a class for selecting \ref stk::mesh::Bucket "buckets" based on a set of
- * \ref stk::mesh::Part "meshparts" and set logic.
- *
- * The selector allows complements, unions and intersections.  All of
- * this logic is converted to NAND, meaning nots and AND logic.  Each
- * operation is placed on a stack of operands where each operand is
- * either a left parenthesis with a number of operands included in the
- * compound object, or an actual meshpart.  All operands have a unary
- * bit used to complement the operand.
- *
- * Please see the \ref stk_mesh_selector_unit "unit testing" for additional documentation.
- *
- * **/
-
 class Selector {
 public:
-  /**  \brief  A default Selector selects nothing */
-  Selector();
 
-  bool operator == (const Selector & rhs) const
-  { return m_op == rhs.m_op; }
-
-  bool operator != (const Selector & rhs) const
-  { return m_op != rhs.m_op; }
+  Selector()
+    : m_expr(1) // default Selector is null part (selects nothing)
+  {}
 
   /** \brief  A part that is required */
-  Selector( const Part & part);
+  Selector(const Part & part)
+    : m_expr(1, impl::SelectorNode(&part))
+  {}
+
+  bool operator == (const Selector & rhs) const
+  { return m_expr == rhs.m_expr; }
+
+  bool operator != (const Selector & rhs) const
+  { return m_expr != rhs.m_expr; }
 
   /** \brief  Intersection: this = this INTERSECT ( expression ) */
-  Selector & operator &= ( const Selector & selector);
+  Selector & operator &= ( const Selector & selector)
+  { return add_binary_op(SelectorNodeType::INTERSECTION, selector); }
+
+// Remove once Fmwk::MeshPart no longer exists
+#ifdef SIERRA_MIGRATION
+  Selector & operator &= ( const Part& part)
+  { return add_binary_op(SelectorNodeType::INTERSECTION, Selector(part)); }
+
+  Selector & operator |= ( const Part& part )
+  { return operator|=(Selector(part)); }
+#endif
 
   /** \brief  Union: this = this UNION ( expression ) */
-  Selector & operator |= ( const Selector & selector);
+  Selector & operator |= ( const Selector & selector)
+  {
+    if (is_null()) {
+      m_expr = selector.m_expr;
+    }
+    else {
+      add_binary_op(SelectorNodeType::UNION, selector);
+    }
+    return *this;
+  }
+
+  /** \brief  Difference: this = this - ( expression ) */
+  Selector & operator -= ( const Selector & selector)
+  { return add_binary_op(SelectorNodeType::DIFFERENCE, selector); }
+
+  bool operator<(const Selector& rhs) const;
+
+  bool operator<=(const Selector& rhs) const {
+    return *this < rhs || *this == rhs;
+  }
+
+  bool operator>(const Selector& rhs) const {
+    return rhs < *this;
+  }
+
+  bool operator>=(const Selector& rhs) const {
+    return *this > rhs || *this == rhs;
+  }
 
   /** \brief  Complement: this = !(this)
-   * Postcondition:  this is a compound expression
+   * Complements this selector in-place
    * */
-  Selector & complement();
+  Selector & complement()
+  {
+    impl::SelectorNode root;
+    root.m_type = SelectorNodeType::COMPLEMENT;
+
+    m_expr.insert(m_expr.begin(), root);
+    return *this;
+  }
 
   /** \brief Complement:  return !(this) */
   Selector operator ! () const
-    { Selector S( *this ); return S.complement(); }
+  {
+    Selector tmp( *this );
+    return tmp.complement();
+  }
+
+  bool is_all_unions() const;
+
+  void get_parts(PartVector& parts) const;
+
+  BucketVector const& get_buckets(EntityRank entity_rank) const;
+
+  bool is_empty(EntityRank entity_rank) const;
 
   /** \brief  Is this part a member of the
    *          set defined by the selector expression.
    */
   bool operator()( const Part & part ) const;
 
+  /** \brief  Is this part a member of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const Part * part ) const;
+
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Bucket & candidate ) const;
+  bool operator()( const Bucket & bucket ) const;
 
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
-  bool operator()( const Bucket * candidate ) const;
+  bool operator()( const Bucket * bucket ) const;
 
-  /** \brief  Is this entity a member of the
-   *          set defined by the selector expression.
-   */
-  bool operator()( const Entity & candidate ) const;
 
-  /** \brief Is the intersection of the 'part_ords' parts a member
-   * of the set defined by the selector expression.
-   */
-  template<typename PartIterator, class Compare>
-  bool apply(const std::pair<PartIterator,PartIterator>& part_range, Compare comp) const
-  { return apply(m_op.begin(), m_op.end(), part_range, comp); }
+  bool operator()(const PartVector& parts) const;
 
-  /** \brief  Pretty print the set-expression with part names */
-#ifndef SWIG
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
-#endif
-
-  const std::vector<OpType>& get_ops() const { return m_op; }
-  void set_ops(const std::vector<OpType>& ops) { m_op = ops; }
-
-  /** \brief Turn the entire expression into a compound */
-  void compoundAll();
 
 private:
 
-  /** \brief . */
-  const MetaData * m_mesh_meta_data ;
+  BulkData* find_mesh() const;
 
-  /** \brief . */
-  std::vector< OpType > m_op ;
-
-  /** \brief . */
-  void verify_compatible( const Selector & B ) const;
-
-  /** \brief . */
-  void verify_compatible( const Bucket & B ) const;
-
-  /** \brief . */
-  template<typename PartIterator, class Compare>
-  bool apply(
-      std::vector<OpType>::const_iterator i,
-      std::vector<OpType>::const_iterator j,
-      const std::pair<PartIterator,PartIterator>& part_range,
-      Compare comp) const
-  {
-    bool result = i != j ;
-    while ( result && i != j ) {
-      const unsigned statement_length = i->m_count;
-      if ( statement_length > 0 ) { // Check if compound statement
-        result = i->m_unary ^ apply( i + 1 , i + statement_length , part_range , comp );
-        i += statement_length;
-      }
-      else { // Test for containment of bucket in this part, or not in
-        result = i->m_unary ^ part_is_present( i->m_part_id , part_range , comp );
-        ++i ;
-      }
-    }
-    return result ;
+  bool is_null() const {
+    return m_expr.size() == 1 && m_expr[0].m_type == SelectorNodeType::PART && m_expr[0].m_value.part_ptr == NULL;
   }
 
-  /** \brief Pretty print the expression */
-  std::string printExpression(
-      const std::vector<OpType>::const_iterator start,
-      const std::vector<OpType>::const_iterator finish
-      ) const;
+  Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs)
+  {
+    impl::SelectorNode root;
+    root.m_type = type;
+    root.m_value.right_offset = 1 + m_expr.size();
 
+    m_expr.insert(m_expr.begin(), root);
+    m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
+
+    return *this;
+  }
+
+  std::vector<impl::SelectorNode> m_expr;
 };
 
-class Part;
+inline
+Selector operator & ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S &= Selector( B );
+  return S;
+}
 
-#ifndef SWIG
-std::ostream & operator<<( std::ostream & out, const Selector & selector);
-#endif
+inline
+Selector operator & ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S &= B;
+  return S;
+}
+
+inline
+Selector operator & ( const Selector & A, const Part & B )
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
+}
+
+inline
+Selector operator & ( const Selector & A, const Selector & B )
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
+}
+
+inline
+Selector operator | ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S |= Selector( B );
+  return S;
+}
+
+inline
+Selector operator | ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S |= B;
+  return S;
+}
+
+inline
+Selector operator | ( const Selector & A, const Part & B  )
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
+}
+
+inline
+Selector operator | ( const Selector & A, const Selector & B  )
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
+}
+
+inline
+Selector operator - ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S -= Selector( B );
+  return S;
+}
+
+inline
+Selector operator - ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S -= B;
+  return S;
+}
+
+inline
+Selector operator - ( const Selector & A, const Part & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
+
+inline
+Selector operator - ( const Selector & A, const Selector & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
+
+inline
+Selector operator ! ( const Part & A )
+{
+  Selector S(A);
+  return S.complement();
+}
 
 /** \brief .
  * \relates Selector
  * */
-Selector operator & ( const Part & A , const Part & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator & ( const Part & A , const Selector & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator & ( const Selector & A, const Part & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator & ( const Selector & A, const Selector & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator | ( const Part & A , const Part & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator | ( const Part & A , const Selector & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator | ( const Selector & A, const Part & B  );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator | ( const Selector & A , const Selector & B );
-
-/** \brief .
- * \relates Selector
- * */
-Selector operator ! ( const Part & A );
-
-
-/** \brief .
- * \relates Selector
- * */
-Selector selectUnion( const PartVector& union_part_vector );
+template <typename PartVectorType>
+Selector selectUnion( const PartVectorType & union_part_vector );
 
 /** \brief .
  * \relates Selector
  * */
 Selector selectIntersection( const PartVector& intersection_part_vector );
+Selector selectIntersection( const ConstPartVector& intersection_part_vector );
 
 /** \brief Return a selector for the union of the parts where field exists.
  * \relates Selector
  * */
 Selector selectField( const FieldBase& field );
 
+/** \brief Is lhs a subset of rhs, only works for simple selectors (parts and unions)
+ */
+bool is_subset(Selector const& lhs, Selector const& rhs);
+
 /** \} */
 
-} // namespace mesh
-} // namespace stk
+}} // namespace stk::mesh
 
 #endif // stk_mesh_Selector_hpp
 

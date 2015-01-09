@@ -95,14 +95,14 @@ using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::CommandLineProcessor;
 /*
-typedef int lno_t;
-typedef long gno_t;
-typedef double scalar_t;
+typedef int zlno_t;
+typedef long zgno_t;
+typedef double zscalar_t;
 */
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
 
 //////////////////////////////////////////////////////////////////////////////
 // Data structure for data
@@ -221,31 +221,31 @@ int getDim(void *data, int *ierr)
 //////////////////////////
 void getObjList(void *data, int numGid, int numLid,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-  int wgt_dim, float *obj_wgts, int *ierr)
+  int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
 
   size_t localLen = dots->coordinates->getLocalLength();
-  const gno_t *ids =
+  const zgno_t *ids =
                dots->coordinates->getMap()->getNodeElementList().getRawPtr();
 
-  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
+  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(zgno_t))
     memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);
   else
     for (size_t i=0; i < localLen; i++)
       gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
-  if (wgt_dim > 0){
+  if (num_wgts > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
-      for (int w=0; w < wgt_dim; w++)
+      for (int w=0; w < num_wgts; w++)
         *wgts++ = dots->weights[w][i];
   }
 }
 
 //////////////////////////
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords, int *ierr)
 {
@@ -254,9 +254,9 @@ void getCoordinates(void *data, int numGid, int numLid,
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
   double *val = coords;
-  const scalar_t *x = dots->coordinates->getData(0).getRawPtr();
-  const scalar_t *y = dots->coordinates->getData(1).getRawPtr();
-  const scalar_t *z = dots->coordinates->getData(2).getRawPtr();
+  const zscalar_t *x = dots->coordinates->getData(0).getRawPtr();
+  const zscalar_t *y = dots->coordinates->getData(1).getRawPtr();
+  const zscalar_t *z = dots->coordinates->getData(2).getRawPtr();
   for (int i=0; i < numObj; i++){
     *val++ = static_cast<double>(x[i]);
     *val++ = static_cast<double>(y[i]);
@@ -267,8 +267,8 @@ void getCoordinates(void *data, int numGid, int numLid,
       *ierr = 0;
       DOTS *dots = (DOTS *) data;
       double *val = coords;
-      const scalar_t *x = dots->coordinates->getData(0).getRawPtr();
-      const scalar_t *y = dots->coordinates->getData(1).getRawPtr();
+      const zscalar_t *x = dots->coordinates->getData(0).getRawPtr();
+      const zscalar_t *y = dots->coordinates->getData(1).getRawPtr();
       for (int i=0; i < numObj; i++){
         *val++ = static_cast<double>(x[i]);
         *val++ = static_cast<double>(y[i]);
@@ -292,22 +292,22 @@ void makeWeights(
   const RCP<const Teuchos::Comm<int> > & comm,
   vector<float> &wgts, weightTypes how, float scale, int rank)
 {
-  lno_t len = wgts.size();
+  zlno_t len = wgts.size();
   if (how == upDown){
     float val = scale + rank%2;
-    for (lno_t i=0; i < len; i++)
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
       float val = (i + 10)*scale;
-      for (int j=i; j < len; j += 10)
+      for (zlno_t j=i; j < len; j += 10)
          wgts[j] = val;
     }
   }
   else if (how == increasing){
     float val = scale + rank;
-    for (lno_t i=0; i < len; i++)
+    for (zlno_t i=0; i < len; i++)
       wgts[i] = val;
   }
 }
@@ -319,19 +319,19 @@ void makeWeights(
  */
 tMVector_t* makeMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    gno_t numGlobalCoords)
+    zgno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  gno_t xdim = static_cast<gno_t>(floor(xdimf));
-  gno_t ydim = xdim;
-  gno_t zdim = numGlobalCoords / (xdim*ydim);
-  gno_t num=xdim*ydim*zdim;
-  gno_t diff = numGlobalCoords - num;
-  gno_t newdiff = 0;
+  ssize_t xdim = static_cast<ssize_t>(floor(xdimf));
+  ssize_t ydim = xdim;
+  ssize_t zdim = numGlobalCoords / (xdim*ydim);
+  ssize_t num=xdim*ydim*zdim;
+  ssize_t diff = numGlobalCoords - num;
+  ssize_t newdiff = 0;
 
   while (diff > 0){
     if (zdim > xdim && zdim > ydim){
@@ -375,28 +375,29 @@ tMVector_t* makeMeshCoordinates(
 
   // Divide coordinates.
 
-  gno_t numLocalCoords = num / nprocs;
-  gno_t leftOver = num % nprocs;
-  gno_t gid0 = 0;
+  ssize_t numLocalCoords = num / nprocs;
+  ssize_t leftOver = num % nprocs;
+  ssize_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = gno_t(rank) * (numLocalCoords+1);
+    gid0 = rank * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) +
-           ((gno_t(rank) - leftOver) * numLocalCoords);
+           ((rank - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
 
-  gno_t gid1 = gid0 + numLocalCoords;
+  ssize_t gid1 = gid0 + numLocalCoords;
 
-  gno_t *ids = new gno_t[numLocalCoords];
+  zgno_t *ids = new zgno_t[numLocalCoords];
   if (!ids)
     throw bad_alloc();
-  ArrayView<gno_t> idArray(ids, numLocalCoords);
+  ArrayView<zgno_t> idArray(ids, numLocalCoords);
+  zgno_t *idptr = ids;
 
-  for (gno_t i=gid0, *idptr=ids; i < gid1; i++)
-    *idptr++ = i;
+  for (ssize_t i=gid0; i < gid1; i++)
+    *idptr++ = zgno_t(i);
 
   RCP<const tMap_t> idMap = rcp(new tMap_t(num, idArray, 0, comm));
 
@@ -404,26 +405,26 @@ tMVector_t* makeMeshCoordinates(
 
   // Create a Tpetra::MultiVector of coordinates.
 
-  scalar_t *x = new scalar_t [numLocalCoords*3];
+  zscalar_t *x = new zscalar_t [numLocalCoords*3];
   if (!x) throw bad_alloc();
 
-  scalar_t *y = x + numLocalCoords;
-  scalar_t *z = y + numLocalCoords;
+  zscalar_t *y = x + numLocalCoords;
+  zscalar_t *z = y + numLocalCoords;
 
-  gno_t xStart = 0;
-  gno_t yStart = 0;
-  gno_t xyPlane = xdim*ydim;
-  gno_t zStart = gid0 / xyPlane;
-  gno_t rem = gid0 % xyPlane;
+  zgno_t xStart = 0;
+  zgno_t yStart = 0;
+  zgno_t xyPlane = xdim*ydim;
+  zgno_t zStart = gid0 / xyPlane;
+  zgno_t rem = gid0 % xyPlane;
   if (rem > 0){
     yStart = rem / xdim;
     xStart = rem % xdim;
   }
 
-  lno_t next = 0;
-  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval+=1.){
-    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval+=1.){
-      for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim;xval+=1.){
+  zlno_t next = 0;
+  for (zscalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval+=1.){
+    for (zscalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval+=1.){
+      for (zscalar_t xval=xStart; next < numLocalCoords && xval < xdim;xval+=1.){
         x[next] = xval;
         y[next] = yval;
         z[next] = zval;
@@ -434,9 +435,10 @@ tMVector_t* makeMeshCoordinates(
     yStart = 0;
   }
 
-  ArrayView<const scalar_t> xArray(x, numLocalCoords*3);
+  ArrayView<const zscalar_t> xArray(x, numLocalCoords*3);
   tMVector_t *dots = new tMVector_t(idMap, xArray, numLocalCoords, 3);
 
+  delete [] x;
   return dots;
 }
 
@@ -457,8 +459,8 @@ int main(int argc, char *argv[])
     cout << "Number of processes: " << nprocs << endl;
 
   // Default values
-  gno_t numGlobalCoords = 1000;
-  int weightDim = 0;
+  zgno_t numGlobalCoords = 1000;
+  int nWeights = 0;
   int debugLevel=2;
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
@@ -491,7 +493,7 @@ int main(int argc, char *argv[])
     "Approximate number of global coordinates.");
   commandLine.setOption("numParts", &numGlobalParts,
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim,
+  commandLine.setOption("nWeights", &nWeights,
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
   commandLine.setOption("remap", "no-remap", &remap,
@@ -542,10 +544,10 @@ int main(int argc, char *argv[])
       for (int p=0; p < nprocs; p++){
           if (p==rank){
               cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
-              const scalar_t *x = coordinates->getData(0).getRawPtr();
-              const scalar_t *y = coordinates->getData(1).getRawPtr();
-              const scalar_t *z = coordinates->getData(2).getRawPtr();
-              for (lno_t i=0; i < numLocalCoords; i++)
+              const zscalar_t *x = coordinates->getData(0).getRawPtr();
+              const zscalar_t *y = coordinates->getData(1).getRawPtr();
+              const zscalar_t *z = coordinates->getData(2).getRawPtr();
+              for (zlno_t i=0; i < numLocalCoords; i++)
                   cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
           }
           cout.flush();
@@ -553,13 +555,13 @@ int main(int argc, char *argv[])
       }
 #endif
 
-      if (weightDim > 0){
+      if (nWeights > 0){
 
-          dots.weights.resize(weightDim);
+          dots.weights.resize(nWeights);
 
           int wt = 0;
           float scale = 1.0;
-          for (int i=0; i < weightDim; i++){
+          for (int i=0; i < nWeights; i++){
               dots.weights[i].resize(numLocalCoords);
               makeWeights(comm, dots.weights[i], weightTypes(wt++), scale, rank);
 
@@ -573,38 +575,38 @@ int main(int argc, char *argv[])
   else if(input_option == 1){
       Teuchos::ParameterList geoparams("geo params");
       readGeoGenParams(inputFile, geoparams, comm);
-      GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
+      GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg = new GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>(geoparams,comm);
 
       int coord_dim = gg->getCoordinateDimension();
-      weightDim = gg->getWeightDimension();
+      nWeights = gg->getNumWeights();
       numLocalCoords = gg->getNumLocalCoords();
       numGlobalCoords = gg->getNumGlobalCoords();
-      scalar_t **coords = new scalar_t * [coord_dim];
+      zscalar_t **coords = new zscalar_t * [coord_dim];
       for(int i = 0; i < coord_dim; ++i){
-          coords[i] = new scalar_t[numLocalCoords];
+          coords[i] = new zscalar_t[numLocalCoords];
       }
       gg->getLocalCoordinatesCopy(coords);
-      scalar_t **weight = NULL;
-      if(weightDim){
-          weight= new scalar_t * [weightDim];
-          for(int i = 0; i < weightDim; ++i){
-              weight[i] = new scalar_t[numLocalCoords];
+      zscalar_t **weight = NULL;
+      if(nWeights){
+          weight= new zscalar_t * [nWeights];
+          for(int i = 0; i < nWeights; ++i){
+              weight[i] = new zscalar_t[numLocalCoords];
           }
           gg->getLocalWeightsCopy(weight);
       }
 
       delete gg;
 
-      RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
-              new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalCoords, numLocalCoords, 0, comm));
+      RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp = rcp(
+              new Tpetra::Map<zlno_t, zgno_t, znode_t> (numGlobalCoords, numLocalCoords, 0, comm));
 
-      Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
+      Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(coord_dim);
       for (int i=0; i < coord_dim; i++){
           if(numLocalCoords > 0){
-              Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalCoords);
+              Teuchos::ArrayView<const zscalar_t> a(coords[i], numLocalCoords);
               coordView[i] = a;
           } else{
-              Teuchos::ArrayView<const scalar_t> a;
+              Teuchos::ArrayView<const zscalar_t> a;
               coordView[i] = a;
           }
       }
@@ -612,17 +614,17 @@ int main(int argc, char *argv[])
       tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
 
       dots.coordinates = tmVector;
-      dots.weights.resize(weightDim);
+      dots.weights.resize(nWeights);
 
-      if(weightDim){
-          for (int i = 0; i < weightDim;++i){
-              for (lno_t j = 0; j < lno_t(numLocalCoords); ++j){
+      if(nWeights){
+          for (int i = 0; i < nWeights;++i){
+              for (zlno_t j = 0; j < zlno_t(numLocalCoords); ++j){
                   dots.weights[i].push_back(weight[i][j]);
               }
           }
       }
-      if(weightDim){
-          for(int i = 0; i < weightDim; ++i)
+      if(nWeights){
+          for(int i = 0; i < nWeights; ++i)
               delete [] weight[i];
           delete [] weight;
       }
@@ -630,7 +632,7 @@ int main(int argc, char *argv[])
   else {
 
       UserInputForTests uinput(testDataFilePath, inputFile, comm, true);
-      RCP<tMVector_t> coords = uinput.getCoordinates();
+      RCP<tMVector_t> coords = uinput.getUICoordinates();
       tMVector_t *newMulti = new tMVector_t(*coords);
       dots.coordinates = newMulti;
       numLocalCoords = coords->getLocalLength();
@@ -672,7 +674,7 @@ int main(int argc, char *argv[])
 
   if (objective != balanceCount){
     oss.str("");
-    oss << weightDim;
+    oss << nWeights;
     Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
 
     if (objective == mcnorm1)
@@ -689,7 +691,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, &dots);
   Zoltan_Set_Obj_List_Fn(zz, getObjList, &dots);
   Zoltan_Set_Num_Geom_Fn(zz, getDim, &dots);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates, &dots);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoords, &dots);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
@@ -715,7 +717,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < numGlobalParts; i++) sumWgtPerPart[i] = 0.;
 
   for (size_t i = 0; i < numLocalCoords; i++)
-    sumWgtPerPart[exportToPart[i]] += (weightDim ? dots.weights[0][i]: 1.);
+    sumWgtPerPart[exportToPart[i]] += (nWeights ? dots.weights[0][i]: 1.);
 
   Teuchos::reduceAll<int, float>(*comm, Teuchos::REDUCE_SUM, numGlobalParts,
                                   sumWgtPerPart, gsumWgtPerPart);
@@ -755,7 +757,7 @@ int main(int argc, char *argv[])
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 
   delete dots.coordinates;
-  for (int i = 0; i < weightDim; i++)
+  for (int i = 0; i < nWeights; i++)
     dots.weights[i].clear();
   dots.weights.clear();
 

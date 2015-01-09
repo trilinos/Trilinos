@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@
 #include "Problem_Manager.H"
 #include "Burgers.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, std::string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xFactor(5.0),
@@ -72,7 +72,7 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, std::string name_) :
   xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
-  for ( int i = 0; i < NumMyNodes; ++i ) 
+  for ( int i = 0; i < NumMyNodes; ++i )
     (*xptr)[i] = xmin + dx*((double) StandardMap->MinMyGID()+i);
 
   // Create extra vector needed for this transient problem
@@ -81,12 +81,12 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, std::string name_) :
 
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   initializeSoln();
-  
+
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *StandardMap, 5) );
   generateGraph();
 
-  // Create a second matrix using graph of first matrix - this creates a 
+  // Create a second matrix using graph of first matrix - this creates a
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
   A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
@@ -106,7 +106,7 @@ Burgers::~Burgers()
 }
 
 // Reset function
-void Burgers::reset(const Epetra_Vector& x) 
+void Burgers::reset(const Epetra_Vector& x)
 {
   *oldSolution = x;
 }
@@ -124,7 +124,7 @@ bool Burgers::initializeSoln()
   Epetra_Vector& x = *xptr;
 
   double arg;
-  for( int i = 0; i < NumMyNodes; ++i) 
+  for( int i = 0; i < NumMyNodes; ++i)
   {
     arg = ( 20.0 * x[i] - 10.0 ) / xFactor;
     (*initialSolution)[i] = (1.0 - ( exp(arg) - exp(-arg) ) /
@@ -140,8 +140,8 @@ bool Burgers::initializeSoln()
 // Matrix and Residual Fills
 bool Burgers::evaluate(
              NOX::Epetra::Interface::Required::FillType fillType,
-             const Epetra_Vector* soln, 
-             Epetra_Vector* rhs) 
+             const Epetra_Vector* soln,
+             Epetra_Vector* rhs)
 {
   bool fillRes = false;
   bool fillJac = false;
@@ -177,7 +177,7 @@ bool Burgers::evaluate(
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i < numDep; ++i )
   {
-    dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
+    dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ),
                    *Importer, Insert);
     //cout << "depSoln[" << i << "] :" << dep[i] << std::endl;
   }
@@ -219,56 +219,56 @@ bool Burgers::evaluate(
     //
 
   // Zero out the objects that will be filled
-  if( fillJac ) 
+  if( fillJac )
     A->PutScalar(0.0);
-  if( fillRes ) 
+  if( fillRes )
     rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
-    
+
     // Loop Over Gauss Points
     for(int gp=0; gp < 2; gp++) {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
       uu[0]=u[ne];
       uu[1]=u[ne+1];
       uuold[0]=uold[ne];
       uuold[1]=uold[ne+1];
-      for( int i = 0; i<numDep; i++ ) 
+      for( int i = 0; i<numDep; i++ )
       {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
       }
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold, ddep);
-	            
+
       // Loop over Nodes in Element
-      for ( int i = 0; i < 2; ++i ) 
+      for ( int i = 0; i < 2; ++i )
       {
-	row=OverlapMap->GID(ne+i);
-	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	//     MyPID, row, ne+i,StandardMap.MyGID(row));
-	if (StandardMap->MyGID(row)) {
-	  if ( fillRes ) 
+    row=OverlapMap->GID(ne+i);
+    //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+    //     MyPID, row, ne+i,StandardMap.MyGID(row));
+    if (StandardMap->MyGID(row)) {
+      if ( fillRes )
           {
-	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+        (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
               +basis.wt*basis.dx*(
                 (basis.uu-basis.uuold)/dt*basis.phi[i] +
                 (1.0/(basis.dx*basis.dx))*viscosity*pow(1.0*(basis.ddep[id_temp]-0.2),1.5)
                 //(1.0/(basis.dx*basis.dx))*viscosity
                   *basis.duu*basis.dphide[i] -
                 (1.0/basis.dx)*0.5*basis.uu*basis.uu*basis.dphide[i]);
-	  }
-	}
-	// Loop over Trial Functions
-	if ( fillRes ) 
+      }
+    }
+    // Loop over Trial Functions
+    if ( fillRes )
         {
-	  for(int j = 0; j < 2; ++j) 
+      for(int j = 0; j < 2; ++j)
           {
-	    if (StandardMap->MyGID(row)) {
-	      column=OverlapMap->GID(ne+j);
+        if (StandardMap->MyGID(row)) {
+          column=OverlapMap->GID(ne+j);
               jac=basis.wt*basis.dx*(
                            basis.phi[j]/dt*basis.phi[i] +
                            (1.0/(basis.dx*basis.dx))*
@@ -276,21 +276,21 @@ bool Burgers::evaluate(
                             8.0/xFactor/xFactor*
                              (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                              basis.phi[j]*basis.phi[i]);
-	      A->SumIntoGlobalValues(row, 1, &jac, &column);
-	    }
-	  }
-	}
+          A->SumIntoGlobalValues(row, 1, &jac, &column);
+        }
       }
     }
-  } 
+      }
+    }
+  }
 
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(xmin)=1
-  if( MyPID == 0 ) 
+  if( MyPID == 0 )
   {
-    if( fillRes ) 
+    if( fillRes )
       (*rhs)[0]= (*soln)[0] - 1.0;
-    if( fillJac ) 
+    if( fillJac )
     {
       column=0;
       jac=1.0;
@@ -302,11 +302,11 @@ bool Burgers::evaluate(
   }
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(xmax)=0
-  if( MyPID == NumProc-1 ) 
+  if( MyPID == NumProc-1 )
   {
-    if ( fillRes ) 
+    if ( fillRes )
       (*rhs)[NumMyNodes-1]= (*soln)[OverlapNumMyNodes-1] - (-1.0);
-    if( fillJac ) 
+    if( fillJac )
     {
       row=NumGlobalNodes-1;
       column=row;
@@ -320,7 +320,7 @@ bool Burgers::evaluate(
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   if ( fillJac )
     A->FillComplete();
 
@@ -338,7 +338,7 @@ Teuchos::RCP<Epetra_Vector> Burgers::getSolution()
 {
   return initialSolution;
 }
-  
+
 Epetra_Vector& Burgers::getExactSoln(double time)
 {
   Epetra_Vector& x = *xptr;
@@ -348,15 +348,15 @@ Epetra_Vector& Burgers::getExactSoln(double time)
 
   return *exactSolution;
 }
-  
+
 Epetra_Vector& Burgers::getOldSoln()
 {
   return *oldSolution;
 }
-  
+
 void Burgers::generateGraph()
 {
-  
+
   // Declare required variables
   int i;
   int row, column;
@@ -364,24 +364,24 @@ void Burgers::generateGraph()
   int OverlapMinMyGID;
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
-  
+
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
-          
+
     // Loop over Nodes in Element
     for (i=0; i< 2; i++) {
       row=OverlapMap->GID(ne+i);
-      
+
       // Loop over Trial Functions
-      for( int j = 0; j < 2; ++j ) 
+      for( int j = 0; j < 2; ++j )
       {
-	// If this row is owned by current processor, add the index
-	if (StandardMap->MyGID(row)) 
+    // If this row is owned by current processor, add the index
+    if (StandardMap->MyGID(row))
         {
-	  column=OverlapMap->GID(ne+j);
-	  AA->InsertGlobalIndices(row, 1, &column);
-	}
-      } 	
+      column=OverlapMap->GID(ne+j);
+      AA->InsertGlobalIndices(row, 1, &column);
+    }
+      }
     }
   }
   AA->FillComplete();

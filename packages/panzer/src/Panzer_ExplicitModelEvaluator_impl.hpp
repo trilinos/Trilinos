@@ -178,12 +178,17 @@ buildInverseMassMatrix() const
 
   // set the one time beta to ensure dirichlet conditions
   // are correctly included in the mass matrix: do it for
-  // both epetra and Tpetra. If a panzer model evaluator has
-  // not been passed in...oh well you get what you asked for!
+  // both epetra and Tpetra. 
   if(panzerModel_!=Teuchos::null)
     panzerModel_->setOneTimeDirichletBeta(-1.0);
   else if(panzerEpetraModel_!=Teuchos::null)
     panzerEpetraModel_->setOneTimeDirichletBeta(-1.0);
+  else {
+    // assuming the underlying model is a delegator, walk through
+    // the decerator hierarchy until you find a panzer::ME or panzer::EpetraME.
+    // If you don't find one, then throw because you are in a load of trouble anyway!
+    setOneTimeDirichletBeta(-1.0,*this->getUnderlyingModel());
+  }
 
   // set only the mass matrix
   MEB::OutArgs<Scalar> outArgs = me->createOutArgs();
@@ -191,6 +196,9 @@ buildInverseMassMatrix() const
 
   // this will fill the mass matrix operator 
   me->evalModel(inArgs,outArgs);
+
+  // Teuchos::RCP<const Epetra_CrsMatrix> crsMat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*mass));
+  // EpetraExt::RowMatrixToMatrixMarketFile("expmat.mm",*crsMat);
 
   if(!massLumping_) {
     invMassMatrix_ = Thyra::inverse<Scalar>(*me->get_W_factory(),mass);
@@ -226,6 +234,48 @@ buildArgsPrototypes()
   outArgs.setSupports(MEB::OUT_ARG_W,false);
   outArgs.setSupports(MEB::OUT_ARG_W_op,false);
   prototypeOutArgs_ = outArgs;
+}
+
+template<typename Scalar>
+void ExplicitModelEvaluator<Scalar>::
+setOneTimeDirichletBeta(double beta,const Thyra::ModelEvaluator<Scalar> & me) const
+{
+  using Teuchos::Ptr;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
+
+  // try to extract base classes that support setOneTimeDirichletBeta
+  Ptr<const panzer::ModelEvaluator<Scalar> > panzerModel = ptr_dynamic_cast<const panzer::ModelEvaluator<Scalar> >(ptrFromRef(me));
+  if(panzerModel!=Teuchos::null) {
+    panzerModel->setOneTimeDirichletBeta(beta);
+    return;
+  }
+  else {
+    Ptr<const Thyra::EpetraModelEvaluator> epModel = ptr_dynamic_cast<const Thyra::EpetraModelEvaluator>(ptrFromRef(me));
+    if(epModel!=Teuchos::null) {
+      Ptr<const panzer::ModelEvaluator_Epetra> panzerEpetraModel 
+          = ptr_dynamic_cast<const panzer::ModelEvaluator_Epetra>(epModel->getEpetraModel().ptr());
+
+      if(panzerEpetraModel!=Teuchos::null) {
+        panzerEpetraModel->setOneTimeDirichletBeta(beta);
+        return;
+      }
+    }
+  }
+
+  // if you get here then the ME is not a panzer::ME or panzer::EpetraME, check
+  // to see if its a delegator
+ 
+  Ptr<const Thyra::ModelEvaluatorDelegatorBase<Scalar> > delegator
+      = ptr_dynamic_cast<const Thyra::ModelEvaluatorDelegatorBase<Scalar> >(ptrFromRef(me));
+  if(delegator!=Teuchos::null) {
+    setOneTimeDirichletBeta(beta,*delegator->getUnderlyingModel());
+    return;
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "panzer::ExplicitModelEvaluator::setOneTimeDirichletBeta can't find a panzer::ME or a panzer::EpetraME. "
+                             "The deepest model is also not a delegator. Thus the recursion failed and an exception was generated.");
 }
 
 } // end namespace panzer

@@ -52,12 +52,20 @@
 namespace Ifpack2 {
 
   #define LCLINST(LO,GO) \
-          IFPACK2_INST_GRAPH(LinearPartitioner,LO,GO)
+          IFPACK2_INST_GRAPH(LinearPartitioner,LO,GO) \
+          template class LinearPartitioner<Tpetra::RowGraph<LO,GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_LG(LCLINST)
 
+  // mfh 02 Oct 2014: Don't instantiate if the default Node type is
+  // TPINode, since we already do that above (see the definition of
+  // LCLINST).
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class LinearPartitioner<Tpetra::RowGraph<int, int, KokkosClassic::TPINode> >;
+#endif
+
 }
 
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

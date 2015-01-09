@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,8 +60,8 @@ LOCA::MultiContinuation::MultiVecConstraint::MultiVecConstraint(
 }
 
 LOCA::MultiContinuation::MultiVecConstraint::MultiVecConstraint(
-		  const LOCA::MultiContinuation::MultiVecConstraint& source, 
-		  NOX::CopyType type) : 
+          const LOCA::MultiContinuation::MultiVecConstraint& source,
+          NOX::CopyType type) :
   dx(source.dx->clone(type)),
   x(source.x->clone(type)),
   constraints(source.constraints),
@@ -77,16 +77,16 @@ LOCA::MultiContinuation::MultiVecConstraint::~MultiVecConstraint()
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::setDx(
-	    const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx_)
+        const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx_)
 {
   *dx = *dx_;
 }
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::copy(
-		   const LOCA::MultiContinuation::ConstraintInterface& src)
+           const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::MultiContinuation::MultiVecConstraint& source = 
+  const LOCA::MultiContinuation::MultiVecConstraint& source =
     dynamic_cast<const LOCA::MultiContinuation::MultiVecConstraint&>(src);
 
   if (this != &source) {
@@ -111,7 +111,7 @@ LOCA::MultiContinuation::MultiVecConstraint::numConstraints() const
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::setX(
-					      const NOX::Abstract::Vector& y)
+                          const NOX::Abstract::Vector& y)
 {
   (*x)[0] = y;
   isValidConstraints = false;
@@ -124,8 +124,8 @@ LOCA::MultiContinuation::MultiVecConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::MultiVecConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
 }
 
@@ -148,14 +148,15 @@ LOCA::MultiContinuation::MultiVecConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::MultiVecConstraint::computeDP(
-		                const std::vector<int>& paramIDs, 
-		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-				bool isValidG)
+                        const std::vector<int>& paramIDs,
+                        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+                bool isValidG)
 {
-   std::string callingFunction = 
+   std::string callingFunction =
     "LOCA::MultiContinuation::MultiVecConstraint::computeDP()";
-  NOX::Abstract::Group::ReturnType status;
-  
+  NOX::Abstract::Group::ReturnType status =
+    NOX::Abstract::Group::NotDefined;
+
   // Compute constraints if necessary
   if (!isValidG && !isValidConstraints)
     status = computeConstraints();

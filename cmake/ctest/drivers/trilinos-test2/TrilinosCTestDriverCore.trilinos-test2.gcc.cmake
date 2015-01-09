@@ -101,6 +101,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/SRC"
     "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+    "-DGLM_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/glm-0.9.4.6"
+    "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.55.0"
+    "-DBoostLib_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.55.0_compiled/include"
+    "-DBoostLib_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.55.0_compiled/lib"
     "-DTPL_ENABLE_Matio=OFF"
     "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
@@ -113,7 +117,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       )
   ENDIF()
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.7.2")
   
   IF (COMM_TYPE STREQUAL MPI)
   
@@ -121,7 +125,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
       )
-#      "-DMPI_BASE_DIR:PATH=/home/trilinos/openmpi-1.4"
+#      "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
 #      )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
@@ -131,9 +135,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gfortran"
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS

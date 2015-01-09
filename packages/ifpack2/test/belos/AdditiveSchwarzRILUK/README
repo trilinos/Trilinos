@@ -1,0 +1,11 @@
+Thanks to John Pease Moore at MIT for contributing this test.  At one
+time, the test would throw on preconditioner construction (in
+Solve.cpp), with the following exception message:
+
+Ifpack2::LocalFilter does not implement getNumEntriesInGlobalRow.
+
+This has been fixed for a while, and certainly should work in the 11.8
+release.
+
+
+

@@ -11,9 +11,9 @@ User code that inadvertently relied on such names being available
 in global namespace could see errors.  They should explicitly
 use std::name or place the appropriate "using std::name;" statement
 in their code.
-  
 
-Trilinos 11.0: 
+
+Trilinos 11.0:
 --------------
 Added support for 64-bit global indices
  

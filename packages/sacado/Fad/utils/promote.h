@@ -5,10 +5,10 @@
 //  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
 //  http://www.ann.jussieu.fr/~dicesare
 //
-//            CEMRACS 98 : C++ courses, 
-//         templates : new C++ techniques 
-//            for scientific computing 
-// 
+//            CEMRACS 98 : C++ courses,
+//         templates : new C++ techniques
+//            for scientific computing
+//
 //********************************************************
 //
 //  NumericalTraits class to illustrate TRAITS
@@ -23,7 +23,7 @@
 namespace FAD {
 
 template <class T> class ADPromote {
-  const T& x_; 
+  const T& x_;
 public:
   typedef typename T::value_type value_type;
   ADPromote(const T& x) : x_(x) {;}
@@ -40,7 +40,7 @@ public:                                \
   ADPromote(const type& x) : x_(x) {;} \
                                        \
   value_type val() { return x_;}       \
-};                                 
+};
 
 ADP_SPE(double)
 ADP_SPE(float)
@@ -97,7 +97,7 @@ public:
   typedef Fad<value_type> promote;
 };
 
-template <int Num, class T> 
+template <int Num, class T>
 class NumericalTraits< TFad<Num,T>, TFad<Num,T> > {
 public:
     typedef TFad< Num, T > promote;
@@ -162,9 +162,9 @@ public:                                          \
 template <> class NumericalTraits< type2 , type1 > { \
 public:                                          \
     typedef type3 promote;                       \
-};                                               
+};
 
-NT_SPE(double,complex<float>,complex<double>)
+NT_SPE(double,std::complex<float>,std::complex<double>)
 NT_SPE(double,float,double)
 NT_SPE(double,long,double)
 NT_SPE(double,int,double)

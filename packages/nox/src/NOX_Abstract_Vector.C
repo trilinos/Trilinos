@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,7 +53,7 @@
 // Included multivector declarations
 #include "NOX_MultiVector.H"
 
-NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed) 
+NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed)
 {
   std::cerr << "NOX::Abstract::Vector::random() function not implemented" << std::endl;
   throw "NOX Error";
@@ -67,23 +67,23 @@ void NOX::Abstract::Vector::print(std::ostream& stream) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Abstract::Vector::createMultiVector(
-				    const NOX::Abstract::Vector* const* vecs,
-				    int numVecs, NOX::CopyType type) const
+                    const NOX::Abstract::Vector* const* vecs,
+                    int numVecs, NOX::CopyType type) const
 {
   if (numVecs < 0) {
-    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
-  const NOX::Abstract::Vector** tmp = 
+  const NOX::Abstract::Vector** tmp =
     new const NOX::Abstract::Vector*[numVecs+1];
 
   tmp[0] = this;
   for (int i=0; i<numVecs; i++)
     tmp[i+1] = vecs[i];
 
-  Teuchos::RCP<NOX::MultiVector> mv = 
+  Teuchos::RCP<NOX::MultiVector> mv =
     Teuchos::rcp(new NOX::MultiVector(tmp, numVecs+1, type));
 
   delete [] tmp;
@@ -95,8 +95,8 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
-    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << std::endl;
+    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
+     << " must have postive number of columns!" << std::endl;
     throw "NOX Error";
   }
 

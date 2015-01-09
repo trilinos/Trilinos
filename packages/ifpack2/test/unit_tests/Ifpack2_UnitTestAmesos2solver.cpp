@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -78,6 +78,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
 
+//#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
 #if defined(HAVE_IFPACK2_AMESOS2)
 
 #include <Amesos2_config.h>
@@ -117,7 +118,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrd
   Ifpack2::Details::Amesos2Wrapper<crs_matrix_type> prec (crsmatrix);
 
   Teuchos::ParameterList params;
-
+  params.set("Amesos2 solver name","superlu");
+  Teuchos::ParameterList &sublist = params.sublist("Amesos2");
+  (sublist.sublist("SuperLU")).set("ILU_Flag",false); //create SuperLU sublist to get rid of unused variable warnings
   TEST_NOTHROW(prec.setParameters(params));
 
   //trivial tests to insist that the preconditioner's domain/range maps are
@@ -131,7 +134,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrd
   TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
   TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
 
-  prec.initialize();
+# if !defined(HAVE_AMESOS2_SUPERLU)
+  TEST_THROW(prec.initialize(),std::invalid_argument);
+# else
+  TEST_NOTHROW(prec.initialize());
   prec.compute();
 
   mv_type x (rowmap,2), y (rowmap,2);
@@ -146,6 +152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrd
   Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+# endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -171,9 +178,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrd
 
   Teuchos::ParameterList params;
 
+  params.set("Amesos2 solver name","superlu");
+  Teuchos::ParameterList &sublist = params.sublist("Amesos2");
+  (sublist.sublist("SuperLU")).set("ILU_Flag",false); //create SuperLU sublist to get rid of unused variable warnings
   TEST_NOTHROW(prec.setParameters(params));
 
-  prec.initialize();
+# if !defined(HAVE_AMESOS2_SUPERLU)
+  TEST_THROW(prec.initialize(),std::invalid_argument);
+# else
+  TEST_NOTHROW(prec.initialize());
   prec.compute();
 
   mv_type x(rowmap,2), y(rowmap,2);
@@ -189,6 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrd
   Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, Teuchos::ScalarTraits<Scalar>::one ());
 
   TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+# endif
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \

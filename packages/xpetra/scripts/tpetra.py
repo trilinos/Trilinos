@@ -49,7 +49,7 @@ def buildFuncLineTpetra( functionNode ):
 
     #hack for CrsMatrix
     if name == "getLocalRowCopy" and "const =0" in argsstring: return ''
-    if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
+    if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph" in argsstring: return ''
     if className == "TpetraCrsMatrix" and "const =0" in argsstring: argsstring = argsstring.replace("const =0", "const")
 
     #hack for RowMatrix

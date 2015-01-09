@@ -52,7 +52,7 @@
 /*! \file Teuchos_ScalarTraits.hpp
     \brief Defines basic traits for the scalar field type.
 */
- 
+
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -126,8 +126,8 @@ struct ScalarTraits<char>
   static inline char real(char x) { return x; }
   static inline char imag(char) { return 0; }
   static inline bool isnaninf(char ) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -162,8 +162,8 @@ struct ScalarTraits<short int>
   static inline short int real(short int x) { return x; }
   static inline short int imag(short int) { return 0; }
   static inline bool isnaninf(short int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -197,8 +197,8 @@ struct ScalarTraits<unsigned short int>
   static inline unsigned short int real(unsigned short int x) { return x; }
   static inline unsigned short int imag(unsigned short int) { return 0; }
   static inline bool isnaninf(unsigned short int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -233,8 +233,8 @@ struct ScalarTraits<int>
   static inline int real(int x) { return x; }
   static inline int imag(int) { return 0; }
   static inline bool isnaninf(int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -269,8 +269,8 @@ struct ScalarTraits<unsigned int>
   static inline unsigned int real(unsigned int x) { return x; }
   static inline unsigned int imag(unsigned int) { return 0; }
   static inline bool isnaninf(unsigned int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -305,8 +305,8 @@ struct ScalarTraits<long int>
   static inline long int real(long int x) { return x; }
   static inline long int imag(long int) { return 0; }
   static inline bool isnaninf(long int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -343,8 +343,8 @@ struct ScalarTraits<long unsigned int>
   static inline long unsigned int real(long unsigned int x) { return x; }
   static inline long unsigned int imag(long unsigned int) { return 0; }
   static inline bool isnaninf(long unsigned int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -382,8 +382,8 @@ struct ScalarTraits<long long int>
   static inline long long int real(long long int x) { return x; }
   static inline long long int imag(long long int) { return 0; }
   static inline bool isnaninf(long long int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -419,8 +419,8 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int real(unsigned long long int x) { return x; }
   static inline unsigned long long int imag(unsigned long long int) { return 0; }
   static inline bool isnaninf(unsigned long long int) { return false; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -459,8 +459,8 @@ struct ScalarTraits<__int64>
   static inline __int64 conjugate(__int64 x) { return x; }
   static inline __int64 real(__int64 x) { return x; }
   static inline __int64 imag(__int64) { return 0; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -495,8 +495,8 @@ struct ScalarTraits<unsigned __int64>
   static inline unsigned __int64 conjugate(unsigned __int64 x) { return x; }
   static inline unsigned __int64 real(unsigned __int64 x) { return x; }
   static inline unsigned __int64 imag(unsigned __int64) { return 0; }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -521,7 +521,7 @@ struct ScalarTraits<unsigned __int64>
 extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 #endif
 
- 
+
 template<>
 struct ScalarTraits<float>
 {
@@ -567,12 +567,12 @@ struct ScalarTraits<float>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
-#endif      
+#endif
       return std::fabs(a);
-    }    
+    }
   static inline float zero()  { return(0.0f); }
-  static inline float one()   { return(1.0f); }    
-  static inline float conjugate(float x)   { return(x); }    
+  static inline float one()   { return(1.0f); }
+  static inline float conjugate(float x)   { return(x); }
   static inline float real(float x) { return x; }
   static inline float imag(float) { return zero(); }
   static inline float nan() {
@@ -585,8 +585,8 @@ struct ScalarTraits<float>
   static inline bool isnaninf(float x) {
     return generic_real_isnaninf<float>(x);
   }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -617,7 +617,7 @@ struct ScalarTraits<float>
 extern TEUCHOSCORE_LIB_DLL_EXPORT const double dbl_nan;
 #endif
 
- 
+
 template<>
 struct ScalarTraits<double>
 {
@@ -629,7 +629,7 @@ struct ScalarTraits<double>
      - GNU MP
      - a true hardware quad
 
-     in the shortterm, this should be specified at configure time. I have inserted a configure-time option (--enable-teuchos-double-to-dd) 
+     in the shortterm, this should be specified at configure time. I have inserted a configure-time option (--enable-teuchos-double-to-dd)
      which uses QD's DD when available. This must be used alongside --enable-teuchos-qd.
    */
 #if defined(HAVE_TEUCHOS_DOUBLE_TO_QD)
@@ -678,12 +678,12 @@ struct ScalarTraits<double>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
-#endif      
+#endif
       return std::fabs(a);
     }
   static inline double zero()  { return 0.0; }
   static inline double one()   { return 1.0; }
-  static inline double conjugate(double x)   { return(x); }    
+  static inline double conjugate(double x)   { return(x); }
   static inline double real(double x) { return(x); }
   static inline double imag(double) { return(0); }
   static inline double nan() {
@@ -696,8 +696,8 @@ struct ScalarTraits<double>
   static inline bool isnaninf(double x) {
     return generic_real_isnaninf<double>(x);
   }
-  static inline void seedrandom(unsigned int s) { 
-    std::srand(s); 
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -711,7 +711,7 @@ struct ScalarTraits<double>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
-#endif      
+#endif
       errno = 0;
       const double rtn = std::sqrt(x);
       if (errno)
@@ -757,19 +757,19 @@ struct ScalarTraits<dd_real>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
-#endif      
+#endif
       return ::abs(a);
   }
   static inline dd_real zero()  { return dd_real(0.0); }
   static inline dd_real one()   { return dd_real(1.0); }
-  static inline dd_real conjugate(dd_real x)   { return(x); }    
+  static inline dd_real conjugate(dd_real x)   { return(x); }
   static inline dd_real real(dd_real x) { return x ; }
   static inline dd_real imag(dd_real) { return zero(); }
   static inline dd_real nan() { return dd_real::_nan; }
   static inline bool isnaninf(dd_real x) { return isnan(x) || isinf(x); }
   static inline void seedrandom(unsigned int s) {
     // ddrand() uses std::rand(), so the std::srand() is our seed
-    std::srand(s); 
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -783,7 +783,7 @@ struct ScalarTraits<dd_real>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
-#endif      
+#endif
       return ::sqrt(x);
   }
   static inline dd_real pow(dd_real x, dd_real y) { return ::pow(x,y); }
@@ -818,19 +818,19 @@ struct ScalarTraits<qd_real>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
-#endif      
+#endif
       return ::abs(a);
   }
   static inline qd_real zero()  { return qd_real(0.0); }
   static inline qd_real one()   { return qd_real(1.0); }
-  static inline qd_real conjugate(qd_real x)   { return(x); }    
+  static inline qd_real conjugate(qd_real x)   { return(x); }
   static inline qd_real real(qd_real x) { return x ; }
   static inline qd_real imag(qd_real) { return zero(); }
   static inline qd_real nan() { return qd_real::_nan; }
   static inline bool isnaninf(qd_real x) { return isnan(x) || isinf(x); }
   static inline void seedrandom(unsigned int s) {
     // qdrand() uses std::rand(), so the std::srand() is our seed
-    std::srand(s); 
+    std::srand(s);
 #ifdef __APPLE__
     // throw away first random number to address bug 3655
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
@@ -844,7 +844,7 @@ struct ScalarTraits<qd_real>
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
-#endif      
+#endif
       return ::sqrt(x);
   }
   static inline qd_real pow(qd_real x, qd_real y) { return ::pow(x,y); }
@@ -860,21 +860,21 @@ struct ScalarTraits<qd_real>
 #ifdef HAVE_TEUCHOS_GNU_MP
 
 
-extern gmp_randclass gmp_rng; 
+extern gmp_randclass gmp_rng;
 
 
-/* Regarding halfPrecision, doublePrecision and mpf_class: 
-   Because the precision of an mpf_class float is not determined by the data type, 
-   there is no way to fill the typedefs for this object. 
+/* Regarding halfPrecision, doublePrecision and mpf_class:
+   Because the precision of an mpf_class float is not determined by the data type,
+   there is no way to fill the typedefs for this object.
 
-   Instead, we could create new data classes (e.g., Teuchos::MPF128, Teuchos::MPF256) for 
+   Instead, we could create new data classes (e.g., Teuchos::MPF128, Teuchos::MPF256) for
    commonly used levels of precision, and fill out ScalarTraits for these. This would allow us
-   to typedef the promotions and demotions in the appropriate way. These classes would serve to 
-   wrap an mpf_class object, calling the constructor for the appropriate precision, exposing the 
+   to typedef the promotions and demotions in the appropriate way. These classes would serve to
+   wrap an mpf_class object, calling the constructor for the appropriate precision, exposing the
    arithmetic routines but hiding the precision-altering routines.
-   
-   Alternatively (perhaps, preferably), would could create a single class templated on the precision (e.g., Teuchos::MPF<N>). 
-   Then we have a single (partially-specialized) implementation of ScalarTraits. This class, as above, must expose all of the 
+
+   Alternatively (perhaps, preferably), would could create a single class templated on the precision (e.g., Teuchos::MPF<N>).
+   Then we have a single (partially-specialized) implementation of ScalarTraits. This class, as above, must expose all of the
    operations expected of a scalar type; however, most of these can be trivially stolen from the gmpcxx.h header file
 
    CGB/RAB, 01/05/2009
@@ -890,17 +890,17 @@ struct ScalarTraits<mpf_class>
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
   static magnitudeType magnitude(mpf_class a) { return std::abs(a); }
   static inline mpf_class zero() { mpf_class zero = 0.0; return zero; }
-  static inline mpf_class one() { mpf_class one = 1.0; return one; }    
+  static inline mpf_class one() { mpf_class one = 1.0; return one; }
   static inline mpf_class conjugate(mpf_class x) { return x; }
   static inline mpf_class real(mpf_class x) { return(x); }
   static inline mpf_class imag(mpf_class x) { return(0); }
   static inline bool isnaninf(mpf_class x) { return false; } // mpf_class currently can't handle nan or inf!
-  static inline void seedrandom(unsigned int s) { 
+  static inline void seedrandom(unsigned int s) {
     unsigned long int seedVal = static_cast<unsigned long int>(s);
     gmp_rng.seed( seedVal );	
   }
-  static inline mpf_class random() { 
-    return gmp_rng.get_f(); 
+  static inline mpf_class random() {
+    return gmp_rng.get_f();
   }
   static inline std::string name() { return "mpf_class"; }
   static inline mpf_class squareroot(mpf_class x) { return std::sqrt(x); }
@@ -927,12 +927,12 @@ struct ScalarTraits<mp_real>
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
   static magnitudeType magnitude(mp_real a) { return abs(a); }
   static inline mp_real zero() { mp_real zero = 0.0; return zero; }
-  static inline mp_real one() { mp_real one = 1.0; return one; }    
+  static inline mp_real one() { mp_real one = 1.0; return one; }
   static inline mp_real conjugate(mp_real x) { return x; }
   static inline mp_real real(mp_real x) { return(x); }
   static inline mp_real imag(mp_real x) { return zero(); }
   static inline bool isnaninf(mp_real x) { return false; } // ToDo: Change this?
-  static inline void seedrandom(unsigned int s) { 
+  static inline void seedrandom(unsigned int s) {
     long int seedVal = static_cast<long int>(s);
     srand48(seedVal);
   }
@@ -943,15 +943,15 @@ struct ScalarTraits<mp_real>
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
 
-  
+
 #endif // HAVE_TEUCHOS_ARPREC
 
- 
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 
 // Partial specialization for std::complex numbers templated on real type T
-template<class T> 
+template<class T>
 struct ScalarTraits<
   std::complex<T>
 >
@@ -979,7 +979,7 @@ struct ScalarTraits<
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
-#endif      
+#endif
       return std::abs(a);
     }
   static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); }

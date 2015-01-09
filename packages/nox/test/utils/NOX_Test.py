@@ -26,7 +26,7 @@ if showUsage == 1:
    os.system('echo ')
    os.system('echo Usage:')
    os.system('echo     ' +sys.argv[0]+' '+a+b+c+d)
-   
+
 if nargin > 1:
    NOXexecutable = sys.argv[1]
 if nargin > 2:
@@ -49,11 +49,11 @@ os.system('rm -f '+NOXoutput)
 #
 # if NOXexpectedOutput is provided, generate single files from it,
 # one for each run
-# 
+#
 if nargin == 5:
    NOXexpectedOutput = sys.argv[4]
    os.system('rm -f diffOutput_'+hostname)
-   
+
    try:
       NOXexpectedOutputFile = open(NOXexpectedOutput,'r')
    except IOError:
@@ -62,13 +62,13 @@ if nargin == 5:
       except:
          os.system("echo ERROR: Cannot open file "+NOXexpectedOutput)
 
-      
+
    NOXexpectedOutputLines = NOXexpectedOutputFile.readlines()
    if NOXexpectedOutputLines[0].rfind('#NOX TEST TAG') == -1:
       os.system('echo ERROR: #NOX TEST TAG 1# not found in first line of '+ NOXexpectedOutput)
    expectedTestNumberList = []
    for line in NOXexpectedOutputLines:
-      if line.rfind('#NOX TEST TAG') > -1:     
+      if line.rfind('#NOX TEST TAG') > -1:
          splitLine = line.split()
          expectedTestNumber = int(splitLine[3][0:-1])
          expectedTestNumberList.append(expectedTestNumber)
@@ -76,10 +76,10 @@ if nargin == 5:
             os.fsync(tmpNOXexpectedOutputFile.fileno())
             tmpNOXexpectedOutputFile.close()
          tmpNOXexpectedOutputFileName = 'tmpExpectedOutput'+splitLine[3][0:-1]
-         tmpNOXexpectedOutputFile = open(tmpNOXexpectedOutputFileName,'w')   
+         tmpNOXexpectedOutputFile = open(tmpNOXexpectedOutputFileName,'w')
       else:
          tmpNOXexpectedOutputFile.write(line)
-   os.fsync(tmpNOXexpectedOutputFile.fileno())         
+   os.fsync(tmpNOXexpectedOutputFile.fileno())
    tmpNOXexpectedOutputFile.close()
 
 # read parameter input file, and place the lines in paramInputLines
@@ -87,7 +87,7 @@ try:
    input = open(pythonInputFile,'r')
 except IOError:
    os.system('echo ERROR: Cannot open file '+pythonInputFile)
-   
+
 paramInputLines = input.readlines()
 input.close
 
@@ -96,10 +96,10 @@ input.close
 #
 phraseID = 0
 deleteList = []
-for phrase in paramInputLines:  
+for phrase in paramInputLines:
    # tag comment and blank lines... these will be deleted below
    if phrase.isspace() or phrase[0] == '#':
-       deleteList.append(phraseID)   
+       deleteList.append(phraseID)
    phraseID = phraseID+1
 
 # delete tagged lines
@@ -127,7 +127,7 @@ for phrase in paramInputLines:
       VARlist.append(VARval)
 
       paramInputLines[phraseLoc] = phrase[0:truncAt]
-      
+
 if nargin == 5:
    if numCombinations != len(expectedTestNumberList):
       os.system('echoERROR: The number of tagged runs in "'+NOXexpectedOutput+'" does not match the number')
@@ -135,14 +135,14 @@ if nargin == 5:
       os.system('echo ERROR: \t\tNumber of tagged runs in "'+NOXexpectedOutput+'" is ',len(expectedTestNumberList))
       os.system('echo ERROR: \t\tNumber of combinations in "'+pythonInputFile+'" is ',numCombinations)
       os.system('echo ""')
-   
+
 if numCombinations > 1:
    os.system('echo Starting suite of tests for '+os.getcwd()+NOXexecutable.replace('.',''))
 else:
    os.system('echo Starting test for '+os.getcwd()+NOXexecutable.replace('.',''))
    VARlist = [1]
    VARindexList = [0]
-   
+
 lenVARlist = len(VARlist)
 
 #
@@ -151,19 +151,19 @@ lenVARlist = len(VARlist)
 #
 for i in range(lenVARlist):
    for j in range(1,VARlist[i]+1):
-      indx = VARindexList[i] + j 
+      indx = VARindexList[i] + j
       if paramInputLines[indx][0:2] == '@@':
          os.system('echo ERROR: Too few sublist parameters placed in '+ pythonInputFile)
          os.system('echo ERROR: See line: '+paramInputLines[VARindexList[i]]+' VAR '+str(VARlist[i]))
-      
+
 
 ##
 ## Loop through all possible combinations of sublists parameters. x contains
 ## the given combination. for each combination a temporary nox parameter input
 ## file is generated and the nox executable is called. output is placed in
 ## temporary files to be diffed against the expected output. the output is
-## also accumulated in NOXoutput for saving. 
-##      
+## also accumulated in NOXoutput for saving.
+##
 x = []
 for q in range(lenVARlist):
    x.append(0)
@@ -184,16 +184,16 @@ while x[lenVARlist-1] < VARlist[lenVARlist-1]:
             currParamList.append(paramInputLines[r+VARindexList[q]+1].rstrip())
 
    entireParamList.append(currParamList)
-   
+
    #print '\nBeginning test '+str(testNumber)+'...'
 
    #
-   # write temporary nox parameter input files using combinations of information 
+   # write temporary nox parameter input files using combinations of information
    # within pythonInputFile.
    #
    testNumberList.append(str(testNumber))
    tmpNOXInput =  open('./tmpNOXInputFile','w');
-   
+
    numItemsOnLine = 0
    for y in range(len(paramInputLines)):
       if doNotPrint.count(y) == 0:
@@ -201,16 +201,16 @@ while x[lenVARlist-1] < VARlist[lenVARlist-1]:
             if numItemsOnLine == 1:
                tmpNOXInput.write('\n')
             tmpNOXInput.write(paramInputLines[y][0:2].rstrip()+'\n')
-            numItemsOnLine = 0               
+            numItemsOnLine = 0
          elif paramInputLines[y][0] == "@" and paramInputLines[y][1] != "@":
             tmpNOXInput.write('\n' + paramInputLines[y].rstrip()+'\n')
             numItemsOnLine = 0
          elif numItemsOnLine == 1:
             tmpNOXInput.write(' '+paramInputLines[y].rstrip()+'\n')
             numItemsOnLine = 0
-         else:            
+         else:
             tmpNOXInput.write(paramInputLines[y].rstrip())
-            numItemsOnLine = numItemsOnLine + 1 
+            numItemsOnLine = numItemsOnLine + 1
 
    os.fsync(tmpNOXInput.fileno())
    tmpNOXInput.close()
@@ -226,7 +226,7 @@ while x[lenVARlist-1] < VARlist[lenVARlist-1]:
    os.system('cat tmp'+NOXoutput+str(testNumber)+' >> '+NOXoutput)
    os.system('rm -f tmpNOXInputFile');
    testNumber = testNumber+1
-   
+
    # update the combination of parameters
    x[0] = x[0]+1
    i = 0
@@ -252,7 +252,7 @@ if nargin == 5:
       os.system(command)
       command = 'diff '+ new + ' ' + old + '>> diffOutput_'+hostname+' &> /dev/null'
       diffSuccess = os.system(command)
-      diffList.append(diffSuccess)         
+      diffList.append(diffSuccess)
       #os.system('rm -f '+old)
 
    # remove the temporary expected nox output files
@@ -268,7 +268,7 @@ for i in testNumberList:
       os.system("sync")
       os.system('cat tmp'+NOXoutput+str(i))
    os.system('rm -f '+ 'tmp'+NOXoutput+str(i))
-  
+
 if statusTestSuccessful == 1:
    os.system("echo Status tests were successful!")
 

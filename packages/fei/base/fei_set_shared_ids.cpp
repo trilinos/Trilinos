@@ -1,4 +1,5 @@
 
+#include <sstream>
 #include <fei_set_shared_ids.hpp>
 #include <fei_CommMap.hpp>
 #include <fei_CommUtils.hpp>
@@ -66,14 +67,15 @@ void set_shared_ids(MPI_Comm comm,
   fei::LinearDecomposition<int> lindecomp(myProc,numProcs,
                                      lowest_global_id, highest_global_id);
 
-  //Fill a CommMap (procs_to_shared_ids) that maps other procs to ids which we hold.
-  //These are ids that appear locally, but which are *not* in our portion
-  //of the linear-decomposition.
+  //Fill a CommMap (procs_to_shared_ids) that maps other procs to ids which we
+  //have, but which are not in our portion of the linear decomposition.
   fei::CommMap<int>::Type procs_to_shared_ids;
   copy_remotelyowned_ids_into_CommMap(myProc, lindecomp, records, procs_to_shared_ids);
 
-  //Do a global-exchange where we send ids we share to procs that own them,
-  //and receive IDs that we own from other procs that share them.
+  //Do a global-exchange where we send those ids to procs that own them in the
+  //linear decomposition.
+  //And receive IDs in our portion of the linear decomposition from other procs
+  //that hold them.
   fei::CommMap<int>::Type procs_to_owned_ids;
   fei::exchangeCommMapData<int>(comm, procs_to_shared_ids, procs_to_owned_ids);
 
@@ -101,10 +103,12 @@ void set_shared_ids(MPI_Comm comm,
     std::vector<int>& ids = o_iter->second;
     for(size_t i=0; i<ids.size(); ++i) {
       std::vector<int>& sharing_procs = owned_ids_to_procs[ids[i]];
-      addItemsToCommMap(proc, 1, &ids[i], procs_to_owned_ids_and_sharing_procs, false);
       int num_sharing_procs = sharing_procs.size();
-      addItemsToCommMap(proc, 1, &num_sharing_procs, procs_to_owned_ids_and_sharing_procs, false);
-      addItemsToCommMap(proc, num_sharing_procs, &sharing_procs[0], procs_to_owned_ids_and_sharing_procs, false);
+      if (num_sharing_procs > 1) {
+        addItemsToCommMap(proc, 1, &ids[i], procs_to_owned_ids_and_sharing_procs, false);
+        addItemsToCommMap(proc, 1, &num_sharing_procs, procs_to_owned_ids_and_sharing_procs, false);
+        addItemsToCommMap(proc, num_sharing_procs, &sharing_procs[0], procs_to_owned_ids_and_sharing_procs, false);
+      }
     }
   }
 

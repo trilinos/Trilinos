@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -50,14 +50,14 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_varid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, VAR_INT_E_STAT, etc
 
-#include <netcdf.h>
 
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 int ex_get_processor_elem_maps(int  exoid,
 			       void_int *elem_mapi,

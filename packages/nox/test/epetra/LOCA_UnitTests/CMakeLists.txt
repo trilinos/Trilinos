@@ -1,76 +1,75 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../LOCA_TestProblems)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../LOCA_TestProblems)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_HouseholderBorderedSolve
-    SOURCES 
+    SOURCES
     HouseholderBorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_HouseholderTransposeBorderedSolve
-    SOURCES 
+    SOURCES
     HouseholderTransposeBorderedSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_TransposeSolve
-    SOURCES 
-    TransposeSolve.C 
+    SOURCES
+    TransposeSolve.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_CompositeConstraint
-    SOURCES 
+    SOURCES
     CompositeConstraint.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_CompositeConstraintMVDX
-    SOURCES 
+    SOURCES
     CompositeConstraintMVDX.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_NaturalContResidualFills
-    SOURCES 
+    SOURCES
     NaturalContResidualFills.C
     COMM serial mpi
     NUM_MPI_PROCS 2
-    DEPLIBS noxtestutils locaepetratestproblems
+    TESTONLYLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )

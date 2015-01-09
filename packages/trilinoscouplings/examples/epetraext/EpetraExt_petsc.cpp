@@ -38,7 +38,11 @@ Input parameters include:\n\
   -m <mesh_x>       : number of mesh points in x-direction\n\
   -n <mesh_n>       : number of mesh points in y-direction\n\n";
 
+#if (PETSC_VERSION_MAJOR < 3) || (PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 1)
 extern PetscErrorCode ShellApplyML(void*,Vec,Vec);
+#else
+extern PetscErrorCode ShellApplyML(PC,Vec,Vec);
+#endif
 
 #undef __FUNCT__
 #define __FUNCT__ "main"
@@ -226,11 +230,18 @@ int main(int argc,char **args)
 
 /* ***************************************************************** */
 
+#if (PETSC_VERSION_MAJOR < 3) || (PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR < 1)
 PetscErrorCode ShellApplyML(void *ctx,Vec x,Vec y)
+#else
+PetscErrorCode ShellApplyML(PC pc,Vec x,Vec y)
 {
   PetscErrorCode  ierr;
-  ML_Epetra::MultiLevelPreconditioner *mlp = (ML_Epetra::MultiLevelPreconditioner*)ctx;
+  ML_Epetra::MultiLevelPreconditioner *mlp = 0;
+  void* ctx;
 
+  ierr = PCShellGetContext(pc,&ctx); CHKERRQ(ierr);  
+  mlp = (ML_Epetra::MultiLevelPreconditioner*)ctx;
+#endif
   /* Wrap x and y as Epetra_Vectors. */
   PetscScalar *xvals,*yvals;
   ierr = VecGetArray(x,&xvals);CHKERRQ(ierr);

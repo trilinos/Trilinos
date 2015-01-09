@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -52,29 +52,29 @@ class Epetra_Directory;
 class Epetra_BlockMap;
 
 //! Epetra_Comm:  The Epetra Communication Abstract Base Class.
-/*! The Epetra_Comm class is an interface that encapsulates the general 
-    information and services needed for other Epetra classes to run on a 
-    parallel computer. An Epetra_Comm object is required for building all 
-    Epetra Map objects, which in turn are required for all other Epetra 
+/*! The Epetra_Comm class is an interface that encapsulates the general
+    information and services needed for other Epetra classes to run on a
+    parallel computer. An Epetra_Comm object is required for building all
+    Epetra Map objects, which in turn are required for all other Epetra
     classes.
 
-    Epetra_Comm has default implementations, via Epetra_SerialComm and 
-    Epetra_MpiComm, for both serial execution and MPI distributed memory 
-    execution.  It is meant to insulate the user from the specifics of 
-    communication that are not required for normal manipulation of linear 
-    algebra objects.  Most Epetra_Comm interfaces are similar to MPI 
-    interfaces, except that the type of data is not required as an argument 
+    Epetra_Comm has default implementations, via Epetra_SerialComm and
+    Epetra_MpiComm, for both serial execution and MPI distributed memory
+    execution.  It is meant to insulate the user from the specifics of
+    communication that are not required for normal manipulation of linear
+    algebra objects.  Most Epetra_Comm interfaces are similar to MPI
+    interfaces, except that the type of data is not required as an argument
     since C++ can bind to the appropriate interface based on argument typing.
 
-    Any implementation of the Epetra_Comm interface is also responsible for 
+    Any implementation of the Epetra_Comm interface is also responsible for
     generating an Epetra_Distributor and Epetra_Directory object.
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
-    
+
   public:
     //! @name Constructor / Destructor
-  //@{ 
+  //@{
 	//! Epetra_Comm clone constructor.
 	/*! The clone function will return a new heap-allocated Comm instance.
             It is the responsibility of the caller to ensure that this new instance
@@ -86,7 +86,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Barrier Methods
-  //@{ 
+  //@{
   //! Epetra_Comm Barrier function.
   /*! Each processor must wait at the point the barrier is called until all processors have arrived.
   */
@@ -94,7 +94,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Broadcast Methods
-  //@{ 
+  //@{
   //! Epetra_Comm Broadcast function.
   /*! Take list of input values from the root processor and sends to all other processors.
     \param MyVals InOut
@@ -168,7 +168,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Gather Methods
-  //@{ 
+  //@{
   //! Epetra_Comm All Gather function.
   /*! Take list of input values from all processors in the communicator and creates an ordered contiguous list of
 		  those values on each processor.
@@ -223,7 +223,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Sum Methods
-  //@{ 
+  //@{
   //! Epetra_Comm Global Sum function.
   /*! Take list of input values from all processors in the communicator, computes the sum and returns the
 		  sum to all processors.
@@ -279,7 +279,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Max/Min Methods
-  //@{ 
+  //@{
   //! Epetra_Comm Global Max function.
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
       max to all processors.
@@ -385,9 +385,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Parallel Prefix Methods
-  //@{ 
+  //@{
   //! Epetra_Comm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
       to all processors such that processor i contains the sum of values from processor 0 up to and including
 			processor i.
     \param MyVals In
@@ -400,7 +400,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   virtual int ScanSum(double * MyVals, double * ScanSums, int Count) const = 0;
 
   //! Epetra_Comm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
       to all processors such that processor i contains the sum of values from processor 0 up to and including
 			processor i.
     \param MyVals In
@@ -413,7 +413,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   virtual int ScanSum(int * MyVals, int * ScanSums, int Count) const = 0;
 
   //! Epetra_Comm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
       to all processors such that processor i contains the sum of values from processor 0 up to and including
 			processor i.
     \param MyVals In
@@ -426,7 +426,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   virtual int ScanSum(long * MyVals, long * ScanSums, int Count) const = 0;
 
   //! Epetra_Comm Scan Sum function.
-  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
+  /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it
       to all processors such that processor i contains the sum of values from processor 0 up to and including
 			processor i.
     \param MyVals In
@@ -440,15 +440,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Attribute Accessor Methods
-  //@{ 
-    
-  //! Return my process ID. 
+  //@{
+
+  //! Return my process ID.
   /*! In MPI mode returns the rank of the calling process.  In serial mode
       returns 0.
   */
   virtual int MyPID() const = 0;
-  
-  //! Returns total number of processes. 
+
+  //! Returns total number of processes.
   /*! In MPI mode returns the size of the MPI communicator.  In serial mode
       returns 1.
   */
@@ -456,7 +456,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name Gather/Scatter and Directory Constructors
-  //@{ 
+  //@{
   //! Create a distributor object.
   virtual Epetra_Distributor * CreateDistributor() const = 0;
   //! Create a directory object for the given Epetra_BlockMap.
@@ -464,7 +464,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
   //@}
 
   //! @name I/O methods
-  //@{ 
+  //@{
   //! Print object to an output stream
   virtual void PrintInfo(std::ostream & os) const = 0;
   //@}

@@ -51,19 +51,22 @@
 #include "MueLu_CGSolver_decl.hpp"
 
 #include "MueLu_Constraint.hpp"
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
   using Teuchos::rcp_const_cast;
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CGSolver(size_t Its)
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CGSolver(size_t Its)
   : nIts_(Its)
   { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& finalP) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& Aref, const Constraint& C, const Matrix& P0, RCP<Matrix>& finalP) const {
+    PrintMonitor m(*this, "CG iterations");
+
     // Note: this function matrix notations follow Saad's "Iterative methods", ed. 2, pg. 246
     // So, X is the unknown prolongator, P's are conjugate directions, Z's are preconditioned P's
     RCP<const Matrix> A = rcpFromRef(Aref);
@@ -194,8 +197,8 @@ namespace MueLu {
     finalP = X;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Frobenius(const Matrix& A, const Matrix& B) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Frobenius(const Matrix& A, const Matrix& B) const {
     // We check only row maps. Column may be different. One would hope that they are the same, as we typically
     // calculate frobenius norm of the specified sparsity pattern with an updated matrix from the previous step,
     // but matrix addition, even when one is submatrix of the other, changes column map (though change may be as

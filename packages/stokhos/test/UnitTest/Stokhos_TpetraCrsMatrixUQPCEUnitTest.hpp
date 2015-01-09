@@ -195,9 +195,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -289,9 +288,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -383,9 +381,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -486,9 +483,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -592,9 +588,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -707,9 +702,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -719,7 +713,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   LocalOrdinal pce_size = cijk.dimension();
 
   // Build banded matrix
-  GlobalOrdinal nrow = 10;
+  GlobalOrdinal nrow = 13;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   RCP<Node> node = KokkosClassic::Details::getNode<Node>();
@@ -854,15 +848,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1023,9 +1015,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1113,7 +1104,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_y_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
 
@@ -1183,9 +1174,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1294,7 +1284,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1306,7 +1296,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
                                        tol, max_its, out.getOStream().get());
   TEST_EQUALITY_CONST( solved_flat, true );
 
-  btol = 100*btol;
+  btol = 500*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   ArrayRCP<Scalar> x2_view = x2->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {
@@ -1317,9 +1307,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (BST::abs(v.coeff(j)) < btol)
+      if (j < v.size() && BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::abs(v2.coeff(j)) < btol)
+      if (j < v2.size() && BST::abs(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1360,9 +1350,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1472,7 +1461,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1500,9 +1489,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (BST::abs(v.coeff(j)) < btol)
+      if (j < v.size() && BST::abs(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (BST::abs(v2.coeff(j)) < btol)
+      if (j < v2.size() && BST::abs(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1549,9 +1538,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1616,8 +1604,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1647,7 +1633,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1657,8 +1643,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Stokhos::create_flat_vector_view(*b, flat_b_map);
   typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
   typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::OperatorTraits<BelosScalar,FMV,FOP> FBOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,FMV> FBMVT;
   typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
   RCP< FBLinProb > flat_problem =
     rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
@@ -1680,9 +1664,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1734,9 +1718,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1838,7 +1821,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -1871,9 +1854,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -1923,9 +1906,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -2024,8 +2006,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -2058,7 +2038,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -2068,8 +2048,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Stokhos::create_flat_vector_view(*b, flat_b_map);
   typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
   typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::OperatorTraits<BelosScalar,FMV,FOP> FBOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,FMV> FBMVT;
   typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
   RCP< FBLinProb > flat_problem =
     rcp(new FBLinProb(flat_matrix, flat_x, flat_b));
@@ -2091,9 +2069,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 
@@ -2142,9 +2120,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -2262,7 +2239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<const Tpetra_CrsGraph> flat_graph, cijk_graph;
   flat_graph =
     Stokhos::create_flat_pce_graph(*graph, cijk, flat_x_map, flat_b_map,
-                                   cijk_graph);
+                                   cijk_graph, pce_size);
   RCP<Flat_Tpetra_CrsMatrix> flat_matrix =
     Stokhos::create_flat_matrix(*matrix, flat_graph, cijk_graph, cijk);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
@@ -2288,9 +2265,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Scalar v = x_view[i];
     Scalar v2 = x2_view[i];
     for (LocalOrdinal j=0; j<pce_size; ++j) {
-      if (ST::magnitude(v.coeff(j)) < btol)
+      if (j < v.size() && ST::magnitude(v.coeff(j)) < btol)
         v.fastAccessCoeff(j) = BaseScalar(0.0);
-      if (ST::magnitude(v2.coeff(j)) < btol)
+      if (j < v2.size() && ST::magnitude(v2.coeff(j)) < btol)
         v2.fastAccessCoeff(j) = BaseScalar(0.0);
     }
 

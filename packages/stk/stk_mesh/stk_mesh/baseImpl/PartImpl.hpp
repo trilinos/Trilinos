@@ -1,22 +1,50 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_PartImpl_hpp
 #define stk_mesh_PartImpl_hpp
 
 //----------------------------------------------------------------------
 
-#include <iosfwd>
-#include <string>
-#include <vector>
+#include <stddef.h>                     // for size_t
+#include <sys/types.h>                  // for int64_t
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
+#include <stk_util/util/CSet.hpp>       // for CSet
+#include <string>                       // for string
+#include "stk_topology/topology.hpp"    // for topology
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/util/CSet.hpp>
-#include <stk_mesh/base/Types.hpp>
 
 //----------------------------------------------------------------------
 
@@ -30,7 +58,7 @@ public:
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this part
    */
-  MetaData & mesh_meta_data() const { return *m_mesh_meta_data ; }
+  MetaData & mesh_meta_data() const { return *m_mesh_meta_data; }
 
   /** \brief  The primary entity type for this part.
    *
@@ -39,44 +67,46 @@ public:
    *   nodes of those elements are also members of an element part.
    *   Return InvalidEntityRank if no primary entity type.
    */
-  unsigned primary_entity_rank() const { return m_entity_rank ; }
+  EntityRank primary_entity_rank() const { return m_entity_rank; }
+
+  stk::topology topology() const { return m_topology; }
+
+  bool force_no_induce() const { return m_force_no_induce; }
+
+  void set_force_no_induce(bool arg_force_no_induce) { m_force_no_induce = arg_force_no_induce; }
+
+  bool entity_membership_is_parallel_consistent() const { return m_entity_membership_is_parallel_consistent; }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_entity_membership_is_parallel_consistent = trueOrFalse; }
 
   /** \brief  Application-defined text name of this part */
-  const std::string & name() const { return m_name ; }
+  const std::string & name() const { return m_name; }
+
+  int64_t id() const { return m_id; }
+  void set_id(int64_t lid) { m_id = lid; }
 
   /** \brief  Internally generated ordinal of this part that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
-  unsigned mesh_meta_data_ordinal() const { return m_universe_ordinal ; }
+  unsigned mesh_meta_data_ordinal() const { return m_ordinal; }
 
   /** \brief  Parts that are supersets of this part. */
-  const PartVector & supersets() const { return m_supersets ; }
+  const PartVector & supersets() const { return m_supersets; }
 
   /** \brief  Parts that are subsets of this part. */
-  const PartVector & subsets() const { return m_subsets ; }
-
-  /** \brief  Parts for which this part is defined as the intersection.  */
-  const PartVector & intersection_of() const { return m_intersect ; }
-
-  /** \brief  PartRelations for which this part is a member, root or target */
-  const std::vector<PartRelation> & relations() const { return m_relations ; }
+  const PartVector & subsets() const { return m_subsets; }
 
   /** \brief  Equality comparison */
-  bool operator == ( const PartImpl & rhs ) const { return this == & rhs ; }
+  bool operator == ( const PartImpl & rhs ) const { return this == & rhs; }
 
   /** \brief  Inequality comparison */
-  bool operator != ( const PartImpl & rhs ) const { return this != & rhs ; }
+  bool operator != ( const PartImpl & rhs ) const { return this != & rhs; }
 
   /** \brief  Query attribute that has been attached to this part */
   template<class A>
   const A * attribute() const { return m_attribute.template get<A>(); }
 
-  explicit PartImpl( MetaData * );
-
   void add_part_to_subset( Part & part);
   void add_part_to_superset( Part & part );
-  void add_relation( PartRelation relation );
-  void set_intersection_of( const PartVector & );
 
   template<class T>
   const T * declare_attribute_with_delete( const T *);
@@ -88,10 +118,13 @@ public:
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods.
    */
-  PartImpl( MetaData * meta, const std::string & name,
-            EntityRank rank, size_t ordinal);
+  PartImpl( MetaData * arg_meta, const std::string & arg_name,
+            EntityRank arg_rank, size_t arg_ordinal,
+            bool arg_force_no_induce);
 
   void set_primary_entity_rank( EntityRank entity_rank );
+
+  void set_topology (stk::topology topo);
 
 private:
 
@@ -101,15 +134,17 @@ private:
   PartImpl( const PartImpl & );
   PartImpl & operator = ( const PartImpl & );
 
-  const std::string         m_name ;
-  CSet                      m_attribute ;
-  PartVector                m_subsets ;
-  PartVector                m_supersets ;
-  PartVector                m_intersect ;
-  std::vector<PartRelation> m_relations ;
-  MetaData          * const m_mesh_meta_data ;
-  const unsigned            m_universe_ordinal ;
-  EntityRank                m_entity_rank ;
+  const std::string         m_name;
+  int64_t                   m_id;
+  CSet                      m_attribute;
+  PartVector                m_subsets;
+  PartVector                m_supersets;
+  MetaData          * const m_mesh_meta_data;
+  const unsigned            m_ordinal;
+  EntityRank                m_entity_rank;
+  stk::topology             m_topology;
+  bool                      m_force_no_induce;
+  bool                      m_entity_membership_is_parallel_consistent;
 
 #endif /* DOXYGEN_COMPILE */
 
@@ -133,7 +168,7 @@ PartImpl::declare_attribute_no_delete( const T * a )
 
 template<class T>
 inline
-bool 
+bool
 PartImpl::remove_attribute( const T * a )
 {
   return m_attribute.template remove<T>( a );

@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -47,9 +47,13 @@ namespace Sacado {
 
     public:
 
+       typedef T value_type;
+
       //! Default constructor
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const T & x) : val_(x), sz_(0) {}
+      StaticStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+        val_(x), sz_(0) {}
 
       //! Constructor with size \c sz
       /*!
@@ -103,6 +107,22 @@ namespace Sacado {
         if (sz > Num)
           throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
+        sz_ = sz;
+      }
+
+      //! Resize the derivative array to sz
+      /*!
+       * This method doest not preserve any existing derivative components but
+       * sets any that are added to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void resizeAndZero(int sz) {
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+        if (sz > Num)
+          throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
+#endif
+        if (sz > sz_)
+          ss_array<T>::zero(dx_+sz_, sz-sz_);
         sz_ = sz;
       }
 

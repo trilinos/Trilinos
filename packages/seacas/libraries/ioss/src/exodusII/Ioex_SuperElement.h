@@ -32,13 +32,16 @@
 #ifndef IOSS_Ioex_SuperElement_h
 #define IOSS_Ioex_SuperElement_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_GroupingEntity.h>
-#include <string>
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include "Ioss_EntityType.h"            // for EntityType, etc
+#include "Ioss_Property.h"              // for Property
+namespace Ioss { class Field; }
 
 namespace Ioss {
   class Property;
-  class Field;
 }
 
 namespace Ioex {

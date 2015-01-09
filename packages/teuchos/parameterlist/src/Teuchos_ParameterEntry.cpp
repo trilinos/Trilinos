@@ -48,7 +48,7 @@
 namespace Teuchos {
 
 
-ParameterEntry::ParameterEntry() : 
+ParameterEntry::ParameterEntry() :
   isUsed_(false),
   isDefault_(false)
 {}
@@ -131,7 +131,7 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
   return os;
 }
 
-bool ParameterEntry::isTwoDArray() const{ 
+bool ParameterEntry::isTwoDArray() const{
   std::string formatString = getTwoDArrayTypeNameTraitsFormat();
   size_t starPos = formatString.find("*");
   std::string prefix = formatString.substr(0,starPos);
@@ -143,7 +143,7 @@ bool ParameterEntry::isTwoDArray() const{
     && (postPos != std::string::npos) && (prePos < postPos);
 }
 
-bool ParameterEntry::isArray() const{ 
+bool ParameterEntry::isArray() const{
   std::string formatString = getArrayTypeNameTraitsFormat();
   size_t starPos = formatString.find("*");
   std::string prefix = formatString.substr(0,starPos);

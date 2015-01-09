@@ -31,14 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <xdmf/Ioxf_Internals.h>
-#include <Ioss_ElementBlock.h>
-#include <Ioss_NodeSet.h>
-#include <Ioss_SideBlock.h>
-#include <algorithm>
+#include <Ioss_ElementBlock.h>          // for ElementBlock
+#include <Ioss_NodeSet.h>               // for NodeSet
+#include <Ioss_SideBlock.h>             // for SideBlock
+#include <string>                       // for string
+#include "Ioss_Property.h"              // for Property
 
-#include <assert.h>
 
-#include <string>
 
 using namespace Ioxf;
 

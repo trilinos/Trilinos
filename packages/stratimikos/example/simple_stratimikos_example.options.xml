@@ -1,4 +1,4 @@
-<?xml-stylesheet type="text/xsl" href="common/paramList/paramList.xslt"?>
+<?xml-stylesheet type="text/xsl" href="common/paramList/paramList.xsl"?>
 
 <ParameterList name="ANONYMOUS" id="Start">
   <Parameter docString='Determines the type of linear solver that will be used.

@@ -9,9 +9,9 @@
 
 /****************************************************************************/
 ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,
-						      long long rank, 
-						      long long num_procs)
-/****************************************************************************/
+    long long rank,
+    long long num_procs)
+  /****************************************************************************/
 {
   imd->my_rank = rank;
   imd->num_processors = num_procs;
@@ -34,17 +34,17 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   //Pre-Process BC's
   // set up nnx/nny/nnz for calculating bc loop limits
-  long long nnx = imd->nelx_tot+1;
-  long long nny = imd->nely_tot+1;
+  long long nnx = imd->nel_tot[0]+1;
+  long long nny = imd->nel_tot[1]+1;
   long long nnz = 1;
   if(dim == 3){
-    nnz = imd->nelz_tot+1;
+    nnz = imd->nel_tot[2]+1;
   }
-  
+
   imd->Size_BC_Sets(nnx,nny,nnz);
 
   if(imd->inline_geometry_type == RADIAL && imd->periodic_j){
-    nny = imd->nely_tot;
+    nny = imd->nel_tot[1];
   }
 
   ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification();
@@ -54,16 +54,21 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   // The strategy is to implement serial with a trivial decomposition.
   // The trivial decomposition is to disperse the elements based on their
-  // 'global' ordering in the entire i,j,k domain. 
+  // 'global' ordering in the entire i,j,k domain.
   // The strategy is to implement serial with a trivial decomposition.
   // The trivial decomposition is to disperse the elements based on their
-  // 'global' ordering in the entire i,j,k domain. 
+  // 'global' ordering in the entire i,j,k domain.
 
   //make up list of global elements on processor
-  std::list <long long> global_el_ids;
-  long long error_code = 0;
-  PAMGEN_NEVADA::Partition * my_part = imd->Decompose(global_el_ids,error_code);
-  if(error_code){return NULL;}
+  std::set <long long> global_el_ids;
+  {
+    long long error_code = imd->Decompose(global_el_ids);
+    if(error_code){
+      delete nemesis_db;
+      nemesis_db = NULL;
+      return NULL;
+    }
+  }
 
   // reads in all the serial component of the mesh specification
   // including the maps
@@ -74,22 +79,22 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   std::map <long long, long long> global_element_map;//maps global node id to local ordinal
 
   imd->Build_Global_Lists(global_el_ids,
-                     element_vector,
-                     global_node_list,
-                     global_node_vector,
-                     global_node_map,
-                     global_element_map);
+      element_vector,
+      global_node_list,
+      global_node_vector,
+      global_node_map,
+      global_element_map);
 
   nemesis_db->Specify_Global_Information(std::string ("PAMGEN Inline Mesh"),//title_string
-					 dim,//dimension
-					 global_node_list.size(),//total num nodes that are local
-					 element_vector.size(),//total num elements that are local
-					 imd->numBlocks(),//total num blocks in entire problem
-					 imd->nodeset_list.size(),//num nodesets in entire problem
-					 imd->sideset_list.size(),//num_sidesets in entire problem
-					 1,//num_qa records
-					 0// num_info_records
-					 );
+      dim,//dimension
+      global_node_list.size(),//total num nodes that are local
+      element_vector.size(),//total num elements that are local
+      imd->numBlocks(),//total num blocks in entire problem
+      imd->nodeset_list.size(),//num nodesets in entire problem
+      imd->sideset_list.size(),//num_sidesets in entire problem
+      1,//num_qa records
+      0// num_info_records
+      );
 
 
   time_t tim = time(NULL);
@@ -108,33 +113,37 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   coord_names[0] = "X";
   coord_names[1] = "Y";
   if(dim ==3){
-  coord_names[2] = "Z";
+    coord_names[2] = "Z";
   }
 
-  imd->Calc_Serial_Component(my_part,
-                        element_vector,
-                        global_node_list,
-                        global_node_vector,
-                        global_node_map,
-                        global_element_map);
+  imd->Calc_Serial_Component(global_el_ids,
+      global_node_vector);
 
   long long err_code = imd->Calc_Coord_Vectors();
-  if(err_code){return NULL;}
+  if(err_code){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
 
-  imd->Populate_Coords(nemesis_db->Coord(),   
-		  global_node_vector,                             
-		  global_node_map,
-		  global_node_list.size());
+  imd->Populate_Coords(nemesis_db->Coord(),
+      global_node_vector,
+      global_node_map,
+      global_node_list.size());
 
   imd->Offset_Coords(nemesis_db->Coord(),
-			global_node_list.size(),
-			dim);
+      global_node_list.size(),
+      dim);
 
-  if(!imd->getErrorString().empty()){return NULL;}
-
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
+  
   imd->Customize_Coords(nemesis_db->Coord(),
-			global_node_list.size(),
-			dim);
+      global_node_list.size(),
+      dim);
 
   imd->Display_Class(imd->info_stream,"");
 
@@ -144,49 +153,65 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   long long the_num_side_set_nodes = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     nemesis_db->Specify_Side_Set_Information(nsct,//the index
-					    (*setit)->id,//the id
-					    imd->sideset_vectors[nsct].size(),// number of faces
-					    imd->sideset_vectors[nsct].size()*num_nodes_per_face,// number of ss nodes
-					    0 );
+        (*setit)->id,//the id
+        imd->sideset_vectors[nsct].size(),// number of faces
+        imd->sideset_vectors[nsct].size()*num_nodes_per_face,// number of ss nodes
+        0 );
     the_num_side_set_nodes += imd->sideset_vectors[nsct].size()*num_nodes_per_face;
   }
   nemesis_db->setMSI(ms_lt::Mesh_Specification::NUM_SIDE_SET_NODES,the_num_side_set_nodes);
 
   err_code = imd->Populate_Sideset_Info( global_element_map,
-					 global_node_map,
-					 nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_ELEMENTS),
-					 nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_FACES),
-					 nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODES),
-					 nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODE_COUNTER));
+      global_node_map,
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_ELEMENTS),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_FACES),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODES),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODE_COUNTER));
 
-  if(!imd->getErrorString().empty()){return NULL;}
-  if(err_code){return NULL;}
-  
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
+  if(err_code){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
+
   nsct = 0;
 
   for(setit = imd->nodeset_list.begin(); setit != imd->nodeset_list.end();setit++,nsct ++){
     nemesis_db->Specify_Node_Set_Information(nsct,//the index
-					    (*setit)->id,//the id
-					    imd->nodeset_vectors[nsct].size(),//
-					    0/*number_of_df*/);
+        (*setit)->id,//the id
+        imd->nodeset_vectors[nsct].size(),//
+        0/*number_of_df*/);
   }
 
   imd->Populate_Nodeset_Info(nemesis_db->getMSPP(ms_lt::Mesh_Specification::NODE_SET_NODES),//Node_Set_Nodes(),
-			     global_node_map);
-  if(!imd->getErrorString().empty()){return NULL;}
+      global_node_map);
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
   //CONNECTIVITY
   for(long long i = 0;i <nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);i++ ){
     nemesis_db->Specify_Block_Information(i,//index
-                                         i+1,//id
-                                         imd->element_block_lists[i].size(),//number of elements
-                                         num_nodes_per_element,//num nodes per element
-                                         0,//number of element_attributes
-                                         the_element_type);
+        i+1,//id
+        imd->element_block_lists[i].size(),//number of elements
+        num_nodes_per_element,//num nodes per element
+        0,//number of element_attributes
+        the_element_type);
   }
 
   imd->Populate_Connectivity(nemesis_db->getMSPP(ms_lt::Mesh_Specification::ELMT_NODE_LINKAGE),
-			     global_node_map);
-  if(!imd->getErrorString().empty()){return NULL;}
+      global_node_map);
+  if(!imd->getErrorString().empty()){
+    delete nemesis_db;
+    nemesis_db = NULL;
+    return NULL;
+  }
 
 
 
@@ -200,8 +225,8 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   long long * the_map = nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
   long long * global_element_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
-  imd->Populate_Map_and_Global_Element_List(the_map, 
-				       global_element_numbers);
+  imd->Populate_Map_and_Global_Element_List(the_map,
+      global_element_numbers);
 
   //   Read_Global_Numbers();
   long long * global_node_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
@@ -209,22 +234,22 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     global_node_numbers[gnv] = global_node_vector[gnv]+1;
   }
   //   Read_Global_Info();
- {
+  {
     long long telc;
     long long tnoc;
     long long tect;
     imd->calculateSize(telc,
-                       tnoc,
-                       tect);
+        tnoc,
+        tect);
 
-  nemesis_db->Global_Data_Size(tnoc,
-                               imd->GlobalNumElements(),
-                               imd->numBlocks(),
-                               imd->nodeset_list.size(),//num_nodesets
-                               imd->sideset_list.size(),
-			       imd->num_processors,
-			       imd->my_rank);
- }
+    nemesis_db->Global_Data_Size(tnoc,
+        imd->GlobalNumElements(),
+        imd->numBlocks(),
+        imd->nodeset_list.size(),//num_nodesets
+        imd->sideset_list.size(),
+        imd->num_processors,
+        imd->my_rank);
+  }
 
   long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
   for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
@@ -239,8 +264,11 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   for(setit = imd->nodeset_list.begin(); setit != imd->nodeset_list.end();setit++,nsct ++){
     ns_ids_global[nsct]=(*setit)->id;
-    PAMGEN_NEVADA::LoopLimits ll = (*setit)->limits;
-    ns_cnts_global[nsct] = ll.total;
+    ns_cnts_global[nsct] = 0;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+      PAMGEN_NEVADA::LoopLimits ll = (*setit)->the_locs[ict].limits;
+      ns_cnts_global[nsct] += ll.total;
+    }
     ns_df_cnts_global[nsct] = 0;
   }
 
@@ -251,8 +279,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   nsct = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     ss_ids_global[nsct]=(*setit)->id;
-    PAMGEN_NEVADA::LoopLimits ll = (*setit)->limits;
-    ss_cnts_global[nsct] = ll.total;
+    ss_cnts_global[nsct] = imd->sideset_global_count[nsct];
     ss_df_cnts_global[nsct] = 0;
   }
   //Declare containers for par info Calculation
@@ -268,62 +295,62 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   std::list <std::pair <long long ,Topo_Loc > > *boundary_element_list = NULL;
 
   imd->Calc_Parallel_Info(element_vector,
-			  global_node_vector,
-			  global_node_map,
-			  internal_node_list,
-			  border_nodes_list,
-			  internal_element_list,
-			  border_elements_list,
-			  node_proc_id_list,
-			  element_proc_id_list,
-			  node_neighbor_vector,
-			  boundary_node_list,
-			  element_neighbor_vector,
-			  boundary_element_list);
+      global_node_vector,
+      global_node_map,
+      internal_node_list,
+      border_nodes_list,
+      internal_element_list,
+      border_elements_list,
+      node_proc_id_list,
+      element_proc_id_list,
+      node_neighbor_vector,
+      boundary_node_list,
+      element_neighbor_vector,
+      boundary_element_list);
 
   nemesis_db->Parallel_Data_Size(internal_node_list.size(),
-                                 border_nodes_list.size(),
-                                 0,//num_external_nodes,
-                                 internal_element_list.size(),
-                                 border_elements_list.size(),
-                                 node_proc_id_list.size(),
-                                 element_proc_id_list.size()
-                                );
+      border_nodes_list.size(),
+      0,//num_external_nodes,
+      internal_element_list.size(),
+      border_elements_list.size(),
+      node_proc_id_list.size(),
+      element_proc_id_list.size()
+      );
 
 
   imd->Populate_Border_Nodes_Elements( nemesis_db->getMSP(ms_lt::Mesh_Specification::INTERNAL_ELEMENTS),
-				       nemesis_db->getMSP(ms_lt::Mesh_Specification::INTERNAL_NODES),
-				       nemesis_db->getMSP(ms_lt::Mesh_Specification::BORDER_ELEMENTS),
-				       nemesis_db->getMSP(ms_lt::Mesh_Specification::BORDER_NODES),
-				       internal_node_list,	
-				       border_nodes_list,
-				       internal_element_list,
-				       border_elements_list,
-				       global_node_map,
-				       global_element_map);
-  
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::INTERNAL_NODES),
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::BORDER_ELEMENTS),
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::BORDER_NODES),
+      internal_node_list,
+      border_nodes_list,
+      internal_element_list,
+      border_elements_list,
+      global_node_map,
+      global_element_map);
+
   imd->Populate_Cmap( nemesis_db->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_NODE_CNTS),
-		      nemesis_db->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_IDS),
-		      nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_ELEM_CNTS),
-		      nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_IDS),
-		      node_neighbor_vector,
-		      element_neighbor_vector,
-		      boundary_node_list,                   
-		      boundary_element_list);
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_IDS),
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_ELEM_CNTS),
+      nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_IDS),
+      node_neighbor_vector,
+      element_neighbor_vector,
+      boundary_node_list,
+      boundary_element_list);
 
   nemesis_db->Allocate_Parallel_Data();
 
   imd->Populate_Parallel_Info( nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS),
-			       nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS),
-			       nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS),
-			       nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS),
-			       nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS),
-			       node_neighbor_vector,
-			       element_neighbor_vector,		
-			       boundary_node_list,
-			       global_node_map,
-			       boundary_element_list,
-			       global_element_map);
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS),
+      nemesis_db->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS),
+      node_neighbor_vector,
+      element_neighbor_vector,
+      boundary_node_list,
+      global_node_map,
+      boundary_element_list,
+      global_element_map);
 
 
   if(node_proc_id_list.size())
@@ -331,14 +358,13 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   if(element_proc_id_list.size())
     delete [] boundary_element_list;
 
-
   return nemesis_db;
 }
 
 
 /****************************************************************************/
 ms_lt::Mesh_Specification * consolidateMeshSpecification_LT(ms_lt::Mesh_Specification *)
-/****************************************************************************/
+  /****************************************************************************/
 {
   return NULL;
 }

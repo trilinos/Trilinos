@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,25 +44,25 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
-//  Simple 2 equation test for quadratic and cubic line searches 
+
+//  Simple 2 equation test for quadratic and cubic line searches
 //  from Dennis & Schnabel's book, chp 6.  The test problem is from
 //  Example 6.5.1
-/*  
+/*
  *    U0**2 + U1**2 - 2 = 0
  *    exp(U0-1) + U1**3 -2 = 0
  *
  *  NOTE: To reproduce the results from the reference, the linesearch option
- *        must be set to polynomial.  This can be done either from the 
- *        command line using "-nox_linesearch_type polynomial" or by 
- *        placing the same option specification in an input file, 
+ *        must be set to polynomial.  This can be done either from the
+ *        command line using "-nox_linesearch_type polynomial" or by
+ *        placing the same option specification in an input file,
  *        eg ${HOME}/.petscrc
  *        Also, the solver must be -nox_linesearch_based with
  *        "-nox_direction_type newton", which can be used by not
  *        explicitly setting either of these since they are the defaults.
  */
 
-static char help[] = 
+static char help[] =
        "Solves Dennis & Schnabel example problem in parallel.\n\n";
 
 
@@ -85,9 +85,9 @@ static char help[] =
 #include "NOX_Petsc_Group.H"
 #include "NOX_Petsc_Options.H"
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
-#include "DennisSchnabel.H"              
+#include "DennisSchnabel.H"
 
 using namespace std;
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   }
 
   // Create the Problem class.  This creates all required
-  // Petsc objects for the problem and allows calls to the 
+  // Petsc objects for the problem and allows calls to the
   // function (RHS) and Jacobian evaluation routines.
   DennisSchnabel Problem(NumGlobalElements);
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
   // Warn if not using Polynimial linesearch
   std::string lsMethod = nlParams.sublist("Line Search").get("Method", "Full Step");
   if( "Polynomial" != lsMethod )
-    if (MyPID==0) 
+    if (MyPID==0)
       std::cout << "Line Search Method is set to \"" << lsMethod << "\".  This test is designed to "
            << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
            << "on the command line." << std::endl;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   // NOX::Petsc::Interface
   Problem_Interface interface(Problem);
 
-  // Get a reference to the Petsc_RowMatrix created in Problem_Interface.  
+  // Get a reference to the Petsc_RowMatrix created in Problem_Interface.
   Mat& A = Problem.getJacobian();
 
   // Create the Group
@@ -170,16 +170,16 @@ int main(int argc, char *argv[])
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grp, optionHandler.getStatusTest(), nlParamsPtr);
   NOX::StatusTest::StatusType status = solver->solve();
 
   if (status != NOX::StatusTest::Converged)
   {
-    if (MyPID==0) 
+    if (MyPID==0)
       std::cout << "Nonlinear solver failed to converge!" << std::endl;
   if( "Polynomial" != lsMethod )
-      if (MyPID==0) 
+      if (MyPID==0)
         std::cout << "\nLine Search Method is set to \"" << lsMethod << "\".  This test is designed to "
              << "work with \"Polynomial\".  You can set this using \"-nox_linesearch_type polynomial\" "
              << "on the command line." << std::endl;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
 
   // Get the Petsc_Vector with the final solution from the solver
-  const NOX::Petsc::Group& finalGroup = 
+  const NOX::Petsc::Group& finalGroup =
       dynamic_cast<const NOX::Petsc::Group&>(solver->getSolutionGroup());
   const Vec& finalSolution = (dynamic_cast<const NOX::Petsc::Vector&>
         (finalGroup.getX())).getPetscVector();
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
   fclose(ifp);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
- 
+
 return 0;
 
 } // end main

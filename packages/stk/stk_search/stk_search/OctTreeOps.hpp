@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_util_util_OctTreeOps_hpp
 #define stk_util_util_OctTreeOps_hpp
@@ -23,25 +48,24 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <stk_search/BoundingBox.hpp>
 #include <stk_search/OctTree.hpp>
+
 
 namespace stk {
 namespace search {
+
+void calculate_key_using_offset(unsigned depth, unsigned offset, stk::OctTreeKey &kUpper);
 
 //----------------------------------------------------------------------
 /**  A recursive kernel used within the oct_tree_partitioning algorithms.
  *   Exposed to support unit testing.
  */
 
-void oct_tree_partition_private(
-  const unsigned p_first ,
-  const unsigned p_end ,
-  const unsigned depth ,
-  const double   tolerance ,
-  float * const weights ,
-  const unsigned cuts_length ,
-  OctTreeKey * const cuts );
+void partition_oct_tree(unsigned numProcsLocal, unsigned depth, const float * const weights, unsigned cuts_length, stk::OctTreeKey *cuts);
+
 
 //----------------------------------------------------------------------
 /** Generate an oct-tree covering of a small box within a global box.
@@ -143,7 +167,8 @@ void box_global_bounds(
   const RangeBoundingBox  * const arg_range_boxes ,
   float        * const arg_global_box )
 {
-  enum { Dim = 3 };
+  typedef typename DomainBoundingBox::first_type box_type;
+  enum { Dim = 3};
 
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1210)
 #pragma warning disable 191
@@ -157,30 +182,25 @@ void box_global_bounds(
 
   //------------------------------------
   // Trivial loop threading possible:
-
   for ( size_t i = 0 ; i < arg_domain_boxes_number ; ++i ) {
     const DomainBoundingBox & box = arg_domain_boxes[i];
-    for (int j=0; j<Dim; ++j) {
-      if (arg_global_box[j] > static_cast<float>(box.lower(j)) ) {
-        arg_global_box[j] = static_cast<float>(box.lower(j));
-      }
-      if (arg_global_box[j+Dim] < static_cast<float>(box.upper(j)) ) {
-        arg_global_box[j+Dim] = static_cast<float>(box.upper(j));
-      }
-    }
+    arg_global_box[0] = std::min(arg_global_box[0], static_cast<float>(box.first.get_x_min()));
+    arg_global_box[1] = std::min(arg_global_box[1], static_cast<float>(box.first.get_y_min()));
+    arg_global_box[2] = std::min(arg_global_box[2], static_cast<float>(box.first.get_z_min()));
+    arg_global_box[3] = std::max(arg_global_box[3], static_cast<float>(box.first.get_x_max()));
+    arg_global_box[4] = std::max(arg_global_box[4], static_cast<float>(box.first.get_y_max()));
+    arg_global_box[5] = std::max(arg_global_box[5], static_cast<float>(box.first.get_z_max()));
   }
 
   if ( ! symmetric ) {
     for ( size_t i = 0 ; i < arg_range_boxes_number ; ++i ) {
       const RangeBoundingBox & box = arg_range_boxes[i];
-      for (int j=0; j<Dim; ++j) {
-        if (arg_global_box[j] > static_cast<float>(box.lower(j)) ) {
-          arg_global_box[j] = static_cast<float>(box.lower(j));
-        }
-        if (arg_global_box[j+Dim] < static_cast<float>(box.upper(j)) ) {
-          arg_global_box[j+Dim] = static_cast<float>(box.upper(j));
-        }
-      }
+      arg_global_box[0] = std::min(arg_global_box[0], static_cast<float>(box.first.get_x_min()));
+      arg_global_box[1] = std::min(arg_global_box[1], static_cast<float>(box.first.get_y_min()));
+      arg_global_box[2] = std::min(arg_global_box[2], static_cast<float>(box.first.get_z_min()));
+      arg_global_box[3] = std::max(arg_global_box[3], static_cast<float>(box.first.get_x_max()));
+      arg_global_box[4] = std::max(arg_global_box[4], static_cast<float>(box.first.get_y_max()));
+      arg_global_box[5] = std::max(arg_global_box[5], static_cast<float>(box.first.get_z_max()));
     }
   }
 
@@ -259,106 +279,14 @@ void SetInsertBuffer<S>::operator()( const typename S::value_type & v )
 }
 
 
-/*
-template <class DomainBoundingBox, class RangeBoundingBox>
-void proximity_search_symmetric(
-  const typename std::map< stk::OctTreeKey,
-                           std::pair< std::list< DomainBoundingBox >,
-                                      std::list< RangeBoundingBox > > >::const_iterator i_beg ,
-  const typename std::map< stk::OctTreeKey,
-                           std::pair< std::list< DomainBoundingBox >,
-                                      std::list< RangeBoundingBox > > >::const_iterator i_end ,
-  SetInsertBuffer< std::set< std::pair< typename DomainBoundingBox::Key,
-                                        typename RangeBoundingBox::Key > > > & arg_out )
-{
-  typedef typename DomainBoundingBox::Key DomainKey;
-  typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
-
-  typename SearchTree::const_iterator j ;
-
-  typename std::list<DomainBoundingBox>::const_iterator id;
-  typename std::list<RangeBoundingBox>::const_iterator ir;
-
-  const typename SearchTree::value_type  & inode = *i_beg ;
-  const std::list<DomainBoundingBox> & domain_outer = inode.second.first ;
-
-  const typename std::list<DomainBoundingBox>::const_iterator
-    beg_dom_out = domain_outer.begin(),
-    end_dom_out = domain_outer.end();
-
-  // Outer cell vs. itself
-
-  for ( id = beg_dom_out ; id != end_dom_out ; ++id ) {
-    const DomainBoundingBox & d = *id ;
-    for ( ir = id ; ++ir != end_dom_out ; ) {
-      const RangeBoundingBox & r = *ir ;
-      if ( d.intersect(r) ) {
-        const DomainKey & dip = d.key ;
-        const RangeKey & rip = r.key ;
-        if ( dip < rip ) {
-          std::pair<DomainKey,RangeKey> tmp( dip , rip );
-          arg_out( tmp );
-        }
-        else {
-          std::pair<Key,Key> tmp( rip , dip );
-          arg_out( tmp );
-        }
-      }
-    }
-  }
-
-  // Outer cell searching inner cells.
-  // Outer cell always precedes inner cells
-  // Iterate forward until the cell is not contained.
-
-  const stk::OctTreeKey & outer_key = inode.first ;
-
-  for ( j = i_beg ; ++j != i_end && outer_key.intersect( (*j).first ) ; ) {
-
-    const typename SearchTree::value_type & jnode = *j ;
-
-    const std::list<BoundingBox> & domain_inner = jnode.second.first ;
-
-    const typename std::list<BoundingBox>::const_iterator
-      beg_dom_inn = domain_inner.begin(),
-      end_dom_inn = domain_inner.end();
-
-    // Check domain_outer vs. domain_inner,
-    // skip if the same box.
-
-    for ( id = beg_dom_out ; id != end_dom_out ; ++id ) {
-      const BoundingBox & d = *id ;
-      for ( ir = beg_dom_inn ; ir != end_dom_inn ; ++ir ) {
-        const BoundingBox & r = *ir ;
-        if ( d.key != r.key ) {
-          if ( d.intersect(r) ) {
-            const Key & dip = d.key ;
-            const Key & rip = r.key ;
-            if ( dip < rip ) {
-              std::pair<Key,Key> tmp( dip , rip );
-              arg_out( tmp );
-            }
-            else {
-              std::pair<Key,Key> tmp( rip , dip );
-              arg_out( tmp );
-            }
-          }
-        }
-      }
-    }
-  }
-}
-*/
-
 template <class DomainBoundingBox, class RangeBoundingBox>
 void proximity_search_asymmetric(
   const typename std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_beg ,
   const typename std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_end ,
-  SetInsertBuffer< std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > > & arg_out )
+  SetInsertBuffer< std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > > & arg_out )
 {
-  typedef typename DomainBoundingBox::Key DomainKey;
-  typedef typename RangeBoundingBox::Key RangeKey;
+  typedef typename DomainBoundingBox::second_type DomainKey;
+  typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   typename SearchTree::const_iterator j ;
@@ -384,8 +312,8 @@ void proximity_search_asymmetric(
     const DomainBoundingBox & d = *id ;
     for ( ir = beg_ran_out ; ir != end_ran_out ; ++ir ) {
       const RangeBoundingBox & r = *ir ;
-      if ( d.intersect(r) ) {
-        std::pair<DomainKey,RangeKey> tmp( d.key , r.key );
+      if ( intersects(d.first,r.first) ) {
+        std::pair<DomainKey,RangeKey> tmp( d.second , r.second );
         arg_out( tmp );
       }
     }
@@ -413,8 +341,8 @@ void proximity_search_asymmetric(
       const RangeBoundingBox & r = *ir ;
       for ( id = beg_dom_out ; id != end_dom_out ; ++id ) {
         const DomainBoundingBox & d = *id ;
-        if ( d.intersect(r) ) {
-          std::pair<DomainKey,RangeKey> tmp( d.key , r.key );
+        if ( intersects(d.first,r.first) ) {
+          std::pair<DomainKey,RangeKey> tmp( d.second , r.second );
           arg_out( tmp );
         }
       }
@@ -431,8 +359,8 @@ void proximity_search_asymmetric(
       const DomainBoundingBox & d = *id ;
       for ( ir = beg_ran_out ; ir != end_ran_out ; ++ir ) {
         const RangeBoundingBox & r = *ir ;
-        if ( d.intersect(r) ) {
-          std::pair<DomainKey,RangeKey> tmp( d.key , r.key );
+        if ( intersects(d.first,r.first) ) {
+          std::pair<DomainKey,RangeKey> tmp( d.second , r.second );
           arg_out( tmp );
         }
       }
@@ -588,32 +516,37 @@ bool communicate(
 template <class DomainBoundingBox, class RangeBoundingBox>
 void communicate(
   stk::ParallelMachine arg_comm ,
-  const std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & send_relation ,
-        std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & recv_relation )
+  const std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
+        std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+        bool communicateRangeBoxInfo = true )
 {
-  typedef typename DomainBoundingBox::Key DomainKey;
-  typedef typename RangeBoundingBox::Key RangeKey;
+  typedef typename DomainBoundingBox::second_type DomainKey;
+  typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::pair<DomainKey, RangeKey> ValueType ;
 
   CommAll comm_all( arg_comm );
 
-  const unsigned p_rank = comm_all.parallel_rank();
-  const unsigned p_size = comm_all.parallel_size();
+  const int p_rank = comm_all.parallel_rank();
+  const int p_size = comm_all.parallel_size();
 
   typename std::set< ValueType >::const_iterator i ;
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
-    if ( val.first.proc == p_rank || val.second.proc == p_rank ) {
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {
       recv_relation.insert( val );
     }
-    if ( val.first.proc != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc );
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.skip<ValueType>( 1 );
     }
-    if ( val.second.proc != p_rank && val.second.proc != val.first.proc ) {
-      CommBuffer & buf = comm_all.send_buffer( val.second.proc );
-      buf.skip<ValueType>( 1 );
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.skip<ValueType>( 1 );
+        }
     }
   }
 
@@ -623,24 +556,95 @@ void communicate(
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
-    if ( val.first.proc != p_rank ) {
-      CommBuffer & buf = comm_all.send_buffer( val.first.proc );
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.pack<ValueType>( val );
     }
-    if ( val.second.proc != p_rank && val.second.proc != val.first.proc ) {
-      CommBuffer & buf = comm_all.send_buffer( val.second.proc );
-      buf.pack<ValueType>( val );
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.pack<ValueType>( val );
+        }
     }
   }
 
   comm_all.communicate();
 
-  for ( unsigned p = 0 ; p < p_size ; ++p ) {
+  for ( int p = 0 ; p < p_size ; ++p ) {
     CommBuffer & buf = comm_all.recv_buffer( p );
     while ( buf.remaining() ) {
       ValueType val ;
       buf.unpack<ValueType>( val );
       recv_relation.insert( val );
+    }
+  }
+}
+
+template <class DomainBoundingBox, class RangeBoundingBox>
+void communicateVector(
+  stk::ParallelMachine arg_comm ,
+  const std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
+        std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+        bool communicateRangeBoxInfo = true )
+{
+  typedef typename DomainBoundingBox::second_type DomainKey;
+  typedef typename RangeBoundingBox::second_type RangeKey;
+  typedef std::pair<DomainKey, RangeKey> ValueType ;
+
+  CommAll comm_all( arg_comm );
+
+  const int p_rank = comm_all.parallel_rank();
+  const int p_size = comm_all.parallel_size();
+
+  typename std::vector< ValueType >::const_iterator i ;
+
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {
+      recv_relation.push_back( val );
+    }
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      buf.skip<ValueType>( 1 );
+    }
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.skip<ValueType>( 1 );
+        }
+    }
+  }
+
+  // If more than 25% messages then is dense
+
+  comm_all.allocate_buffers( p_size / 4 , false );
+
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      buf.pack<ValueType>( val );
+    }
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.pack<ValueType>( val );
+        }
+    }
+  }
+
+  comm_all.communicate();
+
+  for ( int p = 0 ; p < p_size ; ++p ) {
+    CommBuffer & buf = comm_all.recv_buffer( p );
+    while ( buf.remaining() ) {
+      ValueType val ;
+      buf.unpack<ValueType>( val );
+      recv_relation.push_back( val );
     }
   }
 }
@@ -697,16 +701,34 @@ void oct_tree_partition(
 
   all_reduce_sum( arg_comm , local_count , global_count , tree_size_2 );
 
-  oct_tree_partition_private( 0, p_size, tree_depth,
-                              arg_tolerance, global_count,
-                              p_size, & arg_cuts[0]);
+  stk::search::partition_oct_tree(p_size, tree_depth, global_count, p_size, &(*arg_cuts.begin()));
+
+  OctTreeKey lb = arg_cuts[0];
+  for (unsigned p = 0; p < p_size; ++p)
+  {
+    if (arg_cuts[p] < lb)
+    {
+      int myrank = parallel_machine_rank(arg_comm);
+      if (myrank == 0)
+      {
+        std::cerr << "proc " << myrank << "  WARNING returning from oct_tree_partition(..) with arg_cuts NON-MONOTONIC { ";
+        for (unsigned p_inner = 0; p_inner < p_size; ++p_inner)
+        {
+          std::cerr << arg_cuts[p_inner] << " ";
+        }
+        std::cerr << "}\n" << std::endl;
+      }
+      ThrowErrorMsg("stk::search::oct_tree_partition(..) arg_cuts is not monotonic at return.");
+    }
+    lb   = arg_cuts[p];
+  }
 }
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 class ProximitySearch {
 public:
-  typedef typename DomainBoundingBox::Key DomainKey;
-  typedef typename RangeBoundingBox::Key RangeKey;
+  typedef typename DomainBoundingBox::second_type DomainKey;
+  typedef typename RangeBoundingBox::second_type RangeKey;
   typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
   typedef void (*proximity_search_work_routine)(
     const typename SearchTree::const_iterator i_beg ,
@@ -781,20 +803,12 @@ void ProximitySearch<DomainBoundingBox, RangeBoundingBox>::iterate_tree()
       }
       catch( ... ) {
         TPI_Unlock( GET_LOCK );
-	throw ;
+        throw ;
       }
 
-      // Perform work:
-
-    //  if (m_symmetric) {
-    //    for ( ; i_beg != i_end ; ++i_beg ) {
-    //      proximity_search_symmetric<DomainBoundingBox,RangeBoundingBox>( i_beg , i_tree_end , tmp );
-    //    }
-    //  } else {
-        for ( ; i_beg != i_end ; ++i_beg ) {
-          proximity_search_asymmetric<DomainBoundingBox, RangeBoundingBox>( i_beg , i_tree_end , tmp );
-        }
-    //  }
+      for ( ; i_beg != i_end ; ++i_beg ) {
+        proximity_search_asymmetric<DomainBoundingBox, RangeBoundingBox>( i_beg , i_tree_end , tmp );
+      }
     }
   }
   catch ( const std::exception & x ) {
@@ -820,7 +834,7 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
 {
   if ( m_tree_iter != m_tree_end ) {
 
-    TPI_work_subprogram worker = (TPI_work_subprogram) proximity_search_work<DomainBoundingBox, RangeBoundingBox>;
+    TPI_work_subprogram worker = proximity_search_work<DomainBoundingBox, RangeBoundingBox>;
     TPI_Run_threads(worker, this, NLOCKS );
 
     if ( m_tree_iter != m_tree_end ) {
@@ -829,6 +843,105 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
     }
   }
 }
+
+
+template <class DomainBox, class DomainIdent , class RangeBox, class RangeIdent>
+void createSearchTree(
+        const float * const arg_global_box ,
+        const size_t arg_domain_boxes_number,
+        const std::pair<DomainBox,DomainIdent> * const arg_domain_boxes,
+        const size_t arg_range_boxes_number,
+        const std::pair<RangeBox,RangeIdent> * const arg_range_boxes,
+        unsigned Dim,
+        const unsigned p_rank,
+        bool local_violations,
+        std::map< stk::OctTreeKey, std::pair< std::list< std::pair<DomainBox,DomainIdent> >, std::list< std::pair<RangeBox,RangeIdent> > > > &search_tree)
+{
+  typedef std::pair<DomainBox,DomainIdent> DomainBoundingBox;
+  typedef std::pair<RangeBox,RangeIdent> RangeBoundingBox;
+  typedef std::map<stk::OctTreeKey, std::pair<std::list<DomainBoundingBox>, std::list<RangeBoundingBox> > > SearchTree;
+
+  stk::OctTreeKey covering[8];
+  unsigned number = 0u;
+
+  double scale = arg_global_box[0 + Dim] - arg_global_box[0];
+  for(unsigned i = 1; i < Dim; ++i)
+  {
+    double tst_scale = arg_global_box[i + Dim] - arg_global_box[i];
+    if(tst_scale > scale)
+      scale = tst_scale;
+  }
+  if(scale > 0.0) // Not an error. Could arise with a point bounding box in the range/domain...
+    scale = 1.0 / scale;
+  else
+    scale = 1.0;
+
+  for(size_t i = 0; i < arg_domain_boxes_number; ++i)
+  {
+
+    DomainBoundingBox tmp(arg_domain_boxes[i]);
+
+    tmp.second.set_proc(p_rank);
+
+    float box[6];
+
+    box[0] = static_cast<float>(tmp.first.get_x_min());
+    box[1] = static_cast<float>(tmp.first.get_y_min());
+    box[2] = static_cast<float>(tmp.first.get_z_min());
+    box[3] = static_cast<float>(tmp.first.get_x_max());
+    box[4] = static_cast<float>(tmp.first.get_y_max());
+    box[5] = static_cast<float>(tmp.first.get_z_max());
+
+    const bool valid =
+      hsfc_box_covering(arg_global_box, box, covering, number, scale);
+
+    if(!valid)
+    {
+      local_violations = true;
+    }
+
+    for(unsigned k = 0u; k < number; ++k)
+    {
+      const stk::OctTreeKey key = covering[k];
+      search_tree[key].first.push_back(tmp);
+    }
+  }
+
+  const bool symmetric = false;
+  if(!symmetric)
+  {
+    for(size_t i = 0; i < arg_range_boxes_number; ++i)
+    {
+
+      RangeBoundingBox tmp(arg_range_boxes[i]);
+      tmp.second.set_proc(p_rank);
+
+      float box[6];
+
+      box[0] = static_cast<float>(tmp.first.get_x_min());
+      box[1] = static_cast<float>(tmp.first.get_y_min());
+      box[2] = static_cast<float>(tmp.first.get_z_min());
+      box[3] = static_cast<float>(tmp.first.get_x_max());
+      box[4] = static_cast<float>(tmp.first.get_y_max());
+      box[5] = static_cast<float>(tmp.first.get_z_max());
+
+      const bool valid =
+        hsfc_box_covering(arg_global_box, box, covering, number, scale);
+
+      if(!valid)
+      {
+        local_violations = true;
+      }
+
+      for(unsigned k = 0; k < number; ++k)
+      {
+        const stk::OctTreeKey key = covering[k];
+        search_tree[key].second.push_back(tmp);
+      }
+    }
+  }
+}
+
 
 
 //----------------------------------------------------------------------
@@ -855,102 +968,39 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
  *  the global box.
  */
 
-template <class DomainBoundingBox, class RangeBoundingBox>
+template <class DomainBox, class DomainIdent , class RangeBox, class RangeIdent>
 bool oct_tree_proximity_search(
   ParallelMachine            arg_comm ,
   const float        * const arg_global_box ,
   const size_t               arg_domain_boxes_number ,
-  const DomainBoundingBox * const arg_domain_boxes ,
+  const std::pair<DomainBox,DomainIdent> * const arg_domain_boxes ,
   const size_t               arg_range_boxes_number ,
-  const RangeBoundingBox * const arg_range_boxes ,
-  const OctTreeKey   * const arg_cuts ,
-  std::vector< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & arg_relation ,
-  unsigned * const arg_search_tree_stats = NULL )
+  const std::pair<RangeBox,RangeIdent> * const arg_range_boxes ,
+  std::vector< std::pair< DomainIdent, RangeIdent > > & arg_relation,
+  bool communicateRangeBoxInfo )
 {
-  typedef typename DomainBoundingBox::Key DomainKey;
-  typedef typename RangeBoundingBox::Key RangeKey;
+  typedef DomainIdent DomainKey;
+  typedef RangeIdent RangeKey;
+  typedef std::pair<DomainBox,DomainIdent> DomainBoundingBox;
+  typedef std::pair<RangeBox,RangeIdent> RangeBoundingBox;
   typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
-
+  
   enum { Dim = 3 };
 
-  //const bool symmetric = static_cast<const void * const>(arg_range_boxes) == static_cast<const void *const>(arg_domain_boxes ) ||
-  //  arg_range_boxes == NULL;
   const bool symmetric = false;
-
+  bool global_violations = false ;
+  bool local_violations = false ;
+  
   const unsigned p_size = parallel_machine_size( arg_comm );
   const unsigned p_rank = parallel_machine_rank( arg_comm );
+
 
   //----------------------------------------------------------------------
   // Search tree defined by oct-tree covering for boxes
 
-  bool local_violations = false ;
-  bool global_violations = false ;
-
   SearchTree search_tree ;
+  createSearchTree(arg_global_box, arg_domain_boxes_number, arg_domain_boxes, arg_range_boxes_number, arg_range_boxes, Dim, p_rank, local_violations, search_tree);
 
-  {
-    stk::OctTreeKey covering[8] ;
-    unsigned   number = 0 ;
-
-    double scale = arg_global_box[0+Dim] - arg_global_box[0];
-    for ( unsigned i = 1 ; i < Dim ; ++i ) {
-      double tst_scale = arg_global_box[i+Dim] - arg_global_box[i];
-      if (tst_scale > scale) scale = tst_scale;
-    }
-    if (scale > 0.0) // Not an error. Could arise with a point bounding box in the range/domain...
-      scale = 1.0 / scale;
-    else
-      scale = 1.0;
-
-    for ( size_t i = 0 ; i < arg_domain_boxes_number ; ++i ) {
-
-      DomainBoundingBox tmp( arg_domain_boxes[i] );
-
-      tmp.key.proc = p_rank ;
-
-      float box[6];
-
-      for (int x=0; x<Dim; ++x) {
-        box[x] = tmp.lower(x);
-        box[x+Dim] = tmp.upper(x);
-      }
-
-      const bool valid =
-        hsfc_box_covering( arg_global_box, box, covering, number, scale );
-
-      if ( ! valid ) { local_violations = true ; }
-
-      for ( unsigned k = 0 ; k < number ; ++k ) {
-        const stk::OctTreeKey key = covering[k] ;
-        search_tree[key].first.push_back(tmp);
-      }
-    }
-
-    if ( ! symmetric ) {
-      for ( size_t i = 0 ; i < arg_range_boxes_number ; ++i ) {
-
-        RangeBoundingBox tmp( arg_range_boxes[i] );
-
-        tmp.key.proc = p_rank ;
-        float box[6];
-
-        for (int x=0; x<Dim; ++x) {
-          box[x] = tmp.lower(x);
-          box[x+Dim] = tmp.upper(x);
-        }
-
-        const bool valid =
-          hsfc_box_covering( arg_global_box, box, covering, number, scale );
-
-        if ( ! valid ) { local_violations = true ; }
-
-        for ( unsigned k = 0 ; k < number ; ++k ) {
-          const stk::OctTreeKey key = covering[k] ;
-          search_tree[key].second.push_back(tmp);
-        }
-      }
-    }
-  }
 
   //----------------------------------------------------------------------
   // Use a set to provide a unique and sorted result.
@@ -961,10 +1011,6 @@ bool oct_tree_proximity_search(
 
     global_violations = local_violations ;
 
-    if ( arg_search_tree_stats ) {
-      search_tree_statistics( arg_comm , search_tree ,
-                              arg_search_tree_stats );
-    }
     ProximitySearch<DomainBoundingBox, RangeBoundingBox>( symmetric, search_tree, tmp_relation);
   }
   else {
@@ -974,12 +1020,8 @@ bool oct_tree_proximity_search(
 
     std::set< std::pair<DomainKey, RangeKey> > local_relation ;
 
-    if ( arg_cuts ) {
-      global_violations =
-        communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , arg_cuts , search_tree , local_tree ,
-                           local_violations );
-    }
-    else {
+    {
+      //WTF???
       const double tolerance = 0.001 ;
 
       std::vector< stk::OctTreeKey > cuts ;
@@ -993,29 +1035,43 @@ bool oct_tree_proximity_search(
 
     // Local proximity search with received members
 
-    if ( arg_search_tree_stats ) {
-      search_tree_statistics( arg_comm , local_tree ,
-                              arg_search_tree_stats );
-    }
-
     ProximitySearch<DomainBoundingBox, RangeBoundingBox>( symmetric, local_tree, local_relation);
 
     // Communicate relations back to domain and range processors
 
-    communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , local_relation , tmp_relation );
+    communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , local_relation , tmp_relation , communicateRangeBoxInfo);
   }
+
 
   arg_relation.clear();
-  arg_relation.reserve( tmp_relation.size() );
+  arg_relation.assign(tmp_relation.begin(),tmp_relation.end());
 
-  typename std::set< std::pair<DomainKey, RangeKey> >::iterator ir ;
-  for ( ir = tmp_relation.begin() ; ir != tmp_relation.end() ; ++ir ) {
-    arg_relation.push_back( *ir );
-  }
   return global_violations ;
 }
 
 //----------------------------------------------------------------------
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > const& domain,
+                           std::vector< std::pair<RangeBox, RangeIdent> >  const& range,
+                           stk::ParallelMachine   comm,
+                           std::vector< std::pair< DomainIdent, RangeIdent> > & intersections,
+                           bool communicateRangeBoxInfo
+                         )
+{
+
+  std::vector<float> global_box(6);
+  stk::search::box_global_bounds( comm, domain.size(), &*domain.begin(), range.size(), &*range.begin(), &*global_box.begin() );
+  stk::search::oct_tree_proximity_search(
+      comm,
+      &*global_box.begin(),
+      domain.size(),
+      &*domain.begin(),
+      range.size(),
+      &*range.begin(),
+      intersections,
+      communicateRangeBoxInfo
+      );
+}
 
 } // namespace search
 } // namespace stk

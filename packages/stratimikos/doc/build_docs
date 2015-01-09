@@ -12,15 +12,11 @@ rm -r html
 
 mkdir ../browser/doc/html
 
-mkdir html
+mkdir -p html/common
+cp -r ../../../doc/DocumentingParameterLists/webfiles html/common/parameterList
+
 
 # Build the documentation
-
 ./build_docs_guts
 
-# Files needed for collapsible parameter list (short term proof of concept)
-#TODO:
-mkdir html/common
-cp -r ../../common/paramList html/common/paramList
-cp ../example/simple_stratimikos_example.options.xml html
 

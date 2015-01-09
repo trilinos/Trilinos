@@ -642,7 +642,12 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
     }
-    belosSolveStatus = iterativeSolver_->solve();
+    try {
+      belosSolveStatus = iterativeSolver_->solve();
+    }
+    catch (Belos::BelosError&) {
+      belosSolveStatus = Belos::Unconverged;
+    }
   }
 
   //

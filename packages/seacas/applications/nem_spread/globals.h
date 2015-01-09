@@ -377,6 +377,12 @@ template <typename T, typename INT>
   char   *Coordinate_Frame_Tags;
 
   Globals() :
+    Num_Dim(0),
+    Num_Node(0),
+    Num_Elem(0),
+    Num_Elem_Blk(0),
+    Num_Node_Set(0),
+    Num_Side_Set(0),
     Max_NP_Elem(0),
     Num_QA_Recs(0),
     Num_Info_Recs(0),

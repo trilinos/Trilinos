@@ -1,314 +1,264 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef stk_search_BoundingBox_hpp
-#define stk_search_BoundingBox_hpp
+#ifndef STK_SEARCH_BOUNDINGBOX_HPP
+#define STK_SEARCH_BOUNDINGBOX_HPP
 
-#include <iosfwd>
-#include <stk_search/BoundingBoxCompare.hpp>
-#include <cmath>
-#include <stdint.h>
+#include <stk_search/Point.hpp>
+#include <stk_search/Sphere.hpp>
+#include <stk_search/Box.hpp>
 
-namespace stk {
-namespace search {
-namespace box {
+namespace stk { namespace search {
 
-template <class K, class T, int Dim>
-  struct PointBoundingBox;
+// is_valid: Point
+template <typename T>
+inline bool is_valid(Point<T> const&)
+{ return true; }
 
-template <class K, class T, int Dim>
-  struct SphereBoundingBox;
+// is_valid: Sphere
+template <typename T>
+inline bool is_valid(Sphere<T> const& s)
+{ return static_cast<T>(0) <= s.radius(); }
 
-template <class K, class T, int Dim>
-  struct AxisAlignedBoundingBox;
-
-template <class K = uint64_t, class T = float, int Dim = 3>
-struct PointBoundingBox
+// is_valid: Box
+template <typename T>
+inline bool is_valid(Box<T> const& b)
 {
-  typedef K Key;
-  typedef T Data;
+  return   b.min_corner()[0] <= b.max_corner()[0]
+        && b.min_corner()[1] <= b.max_corner()[1]
+        && b.min_corner()[2] <= b.max_corner()[2] ;
+}
 
-  const static int DIMENSION = Dim;
+//Point
+template <typename T>
+inline Point<T> const& min_corner(Point<T> const& p)
+{ return p; }
 
-  inline Data lower(int axis) const { return center[axis]; }
-  inline Data middle(int axis) const { return center[axis]; }
-  inline Data upper(int axis) const { return center[axis]; }
+template <typename T>
+inline Point<T> const& max_corner(Point<T> const& p)
+{ return p; }
 
-  inline Data length(int /* axis */ = 0) const { return 0; }
+template <typename T>
+inline Point<T> const& center(Point<T> const& p)
+{ return p; }
 
-  PointBoundingBox()
-    : center(), key()
-  {}
+//Point,index
+template <typename T>
+inline T min_corner(Point<T> const& p, int index)
+{ return p[index]; }
 
-  PointBoundingBox(const Data center_[], const Key & key_)
-    : center(), key(key_)
-  {
-    set_center(center_);
-  }
+template <typename T>
+inline T max_corner(Point<T> const& p, int index)
+{ return p[index]; }
 
-  PointBoundingBox(const PointBoundingBox &point_)
-    : center(), key(point_.key)
-  {
-    set_center(point_.center);
-  }
+template <typename T>
+inline T center(Point<T> const& p, int index)
+{ return p[index]; }
 
-  PointBoundingBox & operator = ( const PointBoundingBox &point_) {
-    if (this != &point_) {
-      set_center(point_.center);
-      key = point_.key;
-    }
-    return *this;
-  }
 
-  inline
-  void set_center(const Data center_[]) {
-    for (int i = 0; i<DIMENSION; ++i)
-      center[i] = center_[i];
-  }
-
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
-    Data dist = 0;
-    for (int i=0; i<DIMENSION; ++i) {
-      dist += std::abs(middle(i) - point_.middle(i));
-    }
-    return dist == 0;
-  }
-
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
-    Data tmp = 0;
-    Data dist = 0;
-    for (int i=0; i<DIMENSION; ++i) {
-      tmp = sphere_.middle(i) - middle(i);
-      dist += tmp * tmp;
-    }
-    return dist < sphere_.radius * sphere_.radius;
-  }
-
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
-    for (int i=0; i<DIMENSION; ++i) {
-      if( middle(i) < box_.lower(i) || middle(i) > box_.upper(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  Data center[DIMENSION];
-  Key  key;
-
-};
-
-template <class K = uint64_t, class T = float, int Dim = 3>
-struct SphereBoundingBox
+//Sphere
+template <typename T> inline Point<T> const min_corner(Sphere<T> const& s)
 {
-  typedef K Key;
-  typedef T Data;
+  const Point<T> & c = s.center();
+  const T r = s.radius();
+  return Point<T>(c[0]-r,c[1]-r,c[2]-r);
+}
 
-  const static int DIMENSION = Dim;
-
-  inline Data lower(int axis) const { return center[axis] - radius; }
-  inline Data middle(int axis) const { return center[axis]; }
-  inline Data upper(int axis) const { return center[axis] + radius; }
-
-  inline Data length(int /* axis */ = 0) const { return 2*radius; }
-
-  inline void expand(const Data delta) { radius += delta; }
-
-
-  SphereBoundingBox()
-    : center(), radius(0), key()
-  {}
-
-  SphereBoundingBox(const SphereBoundingBox &sphere_)
-    : center(), radius(sphere_.radius), key(sphere_.key)
-  {
-    set_center(sphere_.center);
-  }
-
-  SphereBoundingBox & operator = ( const SphereBoundingBox &sphere_) {
-    if (this != &sphere_) {
-      set_center(sphere_.center);
-      radius = sphere_.radius;
-      key = sphere_.key;
-    }
-    return *this;
-  }
-
-  SphereBoundingBox( const PointBoundingBox<K,T,Dim> & point_ )
-    : center(), radius(0), key(point_.key)
-  {
-    set_center(point_.center);
-  }
-
-  SphereBoundingBox( const AxisAlignedBoundingBox<K,T,Dim> & box_)
-    : center(), radius(0), key(box_.key)
-  {
-    Data dist;
-    Data radius_squared = 0;
-    for (int i=0; i<Dim; ++i) {
-      center[i] = box_.middle(i);
-      dist = box_.upper(i) - center[i];
-      radius_squared += dist * dist;
-    }
-    radius = std::sqrt(radius_squared);
-  }
-
-  SphereBoundingBox(const Data center_[], const Data radius_, const Key & key_)
-    : center(), radius(radius_), key(key_)
-  {
-    set_center(center_);
-  }
-
-  inline
-  void set_center(const Data center_[]) {
-    for (int i = 0; i<DIMENSION; ++i)
-      center[i] = center_[i];
-  }
-
-  inline
-  void set_radius(const Data radius_) {
-    radius = radius_;
-  }
-
-  inline
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
-    return point_.intersect(*this);
-  }
-
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
-    Data tmp = 0;
-    Data dist = 0;
-    for (int i=0; i<DIMENSION; ++i) {
-      tmp = middle(i) - sphere_.middle(i);
-      dist += tmp * tmp;
-    }
-    Data radius_sum = radius + sphere_.radius;
-    return dist < radius_sum * radius_sum;
-  }
-
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
-    Data tmp = 0;
-    Data dist = 0;
-    for (int i=0; i<DIMENSION; ++i) {
-      if (middle(i) < box_.lower(i)) {
-        tmp = middle(i) - box_.lower(i);
-        dist += tmp*tmp;
-      }
-      else if (middle(i) > box_.upper(i)) {
-        tmp = middle(i) - box_.upper(i);
-        dist += tmp*tmp;
-      }
-    }
-
-    return dist <= radius*radius;;
-  }
-  Data center[DIMENSION];
-  Data radius;
-  Key  key;
-
-};
-
-
-template <class K = uint64_t, class T = float, int Dim = 3>
-struct AxisAlignedBoundingBox
+template <typename T> inline Point<T> const max_corner(Sphere<T> const& s)
 {
-  typedef K Key;
-  typedef T Data;
+  const Point<T> & c = s.center();
+  const T r = s.radius();
+  return Point<T>(c[0]+r,c[1]+r,c[2]+r);
+}
 
-  const static int DIMENSION = Dim;
+template <typename T>
+inline Point<T> const& center(Sphere<T> const& s)
+{ return s.center(); }
 
-  inline Data lower(int axis)  const { return box[axis]; }
-  inline Data middle(int axis) const { return lower(axis) + length(axis)/2; }
-  inline Data upper(int axis)  const { return box[axis+DIMENSION]; }
+//Sphere,index
+template <typename T>
+inline T min_corner(Sphere<T> const& s, int index)
+{ return s.center()[index] - s.radius(); }
 
-  inline Data length(int axis) const { return upper(axis) - lower(axis); }
+template <typename T>
+inline T max_corner(Sphere<T> const& s, int index)
+{ return s.center()[index] + s.radius(); }
 
-  inline void expand(const Data delta) {
-    for (int i=0; i<DIMENSION; ++i) {
-      box[i] -= delta;
-      box[i+DIMENSION] += delta;
-    }
+template <typename T>
+inline T center(Sphere<T> const& s, int index)
+{ return s.center()[index]; }
+
+
+//Box
+template <typename T>
+inline Point<T> const& min_corner(Box<T> const& b)
+{ return b.min_corner(); }
+
+template <typename T>
+inline Point<T> const& max_corner(Box<T> const& b)
+{ return b.max_corner(); }
+
+template <typename T>
+inline Point<T> const center(Box<T> const& b)
+{
+  const Point<T> & l = b.min_corner();
+  const Point<T> & u = b.max_corner();
+  return Point<T>( (l[0]+u[0])/2, (l[1]+u[1])/2, (l[2]+u[2])/2);
+}
+
+//Box,index
+template <typename T>
+inline T min_corner(Box<T> const& b, int index)
+{ return b.min_corner()[index]; }
+
+template <typename T>
+inline T max_corner(Box<T> const& b, int index)
+{ return b.max_corner()[index]; }
+
+template <typename T>
+inline T center(Box<T> const& b, int index)
+{ return (b.min_corner()[index] + b.max_corner()[index])/2; }
+
+
+// intersects: Point,Point
+template <typename T>
+inline bool intersects(Point<T> const& a, Point<T> const& b)
+{ return (a==b); }
+
+
+// intersects: Point,Sphere
+template <typename T>
+inline bool intersects(Point<T> const& a, Sphere<T> const& b)
+{
+  const T dist2 =   (a[0]-b.center()[0])*(a[0]-b.center()[0])
+                  + (a[1]-b.center()[1])*(a[1]-b.center()[1])
+                  + (a[2]-b.center()[2])*(a[2]-b.center()[2]);
+  return (dist2 <= b.radius()*b.radius());
+}
+
+// intersects: Sphere,Point
+template <typename T>
+inline bool intersects(Sphere<T> const& a, Point<T> const& b)
+{ return intersects(b,a); }
+
+// intersects: Point,Box
+template <typename T>
+inline bool intersects(Point<T> const& a, Box<T> const& b)
+{
+  return b.min_corner()[0] <= a[0] && a[0] <= b.max_corner()[0]
+      && b.min_corner()[1] <= a[1] && a[1] <= b.max_corner()[1]
+      && b.min_corner()[2] <= a[2] && a[2] <= b.max_corner()[2];
+}
+
+// intersects: Box,Point
+template <typename T>
+inline bool intersects(Box<T> const& a, Point<T> const& b)
+{ return intersects(b,a); }
+
+// intersects: Sphere,Sphere
+template <typename T>
+inline bool intersects(Sphere<T> const& a, Sphere<T> const& b)
+{
+  const Point<T> & ac = a.center();
+  const Point<T> & bc = b.center();
+  const T r2 = (a.radius()+b.radius())*(a.radius()+b.radius());
+  const T dist2 =  (ac[0]-bc[0])*(ac[0]-bc[0])
+                 + (ac[1]-bc[1])*(ac[1]-bc[1])
+                 + (ac[2]-bc[2])*(ac[2]-bc[2]);
+  return dist2 < r2;
+}
+
+// intersects: Sphere,Box
+template <typename T>
+inline bool intersects(Sphere<T> const& a, Box<T> const& b)
+{
+  Point<T> const& ac = a.center();
+  Point<T> const& bmin = b.min_corner();
+  Point<T> const& bmax = b.max_corner();
+
+  const T r2 = a.radius() * a.radius();
+
+  // check that the nearest point in the bounding box is within the sphere
+  T dmin = 0;
+  for( int i = 0; i < 3; ++i ) {
+    if( ac[i] < bmin[i] ) dmin += (ac[i]-bmin[i])*(ac[i]-bmin[i]);
+    else if( ac[i] > bmax[i] ) dmin += (ac[i]-bmax[i])*(ac[i]-bmax[i]);
   }
+  return dmin <= r2;
+}
 
-  AxisAlignedBoundingBox()
-    : box(), key()
-  {}
+// intersects: Box,Sphere
+template <typename T>
+inline bool intersects(Box<T> const& a, Sphere<T> const& b)
+{ return intersects(b,a); }
 
-  AxisAlignedBoundingBox(const Data box_[], const Key & key_)
-    : box(), key(key_)
-  {
-    set_box(box_);
+// intersects: Box,Box
+template <typename T>
+inline bool intersects(Box<T> const& a, Box<T> const& b)
+{
+  Point<T> const& amin = a.min_corner();
+  Point<T> const& amax = a.max_corner();
+
+  Point<T> const& bmin = b.min_corner();
+  Point<T> const& bmax = b.max_corner();
+
+  // check that the boxes are not disjoint
+  return !((amax[0] < bmin[0]) || (bmax[0] < amin[0])
+        || (amax[1] < bmin[1]) || (bmax[1] < amin[1])
+        || (amax[2] < bmin[2]) || (bmax[2] < amin[2]));
+
+}
+
+template <typename T, typename U>
+inline void scale_by(Sphere<T> &s, U const& c)
+{
+  s.set_radius(s.radius()*c);
+}
+
+template <typename T, typename U>
+inline void scale_by(Box<T> &b, U const& c)
+{
+  Point<T> & min_corner = b.min_corner();
+  Point<T> & max_corner = b.max_corner();
+  const U factor = (c-1)/2;
+  for (int i=0; i<3; ++i) {
+    const T d = factor*(max_corner[i] - min_corner[i]);
+    min_corner[i] -= d;
+    max_corner[i] += d;
   }
+}
 
-  AxisAlignedBoundingBox(const AxisAlignedBoundingBox &box_)
-    : box(), key(box_.key)
-  {
-    set_box(box_.box);
-  }
-
-  AxisAlignedBoundingBox & operator = ( const AxisAlignedBoundingBox &box_) {
-    if (this != &box_) {
-      set_box(box_.box);
-      key = box_.key;
-    }
-    return *this;
-  }
-
-  AxisAlignedBoundingBox( const PointBoundingBox<K,T,Dim> & point_)
-    : box(), key(point_.key)
-  {
-    for (int i=0; i<Dim; ++i) {
-      box[i] = point_.lower(i);
-      box[i+Dim] = point_.upper(i);
-    }
-  }
-
-  AxisAlignedBoundingBox( const SphereBoundingBox<K,T,Dim> & sphere_)
-    : box(), key(sphere_.key)
-  {
-    for (int i=0; i<Dim; ++i) {
-      box[i] = sphere_.lower(i);
-      box[i+Dim] = sphere_.upper(i);
-    }
-  }
-
-  inline
-  void set_box(const Data box_[]) {
-    for (int i = 0; i<2*DIMENSION; ++i)
-      box[i] = box_[i];
-  }
-
-  inline
-  bool intersect( const PointBoundingBox<K,T,Dim> & point_) const {
-    return point_.intersect(*this);
-  }
-
-  inline
-  bool intersect( const SphereBoundingBox<K,T,Dim> & sphere_) const {
-    return sphere_.intersect(*this);
-  }
-
-  bool intersect( const AxisAlignedBoundingBox<K,T,Dim> & box_) const {
-    for (int i=0; i<DIMENSION; ++i) {
-      if( upper(i) < box_.lower(i) || lower(i) > box_.upper(i)) return false;
-    }
-    return true;
-  }
-
-  Data box[2*DIMENSION];
-  Key  key;
-
-};
+}} //namespace stk::search
 
 
-
-} // namespace box
-} // namespace search
-} // namespace stk
-
-#endif // stk_search_BoundingBox_hpp
+#endif //STK_SEARCH_BOUNDINGBOX_HPP

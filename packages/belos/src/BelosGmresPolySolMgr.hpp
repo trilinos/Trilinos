@@ -381,7 +381,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 template<class ScalarType, class MV, class OP>
 const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType
 GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ =
-  -Teuchos::ScalarTraits<ScalarType>::one ();
+  -Teuchos::ScalarTraits<MagnitudeType>::one();
 
 template<class ScalarType, class MV, class OP>
 const int GmresPolySolMgr<ScalarType,MV,OP>::maxDegree_default_ = 25;
@@ -439,6 +439,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
+  numIters_ (0),
   blockSize_ (blockSize_default_),
   numBlocks_ (numBlocks_default_),
   verbosity_ (verbosity_default_),
@@ -449,6 +450,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   orthoType_ (orthoType_default_),
   impResScale_ (impResScale_default_),
   expResScale_ (expResScale_default_),
+  poly_dim_ (0),
   label_ (label_default_),
   isPolyBuilt_ (false),
   isSet_ (false),
@@ -470,6 +472,7 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
+  numIters_ (0),
   blockSize_ (blockSize_default_),
   numBlocks_ (numBlocks_default_),
   verbosity_ (verbosity_default_),
@@ -480,6 +483,7 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   orthoType_ (orthoType_default_),
   impResScale_ (impResScale_default_),
   expResScale_ (expResScale_default_),
+  poly_dim_ (0),
   label_ (label_default_),
   isPolyBuilt_ (false),
   isSet_ (false),
@@ -739,8 +743,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  //typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t; // unused
+  //typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t; // unused
 
   // Check for polynomial convergence tolerance
   if (params->isParameter("Polynomial Tolerance")) {
@@ -1289,25 +1293,31 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
               // Compute the restart vector.
               // Get a view of the current Krylov basis.
-              RCP<MV> V_0  = MVT::Clone (*(oldState.V), blockSize_);
-              problem_->computeCurrPrecResVec (&*V_0);
+              //
+              // We call this VV_0 to avoid shadowing the previously
+              // defined V_0 above.
+              RCP<MV> VV_0  = MVT::Clone (*(oldState.V), blockSize_);
+              problem_->computeCurrPrecResVec (&*VV_0);
 
               // Get a view of the first block of the Krylov basis.
-              RCP<SDM> z_0 = rcp (new SDM (blockSize_, blockSize_));
+              //
+              // We call this zz_0 to avoid shadowing the previously
+              // defined z_0 above.
+              RCP<SDM> zz_0 = rcp (new SDM (blockSize_, blockSize_));
 
-              // Orthonormalize the new V_0
-              int rank = ortho_->normalize( *V_0, z_0 );
+              // Orthonormalize the new VV_0
+              const int theRank = ortho_->normalize( *VV_0, zz_0 );
               TEUCHOS_TEST_FOR_EXCEPTION(
-                rank != blockSize_, GmresPolySolMgrOrthoFailure,
+                theRank != blockSize_, GmresPolySolMgrOrthoFailure,
                 "Belos::GmresPolySolMgr::solve: Failed to compute initial "
                 "block of orthonormal vectors after restart.");
 
               // Set the new state and initialize the solver.
-              GmresIterationState<ScalarType,MV> newstate;
-              newstate.V = V_0;
-              newstate.z = z_0;
-              newstate.curDim = 0;
-              block_gmres_iter->initializeGmres(newstate);
+              GmresIterationState<ScalarType,MV> theNewState;
+              theNewState.V = VV_0;
+              theNewState.z = zz_0;
+              theNewState.curDim = 0;
+              block_gmres_iter->initializeGmres (theNewState);
             } // end of restarting
             //
             // We returned from iterate(), but none of our status

@@ -142,17 +142,20 @@ main (int argc, char *argv[])
   // Values of command-line arguments.
   int nx, ny, nz;
   std::string xmlInputParamsFile;
+  std::string solverName;
   bool verbose, debug;
+  double tol;
+  int maxNumIters;
 
   // Set default values of command-line arguments.
-  setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
+  setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, solverName,
                                   verbose, debug);
   // Parse and validate command-line arguments.
   Teuchos::CommandLineProcessor cmdp (false, true);
-  setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
-                             verbose, debug);
+  setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile, solverName,
+                             tol, maxNumIters, verbose, debug);
   parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
-                             xmlInputParamsFile, verbose, debug);
+                             xmlInputParamsFile, solverName, verbose, debug);
   if (printedHelp) {
     // The user specified --help at the command line to print help
     // with command-line arguments.  We printed help already, so quit
@@ -180,8 +183,7 @@ main (int argc, char *argv[])
   if (xmlInputParamsFile != "") {
     *out << "Reading parameters from XML file \""
          << xmlInputParamsFile << "\"..." << endl;
-    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, 
-					  outArg (inputList));
+    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, outArg (inputList));
     if (myRank == 0) {
       inputList.print (*out, 2, true, true);
       *out << endl;
@@ -209,7 +211,7 @@ main (int argc, char *argv[])
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
     makeMatrixAndRightHandSide (A, B, X_exact, X, comm, meshInput,
-				out, err, verbose, debug);
+                                out, err, verbose, debug);
   }
 
   const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
@@ -229,31 +231,28 @@ main (int argc, char *argv[])
     if (prec_type == "ML") {
       ParameterList mlParams;
       if (inputList.isSublist("ML"))
-	mlParams = inputList.sublist("ML");
+        mlParams = inputList.sublist("ML");
       else {
-	ML_Epetra::SetDefaults("SA", mlParams);
-	mlParams.set("ML output", 0);
+        ML_Epetra::SetDefaults("SA", mlParams);
+        mlParams.set("ML output", 0);
       }
       M = rcp(new ML_Epetra::MultiLevelPreconditioner(*A, mlParams));
     }
 
     else if (prec_type == "MueLu") {
       // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-      RCP<Xpetra::CrsMatrix<ST> > mueluA_ = 
-	rcp(new Xpetra::EpetraCrsMatrix(A));
-      RCP<Xpetra::Matrix <ST> > mueluA  = 
-	rcp(new Xpetra::CrsMatrixWrap<ST>(mueluA_));
-      
+      RCP<Xpetra::CrsMatrix<ST> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A));
+      RCP<Xpetra::Matrix <ST> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<ST>(mueluA_));
+
       // Multigrid Hierarchy
       ParameterList mueluParams;
       if (inputList.isSublist("MueLu"))
-	mueluParams = inputList.sublist("MueLu");
+        mueluParams = inputList.sublist("MueLu");
       MueLu::ParameterListInterpreter<ST> mueLuFactory(mueluParams);
-      RCP<MueLu::Hierarchy<ST> > H = 
-	mueLuFactory.CreateHierarchy();
+      RCP<MueLu::Hierarchy<ST> > H = mueLuFactory.CreateHierarchy();
       H->setVerbLevel(Teuchos::VERB_HIGH);
       H->GetLevel(0)->Set("A", mueluA);
-      
+
       // Multigrid setup phase
       H->Setup();
 
@@ -264,14 +263,12 @@ main (int argc, char *argv[])
 
   bool converged = false;
   int numItersPerformed = 0;
-  const MT tol = inputList.get("Convergence Tolerance",
-			       STM::squareroot (STM::eps ()));
+  const MT tol = inputList.get("Convergence Tolerance", STM::squareroot (STM::eps ()));
   const int maxNumIters = inputList.get("Maximum Iterations", 200);
   const int num_steps = inputList.get("Number of Time Steps", 1);
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-    solveWithAztecOO (converged, numItersPerformed, tol, maxNumIters, num_steps,
-		      X, A, B, M);
+    solveWithAztecOO (converged, numItersPerformed, tol, maxNumIters, num_steps, X, A, B, M);
   }
 
   // Compute ||X-X_exact||_2
@@ -280,7 +277,7 @@ main (int argc, char *argv[])
   X_exact->Update(-1.0, *X, 1.0);
   X_exact->Norm2(&norm_error);
   *out << endl
-       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
+       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
        << endl;
 
   } // total time block

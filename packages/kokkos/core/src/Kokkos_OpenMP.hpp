@@ -46,24 +46,19 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
-#if defined(KOKKOS_HAVE_OPENMP)
+#if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP )
 
 #include <omp.h>
+
 #include <cstddef>
 #include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-namespace Impl {
-class OpenMPexec ;
-} // namespace Impl
-} // namespace Kokkos
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -77,12 +72,16 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef OpenMP                device_type ;
-  typedef HostSpace::size_type  size_type ;
+  //! Tag this class as a kokkos execution space
+  typedef OpenMP                execution_space ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
-  typedef OpenMP                host_mirror_device_type ;
+  typedef HostSpace::size_type  size_type ;
 
+  typedef ScratchMemorySpace< OpenMP > scratch_memory_space ;
+
+  //! For backward compatibility
+  typedef OpenMP                device_type ;
   //@}
   //------------------------------------
   //! \name Functions that all Kokkos devices must implement.
@@ -114,68 +113,56 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-#if 0
-  static void initialize( const unsigned team_count         = 1 ,
-                          const unsigned threads_per_team   = 1 ,
-                          const unsigned use_numa_count     = 0 ,
-                          const unsigned use_cores_per_numa = 0 );
-#endif
-
   static void initialize( unsigned thread_count = 0 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
-
-  static unsigned league_max();
-  static unsigned team_max();
   //@}
   //------------------------------------
-  //! \name Function for the functor device interface */
-  //@{
-
-  inline int league_rank() const ;
-  inline int league_size() const ;
-  inline int team_rank() const ;
-  inline int team_size() const ;
-
-  inline void team_barrier();
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+  /** \brief  This execution space has a topological thread pool which can be queried.
    *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
+   *  All threads within a pool have a common memory space for which they are cache coherent.
+   *    depth = 0  gives the number of threads in the whole pool.
+   *    depth = 1  gives the number of threads in a NUMA region, typically sharing L3 cache.
+   *    depth = 2  gives the number of threads at the finest granularity, typically sharing L1 cache.
    */
-  template< typename Type >
-  inline Type team_scan( const Type & value );
+  inline static int thread_pool_size( int depth = 0 );
 
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-
-  inline void * get_shmem( const int size );
-
-  explicit inline OpenMP( Impl::OpenMPexec & );
+  /** \brief  The rank of the executing thread in this thread pool */
+  KOKKOS_INLINE_FUNCTION static int thread_pool_rank();
 
   //------------------------------------
 
-private:
+  inline static unsigned max_hardware_threads() { return thread_pool_size(0); }
 
-  Impl::OpenMPexec & m_exec ;
-
+  KOKKOS_INLINE_FUNCTION static
+  unsigned hardware_thread_id() { return thread_pool_rank(); }
 };
 
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::OpenMP::memory_space
+  , Kokkos::OpenMP::scratch_memory_space
+  >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>
@@ -183,7 +170,7 @@ private:
 
 /*--------------------------------------------------------------------------*/
 
-#endif /* #if defined(KOKKOS_HAVE_OPENMP) */
+#endif /* #if defined( KOKKOS_HAVE_OPENMP ) && defined( _OPENMP ) */
 #endif /* #ifndef KOKKOS_OPENMP_HPP */
 
 

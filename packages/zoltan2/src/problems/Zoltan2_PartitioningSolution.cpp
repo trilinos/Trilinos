@@ -51,31 +51,6 @@
 namespace Zoltan2 {
 
 
-////////////////////////////////////////////////////////////////////
-long measure_stays(
-  partId_t *remap,
-  int *idx,
-  partId_t *adj,
-  long *wgt,
-  partId_t nrhs,
-  partId_t nlhs
-)
-{
-// Return the weight of objects staying with a given remap.
-// If remap is NULL, compute weight of objects staying with given partition
-  long staying = 0;
-  for (partId_t i = 0; i < nrhs; i++) {
-    partId_t k = (remap ? remap[i] : i);
-    for (partId_t j = idx[k]; j < idx[k+1]; j++) {
-      if (i == (adj[j]-nlhs)) {
-        staying += wgt[j];
-        break;
-      }
-    }
-  }
-  return staying;
-}
-
 }
 
 

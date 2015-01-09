@@ -310,7 +310,7 @@ extern int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *,int nl,int pre_or_post,
 extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
                      int pre_or_post, int ntimes, int length, int *blkinfo);
 #include "ml_petsc.h"
-#ifdef HAVE_PETSC
+#ifdef HAVE_ML_PETSC
 extern int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_PetscKSP petscKSP);
 #endif
 

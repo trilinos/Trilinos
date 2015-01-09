@@ -47,13 +47,18 @@
 #define MUELU_EMINPFACTORY_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+
+#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_StridedMapFactory_fwd.hpp>
+
 #include "MueLu_EminPFactory_fwd.hpp"
 
-#include "MueLu_CGSolver_fwd.hpp"
 #include "MueLu_Constraint_fwd.hpp"
+#include "MueLu_CGSolver_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
+#include "MueLu_SolverBase_fwd.hpp"
 #include "MueLu_SteepestDescentSolver_fwd.hpp"
 
 namespace MueLu {
@@ -64,7 +69,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class EminPFactory : public PFactory {
 #undef MUELU_EMINPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -82,7 +87,7 @@ namespace MueLu {
 
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

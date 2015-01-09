@@ -97,7 +97,7 @@ public:
     const Dependency::ParameterEntryList dependets,
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const = 0;
-  
+
   //@}
 
   /** \name Overridden from DependencyXMLConverter */
@@ -105,7 +105,7 @@ public:
 
   /** \brief . */
   RCP<Dependency> convertXML(
-    const XMLObject& xmlObj, 
+    const XMLObject& xmlObj,
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
@@ -113,18 +113,18 @@ public:
 
   /** \brief . */
   void convertDependency(
-    const RCP<const Dependency> dependency, 
+    const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const;
-  
+
   //@}
-  
+
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief Gets the name of the showif attribute */
   static const std::string& getShowIfAttributeName(){
     static const std::string showIfAttributeName = "showIf";
@@ -132,7 +132,7 @@ private:
   }
 
   //@}
-  
+
 };
 
 /** \brief An xml converter for ValidatorDependencies.
@@ -174,7 +174,7 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const IDtoValidatorMap& validatorIDsMap) const = 0;
-  
+
   //@}
 
   /** \name Overridden from DependencyXMLConverter */
@@ -182,7 +182,7 @@ public:
 
   /** \brief . */
   RCP<Dependency> convertXML(
-    const XMLObject& xmlObj, 
+    const XMLObject& xmlObj,
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
@@ -190,13 +190,13 @@ public:
 
   /** \brief . */
   void convertDependency(
-    const RCP<const Dependency> dependency, 
+    const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const;
-  
+
   //@}
-  
+
 };
 
 /** \brief An xml converter for StringVisualDepenencies
@@ -223,7 +223,7 @@ public:
 
   /** \name Overridden from VisualDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialVisualAttributes(
     RCP<const VisualDependency> dependency,
@@ -243,14 +243,14 @@ public:
     static const std::string stringValuesTagName = "StringValues";
     return stringValuesTagName;
   }
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief Gets the String Tag */
   static const std::string& getStringTagName(){
     static const std::string stringTagName = "String";
@@ -264,7 +264,7 @@ private:
   }
 
   //@}
-  
+
 };
 
 /** \brief An xml converter for BoolVisualDepenencies
@@ -286,7 +286,7 @@ public:
 
   /** \name Overridden from VisualDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialVisualAttributes(
     RCP<const VisualDependency> dependency,
@@ -328,7 +328,7 @@ public:
 
   /** \name Overridden from VisualDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialVisualAttributes(
     RCP<const VisualDependency> dependency,
@@ -342,7 +342,7 @@ public:
     const Dependency::ParameterEntryList dependets,
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
-  
+
   //@}
 
 };
@@ -353,21 +353,21 @@ void NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
 {
-  RCP<const NumberVisualDependency<T> > castedDependency = 
+  RCP<const NumberVisualDependency<T> > castedDependency =
     rcp_dynamic_cast<const NumberVisualDependency<T> >(dependency);
-  RCP<const SimpleFunctionObject<T> > functionObject = 
+  RCP<const SimpleFunctionObject<T> > functionObject =
     castedDependency->getFunctionObject();
 
   if(functionObject != null){
-    XMLObject functionXML = 
+    XMLObject functionXML =
       FunctionObjectXMLConverterDB::convertFunctionObject(functionObject);
     xmlObj.addChild(functionXML);
   }
-    
+
 }
-  
+
 template<class T>
-RCP<VisualDependency> 
+RCP<VisualDependency>
 NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   const XMLObject& xmlObj,
   const Dependency::ConstParameterEntryList dependees,
@@ -387,7 +387,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   }
   return rcp(new NumberVisualDependency<T>(
     *(dependees.begin()), dependents, showIf, functionObject));
-      
+
 }
 
 /** \brief An xml converter for ConditionVisualDependencies
@@ -406,7 +406,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
  *  The "showIf" XML attribute is optional and if not present will be considered
  *  true.
  */
-class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter : 
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter :
   public VisualDependencyXMLConverter
 {
 
@@ -414,7 +414,7 @@ public:
 
   /** \name Overridden from VisualDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialVisualAttributes(
     RCP<const VisualDependency> dependency,
@@ -428,7 +428,7 @@ public:
     const Dependency::ParameterEntryList dependets,
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
-  
+
   //@}
 
 };
@@ -453,14 +453,14 @@ public:
   \endcode
  * The "defaultValidatorId" XML attribute is optional.
  */
-class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter : 
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter :
   public ValidatorDependencyXMLConverter{
 
 public:
 
   /** \name Overridden from ValidatorDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
@@ -479,13 +479,13 @@ public:
     static const std::string valuesAndValidatorsTag = "ValuesAndValidators";
     return valuesAndValidatorsTag;
   }
-  
+
   //@}
 
 private:
   /** \name Private Members */
   //@{
- 
+
   /** \brief . */
   static const std::string& getPairTag(){
     static const std::string pairTag = "Pair";
@@ -506,13 +506,13 @@ private:
 
   /** \brief . */
   static const std::string& getDefaultValidatorIdAttributeName(){
-    static const std::string defaultValidatorIdAttributeName = 
+    static const std::string defaultValidatorIdAttributeName =
       "defaultValidatorId";
     return defaultValidatorIdAttributeName;
   }
-  
+
   //@}
-  
+
 };
 
 /** \brief An xml converter for BoolValidatorDependencies
@@ -528,7 +528,7 @@ private:
       ...Any other dependent parameters...
     </Dependency>
  \endcode
- * You don't have to include both a "trueValidatorId" and "falseValidatorId" 
+ * You don't have to include both a "trueValidatorId" and "falseValidatorId"
  * XML attribute, but you must include at least one of them.
  */
 class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
@@ -537,7 +537,7 @@ public:
 
   /** \name Overridden from ValidatorDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
@@ -550,30 +550,30 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const IDtoValidatorMap& validatorIDsMap) const;
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-    
+
     /** \brief . */
     static const std::string& getFalseValidatorIdAttributeName(){
-      static const std::string falseValidatorIdAttributeName = 
+      static const std::string falseValidatorIdAttributeName =
         "falseValidatorId";
       return falseValidatorIdAttributeName;
     }
 
     /** \brief . */
     static const std::string& getTrueValidatorIdAttributeName(){
-      static const std::string trueValidatorIdAttributeName = 
+      static const std::string trueValidatorIdAttributeName =
         "trueValidatorId";
       return trueValidatorIdAttributeName;
     }
-  
+
   //@}
-  
+
 };
 
 /** \brief An xml converter for RangeValidatorDependencies
@@ -587,9 +587,9 @@ private:
       <Dependent parameterId="Id of dependent parameter"/>
       ...Any other dependent parameters...
       <RangesAndValidators>
-        <Pair min="min value" max="max value" 
+        <Pair min="min value" max="max value"
           validatorId="Id of first mapped validator"/>
-        <Pair min="min value" max="max value" 
+        <Pair min="min value" max="max value"
           validatorId="Id of second mapped validator"/>
         ...Other range-to-validator mappings...
       </RangesAndValidators>
@@ -599,14 +599,14 @@ private:
  * The "defaultValidatorId" XML attribute is optional.
  */
 template<class T>
-class RangeValidatorDependencyXMLConverter : 
+class RangeValidatorDependencyXMLConverter :
   public ValidatorDependencyXMLConverter{
 
 public:
 
   /** \name Overridden from ValidatorDependencyConverter */
   //@{
-  
+
   /** \brief . */
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
@@ -625,13 +625,13 @@ public:
     static const std::string rangesAndValidatorsTag = "RangesAndValidators";
     return rangesAndValidatorsTag;
   }
-  
+
   //@}
 
 private:
   /** \name Private Members */
   //@{
- 
+
 
   /** \brief . */
   static const std::string& getPairTag(){
@@ -660,13 +660,13 @@ private:
 
   /** \brief . */
   static const std::string& getDefaultValidatorIdAttributeName(){
-    static const std::string defaultValidatorIdAttributeName = 
+    static const std::string defaultValidatorIdAttributeName =
       "defaultValidatorId";
     return defaultValidatorIdAttributeName;
   }
 
   //@}
-  
+
 };
 
 template<class T>
@@ -676,14 +676,14 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   XMLObject& xmlObj,
   ValidatortoIDMap& validatorIDsMap) const
 {
-  RCP<const RangeValidatorDependency<T> > castedDependency = 
+  RCP<const RangeValidatorDependency<T> > castedDependency =
     rcp_dynamic_cast<const RangeValidatorDependency<T> >(dependency, true);
 
   XMLObject rangesAndValidatorsTag(getRangesAndValidatorsTag());
 
   castedDependency->getRangeToValidatorMap();
   for(
-    typename RangeValidatorDependency<T>::RangeToValidatorMap::const_iterator 
+    typename RangeValidatorDependency<T>::RangeToValidatorMap::const_iterator
       it = castedDependency->getRangeToValidatorMap().begin();
     it != castedDependency->getRangeToValidatorMap().end();
     ++it)
@@ -693,7 +693,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     if(validatorIDsMap.find(it->second) == validatorIDsMap.end()){
       validatorIDsMap.insert(it->second);
     }
-    ParameterEntryValidator::ValidatorID validatorID = 
+    ParameterEntryValidator::ValidatorID validatorID =
       validatorIDsMap.find(it->second)->second;
     XMLObject pairTag(getPairTag());
     pairTag.addAttribute(getMinAttributeName(), min);
@@ -702,7 +702,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     rangesAndValidatorsTag.addChild(pairTag);
   }
   xmlObj.addChild(rangesAndValidatorsTag);
-  RCP<const ParameterEntryValidator> defaultValidator = 
+  RCP<const ParameterEntryValidator> defaultValidator =
     castedDependency->getDefaultValidator();
   if(nonnull(defaultValidator)){
     if(validatorIDsMap.find(defaultValidator) == validatorIDsMap.end()){
@@ -715,7 +715,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
 }
 
 template<class T>
-RCP<ValidatorDependency> 
+RCP<ValidatorDependency>
 RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   const XMLObject& xmlObj,
   RCP<const ParameterEntry> dependee,
@@ -723,15 +723,15 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   const IDtoValidatorMap& validatorIDsMap) const
 {
 
-  int result = xmlObj.findFirstChild(getRangesAndValidatorsTag()); 
+  int result = xmlObj.findFirstChild(getRangesAndValidatorsTag());
   TEUCHOS_TEST_FOR_EXCEPTION(result == -1,
     MissingRangesAndValidatorsTagException,
-    "Error: All RangeValidatorDependencies must have a " << 
+    "Error: All RangeValidatorDependencies must have a " <<
     getRangesAndValidatorsTag() << " tag!" << std::endl << std::endl);
 
   XMLObject rangesAndValidatorsTag = xmlObj.getChild(result);
 
-  typename RangeValidatorDependency<T>::RangeToValidatorMap 
+  typename RangeValidatorDependency<T>::RangeToValidatorMap
     rangesAndValidators;
   for(int i = 0 ; i < rangesAndValidatorsTag.numChildren(); ++i){
     XMLObject child = rangesAndValidatorsTag.getChild(i);
@@ -740,15 +740,15 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     ParameterEntryValidator::ValidatorID currentID =
       child.getRequired<ParameterEntryValidator::ValidatorID>(
           getValidatorIdAttributeName());
-      
+
     TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(currentID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find validator in given ValidatorIDsMap! " << std::endl <<
       std::endl);
-    RCP<ParameterEntryValidator> validator = 
+    RCP<ParameterEntryValidator> validator =
       validatorIDsMap.find(currentID)->second;
-   
+
     rangesAndValidators.insert(
       typename RangeValidatorDependency<T>::RangeValidatorPair(
         typename RangeValidatorDependency<T>::Range(min, max), validator));
@@ -756,14 +756,14 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
 
   RCP<ParameterEntryValidator> defaultValidator = null;
   if(xmlObj.hasAttribute(getDefaultValidatorIdAttributeName())){
-    ParameterEntryValidator::ValidatorID defaultValiID = 
+    ParameterEntryValidator::ValidatorID defaultValiID =
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getDefaultValidatorIdAttributeName());
     TEUCHOS_TEST_FOR_EXCEPTION(
       validatorIDsMap.find(defaultValiID) == validatorIDsMap.end(),
       MissingValidatorException,
       "Could not find a validator (for the default validator) " <<
-      "corresponding to the ID " << defaultValiID << 
+      "corresponding to the ID " << defaultValiID <<
       " in the given validatorIDsMap!" << std::endl << std::endl);
     defaultValidator = validatorIDsMap.find(defaultValiID)->second;
   }
@@ -786,7 +786,7 @@ public:
 
   /** \brief . */
   RCP<Dependency> convertXML(
-    const XMLObject& xmlObj, 
+    const XMLObject& xmlObj,
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
@@ -794,11 +794,11 @@ public:
 
   /** \brief . */
   void convertDependency(
-    const RCP<const Dependency> dependency, 
+    const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const;
-  
+
   //@}
 
 protected:
@@ -808,7 +808,7 @@ protected:
    * dependee, dependtns, and a funciton object.
    *
    * Because ArrayModifierDependency is an abstact class with pure virtual
-   * methods we need to be able to get a concrete object to actually 
+   * methods we need to be able to get a concrete object to actually
    * return. This is the reponsibility of any classes subclassing this one.
    *
    * @param dependee The dependee to be used in the construction of the
@@ -817,21 +817,21 @@ protected:
    * concrete dependency.
    * @param function The function object to be used in the construction of the
    * concrete dependency.
-   * @return A concrete dependency object.which subclasses 
+   * @return A concrete dependency object.which subclasses
    * ArrayModifierDependency.
    */
-  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> >
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
-    const Dependency::ParameterEntryList dependents,
+    Dependency::ParameterEntryList dependents,
     RCP<const SimpleFunctionObject<DependeeType> > function) const = 0;
 
 };
 
 template<class DependeeType, class DependentType>
-RCP<Dependency> 
+RCP<Dependency>
 ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
-  const XMLObject& xmlObj, 
+  const XMLObject& xmlObj,
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
@@ -847,14 +847,14 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
     functionObject = rcp_dynamic_cast<SimpleFunctionObject<DependeeType> >(
       FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
   }
-  return 
+  return
     getConcreteDependency(*(dependees.begin()), dependents, functionObject);
 }
 
 template<class DependeeType, class DependentType>
 void
 ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
-    const RCP<const Dependency> dependency, 
+    const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const
@@ -862,7 +862,7 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDepende
   RCP<const ArrayModifierDependency<DependeeType, DependentType> > castedDep =
     rcp_dynamic_cast<const ArrayModifierDependency<DependeeType, DependentType> >(
       dependency);
-  RCP<const SimpleFunctionObject<DependeeType> > functionObject = 
+  RCP<const SimpleFunctionObject<DependeeType> > functionObject =
     castedDep->getFunctionObject();
   if(functionObject != null){
     XMLObject functionXML = FunctionObjectXMLConverterDB::convertFunctionObject(
@@ -876,7 +876,7 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDepende
  *
  * The valid XML representation of a NumberArrayLengthDependency is:
  * \code
-    <Dependency 
+    <Dependency
       type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
     >
       <Dependee parameterId="Id of dependee parameter"/>
@@ -887,14 +887,14 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDepende
  \endcode
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependencyXMLConverter : 
+class NumberArrayLengthDependencyXMLConverter :
   public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>{
 
 protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> >
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
@@ -904,7 +904,7 @@ protected:
 };
 
 template<class DependeeType, class DependentType>
-RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+RCP<ArrayModifierDependency<DependeeType, DependentType> >
 NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
   RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,
@@ -922,7 +922,7 @@ return rcp(
  *
  * The valid XML representation of a TwoDRowDependency is:
  * \code
-    <Dependency 
+    <Dependency
       type="TwoDRowDependency(dependee_number_type, type_of_array_values)"
     >
       <Dependee parameterId="Id of dependee parameter"/>
@@ -941,7 +941,7 @@ protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> >
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
@@ -951,7 +951,7 @@ protected:
 };
 
 template<class DependeeType, class DependentType>
-RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+RCP<ArrayModifierDependency<DependeeType, DependentType> >
 TwoDRowDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
   RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,
@@ -968,7 +968,7 @@ return rcp(
  *
  * The valid XML representation of a TwoDColDependency is:
  * \code
-    <Dependency 
+    <Dependency
       type="TwoDColDependency(dependee_number_type, type_of_array_values)"
     >
       <Dependee parameterId="Id of dependee parameter"/>
@@ -987,7 +987,7 @@ protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> >
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
@@ -997,7 +997,7 @@ protected:
 };
 
 template<class DependeeType, class DependentType>
-RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+RCP<ArrayModifierDependency<DependeeType, DependentType> >
 TwoDColDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
   RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,

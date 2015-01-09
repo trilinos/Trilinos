@@ -272,6 +272,9 @@ int read_mesh_params(const std::string &exo_file,
       return 0;
     }
 
+    if (num_elems == 0)
+      continue;
+    
     if(cnt == 0)
       sphere->end[0] = num_elems;
 
@@ -297,11 +300,11 @@ int read_mesh_params(const std::string &exo_file,
   printf("ExodusII mesh information\n");
   if(strlen(mesh->title) > 0)
     printf("\ttitle: %s\n", mesh->title);
-  printf("\tgeometry dimension: "ST_ZU"\n", mesh->num_dims);
-  printf("\tnumber of nodes: "ST_ZU"\tnumber of elements: "ST_ZU"\n", mesh->num_nodes,
+  printf("\tgeometry dimension: " ST_ZU "\n", mesh->num_dims);
+  printf("\tnumber of nodes: " ST_ZU "\tnumber of elements: " ST_ZU "\n", mesh->num_nodes,
          mesh->num_elems);
-  printf("\tnumber of element blocks: "ST_ZU"\n", mesh->num_el_blks);
-  printf("\tnumber of node sets: "ST_ZU"\tnumber of side sets: "ST_ZU"\n",
+  printf("\tnumber of element blocks: " ST_ZU "\n", mesh->num_el_blks);
+  printf("\tnumber of node sets: " ST_ZU "\tnumber of side sets: " ST_ZU "\n",
          mesh->num_node_sets, mesh->num_side_sets);
 
   return 1;
@@ -388,6 +391,8 @@ int read_mesh(const std::string &exo_file,
 	Gen_Error(0, "fatal: unable to read element block");
 	return 0;
       }
+    if (el_blk_cnts[cnt] == 0)
+      continue;
 
     blk_elem_type = get_elem_type(elem_type, nodes_per_elem, mesh->num_dims);
 

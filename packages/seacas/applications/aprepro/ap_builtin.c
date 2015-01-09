@@ -1,6 +1,6 @@
 /* 
  * Copyright 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,9 +70,9 @@
 #endif
 
 #if defined(sun)
-#define LOG1P(x)	log1p(x)
+#define LOG1P(x)        log1p(x)
 #else
-#define LOG1P(x)	log(1.0 + (x))
+#define LOG1P(x)        log(1.0 + (x))
 #endif
 
 extern aprepro_options ap_options;
@@ -153,7 +153,7 @@ char  *do_extract(char *string, char *begin, char *end);
 double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
 double do_lgamma(double val);
 double do_juldayhms(double mon, double day, double year,
-			    double h, double mi, double se);
+                            double h, double mi, double se);
 double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
 char  *do_include_path(char *newpath);
@@ -644,7 +644,7 @@ double cof[] =
  -1.231739516, 0.120858003e-2, -0.536382e-5};
 double do_lgamma(double val)
 {
-#define STP	2.50662827465
+#define STP     2.50662827465
   double x, tmp, ser;
   int j;
 
@@ -661,7 +661,7 @@ double do_lgamma(double val)
 }
 
 double do_juldayhms(double mon, double day, double year,
-	      double h, double mi, double se)
+              double h, double mi, double se)
 {
   long m = mon, d = day, y = year;
   long c, ya, j;
@@ -838,7 +838,7 @@ char *do_tolower(char *string)
   while (*p != '\0')
     {
       if (isupper((int)*p))
-	*p = tolower((int)*p);
+        *p = tolower((int)*p);
       p++;
     }
   return (string);
@@ -850,7 +850,7 @@ char *do_toupper(char *string)
   while (*p != '\0')
     {
       if (islower((int)*p))
-	*p = toupper((int)*p);
+        *p = toupper((int)*p);
       p++;
     }
   return (string);
@@ -924,28 +924,32 @@ double do_word_count(char *string, char *delm)
 
 char *do_get_word(double n, char *string, char *delm)
 {
-   char *temp, *token, *word;
-   int i;
+  char *temp = NULL;
+  char *token = NULL;
+  char *word = NULL;
+  int i;
 
-    NEWSTR(string, temp);
-    token = strtok(temp,delm);
+  NEWSTR(string, temp);
+  token = strtok(temp,delm);
+  if (token != NULL) {
     if( n == 1 )
-     {
+    {
       NEWSTR(token,word);
       free(temp);
       return(word);
-     }
+    }
     for(i=1; i<n; i++)
-	{
-        if( (token = strtok(NULL,delm)) == NULL )
-	    {
-	        free(temp);
-            return(NULL);
-            }
-	 }
-     NEWSTR(token,word);
-     free(temp);
-     return(word);
+    {
+      if( (token = strtok(NULL,delm)) == NULL )
+      {
+        free(temp);
+        return(NULL);
+      }
+    }
+    NEWSTR(token,word);
+  }
+  free(temp);
+  return(word);
 }
 
 char *do_file_to_string(char *filename)
@@ -976,6 +980,10 @@ char *do_file_to_string(char *filename)
   size = st.st_size+2;
 
   lines = malloc(size * sizeof(char)+1);
+  if (lines == NULL) {
+    perror("Aprepro: ERR: Out of memory in file_to_string function.\n");
+    exit(EXIT_FAILURE);
+  }
   lines[0] = '\0';
   
   fp = open_file(filename, "r");
@@ -987,6 +995,7 @@ char *do_file_to_string(char *filename)
 
   assert(strlen(lines) <= size);
   NEWSTR(lines, ret_string);
+  fclose(fp);
   if (line) free(line);
   if (lines) free(lines);
   return ret_string;
@@ -1167,10 +1176,10 @@ char *do_get_csv(char *filename, double row, double col)
     rows++;
     if (rows == row) {
       /* Found the correct row, now get the value at the specified
-	 column */
+         column */
       double num_cols = do_word_count(line, delim);
       if (num_cols  > col) {
-	value = do_get_word(col, line, delim);
+        value = do_get_word(col, line, delim);
       }
       break;
     }
@@ -1200,18 +1209,22 @@ char *do_print_array(array *my_array_data)
     
     int size = 32 * rows * cols;
     lines = malloc(size * sizeof(char) + 1);
+    if (lines == NULL) {
+      perror("Aprepro: ERR: Out of memory in print_array function.\n");
+      exit(EXIT_FAILURE);
+    }
     lines[0] = '\0';
     
     for (ir=0; ir < rows; ir++) {
       if (ir > 0)
-	strcat(lines, "\n");
+        strcat(lines, "\n");
       strcat(lines, "\t");
 
       for (ic=0; ic < cols; ic++) {
-	assert(strlen(lines) <= size);
-	sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
-	if (ic < cols-1)
-	  strcat(lines, "\t");
+        assert(strlen(lines) <= size);
+        sprintf(&lines[strlen(lines)], format->value.svar, my_array_data->data[idx++]);
+        if (ic < cols-1)
+          strcat(lines, "\t");
       }
     }
     assert(strlen(lines) <= size);

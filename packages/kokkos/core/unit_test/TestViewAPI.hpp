@@ -43,6 +43,7 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Core.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -80,7 +81,7 @@ struct TestViewOperator
     , v2( "v2" , N )
     {}
 
-  static void apply()
+  static void testit()
   {
     Kokkos::parallel_for( N , TestViewOperator() );
   }
@@ -99,17 +100,6 @@ struct TestViewOperator
 };
 
 /*--------------------------------------------------------------------------*/
-
-template< class ViewType >
-ViewType create_test_view( const typename ViewType::shape_type shape )
-{
-  const unsigned stride =
-    Kokkos::Impl::ShapeMap< typename ViewType::shape_type,
-                                 typename ViewType::array_layout >
-    ::template stride< typename ViewType::memory_space >( shape );
-
-  return ViewType( (typename ViewType::scalar_type *) 0 , shape , stride );
-}
 
 template< class DataType >
 struct rank {
@@ -175,7 +165,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -282,7 +272,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -377,7 +367,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -477,7 +467,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -574,7 +564,7 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -662,15 +652,15 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  std::string("left") )
+    , right( std::string("right") )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -763,13 +753,13 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate("left") )
+    , right( Kokkos::ViewAllocate("right") )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -860,15 +850,15 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   TestViewOperator_LeftAndRight()
     : lsh()
     , rsh()
-    , left(  "left" )
-    , right( "right" )
+    , left(  Kokkos::ViewAllocate() )
+    , right( Kokkos::ViewAllocate() )
     , left_stride( left )
     , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
 
-  static void apply()
+  static void testit()
   {
     TestViewOperator_LeftAndRight driver ;
 
@@ -902,27 +892,6 @@ class TestViewAPI
 {
 public:
   typedef DeviceType        device ;
-  typedef typename DeviceType::host_mirror_device_type host ;
-
-  TestViewAPI()
-  {
-    run_test_mirror();
-    run_test();
-    run_test_scalar();
-    run_test_const();
-    run_test_subview();
-    run_test_vector();
-
-    TestViewOperator< T , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3][4] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2][3] , device >::apply();
-    TestViewOperator_LeftAndRight< int[2] , device >::apply();
-  }
 
   enum { N0 = 1000 ,
          N1 = 3 ,
@@ -937,6 +906,29 @@ public:
   typedef Kokkos::View< const T*[N1][N2][N3] , device > const_dView4 ;
 
   typedef Kokkos::View< T****, device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
+
+  typedef typename dView0::host_mirror_space host ;
+
+  TestViewAPI()
+  {
+    run_test_mirror();
+    run_test();
+    run_test_scalar();
+    run_test_const();
+    run_test_subview();
+    run_test_subview_strided();
+    run_test_vector();
+
+    TestViewOperator< T , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4][2] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3][4] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4][2] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3][4] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2][3] , device >::testit();
+    TestViewOperator_LeftAndRight< int[2] , device >::testit();
+  }
 
   static void run_test_mirror()
   {
@@ -1041,8 +1033,7 @@ public:
 
     {
       // Destruction of this view should be harmless
-      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
-                                                dx.ptr_on_device() ,
+      const_dView4 unmanaged_from_ptr_const_dx( dx.ptr_on_device() ,
                                                 dx.dimension_0() ,
                                                 dx.dimension_1() ,
                                                 dx.dimension_2() ,
@@ -1163,10 +1154,52 @@ public:
     dView4 d4( "d4" , N0 );
 
     sView s0 = d0 ;
-    sView s1 = Kokkos::subview< sView >( d1 , 1 );
-    sView s2 = Kokkos::subview< sView >( d2 , 1 , 1 );
-    sView s3 = Kokkos::subview< sView >( d3 , 1 , 1 , 1 );
-    sView s4 = Kokkos::subview< sView >( d4 , 1 , 1 , 1 , 1 );
+    sView s1 = Kokkos::subview( d1 , 1 );
+    sView s2 = Kokkos::subview( d2 , 1 , 1 );
+    sView s3 = Kokkos::subview( d3 , 1 , 1 , 1 );
+    sView s4 = Kokkos::subview( d4 , 1 , 1 , 1 , 1 );
+  }
+
+  static void run_test_subview_strided()
+  {
+    typedef Kokkos::View< int **** , Kokkos::LayoutLeft  , host >  view_left_4 ;
+    typedef Kokkos::View< int **** , Kokkos::LayoutRight , host >  view_right_4 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutLeft  , host >  view_left_2 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutRight , host >  view_right_2 ;
+
+    typedef Kokkos::View< int * ,  Kokkos::LayoutStride , host >  view_stride_1 ;
+    typedef Kokkos::View< int ** ,  Kokkos::LayoutStride , host >  view_stride_2 ;
+
+    view_left_2  xl2("xl2", 100 , 200 );
+    view_right_2 xr2("xr2", 100 , 200 );
+    view_stride_1  yl1 = Kokkos::subview( xl2 , 0 , Kokkos::ALL() );
+    view_stride_1  yl2 = Kokkos::subview( xl2 , 1 , Kokkos::ALL() );
+    view_stride_1  yr1 = Kokkos::subview( xr2 , 0 , Kokkos::ALL() );
+    view_stride_1  yr2 = Kokkos::subview( xr2 , 1 , Kokkos::ALL() );
+
+    ASSERT_EQ( yl1.dimension_0() , xl2.dimension_1() );
+    ASSERT_EQ( yl2.dimension_0() , xl2.dimension_1() );
+    ASSERT_EQ( yr1.dimension_0() , xr2.dimension_1() );
+    ASSERT_EQ( yr2.dimension_0() , xr2.dimension_1() );
+
+    ASSERT_EQ( & yl1(0) - & xl2(0,0) , 0 );
+    ASSERT_EQ( & yl2(0) - & xl2(1,0) , 0 );
+    ASSERT_EQ( & yr1(0) - & xr2(0,0) , 0 );
+    ASSERT_EQ( & yr2(0) - & xr2(1,0) , 0 );
+
+    view_left_4 xl4( "xl4" , 10 , 20 , 30 , 40 );
+    view_right_4 xr4( "xr4" , 10 , 20 , 30 , 40 );
+
+    view_stride_2 yl4 = Kokkos::subview( xl4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+    view_stride_2 yr4 = Kokkos::subview( xr4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+
+    ASSERT_EQ( yl4.dimension_0() , xl4.dimension_1() );
+    ASSERT_EQ( yl4.dimension_1() , xl4.dimension_3() );
+    ASSERT_EQ( yr4.dimension_0() , xr4.dimension_1() );
+    ASSERT_EQ( yr4.dimension_1() , xr4.dimension_3() );
+
+    ASSERT_EQ( & yl4(4,4) - & xl4(1,4,2,4) , 0 );
+    ASSERT_EQ( & yr4(4,4) - & xr4(1,4,2,4) , 0 );
   }
 
   static void run_test_vector()
@@ -1186,33 +1219,33 @@ public:
     multivector_type mv = multivector_type( "mv" , Length , Count );
     multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
 
-    vector_type v1 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 0 );
-    vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );
-    vector_type v3 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 2 );
+    vector_type v1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    vector_type v2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    vector_type v3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
 
-    vector_type rv1 = Kokkos::subview< vector_type >( mv_right , 0 , Kokkos::ALL() );
-    vector_type rv2 = Kokkos::subview< vector_type >( mv_right , 1 , Kokkos::ALL() );
-    vector_type rv3 = Kokkos::subview< vector_type >( mv_right , 2 , Kokkos::ALL() );
+    vector_type rv1 = Kokkos::subview( mv_right , 0 , Kokkos::ALL() );
+    vector_type rv2 = Kokkos::subview( mv_right , 1 , Kokkos::ALL() );
+    vector_type rv3 = Kokkos::subview( mv_right , 2 , Kokkos::ALL() );
 
-    multivector_type mv1 = Kokkos::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
-                                                                     std::make_pair( 2 , 5 ) );
-
-    multivector_right_type mvr1 =
-      Kokkos::subview< multivector_right_type >( mv_right ,
-                                                 std::make_pair( 1 , 998 ) ,
+    multivector_type mv1 = Kokkos::subview( mv , std::make_pair( 1 , 998 ) ,
                                                  std::make_pair( 2 , 5 ) );
 
-    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 0 );
-    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 1 );
-    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 2 );
+    multivector_right_type mvr1 =
+      Kokkos::subview( mv_right ,
+                       std::make_pair( 1 , 998 ) ,
+                       std::make_pair( 2 , 5 ) );
 
-    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 0 );
-    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 1 );
-    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 2 );
+    const_vector_type cv1 = Kokkos::subview( mv , Kokkos::ALL(), 0 );
+    const_vector_type cv2 = Kokkos::subview( mv , Kokkos::ALL(), 1 );
+    const_vector_type cv3 = Kokkos::subview( mv , Kokkos::ALL(), 2 );
 
-    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 0 );
-    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 1 );
-    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 2 );
+    vector_right_type vr1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    vector_right_type vr2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    vector_right_type vr3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
+
+    const_vector_right_type cvr1 = Kokkos::subview( mv , Kokkos::ALL() , 0 );
+    const_vector_right_type cvr2 = Kokkos::subview( mv , Kokkos::ALL() , 1 );
+    const_vector_right_type cvr3 = Kokkos::subview( mv , Kokkos::ALL() , 2 );
 
     ASSERT_TRUE( & v1[0] == & v1(0) );
     ASSERT_TRUE( & v1[0] == & mv(0,0) );

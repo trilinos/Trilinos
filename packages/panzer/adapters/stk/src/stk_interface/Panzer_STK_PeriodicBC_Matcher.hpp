@@ -50,7 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** These functions are utilities to support the implementation of
   * peridic boundary conditions.  They should not be used by externally
@@ -66,14 +66,14 @@ namespace periodic_helpers {
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    matchPeriodicSides(const std::string & left,const std::string & right,
                      const STK_Interface & mesh,
-                     const Matcher & matcher);
+                     const Matcher & matcher, const std::string type_ = "coord");
 
    template <typename Matcher>
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    matchPeriodicSides(const std::string & left,const std::string & right,
                      const STK_Interface & mesh,
                      const Matcher & matcher,
-                     const std::vector<std::pair<std::size_t,std::size_t> > & current);
+                     const std::vector<std::pair<std::size_t,std::size_t> > & current, const std::string type_ = "coord");
 
    /** This returns all the global IDs and coordinates for 
      * a particular side. By "all" that means across all processors.
@@ -81,7 +81,7 @@ namespace periodic_helpers {
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
    getSideIdsAndCoords(const STK_Interface & mesh,
-                       const std::string & sideName);
+                       const std::string & sideName, const std::string type_ = "coord");
  
    /** This returns the locally owned global IDs and coordinates for 
      * a particular side. 
@@ -89,14 +89,14 @@ namespace periodic_helpers {
    std::pair<Teuchos::RCP<std::vector<std::size_t> >,
              Teuchos::RCP<std::vector<Teuchos::Tuple<double,3> > > >
    getLocalSideIdsAndCoords(const STK_Interface & mesh,
-                            const std::string & sideName);
+                            const std::string & sideName, const std::string type_ = "coord");
  
    /** This returns the locally resident (includes ghosted) global IDs
      * for a particular side. 
      */
    Teuchos::RCP<std::vector<std::size_t> >
    getLocalSideIds(const STK_Interface & mesh,
-                   const std::string & sideName);
+                   const std::string & sideName, const std::string type_ = "coord");
  
    /** Determine a map from the specified side to the set of coordinates
      * and Ids passed in. A vector of pairs that maps from (passed in gids)->(locally owned gids)
@@ -107,7 +107,7 @@ namespace periodic_helpers {
    getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
                             const std::vector<Teuchos::Tuple<double,3> > & side_coords,
                             const STK_Interface & mesh,
-                            const std::string & sideName,const Matcher & matcher);
+                            const std::string & sideName,const Matcher & matcher, const std::string type_ = "coord");
  
    /** Builds a vector of local ids and their matching global indices.
      * This requires a previously discovered vector of pairs of locally matched
@@ -157,6 +157,11 @@ public:
      * boundary condition.
      */
    virtual std::string getString() const = 0;
+
+   /** Return a one line string that describes the type of periodic
+     * boundary condition.
+     */
+   virtual std::string getType() const = 0;
 };
 
 /** Default implementation class for the periodic boundary conditions.
@@ -167,10 +172,10 @@ public:
 template <typename Matcher>
 class PeriodicBC_Matcher : public PeriodicBC_MatcherBase {
 public:
-   PeriodicBC_Matcher(const std::string & left, const std::string & right,const Matcher & matcher)
-      : left_(left), right_(right), matcher_(matcher) {}
+   PeriodicBC_Matcher(const std::string & left, const std::string & right,const Matcher & matcher, const std::string type = "coord")
+      : left_(left), right_(right), matcher_(matcher), type_(type) {}
    PeriodicBC_Matcher(const PeriodicBC_Matcher & src)
-      : left_(src.left_), right_(src.right_), matcher_(src.matcher_) {}
+      : left_(src.left_), right_(src.right_), matcher_(src.matcher_), type_(src.type_) {}
 
    /** Simply returns a vector of pairs that match
      * the IDs owned by this processor to their
@@ -188,9 +193,9 @@ public:
                   ) const
    { 
       if(currentState==Teuchos::null) 
-         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_); 
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,type_); 
       else
-         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState); 
+         return periodic_helpers::matchPeriodicSides(left_,right_,mesh,matcher_,*currentState,type_); 
    }
 
    std::string getString() const 
@@ -202,6 +207,11 @@ public:
       return ss.str();
    }
 
+   std::string getType() const 
+   { 
+      return type_;
+   }
+
 private:
    PeriodicBC_Matcher(); // hidden!
 
@@ -209,6 +219,8 @@ private:
    std::string right_; // that we realize that these boundaries are
                                // opposite of each other.
    Matcher matcher_;
+
+   std::string type_; // type of periodic BC: coord, edge, (face)
 
 };
 
@@ -218,8 +230,8 @@ private:
   */
 template <typename Matcher>
 Teuchos::RCP<PeriodicBC_MatcherBase> 
-buildPeriodicBC_Matcher(const std::string & left, const std::string & right, const Matcher & matcher)
-{ return Teuchos::rcp(new PeriodicBC_Matcher<Matcher>(left,right,matcher)); }
+buildPeriodicBC_Matcher(const std::string & left, const std::string & right, const Matcher & matcher, const std::string type = "coord")
+{ return Teuchos::rcp(new PeriodicBC_Matcher<Matcher>(left,right,matcher,type)); }
 
 } // end panzer_stk
 

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -62,9 +62,9 @@
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 
-void BiCGSTAB(Epetra_CrsMatrix &A, Epetra_Vector &x, Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, double Tolerance, 
+void BiCGSTAB(Epetra_CrsMatrix &A, Epetra_Vector &x, Epetra_Vector &b,
+	      Ifpack_CrsRiluk *M,
+	      int Maxiter, double Tolerance,
 	      double *residual, bool verbose);
 int Statistics(const Epetra_CrsSingletonFilter & filter);
 int main(int argc, char *argv[]) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   if (MyPID==0) verbose = true;
 
   if(argc < 2 && verbose) {
-    cerr << "Usage: " << argv[0] 
+    cerr << "Usage: " << argv[0]
 	 << " HPC_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
   Comm.Barrier();
 
   Epetra_Map * map;
-  Epetra_CrsMatrix * A; 
-  Epetra_Vector * x; 
+  Epetra_CrsMatrix * A;
+  Epetra_Vector * x;
   Epetra_Vector * b;
   Epetra_Vector * xexact;
 
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
   if (verbose)
     cout << "Inf norm of Original Matrix = " << A->NormInf() << endl
 	 << "Inf norm of Original RHS    = " << normb << endl;
-  
+
   Epetra_Time ReductionTimer(Comm);
   Epetra_CrsSingletonFilter SingletonFilter;
   Comm.Barrier();
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   Epetra_CrsMatrix * Ap = dynamic_cast<Epetra_CrsMatrix *>(ReducedProblem->GetMatrix());
   Epetra_Vector * bp = (*ReducedProblem->GetRHS())(0);
   Epetra_Vector * xp = (*ReducedProblem->GetLHS())(0);
-  
+
 
   if (smallProblem)
     cout << " Reduced Matrix = " << endl << *Ap << endl
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 
 
     Epetra_Flops fact_counter;
-  
+
     elapsed_time = timer.ElapsedTime();
     ILUK = new Ifpack_CrsRiluk(*IlukGraph);
     ILUK->SetFlopCounter(fact_counter);
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = ILUK->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "Time to compute preconditioner values = " 
+    if (verbose) cout << "Time to compute preconditioner values = "
 		    << elapsed_time << endl
 		    << "MFLOPS for Factorization = " << MFLOPs << endl;
     //cout << *ILUK << endl;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
   double normreducedb, normreduceda;
   bp->NormInf(&normreducedb);
   normreduceda = Ap->NormInf();
-  if (verbose) 
+  if (verbose)
     cout << "Inf norm of Reduced Matrix = " << normreduceda << endl
 	 << "Inf norm of Reduced RHS    = " << normreducedb << endl;
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "Time to compute solution = " 
+  if (verbose) cout << "Time to compute solution = "
 		    << elapsed_time << endl
 		    << "Number of operations in solve = " << total_flops << endl
 		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
@@ -273,11 +273,11 @@ int main(int argc, char *argv[]) {
   x->Norm2(&normx);
   xexact->Norm2(&normxexact);
 
-  if (verbose) 
+  if (verbose)
     cout << "2-norm of computed solution                               = " << normx << endl
 	 << "2-norm of exact solution                                  = " << normxexact << endl
 	 << "2-norm of difference between computed and exact solution  = " << residual << endl;
-    
+
   if (verbose1 && residual>1.0e-5) {
     if (verbose)
       cout << "Difference between computed and exact solution appears large..." << endl
@@ -286,11 +286,11 @@ int main(int argc, char *argv[]) {
     Epetra_Vector bdiff(*b);
     assert(A->Multiply(false, resid, bdiff)==0);
     assert(bdiff.Norm2(&residual)==0);
-    if (verbose) 
+    if (verbose)
       cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
-    
+
   }
-  if (verbose) 
+  if (verbose)
     cout << "********************************************************" << endl
 	 << "              Solving again with 2*Ax=2*b" << endl
 	 << "********************************************************" << endl;
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
   if (LevelFill>-1) {
 
     Epetra_Flops fact_counter;
-  
+
     elapsed_time = timer.ElapsedTime();
 
     int initerr = ILUK->InitValues(*Ap);
@@ -329,17 +329,17 @@ int main(int argc, char *argv[]) {
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = ILUK->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "Time to compute preconditioner values = " 
+    if (verbose) cout << "Time to compute preconditioner values = "
 		    << elapsed_time << endl
 		    << "MFLOPS for Factorization = " << MFLOPs << endl;
     double Condest;
     ILUK->Condest(false, Condest);
-    
+
     if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
   }
   bp->NormInf(&normreducedb);
   normreduceda = Ap->NormInf();
-  if (verbose) 
+  if (verbose)
     cout << "Inf norm of Reduced Matrix = " << normreduceda << endl
 	 << "Inf norm of Reduced RHS    = " << normreducedb << endl;
 
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "Time to compute solution = " 
+  if (verbose) cout << "Time to compute solution = "
 		    << elapsed_time << endl
 		    << "Number of operations in solve = " << total_flops << endl
 		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
@@ -366,11 +366,11 @@ int main(int argc, char *argv[]) {
   x->Norm2(&normx);
   xexact->Norm2(&normxexact);
 
-  if (verbose) 
+  if (verbose)
     cout << "2-norm of computed solution                               = " << normx << endl
 	 << "2-norm of exact solution                                  = " << normxexact << endl
 	 << "2-norm of difference between computed and exact solution  = " << residual << endl;
-    
+
   if (verbose1 && residual>1.0e-5) {
     if (verbose)
       cout << "Difference between computed and exact solution appears large..." << endl
@@ -379,28 +379,28 @@ int main(int argc, char *argv[]) {
     Epetra_Vector bdiff(*b);
     assert(A->Multiply(false, resid, bdiff)==0);
     assert(bdiff.Norm2(&residual)==0);
-    if (verbose) 
+    if (verbose)
       cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
-    
+
   }
- 
+
 
 
   if (ILUK!=0) delete ILUK;
   if (IlukGraph!=0) delete IlukGraph;
-				       
+				
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
 return 0 ;
 }
-void BiCGSTAB(Epetra_CrsMatrix &A, 
-	      Epetra_Vector &x, 
-	      Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, 
-	      double Tolerance, 
+void BiCGSTAB(Epetra_CrsMatrix &A,
+	      Epetra_Vector &x,
+	      Epetra_Vector &b,
+	      Ifpack_CrsRiluk *M,
+	      int Maxiter,
+	      double Tolerance,
 	      double *residual, bool verbose) {
 
   // Allocate vectors needed for iterations
@@ -411,7 +411,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
   Epetra_Vector r(b.Map()); r.SetFlopCounter(x);
   Epetra_Vector rtilde(x.Map()); rtilde.PutScalar(1.0); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
-  
+
 
   A.Multiply(false, x, r); // r = A*x
 
@@ -429,7 +429,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
 		    << " Scaled residual = " << scaled_r_norm << endl;
 
 
-  for (int i=0; i<Maxiter; i++) { // Main iteration loop   
+  for (int i=0; i<Maxiter; i++) { // Main iteration loop
 
     double beta = (rhon/rhonm1) * (alpha/omega);
     rhonm1 = rhon;
@@ -441,22 +441,22 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     double dtemp = - beta*omega;
 
     p.Update(1.0, r, dtemp, v, beta);
-    if (M==0) 
+    if (M==0)
       phat.Scale(1.0, p);
     else
       M->Solve(false, p, phat);
     A.Multiply(false, phat, v);
 
-    
+
     rtilde.Dot(v,&sigma);
-    alpha = rhon/sigma;    
+    alpha = rhon/sigma;
 
     /* s = r - alpha*v                     */
     /* shat = M^-1 s                       */
     /* r = A shat (r is a tmp here for t ) */
 
     s.Update(-alpha, v, 1.0, r, 0.0);
-    if (M==0) 
+    if (M==0)
       shat.Scale(1.0, s);
     else
       M->Solve(false, s, shat);
@@ -470,8 +470,8 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     /* r = s - omega*r */
 
     x.Update(alpha, phat, omega, shat, 1.0);
-    r.Update(1.0, s, -omega); 
-    
+    r.Update(1.0, s, -omega);
+
     r.Norm2(&r_norm);
     scaled_r_norm = r_norm/b_norm;
     r.Dot(rtilde,&rhon);

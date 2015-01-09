@@ -53,7 +53,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** This class is a gather operation from the mesh. It
   * takes a set of field names and basis objects and
@@ -70,7 +70,7 @@ class GatherFields
     public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:
-  GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p);
+  GatherFields(const Teuchos::RCP<const panzer_stk_classic::STK_Interface> & mesh,const Teuchos::ParameterList & p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -79,7 +79,7 @@ public:
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
-  typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
+  typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
 
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > gatherFields_;
   std::vector<VariableField*> stkFields_;

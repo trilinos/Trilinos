@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,7 +67,7 @@ Constraint(
     const Teuchos::RCP<const NOX::Abstract::Vector>& psi,
     int bif_param) :
   LOCA::TurningPoint::MinimallyAugmented::Constraint(global_data, topParams,
-						     pfParams, g, bif_param),
+                             pfParams, g, bif_param),
   pf_grp(g),
   psi_vector(psi),
   dgdx(psi->createMultiVector(2, NOX::ShapeCopy)),
@@ -76,8 +76,8 @@ Constraint(
 }
 
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
-Constraint(const LOCA::Pitchfork::MinimallyAugmented::Constraint& source, 
-	   NOX::CopyType type) : 
+Constraint(const LOCA::Pitchfork::MinimallyAugmented::Constraint& source,
+       NOX::CopyType type) :
   LOCA::TurningPoint::MinimallyAugmented::Constraint(source, type),
   pf_grp(Teuchos::null),
   psi_vector(source.psi_vector),
@@ -105,7 +105,7 @@ void
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
 copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::Pitchfork::MinimallyAugmented::Constraint& source = 
+  const LOCA::Pitchfork::MinimallyAugmented::Constraint& source =
   dynamic_cast<const LOCA::Pitchfork::MinimallyAugmented::Constraint&>(src);
 
   if (this != &source) {
@@ -141,10 +141,10 @@ computeConstraints()
     return NOX::Abstract::Group::Ok;
 
   // Compute sigma
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     LOCA::TurningPoint::MinimallyAugmented::Constraint::computeConstraints();
   pf_constraints(0,0) = constraints(0,0);
-  
+
 
   // Compute <psi,x>
   pf_constraints(1,0) = pf_grp->innerProduct(*psi_vector, pf_grp->getX());
@@ -160,7 +160,7 @@ computeDX()
     return NOX::Abstract::Group::Ok;
 
   // Compute sigma_x
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDX();
   (*dgdx)[0] = (*sigma_x)[0];
 
@@ -172,17 +172,17 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
-computeDP(const std::vector<int>& paramIDs, 
-	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-	  bool isValidG)
+computeDP(const std::vector<int>& paramIDs,
+      NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+      bool isValidG)
 {
   // Compute sigma_p
-  NOX::Abstract::MultiVector::DenseMatrix dgdp_sub(Teuchos::View, dgdp, 1, 
-						   paramIDs.size()+1, 0, 0);
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::MultiVector::DenseMatrix dgdp_sub(Teuchos::View, dgdp, 1,
+                           paramIDs.size()+1, 0, 0);
+  NOX::Abstract::Group::ReturnType status =
     LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDP(paramIDs,
-								  dgdp_sub,
-								  isValidG);
+                                  dgdp_sub,
+                                  isValidG);
 
   // Compute <psi,x>_p
   if (!isValidG)

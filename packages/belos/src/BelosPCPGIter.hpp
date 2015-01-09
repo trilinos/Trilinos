@@ -684,7 +684,7 @@ namespace Belos {
     if (initialized_ == false) {
       initialize();
     }
-    bool debug = false;
+    const bool debug = false;
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );

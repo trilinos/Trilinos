@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -56,7 +56,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_BlockMap& map, bool ze
     Allocated_(false)
 {
   if(!map.GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   AllocateForCopy();
   if(zeroOut) PutValue(0); // Zero out values
@@ -69,7 +69,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_LongLongVector& Source
     Allocated_(false)
 {
   if(!Source.Map().GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   AllocateForCopy();
   DoCopy(Source.Values_);
@@ -82,7 +82,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(Epetra_DataAccess CV, const Epetra_
     Allocated_(false)
 {
   if(!map.GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   if (CV==Copy) {
     AllocateForCopy();
@@ -103,9 +103,9 @@ Epetra_LongLongVector::~Epetra_LongLongVector(){
 //=========================================================================
 int Epetra_LongLongVector::AllocateForCopy()
 {
-  
+
   if (Allocated_) return(0);
-    
+
   int myLength = MyLength();
   if (myLength>0)
     Values_ = new long long[myLength];
@@ -131,21 +131,21 @@ int Epetra_LongLongVector::AllocateForView()
 
   Allocated_ = true;
   UserAllocated_ = true;
-  
+
   return(0);
 }
 
 //=========================================================================
 int Epetra_LongLongVector::DoView(long long * V)
 {
-  
+
   Values_ = V;
 
   return(0);
 }
 //=============================================================================
 int Epetra_LongLongVector::ExtractCopy(long long *V) const {
-  
+
   int iend = MyLength();
   for (int i=0; i<iend; i++) V[i] = Values_[i];
   return(0);
@@ -186,12 +186,12 @@ long long Epetra_LongLongVector::MinValue() {
 }
 //========================================================================
 Epetra_LongLongVector& Epetra_LongLongVector::operator = (const Epetra_LongLongVector& V) {
-  
+
 
   if (MyLength() != V.MyLength())
     throw ReportError("Length of LongLongVectors incompatible in Assign.  The this LongLongVector has MyLength = " + toString(MyLength())
           + ".  The V LongLongVector has MyLength = " + toString(V.MyLength()), -1);
-  
+
   int iend = MyLength();
   for (int i=0; i<iend; i++) Values_[i] =V[i];
   return(*this);
@@ -200,7 +200,7 @@ Epetra_LongLongVector& Epetra_LongLongVector::operator = (const Epetra_LongLongV
 void Epetra_LongLongVector::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyElements1 =Map(). NumMyElements();
@@ -240,7 +240,7 @@ void Epetra_LongLongVector::Print(std::ostream& os) const {
     os << std::endl;
   }
       }
-      os << std::flush; 
+      os << std::flush;
     }
 
     // Do a few global ops to give I/O a chance to complete
@@ -259,11 +259,12 @@ int Epetra_LongLongVector::CheckSizes(const Epetra_SrcDistObject& Source)
 
 //=========================================================================
 int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
-                                     int NumSameIDs, 
+                                     int NumSameIDs,
                                      int NumPermuteIDs,
-                                     int * PermuteToLIDs, 
+                                     int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor)
+                                     const Epetra_OffsetIndex * Indexor,
+                                     Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_LongLongVector & A = dynamic_cast<const Epetra_LongLongVector &>(Source);
@@ -284,7 +285,7 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     FromElementSizeList = A.Map().ElementSizeList();
   }
   int j, jj, jjj, k;
-  
+
   int NumSameEntries;
 
   bool Case1 = false;
@@ -306,25 +307,36 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
 
   // Short circuit for the case where the source and target vector is the same.
   if (To==From) NumSameEntries = 0;
-  
+
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-  for (j=0; j<NumSameEntries; j++)
-    To[j] = From[j];
+      if (CombineMode==Epetra_AddLocalAlso)
+  for (j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
+      else
+  for (j=0; j<NumSameEntries; j++) To[j] = From[j];
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
-  
+
     // Point entry case
     if (Case1) {
-      
-      for (j=0; j<NumPermuteIDs; j++) 
-  To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+
+      if (CombineMode==Epetra_AddLocalAlso)
+  for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+      else for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
     }
     // constant element size case
     else if (Case2) {
-      
+
+      if (CombineMode==Epetra_AddLocalAlso)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else
       for (j=0; j<NumPermuteIDs; j++) {
   jj = MaxElementSize*PermuteToLIDs[j];
   jjj = MaxElementSize*PermuteFromLIDs[j];
@@ -332,10 +344,19 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
       To[jj+k] = From[jjj+k];
       }
     }
-    
+
     // variable element size case
     else {
-      
+
+      if (CombineMode==Epetra_AddLocalAlso)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else
       for (j=0; j<NumPermuteIDs; j++) {
   jj = ToFirstPointInElementList[PermuteToLIDs[j]];
   jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
@@ -379,7 +400,7 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
     FromElementSizeList = A.Map().ElementSizeList();
   }
 
-  SizeOfPacket = MaxElementSize * (int)sizeof(long long); 
+  SizeOfPacket = MaxElementSize * (int)sizeof(long long);
 
   if(NumExportIDs*SizeOfPacket>LenExports) {
     if (LenExports>0) delete [] Exports;
@@ -391,23 +412,23 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
 
   if (NumExportIDs>0) {
     ptr = (long long *) Exports;
-    
+
     // Point entry case
     if (MaxElementSize==1) for (j=0; j<NumExportIDs; j++) *ptr++ = From[ExportLIDs[j]];
 
     // constant element size case
     else if (ConstantElementSize) {
-      
+
       for (j=0; j<NumExportIDs; j++) {
   jj = MaxElementSize*ExportLIDs[j];
     for (k=0; k<MaxElementSize; k++)
       *ptr++ = From[jj+k];
       }
     }
-    
+
     // variable element size case
     else {
-      
+
       int thisSizeOfPacket = MaxElementSize;
       for (j=0; j<NumExportIDs; j++) {
   ptr = (long long *) Exports + j*thisSizeOfPacket;
@@ -425,11 +446,11 @@ int Epetra_LongLongVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
 //=========================================================================
 int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
                                        int NumImportIDs,
-                                       int * ImportLIDs, 
-                                       int LenImports, 
+                                       int * ImportLIDs,
+                                       int LenImports,
                                        char * Imports,
-                                       int & SizeOfPacket, 
-                                       Epetra_Distributor & Distor, 
+                                       int & SizeOfPacket,
+                                       Epetra_Distributor & Distor,
                                        Epetra_CombineMode CombineMode,
                                        const Epetra_OffsetIndex * Indexor)
 {
@@ -439,7 +460,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   (void)Distor;
   (void)Indexor;
   int j, jj, k;
-  
+
   if(    CombineMode != Add
       && CombineMode != Zero
       && CombineMode != Insert
@@ -460,15 +481,15 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     ToFirstPointInElementList = Map().FirstPointInElementList();
     ToElementSizeList = Map().ElementSizeList();
   }
-  
+
   long long * ptr;
   // Unpack it...
 
   ptr = (long long *) Imports;
-    
+
   // Point entry case
   if (MaxElementSize==1) {
-      
+
       if (CombineMode==Add)
   for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
@@ -487,7 +508,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   // constant element size case
 
   else if (ConstantElementSize) {
-   
+
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
   jj = MaxElementSize*ImportLIDs[j];
@@ -521,11 +542,11 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       }
     }
   }
-    
+
   // variable element size case
 
   else {
-      
+
     int thisSizeOfPacket = MaxElementSize;
 
     if (CombineMode==Add) {
@@ -569,7 +590,7 @@ int Epetra_LongLongVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       }
     }
   }
-  
+
   return(0);
 }
 

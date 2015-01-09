@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,16 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 /* Generic error message for element type/node count mapping...*/
 static int el_node_count_error(struct elem_blk_parm elem_blk_parms)
@@ -335,7 +339,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[2] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[3] = 3;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"TRIANGLE",3) == 0)
@@ -367,7 +377,13 @@ int ex_get_side_set_node_count(int exoid,
 	    elem_blk_parms[i].num_nodes_per_side[3] = 3;
 	    elem_blk_parms[i].num_nodes_per_side[4] = 3;
 	  } else {
-	    return el_node_count_error(elem_blk_parms[i]);
+	    struct elem_blk_parm val = elem_blk_parms[i];
+	    free(elem_blk_parms);
+	    free(elem_blk_ids);
+	    free(ss_elem_ndx);
+	    free(side_set_side_list);
+	    free(side_set_elem_list);
+	    return el_node_count_error(val);
 	  }
 	}
       }
@@ -399,7 +415,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[4] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[5] = 3;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"HEX",3) == 0)
@@ -443,7 +465,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[4] = 9;
 	  elem_blk_parms[i].num_nodes_per_side[5] = 9;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"TETRA",3) == 0)
@@ -467,7 +495,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[2] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"WEDGE",3) == 0)
@@ -487,7 +521,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[4] = 6;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"PYRAMID",3) == 0)
@@ -507,7 +547,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[4] = 8;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if (strncmp(elem_blk_parms[i].elem_type,"BEAM",3) == 0)
@@ -522,7 +568,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[0] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[1] = 3;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     else if ( (strncmp(elem_blk_parms[i].elem_type,"TRUSS",3) == 0) ||
@@ -539,7 +591,13 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[0] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[1] = 3;
 	} else {
-	  return el_node_count_error(elem_blk_parms[i]);
+	  struct elem_blk_parm val = elem_blk_parms[i];
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
+	  return el_node_count_error(val);
 	}
       }
     /* Used for an empty block in a parallel decomposition */

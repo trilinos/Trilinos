@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_EIGENVALUESORT_STRATEGIES_H
 #define LOCA_EIGENVALUESORT_STRATEGIES_H
 
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"   // for ReturnType
 
@@ -77,8 +77,8 @@ namespace LOCA {
      * The interface defines two pure virtual methods, sort(), to sort
      * the eigenvalues, optionally returning a permutation vector determining
      * how th eigenvalues were sorted.  There is one version for real-only
-     * eigenvalues and one version for complex.  Derived classes should 
-     * implement these methods for a particular sorting strategy.  
+     * eigenvalues and one version for complex.  Derived classes should
+     * implement these methods for a particular sorting strategy.
      * Constructors for derived classes should be of the form:
      *
      * \code
@@ -91,15 +91,15 @@ namespace LOCA {
      * };
      * \endcode
      *
-     * where \c global_data is the LOCA global data object and \c eigenParams 
-     * is the eigensolver parameter list 
+     * where \c global_data is the LOCA global data object and \c eigenParams
+     * is the eigensolver parameter list
      * (see LOCA::Eigensolver::AbstractStrategy).  In addition to any
      * parameters for the chosen sorting method, this list should contain
      * the parameter "Sorting Order" giving the name of the sorting
      * strategy.
      *
      * This class and its children follow the Strategy pattern as defined
-     * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable 
+     * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable
      * Object-Oriented Software." Addison Wesley, Boston, MA, 1995.
      */
     class AbstractStrategy {
@@ -115,29 +115,29 @@ namespace LOCA {
       //! Sort real eigenvalues optionally returning a permutation vector
       /*!
        * \param n [in] Number of eigenvalues
-       * \param evals [in/out] Array of length n containing the eigenvalues 
+       * \param evals [in/out] Array of length n containing the eigenvalues
        * to be sorted.
-       * \param perm [out] Vector of length n to store the permutation 
+       * \param perm [out] Vector of length n to store the permutation
        * (optional).
        * \return Returns the status of the sorting routine
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const = 0;
 
       //! Sort complex eigenvalues optionally returning a permutation vector
       /*!
        * \param n [in] Number of eigenvalues
-       * \param r_evals [in/out] Array of length n containing the real part 
+       * \param r_evals [in/out] Array of length n containing the real part
        * of the eigenvalues to be sorted.
-       * \param i_evals [in/out] Array of length n containing the imaginary 
-       * part of the eigenvalues to be sorted.  
-       * \param perm [out] Vector of length n to store the permutation 
+       * \param i_evals [in/out] Array of length n containing the imaginary
+       * part of the eigenvalues to be sorted.
+       * \param perm [out] Vector of length n to store the permutation
        * (optional).
        * \return Returns the status of the sorting routine
        */
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals = NULL, 
-	   std::vector<int>* perm = NULL) const = 0;
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals = NULL,
+       std::vector<int>* perm = NULL) const = 0;
 
     private:
 
@@ -159,26 +159,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestMagnitude(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestMagnitude() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     private:
 
@@ -200,26 +200,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestMagnitude(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestMagnitude() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     private:
 
@@ -241,26 +241,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestReal(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestReal() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     private:
 
@@ -282,26 +282,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestReal(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestReal() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     private:
 
@@ -323,27 +323,27 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestImaginary(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestImaginary() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
-      
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
+
     private:
 
       //! Private to prohibit copying
@@ -364,26 +364,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestImaginary(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestImaginary() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     private:
 
@@ -406,26 +406,26 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestRealInverseCayley(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
       //! Destructor
       ~LargestRealInverseCayley() {}
 
-      //! Sort real eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Sort real eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
       sort(int n, double* evals, std::vector<int>* perm = NULL) const;
 
-      //! Sort complex eigenvalues 
-      virtual NOX::Abstract::Group::ReturnType 
-      sort(int n, double* r_evals, double* i_evals, 
-	   std::vector<int>* perm = NULL) const;
+      //! Sort complex eigenvalues
+      virtual NOX::Abstract::Group::ReturnType
+      sort(int n, double* r_evals, double* i_evals,
+       std::vector<int>* perm = NULL) const;
 
     protected:
 

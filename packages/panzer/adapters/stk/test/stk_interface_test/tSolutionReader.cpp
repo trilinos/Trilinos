@@ -70,7 +70,8 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
-Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
+#ifdef PANZER_HAVE_FEI
+Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
@@ -82,10 +83,10 @@ inline double cat_func(double x, double y) { return y*y+3.0*x+5.0; }
 TEUCHOS_UNIT_TEST(tSolutionReader, test)
 {
    RCP<Epetra_Comm> comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
+   RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
 
    RCP<panzer::ConnManager<int,int> > connManager 
-         = rcp(new panzer_stk::STKConnManager<int>(mesh));
+         = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
    RCP<panzer::DOFManagerFEI<int,int> > dofManager 
          = rcp(new panzer::DOFManagerFEI<int,int>(connManager,MPI_COMM_WORLD));
 
@@ -103,8 +104,8 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
    // grab coordinates and local indices
    std::vector<std::size_t> e0indices, e1indices;
    FieldContainer e0_coords, e1_coords; 
-   panzer_stk::workset_utils::getIdsAndVertices(*mesh,"eblock-0_0",e0indices,e0_coords);
-   panzer_stk::workset_utils::getIdsAndVertices(*mesh,"eblock-1_0",e1indices,e1_coords);
+   panzer_stk_classic::workset_utils::getIdsAndVertices(*mesh,"eblock-0_0",e0indices,e0_coords);
+   panzer_stk_classic::workset_utils::getIdsAndVertices(*mesh,"eblock-1_0",e1indices,e1_coords);
 
    const std::vector<int> & dog0_offsets =
          dofManager->getGIDFieldOffsets("eblock-0_0",dofManager->getFieldNum("dog"));
@@ -148,10 +149,10 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
    }
 }
 
-Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
+Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
 {
-  typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-  typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
+  typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
+  typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
 
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
   pl->set("X Blocks",2);
@@ -159,9 +160,9 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   pl->set("X Elements",elemX);
   pl->set("Y Elements",elemY);
   
-  panzer_stk::SquareQuadMeshFactory factory;
+  panzer_stk_classic::SquareQuadMeshFactory factory;
   factory.setParameterList(pl);
-  RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+  RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
  
   // add in some fields
   mesh->addSolutionField("dog","eblock-0_0");
@@ -179,27 +180,27 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
   TEUCHOS_ASSERT(cField!=0);
 
   // fill the fields with data
-  stk::mesh::Part * block0_part = mesh->getElementBlockPart("eblock-0_0");
+  stk_classic::mesh::Part * block0_part = mesh->getElementBlockPart("eblock-0_0");
   TEUCHOS_ASSERT(block0_part!=0);
-  const std::vector<stk::mesh::Bucket*> nodeData 
+  const std::vector<stk_classic::mesh::Bucket*> nodeData 
       = mesh->getBulkData()->buckets(mesh->getNodeRank());
   for(std::size_t b=0;b<nodeData.size();++b) {
-     stk::mesh::Bucket * bucket = nodeData[b];
+     stk_classic::mesh::Bucket * bucket = nodeData[b];
 
 
      // build all buckets
-     for(stk::mesh::Bucket::iterator itr=bucket->begin();
+     for(stk_classic::mesh::Bucket::iterator itr=bucket->begin();
          itr!=bucket->end();++itr) {
 
-        stk::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
-        stk::mesh::EntityArray<VariableField> dog_array(*dog_field,*itr);
+        stk_classic::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
+        stk_classic::mesh::EntityArray<VariableField> dog_array(*dog_field,*itr);
 
         double x = coordinates(0);
         double y = coordinates(1);
 
         dog_array() = dog_func(x,y);
         if(bucket->member(*block0_part)) {
-           stk::mesh::EntityArray<VariableField> cat_array(*cat_field,*itr);
+           stk_classic::mesh::EntityArray<VariableField> cat_array(*cat_field,*itr);
            cat_array() = cat_func(x,y);
         }
         
@@ -211,3 +212,4 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
 
   return mesh;
 }
+#endif

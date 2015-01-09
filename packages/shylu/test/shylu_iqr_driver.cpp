@@ -69,6 +69,7 @@
 #endif
 #include <Epetra_CrsMatrix.h>
 
+#include <Epetra_Vector.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_BlockMapIn.h"
@@ -214,7 +215,7 @@ int main(int argc, char** argv)
         sprintf( file_name, mapFileName.c_str(), file_number );
     }
     else {
-        sprintf( file_name, mapFileName.c_str());
+        strcpy( file_name, mapFileName.c_str());
     }
     if (verbose) {
         std::cout << "--- Using map file: " << file_name << std::endl;
@@ -244,7 +245,7 @@ int main(int argc, char** argv)
         sprintf( file_name, matrixFileName.c_str(), file_number );
     }
     else {
-        sprintf( file_name, matrixFileName.c_str());
+        strcpy( file_name, matrixFileName.c_str());
     }
 
     if (verbose) {
@@ -276,7 +277,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        sprintf( file_name, rhsFileName.c_str());
+        strcpy( file_name, rhsFileName.c_str());
     }
     if (verbose) {
         std::cout << "--- Using rhs file: " << file_name << std::endl;
@@ -544,7 +545,7 @@ int main(int argc, char** argv)
                     rd->redistribute(*RHS, iterb1);
                     if (RHS != NULL){ delete RHS; RHS = NULL; }
                     InitMVValues( *iterb1, newRHS );
-                    // Should we delete iterb1 
+                    // Should we delete iterb1
                 }
             }
         }

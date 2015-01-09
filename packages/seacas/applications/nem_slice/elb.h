@@ -42,7 +42,7 @@
 #include <exodusII.h>
 #include "elb_elem.h"
 
-#define ELB_VERSION	"4.07"
+#define ELB_VERSION	"4.09"
 #define UTIL_NAME	"nem_slice"
 #define ELB_FALSE	0
 #define ELB_TRUE	1
@@ -96,6 +96,7 @@ template <typename INT>
 struct LB_Description
 {
   int      type;
+  int      ignore_z;
   int      refine;
   int      num_sects;
   int      cnctd_dom;
@@ -121,7 +122,7 @@ struct LB_Description
   std::vector<std::vector<INT> > e_cmap_neigh;
 
   LB_Description() :
-    type(-1), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1)
+    type(-1), ignore_z(0), refine(-1), num_sects(-1), cnctd_dom(-1), outfile(-1), vertex2proc(NULL)
   {}
 };
 
@@ -279,6 +280,7 @@ struct Graph_Description
 #define ZOLTAN_RCB      14
 #define ZOLTAN_RIB      15
 #define ZOLTAN_HSFC     16
+#define IGNORE_Z        17
 
 /* Machine types */
 #define MESH 		0

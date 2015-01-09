@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,10 +49,10 @@
 #define NOX_MULTIPHYSICS_GROUP_H
 
 #include "NOX_Abstract_Group.H"         // Base class
-#include "NOX_MultiVector.H" 
-#include "NOX_Common.H"                 // for std::string 
+#include "NOX_MultiVector.H"
+#include "NOX_Common.H"                 // for std::string
 #include "NOX.H"                        // for NOX::Solver::Manager
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 #include <vector>
 
 namespace NOX {
@@ -64,15 +64,15 @@ namespace NOX {
   }
 }
 
-namespace NOX { 
-namespace Multiphysics { 
+namespace NOX {
+namespace Multiphysics {
 
- /*!  
+ /*!
    \brief %NOX pure abstract interface to a "group"; i.e., a
    solution vector and the corresponding F-vector, Jacobian matrix,
    gradient vector, and Newton vector.
 
-   This class is a member of the namespace NOX::Abstract. 
+   This class is a member of the namespace NOX::Abstract.
 
    The user should implement their own concrete implementation of this
    class or use one of the implementations provided by us. Typically
@@ -92,12 +92,12 @@ namespace Multiphysics {
  public:
 
    //! Constructor.
-   /*!  
+   /*!
      \note Constructors for any derived object should always define a default
      x-value so that getX() is always defined.
    */
-   Group( const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
-          const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+   Group( const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& t,
           const Teuchos::RCP<Teuchos::ParameterList>& p);
 
    //! Constructor.
@@ -106,7 +106,7 @@ namespace Multiphysics {
    //! Destructor.
    virtual ~Group();
 
-   /*! 
+   /*!
      \brief Copies the source group into this group.
 
      \note Any <em>shared data</em> owned by the source should have
@@ -129,17 +129,17 @@ namespace Multiphysics {
      Throw an error if the copy fails.
 
      \return
-     Reference to this object 
+     Reference to this object
    */
    virtual void setX(const NOX::Abstract::Vector& y);
 
    //! Compute x = grp.x + step * d.
-   /*! 
+   /*!
      Let \f$x\f$ denote this group's solution vector.
      Let \f$\hat x\f$ denote the result of grp.getX().
      Then set
-     \f[ 
-     x = \hat x + \mbox{step} \; d. 
+     \f[
+     x = \hat x + \mbox{step} \; d.
      \f]
 
      \note
@@ -150,15 +150,15 @@ namespace Multiphysics {
      Throw an error if the copy fails.
 
      \return
-     Reference to this object 
+     Reference to this object
 
    */
-   virtual void computeX(const NOX::Abstract::Group& grp, 
-			 const NOX::Abstract::Vector& d, double step);
+   virtual void computeX(const NOX::Abstract::Group& grp,
+             const NOX::Abstract::Vector& d, double step);
 
-   //! Compute and store F(x). 
-   /*! 
-     \note 
+   //! Compute and store F(x).
+   /*!
+     \note
      It's generally useful to also compute and store the 2-norm of F(x)
      at this point for later access by the getNormF() function.
 
@@ -172,31 +172,31 @@ namespace Multiphysics {
 
 
   /** @name "Is" functions.
-   
+
     Checks to see if various objects have been computed. Returns true
     if the corresponding "compute" function has been called since the
     last change to the solution vector.
   */
 
   //@{
-  
+
   //! Return true if F is valid.
   virtual bool isF() const;
 
   /** @name "Get" functions.
-   
+
     Note that these function do not check whether or not the vectors
     are valid. Must use the "Is" functions for that purpose.
   */
-  //@{ 
+  //@{
 
-  //! Return solution vector.  
+  //! Return solution vector.
   virtual const NOX::Abstract::Vector& getX() const;
 
   //! Return F(x)
   virtual const NOX::Abstract::Vector& getF() const;
 
-  //! Return 2-norm of F(x). 
+  //! Return 2-norm of F(x).
   /*! In other words, \f[ \sqrt{\sum_{i=1}^n F_i^2} \f] */
   virtual double getNormF() const;
 
@@ -216,9 +216,9 @@ namespace Multiphysics {
 
   //@{ \name Creating new Groups.
 
-  /*! 
+  /*!
     \brief Create a new %Group of the same derived type as this one by
-    cloning this one, and return a ref count pointer to the new group.  
+    cloning this one, and return a ref count pointer to the new group.
 
     If type is NOX::DeepCopy, then we need to create an exact replica
     of "this". Otherwise, if type is NOX::ShapeCopy, we need only
@@ -229,7 +229,7 @@ namespace Multiphysics {
     \note Any <em>shared data</em> should have its ownership transfered to this
     group from the source for a NOX::DeepCopy.
   */
-   virtual Teuchos::RCP<NOX::Abstract::Group> 
+   virtual Teuchos::RCP<NOX::Abstract::Group>
    clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
@@ -244,8 +244,8 @@ protected:
   //! Pointer to the container of solvers for each problem to be coupled
   Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
 
-  /** @name IsValid flags 
-   *  
+  /** @name IsValid flags
+   *
    * True if the current solution is up-to-date with respect to the
    * currect xVector. */
   //@{

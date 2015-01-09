@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -61,7 +61,7 @@ class Epetra_Export;
 
 //! Epetra_CrsGraphData:  The Epetra CrsGraph Data Class.
 /*! The Epetra_CrsGraphData class is an implementation detail of Epetra_CrsGraph.
-    It is reference-counted, and can be shared by multiple Epetra_CrsGraph instances. 
+    It is reference-counted, and can be shared by multiple Epetra_CrsGraph instances.
     It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
@@ -72,7 +72,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
  private:
 
   //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_CrsGraphData Default Constructor.
   Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, bool StaticProfile);
@@ -99,9 +99,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
 
   //! Epetra_CrsGraphData assignment operator (not defined)
   Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);
-  
+
   //! @name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
-  //@{ 
+  //@{
                                       /**
                                        * Store some data for each row
                                        * describing which entries of
@@ -123,7 +123,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
            * kept sorted.
            */
       std::vector<int_type> entries_;
-       
+
                 /**
            * Add the given column number to
            * this line.
@@ -136,21 +136,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
       void AddEntries (const int  n_cols,
           const int_type *col_nums);
   };
-  
+
   //! called by FillComplete (and TransformToLocal)
   int MakeImportExport();
-  
+
   //! called by PackAndPrepare
   int ReAllocateAndCast(char*& UserPtr, int& Length, const int IntPacketSizeTimesNumTrans);
-  
+
   //@}
-  
+
   // Defined by CrsGraph::FillComplete and related
   Epetra_BlockMap RowMap_;
   Epetra_BlockMap ColMap_;
   Epetra_BlockMap DomainMap_;
   Epetra_BlockMap RangeMap_;
-  
+
   const Epetra_Import* Importer_;
   const Epetra_Export* Exporter_;
 
@@ -180,14 +180,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   int NumMyBlockRows_;
   int NumMyBlockCols_;
   int NumMyBlockDiagonals_;
-  
+
   int MaxRowDim_;
   int MaxColDim_;
   int GlobalMaxRowDim_;
   int GlobalMaxColDim_;
   int MaxNumNonzeros_;
   int GlobalMaxNumNonzeros_;
-  
+
   long long NumGlobalNonzeros_;
   long long NumGlobalRows_;
   long long NumGlobalCols_;
@@ -236,6 +236,11 @@ struct Epetra_CrsGraphData::IndexData<long long>
     All_Indices_(0)
   {
     Allocate(NumMyBlockRows, AllocSorted);
+  }
+
+  virtual ~IndexData()
+  {
+    Deallocate();
   }
 
   void Allocate(int NumMyBlockRows, bool AllocSorted)

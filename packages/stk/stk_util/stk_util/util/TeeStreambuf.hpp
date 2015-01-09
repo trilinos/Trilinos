@@ -1,10 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_UTIL_TEESTREAMBUF_HPP
 #define STK_UTIL_UTIL_TEESTREAMBUF_HPP
@@ -17,6 +42,15 @@
 
 namespace stk {
 
+namespace {
+struct OStreamPointerLess
+{
+    inline bool operator()(const std::ostream *lhs, const std::ostream *rhs) const
+    {
+        return lhs < rhs;
+    }
+};
+}
 /**
  * @brief Class <b>basic_tee_streambuf</b> maintains a list of destination output stream buffers to
  * send written characters to.  Many destination output stream buffers may be added.  For each
@@ -27,8 +61,8 @@ namespace stk {
 template<class Ch, class Tr = std::char_traits<Ch> >
 class basic_tee_streambuf : public std::basic_streambuf<Ch, Tr>
 {
-  typedef std::set<std::ostream *> StreamSet;
-  typedef std::map<std::ostream *, int> StreamErrorMap;
+  typedef std::set<std::ostream *, OStreamPointerLess> StreamSet;
+  typedef std::map<std::ostream *, int, OStreamPointerLess> StreamErrorMap;
   
 public:
   /**
@@ -65,9 +99,6 @@ public:
 
   /**
    * @brief Member function <b>add</b> adds the specified destination output stream buffer.
-   *
-   * @param sb			a <b>std::streambuf</b> pointer to the output strema buffer to add.
-   *
    */
   void add(std::ostream *os) {
     m_destinations.insert(os);
@@ -75,10 +106,6 @@ public:
 
   /**
    * @brief Member function <b>remove</b> removes the specified destination output stream buffer. 
-   *
-   * @param sb			a <b>std::streambuf</b> pointer to the output strema buffer to
-   *                            remove. 
-   *
    */
   void remove(std::ostream *os) {
     m_destinations.erase(os);

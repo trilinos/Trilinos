@@ -43,19 +43,23 @@
 // ***********************************************************************
 //
 // @HEADER
-
-
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_BlockedDirectSolver_def.hpp"
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::BlockedDirectSolver<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::BlockedDirectSolver<double, int, int>;
+#endif
+
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGINT
+template class MueLu::BlockedDirectSolver<double, int, long>;
 #endif
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::BlockedDirectSolver<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::BlockedDirectSolver<double, int, long long int>;
 # else
 # warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
 # endif
@@ -64,10 +68,10 @@ template class MueLu::BlockedDirectSolver<double, int, long long int, KokkosClas
 #ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
 # ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
-template class MueLu::BlockedDirectSolver<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+template class MueLu::BlockedDirectSolver<std::complex<double>, int, int>;
 # else
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
 
-
+#endif

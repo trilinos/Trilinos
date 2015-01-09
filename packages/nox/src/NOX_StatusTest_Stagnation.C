@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,17 +61,17 @@ NOX::StatusTest::Stagnation::Stagnation(int maxSteps_, double tolerance_) :
   convRate(1.0),
   status(NOX::StatusTest::Unevaluated)
 {
-    
+
 }
 
 NOX::StatusTest::Stagnation::~Stagnation()
 {
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 NOX::StatusTest::Stagnation::
 checkStatus(const Solver::Generic& problem,
-	    NOX::StatusTest::CheckType checkType)
+        NOX::StatusTest::CheckType checkType)
 {
   status = Unconverged;
 
@@ -80,7 +80,7 @@ checkStatus(const Solver::Generic& problem,
   // iterations.
 
   // First time through we don't do anything
-  int niters = problem.getNumIterations(); 
+  int niters = problem.getNumIterations();
   if (niters == 0) {
     lastIteration = 0;
     numSteps = 0;
@@ -88,7 +88,7 @@ checkStatus(const Solver::Generic& problem,
   }
 
   // Make sure we have not already counted the last nonlinear iteration.
-  // This protects against multiple calls to checkStatus() in between 
+  // This protects against multiple calls to checkStatus() in between
   // nonlinear iterations.
   bool isCounted = false;
   if (niters == lastIteration) {
@@ -100,14 +100,14 @@ checkStatus(const Solver::Generic& problem,
   // Compute the convergence rate and set counter appropriately
   if (!isCounted) {
 
-    convRate = problem.getSolutionGroup().getNormF() / 
+    convRate = problem.getSolutionGroup().getNormF() /
                problem.getPreviousSolutionGroup().getNormF();
-    
+
     if (convRate >= tolerance)
       numSteps ++;
     else
       numSteps = 0;
-   
+
   }
 
   if (numSteps >= maxSteps)

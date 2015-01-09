@@ -41,13 +41,18 @@
 //@HEADER
 */
 
+#error "ParallelMachine"
+
 #ifndef PARALLELMACHINE_HPP
 #define PARALLELMACHINE_HPP
 
 //------------------------------------------------------------------------
 
 #include <iosfwd>
-#include <KokkosCore_config.h>
+
+#include <Kokkos_Core.hpp>
+
+//------------------------------------------------------------------------
 
 #if defined( KOKKOS_HAVE_MPI )
 #include <mpi.h>
@@ -55,6 +60,7 @@
   typedef int MPI_Comm ;
 #endif
 
+//------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
 namespace Parallel {

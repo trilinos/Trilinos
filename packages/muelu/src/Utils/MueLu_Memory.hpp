@@ -48,9 +48,8 @@
 
 #include <string>
 
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_Time.hpp>
-#include "MueLu_config.hpp"
+namespace Teuchos { class Time; }
+namespace Teuchos { template <typename Ordinal> class Comm; }
 
 namespace MueLu {
 

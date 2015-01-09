@@ -45,7 +45,7 @@
 
 #include "Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 // Instantiate tests for cuda node
@@ -56,7 +56,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
   Kokkos::Cuda::print_configuration(std::cout);
 
@@ -64,7 +64,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   return ret;

@@ -58,6 +58,7 @@
 #include <BelosPCPGSolMgr.hpp>
 #include <BelosRCGSolMgr.hpp>
 #include <BelosTFQMRSolMgr.hpp>
+#include <BelosPseudoBlockTFQMRSolMgr.hpp>
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Describable.hpp>
@@ -103,6 +104,7 @@ enum EBelosSolverType {
   SOLVER_TYPE_LSQR,
   SOLVER_TYPE_STOCHASTIC_CG,
   SOLVER_TYPE_TFQMR,
+  SOLVER_TYPE_PSEUDO_BLOCK_TFQMR,
   SOLVER_TYPE_GMRES_POLY,
   SOLVER_TYPE_PCPG
 };
@@ -339,29 +341,24 @@ private:
 
   //! List of supported aliases (to canonical solver names).
   Teuchos::Array<std::string> solverNameAliases () const;
-};
 
+  //! Print the given array of strings, in YAML format, to \c out.
+  static void
+  printStringArray (std::ostream& out,
+                    const Teuchos::ArrayView<const std::string>& array)
+  {
+    typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
 
-namespace { // anonymous
-
-//! Print the given array of strings, in YAML format, to \c out.
-void
-printStringArray (std::ostream& out,
-                  const Teuchos::ArrayView<const std::string>& array)
-{
-  typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
-
-  out << "[";
-  for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
-    out << "\"" << *iter << "\"";
-    if (iter + 1 != array.end()) {
-      out << ", ";
+    out << "[";
+    for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
+      out << "\"" << *iter << "\"";
+      if (iter + 1 != array.end()) {
+        out << ", ";
+      }
     }
+    out << "]";
   }
-  out << "]";
-}
-
-} // namespace (anonymous)
+};
 
 
 namespace details {
@@ -462,6 +459,10 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef TFQMRSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
+  case SOLVER_TYPE_PSEUDO_BLOCK_TFQMR: {
+    typedef PseudoBlockTFQMRSolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   case SOLVER_TYPE_GMRES_POLY: {
     typedef GmresPolySolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
@@ -523,6 +524,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   // alias requires modifying the user's parameter list if necessary.
   // This is a good idea because users may not know about the
   // parameter, or may have forgotten.
+  aliasToCanonicalName_["Block GMRES"] = "Block GMRES";
   aliasToCanonicalName_["Flexible GMRES"] = "Block GMRES";
   aliasToCanonicalName_["CG"] = "Pseudoblock CG";
   aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
@@ -535,6 +537,8 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
   aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
   aliasToCanonicalName_["Transpose-Free QMR"] = "TFQMR";
+  aliasToCanonicalName_["Pseudo Block TFQMR"] = "Pseudoblock TFQMR";
+  aliasToCanonicalName_["Pseudo Block Transpose-Free QMR"] = "Pseudoblock TFQMR";
   aliasToCanonicalName_["GmresPoly"] = "Hybrid Block GMRES";
   aliasToCanonicalName_["Seed GMRES"] = "Hybrid Block GMRES";
   aliasToCanonicalName_["CGPoly"] = "PCPG";
@@ -552,6 +556,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
   canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
+  canonicalNameToEnum_["Pseudoblock TFQMR"] = details::SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
   canonicalNameToEnum_["Hybrid Block GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
   canonicalNameToEnum_["PCPG"] = details::SOLVER_TYPE_PCPG;
 }

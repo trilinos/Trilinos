@@ -90,7 +90,7 @@
    PDlw -1 eq not {PDlw w /PDlw -1 def} if} def
 /FA {newpath tMatrix currentmatrix pop translate scale
   0 0 1 5 -2 roll arc tMatrix setmatrix stroke} bdef
-/PA {newpath tMatrix currentmatrix pop	translate 0 0 moveto scale
+/PA {newpath tMatrix currentmatrix pop    translate 0 0 moveto scale
   0 0 1 5 -2 roll arc closepath tMatrix setmatrix fill} bdef
 /FAn {newpath tMatrix currentmatrix pop translate scale
   0 0 1 5 -2 roll arcn tMatrix setmatrix stroke} bdef
@@ -100,7 +100,7 @@
 /lrx 0 def /uly 0 def /ulx 0 def /rad 0 def
 /MRR {/vradius xdef /hradius xdef /lry xdef /lrx xdef /uly xdef
   /ulx xdef newpath tMatrix currentmatrix pop ulx hradius add uly
-  vradius add translate hradius vradius scale 0 0 1 180 270 arc 
+  vradius add translate hradius vradius scale 0 0 1 180 270 arc
   tMatrix setmatrix lrx hradius sub uly vradius add translate
   hradius vradius scale 0 0 1 270 360 arc tMatrix setmatrix
   lrx hradius sub lry vradius sub translate hradius vradius scale
@@ -132,7 +132,7 @@
   2 0 asub 3 1 asub 4 0 asub 5 1 asub
   dup 0 get exch 1 get 7 -1 roll astore } bdef
 /compute_transform {
-  dmat dtri tri_to_matrix tmat1 invertmatrix 
+  dmat dtri tri_to_matrix tmat1 invertmatrix
   smat stri tri_to_matrix tmat2 concatmatrix } bdef
 /ds {stri astore pop} bdef
 /dt {dtri astore pop} bdef
@@ -142,7 +142,7 @@
   dup 2 index dup getinterval /gbmap xdef
   1 index dup 2 mul exch getinterval /bbmap xdef pop pop}bdef
 /it {gs np dtri aload pop moveto lineto lineto cp c
-  cols rows 8 compute_transform 
+  cols rows 8 compute_transform
   rbmap gbmap bbmap true 3 colorimage gr}bdef
 /il {newpath moveto lineto stroke}bdef
 currentdict end def
@@ -203,59 +203,59 @@ SO
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
- 866 4760 mt 
+ 866 4760 mt
 (0) s
 1791 4615 mt 1791 4561 L
 1791  389 mt 1791  442 L
-1758 4760 mt 
+1758 4760 mt
 (1) s
 2684 4615 mt 2684 4561 L
 2684  389 mt 2684  442 L
-2651 4760 mt 
+2651 4760 mt
 (2) s
 3577 4615 mt 3577 4561 L
 3577  389 mt 3577  442 L
-3544 4760 mt 
+3544 4760 mt
 (3) s
 4469 4615 mt 4469 4561 L
 4469  389 mt 4469  442 L
-4436 4760 mt 
+4436 4760 mt
 (4) s
 5362 4615 mt 5362 4561 L
 5362  389 mt 5362  442 L
-5329 4760 mt 
+5329 4760 mt
 (5) s
 6255 4615 mt 6255 4561 L
 6255  389 mt 6255  442 L
-6222 4760 mt 
+6222 4760 mt
 (6) s
  899 4615 mt  952 4615 L
 6255 4615 mt 6201 4615 L
- 798 4659 mt 
+ 798 4659 mt
 (0) s
  899 3910 mt  952 3910 L
 6255 3910 mt 6201 3910 L
- 798 3954 mt 
+ 798 3954 mt
 (5) s
  899 3206 mt  952 3206 L
 6255 3206 mt 6201 3206 L
- 731 3250 mt 
+ 731 3250 mt
 (10) s
  899 2502 mt  952 2502 L
 6255 2502 mt 6201 2502 L
- 731 2546 mt 
+ 731 2546 mt
 (15) s
  899 1797 mt  952 1797 L
 6255 1797 mt 6201 1797 L
- 731 1841 mt 
+ 731 1841 mt
 (20) s
  899 1093 mt  952 1093 L
 6255 1093 mt 6201 1093 L
- 731 1137 mt 
+ 731 1137 mt
 (25) s
  899  389 mt  952  389 L
 6255  389 mt 6201  389 L
- 731  433 mt 
+ 731  433 mt
 (30) s
  899 4615 mt 6255 4615 L
  899  389 mt 6255  389 L
@@ -264,10 +264,10 @@ SO
 gs 899 389 5357 4227 MR c np
 /c8 { 0.000000 0.000000 1.000000 sr} bdef
 c8
--1 1 100 -120 168 -205 164 -205 161 -205 156 -204 150 -206 143 -205 
-136 -205 125 -206 113 -207 97 -206 75 -208 46 -208 6 -210 -52 -211 
--134 -212 -245 -214 -240 -158 -129 -112 53 -82 265 -60 446 -44 547 -31 
-541 -22 476 -15 387 -10 301 -8 228 -5 168 -3 123 -3 89 -2 
+-1 1 100 -120 168 -205 164 -205 161 -205 156 -204 150 -206 143 -205
+136 -205 125 -206 113 -207 97 -206 75 -208 46 -208 6 -210 -52 -211
+-134 -212 -245 -214 -240 -158 -129 -112 53 -82 265 -60 446 -44 547 -31
+541 -22 476 -15 387 -10 301 -8 228 -5 168 -3 123 -3 89 -2
 899 4615 33 MP stroke
 gr
 
@@ -315,34 +315,34 @@ gr
 %%IncludeResource: font Symbol
 /Symbol /ISOLatin1Encoding 120 FMSR
 
-3538 4897 mt 
+3538 4897 mt
 (a) s
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
- 500 2422 mt 
+ 500 2422 mt
 (T) s
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 96 FMSR
 
- 573 2482 mt 
+ 573 2482 mt
 (max) s
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
- 754 2422 mt 
+ 754 2422 mt
 (   ) s
-2757  286 mt 
+2757  286 mt
 (Arc-length Continuation:  ) s
 %%IncludeResource: font Symbol
 /Symbol /ISOLatin1Encoding 120 FMSR
 
-4133  286 mt 
+4133  286 mt
 (b) s
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
-4198  286 mt 
+4198  286 mt
 ( = 0) s
 
 end %%Color Dict

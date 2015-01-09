@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,11 +51,11 @@
 #ifndef NOX_SOLVER_INEXACTTRUSTREGIONBASED_H
 #define NOX_SOLVER_INEXACTTRUSTREGIONBASED_H
 
-#include "NOX_Solver_Generic.H"	    // base class
+#include "NOX_Solver_Generic.H"        // base class
 
-// Class data elements 
-#include "Teuchos_ParameterList.hpp"	    
-#include "NOX_Direction_Utils_InexactNewton.H" 
+// Class data elements
+#include "Teuchos_ParameterList.hpp"
+#include "NOX_Direction_Utils_InexactNewton.H"
 #include "NOX_Solver_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
 
@@ -94,7 +94,7 @@ The trust region subproblem (TRSP) at iteration \f$k\f$ is given by
 \quad \mbox{(TRSP)}
 \f$
 
-where 
+where
 
 <ul>
 <li>\f$ f_k = f(x_k) = \frac{1}{2} \|F(x_k)\|^2_2 \f$,
@@ -103,7 +103,7 @@ where
 <li>\f$ J(x_k)\f$ is the Jacobian of \f$F\f$ at \f$x_k\f$, and
 <li>\f$ \Delta_k \f$ is the trust region radius.
 </ul>
-  
+
 The "improvement ratio" for a given step \f$ s \f$ is defined as
 
 &nbsp;&nbsp;
@@ -126,7 +126,7 @@ An iteration consists of the following steps.
 
 <li> While \f$\rho < \rho_{\min}\f$ and \f$\Delta > \Delta_{\min}\f$, do the following.
 
-     <ul> 
+     <ul>
      <li> Compute the direction \f$d\f$ as follows:
 
           <ul>
@@ -134,25 +134,25 @@ An iteration consists of the following steps.
           <li> If \f$\|n\|_2 < \Delta\f$, then take a Newton step by
                setting \f$d = n\f$
 
-	  <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
+      <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
                step by setting \f$d =
                \displaystyle\frac{\Delta}{\|c\|_2} c\f$
 
-	  <li> Otherwise, take a Dog Leg step by setting 
-               \f$ d = (1-\gamma) c + \gamma n \f$ where 
-	       \f$
-	       \gamma = \displaystyle\frac
-	       {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
-	       \f$
-	       with \f$a = n-c\f$.
-     
+      <li> Otherwise, take a Dog Leg step by setting
+               \f$ d = (1-\gamma) c + \gamma n \f$ where
+           \f$
+           \gamma = \displaystyle\frac
+           {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
+           \f$
+           with \f$a = n-c\f$.
+
           </ul>
 
      <li> Set \f$x_{\rm new} = x + d\f$ and calculate \f$f_{\rm new}\f$
 
      <li> If \f$f_{\rm new} \geq f\f$, then \f$\rho = -1\f$ Otherwise
-	  \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
-	  + \frac{1}{2} (J d)^T (J d)|} \f$
+      \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
+      + \frac{1}{2} (J d)^T (J d)|} \f$
 
      </ul>
 
@@ -183,7 +183,7 @@ An iteration consists of the following steps.
 The following parameters should be specified in the "Trust Region"
 sublist based to the solver.
 
-- "Inner Iteration Method" - Choice of trust region algorithm to use.  
+- "Inner Iteration Method" - Choice of trust region algorithm to use.
   Choices are:
   <ul>
   <li> "Standard Trust Region"
@@ -245,15 +245,15 @@ sublist based to the solver.
 
 - "Use Dogleg Segment Minimization" - Boolean.  Used only by the
   "Inexact Trust Region" algorithm.  If set to true, the \f$ \tau \f$
-  parameter is minimized over the dogleg line segments instead of 
+  parameter is minimized over the dogleg line segments instead of
   being computed at the trust regioin radius.  Used only by the
   "Inexact Trust Region" algorithm.  Defaults to false.
 
 - "Use Counters" - Boolean.  If set to true, solver statistics will be stored.  Defaults to true.
 
-- "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the relevant "Output" sublists (see Output Parameters).  Defaults to true.  
+- "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the relevant "Output" sublists (see Output Parameters).  Defaults to true.
 
-- "Solver Options" - Sublist of general solver options.  
+- "Solver Options" - Sublist of general solver options.
    <ul>
    <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
    </ul>
@@ -274,10 +274,10 @@ A sublist called "Output" will be created in the "Trust Region" sublist and cont
 
 - "Number of Dogleg Steps" - Number of Dogleg steps taken during the solve.
 
-- "Number of Trust Region Inner Iterations" - Number of inner iterations 
+- "Number of Trust Region Inner Iterations" - Number of inner iterations
   required to adjust the trust region radius.
 
-- "Dogleg Steps: Average Fraction of Newton Step Length" - Average value of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.  
+- "Dogleg Steps: Average Fraction of Newton Step Length" - Average value of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.
 
 - "Dogleg Steps: Average Fraction Between Cauchy and Newton Direction" -  Average value of the fraction a dogleg step took between the Cauchy and Newton directions.  This is the \f$ \gamma \f$ variable in the standard dogleg algorithm and the \f$ \tau \f$ parameter in the inexact dogleg algorithm.  A value of 0.0 is a full step in the Cauchy direction and a value of 1.0 is a full step in the Newton direction.
 
@@ -288,21 +288,21 @@ class InexactTrustRegionBased : public Generic {
 
 public:
 
-  /*! 
+  /*!
     \brief Constructor
 
-    See reset() for description. 
+    See reset() for description.
   */
   InexactTrustRegionBased(
-     const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+     const Teuchos::RCP<NOX::Abstract::Group>& grp,
+     const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
      const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~InexactTrustRegionBased();
 
-  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
+             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
@@ -317,7 +317,7 @@ public:
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
 
 protected:
-  
+
   //! "Standard" trust region implementation
   virtual NOX::StatusTest::StatusType iterateStandard();
   //! "Inexact Trust Region"
@@ -340,9 +340,9 @@ protected:
 
   //! Check to see if the current step is acceptable.  If not, it reduces the trust region radius accordingly.
   NOX::StatusTest::StatusType checkStep(const NOX::Abstract::Vector& step,
-					double& radius);
+                    double& radius);
 
-  //! Computes the norm of a given vector.  
+  //! Computes the norm of a given vector.
   /*! Defaults to the L-2 norm but could use a user defined norm also. */
   virtual double computeNorm(const NOX::Abstract::Vector& v);
 
@@ -374,15 +374,15 @@ protected:
 
   //! Utils
   Teuchos::RCP<NOX::Utils> utils;
-  
+
   //! Current status of the trust region inner iteration.
   InnerIterationReturnType innerIterationStatus;
 
   //! Current solution.
-  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;
 
-  //! Previous solution pointer. 
-  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
+  //! Previous solution pointer.
+  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;
 
   //! Current newton direction pointer.
   Teuchos::RCP<NOX::Abstract::Vector> newtonVecPtr;
@@ -403,19 +403,19 @@ protected:
   Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
-  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
 
   //! Input parameters.
-  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
   //! Inexact Newton utitilities.
   NOX::Direction::Utils::InexactNewton inNewtonUtils;
 
-  //! %Newton %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> newtonPtr; 
+  //! %Newton %Search %Direction.
+  Teuchos::RCP<NOX::Direction::Generic> newtonPtr;
 
-  //! Cauchy %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr; 
+  //! Cauchy %Search %Direction.
+  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr;
 
   //! Radius of the trust region
   double radius;
@@ -454,9 +454,9 @@ protected:
   double dx;
 
   //! Number of nonlinear iterations.
-  int nIter;                    
+  int nIter;
 
-  //! Current linear solve tolerance (inexact only). 
+  //! Current linear solve tolerance (inexact only).
   double eta;
 
   //! Linear solve tolerance used in last iteration (inexact only).
@@ -469,12 +469,12 @@ protected:
   NOX::StatusTest::CheckType checkType;
 
   //! Enumerated list for each direction that may be required in the Trust region computation.
-  enum StepType 
+  enum StepType
   {
     //! Use the Newton direction
-    Newton, 
+    Newton,
     //! Use the Cauchy direction
-    Cauchy, 
+    Cauchy,
     //! Use the doglog direction
     Dogleg
   };
@@ -485,13 +485,13 @@ protected:
   //! Stores merit function supplied by global data.
   Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
-  //! If set to true, the initial guess for the Newton direction computation will use the Cauchy direction as the initial guess. 
+  //! If set to true, the initial guess for the Newton direction computation will use the Cauchy direction as the initial guess.
   bool useCauchyInNewtonDirection;
 
   //! If set to true, statistics/counters will be output to the output list
   bool writeOutputParamsToList;
 
-  //! If set to true, counters will be stored by the solver. 
+  //! If set to true, counters will be stored by the solver.
   bool useCounters;
 
   //! Counter for the number of cauchy steps taken.
@@ -512,7 +512,7 @@ protected:
   //! Holds the sum of the values of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.
   double sumDoglegFracNewtonLength;
 
-  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
+  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach.
   bool useAredPredRatio;
 
   //! If set to true, the \f$ \tau \f$ parameter is minimized over the dogleg line segments instead of being computed at the trust regioin radius.

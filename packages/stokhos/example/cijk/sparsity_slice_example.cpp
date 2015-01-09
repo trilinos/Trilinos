@@ -75,7 +75,7 @@ const char *basis_type_names[] = { "hermite", "legendre", "rys" };
 
 int main(int argc, char **argv)
 {
-  int num_k;
+  int num_k = 0;
 
   try {
 

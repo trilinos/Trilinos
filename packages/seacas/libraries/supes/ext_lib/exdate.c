@@ -57,10 +57,9 @@ C
 */
 
 #define STRLEN 8
-#include <errno.h>
-#include <time.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strncpy
+#include <time.h>                       // for tm, localtime, time, time_t
 
 #if defined(ADDC_)
 void exdate_( char *string, long int len )

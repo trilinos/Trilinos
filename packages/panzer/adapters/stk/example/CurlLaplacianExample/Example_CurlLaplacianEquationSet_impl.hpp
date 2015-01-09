@@ -146,6 +146,22 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Energy Equation
   // ********************
 
+  // Transient Operator: Assembles \int \dot{T} v
+  if (this->buildTransientSupport()) {
+    ParameterList p("Transient Residual");
+    p.set("Residual Name", "RESIDUAL_EFIELD_TRANSIENT_OP"); // we are defining the name of this operator
+    p.set("Value Name", "DXDT_EFIELD"); // this field is constructed by the panzer library
+    p.set("Test Field Name", "EFIELD"); 
+    p.set("Basis", basis);
+    p.set("IR", ir);
+    p.set("Multiplier", 1.0);
+
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
   // Diffusion Operator: Assembles \int \nabla T \cdot \nabla v
   {
     double thermal_conductivity = 1.0;
@@ -205,6 +221,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     sum_names.push_back("RESIDUAL_EFIELD_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_EFIELD_MASS_OP");
     sum_names.push_back("RESIDUAL_EFIELD_SOURCE_OP");
+    if (this->buildTransientSupport())
+      sum_names.push_back("RESIDUAL_EFIELD_TRANSIENT_OP");
 
     this->buildAndRegisterResidualSummationEvalautor(fm,"EFIELD",sum_names);
   }

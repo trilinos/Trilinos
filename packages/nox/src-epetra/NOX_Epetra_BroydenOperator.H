@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -88,7 +88,7 @@ namespace Epetra {
   passed into the constructor is preserved.  Inasmuch as unconstrained
   %Broyden updates produce dense matrices, these constrained updates lead
   to a loss of Broyden-matrix properties, e.g.
-  
+
   \f[ \tilde{B}_{k+1} s_k \ne \tilde{B}_k + s_k \f]
 
   \f[ \tilde{B}_{k+1} q \ne \tilde{B}_k q \quad \forall q : s_k^T q = 0 \f]
@@ -107,7 +107,7 @@ namespace Epetra {
 class BroydenOperator : public Epetra_RowMatrix,
                         public NOX::Abstract::PrePostOperator,
                         public NOX::Epetra::Interface::Jacobian,
-                        public NOX::Epetra::Interface::Preconditioner 
+                        public NOX::Epetra::Interface::Preconditioner
 {
 
  public:
@@ -117,7 +117,7 @@ class BroydenOperator : public Epetra_RowMatrix,
    public:
 
     enum FILL_TYPE {    JACOBIAN      ,
-                        PRECONDITIONER  
+                        PRECONDITIONER
                    };
 
     virtual ~ReplacementInterface()
@@ -128,11 +128,11 @@ class BroydenOperator : public Epetra_RowMatrix,
   };
 
   //! Constructor taking an initial matrix to be updated
-  BroydenOperator(Teuchos::ParameterList & nlParams, 
-                  const Teuchos::RCP<NOX::Utils>& utils, 
-		  Epetra_Vector & solnVec,
-                  const Teuchos::RCP<Epetra_CrsMatrix>& broydMat0, 
-		  bool verbose = false);
+  BroydenOperator(Teuchos::ParameterList & nlParams,
+                  const Teuchos::RCP<NOX::Utils>& utils,
+          Epetra_Vector & solnVec,
+                  const Teuchos::RCP<Epetra_CrsMatrix>& broydMat0,
+          bool verbose = false);
 
   //! Copy Constructor
   BroydenOperator(const BroydenOperator &);
@@ -318,11 +318,11 @@ class BroydenOperator : public Epetra_RowMatrix,
   virtual bool computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac);
 
   //! Allow for fill of preconditioning matrix whose values will replace corresponding entries in the %Broyden matrix.
-  virtual bool computePreconditioner( const Epetra_Vector &, 
-				      Epetra_Operator& Prec,
+  virtual bool computePreconditioner( const Epetra_Vector &,
+                      Epetra_Operator& Prec,
                                       Teuchos::ParameterList * params = 0 );
 
-  //! Set a flag to skip the first call to computeSparseBroydenUpdate as no valid step vector or residual vector is available 
+  //! Set a flag to skip the first call to computeSparseBroydenUpdate as no valid step vector or residual vector is available
   virtual void runPreSolve( const NOX::Solver::Generic & solver);
 
   //! Needed to preserve any existing call through to a user-defined Pre/Preost Operator
@@ -360,7 +360,7 @@ class BroydenOperator : public Epetra_RowMatrix,
   Teuchos::RCP<Epetra_CrsMatrix> precMatrixPtr;
 
   //! Reference to top-level nonlinear solver parameters list
-  Teuchos::ParameterList & nlParams; 
+  Teuchos::ParameterList & nlParams;
 
   //! Reference to NOX::Utils object
   const Teuchos::RCP<NOX::Utils>& utils;
@@ -371,8 +371,8 @@ class BroydenOperator : public Epetra_RowMatrix,
   //! label for the Epetra_RowMatrix
   std::string label;
 
-  /** @name IsValid flags 
-   *  
+  /** @name IsValid flags
+   *
    * True if objects are current with respect to the currect stepVec. */
   //@{
   bool isValidStep;

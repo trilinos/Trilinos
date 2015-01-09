@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -78,22 +78,22 @@ Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
 Teuchos::RCP<NOX::Abstract::MultiVector> X_direct;
 Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_direct;
 
-int  
+int
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
-	  double reltol, double abstol, const std::string& testName) {
+      double reltol, double abstol, const std::string& testName) {
   int ierr = 0;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
-    globalData->locaUtils->out() 
+    globalData->locaUtils->out()
       << std::endl << "***** " << testName << " *****" << std::endl;
 
-  Teuchos::RCP<NOX::Abstract::MultiVector> a = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> a =
     Teuchos::null;
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> c = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> c =
     Teuchos::null;
-  Teuchos::RCP<NOX::Abstract::MultiVector> f = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> f =
     Teuchos::null;
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> g = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> g =
     Teuchos::null;
 
   if (!flagA)
@@ -119,40 +119,40 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   Y_direct->putScalar(0.0);
 
   // Solve using bordering
-  NOX::Abstract::Group::ReturnType borderingStatus = 
+  NOX::Abstract::Group::ReturnType borderingStatus =
     bordering->applyInverse(*(parsedParams->getSublist("Linear Solver")),
-			    f.get(), g.get(), *X_bordering, *Y_bordering);
+                f.get(), g.get(), *X_bordering, *Y_bordering);
   if (borderingStatus != NOX::Abstract::Group::Ok)
     ++ierr;
 
   // Solve using direct
-  NOX::Abstract::Group::ReturnType directStatus = 
+  NOX::Abstract::Group::ReturnType directStatus =
     direct->applyInverse(*(parsedParams->getSublist("Linear Solver")),
-			 f.get(), g.get(), *X_direct, *Y_direct);
+             f.get(), g.get(), *X_direct, *Y_direct);
   if (directStatus != NOX::Abstract::Group::Ok)
     ++ierr;
-  
+
   for (int i=0; i<Y_bordering->numCols(); i++) {
     std::stringstream sstr;
     sstr << "Column " << i;
     ierr += testCompare->testVector((*X_bordering)[i],
-				    (*X_direct)[i], reltol, abstol,
-				    sstr.str());
+                    (*X_direct)[i], reltol, abstol,
+                    sstr.str());
   }
 
-  for (int i=0; i<Y_bordering->numRows(); i++) 
+  for (int i=0; i<Y_bordering->numRows(); i++)
     for (int j=0; j<Y_bordering->numCols(); j++) {
       std::stringstream sstr;
       sstr << "Scalars entry (" << i << "," << j << ")";
       ierr += testCompare->testValue((*Y_bordering)(i,j),
-				     (*Y_direct)(i,j), reltol,
-				     sstr.str(),
-				     NOX::TestCompare::Relative);
+                     (*Y_direct)(i,j), reltol,
+                     sstr.str(),
+                     NOX::TestCompare::Relative);
     }
 
   return ierr;
 }
-	  
+
 
 int main(int argc, char *argv[])
 {
@@ -175,18 +175,18 @@ int main(int argc, char *argv[])
     bool verbose = false;
     // Check for verbose output
     if (argc>1)
-      if (argv[1][0]=='-' && argv[1][1]=='v') 
-	verbose = true;
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+    verbose = true;
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
     Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the constraints list
-    Teuchos::ParameterList& constraintsList = 
+    Teuchos::ParameterList& constraintsList =
       locaParamsList.sublist("Constraints");
     constraintsList.set("Bordered Solver Method", "Bordering");
 
@@ -195,15 +195,15 @@ int main(int argc, char *argv[])
 
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
-       nlPrintParams.set("Output Information", 
-				  NOX::Utils::Error +
-				  NOX::Utils::Details +
-				  NOX::Utils::OuterIteration + 
-				  NOX::Utils::InnerIteration + 
-				  NOX::Utils::Warning +
-				  NOX::Utils::TestDetails + 
-				  NOX::Utils::StepperIteration +
-				  NOX::Utils::StepperDetails);
+       nlPrintParams.set("Output Information",
+                  NOX::Utils::Error +
+                  NOX::Utils::Details +
+                  NOX::Utils::OuterIteration +
+                  NOX::Utils::InnerIteration +
+                  NOX::Utils::Warning +
+                  NOX::Utils::TestDetails +
+                  NOX::Utils::StepperIteration +
+                  NOX::Utils::StepperDetails);
      else
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     globalData = LOCA::createGlobalData(paramList, lapackFactory);
 
     // Create parsed parameter list
-    parsedParams = 
+    parsedParams =
       Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
     parsedParams->parseSublists(paramList);
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     p.addParameter("beta",beta);
     p.addParameter("gamma",gamma);
     p.addParameter("scale",scale);
-  
+
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
@@ -243,30 +243,30 @@ int main(int argc, char *argv[])
 
     // Create the constraints object & constraint param IDs list
     constraints = Teuchos::rcp(new LinearConstraint(nConstraints, p, *xnew));
-    Teuchos::RCP< std::vector<int> > constraintParamIDs = 
+    Teuchos::RCP< std::vector<int> > constraintParamIDs =
       Teuchos::rcp(new std::vector<int>(1));
     (*constraintParamIDs)[0] = p.getIndex("alpha");
 
     // Create bordering solver
     bordering
       = globalData->locaFactory->createBorderedSolverStrategy(
-				     parsedParams, 
-				     parsedParams->getSublist("Constraints"));
+                     parsedParams,
+                     parsedParams->getSublist("Constraints"));
 
     // Change strategy to LAPACK Direct Solve
-    constraintsList.set("Bordered Solver Method", 
-				 "LAPACK Direct Solve");
+    constraintsList.set("Bordered Solver Method",
+                 "LAPACK Direct Solve");
 
     // Create direct solver
     direct
       = globalData->locaFactory->createBorderedSolverStrategy(
-				     parsedParams, 
-				     parsedParams->getSublist("Constraints"));
+                     parsedParams,
+                     parsedParams->getSublist("Constraints"));
 
     // Check some statistics on the solution
     testCompare = Teuchos::rcp(new NOX::TestCompare(
-				                 globalData->locaUtils->out(), 
-						 *(globalData->locaUtils)));
+                                 globalData->locaUtils->out(),
+                         *(globalData->locaUtils)));
 
     // Evaluate blocks
     grp->computeF();
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
     // A
     A = grp->getX().createMultiVector(nConstraints);
     A->random();
-    
+
     // B
     constraints->setX(grp->getX());
     B = grp->getX().createMultiVector(nConstraints);
@@ -285,127 +285,127 @@ int main(int argc, char *argv[])
     constraints->computeDX();
 
     // C
-    C = 
+    C =
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
-							       nConstraints));
+                                   nConstraints));
     C->random();
 
     // Set up left- and right-hand sides
     F = grp->getX().createMultiVector(nRHS);
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
-								 nRHS));
+                                 nRHS));
     G->random();
     X_bordering = F->clone(NOX::ShapeCopy);
-    Y_bordering = 
+    Y_bordering =
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
-							       nRHS));
+                                   nRHS));
     X_direct = F->clone(NOX::ShapeCopy);
-    Y_direct = 
+    Y_direct =
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
-							       nRHS));
+                                   nRHS));
 
     std::string testName;
 
     // Test all nonzero
     testName = "Testing all nonzero";
     ierr += testSolve(false, false, false, false, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A = 0
     testName = "Testing A=0";
     ierr += testSolve(true, false, false, false, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test B = 0
     testName = "Testing B=0";
     ierr += testSolve(false, true, false, false, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test C = 0
     testName = "Testing C=0";
     ierr += testSolve(false, false, true, false, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test F = 0
     testName = "Testing F=0";
     ierr += testSolve(false, false, false, true, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test G = 0
     testName = "Testing G=0";
     ierr += testSolve(false, false, false, false, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,B = 0
     testName = "Testing A,B=0";
     ierr += testSolve(true, true, false, false, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,F = 0
     testName = "Testing A,F=0";
     ierr += testSolve(true, false, false, true, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,G = 0
     testName = "Testing A,G=0";
     ierr += testSolve(true, false, false, false, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test B,F = 0
     testName = "Testing B,F=0";
     ierr += testSolve(false, true, false, true, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test B,G = 0
     testName = "Testing B,G=0";
     ierr += testSolve(false, true, false, false, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test C,F = 0
     testName = "Testing C,F=0";
     ierr += testSolve(false, false, true, true, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test C,G = 0
     testName = "Testing C,G=0";
     ierr += testSolve(false, false, true, false, true,
-		      10*reltol, abstol, testName);
+              10*reltol, abstol, testName);
 
     // Test F,G = 0
     testName = "Testing F,G=0";
     ierr += testSolve(false, false, false, true, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,B,F = 0
     testName = "Testing A,B,F=0";
     ierr += testSolve(true, true, false, true, false,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,B,G = 0
     testName = "Testing A,B,G=0";
     ierr += testSolve(true, true, false, false, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test A,F,G = 0
     testName = "Testing A,F,G=0";
     ierr += testSolve(true, false, false, true, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test B,F,G = 0
     testName = "Testing B,F,G=0";
     ierr += testSolve(false, true, false, true, true,
-		      reltol, abstol, testName);
+              reltol, abstol, testName);
 
     // Test C,F,G = 0
     testName = "Testing C,F,G=0";
-    ierr += testSolve(false, false, true, true, true, 
-		      reltol, abstol, testName);
+    ierr += testSolve(false, false, true, true, true,
+              reltol, abstol, testName);
 
     // Test A,B,F,G = 0
     testName = "Testing A,B,F,G=0";
-    ierr += testSolve(true, true, false, true, true, 
-		      reltol, abstol, testName);
+    ierr += testSolve(true, true, false, true, true,
+              reltol, abstol, testName);
 
     LOCA::destroyGlobalData(globalData);
   }

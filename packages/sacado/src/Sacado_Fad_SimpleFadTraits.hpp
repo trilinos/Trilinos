@@ -1,35 +1,33 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 //
 // The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.  
+// expression template classes in the Fad package by Nicolas Di Cesare.
 // The following banner is included in the original Fad source code:
 //
 // ************ DO NOT REMOVE THIS BANNER ****************
@@ -37,10 +35,10 @@
 //  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
 //  http://www.ann.jussieu.fr/~dicesare
 //
-//            CEMRACS 98 : C++ courses, 
-//         templates : new C++ techniques 
-//            for scientific computing 
-// 
+//            CEMRACS 98 : C++ courses,
+//         templates : new C++ techniques
+//            for scientific computing
+//
 //********************************************************
 //
 //  NumericalTraits class to illustrate TRAITS
@@ -63,32 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to SimpleFad types
-  template <typename ValueT>
-  struct Promote< Fad::SimpleFad<ValueT>, Fad::SimpleFad<ValueT> > {
-    typedef Fad::SimpleFad<ValueT> type;
-  };
-
-  //! Specialization of %Promote to SimpleFad types
-  template <typename ValueT, typename R>
-  struct Promote< Fad::SimpleFad<ValueT>, R > {
-    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::SimpleFad<value_type> type;
-  };
-
-  //! Specialization of %Promote to SimpleFad types
-  template <typename L, typename ValueT>
-  struct Promote< L, Fad::SimpleFad<ValueT> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::SimpleFad<value_type> type;
-  };
+  SACADO_FAD_PROMOTE_SPEC( Fad, SimpleFad )
 
   //! Specialization of %ScalarType to SimpleFad types
   template <typename ValueT>
@@ -118,7 +91,7 @@ namespace Sacado {
   template <typename ValueT>
   struct Value< Fad::SimpleFad<ValueT> > {
     typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type;
-    static const value_type& eval(const Fad::SimpleFad<ValueT>& x) { 
+    static const value_type& eval(const Fad::SimpleFad<ValueT>& x) {
       return x.val(); }
   };
 
@@ -127,23 +100,23 @@ namespace Sacado {
   struct ScalarValue< Fad::SimpleFad<ValueT> > {
     typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type;
     typedef typename ScalarType< Fad::SimpleFad<ValueT> >::type scalar_type;
-    static const scalar_type& eval(const Fad::SimpleFad<ValueT>& x) { 
+    static const scalar_type& eval(const Fad::SimpleFad<ValueT>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to SimpleFad types
   template <typename ValueT>
   struct StringName< Fad::SimpleFad<ValueT> > {
-    static std::string eval() { 
-      return std::string("Sacado::Fad::SimpleFad< ") + 
-	StringName<ValueT>::eval() + " >"; }
+    static std::string eval() {
+      return std::string("Sacado::Fad::SimpleFad< ") +
+        StringName<ValueT>::eval() + " >"; }
   };
 
   //! Specialization of %IsEqual to SimpleFad types
   template <typename ValueT>
   struct IsEqual< Fad::SimpleFad<ValueT> > {
-    static bool eval(const Fad::SimpleFad<ValueT>& x, 
-		     const Fad::SimpleFad<ValueT>& y) {
+    static bool eval(const Fad::SimpleFad<ValueT>& x,
+                     const Fad::SimpleFad<ValueT>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -166,17 +139,17 @@ namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
   template <typename ValueT>
-  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>, 
-			  Sacado::Fad::SimpleFad<ValueT> > {
+  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>,
+                          Sacado::Fad::SimpleFad<ValueT> > {
     typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>,
-				      Sacado::Fad::SimpleFad<ValueT> >::type
+                                      Sacado::Fad::SimpleFad<ValueT> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
   template <typename ValueT, typename R>
   struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>, R > {
-    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>, R >::type 
+    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>, R >::type
     promote;
   };
 
@@ -184,7 +157,7 @@ namespace Teuchos {
   template <typename L, typename ValueT>
   struct PromotionTraits< L, Sacado::Fad::SimpleFad<ValueT> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::Fad::SimpleFad<ValueT> >::type 
+    typedef typename Sacado::Promote< L, Sacado::Fad::SimpleFad<ValueT> >::type
     promote;
   };
 
@@ -197,22 +170,22 @@ namespace Teuchos {
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename ValueT>
   struct SerializationTraits<Ordinal, Sacado::Fad::SimpleFad<ValueT> > :
-    public Sacado::Fad::SerializationTraitsImp< Ordinal, 
-						Sacado::Fad::SimpleFad<ValueT> > 
+    public Sacado::Fad::SerializationTraitsImp< Ordinal,
+                                                Sacado::Fad::SimpleFad<ValueT> >
   {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename ValueT>
   struct ValueTypeSerializer<Ordinal, Sacado::Fad::SimpleFad<ValueT> > :
-    public Sacado::Fad::SerializerImp< Ordinal, 
-				       Sacado::Fad::SimpleFad<ValueT>,
-				       ValueTypeSerializer<Ordinal,ValueT> > 
+    public Sacado::Fad::SerializerImp< Ordinal,
+                                       Sacado::Fad::SimpleFad<ValueT>,
+                                       ValueTypeSerializer<Ordinal,ValueT> >
   {
     typedef Sacado::Fad::SimpleFad<ValueT> FadType;
     typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
     typedef Sacado::Fad::SerializerImp< Ordinal,FadType,ValueSerializer> Base;
     ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
-			Ordinal sz = 0) :
+                        Ordinal sz = 0) :
       Base(vs, sz) {}
   };
 }

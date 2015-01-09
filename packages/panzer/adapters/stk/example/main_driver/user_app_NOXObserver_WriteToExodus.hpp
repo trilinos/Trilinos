@@ -57,6 +57,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -69,7 +70,7 @@ namespace user_app {
     
   public:
     
-    NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+    NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
 			       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 			       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
@@ -84,7 +85,7 @@ namespace user_app {
       std::vector<std::string> eBlocks;
       mesh->getElementBlockNames(eBlocks);
 
-      panzer_stk::RespFactorySolnWriter_Builder builder;
+      panzer_stk_classic::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
     }
@@ -194,7 +195,7 @@ namespace user_app {
     }
 
 
-    Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;

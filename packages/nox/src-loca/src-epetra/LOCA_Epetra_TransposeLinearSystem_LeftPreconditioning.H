@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -81,87 +81,87 @@ namespace LOCA {
        * Note:  This class does not support scaling.
        */
       class LeftPreconditioning : public virtual AbstractStrategy {
-	
+
       public:
 
-	//! Constructor
-	LeftPreconditioning(
-	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys);
+    //! Constructor
+    LeftPreconditioning(
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+        const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+        const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys);
 
-	//! Destructor
-	virtual ~LeftPreconditioning();
-  
-	/*!
-	 * \brief Applies the inverse of the Jacobian matrix transpose to the 
-	 * given input vector and puts the answer in result.
-	 *
-	 * Computes 
-	 * \f[ v = J^{-T} u, \f]
-	 * where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, 
-	 * and \f$v\f$ is the result vector.
-	 *
-	 * The parameter list contains the linear solver options.
-	 */
-	virtual bool 
-	applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
-				      const NOX::Epetra::Vector &input, 
-				      NOX::Epetra::Vector &result);
+    //! Destructor
+    virtual ~LeftPreconditioning();
 
-  
+    /*!
+     * \brief Applies the inverse of the Jacobian matrix transpose to the
+     * given input vector and puts the answer in result.
+     *
+     * Computes
+     * \f[ v = J^{-T} u, \f]
+     * where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector,
+     * and \f$v\f$ is the result vector.
+     *
+     * The parameter list contains the linear solver options.
+     */
+    virtual bool
+    applyJacobianTransposeInverse(Teuchos::ParameterList &params,
+                      const NOX::Epetra::Vector &input,
+                      NOX::Epetra::Vector &result);
 
-	//! Evaluates the Jacobian-transpose based on the solution vector x.
-	/*!
-	 * Note:  For flexibility, this method does not compute the original
-	 * Jacobian matrix.  It uses whatever is currently stored in the
-	 * linear system.
-	 */
-	virtual bool 
-	createJacobianTranspose();
- 
-	/*! 
-	 * \brief Explicitly constructs a preconditioner based on the solution 
-	 * vector x and the parameter list p.  
-	 */
-	/*!
-	 * Note:  \c x is only needed for user-supplied preconditioners.
-	 * When using a built-in preconditioner (e.g., Ifpack), \c x will
-	 * note be used.
-	 */
-	virtual bool 
-	createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-				      Teuchos::ParameterList& p);
 
-	//! Get Jacobian-transpose operator
-	virtual Teuchos::RCP<Epetra_Operator> 
-	getJacobianTransposeOperator();
 
-	//! Get transpose-preconditioner
-	virtual Teuchos::RCP<Epetra_Operator> 
-	getTransposePreconditioner();
+    //! Evaluates the Jacobian-transpose based on the solution vector x.
+    /*!
+     * Note:  For flexibility, this method does not compute the original
+     * Jacobian matrix.  It uses whatever is currently stored in the
+     * linear system.
+     */
+    virtual bool
+    createJacobianTranspose();
 
-	//! Set Jacobian-transpose operator
-	virtual void setJacobianTransposeOperator(
-	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans);
+    /*!
+     * \brief Explicitly constructs a preconditioner based on the solution
+     * vector x and the parameter list p.
+     */
+    /*!
+     * Note:  \c x is only needed for user-supplied preconditioners.
+     * When using a built-in preconditioner (e.g., Ifpack), \c x will
+     * note be used.
+     */
+    virtual bool
+    createTransposePreconditioner(const NOX::Epetra::Vector& x,
+                      Teuchos::ParameterList& p);
 
-	//! Set transpose-preconditioner
-	virtual void setTransposePreconditioner(
-	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans);
+    //! Get Jacobian-transpose operator
+    virtual Teuchos::RCP<Epetra_Operator>
+    getJacobianTransposeOperator();
+
+    //! Get transpose-preconditioner
+    virtual Teuchos::RCP<Epetra_Operator>
+    getTransposePreconditioner();
+
+    //! Set Jacobian-transpose operator
+    virtual void setJacobianTransposeOperator(
+           const Teuchos::RCP<Epetra_Operator>& new_jac_trans);
+
+    //! Set transpose-preconditioner
+    virtual void setTransposePreconditioner(
+          const Teuchos::RCP<Epetra_Operator>& new_prec_trans);
 
       protected:
 
-	//! Global data object
-	Teuchos::RCP<LOCA::GlobalData> globalData;
+    //! Global data object
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
-	//! Linear system solver
-	Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
+    //! Linear system solver
+    Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
 
-	//! Jacobian operator
-	Teuchos::RCP<Epetra_Operator> jac;
+    //! Jacobian operator
+    Teuchos::RCP<Epetra_Operator> jac;
 
-	//! Preconditioner
-	Teuchos::RCP<Epetra_Operator> prec;
+    //! Preconditioner
+    Teuchos::RCP<Epetra_Operator> prec;
 
       }; // class TransposePreconditioner
 

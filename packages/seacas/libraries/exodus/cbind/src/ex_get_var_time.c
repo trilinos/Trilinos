@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -56,9 +56,13 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ST_ZU, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*
  * reads the values of a variable for a single entry of an object (block or set) through a 
@@ -198,7 +202,7 @@ int ex_get_var_time( int   exoid,
     if ((status = nc_inq_dimid(exoid, ex_dim_num_entries_in_object(var_type,i+1), &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate number of entries in "ST_ZU"th %s in file id %d",
+	      "Error: failed to locate number of entries in %"ST_ZU"th %s in file id %d",
 	      i, ex_name_of_object(var_type), exoid);
       ex_err("ex_get_var_time",errmsg,exerrval);
       free(stat_vals);
@@ -208,7 +212,7 @@ int ex_get_var_time( int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of entries in "ST_ZU"th %s in file id %d",
+	      "Error: failed to get number of entries in %"ST_ZU"th %s in file id %d",
 	      i, ex_name_of_object(var_type), exoid);
       ex_err("ex_get_var_time",errmsg,exerrval);
       free(stat_vals);
@@ -223,7 +227,7 @@ int ex_get_var_time( int   exoid,
       if ((status = nc_inq_dimid(exoid,ex_dim_num_entries_in_object(var_type,i+1), &dimid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate number of entries in "ST_ZU"th %s in file id %d",
+		"Error: failed to locate number of entries in %"ST_ZU"th %s in file id %d",
 		i, ex_name_of_object(var_type), exoid);
 	ex_err("ex_get_var_time",errmsg,exerrval);
 	free(stat_vals);
@@ -233,7 +237,7 @@ int ex_get_var_time( int   exoid,
       if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get number of entries in "ST_ZU"th %s in file id %d",
+		"Error: failed to get number of entries in %"ST_ZU"th %s in file id %d",
 		i, ex_name_of_object(var_type), exoid);
 	ex_err("ex_get_var_time",errmsg,exerrval);
 	free(stat_vals);
@@ -248,7 +252,7 @@ int ex_get_var_time( int   exoid,
   if ((status = nc_inq_varid(exoid,ex_name_var_of_object(var_type,var_index,i+1), &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate variable "ST_ZU" for %dth %s in file id %d",
+	    "Error: failed to locate variable %"ST_ZU" for %dth %s in file id %d",
 	    i, var_index,ex_name_of_object(var_type),exoid);
     ex_err("ex_get_var_time",errmsg,exerrval);
     free(stat_vals);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -136,9 +136,9 @@ int ex_create_int (const char *path,
 		   int  *io_ws,
 		   int   run_version)
 {
-  int exoid, dims[1];
+  int exoid;
   int status;
-  int dimid, time_dim;
+  int dimid;
   int old_fill;
   int lio_ws;
   int filesiz;
@@ -345,6 +345,17 @@ int ex_create_int (const char *path,
     return (EX_FATAL);
   }
   
+  {
+    int max_so_far = 32;
+    if ((status=nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to add maximum_name_length attribute in file id %d",exoid);
+      ex_err("ex_put_init_ext",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+  }
+
   /* define some dimensions and variables
    */
   
@@ -376,25 +387,6 @@ int ex_create_int (const char *path,
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
-
-  if ((status = nc_def_dim(exoid, DIM_TIME, NC_UNLIMITED, &time_dim)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to define time dimension in file id %d", exoid);
-    ex_err("ex_create",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  dims[0] = time_dim;
-  if ((status = nc_def_var(exoid, VAR_WHOLE_TIME, nc_flt_code(exoid), 1, dims, &dimid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to define whole time step variable in file id %d",
-	    exoid);
-    ex_err("ex_create",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-  ex_compress_variable(exoid, dimid, 2);
 
   {
     int int64_db_status = int64_status & EX_ALL_INT64_DB;

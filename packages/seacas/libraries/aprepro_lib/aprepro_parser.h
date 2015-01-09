@@ -66,7 +66,7 @@ namespace SEAMS {
     union semantic_type
     {
 /* Line 33 of lalr1.cc  */
-#line 43 "aprepro.yy"
+#line 45 "aprepro.yy"
 
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/
@@ -239,7 +239,7 @@ namespace SEAMS {
     /// - if positive, shift that token.
     /// - if negative, reduce the rule which number is the opposite.
     /// - if zero, do what YYDEFACT says.
-    static const unsigned char yytable_[];
+    static const unsigned short int yytable_[];
     static const signed char yytable_ninf_;
 
     static const short int yycheck_[];

@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -220,10 +220,30 @@ private:
     Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
     A.getLocalDiagCopy (*D);
 
-    typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
-    KMV& localDiag = D->getLocalMVNonConst ();
-    typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
-    KMVT::ReciprocalThreshold (localDiag, STS::eps ());
+    // FIXME (mfh 02 Oct 2014) This is currently the only explicit
+    // dependence on KokkosClassic in Ifpack2 that is not protected by
+    // the HAVE_IFPACK2_KOKKOSCLASSIC macro.  See around line 100 of
+    // ifpack2/src/Ifpack2_Details_Chebyshev_def.hpp for a way to work
+    // around this.
+
+    typedef typename V::scalar_type scalar_type;
+    typedef typename V::mag_type mag_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+    const scalar_type ONE = STS::one ();
+    const mag_type min_val_abs = STS::magnitude (STS::eps ());
+    Teuchos::ArrayRCP<scalar_type> D_0 = D->getDataNonConst (0);
+    scalar_type* const D_0_raw = D_0.getRawPtr ();
+    const size_t lclNumRows = D->getLocalLength ();
+
+    for (size_t i = 0; i < lclNumRows; ++i) {
+      const scalar_type D_0i = D_0_raw[i];
+      if (STS::magnitude (D_0i) < min_val_abs) {
+        D_0_raw[i] = STS::eps ();
+      } else {
+        D_0_raw[i] = ONE / D_0i;
+      }
+    }
 
     return D;
   }
@@ -359,12 +379,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   using std::endl;
 
   // Typedefs for basic Tpetra template parameters.
-  typedef double ST;
-  typedef int LO;
-  //typedef long GO;
-  typedef int GO;
-  //typedef KokkosClassic::SerialNode NT;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef Tpetra::MultiVector<>::local_ordinal_type LO;
+  typedef Tpetra::MultiVector<>::global_ordinal_type GO;
+  typedef Tpetra::MultiVector<>::node_type NT;
 
   // Convenience typedefs.
   typedef Tpetra::Map<LO, GO, NT> map_type;

@@ -22,9 +22,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_SerialComm.h"
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 
 // Teuchos includes
@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
     int frequency = -1;        // frequency of status test output.
     int blocksize = 1;         // blocksize
     int numrhs = 1;            // number of right-hand sides to solve for
-    int maxrestarts = 15;      // maximum number of restarts allowed 
-    int maxsubspace = 25;      // maximum number of blocks the solver can use 
+    int maxrestarts = 15;      // maximum number of restarts allowed
+    int maxsubspace = 25;      // maximum number of blocks the solver can use
                                // for the subspace
     char file_name[100];
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        sprintf( file_name, MMFileName.c_str());
+        strcpy( file_name, MMFileName.c_str());
     }
 
     // ==================== Read input Matrix ==============================
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        sprintf( file_name, rhsFileName.c_str());
+        strcpy( file_name, rhsFileName.c_str());
     }
 
     Epetra_Map vecMap(n, 0, Comm);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     Isorropia::Epetra::Redistributor rd(partitioner);
 
     Epetra_CrsMatrix *newA;
-    Epetra_MultiVector *newX, *newB; 
+    Epetra_MultiVector *newX, *newB;
     rd.redistribute(*A, newA);
     delete A;
     A = newA;

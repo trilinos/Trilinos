@@ -11,7 +11,7 @@
 //    ITYPE:  int --> use Epetra
 //            long long --> use Epetra64
 //    OFFSET_EPETRA64:  Add this value to each row/column index.  Resulting
-//                      matrix rows/columns are indexed from 
+//                      matrix rows/columns are indexed from
 //                      OFFSET_EPETRA64 to OFFSET_EPETRA64+n-1.
 
 #include <limits.h>
@@ -30,7 +30,7 @@
 #include "Epetra_SerialComm.h"
 #define FINALIZE
 #endif
- 
+
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -52,8 +52,8 @@ int main(int narg, char *arg[])
 {
   using std::cout;
 
-#ifdef EPETRA_MPI  
-  // Initialize MPI  
+#ifdef EPETRA_MPI
+  // Initialize MPI
   MPI_Init(&narg,&arg);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -64,12 +64,12 @@ int main(int narg, char *arg[])
   int np = comm.NumProc();
 
   ITYPE nGlobalRows = 10;
-  if (narg > 1) 
+  if (narg > 1)
     nGlobalRows = (ITYPE) atol(arg[1]);
 
   bool verbose = (nGlobalRows < 20);
 
-  // Linear map similar to Trilinos default, 
+  // Linear map similar to Trilinos default,
   // but want to allow adding OFFSET_EPETRA64 to the indices.
   int nMyRows = (int) (nGlobalRows / np + (nGlobalRows % np > me));
   ITYPE myFirstRow = (ITYPE)(me * (nGlobalRows / np) + MIN(nGlobalRows%np, me));
@@ -84,7 +84,7 @@ int main(int narg, char *arg[])
   std::vector<int> nnzPerRow(nMyRows+1, 0);
 
   // Also create lists of the nonzeros to be assigned to processors.
-  // To save programming time and complexity, these vectors are allocated 
+  // To save programming time and complexity, these vectors are allocated
   // bigger than they may actually be needed.
   std::vector<ITYPE> iv(3*nMyRows+1);
   std::vector<ITYPE> jv(3*nMyRows+1);
@@ -93,7 +93,7 @@ int main(int narg, char *arg[])
   // Generate the nonzeros for the Laplacian matrix.
   ITYPE nMyNonzeros = 0;
   for (ITYPE i = 0, myrowcnt = 0; i < nGlobalRows; i++) {
-    if (rowMap->MyGID(i+OFFSET_EPETRA64)) { 
+    if (rowMap->MyGID(i+OFFSET_EPETRA64)) {
       // This processor owns this row; add nonzeros.
       if (i > 0) {
         iv[nMyNonzeros] = i + OFFSET_EPETRA64;
@@ -110,7 +110,7 @@ int main(int narg, char *arg[])
       iv[nMyNonzeros] = i + OFFSET_EPETRA64;
       jv[nMyNonzeros] = i + OFFSET_EPETRA64;
       vv[nMyNonzeros] = ((i == 0 || i == nGlobalRows-1) ? 1. : 2.);
-      if (verbose) 
+      if (verbose)
         std::cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
              << vv[nMyNonzeros] << " on processor " << me
              << " in " << myrowcnt << std::endl;
@@ -121,7 +121,7 @@ int main(int narg, char *arg[])
         iv[nMyNonzeros] = i + OFFSET_EPETRA64;
         jv[nMyNonzeros] = i+1 + OFFSET_EPETRA64;
         vv[nMyNonzeros] = -1;
-        if (verbose) 
+        if (verbose)
           std::cout << "(" << iv[nMyNonzeros] << "," << jv[nMyNonzeros] << ")="
                << vv[nMyNonzeros] << " on processor " << me
                << " in " << myrowcnt << std::endl;
@@ -142,7 +142,7 @@ int main(int narg, char *arg[])
     if (nnzPerRow[i]) {
       if (verbose) {
         std::cout << "InsertGlobalValus row " << iv[sum]
-             << " count " << nnzPerRow[i] 
+             << " count " << nnzPerRow[i]
              << " cols " << jv[sum] << " " << jv[sum+1] << " ";
         if (nnzPerRow[i] == 3) std::cout << jv[sum+2];
         std::cout << std::endl;

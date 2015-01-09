@@ -86,14 +86,12 @@ namespace Teuchos {
       template<class Scalar, class Ordinal>
       class Element {
       public:
-        /// \brief Default constructor: an invalid entry of the matrix.
-        ///
-        /// FIXME (mfh 31 May 2012) This currently only works for
-        /// signed Ordinal types to which -1 can be assigned.  It
-        /// would be better to use
-        /// Teuchos::OrdinalTraits<Ordinal>::invalid() as the default
-        /// invalid value.
-        Element () : rowIndex_ (-1), colIndex_ (-1), value_ (0) {}
+        //! Default constructor: an invalid entry of the matrix.
+        Element () :
+          rowIndex_ (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+          colIndex_ (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+          value_ (Teuchos::ScalarTraits<Scalar>::zero ())
+        {}
 
         //! Create a sparse matrix entry at (i,j) with value Aij.
         Element (const Ordinal i, const Ordinal j, const Scalar& Aij) :
@@ -192,6 +190,7 @@ namespace Teuchos {
       operator<< (std::ostream& out, const Element<Scalar, Ordinal>& elt)
       {
         typedef ScalarTraits<Scalar> STS;
+        std::ios::fmtflags f( out.flags() );
         // Non-Ordinal types are floating-point types.  In order not to
         // lose information when we print a floating-point type, we have
         // to set the number of digits to print.  C++ standard behavior
@@ -239,6 +238,8 @@ namespace Teuchos {
         else {
           out << elt.value ();
         }
+        // Restore flags
+        out.flags( f );
         return out;
       }
 

@@ -1,5 +1,5 @@
 XCOMM Copyright 2006 Sandia Corporation. Under the terms of Contract
-XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 XCOMM retains certain rights in this software.
 XCOMM
 XCOMM Redistribution and use in source and binary forms, with or without
@@ -88,10 +88,14 @@ ExtraStuffToClean(lex.yy.c y.tab.c y.tab.h)
 test: check
 
 check: aprepro
-	@echo "****Test should produce the following 4 lines of output to stderr:"
-	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
-	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
-	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 159)"
+	@echo "****Test should produce the following 7 lines of output to stderr:"
+	@echo "Aprepro: WARN: Undefined variable 'ifundefined' (test.inp_app, line 49)"
+	@echo "Aprepro: WARN: Undefined variable 'Parse' (test.inp_app, line 78)"
+	@echo "Aprepro: ERROR:  syntax error (test.inp_app, line 78)"
+	@echo "Aprepro: WARN: Undefined variable 'This' (test.inp_app, line 79)"
+	@echo "Aprepro: ERROR:  syntax error (test.inp_app, line 79)"
+	@echo "Aprepro: WARN: User-defined Variable 'a' redefined (_string_, line 1)"
+	@echo "Aprepro: WARN: Undefined variable 'T' (test.inp_app, line 189)"
 	@echo " "
 	rm -f distribution.out
 	./aprepro test.inp_app | grep -v Revision > distribution.out

@@ -60,7 +60,7 @@ int Ifpack_UserPartitioner::ComputePartitions()
 
   // put together all partitions composed by 1 one vertex
   // (if any)
-  vector<int> singletons(NumLocalParts());
+  std::vector<int> singletons(NumLocalParts());
   for (unsigned int i = 0 ; i < singletons.size() ; ++i) {
     singletons[i] = 0;
   }

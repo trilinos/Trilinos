@@ -1,33 +1,47 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_baseImpl_EntityRepository_hpp
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
-#include <stk_mesh/base/Trace.hpp>
-
-// We will use tr1 if we can (not on PGI or pathscale); otherwise, fall back to std map.
-#if defined(__PGI) || defined(__PATHSCALE__)
-  #define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0
-#else
-  #define STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1 0
-#endif
-
-#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-  #include <tr1/unordered_map>
-#else
-  #include <map>
-#endif
-
-#include <stk_mesh/base/Entity.hpp>
-
-
-#include <boost/pool/pool_alloc.hpp>
+#include <stddef.h>                     // for size_t
+#include <map>                          // for map, map<>::value_compare
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <utility>                      // for pair
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+namespace stk { namespace mesh { class Bucket; } }
+namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk {
 namespace mesh {
@@ -35,140 +49,63 @@ namespace impl {
 
 class EntityRepository {
 
-#if STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-  struct stk_entity_rep_hash : public std::unary_function< EntityKey, std::size_t >
-  {
-    inline std::size_t
-    operator()(const EntityKey& x) const
-    {
-      return (std::size_t)(x.raw_key());
-    }
-  };
+public:
 
-  typedef std::tr1::unordered_map<EntityKey, Entity*, stk_entity_rep_hash, std::equal_to<EntityKey> > EntityMap;
-#else
-  typedef std::map<EntityKey,Entity*> EntityMap;
-#endif
+    typedef std::map<EntityKey,Entity> EntityMap;
 
-  public:
+    typedef EntityMap::const_iterator const_iterator;
+    typedef EntityMap::iterator iterator;
 
-    typedef EntityMap::const_iterator iterator;
-
-    EntityRepository(bool use_pool)
-      : m_entities(), m_use_pool(use_pool) {}
+    EntityRepository(BulkData &mesh)
+      : m_mesh(mesh), m_entities() {}
 
     ~EntityRepository();
 
-    Entity * get_entity( const EntityKey &key ) const;
+    Entity get_entity( const EntityKey &key ) const;
 
-    iterator begin() const { return m_entities.begin(); }
-    iterator end() const { return m_entities.end(); }
+    const_iterator begin() const { return m_entities.begin(); }
+    const_iterator end() const { return m_entities.end(); }
 
-    void clean_changes();
+    const_iterator begin_rank(EntityRank ent_rank) const { return m_entities.lower_bound(EntityKey(ent_rank, 0)); }
+    const_iterator end_rank(EntityRank ent_rank) const { return m_entities.upper_bound(EntityKey(static_cast<EntityRank>(ent_rank+1), 0)); }
 
     // Return a pair: the relevant entity, and whether it had to be created
-    // or not. If there was already an active entity, the second item in the
+    // or not. If there was already an active entity with the specified key, the second item in the pair
     // will be false; otherwise it will be true (even if the Entity was present
     // but marked as destroyed).
-    std::pair<Entity*,bool>
-      internal_create_entity( const EntityKey & key );
+    std::pair<Entity ,bool>
+    internal_create_entity( const EntityKey & key, size_t preferred_offset = 0 );
 
-    /** \brief Log that this entity was created as a parallel copy
-      *        of an existing entity.
-      */
-    void log_created_parallel_copy( Entity & e );
+    void update_entity_key(EntityKey new_key, EntityKey old_key, Entity entity);
 
-    /**
-     * The client knows that this entity should be marked as modified. In
-     * general clients shouldn't need to call this because EntityRepository
-     * knows when it performs operations that modify entities. BulkData should
-     * be the only caller of this method.
-     */
-    inline void log_modified(Entity & e) const;
-
-    inline void set_entity_owner_rank( Entity & e, unsigned owner_rank);
-    inline void set_entity_sync_count( Entity & e, size_t count);
-
-    inline void comm_clear( Entity & e) const;
-    inline void comm_clear_ghosting( Entity & e) const;
-
-    bool erase_ghosting( Entity & e, const Ghosting & ghosts) const;
-    bool erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
-
-    bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
-
-    void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
-    Bucket * get_entity_bucket ( Entity & e ) const;
-    void destroy_later( Entity & e, Bucket* nil_bucket );
-
-    bool destroy_relation( Entity & e_from,
-                           Entity & e_to,
-                           const RelationIdentifier local_id);
-
-    void declare_relation( Entity & e_from,
-                           Entity & e_to,
-                           const RelationIdentifier local_id,
-                           unsigned sync_count );
-
-    void update_entity_key(EntityKey key, Entity & entity);
+    void destroy_entity(EntityKey key, Entity entity);
 
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
-    Entity* internal_allocate_entity(EntityKey entity_key);
-    Entity* allocate_entity(bool use_pool);
+    // Entity internal_allocate_entity(EntityKey entity_key);
+    Entity allocate_entity();
 
+    BulkData &m_mesh;
     EntityMap m_entities;
-    bool m_use_pool;
 
     //disable copy constructor and assignment operator
     EntityRepository(const EntityRepository &);
     EntityRepository & operator =(const EntityRepository &);
 };
 
-/*---------------------------------------------------------------*/
-
-void EntityRepository::set_entity_sync_count( Entity & e, size_t count)
+inline
+void EntityRepository::destroy_entity(EntityKey key, Entity entity)
 {
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_sync_count", LOG_ENTITY, e.key());
-
-  e.m_entityImpl.set_sync_count(count);
-}
-
-void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank)
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::set_entity_owner_rank", LOG_ENTITY, e.key());
-  DiagIfWatching(LOG_ENTITY, e.key(), "new owner: " << owner_rank);
-
-  bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
-  if ( changed ) {
-    e.m_entityImpl.log_modified_and_propagate();
-  }
-}
-
-void EntityRepository::comm_clear( Entity & e) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear", LOG_ENTITY, e.key());
-
-  e.m_entityImpl.comm_clear();
-}
-
-void EntityRepository::comm_clear_ghosting( Entity & e) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::comm_clear_ghosting", LOG_ENTITY, e.key());
-
-  e.m_entityImpl.comm_clear_ghosting();
-}
-
-void EntityRepository::log_modified( Entity & e ) const
-{
-  TraceIfWatching("stk::mesh::impl::EntityRepository::log_modified", LOG_ENTITY, e.key());
-
-  e.m_entityImpl.log_modified_and_propagate();
+  m_entities.erase(key);
 }
 
 } // namespace impl
+
+typedef stk::mesh::impl::EntityRepository::const_iterator const_entity_iterator;
+
 } // namespace mesh
 } // namespace stk
+
 
 #endif // stk_mesh_baseImpl_EntityRepository_hpp

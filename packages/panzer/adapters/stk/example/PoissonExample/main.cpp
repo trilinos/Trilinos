@@ -60,7 +60,6 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -113,7 +112,7 @@ int main(int argc,char * argv[])
      Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
    Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
 
-   panzer_stk::SquareQuadMeshFactory mesh_factory;
+   panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
 
    // other declarations
    const std::size_t workset_size = 20;
@@ -129,7 +128,7 @@ int main(int argc,char * argv[])
    pl->set("Y Elements",10);
    mesh_factory.setParameterList(pl);
 
-   RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
    // construct input physics and physics block
    ////////////////////////////////////////////////////////
@@ -187,8 +186,8 @@ int main(int argc,char * argv[])
    // build worksets
    ////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
+      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -197,7 +196,7 @@ int main(int argc,char * argv[])
  
    // build the connection manager 
    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-     conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+     conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
@@ -281,7 +280,7 @@ int main(int argc,char * argv[])
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
    solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,1000);
+   solver.SetAztecOption(AZ_kspace,300);
    solver.SetAztecOption(AZ_output,10);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
@@ -313,7 +312,7 @@ int main(int argc,char * argv[])
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk::write_solution_data(*dofManager,*mesh,*ep_ghostCont->get_x());
+      panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ep_ghostCont->get_x());
       mesh->writeToExodus("output.exo");
    }
 

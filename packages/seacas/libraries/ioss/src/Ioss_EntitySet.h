@@ -33,15 +33,14 @@
 #ifndef IOSS_Ioss_EntitySet_h
 #define IOSS_Ioss_EntitySet_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Property.h>
-#include <Ioss_GroupingEntity.h>
-#include <string>
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+namespace Ioss { class DatabaseIO; }
 
 namespace Ioss {
-  class ElementTopology;
   class ElementSet;
-  class DatabaseIO;
 
   class EntitySet : public GroupingEntity {
   public:
@@ -57,12 +56,8 @@ namespace Ioss {
     EntitySet(const EntitySet&); // do not implement
     EntitySet& operator=(const EntitySet&); // do not implement
 
-    ElementTopology *topology_;
   protected:
     void count_attributes() const;
-
-    size_t entityCount; ///< stored locally to avoid looking up property
-    mutable size_t attributeCount;
   };
 }
 #endif

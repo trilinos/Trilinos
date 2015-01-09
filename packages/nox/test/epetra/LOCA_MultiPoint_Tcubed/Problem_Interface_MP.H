@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #ifndef Problem_Interface_MP_H
 #define Problem_Interface_MP_H
 
-// Interface to the NLS_PetraGroup to provide for 
+// Interface to the NLS_PetraGroup to provide for
 // residual and matrix fill routines.
 
 // ---------- Standard Includes ----------
@@ -67,14 +67,14 @@ namespace LOCA {
 }
 
 
-class  Problem_Interface_MP : 
+class  Problem_Interface_MP :
   public LOCA::Epetra::Interface::Required,
   public NOX::Epetra::Interface::Jacobian
 {
 public:
   Problem_Interface_MP(FiniteElementProblem& Problem);
   ~Problem_Interface_MP();
-  
+
   //! Compute and return F
   bool computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag);
 
@@ -85,18 +85,18 @@ public:
   void setParameters(const LOCA::ParameterVector& params);
 
   //! Application Operator: Object that points to the user's evaluation routines.
-  /*! This is used to point to the actual routines and to store 
+  /*! This is used to point to the actual routines and to store
    *  auxiliary data required by the user's application for function/Jacobian
-   *  evaluations that NOX does not need to know about.  This is type of 
+   *  evaluations that NOX does not need to know about.  This is type of
    *  passdown class design by the application code.
-   */ 
+   */
   FiniteElementProblem& problem;
 
   //! Number of residual fills
   int numFillsF;
 
 
-  /* 
+  /*
     These two functions are added for the multipoint problem.
     All above functions are the same as for regular problem.
    */

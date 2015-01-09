@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -47,7 +47,7 @@
 #endif
 
 //=============================================================================
-Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label) 
+Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label)
   : Label_(0)
 {
   if (set_label) {
@@ -57,8 +57,8 @@ Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label)
 }
 
 //=============================================================================
-Epetra_Object::Epetra_Object(const char * const Label_in, 
-			     int TracebackModeIn) 
+Epetra_Object::Epetra_Object(const char * const Label_in,
+			     int TracebackModeIn)
   : Label_(0)
 {
   SetLabel(Label_in);
@@ -103,7 +103,7 @@ void Epetra_Object::Print(std::ostream & os) const {
 int Epetra_Object::ReportError(const std::string Message, int ErrorCode) const {
 #ifndef EPETRA_NO_ERROR_REPORTS
   // NOTE:  We are extracting a C-style string from Message because
-  //        the SGI compiler does not have a real string class with 
+  //        the SGI compiler does not have a real string class with
   //        the << operator.  Some day we should get rid of ".c_str()"
   if (
     ( ErrorCode < 0 && Epetra_Object::GetTracebackMode() > 0 )
@@ -119,7 +119,7 @@ int Epetra_Object::ReportError(const std::string Message, int ErrorCode) const {
   return(ErrorCode);
 }
 //=============================================================================
-Epetra_Object::~Epetra_Object()  
+Epetra_Object::~Epetra_Object()
 {
   if (Label_!=0) {
     delete [] Label_;
@@ -132,7 +132,7 @@ const char * Epetra_Object::Label() const {
 }
 //=============================================================================
 void Epetra_Object::SetLabel(const char * const Label_in)
-{ 
+{
   if (Label_!=0) {
     delete [] Label_;
     Label_ = 0;

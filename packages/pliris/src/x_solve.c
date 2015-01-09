@@ -84,11 +84,11 @@ extern int nprocs_row;
 
 void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
         DATA_TYPE *rhs,int *num_rhs)
-{    
+{
   int begin_rhs;
-  
+
   int my_first_col;
- 
+
 #ifdef TIMING0
 
    double permtime, f_solve,b_solve, t1;
@@ -98,7 +98,7 @@ void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
 
 
     my_first_col = mesh_col(me);
-  
+
   /* Distribution for the rhs on me */
 
   nrhs = *num_rhs;
@@ -109,7 +109,7 @@ void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
 
 
 
-  /* Exchange Pivoting Information 
+  /* Exchange Pivoting Information
        Now all processors have complete pivot information  */
 
 #ifdef TIMING0
@@ -131,7 +131,7 @@ void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
    t1 = MPI_Wtime();
 
 #endif
-  
+
   /* Forward Solve  */
   forward(mat, rhs);
 
@@ -160,11 +160,11 @@ void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
 #endif
 
   MPI_Barrier(MPI_COMM_WORLD);
- 
+
   /* Permute the answer -- torus map inverse */
 
   perm1_((rhs),&my_rhs);
-          
+
   MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef TIMING0

@@ -61,12 +61,12 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MHDRAPFactory()
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MHDRAPFactory()
     : implicitTranspose_(true) { }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
     if (implicitTranspose_ == false)
       {
@@ -94,8 +94,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
@@ -104,7 +104,7 @@ namespace MueLu {
       //
 
       //DEBUG
-      //Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+      //Teuchos::FancyOStream fout(*GetOStream(Runtime1));
       //coarseLevel.print(fout,Teuchos::VERB_HIGH);
 
 
@@ -142,16 +142,16 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP   = Utils::Multiply(*A  , false, *P , false);
-        AP00 = Utils::Multiply(*A00, false, *PV, false);
-        AP01 = Utils::Multiply(*A01, false, *PP, false);
-        AP02 = Utils::Multiply(*A02, false, *PM, false);
-        AP10 = Utils::Multiply(*A10, false, *PV, false);
-        AP11 = Utils::Multiply(*A11, false, *PP, false);
-        AP12 = Utils::Multiply(*A12, false, *PM, false);
-        AP20 = Utils::Multiply(*A20, false, *PV, false);
-        AP21 = Utils::Multiply(*A21, false, *PP, false);
-        AP22 = Utils::Multiply(*A22, false, *PM, false);
+        AP   = Utils::Multiply(*A  , false, *P , false, AP, GetOStream(Statistics2));
+        AP00 = Utils::Multiply(*A00, false, *PV, false, AP00, GetOStream(Statistics2));
+        AP01 = Utils::Multiply(*A01, false, *PP, false, AP01, GetOStream(Statistics2));
+        AP02 = Utils::Multiply(*A02, false, *PM, false, AP02, GetOStream(Statistics2));
+        AP10 = Utils::Multiply(*A10, false, *PV, false, AP10, GetOStream(Statistics2));
+        AP11 = Utils::Multiply(*A11, false, *PP, false, AP11, GetOStream(Statistics2));
+        AP12 = Utils::Multiply(*A12, false, *PM, false, AP12, GetOStream(Statistics2));
+        AP20 = Utils::Multiply(*A20, false, *PV, false, AP20, GetOStream(Statistics2));
+        AP21 = Utils::Multiply(*A21, false, *PP, false, AP21, GetOStream(Statistics2));
+        AP22 = Utils::Multiply(*A22, false, *PM, false, AP22, GetOStream(Statistics2));
       }
 
       RCP<Matrix> Ac;
@@ -169,16 +169,16 @@ namespace MueLu {
         {
           SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-          Ac   = Utils::Multiply(*P , true, *AP  , false);
-          Ac00 = Utils::Multiply(*PV, true, *AP00, false);
-          Ac01 = Utils::Multiply(*PV, true, *AP01, false);
-          Ac02 = Utils::Multiply(*PV, true, *AP02, false);
-          Ac10 = Utils::Multiply(*PP, true, *AP10, false);
-          Ac11 = Utils::Multiply(*PP, true, *AP11, false);
-          Ac12 = Utils::Multiply(*PP, true, *AP12, false);
-          Ac20 = Utils::Multiply(*PM, true, *AP20, false);
-          Ac21 = Utils::Multiply(*PM, true, *AP21, false);
-          Ac22 = Utils::Multiply(*PM, true, *AP22, false);
+          Ac   = Utils::Multiply(*P , true, *AP  , false, Ac, GetOStream(Statistics2));
+          Ac00 = Utils::Multiply(*PV, true, *AP00, false, Ac00, GetOStream(Statistics2));
+          Ac01 = Utils::Multiply(*PV, true, *AP01, false, Ac01, GetOStream(Statistics2));
+          Ac02 = Utils::Multiply(*PV, true, *AP02, false, Ac02, GetOStream(Statistics2));
+          Ac10 = Utils::Multiply(*PP, true, *AP10, false, Ac10, GetOStream(Statistics2));
+          Ac11 = Utils::Multiply(*PP, true, *AP11, false, Ac11, GetOStream(Statistics2));
+          Ac12 = Utils::Multiply(*PP, true, *AP12, false, Ac12, GetOStream(Statistics2));
+          Ac20 = Utils::Multiply(*PM, true, *AP20, false, Ac20, GetOStream(Statistics2));
+          Ac21 = Utils::Multiply(*PM, true, *AP21, false, Ac21, GetOStream(Statistics2));
+          Ac22 = Utils::Multiply(*PM, true, *AP22, false, Ac22, GetOStream(Statistics2));
 
         }
       else
@@ -191,16 +191,16 @@ namespace MueLu {
           RCP<Matrix> RP = Get< RCP<Matrix> >(coarseLevel, "RP");
           RCP<Matrix> RM = Get< RCP<Matrix> >(coarseLevel, "RM");
 
-          Ac   = Utils::Multiply(*R , false, *AP  , false);
-          Ac00 = Utils::Multiply(*RV, false, *AP00, false);
-          Ac01 = Utils::Multiply(*RV, false, *AP01, false);
-          Ac02 = Utils::Multiply(*RV, false, *AP02, false);
-          Ac10 = Utils::Multiply(*RP, false, *AP10, false);
-          Ac11 = Utils::Multiply(*RP, false, *AP11, false);
-          Ac12 = Utils::Multiply(*RP, false, *AP12, false);
-          Ac20 = Utils::Multiply(*RM, false, *AP20, false);
-          Ac21 = Utils::Multiply(*RM, false, *AP21, false);
-          Ac22 = Utils::Multiply(*RM, false, *AP22, false);
+          Ac   = Utils::Multiply(*R , false, *AP  , false, Ac, GetOStream(Statistics2));
+          Ac00 = Utils::Multiply(*RV, false, *AP00, false, Ac00, GetOStream(Statistics2));
+          Ac01 = Utils::Multiply(*RV, false, *AP01, false, Ac01, GetOStream(Statistics2));
+          Ac02 = Utils::Multiply(*RV, false, *AP02, false, Ac02, GetOStream(Statistics2));
+          Ac10 = Utils::Multiply(*RP, false, *AP10, false, Ac10, GetOStream(Statistics2));
+          Ac11 = Utils::Multiply(*RP, false, *AP11, false, Ac11, GetOStream(Statistics2));
+          Ac12 = Utils::Multiply(*RP, false, *AP12, false, Ac12, GetOStream(Statistics2));
+          Ac20 = Utils::Multiply(*RM, false, *AP20, false, Ac20, GetOStream(Statistics2));
+          Ac21 = Utils::Multiply(*RM, false, *AP21, false, Ac21, GetOStream(Statistics2));
+          Ac22 = Utils::Multiply(*RM, false, *AP22, false, Ac22, GetOStream(Statistics2));
 
         }
       // FINISHED MAKING COARSE BLOCKS
@@ -223,8 +223,9 @@ namespace MueLu {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
+/*
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag) {
     std::stringstream ss(std::stringstream::out);
     ss << msgTag
        << " # global rows = "      << Ac.getGlobalNumRows()
@@ -232,9 +233,10 @@ namespace MueLu {
        << std::endl;
     return ss.str();
   }
+*/
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string MHDRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag) {
     std::stringstream ss(std::stringstream::out);
 
     // TODO: provide a option to skip this (to avoid global communication)

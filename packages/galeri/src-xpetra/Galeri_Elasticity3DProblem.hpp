@@ -69,7 +69,7 @@ namespace Galeri {
         ny_ = list.get("ny", -1);
         nz_ = list.get("nz", -1);
 
-        nDim = 3;
+        nDim_ = 3;
         double one = 1.0;
         stretch.push_back(list.get("stretchx", one));
         stretch.push_back(list.get("stretchy", one));
@@ -100,12 +100,12 @@ namespace Galeri {
       };
 
       GlobalOrdinal                  nx_, ny_, nz_;
-      size_t                         nDim;
+      size_t                         nDim_;
       std::vector<GO>                dims;
       // NOTE: nodes correspond to a local subdomain nodes. I have to construct overlapped subdomains because
       // InsertGlobalValues in Epetra does not support inserting into rows owned by other processor
-      std::vector<Point>             nodes;
-      std::vector<std::vector<LO> >  elements;
+      std::vector<Point>             nodes_;
+      std::vector<std::vector<LO> >  elements_;
       std::vector<GO>                local2Global_;
 
       std::vector<char>              dirichlet_;
@@ -135,7 +135,7 @@ namespace Galeri {
       const size_t numNodesPerElem = 8;
       const size_t numDofPerElem   = numNodesPerElem * numDofPerNode;
 
-      TEUCHOS_TEST_FOR_EXCEPTION(elements[0].size() != numNodesPerElem, std::logic_error, "Incorrect number of element vertices");
+      TEUCHOS_TEST_FOR_EXCEPTION(elements_[0].size() != numNodesPerElem, std::logic_error, "Incorrect number of element vertices");
 
       // Material constant
       SC t = 1;
@@ -157,7 +157,7 @@ namespace Galeri {
 
       for (size_t j = 0; j < numGaussPoints; j++) {
         SerialDenseMatrix<LO,SC>& S = Ss[j];
-        S.shape(sDim, nDim);
+        S.shape(sDim, nDim_);
         EvalDxi  (refPoints, gaussPoints[j], S[0]);
         EvalDeta (refPoints, gaussPoints[j], S[1]);
         EvalDzeta(refPoints, gaussPoints[j], S[2]);
@@ -185,15 +185,15 @@ namespace Galeri {
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
-      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim);        // cache
-      for (size_t i = 0; i < elements.size(); i++) {
+      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);        // cache
+      for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
-        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, nDim);
-        std::vector<LO>& elemNodes = elements[i];
+        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, nDim_);
+        std::vector<LO>& elemNodes = elements_[i];
         for (size_t j = 0; j < numNodesPerElem; j++) {
-          elementNodes(j,0) = nodes[elemNodes[j]].x;
-          elementNodes(j,1) = nodes[elemNodes[j]].y;
-          elementNodes(j,2) = nodes[elemNodes[j]].z;
+          elementNodes(j,0) = nodes_[elemNodes[j]].x;
+          elementNodes(j,1) = nodes_[elemNodes[j]].y;
+          elementNodes(j,2) = nodes_[elemNodes[j]].z;
         }
 
         // Check if element is a translation of the previous element
@@ -223,10 +223,10 @@ namespace Galeri {
             SerialDenseMatrix<LO,SC>& B = Bs[j];
             SerialDenseMatrix<LO,SC>& S = Ss[j];
 
-            SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
+            SerialDenseMatrix<LO,SC> JAC(nDim_, nDim_);
 
-            for (size_t p = 0; p < nDim; p++)
-              for (size_t q = 0; q < nDim; q++) {
+            for (size_t p = 0; p < nDim_; p++)
+              for (size_t q = 0; q < nDim_; q++) {
                 JAC(p,q) = zero;
 
                 for (size_t k = 0; k < numNodesPerElem; k++)
@@ -237,7 +237,7 @@ namespace Galeri {
                 JAC(2,0)*JAC(1,1)*JAC(0,2) - JAC(0,0)*JAC(2,1)*JAC(1,2) - JAC(2,2)*JAC(0,1)*JAC(1,0);
 
             // J2 = inv([JAC zeros(3) zeros(3); zeros(3) JAC zeros(3); zeros(3) zeros(3) JAC])
-            SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
+            SerialDenseMatrix<LO,SC> J2(nDim_*nDim_,nDim_*nDim_);
             J2(0,0) = J2(3,3) = J2(6,6) =  (JAC(2,2)*JAC(1,1)-JAC(2,1)*JAC(1,2))/detJ;
             J2(0,1) = J2(3,4) = J2(6,7) = -(JAC(2,2)*JAC(0,1)-JAC(2,1)*JAC(0,2))/detJ;
             J2(0,2) = J2(3,5) = J2(6,8) =  (JAC(1,2)*JAC(0,1)-JAC(1,1)*JAC(0,2))/detJ;
@@ -332,7 +332,7 @@ namespace Galeri {
     RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
       // FIXME: map here is an extended map, with multiple DOF per node
       // as we cannot construct a single DOF map in Problem, we repeat the coords
-      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim);
+      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim_);
 
       Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
       Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
@@ -340,6 +340,9 @@ namespace Galeri {
 
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
+      // NOTE: coordinates vector local ordering is consistent with that of the
+      // matrix map, as it is constructed by going through GIDs and translating
+      // those.
       const SC hx = stretch[0], hy = stretch[1], hz = stretch[2];
       for (GO p = 0; p < GIDs.size(); p += 3) { // FIXME: we assume that DOF for the same node are label consequently
         GlobalOrdinal ind = GIDs[p] / 3;
@@ -355,7 +358,8 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
-      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, 6);
+      const int numVectors = 6;
+      this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, numVectors);
 
       if (this->Coords_ == Teuchos::null)
         BuildCoords();
@@ -369,9 +373,12 @@ namespace Galeri {
 
       SC one = Teuchos::ScalarTraits<SC>::one();
 
+      // NOTE: nullspace local ordering is consistent with that of the matrix
+      // map, as it inherits ordering from coordinates, which is consistent.
+
       // Translations
       Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1), T2 = this->Nullspace_->getDataNonConst(2);
-      for (size_t i = 0; i < numDofs; i += nDim) {
+      for (size_t i = 0; i < numDofs; i += nDim_) {
         T0[i]   = one;
         T1[i+1] = one;
         T2[i+2] = one;
@@ -384,7 +391,7 @@ namespace Galeri {
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
-      for (size_t i = 0; i < numDofs; i += nDim) {
+      for (size_t i = 0; i < numDofs; i += nDim_) {
         // Rotate in Y-Z Plane (around Z axis): [ -y; x]
         R0[i+0] = -(y[i]-cy);
         R0[i+1] =  (x[i]-cx);
@@ -397,7 +404,15 @@ namespace Galeri {
         R2[i+0] =  (z[i]-cz);
         R2[i+2] = -(x[i]-cx);
       }
-      // Normalize??
+
+      // Equalize norms of all vectors to that of the first one
+      // We do not normalize them as a vector of ones seems nice
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms2(numVectors);
+      for (int i = 1; i < numVectors; i++)
+        norms2[i] = norms2[0] / norms2[i];
+      norms2[0] = Teuchos::ScalarTraits<SC>::one();
+      this->Nullspace_->norm2(norms2);
+      this->Nullspace_->scale(norms2);
 
       return this->Nullspace_;
     }
@@ -407,35 +422,42 @@ namespace Galeri {
       const SC hx = stretch[0], hy = stretch[1], hz = stretch[2];
 
       GO myPID = this->Map_->getComm()->getRank();
-      GO nx = -1,                        ny = -1,                        nz = -1;
       GO mx = this->list_.get("mx", -1), my = this->list_.get("my", -1), mz = this->list_.get("mz", -1);
-      GO shiftx, shifty, shiftz;
 
-      Utils::getSubdomainData(dims[0], mx, myPID % mx, nx, shiftx);
-      Utils::getSubdomainData(dims[1], my, ((myPID - (mx*my) * (myPID / (mx*my))) / mx), ny, shifty);
-      Utils::getSubdomainData(dims[2], mz, myPID / (mx*my), nz, shiftz);
+      const GO mxy = mx*my;
+
+      GO startx, starty, startz, endx, endy, endz;
+      Utils::getSubdomainData(dims[0], mx, (myPID % mxy) % mx, startx, endx);
+      Utils::getSubdomainData(dims[1], my, (myPID % mxy) / mx, starty, endy);
+      Utils::getSubdomainData(dims[2], mz,  myPID / mxy,       startz, endz);
+
+      LO nx = endx - startx, ny = endy - starty, nz = endz - startz;
 
       // Expand subdomain to do overlap
-      if (shiftx    > 0)        { nx++; shiftx--; }
-      if (shifty    > 0)        { ny++; shifty--; }
-      if (shiftz    > 0)        { nz++; shiftz--; }
-      if (shiftx+nx < dims[0])  { nx++;           }
-      if (shifty+ny < dims[1])  { ny++;           }
-      if (shiftz+nz < dims[2])  { nz++;           }
+      if (startx    > 0)        { nx++; startx--; }
+      if (starty    > 0)        { ny++; starty--; }
+      if (startz    > 0)        { nz++; startz--; }
+      if (startx+nx < dims[0])  { nx++;           }
+      if (starty+ny < dims[1])  { ny++;           }
+      if (startz+nz < dims[2])  { nz++;           }
 
-      nodes        .resize((nx+1)*(ny+1)*(nz+1));
+      nodes_       .resize((nx+1)*(ny+1)*(nz+1));
       dirichlet_   .resize((nx+1)*(ny+1)*(nz+1), 0);
       local2Global_.resize((nx+1)*(ny+1)*(nz+1));
-      elements     .resize(nx*ny*nz);
+      elements_    .resize(nx*ny*nz);
 
 #define NODE(i,j,k) ((k)*(ny+1)*(nx+1) + (j)*(nx+1) + (i))
 #define CELL(i,j,k) ((k)*ny*nx         + (j)*nx     + (i))
+      // NOTE: the fact that local ordering here is not consistent with that of
+      // the matrix map does not matter.  The two things that matter are:
+      // local2Global_ assigns to a correct GID, and nodes_ contain correct
+      // coordinates
       for (int k = 0; k <= nz; k++)
         for (int j = 0; j <= ny; j++)
           for (int i = 0; i <= nx; i++) {
-            int ii = shiftx+i, jj = shifty+j, kk = shiftz+k;
+            int ii = startx+i, jj = starty+j, kk = startz+k;
             int nodeID = NODE(i,j,k);
-            nodes[nodeID]         = Point((ii+1)*hx, (jj+1)*hy, (kk+1)*hz);
+            nodes_[nodeID]        = Point((ii+1)*hx, (jj+1)*hy, (kk+1)*hz);
             local2Global_[nodeID] = kk*nx_*ny_ + jj*nx_ + ii;
 
             if (ii == 0   && (this->DirichletBC_ & DIR_LEFT))   dirichlet_[nodeID]++;
@@ -449,7 +471,7 @@ namespace Galeri {
       for (int k = 0; k < nz; k++)
         for (int j = 0; j < ny; j++)
           for (int i = 0; i < nx; i++) {
-            std::vector<int>& element = elements[CELL(i,j,k)];
+            std::vector<LO>& element = elements_[CELL(i,j,k)];
             element.resize(8);
             element[0] = NODE(i,  j,   k  );
             element[1] = NODE(i+1,j,   k  );

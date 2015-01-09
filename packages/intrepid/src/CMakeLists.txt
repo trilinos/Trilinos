@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -155,6 +154,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_C1_FEM.hpp
@@ -185,8 +186,12 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_WEDGE_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_WEDGE_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_WEDGE_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_PYR_C1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_PYR_I2_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEM.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_HEX_In_FEM.hpp

@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -32,7 +32,7 @@
 
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Core.hpp"
 
 // Instantiate tests for Cuda device
 using Kokkos::Cuda;
@@ -42,14 +42,14 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
   Kokkos::Cuda::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize Cuda
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   return res;

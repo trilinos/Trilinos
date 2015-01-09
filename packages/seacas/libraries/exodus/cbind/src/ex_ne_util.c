@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,16 +53,16 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_varid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <stdlib.h>                     // for malloc
+#include <string.h>                     // for strcpy, strlen
+#include <sys/types.h>                  // for int64_t
 
-#include <string.h>
-#include <math.h>
 
-#include <netcdf.h>
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 /* Global variables */
 char *ne_ret_string;
@@ -153,7 +153,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
     return (EX_FATAL);
   }
 
-  /* check if I need the length for this varible */
+  /* check if I need the length for this variable */
   if (idx[1] == -1) {
     /* Get the dimension IDs for this variable */
     if ((status = nc_inq_var(exoid, varid, (char *) 0, &var_type, &ndims,

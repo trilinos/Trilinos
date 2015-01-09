@@ -128,7 +128,7 @@ namespace {
   
 #ifdef USE_ZOLTAN
   /* ZOLTAN_RCB partitioning interface */
-  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *,
+  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *, int,
 			   int *, int, char **);
 #endif
   void BALANCE_STATS(Machine_Description*, int *, size_t, int *);
@@ -720,17 +720,17 @@ int generate_loadbal(Machine_Description* machine,
 #ifdef USE_ZOLTAN
       else if (lb->type == ZOLTAN_RCB) {
         flag = ZOLTAN_assign("RCB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_RIB) {
         flag = ZOLTAN_assign("RIB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_HSFC) {
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
 #endif
@@ -1068,7 +1068,7 @@ namespace {
   {
     INT   *pt_list;
     size_t nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     size_t nhold;
     size_t count;
     size_t num_found = 0;
@@ -1095,7 +1095,6 @@ namespace {
 	  return 0;
 	}
 
-
 	rows[0] = 1;
 	for(size_t ecnt=1; ecnt < mesh->num_elems; ecnt++) {
 	  ssize_t distance = graph->start[ecnt] - graph->start[ecnt-1] + 1;
@@ -1110,6 +1109,10 @@ namespace {
 	  return 0;
 	}
 
+	for (size_t i=0; i < nedges; i++) {
+	  columns[i] = 0;
+	}
+	
 	size_t ki = 0;
 	size_t kf = 0;
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
@@ -1124,12 +1127,12 @@ namespace {
 
 	if (components) {
     
-	  printf("There are "ST_ZU" connected components.\n",components);
+	  printf("There are " ST_ZU " connected components.\n",components);
 	  for(size_t i=0; i <components; i++){
 	    ki = (list_ptr)[i];
 	    kf = (list_ptr)[i+1]-1;
 	    size_t distance = kf - ki + 1;
-	    printf("Connection "ST_ZU" #elements "ST_ZU"\n",i+1, distance);
+	    printf("Connection " ST_ZU " #elements " ST_ZU "\n",i+1, distance);
 	  }
 	}
 
@@ -1428,7 +1431,7 @@ namespace {
 
 	      if(check_type == LOCAL_ISSUES) 
 		{
-		  printf("WARNING: On Processor %d Local Element "ST_ZU" (%s) has a mechanism through Global Node "ST_ZU" with Local Element "ST_ZU" (%s)\n", 
+		  printf("WARNING: On Processor %d Local Element " ST_ZU " (%s) has a mechanism through Global Node " ST_ZU " with Local Element " ST_ZU " (%s)\n", 
 			 proc, 
 			 (size_t)local_number[ecnt], 
 			 elem_name_from_enum(etype), 
@@ -1439,7 +1442,7 @@ namespace {
 		}
 	      else 
 		{
-		  printf("WARNING: Element "ST_ZU" (%s) has a mechanism through Node "ST_ZU" with Element "ST_ZU" (%s)\n", 
+		  printf("WARNING: Element " ST_ZU " (%s) has a mechanism through Node " ST_ZU " with Element " ST_ZU " (%s)\n", 
 			 (size_t)ecnt+1, elem_name_from_enum(etype), (size_t)node, (size_t)el2+1, elem_name_from_enum(etype2)); 
 		}
 	      num_found++;
@@ -1455,7 +1458,7 @@ namespace {
       free(local_number);
 
       if(num_found) {
-	printf("Total mechanisms found = "ST_ZU"\n", num_found);
+	printf("Total mechanisms found = " ST_ZU "\n", num_found);
 	if(check_type == LOCAL_ISSUES) {
 	  if(problem->mech_add_procs == 1) {
 	    machine->num_procs++;
@@ -1580,7 +1583,7 @@ namespace {
     int    dflag;
 
     INT   *pt_list, nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     INT    side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
     int    side_cnt;
 
@@ -1689,7 +1692,7 @@ namespace {
 	    }
 	  }
 	  else {
-	    printf("WARNING: Element = "ST_ZU" is a DEGENERATE BAR\n", ecnt+1);
+	    printf("WARNING: Element = " ST_ZU " is a DEGENERATE BAR\n", ecnt+1);
 	  }
 	}
 	else { /* Is a hex */
@@ -1799,7 +1802,7 @@ namespace {
 		  }
 		  nelem = ncnt3;
 		  if (!dflag && nelem > 2) {
-		    fprintf(stderr, "Possible corrupted mesh detected at element "ST_ZU", strange connectivity.\n", ecnt);
+		    fprintf(stderr, "Possible corrupted mesh detected at element " ST_ZU ", strange connectivity.\n", ecnt);
 		  } 
 		}
 	      }
@@ -1921,29 +1924,29 @@ namespace {
 		  sprintf(cmesg,
 			  "Error returned while getting side id for communication map.");
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "Element 1: "ST_ZU"", (ecnt+1));
+		  sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt+1));
 		  Gen_Error(0, cmesg);
 		  nnodes = get_elem_info(NNODES, etype);
 		  strcpy(cmesg, "connect table:");
 		  for (int i = 0; i < nnodes; i++) {
-		    sprintf(tmpstr, " "ST_ZU"", (size_t)(mesh->connect[ecnt][i]+1));
+		    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "side id: "ST_ZU"", (size_t)(nscnt+1));
+		  sprintf(cmesg, "side id: " ST_ZU "", (size_t)(nscnt+1));
 		  Gen_Error(0, cmesg);
 		  strcpy(cmesg, "side nodes:");
 		  for (int i = 0; i < side_cnt; i++) {
-		    sprintf(tmpstr, " "ST_ZU"", (size_t)(side_nodes[i]+1));
+		    sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "Element 2: "ST_ZU"", (size_t)(elem+1));
+		  sprintf(cmesg, "Element 2: " ST_ZU "", (size_t)(elem+1));
 		  Gen_Error(0, cmesg);
 		  nnodes = get_elem_info(NNODES, etype2);
 		  strcpy(cmesg, "connect table:");
 		  for (int i = 0; i < nnodes; i++) {
-		    sprintf(tmpstr, " "ST_ZU"", (size_t)(mesh->connect[elem][i]+1));
+		    sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[elem][i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
@@ -2147,16 +2150,16 @@ namespace {
 			  &fv2, &lv2);
 #if 1
 	  if (lv2-fv2 != lv1-fv1) {
-	    fprintf(stderr, ""ST_ZU": "ST_ZU" to "ST_ZU"\n", (size_t)pcnt2, (size_t)fv1, (size_t)lv1);
+	    fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", (size_t)pcnt2, (size_t)fv1, (size_t)lv1);
 	    for (i=fv1; i <= lv1; i++)
-	      fprintf(stderr, ""ST_ZU": "ST_ZU"\t"ST_ZU"\t"ST_ZU"\t"ST_ZU"\n", (size_t)i,
+	      fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n", (size_t)i,
 		      (size_t)lb->e_cmap_elems[pcnt][i],
 		      (size_t)lb->e_cmap_neigh[pcnt][i],
 		      (size_t)lb->e_cmap_procs[pcnt][i],
 		      (size_t)lb->e_cmap_sides[pcnt][i]);
-	    fprintf(stderr, ""ST_ZU": "ST_ZU" to "ST_ZU"\n", (size_t)pcnt, (size_t)fv2, (size_t)lv2);
+	    fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", (size_t)pcnt, (size_t)fv2, (size_t)lv2);
 	    for (i=fv2; i <= lv2; i++)
-	      fprintf(stderr, ""ST_ZU": "ST_ZU"\t"ST_ZU"\t"ST_ZU"\t"ST_ZU"\n", (size_t)i,
+	      fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n", (size_t)i,
 		      (size_t)lb->e_cmap_elems[pcnt2][i],
 		      (size_t)lb->e_cmap_neigh[pcnt2][i],
 		      (size_t)lb->e_cmap_procs[pcnt2][i],
@@ -2707,6 +2710,7 @@ namespace {
 		    float *x,             /* x-coordinates */
 		    float *y,             /* y-coordinates */
 		    float *z,             /* z-coordinates */
+                    int ignore_z,          /* flag indicating whether to use z-coords*/
 		    int *part,          /* Output:  partition assignments for each element */
 		    int argc,             /* Fields needed by MPI_Init */
 		    char *argv[]          /* Fields needed by MPI_Init */
@@ -2734,7 +2738,7 @@ namespace {
     Zoltan_Data.vwgt = vwgt;
     Zoltan_Data.x = x;
     Zoltan_Data.y = y;
-    Zoltan_Data.z = z;
+    Zoltan_Data.z = (ignore_z ? NULL : z);
 
     /* Initialize Zoltan */
     Zoltan_Initialize(argc, argv, &ver);
@@ -2764,6 +2768,7 @@ namespace {
     Zoltan_Set_Param(zz, "REMAP", "0");
     Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
     if (vwgt) Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+    if (ignore_z) Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
 
     /* Call partitioner */
     printf("Using Zoltan version %f, method %s\n", ver, method);
@@ -2778,7 +2783,7 @@ namespace {
 
     /* Sanity check */
     if (ndot != (size_t)znobj) {
-      fprintf(stderr, "Sanity check failed; ndot "ST_ZU" != znobj "ST_ZU".\n", 
+      fprintf(stderr, "Sanity check failed; ndot " ST_ZU " != znobj " ST_ZU ".\n", 
 	      (size_t)ndot, (size_t)znobj);
       goto End;
     }

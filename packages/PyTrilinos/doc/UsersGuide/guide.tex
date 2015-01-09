@@ -1,30 +1,3 @@
-% @HEADER
-% ***********************************************************************
-% 
-%            Trilinos: An Object-Oriented Solver Framework
-%                 Copyright (2001) Sandia Corporation
-% 
-% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-% license for use of this work by or on behalf of the U.S. Government.
-% 
-% This library is free software; you can redistribute it and/or modify
-% it under the terms of the GNU Lesser General Public License as
-% published by the Free Software Foundation; either version 2.1 of the
-% License, or (at your option) any later version.
-%  
-% This library is distributed in the hope that it will be useful, but
-% WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-% Lesser General Public License for more details.
-%  
-% You should have received a copy of the GNU Lesser General Public
-% License along with this library; if not, write to the Free Software
-% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-% USA
-% Questions? Contact Michael A. Heroux (wfspotz@sandia.gov) 
-% 
-% ***********************************************************************
-% @HEADER
 
 \documentclass[10pt,relax]{SANDreport}
 \usepackage{amsmath,amsthm}
@@ -107,7 +80,7 @@ detailed insight.
 \bigskip
 
 \begin{center}
-\includegraphics[height=4cm]{PyTrilinos.eps}
+\includegraphics[height=4cm]{figures/PyTrilinos}
 \end{center}
 
 \end{abstract}
@@ -133,7 +106,7 @@ somehow familiar with Trilinos, and knows how to install it.  It is of
 paramount importance to remember that PyTrilinos is ``only'' a wrapper to
 Trilinos, and therefore the reader cannot really understand PyTrilinos if he
 or she is not somehow familiar with Trilinos.  We suggest
-documents~\cite{Trilinos-tutorial, Trilinos-Users-Guide, Trilinos-home-page} 
+documents~\cite{Trilinos-tutorial, Trilinos-Users-Guide, Trilinos-home-page}
 to become familiar with the basic Trilinos
 capabilities.
 
@@ -145,7 +118,7 @@ PyTrilinos reflects the Trilinos organization by presenting a series of {\sl
 modules}, each of them wraps a given Trilinos package.  Algorithmic
 capabilities are defined within independent Trilinos packages; a {\sl
 package} is an integral unit usually developed by a small team of experts
-in a particular area. 
+in a particular area.
 
 The modules of \PyTrilinos\ covered in this document are:
 \begin{itemize}
@@ -158,12 +131,12 @@ see~\cite{Epetra-Ref-Guide}.
 %
 \item {\bf EpetraExt}. This module offers input/output
 capabilities, making it possible to read a matrix in Harwell/Boeing or
-MatrixMarket format, or to read and write generic Epetra objects 
+MatrixMarket format, or to read and write generic Epetra objects
 (like maps, matrices and vectors).
 %
-\item {\bf Triutils}. This module allows the creation of several matrices, 
+\item {\bf Triutils}. This module allows the creation of several matrices,
   like the MATLAB's {\tt gallery} function, and it can be useful for examples
-  and testing. 
+  and testing.
 %
 \item {\bf Amesos}. This module contains a set of clear and consistent
 interfaces to the following third-party serial and parallel sparse direct
@@ -172,8 +145,8 @@ UMFPACK~\cite{umfpack-home-page},
 PARDISO,
 TAUCS,
 SuperLU and SuperLU\_DIST~\cite{superlu-manual},
-DSCPACK~\cite{dscpack-manual}, and 
-MUMPS~\cite{mumps-manual}. See~\cite{Amesos-Reference-Guide} for more details. 
+DSCPACK~\cite{dscpack-manual}, and
+MUMPS~\cite{mumps-manual}. See~\cite{Amesos-Reference-Guide} for more details.
 %
 \item {\bf AztecOO}. This module contains preconditioned Krylov accelerators,
 like CG, GMRES and several others, based on the popular Aztec library.
@@ -189,7 +162,7 @@ see~\cite{ifpack-guide} for more details.
 %
 \item {\bf ML}. This module contains a set of multilevel preconditioners based
 on aggregation procedures for serial and vector problems. ML can take
-advantage of the 
+advantage of the
 METIS~\cite{metis}
 ParMETIS~\cite{parmetis} libraries to create the aggregates.
 For a general introduction to ML and its applications, we refer to
@@ -202,7 +175,7 @@ is reported in Figure~\ref{fig:organization} and Table~\ref{tab:dependency}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=12cm]{organization.eps}
+\includegraphics[width=12cm]{figures/organization}
 \caption{Organization of the linear algebra modules of PyTrilinos.}
 \label{fig:organization}
 \end{center}
@@ -213,14 +186,14 @@ is reported in Figure~\ref{fig:organization} and Table~\ref{tab:dependency}.
 \begin{tabular}{| p{3cm}| c | c | c | c | c | c | c |}
 \hline
           & \rotatebox{90}{Epetra}
-          & \rotatebox{90}{EpetraExt} 
-          & \rotatebox{90}{Triutils} 
-          & \rotatebox{90}{Amesos} 
-          & \rotatebox{90}{IFPACK} 
-          & \rotatebox{90}{ML} 
+          & \rotatebox{90}{EpetraExt}
+          & \rotatebox{90}{Triutils}
+          & \rotatebox{90}{Amesos}
+          & \rotatebox{90}{IFPACK}
+          & \rotatebox{90}{ML}
           & \rotatebox{90}{AztecOO} \\
           \hline
-Epetra    & --&   &   &   &   &   &   \\  
+Epetra    & --&   &   &   &   &   &   \\
 EpetraExt & R & --&   &   &   &   &   \\
 Triutils  & R &   & --&   &   &   &   \\
 Amesos    & R &   & E & --&   &   &   \\
@@ -244,14 +217,14 @@ AztecOO   & R &   & E & A & A & A & --\\
 To fully take advantage of the presented modules of \PyTrilinos, Trilinos
 should be compiled with the following options:
 \begin{verbatim}
-  --enable-teuchos    
-  --enable-epetra     
-  --enable-epetraext  
-  --enable-amesos    
-  --enable-ifpack     
-  --enable-aztecoo     
-  --enable-ml         
-  --enable-triutils   
+  --enable-teuchos
+  --enable-epetra
+  --enable-epetraext
+  --enable-amesos
+  --enable-ifpack
+  --enable-aztecoo
+  --enable-ml
+  --enable-triutils
   --enable-python
 \end{verbatim}
 
@@ -259,16 +232,16 @@ Users can decide to enable or disable any given module/package; however,
 PyTrilinos without the Epetra module is almost an empty box.  As a matter of
 fact, Epetra is the ``language'' of Trilinos, and offers a convenient set of
 interfaces to define distributed linear algebra objects. Epetra supports
-double-precision floating point data only (no single-precision or complex). 
+double-precision floating point data only (no single-precision or complex).
 
 \smallskip
 
-After configuring and compiling Trilinos, one must install Trilinos 
+After configuring and compiling Trilinos, one must install Trilinos
 (by typing \verb!make install!), in order to create PyTrilinos modules.
 The installing procedure will copy all the Python modules in a subdirectory of
 the directory specified with option \verb!--prefix=<inst-dir>!, for example \\
-\verb!lib/python2.3/site-packages/PyTrilinos!. The reader might decide 
-to add this directory to the \verb!PYTHONPATH! variable, for example using the 
+\verb!lib/python2.3/site-packages/PyTrilinos!. The reader might decide
+to add this directory to the \verb!PYTHONPATH! variable, for example using the
 bash shell command
 \begin{verbatim}
 % export PYTHONPATH=$PYTHONPATH:<inst-dir>/lib/python2.3/site-packages
@@ -277,7 +250,7 @@ bash shell command
 At this point, to use PyTrilinos  simply type
 \begin{verbatim}
 % python
-Python 2.3 (#1, Sep 13 2003, 00:49:11) 
+Python 2.3 (#1, Sep 13 2003, 00:49:11)
 [GCC 3.3 20030304 (Apple Computer, Inc. build 1495)] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from PyTrilinos import <module-name>
@@ -342,7 +315,7 @@ Mathematical entities are shown in italics.
 %-----------------------------------------------------------------------------
 
 The PyTrilinos project can be referenced by using the following BiBTeX
-citation information: 
+citation information:
 \begin{verbatim}
 @techreport{sparse05sala,
   title = "Distributed Sparse Linear Algebra With {P}y{T}rilinos",
@@ -363,23 +336,23 @@ capabilities are given to handle dense and serial linear algebra problems.
 These capabilities are based on the Epetra wrapper for BLAS and LAPACK, and
 therefore the serial dense module of PyTrilinos is computationally efficient.
 
-We now report some basic operations involving serial dense objects. First, 
+We now report some basic operations involving serial dense objects. First,
 the {\tt Epetra} module must be imported, with the instruction
 \begin{verbatim}
 >>> from PyTrilinos import Epetra
 \end{verbatim}
 Serial dense matrices are defined by Epetra.SerialDenseMatrix objects; serial
-dense vectors by Epetra.SerialDenseVector objects. As an example, 
+dense vectors by Epetra.SerialDenseVector objects. As an example,
 we create the matrix $A$ and the vector $B$
 \[
-A = 
+A =
 \begin{pmatrix}
 1 & 3 & 5 \\
 2 & 5 & 1 \\
 2 & 3 & 8
 \end{pmatrix}
 , \quad \quad
-B = 
+B =
 \begin{pmatrix}
 10 \\
   8 \\
@@ -396,7 +369,7 @@ with the following commands:
 >>> A[2,0] = 2; A[2,1] = 3; A[2,2] = 8
 >>> B[0] = 10;  B[1] = 8;   B[2] = 3
 \end{verbatim}
-We can  verify the result using 
+We can  verify the result using
 \begin{verbatim}
 >>> print A
 Data access mode: Copy
@@ -411,7 +384,7 @@ LDA: 3
 Data access mode: Copy
 A_Copied: yes
 Length(M): 3
-10 8 3 
+10 8 3
 \end{verbatim}
 Matrix {\tt A} can be reshaped using \verb!A.Reshape(N, M)!; command
 \verb!A.Shape(N, M)! reshapes and sets all the matrix elements to zero.  The
@@ -438,7 +411,7 @@ we first need to create an Epetra.SerialDenseSolver object, set the matrix and t
 Data access mode: Copy
 A_Copied: yes
 Length(M): 3
--9.84 3.88 6.04 
+-9.84 3.88 6.04
 \end{verbatim}
 Alternatively, once can compute the inverse of $A$:
 \begin{verbatim}
@@ -450,9 +423,9 @@ A_Copied: yes
 Rows(M): 3
 Columns(N): 3
 LDA: 3
--1.48 0.56 0.16 
-0.36 0.08 -0.12 
-0.88 -0.36 0.04 
+-1.48 0.56 0.16
+0.36 0.08 -0.12
+0.88 -0.36 0.04
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
@@ -475,14 +448,14 @@ which returns an Epetra.SerialComm if PyTrilinos has been compiled in serial
 mode, or an Epetra.MpiComm if PyTrilinos has support for MPI, using the
 MPI\_COMM\_WORLD communicator. Start-up operations like a call to MPI\_Init()
   are automatically performed when loading method Epetra. MPI is automatically
-  finalized by the Epetra module. Using this approach, 
+  finalized by the Epetra module. Using this approach,
 PyTrilinos scripts are virtually identical for both serial and
 parallel runs. A pictorial representation of how communication are handled in
 the case of two  processors is given in Figure~\ref{fig:distributed}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=5cm]{distributed_object.eps}
+\includegraphics[height=5cm]{figures/distributed_object}
 \caption{All distributed PyTrilinos objects are based on the Epetra.MpiComm
   object, which takes care of calling MPI functions for intra-processor
     communications.}
@@ -503,7 +476,7 @@ report two examples, one for a simple linear map, and another for a more
 realistic, non-structured map.
 
 A linear maps containing 10
-elements and with 0 as base index can be created as 
+elements and with 0 as base index can be created as
 \begin{verbatim}
 >>> Map = Epetra.Map(10, 0, Comm)
 \end{verbatim}
@@ -562,7 +535,7 @@ Minimum of my GIDs         = 2
 \end{verbatim}
 
 A list of elements assigned to the calling processor can be obtained by method
-\verb!MyGlobalElements()!; for example, the instruction 
+\verb!MyGlobalElements()!; for example, the instruction
 {\tt print Map.MyGlobalElements()} results in the output
 \begin{verbatim}
 [0, 1, 5, 6]
@@ -580,7 +553,7 @@ distributed vector can be created and used as follows:
 >>> X = Epetra.Vector(Map)
 >>> for i in range(0, X.MyLength()):
 ...   X[i] = i
-... 
+...
 >>> print X
 [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
 \end{verbatim}
@@ -596,7 +569,7 @@ contains 10 elements and 2 vectors, then sets the {\tt i-}th element of the
 ...     X[v,i] = 10 * v + i
 ...
 >>> print X
-     MyPID           GID               Value               Value  
+     MyPID           GID               Value               Value
          0             0                       0                  10
          0             1                       1                  11
          0             2                       2                  12
@@ -624,7 +597,7 @@ operations, including scaling, norm, matrix-vector multiplication and
 matrix-multivector multiplication.
 Using \epetra\ objects, applications do not need to know about the
 particular storage format, and other implementation details such as data
-layout, the number and location of ghost nodes. 
+layout, the number and location of ghost nodes.
 
 The process of creating a sparse matrix is more involved than the
 process for dense matrices. This is because, in order to obtain
@@ -656,7 +629,7 @@ of nonzeros per row. In general, this can be done in two ways:
 
 We present here how to proceed using the first approach. The storage format is
 inherited from the Epetra\_CrsMatrix class, which stores the matrix
-row-by-row. 
+row-by-row.
 \begin{verbatim}
 >>> A = Epetra.CrsMatrix A(Epetra.Copy,Map,3);
 \end{verbatim}
@@ -718,7 +691,7 @@ complex cases can be handled as well.
 ...     Values = [1.0]
 ...     Matrix.InsertGlobalValues(i, Indices, Values)
 ...
->>> Matrix.GlobalAssemble() 
+>>> Matrix.GlobalAssemble()
 >>> Matrix.FillComplete()
 \end{verbatim}
 Function \verb!SumIntoGlobalValues! adds the coefficients specified
@@ -726,9 +699,9 @@ in \verb!Indices! (as pair row-column) to the matrix, adding them to any
 coefficient that may exist at the specified location. In a finite
 element code, the user will probably insert more than one coefficient
 at time (typically, all the matrix entries corresponding to an elemental
-matrix). Method \verb!GlobalAssemble()! exchange data, so that 
+matrix). Method \verb!GlobalAssemble()! exchange data, so that
 each matrix element not owned by
-process 0 could be sent to the owner, as specified by \verb!Map!. 
+process 0 could be sent to the owner, as specified by \verb!Map!.
 
 %-----------------------------------------------------------------------------
 \subsection{Matrix Generation}
@@ -786,7 +759,7 @@ or can be read from file as
 \begin{verbatim}
 >>> (ierr, Map2) = EpetraExt.MatrixMarketFileToBlockMap(FileName, Comm)
 \end{verbatim}
-where \verb!ierr! is the return error code. Analogously, 
+where \verb!ierr! is the return error code. Analogously,
 \verb!Epetra.MultiVector!'s and \verb!Epetra.Crsmatrix!'s objects
 can be saved on file as follows:
 \begin{verbatim}
@@ -808,7 +781,7 @@ Let us consider again the solution of the linear system (\ref{eq:lin_sys}),
 where $A \in \mathbb{R}^{n \times n}$ is a sparse linear operator, $X \in
 \mathbb{R}^{n \times m}$ and $B \in \mathbb{R}^{n \times m}$ are the solution
 and right-hand side, respectively. $n$ is the global dimension of the problem,
-  and $m$ is the number of vectors in the multi-vectors $X$ and $B$. 
+  and $m$ is the number of vectors in the multi-vectors $X$ and $B$.
   (If $m = 1$, then $X$ and $B$ are ``normal'' vectors.)
 Linear systems of type (\ref{eq:lin_sys}) arise in a variety of applications,
   and constitute the innermost computational kernel, and often the most
@@ -839,10 +812,10 @@ vector, respectively.
 
 Probably, the most robust strategy to solve (\ref{eq:lin_sys}) is to factorize
 the linear matrix $A$ into the product of two matrices $L$ and $U$, so that
-$A = L \, U$, and 
+$A = L \, U$, and
 the linear systems with $L$ and $U$ are readily solvable. Typically,
 $L$ and $U$ are a lower and upper triangular matrix, respectively, and the
-process is referred to as Gaussian elimination. 
+process is referred to as Gaussian elimination.
 
 Direct solution methods can be accessed through the Amesos module.
 All Amesos objects are constructed from the function class
@@ -880,7 +853,7 @@ The object is deleted using
 \begin{verbatim}
 >>> del Solver
 \end{verbatim}
-  
+
 Several parameters are available to toggle the selected Amesos solver.
 To specify parameters, one can use Python's dictionaries:
 \begin{verbatim}
@@ -913,7 +886,7 @@ A very well known solution to this problem is to adopt an iterative solution
 process, like conjugate gradient (CG) or GMRES. The rationale behind
 iterative methods is that they only require (at least in their simplest form)
 matrix-vector and vector-vector products, and both operations scale well for
-sparse matrices. 
+sparse matrices.
 
 To adopt an non-preconditioned iterative solver (for example, CG), with 1550
 maximum iterations and a tolerance of $10^{-5}$ on the relative residual,
@@ -932,20 +905,20 @@ iterative methods is determined by the spectral properties of the matrix
 $A$---typically, its condition number $\kappa(A)$. For
 real-life problems, $\kappa(A)$ is ``large'', meaning that the iterative
 solution method will converge slowly. To solve this problem,
-the original linear system is replaced by 
+the original linear system is replaced by
 \[
 A P P^{-1} X = B
 \]
 where $P$, called {\sl preconditioner}, is an operator whose inverse aim to
 represent the inverse of $A$, though being much cheaper to compute.
-$P$ is chosen so that $AP^{-1}$ is easier to solver than $A$ 
-(that is, it is better conditioned). 
+$P$ is chosen so that $AP^{-1}$ is easier to solver than $A$
+(that is, it is better conditioned).
 
 \smallskip
 
 Often, algebraic preconditioners are adopted, that is, $P$ is constructed by
 manipulating the entries of $A$. This gives rise to the so-called incomplete
-factorization preconditioners (ILU) or algebraic multilevel methods. 
+factorization preconditioners (ILU) or algebraic multilevel methods.
 
 Because ILU preconditioners do not scale well on parallel computers, a common
 practice is to perform {\em local} ILU factorizations.  In this situation,
@@ -962,7 +935,7 @@ so that a processor will include rows that are part of its original set.
 In addition, if row $i$ is part of its original set and row $i$ of $A$ has
 a nonzero entry in column $j$, then row $j$ will also be included in the
 factorization on that processor.  Other levels of overlap are computed
-recursively. 
+recursively.
 
 What we have just described is an example of one-level overlapping domain
 decomposition (DD) preconditioners.  The basic idea of DD methods consists in
@@ -979,7 +952,7 @@ be written as
 where $M$ represents the number of subdomains,
 $R_i$ is a rectangular Boolean matrix that restricts
 a global vector to the subspace defined by the interior of the $i$th
-subdomain, and $B_i$ approximates the inverse of 
+subdomain, and $B_i$ approximates the inverse of
 \begin{equation}
   \label{eq:aztecoo_tilde_a}
   A_i = R_i A R_i^T ,
@@ -1008,7 +981,7 @@ module.
 >>> IFPACKList = {
 ...   "fact: level-of-fill": ("int", "5")
 ... }
-... 
+...
 >>> Prec.SetParameters(IFPACKList);
 >>> Prec.Initialize();
 >>> Prec.Compute();
@@ -1044,7 +1017,7 @@ underlying grid, and in most cases a hierarchy of (not necessarily nested)
   and the specification of the ML, designed for unstructured problems, are
   beyond the scope of this document.
 
-The development of algebraic multigrid (AMG)  (see \cite[Section 8]{Briggs}) 
+The development of algebraic multigrid (AMG)  (see \cite[Section 8]{Briggs})
 has been motivated by the demand for multilevel methods that are
 easier to use.  In AMG, both the matrix hierarchy and the prolongation
 operators are constructed just from the stiffness matrix.  Recall that to use
@@ -1104,7 +1077,7 @@ Harwell/Boeing format~\cite{hb}. The following lines read matrix {\tt
 
 When working with linear systems, it is sometimes informative to be able to
 obtain some basic statistical properties of the linear system matrix and
-the corresponding vectors. 
+the corresponding vectors.
 The IFPACK package furnishes several utilities to accomplish this task.
 Printed information concern the total number of rows and nonzeros, the average
 number of nonzero elements per row, the band size, the number of (weakly)
@@ -1202,7 +1175,7 @@ IFPACK.PrintSparsity(Matrix, "matrix.ps")
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=5cm]{sparsity.ps}
+\includegraphics[height=5cm]{figures/sparsity}
 \caption{Sparsity pattern of matrix {\tt fidap05} obtained using {\tt
   IFPACK.PrintSparsity()}.}
 \label{fig:sparsity}

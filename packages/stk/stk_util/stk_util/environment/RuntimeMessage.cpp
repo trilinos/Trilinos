@@ -1,22 +1,51 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include <list>
-#include <string>
-#include <sstream>
-#include <utility>
-#include <vector>
-#include <boost/unordered_map.hpp>
-
+#include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <stk_util/environment/RuntimeMessage.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/util/Bootstrap.hpp>
-#include <stk_util/util/Marshal.hpp>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <algorithm>                    // for max, stable_sort
+#include <functional>                   // for equal_to, binary_function
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/environment/ReportHandler.hpp>  // for report
+#include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair, operator==
+#include <vector>                       // for vector, etc
+#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
+#include "boost/unordered/unordered_map.hpp"
 
 namespace stk {
 
@@ -289,12 +318,12 @@ add_deferred_message(
 
 void
 report_deferred_messages(
-  ParallelMachine       comm)
+  MPI_Comm       comm)
 {
 #ifdef STK_HAS_MPI
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
 
   for (DeferredMessageVector::iterator it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
     (*it).m_rank = p_rank;
@@ -332,10 +361,10 @@ report_deferred_messages(
 
   {
     const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
     if (MPI_SUCCESS != result) {
@@ -396,7 +425,7 @@ report_deferred_messages(
 
 void
 aggregate_messages(
-  ParallelMachine       comm,
+  MPI_Comm       comm,
   std::ostringstream &  os,
   const char *          separator)
 {
@@ -405,10 +434,10 @@ aggregate_messages(
   os.str("");
   
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
   
-  int result ;
+  int result =-1;
 
   // Gather the send counts on root processor
 
@@ -441,10 +470,10 @@ aggregate_messages(
 
   {
     const char * const send_ptr = message.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void*) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
   }
@@ -455,7 +484,7 @@ aggregate_messages(
     throw std::runtime_error(s.str());
   }
 
-  if (p_root == (int) p_rank) {
+  if (p_root == static_cast<int>(p_rank)) {
     bool first = true;
     for (int i = 0 ; i < p_size ; ++i) {
       if (recv_count[i]) {

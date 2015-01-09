@@ -335,11 +335,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    double *dampingFactors; /* coefficients of prolongator smoother */
    ML_Operator *tmpmat1=NULL,*tmpmat2=NULL;
 
+   double t1=0, createPtentTime=0, smooPTime=0, eigenTime=0;
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
 #endif
-   double t1=0, createPtentTime=0, smooPTime=0, eigenTime=0;
    widget.Adiag = NULL;
 
    StartTimer(&t1);
@@ -487,10 +487,14 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
      }
 
      if ((max_eigen < -666.) && (max_eigen > -667)) {
+       if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+         printf("Calculating eigenvalue estimate using ");
 
        switch( Amat->spectral_radius_scheme ) {
 
        case ML_USE_CG:  /* compute it using CG */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("CG method\n");
 
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
@@ -519,6 +523,8 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
          ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
                          ML_FALSE, ML_TRUE, &max_eigen);
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("Anasazi\n");
 #else
          fprintf(stderr,
              "--enable-epetra --enable-anasazi --enable-teuchos required\n"
@@ -537,6 +543,8 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
          break;
 
        case ML_USE_POWER: /* use ML's power method */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("power method\n");
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
          ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
@@ -555,11 +563,16 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
          break;
 
        default: /* using matrix max norm */
+         if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+           printf("matrix max norm\n");
          max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
          break;
 
        } /* switch( Amat->spectral_radius_scheme ) */
 
+     } else {
+       if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+         printf("Using stashed eigenvalue estimate");
      } /* if ((max_eigen < -666.) && (max_eigen > -667)) */
 
 
@@ -2155,13 +2168,14 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
                          int allocated_space, int columns[], double values[],
                          int row_lengths[])
 {
+
   int ierr;
   int i, j, count, mod;
   int BlockCol, BlockRow, RowMod;
   double DiagValue = 0.0;
   int DiagID;
   int* Filter;
-
+  
   ierr = (*(data->aux_data->aux_func_ptr))(data, N_requested_rows, requested_rows,
                                       allocated_space, columns, values, row_lengths);
   if (ierr == 0)
@@ -2230,6 +2244,14 @@ after:
 
   values[DiagID] += DiagValue;
   row_lengths[0] = count;
+
+  /* EXPERIMENTAL: Special handling code for handling zero diagonals.
+     If sufficient dropping has occurred to zero the diagonal, we reset the 
+     diagonal to its normal value. This keeps the eigenvalue
+     estimate for prolongator smoothing from being hideously wrong.
+   */
+  if(ML_dabs(values[DiagID]  / (values[DiagID] - DiagValue)) < 1e-10)
+    values[DiagID]= -DiagValue;
 
   return(ierr);
 }
@@ -2630,6 +2652,14 @@ static void ML_Finalize_Aux(ML* ml, const int level)
   for (i = 0 ; i < A->aux_data->filter_size ; ++i)
     ML_free((A->aux_data->filter[i]));
   ML_free(A->aux_data->filter);
+
+  /* Kill the filtered diagonal.  This is to prevent later code, like ML_Smoother_NewGS
+   from using the filtered diagonal instead of the real thing.  */
+  if(A->diagonal) {
+    ML_DVector_Destroy(&A->diagonal);
+    A->diagonal=NULL;
+  }
+  
 }
 
 /* ************************************************************************* */
@@ -3201,16 +3231,26 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
   if ( (ml->Pmat[level]).NumZDir      != -1) NumZDir     = (ml->Pmat[level]).NumZDir;
   if ( (ml->Pmat[level]).Zorientation != -1) Zorientation= (ml->Pmat[level]).Zorientation;
 
-  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) { 
+  if (NumZDir == -7 )  {
+     if (ml->comm->ML_mypid == 0  && ag->semicoarsen_levels != -1) {
+       printf("It appears that repartitioning has been performed and so further semicoarsening is aborted.\n");
+       printf("Any further line smoothing is going to numerically act as point smoothing .\n");
+     }
+     (ml->Pmat[level]).NumZDir = 1;
+     ml->Pmat[clevel].Zorientation = 1;
+     NumZDir = 1;
+     Zorientation= 1;
+  }
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) {
 
      Nnodes = Amat->invec_leng/Amat->num_PDEs;
      LayerId    = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
-     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
-                                    Zorientation, NumZDir, ml->Grid[level].Grid);
+     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng,
+            Amat->num_PDEs,  ag->semicoarsen_coordinate,Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm);
   }
-  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) {
      widget.nz = NumZDir;
      widget.CoarsenRate = ag->coarsen_rate;
      widget.LayerId = LayerId;
@@ -3256,8 +3296,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      exit(EXIT_FAILURE);
    }
    }
-   if (VertLineId != NULL)  ML_free(VertLineId); 
-   if (LayerId    != NULL)  ML_free(LayerId); 
+   if (VertLineId != NULL)  ML_free(VertLineId);
+   if (LayerId    != NULL)  ML_free(LayerId);
 
    return flag;
 }
@@ -3850,21 +3890,21 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   struct  ML_CSR_MSRdata *csr_data;
   ML_Operator *Pmatrix;
   double *Pvals;
-  int    *Pptr, *Pcols, NVertLines, Nglobal, Ncglobal;
+  int    *Pptr, *Pcols, Nglobal, Ncglobal;
 
   ML_Aggregate * ag = (ML_Aggregate *) data;
 
+  ML_Operator* Amat = &(ml->Amat[level]);
 #ifdef ML_TIMING
   double t0;
   t0 =  GetClock();
 #endif
 
-  ML_Operator* Amat = &(ml->Amat[level]);
   Pmatrix = &(ml->Pmat[clevel]);
   Amat->num_PDEs    = ag->num_PDE_eqns;
   widget            = (struct SemiCoarsen_Struct *) ag->field_of_values;
 
-  NVertLines = Amat->invec_leng/(ag->num_PDE_eqns*widget->nz);
+  /* int NVertLines = Amat->invec_leng/(ag->num_PDE_eqns*widget->nz); */
   Ncoarse = MakeSemiCoarsenP(Amat->invec_leng/ag->num_PDE_eqns, widget->nz,
                    widget->CoarsenRate, widget->LayerId, widget->VertLineId,
                    ag->num_PDE_eqns, Amat, &Pptr, &Pcols, &Pvals);
@@ -3877,7 +3917,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   Pmatrix->data_destroy = ML_CSR_MSRdata_Destroy;
   ML_Operator_Set_Getrow(Pmatrix, Amat->invec_leng, CSR_getrow);
   ML_Operator_Set_ApplyFunc(Pmatrix, CSR_matvec);
-  Pmatrix->NumZDir = Ncoarse/(ag->num_PDE_eqns*NVertLines);  /* mark these so that we can use them */
+
   Pmatrix->Zorientation= 1;                                  /* for the next level coarsening      */
   Pmatrix ->num_PDEs    = ag->num_PDE_eqns;
 
@@ -3889,9 +3929,12 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   Nglobal = ML_Comm_GsumInt( ml->comm, Nglobal);
   Ncglobal= ML_Comm_GsumInt( ml->comm, Ncglobal);
 
+  /* doing it this way to avoid overflow (and to handle empty procs) */
+  Pmatrix->NumZDir = (int) ( (((double)Ncglobal)/((double)Nglobal))*((double) widget->nz) + .001);
   if (ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) {
        printf("SemiCoarsening: Coarsening from %d to %d\n",Nglobal,Ncglobal);
   }
+  ag->curr_threshold = ag->threshold;
 
 
 #ifdef ML_TIMING
@@ -3908,15 +3951,15 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
 int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
 {
 /*
- * Given the number of points in the z direction (PtsPerLine) and a 
+ * Given the number of points in the z direction (PtsPerLine) and a
  * coarsening rate (CoarsenRate), determine which z-points will serve
  * as Cpts and return the total number of Cpts.
  *
- * Input 
+ * Input
  *    PtsPerLine:   Number of fine level points in the z direction
  *
  *    CoarsenRate:  Roughly, number of Cpts  = (PtsPerLine+1)/CoarsenRate - 1
- *    
+ *
  *    Thin:         Must be either 0 or 1. Thin decides what to do when
  *                  (PtsPerLine+1)/CoarsenRate is not an integer.
  *
@@ -3924,7 +3967,7 @@ int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
  *                    Thin == 1  ==>   floor() the above fraction
  *
  * Output
- *    LayerCpts     Array where LayerCpts[i] indicates that the 
+ *    LayerCpts     Array where LayerCpts[i] indicates that the
  *                  LayerCpts[i]th fine level layer is a Cpt Layer.
  *                  Note: fine level layers are assumed to be numbered starting
  *                        a one.
@@ -3941,14 +3984,14 @@ int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
    if (PtsPerLine == 1) { printf("cannot coarsen further\n"); return -1; }
    if (NCpts < 1) NCpts = 1;
 
-   
+
 
    FirstStride= (int) ceil( ((double) PtsPerLine+1)/( (double) (NCpts+1)));
    RestStride = ((double) (PtsPerLine-FirstStride+1))/((double) NCpts);
 
-   NCLayers   = (int) floor(((double) (PtsPerLine-FirstStride+1))/RestStride);
+   NCLayers   = (int) floor((((double) (PtsPerLine-FirstStride+1))/RestStride)+.00001);
 
-   if ( NCLayers != NCpts) { printf("sizes do not match\n"); exit(1); }
+   if ( NCLayers != NCpts) { printf("sizes do not match %d %d\n",NCpts,NCLayers); exit(1); }
    *LayerCpts = (int *) malloc((NCLayers+1)*sizeof(int));
 
    di  = (double) FirstStride;
@@ -3969,7 +4012,7 @@ int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
 
 
 int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
-                     int VertLineId[], int DofsPerNode, 
+                     int VertLineId[], int DofsPerNode,
 #ifdef HOOKED_TO_ML
                      ML_Operator *Amat,
 #else
@@ -3984,19 +4027,19 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  * construct a prolongator that coarsening to semicoarsening in the z-direction
  * using something like an operator-dependent grid transfer. In particular,
  * matrix stencils are collapsed to vertical lines. Thus, each vertical line
- * gives rise to a block tridiagonal matrix. BlkRows corresponding to 
+ * gives rise to a block tridiagonal matrix. BlkRows corresponding to
  * Cpts are replaced by identity matrices. This tridiagonal is solved
  * to determine each interpolation basis functions. Each Blk Rhs corresponds
  * to all zeros except at the corresponding C-pt which has an identity
  *
- * On termination, return the number of local prolongator columns owned by 
- * this processor. 
+ * On termination, return the number of local prolongator columns owned by
+ * this processor.
  *
- * Note: This code was adapted from a matlab code where offsets/arrays 
+ * Note: This code was adapted from a matlab code where offsets/arrays
  *       start from 1. In most parts of the code, this 1 offset is kept
- *       (in some cases wasting the first element of the array). The 
+ *       (in some cases wasting the first element of the array). The
  *       input and output matrices of this function has been changed to
- *       have offsets/rows/columns which start from 0. LayerId[] and 
+ *       have offsets/rows/columns which start from 0. LayerId[] and
  *       VertLineId[] currently start from 1.
  *
  * Input
@@ -4004,12 +4047,12 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  *    Ntotal       Number of fine level Blk Rows owned by this processor
  *
  *    nz           Number of vertical layers. Note: partitioning must be done
- *                 so that each processor owns an entire vertical line. This 
+ *                 so that each processor owns an entire vertical line. This
  *                 means that nz is the global number of layers, which should
  *                 be equal to the local number of layers.
  *    CoarsenRate  Rate of z semicoarsening. Smoothed aggregation-like coarsening
  *                 would correspond to CoarsenRate = 3.
- *    LayerId      Array from 0 to Ntotal-1 + Ghost. LayerId(BlkRow) gives the  
+ *    LayerId      Array from 0 to Ntotal-1 + Ghost. LayerId(BlkRow) gives the
  *                 layer number associated with the dofs within BlkRow.
  *    VertLineId   Array from 1 to Ntotal, VertLineId(BlkRow) gives a unique
  *                 vertical line id (from 0 to Ntotal/nz-1) of BlkRow. All
@@ -4018,14 +4061,14 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  *    DofsPerNode  Number of degrees-of-freedom per mesh node.
  *
  *    OrigARowPtr, CSR arrays corresponding to the fine level matrix.
- *    OrigAcols,   
+ *    OrigAcols,
  *    OrigAvals
  *
  * Output
  * =====
  *    ParamPptr,   CSR arrays corresponding to the final prolongation matrix.
- *    ParamPcols,   
- *    ParamsPvals 
+ *    ParamPcols,
+ *    ParamsPvals
  */
  int    NLayers, NVertLines, MaxNnz, NCLayers, MyLine, MyLayer;
  int    *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
@@ -4038,7 +4081,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  int    MaxStencilSize, MaxNnzPerRow;
  int    *LayDiff=NULL;
  int    CurRow, LastGuy = -1, NewPtr;
- int    allocated = 0, Ndofs; 
+ int    allocated = 0, Ndofs;
  int    Nghost;
  int    *Layerdofs = NULL, *Col2Dof = NULL;
 
@@ -4072,16 +4115,20 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]=dtemp[i];
    if (dtemp != NULL) free(dtemp);
 
-  NLayers   = LayerId[0];
-  NVertLines= VertLineId[0];
+   if (Ntotal != 0) {
+     NLayers   = LayerId[0];
+     NVertLines= VertLineId[0];
+   }
+   else { NLayers = -1; NVertLines = -1; }
+
   for (i = 1; i < Ntotal; i++) {
       if ( VertLineId[i] > NVertLines ) NVertLines = VertLineId[i];
       if ( LayerId[i]    >   NLayers  ) NLayers    = LayerId[i];
   }
-  NLayers++; 
-  NVertLines++; 
+  NLayers++;
+  NVertLines++;
 
- /* 
+ /*
   * Make an inverse map so that we can quickly find the dof
   * associated with a particular vertical line and layer.
   */
@@ -4091,24 +4138,24 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      InvLineLayer[ VertLineId[i]+1+LayerId[i]*NVertLines ] = i;
   }
 
- /* 
+ /*
   * Determine coarse layers where injection will be applied.
-  */ 
+  */
 
   NCLayers = FindCpts(nz,CoarsenRate,0, &CptLayers);
 
- /* 
+ /*
   * Compute the largest possible interpolation stencil width based
   * on the location of the Clayers. This stencil width is actually
   * nodal (i.e. assuming 1 dof/node). To get the true max stencil width
   * one needs to multiply this by DofsPerNode.
   */
-   
+
   if  (NCLayers < 2) MaxStencilSize = nz;
   else MaxStencilSize = CptLayers[2];
 
   for (i = 3; i <= NCLayers; i++) {
-     if (MaxStencilSize < CptLayers[i]- CptLayers[i-2]) 
+     if (MaxStencilSize < CptLayers[i]- CptLayers[i-2])
          MaxStencilSize = CptLayers[i]- CptLayers[i-2];
   }
   if (NCLayers > 1) {
@@ -4116,18 +4163,18 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
        MaxStencilSize =  nz - CptLayers[NCLayers-1]+1;
   }
 
- /* 
+ /*
   * Allocate storage associated with solving a banded sub-matrix needed to
   * determine the interpolation stencil. Note: we compute interpolation stencils
   * for all dofs within a node at the same time, and so the banded solution
-  * must be large enough to hold all DofsPerNode simultaneously. 
+  * must be large enough to hold all DofsPerNode simultaneously.
   */
 
   Sub2FullMap= (int    *) malloc(sizeof(int   )*(MaxStencilSize+1)*DofsPerNode);
   BandSol    = (double *) malloc(sizeof(double)*(MaxStencilSize+1)*DofsPerNode*
                                                  DofsPerNode);
- /* 
-  * Lapack variables. See comments for dgbsv(). 
+ /*
+  * Lapack variables. See comments for dgbsv().
   */
   KL     = 2*DofsPerNode-1;
   KU     = 2*DofsPerNode-1;
@@ -4136,8 +4183,8 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   NRHS = DofsPerNode;
   BandMat=(double *) malloc(sizeof(double)*(LDAB*MaxStencilSize*DofsPerNode+1));
   IPIV   =(int    *) malloc(sizeof(int   )*(MaxStencilSize+1)*DofsPerNode);
-  
- /* 
+
+ /*
   * Allocate storage for the final interpolation matrix. Note: each prolongator
   * row might have entries corresponding to at most two nodes.
   * Note: the total fine level dofs equals DofsPerNode*Ntotal and the max
@@ -4148,6 +4195,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   MaxNnz = 2*DofsPerNode*Ndofs;
   Pvals  = (double *) malloc( (1+MaxNnz)*sizeof(double));
   Pptr   = (int    *) malloc( DofsPerNode*(2+Ntotal)*sizeof(int   ));
+  Pptr[0] = 0; Pptr[1] = 0;
   Pcols  = (int    *) malloc( (1+MaxNnz)*sizeof(int   ));
 
   if (Pcols == NULL) {
@@ -4163,13 +4211,15 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      if (LayDiff      != NULL) free(LayDiff);
      if (Layerdofs    != NULL) free(Layerdofs);
      if (Col2Dof      != NULL) free(Col2Dof);
+     if (Pvals        != NULL) free(Pvals);
+     if (Pptr         != NULL) free(Pptr);
      return -1;
   }
-  
- /* 
+
+ /*
   * Setup P's rowptr as if each row had its maximum of 2*DofsPerNode nonzeros.
   * This will be useful while filling up P, and then later we will squeeze out
-  * the unused nonzeros locations. 
+  * the unused nonzeros locations.
   */
 
   for (i = 1; i <= MaxNnz; i++) Pcols[i] = -1;  /* mark all entries as unused */
@@ -4179,20 +4229,20 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      count   += (2*DofsPerNode);
   }
 
- /* 
+ /*
   * Build P column by column. The 1st block column corresponds to the 1st coarse
   * layer and the first line. The 2nd block column corresponds to the 2nd coarse
-  * layer and the first line. The NCLayers+1 block column corresponds to the 
+  * layer and the first line. The NCLayers+1 block column corresponds to the
   * 1st coarse layer and the 2nd line, etc.
   */
-  
+
   col = 0;
   for (MyLine=1; MyLine <= NVertLines; MyLine += 1) {
     for (iii=1; iii <= NCLayers;  iii+= 1) {
       col = col+1;
       MyLayer = CptLayers[iii];
 
-      /* 
+      /*
        * StartLayer gives the layer number of the lowest layer that
        * is nonzero in the interpolation stencil that is currently
        * being computed. Normally, if we are not near a boundary this
@@ -4216,31 +4266,31 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
        *  dgbsv() does not require that the first KL rows be initialized,
        *  so we could avoid zeroing out some entries?
        */
-    
+
        for (i = 0; i < NStencilNodes*DofsPerNode*DofsPerNode; i++)
           BandSol[ i] = 0.0;
        for (i = 0; i < LDAB*N; i++) BandMat[ i] = 0.0;
 
       /*
        *  Fill BandMat and BandSol (which is initially the rhs) for each
-       *  node in the interpolation stencil that is being computed. 
+       *  node in the interpolation stencil that is being computed.
        */
-    
+
       for (node_k=1; node_k <= NStencilNodes ; node_k++) {
 
          /*  Map a Line and Layer number to a BlkRow in the fine level  matrix
-          *  and record the mapping from the sub-system to the BlkRow of the   
-          *  fine level matrix.                                               
+          *  and record the mapping from the sub-system to the BlkRow of the
+          *  fine level matrix.
           */
          BlkRow  = InvLineLayer[MyLine+(StartLayer+node_k-2)*NVertLines]+1;
          Sub2FullMap[node_k] = BlkRow;
 
-         /* Two cases: 
+         /* Two cases:
           *    1) the current layer is not a Cpoint layer. In this case we
-          *       want to basically stick the matrix couplings to other 
+          *       want to basically stick the matrix couplings to other
           *       nonzero stencil rows into the band matrix. One way to do
           *       this is to include couplings associated with only MyLine
-          *       and ignore all the other couplings. However, what we do 
+          *       and ignore all the other couplings. However, what we do
           *       instead is to sum all the coupling at each layer participating
           *       in this interpolation stencil and stick this sum into BandMat.
           *    2) the current layer is a Cpoint layer and so we
@@ -4255,7 +4305,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 #else
                 Acols = &(OrigAcols[OrigARowPtr[(BlkRow-1)*DofsPerNode+dof_i]]);
                 Avals = &(OrigAvals[OrigARowPtr[(BlkRow-1)*DofsPerNode+dof_i]]);
-                RowLeng= OrigARowPtr[(BlkRow-1)*DofsPerNode+dof_i+1] - 
+                RowLeng= OrigARowPtr[(BlkRow-1)*DofsPerNode+dof_i+1] -
                                     OrigARowPtr[(BlkRow-1)*DofsPerNode+dof_i];
 #endif
 
@@ -4272,12 +4322,15 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                     if (LayDiff      != NULL) free(LayDiff);
                     if (Layerdofs    != NULL) free(Layerdofs);
                     if (Col2Dof      != NULL) free(Col2Dof);
+                    if (Pvals        != NULL) free(Pvals);
+                    if (Pptr         != NULL) free(Pptr);
+                    if (Pcols        != NULL) free(Pcols);
                     return -1;
                 }
 
                 for (i = 0; i < RowLeng; i++) {
                    LayDiff[i]  = Layerdofs[Acols[i]]-StartLayer-node_k+2;
-                                                                    
+
                    /* This is the main spot where there might be off- */
                    /* processor communication. That is, when we       */
                    /* average the stencil in the horizontal direction,*/
@@ -4306,7 +4359,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                              TheSum += Avals[i];
                       }
                       j = PtCol+DofsPerNode;
-                      index=LDAB*(j-1)+KLU+PtRow-j; 
+                      index=LDAB*(j-1)+KLU+PtRow-j;
                       BandMat[index] = TheSum;
 
                    }
@@ -4319,7 +4372,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                              TheSum += Avals[i];
                       }
                       j = PtCol-DofsPerNode;
-                      index=LDAB*(j-1)+KLU+PtRow-j; 
+                      index=LDAB*(j-1)+KLU+PtRow-j;
                       BandMat[index] = TheSum;
                    }
                 }
@@ -4372,8 +4425,8 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   * Squeeze the -1's out of the columns. At the same time convert Pcols
   * so that now the first column is numbered '0' as opposed to '1'.
   * Also, the arrays Pcols and Pvals should now use the zeroth element
-  * as opposed to just starting with the first element. Pptr will be 
-  * fixed in the for loop below so that Pptr[0] = 0, etc. 
+  * as opposed to just starting with the first element. Pptr will be
+  * fixed in the for loop below so that Pptr[0] = 0, etc.
   */
   CurRow = 1;
   NewPtr = 1;
@@ -4385,7 +4438,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
            Pptr[CurRow] = LastGuy;
            CurRow++;
         }
-     } 
+     }
      if (Pcols[i] != -1) {
         Pcols[NewPtr-1] = Pcols[i]-1;   /* these -1's fix the offset and */
         Pvals[NewPtr-1] = Pvals[i];     /* start using the zeroth element */
@@ -4405,7 +4458,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 
   Pcols = (int    *) realloc(Pcols, (LastGuy+1)*sizeof(int));
   Pvals = (double *) realloc(Pvals, (LastGuy+1)*sizeof(double));
-  
+
   *ParamPptr  = Pptr;
   *ParamPcols = Pcols;
   *ParamPvals = Pvals;
@@ -4414,9 +4467,9 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 }
 
 int ML_compute_line_info(int LayerId[], int VertLineId[],
-                                    int Ndof, int DofsPerNode, 
-                                    int MeshNumbering, int NumNodesPerVertLine, 
-                                    ML_Aggregate_Viz_Stats *grid_info)
+                         int Ndof, int DofsPerNode, char semicoarsen_coordinate,
+                         int MeshNumbering, int NumNodesPerVertLine,
+                         ML_Aggregate_Viz_Stats *grid_info, ML_Comm *comm)
 {
    double *xvals= NULL, *yvals = NULL, *zvals = NULL;
    int    Nnodes, NVertLines, MyNode;
@@ -4425,20 +4478,50 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
    double *xtemp, *ytemp, *ztemp;
    int    *OrigLoc;
    int    i,j,count;
+   int    RetVal, gRetVal;
+   int    mypid;
 
-
+   mypid = comm->ML_mypid;
+   RetVal = 0;
    if ((MeshNumbering != 1) && (MeshNumbering != 2)) {
       if (grid_info != NULL) xvals = grid_info->x;
       if (grid_info != NULL) yvals = grid_info->y;
       if (grid_info != NULL) zvals = grid_info->z;
 
-      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) return -1;
+      ztemp = zvals;
+      if (semicoarsen_coordinate == 'x') 
+         { zvals = xvals; if (ztemp == NULL) xvals=yvals; else xvals= ztemp;}
+      if (semicoarsen_coordinate == 'y') 
+         { zvals = yvals; if (ztemp == NULL) yvals=xvals; else yvals= ztemp;}
+      if (semicoarsen_coordinate == 'z') {
+        if ( (zvals == NULL) && (xvals != NULL) && (yvals != NULL) ) {
+         printf("Cannot coarsen 2D problems in z direction. Must set semicoarsen_coordinate to x or y\n");
+         exit(1);
+        }
+      }
+
+      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) RetVal = -1;
    }
    else {
-      if  (NumNodesPerVertLine == -1) return -4;
-      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
+      if  (NumNodesPerVertLine == -1)                     RetVal = -4;
+      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) RetVal = -3;
    }
-   if ( (Ndof%DofsPerNode) != 0) return -2;
+   if ( (Ndof%DofsPerNode) != 0) RetVal = -2;
+
+   gRetVal = ML_gmax_int(RetVal, comm);
+   if ( gRetVal < 0)  {
+      i = comm->ML_nprocs;
+      if (RetVal < 0) i = mypid;
+      j = ML_gmin_int(i, comm);
+
+      if (mypid == j) {
+         if (RetVal == -1) printf("Not semicoarsening as no mesh numbering information or coordinates are given\n");
+         if (RetVal == -4) printf("Not semicoarsening as the number of z nodes is not given.\n");
+         if (RetVal == -3) printf("Not semicoarsening as the total number of nodes is not evenly divisible by the number of z direction nodes .\n");
+         if (RetVal == -2) printf("Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
+      }
+      return gRetVal;
+   }
 
    Nnodes = Ndof/DofsPerNode;
 
@@ -4515,7 +4598,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
                next++;
             if (NumBlocks == 0) NumNodesPerVertLine = next-index;
             if (next-index != NumNodesPerVertLine) {
-               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumNodesPerVertLine);
+               printf("%d: Error code only works for constant block size now!!! A size of %d found instead of %d\n",mypid,next-index,NumNodesPerVertLine);
                exit(EXIT_FAILURE);
             }
             count = 0;
@@ -4541,6 +4624,13 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
           if (LayerId[i] == -1) {
              printf("Warning: did not assign %d to a Layer?????\n",i);
           }
+       }
+       i = ML_gmax_int(NumNodesPerVertLine, comm);
+       if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
+
+       if (NumNodesPerVertLine != i)  {
+          printf("%d: Different processors have different z direction line lengths? %d vs. %d\n",mypid,i,NumNodesPerVertLine);
+          exit(EXIT_FAILURE);
        }
        return NumNodesPerVertLine;
 }

@@ -64,7 +64,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RigidBodyModeFactory : public SingleLevelFactoryBase {
 #undef MUELU_RIGIDBODYMODEFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -81,7 +81,7 @@ namespace MueLu {
     //! Constructor
     RigidBodyModeFactory(const std::string & nspName = "Nullspace")
       : nspName_(nspName),
-	numPDEs_(3)
+        numPDEs_(3)
     { }
 
     //! Destructor.

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,10 +56,10 @@
 #include <mpi.h>
 #endif
 
-NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess, 
-		  int outputPrecision, 
-		  const Teuchos::RCP<std::ostream>& outputStream,
-		  const Teuchos::RCP<std::ostream>& errStream) :
+NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
+          int outputPrecision,
+          const Teuchos::RCP<std::ostream>& outputStream,
+          const Teuchos::RCP<std::ostream>& errStream) :
   precision(outputPrecision),
   myPID(MyPID),
   printTest(outputInformation),
@@ -82,8 +82,8 @@ NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
 NOX::Utils::Utils(Teuchos::ParameterList& p)
 {
   printTest=0; // This must be initialized before use in reset(), or else
-               // it can take on different random values on different 
-               // processors leading to inconsistent program flow. 
+               // it can take on different random values on different
+               // processors leading to inconsistent program flow.
                // KL 7 June 2009
   this->reset(p);
 }
@@ -142,7 +142,7 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
     for (OptionMap::const_iterator i = start; i != stop; ++i) {
       add_test = printList.get(i->first, false);
       if (add_test)
-	printTest += i->second;
+    printTest += i->second;
     }
   }
   else if (isParameterType<NOX::Utils::MsgType>(p, "Output Information"))
@@ -174,7 +174,7 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
 #endif
   printProc = p.get("Output Processor", 0);
   precision = p.get("Output Precision", 3);
-  
+
   // Output streams
   blackholeStream = Teuchos::rcp(new Teuchos::oblackholestream);
 
@@ -183,16 +183,16 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
     printStream =
       (p).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<std::ostream> >("Output Stream");
-  else 
+  else
     printStream = Teuchos::rcp(&(std::cout), false);
   myStream = (myPID == printProc) ? printStream : blackholeStream;
-  
-  if (p.INVALID_TEMPLATE_QUALIFIER 
+
+  if (p.INVALID_TEMPLATE_QUALIFIER
       isType< Teuchos::RCP<std::ostream> >("Error Stream"))
     errorStream =
       (p).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<std::ostream> >("Error Stream");
-  else 
+  else
     errorStream = Teuchos::rcp(&(std::cerr), false);
 }
 
@@ -214,7 +214,7 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval) const
   return NOX::Utils::Sci(dval, precision);
 }
 
-NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p) 
+NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
 {
   return NOX::Utils::Sci(dval, p);
 }
@@ -222,8 +222,10 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
 std::ostream& NOX::operator<<(std::ostream& os, const NOX::Utils::Sci& s)
 {
   os.setf(std::ios::scientific);
+  std::streamsize p = os.precision();
   os.precision(s.p);
   os << std::setw(s.p + 6) << s.d;
+  os.precision(p);
   os.unsetf(std::ios::scientific);
   return os;
 }
@@ -256,7 +258,7 @@ std::ostream& NOX::Utils::pout(NOX::Utils::MsgType type) const
 {
   if (isPrintType(type))
     return *printStream;
-  
+
   return *blackholeStream;
 }
 

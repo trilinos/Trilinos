@@ -250,7 +250,7 @@ public:
   }
 
   //! Appends a new vector.
-  void Append(MultiVector rhs)
+  void Append(const MultiVector & rhs)
   {
     StackPush();
 
@@ -922,7 +922,7 @@ private:
   }
 
   //! Verifies that \c rhs is compatible with \c this, and not its alias.
-  void CheckSpaces(const MultiVector rhs)  const
+  void CheckSpaces(const MultiVector & rhs)  const
   {
     if (rhs.GetVectorSpace() != GetVectorSpace()) {
       ML_THROW("rhs.GetVectorSpace() is not equal to this->GetVectorSpace()", -1);

@@ -55,8 +55,8 @@
 //==============================================================================
 int Ifpack_GreedyPartitioner::ComputePartitions()
 {
-  vector<int> ElementsPerPart(NumLocalParts());
-  vector<int> Count(NumLocalParts());
+  std::vector<int> ElementsPerPart(NumLocalParts());
+  std::vector<int> Count(NumLocalParts());
   for (int i = 0 ; i < NumLocalParts() ; ++i)
     Count[i] = 0;
 
@@ -75,7 +75,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
   }
 
   int NumEntries;
-  vector<int> Indices(MaxNumEntries());
+  std::vector<int> Indices(MaxNumEntries());
   
   // load root node for partition 0
   int CurrentPartition = 0;
@@ -96,7 +96,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
   if (TotalCount)
     CurrentPartition = 1;
 
-  vector<int> ThisLevel(1);
+  std::vector<int> ThisLevel(1);
   ThisLevel[0] = RootNode_;
 
   // be sure that RootNode is not a singleton or empty row
@@ -115,7 +115,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
   // now aggregate the non-empty and non-singleton rows
   while (ThisLevel.size()) {
 
-    vector<int> NextLevel;
+    std::vector<int> NextLevel;
 
     for (unsigned int i = 0 ; i < ThisLevel.size() ; ++i) {
 

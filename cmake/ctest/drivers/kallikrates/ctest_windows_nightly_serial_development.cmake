@@ -65,7 +65,7 @@ SET(BUILD_DIR_NAME SERIAL_OPT_DEV)
 SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
-SET( EXTRA_EXCLUDE_PACKAGES TrilinosFramework Stokhos Piro FEApp)
+SET( EXTRA_EXCLUDE_PACKAGES TriBITS Stokhos Piro FEApp KokkosCore TeuchosKokkosCompat KokkosContainers TpetraKernels KokkosExample TeuchosKokkosComm)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental"

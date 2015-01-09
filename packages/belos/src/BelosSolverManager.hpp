@@ -269,6 +269,7 @@ namespace Details {
         "This solver is not implemented for complex ScalarType." );
     }
   };
+
 } // namespace Details
 
 

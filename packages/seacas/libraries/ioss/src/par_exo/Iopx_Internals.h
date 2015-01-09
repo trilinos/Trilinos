@@ -35,28 +35,29 @@
 #ifndef IOSS_Iopx_Internals_h
 #define IOSS_Iopx_Internals_h
 
-#include <exodusII.h>
-#include <vector>
-#include <string>
-#include <cstring>
-#include "Ioss_ParallelUtils.h"
+#include <exodusII.h>                   // for MAX_LINE_LENGTH, etc
+#include <stdint.h>                     // for int64_t
+#include <cstring>                      // for strcpy, strncpy
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_ParallelUtils.h"         // for ParallelUtils
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 
 typedef int64_t entity_id;
 
 namespace Ioss {
   
-  class NodeBlock;
-  class EdgeBlock;
-  class FaceBlock;
-  class ElementBlock;
 
-  class NodeSet;
-  class EdgeSet;
-  class FaceSet;
-  class ElementSet;
 
-  class SideBlock;
-  class SideSet;
 }
   /*!
    * This set of classes provides a thin wrapper around the exodusII

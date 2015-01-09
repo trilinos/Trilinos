@@ -55,45 +55,45 @@ using std::map;
 
 namespace EpetraExt {
 
-template<typename int_type>
-typename TCrsGraph_MapColoringIndex<int_type>::NewTypeRef
-TCrsGraph_MapColoringIndex<int_type>::
-operator()( OriginalTypeRef orig )
-{
-  if(!orig.RowMap(). template GlobalIndicesIsType<int_type>())
-    throw "EpetraExt::TCrsGraph_MapColoringIndex::operator(): Global indices mismatch.";
+// template<typename int_type>
+// typename TCrsGraph_MapColoringIndex<int_type>::NewTypeRef
+// TCrsGraph_MapColoringIndex<int_type>::
+// operator()( OriginalTypeRef orig )
+// {
+//   if(!orig.RowMap(). template GlobalIndicesIsType<int_type>())
+//     throw "EpetraExt::TCrsGraph_MapColoringIndex::operator(): Global indices mismatch.";
 
-  Base::origObj_ = &orig;
+//   Base::origObj_ = &orig;
 
-  const Epetra_BlockMap & RowMap = orig.RowMap();
-  int nRows = RowMap.NumMyElements();
+//   const Epetra_BlockMap & RowMap = orig.RowMap();
+//   int nRows = RowMap.NumMyElements();
 
-  int NumColors = ColorMap_.NumColors();
-  int * ListOfColors = ColorMap_.ListOfColors();
+//   int NumColors = ColorMap_.NumColors();
+//   int * ListOfColors = ColorMap_.ListOfColors();
 
-  map<int,int> MapOfColors;
-  for( int i = 0; i < NumColors; ++i ) MapOfColors[ ListOfColors[i] ] = i;
+//   map<int,int> MapOfColors;
+//   for( int i = 0; i < NumColors; ++i ) MapOfColors[ ListOfColors[i] ] = i;
 
-  //initial setup of stl vector of IntVectors for indexing
-  vector<int_type> dummy( nRows, -1 );
-  typename Base::NewTypePtr IndexVec = new typename Base::NewType( NumColors, typename Epetra_GIDTypeVector<int_type>::impl( Copy, RowMap, &dummy[0] ) );
+//   //initial setup of stl vector of IntVectors for indexing
+//   vector<int_type> dummy( nRows, -1 );
+//   typename Base::NewTypePtr IndexVec = new typename Base::NewType( NumColors, typename Epetra_GIDTypeVector<int_type>::impl( Copy, RowMap, &dummy[0] ) );
 
-  int MaxNumIndices = orig.MaxNumIndices();
-  int NumIndices;
-  vector<int_type> Indices( MaxNumIndices );
+//   int MaxNumIndices = orig.MaxNumIndices();
+//   int NumIndices;
+//   vector<int_type> Indices( MaxNumIndices );
 
-  for( int i = 0; i < nRows; ++i )
-  {
-    orig.ExtractGlobalRowCopy( (int_type) orig.GRID64(i), MaxNumIndices, NumIndices, &Indices[0] );
+//   for( int i = 0; i < nRows; ++i )
+//   {
+//     orig.ExtractGlobalRowCopy( (int_type) orig.GRID64(i), MaxNumIndices, NumIndices, &Indices[0] );
 
-    for( int j = 0; j < NumIndices; ++j )
-     (*IndexVec)[ MapOfColors[ColorMap_(Indices[j])] ][i] = Indices[j];
-  }
+//     for( int j = 0; j < NumIndices; ++j )
+//      (*IndexVec)[ MapOfColors[ColorMap_(Indices[j])] ][i] = Indices[j];
+//   }
 
-  Base::newObj_ = IndexVec;
+//   Base::newObj_ = IndexVec;
 
-  return *IndexVec;
-}
+//   return *IndexVec;
+// }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 

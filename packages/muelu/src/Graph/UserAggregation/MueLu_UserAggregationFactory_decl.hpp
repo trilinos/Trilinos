@@ -64,7 +64,9 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+template <class LocalOrdinal = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class UserAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_USERAGGREGATIONFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -79,7 +81,7 @@ public:
   //! Destructor.
   virtual ~UserAggregationFactory() { }
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
   //@}
 

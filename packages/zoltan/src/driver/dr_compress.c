@@ -75,7 +75,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 {
   ZOLTAN_FILE* file;
   char truemode[10];
-  char filename[FILE_NAME_SIZE+EXTENSION_SIZE];
+  char filename[FILE_NAME_SIZE+EXTENSION_SIZE+1];
   int error = 1;
   int i;
 
@@ -97,7 +97,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   for (i=0; (error != 0) && (i <2) ; ++i) {
 
     if (i == 0) { /* Try the classical compressed version */
-      char append[4];
+      char append[EXTENSION_SIZE+1];
       switch (type) {
 #ifdef ZOLTAN_GZIP
       case GZIP:
@@ -118,7 +118,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 	append[0] = '\0';
 	break;
       }
-      strncat(filename, append, FILE_NAME_SIZE + EXTENSION_SIZE);
+      strncat(filename, append, EXTENSION_SIZE);
     }
     else
       strncpy(filename, path, FILE_NAME_SIZE);

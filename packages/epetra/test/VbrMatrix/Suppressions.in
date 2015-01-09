@@ -1,5 +1,5 @@
 #
-#  This file specifies memory errors which we want valgrind to ignore when running 
+#  This file specifies memory errors which we want valgrind to ignore when running
 #  TestOptions.
 #
 #
@@ -9,8 +9,8 @@
 #    3)  A memory leak in fopen
 #
 #  The memory leak in AmesosClasses is, I claim, bogus.  Valgrind objects to the following construct:
-#     
-# 
+#
+#
 
 #    1)  Eight errors in write, mwrite and writev
 {

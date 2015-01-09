@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -55,10 +55,13 @@
 
 #include "DennisSchnabel.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   Comm(&comm),
-  NumGlobalElements(numGlobalElements)
+  NumGlobalElements(numGlobalElements),
+  flag(F_ONLY),
+  soln(NULL),
+  rhs(NULL)
 {
 
   // Commonly used variables
@@ -66,7 +69,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   MyPID = Comm->MyPID();      // Process ID
   NumProc = Comm->NumProc();  // Total number of processes
 
-  // Construct a Source Map that puts approximately the same 
+  // Construct a Source Map that puts approximately the same
   // Number of equations on each processor in uniform global ordering
   StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);
 
@@ -74,31 +77,31 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   NumMyElements = StandardMap->NumMyElements();
 
   // Construct an overlaped map for the fill calls **********************
-  /* The overlap map is needed for multiprocessor jobs.  The unknowns 
-   * are stored in a distributed vector where each node owns one unknown.  
-   * During a function or Jacobian evaluation, each processor needs to have 
-   * both of the unknown values.  The overlapped vector can get this data 
-   * by importing the owned values from the other node to this overlapped map. 
-   * Actual solves must be done using the Standard map where everything is 
+  /* The overlap map is needed for multiprocessor jobs.  The unknowns
+   * are stored in a distributed vector where each node owns one unknown.
+   * During a function or Jacobian evaluation, each processor needs to have
+   * both of the unknown values.  The overlapped vector can get this data
+   * by importing the owned values from the other node to this overlapped map.
+   * Actual solves must be done using the Standard map where everything is
    * distributed.
    */
   // For single processor jobs, the overlap and standard map are the same
   if (NumProc == 1) {
     OverlapMap = new Epetra_Map(*StandardMap);
-  } 
+  }
   else {
 
     int OverlapNumMyElements = 2;
     int OverlapMyGlobalElements[2];
-    
-    for (i = 0; i < OverlapNumMyElements; i ++) 
+
+    for (i = 0; i < OverlapNumMyElements; i ++)
       OverlapMyGlobalElements[i] = i;
-    
-    OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-				OverlapMyGlobalElements, 0, *Comm);
+
+    OverlapMap = new Epetra_Map(-1, OverlapNumMyElements,
+                OverlapMyGlobalElements, 0, *Comm);
   } // End Overlap map construction *************************************
 
-  // Construct Linear Objects  
+  // Construct Linear Objects
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
@@ -109,7 +112,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
   // Use the graph AA to create a Matrix.
   A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
 
-  // Transform the global matrix coordinates to local so the matrix can 
+  // Transform the global matrix coordinates to local so the matrix can
   // be operated upon.
   A->FillComplete();
 }
@@ -126,7 +129,7 @@ DennisSchnabel::~DennisSchnabel()
 // Matrix and Residual Fills
 bool DennisSchnabel::evaluate(
              NOX::Epetra::Interface::Required::FillType fillType,
-             const Epetra_Vector* soln, 
+             const Epetra_Vector* soln,
              Epetra_Vector* tmp_rhs)
 {
   flag = MATRIX_ONLY;
@@ -156,26 +159,26 @@ bool DennisSchnabel::evaluate(
     i=rhs->PutScalar(0.0);
 
     // Processor 0 always fills the first equation.
-    if (MyPID==0) { 
+    if (MyPID==0) {
       (*rhs)[0]=(u[0]*u[0] + u[1]*u[1] - 2.);
 
       // If it's a single processor job, fill the second equation on proc 0.
-      if (NumProc==1) 
-	(*rhs)[1]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
-    } 
+      if (NumProc==1)
+    (*rhs)[1]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
+    }
     // Multiprocessor job puts the second equation on processor 1.
-    else { 
+    else {
       (*rhs)[0]=(exp(u[0]-1.) + u[1]*u[1]*u[1] - 2.);
     }
   }
 
-  
+
   int* column = new int[2];
   double* jac = new double[2];
 
-  // The matrix is 2 x 2 and will always be 0 and 1 regardless of 
+  // The matrix is 2 x 2 and will always be 0 and 1 regardless of
   // the coordinates being local or global.
-  column[0] = 0; 
+  column[0] = 0;
   column[1] = 1;
 
   // Begin Jacobian fill
@@ -191,26 +194,26 @@ bool DennisSchnabel::evaluate(
       ierr=A->ReplaceGlobalValues(0, 2, jac, column);
 
       // If it's a single processor job, fill the second equation on proc 0.
-      if (NumProc==1) {	 
-	jac[0] = exp(u[0]-1.);
-	jac[1] = 3.*u[1]*u[1];
-	ierr=A->ReplaceGlobalValues(1, 2, jac, column);
+      if (NumProc==1) {
+    jac[0] = exp(u[0]-1.);
+    jac[1] = 3.*u[1]*u[1];
+    ierr=A->ReplaceGlobalValues(1, 2, jac, column);
       }
-    } 
+    }
     // Multiprocessor job puts the second equation on processor 1.
     else {
       jac[0] = exp(u[0]-1.);
       jac[1] = 3.*u[1]*u[1];
       ierr=A->ReplaceGlobalValues(1, 2, jac, column);
     }
-  } 
+  }
 
   delete [] column;
   delete [] jac;
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   // Transform matrix so it can be operated upon.
   A->FillComplete();
 
@@ -221,7 +224,7 @@ Teuchos::RCP<Epetra_Vector> DennisSchnabel::getSolution()
 {
   return initialSolution;
 }
-  
+
 Teuchos::RCP<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
 {
   return A;
@@ -229,14 +232,14 @@ Teuchos::RCP<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
 
 Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
 {
-  
+
   int* index = new int[2];
 
   if (MyPID==0) {
     index[0]=0;
     index[1]=1;
     AA.InsertGlobalIndices(0, 2, index);
-  
+
     if (NumProc==1) {
       index[0]=0;
       index[1]=1;
@@ -247,9 +250,9 @@ Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
     index[1]=1;
     AA.InsertGlobalIndices(1, 2, index);
   }
-  
+
   delete [] index;
-  
+
   AA.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -50,21 +50,22 @@
 
 #ifndef NOX_PETSC_OPTIONS_H
 #define NOX_PETSC_OPTIONS_H
-  
+
+#include "petscversion.h"
 #include "petscsys.h"
 #include "NOX.H" // Needed for NOX::StatusTest classes
 
 namespace NOX {
 namespace Petsc {
 
-  /*! \brief Class to convert solver options from command line (or command 
+  /*! \brief Class to convert solver options from command line (or command
    *  input file) into a form usable by NOX. */
   /*!  Details go here .....
    *   */
 class Options {
 
 public:
- 
+
   //! Constructor
   Options();
 
@@ -84,16 +85,20 @@ private:
 
   enum {maxStringLength = 256};
   char optionString[maxStringLength];
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  PetscBool flg;
+#else
   PetscTruth flg;  // Boolean flag
+#endif
   int ierr;   // Used in Petsc CHKERRQ macro
   int rank;   // proc ID used with output utils
- 
+
   //! Supported convergence criteria
   Teuchos::RCP<NOX::StatusTest::MaxIters>    testMaxIters;
   Teuchos::RCP<NOX::StatusTest::NormF>       testNormF;
   Teuchos::RCP<NOX::StatusTest::NormUpdate>  testNormUpdate;
   Teuchos::RCP<NOX::StatusTest::Combo>       testCombo;
-  
+
 };
 } // namespace Petsc
 } // namespace NOX

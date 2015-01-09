@@ -1,6 +1,3 @@
-
-INCLUDE(TribitsAddExecutableAndTest)
-  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ScalarTraits_test  
   SOURCES ScalarTraits_test.cpp 

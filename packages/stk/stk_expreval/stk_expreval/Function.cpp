@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #include <math.h>
 #include <cmath>
 #include <ctime>
@@ -172,36 +205,36 @@ typedef CFunction<CExtern2> CFunction2;
 typedef CFunction<CExtern3> CFunction3;
 typedef CFunction<CExtern4> CFunction4;
 
-
+namespace {
 extern "C" {
   /// extract signed integral value from floating-point number
-  static double ipart(double x)  {
+  double ipart(double x) {
     double y;
     std::modf(x, &y);
     return y;
   }
 
   /// Extract fractional value from floating-point number
-  static double fpart(double x)  {
+  double fpart(double x) {
     double y;
     return std::modf(x, &y);
   }
 
   /// Interface to the pseudo-random number generator function rand
   /// provided by ANSI C math library.
-  static double real_rand() {
-    return (double) std::rand() / ((double)(RAND_MAX) + 1.0);
+  double real_rand() {
+    return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
   }
 
   /// Sets x as the "seed". Interface to the srand function provided by the
   /// ANSI C math library.
-  static double real_srand(double x) {
+  double real_srand(double x) {
     std::srand(static_cast<int>(x));
     return 0.0;
   }
 
   /// Return the current time
-  static double current_time() {
+  double current_time() {
     return static_cast<double>(::time(NULL));
   }
 
@@ -212,7 +245,7 @@ extern "C" {
   }
 
   /// Sets x as the "seed" for the pseudo-random number generator.
-  static double random_seed(double x) {
+  double random_seed(double x) {
     int y = static_cast<int>(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
@@ -220,7 +253,7 @@ extern "C" {
   }
 
   /// Non-platform specific (pseudo) random number generator.
-  static double random0() {
+  double random0() {
     sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
     sRandomRangeHighValue += sRandomRangeLowValue;
     sRandomRangeLowValue += sRandomRangeHighValue;
@@ -229,7 +262,7 @@ extern "C" {
   }
 
   /// Non-platform specific (pseudo) random number generator.
-  static double random1(double seed) {
+  double random1(double seed) {
     random_seed(seed);
     sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
     sRandomRangeHighValue += sRandomRangeLowValue;
@@ -239,51 +272,51 @@ extern "C" {
   }
 
   /// Returns the angle (given in radians) in degrees.
-  static double deg(double a)  {
+  double deg(double a)  {
     return (180.0 / s_pi) * a;
   }
 
   /// Returns the angle (given in degrees) in radians.
-  static double rad(double a)  {
+  double rad(double a)  {
     return  (s_pi / 180.0) * a;
   }
 
   /// Returns the minimum value among its arguments
-  static double min2(double a, double b) {
+  inline double min2(double a, double b) {
     return std::min(a, b);
   }
 
   /// Returns the minimum value among its arguments
-  static double min3(double a, double b, double c) {
+  inline double min3(double a, double b, double c) {
     return std::min(std::min(a, b), c);
   }
 
   /// Returns the minimum value among its arguments
-  static double min4(double a, double b, double c, double d) {
+  inline double min4(double a, double b, double c, double d) {
     return std::min(std::min(a, b), std::min(c,d));
   }
 
   /// Returns the maximum value among its arguments
-  static double max2(double a, double b) {
+  inline double max2(double a, double b) {
     return std::max(a, b);
   }
 
   /// Returns the maximum value among its arguments
-  static double max3(double a, double b, double c) {
+  inline double max3(double a, double b, double c) {
     return std::max(std::max(a, b), c);
   }
 
   /// Returns the maximum value among its arguments
-  static double max4(double a, double b, double c, double d) {
+  double max4(double a, double b, double c, double d) {
     return std::max(std::max(a, b), std::max(c,d));
   }
 
   /// Convert rectangular coordinates into polar radius.
-  static double recttopolr(double x, double y) {
+  double recttopolr(double x, double y) {
     return std::sqrt((x * x) + (y * y));
   }
 
-  static double cosine_ramp3(double t, double rampStartTime, double rampEndTime) {
+  double cosine_ramp3(double t, double rampStartTime, double rampEndTime) {
     if( t < rampStartTime    )
     {
       return 0.0;
@@ -298,11 +331,11 @@ extern "C" {
     }
   }
 
-  static double cosine_ramp1(double t) {
+  double cosine_ramp1(double t) {
     return cosine_ramp3(t, 0.0, 1.0);
   }
 
-  static double cosine_ramp2(double t, double rampEndTime) {
+  double cosine_ramp2(double t, double rampEndTime) {
     return cosine_ramp3(t, 0.0, rampEndTime);
   }
 
@@ -380,17 +413,17 @@ extern "C" {
   }
 
   /// Returns -1 or 1 depending on whether x is negative or positive.
-  static double sign(double a)  {
+  double sign(double a)  {
     return (a >= 0.0 ) ? 1.0 : -1.0;
   }
 
   /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
-  static double unit_step3(double t, double tstart, double tstop)  {
+  double unit_step3(double t, double tstart, double tstop)  {
     return (t < tstart || t > tstop) ? 0.0 : 1.0;
   }
 
   /// Convert rectangular coordinates into polar angle.
-  static double recttopola(double x, double y) {
+  double recttopola(double x, double y) {
     double tmp = std::atan2(y, x);
 
     /* Convert to 0.0 to 2 * PI */
@@ -402,14 +435,15 @@ extern "C" {
   }
 
   /// Convert polar coordinates (r,theta) into x coordinate.
-  static double poltorectx(double r, double theta) {
+  double poltorectx(double r, double theta) {
     return r * std::cos(theta);
   }
 
   /// Convert polar coordinates (r,theta) into y coordinate.
-  static double poltorecty(double r, double theta) {
+  double poltorecty(double r, double theta) {
     return r * std::sin(theta);
   }
+}
 }
 
 CFunctionMap::CFunctionMap() 

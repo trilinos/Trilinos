@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,10 +44,10 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "petscsnes.h"
-#include "petscda.h"
+#include "petscdmda.h"
 
 /*
    User-defined routines
@@ -58,7 +58,7 @@ int MatrixFreePreconditioner(void*,Vec,Vec);
 
 #include "FiniteDifference.H"
 
-// Constructor - creates the Petsc objects (maps and vectors) 
+// Constructor - creates the Petsc objects (maps and vectors)
 FiniteDifference::FiniteDifference(SNES* snes_, void* ctx_) :
   ctx(ctx_),
   snes(snes_),
@@ -67,16 +67,16 @@ FiniteDifference::FiniteDifference(SNES* snes_, void* ctx_) :
 
 // Destructor
 FiniteDifference::~FiniteDifference()
-{ 
+{
   // Nothing currently owned by this class
 }
 
 
 // Matrix and Residual Fills
-bool FiniteDifference::evaluate(FillType f, 
-			      const Vec* soln, 
-			      Vec* tmp_rhs, 
-			      Mat* tmp_matrix)
+bool FiniteDifference::evaluate(FillType f,
+                  const Vec* soln,
+                  Vec* tmp_rhs,
+                  Mat* tmp_matrix)
 {
   flag = f;
   int ierr = 0;
@@ -84,17 +84,17 @@ bool FiniteDifference::evaluate(FillType f,
   // Set the incoming linear objects
   if (flag == RHS_ONLY) {
     rhs = tmp_rhs;
-  } 
+  }
   else if (flag == MATRIX_ONLY) {
     A = tmp_matrix;
-  } 
-  else if (flag == ALL) { 
+  }
+  else if (flag == ALL) {
     rhs = tmp_rhs;
     A = tmp_matrix;
-  } 
+  }
   else {
-    std::cout << "ERROR: FiniteDifference::fillMatrix() - No such flag as " 
-	 << flag << std::endl;
+    std::cout << "ERROR: FiniteDifference::fillMatrix() - No such flag as "
+     << flag << std::endl;
     throw;
   }
 
@@ -108,7 +108,7 @@ bool FiniteDifference::evaluate(FillType f,
   // Begin Jacobian fill
   if((flag == MATRIX_ONLY) || (flag == ALL)) {
     ierr = FormJacobian(*snes, *soln, A, A, &matStruct, ctx);CHKERRQ(ierr);
-  } 
+  }
 
   return true;
 }
@@ -133,37 +133,37 @@ Mat& FiniteDifference::getJacobian()
 int FormFunction(SNES snes,Vec x,Vec f,void *ctx)
 {
   ApplicationCtx *user = (ApplicationCtx*) ctx;
-  DA             da = user->da;
+  DM             da = user->da;
   PetscScalar    *xx,*ff,d;
   int            i,ierr,M,xs,xm;
   Vec            xlocal;
 
   PetscFunctionBegin;
-  ierr = DAGetLocalVector(da,&xlocal);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(da,&xlocal);CHKERRQ(ierr);
   /*
      Scatter ghost points to local vector, using the 2-step process
         DAGlobalToLocalBegin(), DAGlobalToLocalEnd().
      By placing code between these two statements, computations can
      be done while messages are in transition.
   */
-  ierr = DAGlobalToLocalBegin(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(da,x,INSERT_VALUES,xlocal);CHKERRQ(ierr);
 
   /*
      Get pointers to vector data.
        - The vector xlocal includes ghost point; the vectors x and f do
          NOT include ghost points.
        - Using DAVecGetArray() allows accessing the values using global ordering  */
-  ierr = DAVecGetArray(da,xlocal,&xx);CHKERRQ(ierr);
-  ierr = DAVecGetArray(da,f,&ff);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,xlocal,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,f,&ff);CHKERRQ(ierr);
 
   /*
      Get local grid boundaries (for 1-dimensional DA):
        xs, xm  - starting grid index, width of local grid (no ghost points)
   */
-  ierr = DAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-  ierr = DAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
-                   PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
+		     PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
      Set function values for boundary points; define local interior grid point range:
@@ -190,9 +190,9 @@ int FormFunction(SNES snes,Vec x,Vec f,void *ctx)
   /*
      Restore vectors
   */
-  ierr = DAVecRestoreArray(da,xlocal,&xx);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da,f,&ff);CHKERRQ(ierr);
-  ierr = DARestoreLocalVector(da,&xlocal);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,xlocal,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,f,&ff);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(da,&xlocal);CHKERRQ(ierr);
   //PetscFunctionReturn(0);
 
   return 0;
@@ -217,20 +217,20 @@ int FormJacobian(SNES snes,Vec x,Mat *jac,Mat *B,MatStructure*flag,void *ctx)
   ApplicationCtx *user = (ApplicationCtx*) ctx;
   PetscScalar    *xx,d,A[3];
   int            i,j[3],ierr,M,xs,xm;
-  DA             da = user->da;
+  DM             da = user->da;
 
   PetscFunctionBegin;
   /*
      Get pointer to vector data
   */
-  ierr = DAVecGetArray(da,x,&xx);CHKERRQ(ierr);
-  ierr = DAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da,x,&xx);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
     Get range of locally owned matrix
   */
-  ierr = DAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
-                   PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(da,PETSC_NULL,&M,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,
+		     PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
 
   /*
      Determine starting and ending local indices for interior grid points.
@@ -273,7 +273,7 @@ int FormJacobian(SNES snes,Vec x,Mat *jac,Mat *B,MatStructure*flag,void *ctx)
   */
 
   ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da,x,&xx);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da,x,&xx);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   return 0;

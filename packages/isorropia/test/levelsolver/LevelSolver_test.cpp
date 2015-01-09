@@ -68,13 +68,7 @@
 #include <Kokkos_DefaultSparseMultiply.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 
-#include <Kokkos_SerialNode.hpp>
-#ifdef KOKKOS_HAVE_TBB
-#include <Kokkos_TBBNode.hpp>
-#endif
-#ifdef KOKKOS_HAVE_THREADPOOL
-#include <Kokkos_TPINode.hpp>
-#endif
+#include <Kokkos_DefaultNode.hpp>
 
 #define USE_ISORROPIA
 
@@ -174,11 +168,11 @@ int main(int argc, char *argv[])
 
   /////////////////////////////////////////////////////////////
   const int NLRs = L->RowMap().NumMyPoints();
-  size_t NNZ = L->NumMyNonzeros(); 
+  size_t NNZ = L->NumMyNonzeros();
   size_t *NNZperRow = new size_t[NLRs];
   double stddev = 0;
   double mean = (double)(NNZ) / (double)(NLRs);
-  for (int i=0; i<NLRs; ++i) 
+  for (int i=0; i<NLRs; ++i)
   {
      NNZperRow[i] = L->NumMyEntries(i);
      double tmp = (NNZperRow[i] - mean);
@@ -206,38 +200,38 @@ int main(int argc, char *argv[])
    vector<int> pvec(L->NumMyRows());
    int NumLevels;
    vector<int> lsizes;
-   try 
+   try
    {
       ifstream Pfn;
-      Pfn.exceptions(ifstream::eofbit | ifstream::failbit | ifstream::badbit ); 
+      Pfn.exceptions(ifstream::eofbit | ifstream::failbit | ifstream::badbit );
       Pfn.open(pfn.c_str());
-      for (int i=0; i<L->NumMyRows(); ++i) 
+      for (int i=0; i<L->NumMyRows(); ++i)
       {
          Pfn >> pvec[i];
       }
       Pfn >> NumLevels;
       lsizes.resize(NumLevels);
-      for (int i=0; i<NumLevels; ++i) 
+      for (int i=0; i<NumLevels; ++i)
       {
          Pfn >> lsizes[i];
       }
    }
-   catch (ifstream::failure e) 
+   catch (ifstream::failure e)
    {
        cout << "Exception opening/reading file " << pfn << endl;
        return -1;
    }
-   LS.SetLevelInfo(NumLevels,&lsizes[0],&pvec[0]); 
+   LS.SetLevelInfo(NumLevels,&lsizes[0],&pvec[0]);
 
 #else
    {
       double time;
       timer.ResetStartTime();
-      ierr = LS.Analyze(L->Graph()); 
+      ierr = LS.Analyze(L->Graph());
       time = timer.ElapsedTime();
       cout << "\nLevelSolver::Analyze() time: " << time << endl;
    }
-   if (ierr) 
+   if (ierr)
    {
       cout << "LevelSolver::Analyze returned an error" << endl;
       return -1;
@@ -262,7 +256,7 @@ int main(int argc, char *argv[])
    // Verify that the level solver correctly solves the system
    //verify(L,LS);
 
-   // Time the level solver 
+   // Time the level solver
    timeLevelSolver(L,LS,numTrials);
 
    timeOrigSolver(L,numTrials);
@@ -291,13 +285,13 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   ///////////////////////////////////////////////////////////////////
   // test LevelSolver
   ///////////////////////////////////////////////////////////////////
-  Epetra_Vector x_e(L->RowMap(),false); 
-  Epetra_Vector x2_e(x_e); 
+  Epetra_Vector x_e(L->RowMap(),false);
+  Epetra_Vector x2_e(x_e);
   Epetra_Vector Lx_e(x_e);
 
   typedef Tpetra::Vector<double,int,int,nodeT> TV;
 
-  TV x_t(LS.getTpetraMap(),false); 
+  TV x_t(LS.getTpetraMap(),false);
   TV x2_t(x_t);
   TV Lx_t(x_t);
 
@@ -318,7 +312,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
 
 //   cout << "Solving L*x using CrsMatrix\n";
 //   L->Solve(false,false,false,Lx_e,x2_e);      // Lx = L^-1 Lx = x
-          
+
 //   x2_e.Update(-1.0,x_e,1.0);
 //   x2_e.Norm2(&errnrm);
 //   x_e.Norm2(&xnrm);
@@ -335,7 +329,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
 //   cout << "Applying L to x using LevelSolver\n";
 //   LS.ApplyInverse(x_t,Lx_t); // Lx = L * x
 
-//   cout << "Solving L*x using LevelSolver\n"; // 
+//   cout << "Solving L*x using LevelSolver\n"; //
 //   LS.Apply(Lx_t,x2_t);   // Lx = L^-1 Lx = x
 
 //   x2_t.Update(-1.0,x_t,1.0);
@@ -345,7 +339,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   //////////////////////////////////////////////
 
   //////////////////////////////////////////////
-  // Test 3: 
+  // Test 3:
   //////////////////////////////////////////////
   cout << "Verification test 3" << std::endl;
   x_e.Random();
@@ -357,7 +351,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   copyEpetravToTpetrav(Lx_e,Lx_t);
   copyEpetravToTpetrav(x_e,x_t);
 
-  cout << "Solving L*x using LevelSolver\n"; // 
+  cout << "Solving L*x using LevelSolver\n"; //
   LS.Apply(Lx_t,x2_t);   // Lx = L^-1 Lx = x
   x2_t.update(-1.0,x_t,1.0);
 
@@ -396,7 +390,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <class nodeT>
-void copyEpetravToTpetrav(const Epetra_Vector &evector, 
+void copyEpetravToTpetrav(const Epetra_Vector &evector,
                           Tpetra::Vector<double,int,int,nodeT> &tvector)
 {
   for (int i=0; i< evector.MyLength(); i++)
@@ -410,7 +404,7 @@ void copyEpetravToTpetrav(const Epetra_Vector &evector,
 ////////////////////////////////////////////////////////////////////////////////
 template <class nodeT>
 void copyTpetravToEpetrav(const Tpetra::Vector<double,int,int,nodeT> &tvector,
-		          const Epetra_Vector &evector)
+                          const Epetra_Vector &evector)
 {
   for (int i=0; i< tvector.getLocalLength(); i++)
   {
@@ -453,7 +447,7 @@ void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, i
 
 
 
-  for (int t=0; t<numTrials; ++t) 
+  for (int t=0; t<numTrials; ++t)
   {
       LS.Apply(b_t,x_t);
   }
@@ -464,8 +458,8 @@ void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, i
   double time2 =  (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.0;
 
   cout << setw(20) << "LevelSolver  solve, " << setw(2) << 0 << " threads, "
-       << setprecision(3) << scientific << setw(11) << time2           << " total, " 
-       << setprecision(3) << scientific << setw(11) << time2/numTrials << " average" 
+       << setprecision(3) << scientific << setw(11) << time2           << " total, "
+       << setprecision(3) << scientific << setw(11) << time2/numTrials << " average"
        << endl;
   //////////////////////////////
 }
@@ -495,7 +489,7 @@ void timeOrigSolver(const Epetra_CrsMatrix *L, int numTrials)
   gettimeofday(&start, NULL);
 
 
-  for (int t=0; t<numTrials; ++t) 
+  for (int t=0; t<numTrials; ++t)
   {
     L->Solve(false,false,false,Lx,Lx);
   }
@@ -504,8 +498,8 @@ void timeOrigSolver(const Epetra_CrsMatrix *L, int numTrials)
   double time2 =  (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.0;
 
   cout << setw(20) << "Epetra_CrsMatrix solve,         "
-       << setprecision(3) << scientific << setw(11) << time2            << " total, " 
-       << setprecision(3) << scientific << setw(11) << time2 /numTrials << " average" 
+       << setprecision(3) << scientific << setw(11) << time2            << " total, "
+       << setprecision(3) << scientific << setw(11) << time2 /numTrials << " average"
        << endl;
   //////////////////////////////
 

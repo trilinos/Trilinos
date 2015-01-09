@@ -41,9 +41,9 @@
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // The right-hand-side from the HB file is used instead of random vectors.
-// The initial guesses are all set to zero. 
+// The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this case. 
+// NOTE: No preconditioner is used in this case.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -57,23 +57,12 @@
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
-#include "iohb.h"
+#include "Trilinos_Util_iohb.h"
 #endif
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
 #include "MyOperator.hpp"
-
-namespace Belos {
-  class MPIFinalize {
-  public:
-    ~MPIFinalize() {
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
-    }
-  };
-}
 
 using namespace Teuchos;
 
@@ -96,23 +85,21 @@ int main(int argc, char *argv[]) {
   typedef Belos::MultiVecTraits<ST,MV>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
   ST one  = SCT::one();
-  ST zero = SCT::zero();	
+  ST zero = SCT::zero();
 
   int info = 0;
   int MyPID = 0;
   bool norm_failure = false;
 
-#ifdef HAVE_MPI	
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
-  (void)mpiFinalize;
-#endif
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   //
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+bool success = false;
+bool verbose = false;
+try {
+bool proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
@@ -128,23 +115,23 @@ int main(int argc, char *argv[]) {
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
-  
+
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   if (proc_verbose) {
     std::cout << Belos::Belos_Version() << std::endl << std::endl;
   }
   if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
-  
-  
+
+
 #ifndef HAVE_BELOS_TRIUTILS
   std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
   if (MyPID==0) {
-    std::cout << "End Result: TEST FAILED" << std::endl;	
+    std::cout << "End Result: TEST FAILED" << std::endl;
   }
   return -1;
 #endif
-  
+
   // Get the data from the HB file
   int dim,dim2,nnz;
   MT *dvals;
@@ -166,7 +153,7 @@ int main(int argc, char *argv[]) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RCP< MyBetterOperator<ST> > A 
+  RCP< MyBetterOperator<ST> > A
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
   //
   // ********Other information used by block solver***********
@@ -178,7 +165,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
@@ -198,7 +185,7 @@ int main(int argc, char *argv[]) {
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  RCP<Belos::LinearProblem<ST,MV,OP> > problem = 
+  RCP<Belos::LinearProblem<ST,MV,OP> > problem =
     rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
   bool set = problem->setProblem();
   if (set == false) {
@@ -221,7 +208,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << dim << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of MINRES iterations: " << maxits << std::endl; 
+    std::cout << "Max number of MINRES iterations: " << maxits << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -239,30 +226,30 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( *temp, norm_num );
   MVT::MvNorm( *rhs, norm_denom );
   for (int i=0; i<numrhs; ++i) {
-    if (proc_verbose) 
+    if (proc_verbose)
       std::cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << std::endl;
     if ( norm_num[i] / norm_denom[i] > tol ) {
       norm_failure = true;
     }
   }
-  
+
   // Clean up.
   delete [] dvals;
   delete [] colptr;
   delete [] rowind;
   delete [] cvals;
 
-  if ( ret!=Belos::Converged || norm_failure ) {
-    if (proc_verbose)
-      std::cout << "End Result: TEST FAILED" << std::endl;	
-    return -1;
-  }
-  //
-  // Default return value
-  //
+success = ret==Belos::Converged && !norm_failure;
+
+if (success) {
   if (proc_verbose)
     std::cout << "End Result: TEST PASSED" << std::endl;
-  return 0;
+} else {
+if (proc_verbose)
+  std::cout << "End Result: TEST FAILED" << std::endl;
+}
+}
+TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  //
+return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 } // end test_minres_complex_hb.cpp

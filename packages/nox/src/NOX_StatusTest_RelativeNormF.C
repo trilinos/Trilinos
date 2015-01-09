@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,12 +58,13 @@
 #include "Teuchos_as.hpp"
 
 NOX::StatusTest::RelativeNormF::
-RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length, 
-	      const NOX::Utils* u) :
+RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length,
+          const NOX::Utils* u) :
   tolerance(in_tolerance),
   normF_0(0.0),
   normF(0.0),
-  scale_norms_by_vector_length(in_scale_norms_by_vector_length)
+  scale_norms_by_vector_length(in_scale_norms_by_vector_length),
+  status(NOX::StatusTest::Unevaluated)
 {
   if (u != NULL)
     utils = *u;
@@ -71,8 +72,8 @@ RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length,
 
 NOX::StatusTest::StatusType NOX::StatusTest::RelativeNormF::
 checkStatus(const NOX::Solver::Generic& problem,
-	    NOX::StatusTest::CheckType checkType)
-{ 
+        NOX::StatusTest::CheckType checkType)
+{
   // NOTE: This algorithm assumes a 2-norm!
 
   // On initial iteration, compute initial norm F
@@ -93,7 +94,7 @@ checkStatus(const NOX::Solver::Generic& problem,
       normF = problem.getSolutionGroup().getF().norm(NOX::Abstract::Vector::TwoNorm);
 
       if (scale_norms_by_vector_length)
-	normF /= std::sqrt(Teuchos::as<double>(problem.getSolutionGroup().getF().length()));
+    normF /= std::sqrt(Teuchos::as<double>(problem.getSolutionGroup().getF().length()));
 
       status = (normF < tolerance * normF_0) ? Converged : Unconverged;
   }

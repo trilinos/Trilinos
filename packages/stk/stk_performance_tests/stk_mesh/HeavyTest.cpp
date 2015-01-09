@@ -1,26 +1,57 @@
-#include <stk_io/util/IO_Fixture.hpp>
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include <stk_mesh/fem/SkinMesh.hpp>
-#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
-#include <stk_rebalance/Rebalance.hpp>
-#include <stk_rebalance/ZoltanPartition.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/SkinMesh.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/Comm.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
+#include <gtest/gtest.h>
 #include <stk_util/environment/WallTime.hpp>
-
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
 #include <string>
 
 // Globals for command-line arguments
-extern int* STKUNIT_ARGC;
-extern char** STKUNIT_ARGV;
+extern int gl_argc;
+extern char** gl_argv;
 
-STKUNIT_UNIT_TEST( HeavyTest, heavytest )
+TEST( heavy, heavy )
 {
   // A performance test that stresses important parts of stk_mesh
   // (such as mesh-modification in parallel, creation of relations,
@@ -33,10 +64,9 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  const size_t p_size = stk::parallel_machine_size(pm);
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
-  stk::io::util::IO_Fixture fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   // Test constants:
 
@@ -49,27 +79,28 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   const unsigned EXODUS_CREATE_PHASE_ID  = 4;
   const unsigned PROCESS_OUTPUT_PHASE_ID = 5;
 
-  std::vector<std::string> PHASE_NAMES(NUM_PHASES);
+  std::vector<std::string> PHASE_NAMES(NUM_PHASES+1);
   PHASE_NAMES[INIT_META_DATA_PHASE_ID] = "Init meta data";
   PHASE_NAMES[INIT_BULK_DATA_PHASE_ID] = "Init bulk data";
   PHASE_NAMES[REBALANCE_PHASE_ID]      = "Rebalance mesh";
   PHASE_NAMES[SKIN_MESH_PHASE_ID]      = "Skin mesh";
   PHASE_NAMES[EXODUS_CREATE_PHASE_ID]  = "Exodus file creation";
   PHASE_NAMES[PROCESS_OUTPUT_PHASE_ID] = "Process output";
+  PHASE_NAMES[NUM_PHASES]              = "Total time";
 
   // timings[6] = sum(timings[0:5])
   std::vector<double> timings(NUM_PHASES + 1, 0.0); // leave room for sum
 
   // Compute input/output filename
 
-  std::string input_base_filename = "heavy_performance_test.g"; // Default
-  std::string output_base_filename = "heavy_performance_test.e"; // Default
+  std::string input_base_filename = "heavy.g"; // Default
+  std::string output_base_filename = "heavy.e"; // Default
 
   // Search cmd-line args
   const std::string input_flag  = "--heavy-test:input-file=";
   const std::string output_flag = "--heavy-test:output-file=";
-  for (int argitr = 1; argitr < *STKUNIT_ARGC; ++argitr) {
-    std::string argv(STKUNIT_ARGV[argitr]);
+  for (int argitr = 1; argitr < gl_argc; ++argitr) {
+    std::string argv(gl_argv[argitr]);
     if (argv.find(input_flag) == 0) {
       input_base_filename = argv.replace(0, input_flag.size(), "");
     }
@@ -81,49 +112,36 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   // time meta_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.initialize_meta_data( input_base_filename, "exodusii" );
+    fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+    fixture.create_input_mesh();
     timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // Commit meta_data
-  stk::mesh::fem::FEMMetaData & meta_data = fixture.meta_data();
+  stk::mesh::MetaData & meta_data = fixture.meta_data();
   meta_data.commit();
 
   // time bulk_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.initialize_bulk_data();
+    fixture.populate_bulk_data();
     timings[INIT_BULK_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   stk::mesh::BulkData & bulk_data = fixture.bulk_data();
 
-  // time rebalance bulk_data
-  {
-    Teuchos::ParameterList emptyList;
-    stk::rebalance::Zoltan zoltan_partition(pm, meta_data.spatial_dimension(), emptyList);
-    stk::mesh::Selector selector(meta_data.locally_owned_part());
-
-    double start_time = stk::wall_time();
-    stk::rebalance::rebalance(bulk_data,
-                              selector,
-                              &fixture.get_coordinate_field(),
-                              NULL /*weight field*/,
-                              zoltan_partition);
-    timings[REBALANCE_PHASE_ID] = stk::wall_dtime(start_time);
-  }
-
   // time skin bulk_data
   {
     double start_time = stk::wall_time();
-    stk::mesh::skin_mesh( bulk_data, meta_data.spatial_dimension());
+    stk::mesh::skin_mesh(bulk_data);
     timings[SKIN_MESH_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
   // time exodus file creation
+  size_t index = 0;
   {
     double start_time = stk::wall_time();
-    fixture.create_output_mesh( output_base_filename, "exodusii" );
+    index = fixture.create_output_mesh( output_base_filename, stk::io::WRITE_RESULTS);
     timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -131,7 +149,7 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   {
     double time_step = 0;
     double start_time = stk::wall_time();
-    fixture.add_timestep_to_output_mesh( time_step );
+    fixture.process_output_request(index, time_step);
     timings[PROCESS_OUTPUT_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -147,24 +165,18 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
     stk::all_reduce(pm, stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
 
     std::vector<size_t> counts ;
-    stk::mesh::fem::comm_mesh_counts( bulk_data , counts);
+    stk::mesh::comm_mesh_counts( bulk_data , counts);
 
     if (p_rank == 0) {
-      std::cout << "\n\n";
-      std::cout << "<performance_test name=\"HeavyTest\" num_procs=\"" << p_size << "\">\n";
-      std::cout << "  <mesh_stats>\n";
+      std::cout << "  mesh_stats\n";
       for (unsigned i = 0; i < counts.size(); ++i) {
-        std::cout << "    <entity rank=\"" << i << "\" count=\"" << counts[i] << "\"/>\n";
+        std::cout << "    entity rank=" << i << " count=" << counts[i] << "\n";
       }
-      std::cout << "  </mesh_stats>\n";
+      std::cout << std::endl;
 
-      std::cout << "  <timings time=\"" << timings[NUM_PHASES] << "\">\n";
-      for (unsigned i = 0; i < NUM_PHASES; ++i) {
-        std::cout << "    <section name=\"" << PHASE_NAMES[i] << "\" time=\"" << timings[i] <<"\"/>\n";
-      }
-      std::cout << "  </timings>\n";
-      std::cout << "</performance_test>\n";
-      std::cout << "\n\n";
+      stk::print_timers_and_memory(&PHASE_NAMES[0], &timings[0], NUM_PHASES + 1);
     }
   }
+
+  stk::parallel_print_time_for_performance_compare(pm, timings[NUM_PHASES]);
 }

@@ -5,13 +5,17 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+
 #include <MueLu.hpp>
-#include <MueLu_TpetraOperator.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Hierarchy.hpp>
+
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_MasterList.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_TpetraOperator.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_HierarchyHelpers.hpp>
 
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
@@ -55,7 +59,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
-                             Teuchos::ParameterList& paramList,
+                             Teuchos::ParameterList& paramListIn,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
   {
@@ -64,28 +68,36 @@ namespace MueLu {
     typedef GlobalOrdinal   GO;
     typedef Node            NO;
 
+    using   Teuchos::ParameterList;
+
     typedef Xpetra::MultiVector<SC,LO,GO,NO>            MultiVector;
     typedef Xpetra::Matrix<SC,LO,GO,NO>                 Matrix;
     typedef Hierarchy<SC,LO,GO,NO>                      Hierarchy;
     typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
 
-    bool hasParamList = paramList.numParams();
+    bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    RCP<Hierarchy>        H;
+    ParameterList nonSerialList, paramList;
     if (hasParamList) {
-      bool useEasy = !paramList.isSublist("Hierarchy");
+      // Separate serializable and non-serializable data from the parameter list
+      // The data is put into paramList and nonSerialList
+      ExtractNonSerializableData(paramListIn, paramList, nonSerialList);
+    } else {
+      paramList = paramListIn;
+    }
 
-      if (useEasy == false)
-        mueLuFactory = rcp(new ParameterListInterpreter    <SC,LO,GO,NO>(paramList));
-      else
-        mueLuFactory = rcp(new EasyParameterListInterpreter<SC,LO,GO,NO>(paramList));
-
-      H = mueLuFactory->CreateHierarchy();
+    std::string syntaxStr = "parameterlist: syntax";
+    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
+      paramList.remove(syntaxStr);
+      mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      H = rcp(new Hierarchy());
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList));
     }
+
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->setlib(Xpetra::UseTpetra);
 
     // Wrap A
     RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
@@ -103,11 +115,16 @@ namespace MueLu {
       nullspace = TpetraMultiVector_To_XpetraMultiVector<SC,LO,GO,NO>(inNullspace);
 
     } else {
-      int nPDE = 1;
+      int nPDE = MasterList::getDefault<int>("number of equations");
       if (paramList.isSublist("Matrix")) {
+        // Factory style parameter list
         const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
         if (operatorList.isParameter("PDE equations"))
           nPDE = operatorList.get<int>("PDE equations");
+
+      } else if (paramList.isParameter("number of equations")) {
+        // Easy style parameter list
+        nPDE = paramList.get<int>("number of equations");
       }
 
       nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
@@ -129,9 +146,9 @@ namespace MueLu {
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
     if (hasParamList)
-      mueLuFactory->SetupHierarchy(*H);
-    else
-      H->Setup();
+      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *H, nonSerialList);
+
+    mueLuFactory->SetupHierarchy(*H);
 
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
   }
@@ -176,6 +193,15 @@ namespace MueLu {
 
     return CreateTpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA, paramList, inCoords, inNullspace);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                                 MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op) {
+    RCP<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H = Op.GetHierarchy();
+    H->GetLevel(0)->Set("A", TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    H->SetupRe();
+  }
+
 
 } //namespace
 

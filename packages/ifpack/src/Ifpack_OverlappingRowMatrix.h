@@ -223,7 +223,7 @@ public:
      */ 
   virtual double NormOne() const
   {
-    IFPACK_RETURN(A().NormOne());
+    return(A().NormOne());
   }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

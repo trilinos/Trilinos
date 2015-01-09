@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_EPETRA_SCHUROPERATOR_H
 #define NOX_EPETRA_SCHUROPERATOR_H
 
@@ -72,45 +72,45 @@ public:
   // Inherited methods from Epetra_Operator
 
   //! @name Attribute set methods
-  //@{ 
+  //@{
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
-	does not support transpose use, this method should return a value of -1.
-      
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
+    does not support transpose use, this method should return a value of -1.
+
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+       UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
     virtual int SetUseTranspose(bool UseTranspose);
   //@}
-  
+
   //! @name Mathematical functions
-  //@{ 
+  //@{
 
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+       X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+       Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
     virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+       X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+       Y -A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method must 
+    \warning In order to work with AztecOO, any implementation of this method must
               support the case where X and Y are the same object.
   */
     virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -120,12 +120,12 @@ public:
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
        \warning This method must not be called unless HasNormInf() returns true.
-    */ 
+    */
     virtual double NormInf() const;
   //@}
-  
+
   //! @name Attribute access functions
-  //@{ 
+  //@{
 
     //! Returns a character std::string describing the operator
     virtual const char * Label() const;
@@ -147,7 +147,7 @@ public:
   //@}
 
   //! @name Schur-based modifying methods
-  //@{ 
+  //@{
 
     //! Modifies the RHS vector using block operations
     virtual void modifyRHS( Teuchos::RCP<Epetra_Vector> &, Teuchos::RCP<Epetra_Vector> & );
@@ -157,7 +157,7 @@ protected:
 
   // Methods
 
-  // Data 
+  // Data
 
   //! The interface to the action of matrix blocks
   SchurInterface & schurInterface ;

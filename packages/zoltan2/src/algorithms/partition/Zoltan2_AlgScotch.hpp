@@ -46,58 +46,55 @@
 #define _ZOLTAN2_ALGSCOTCH_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
+#include <Zoltan2_TPLTraits.hpp>
 
-typedef zoltan2_partId_t partId_t;
+////////////////////////////////////////////////////////////////////////
+//! \file Zoltan2_AlgScotch.hpp
+//! \brief interface to the Scotch third-party library
 
+////////////////////////////////////////////////////////////////////////
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
+namespace Zoltan2 {
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
+template <typename Adapter>
+class AlgPTScotch : public Algorithm<Adapter>
+{
+public:
+  AlgPTScotch(const RCP<const Environment> &env,
+              const RCP<const Comm<int> > &problemComm,
+              const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
+  )
+  {
+    throw std::runtime_error(
+          "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
+          "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+};
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+#ifdef HAVE_ZOLTAN2_SCOTCH
+
 namespace Zoltan2 {
 
-/*! Scotch partitioning method.
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *  \param solution  a Solution object
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
-
-template <typename Adapter>
-void AlgPTScotch(
-  const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpicomm,
-#endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
-  RCP<PartitioningSolution<Adapter> > &solution
-
-)
-{
-  throw std::runtime_error(
-        "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
-        "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
-}
-}
-
-#else  //HAVE_ZOLTAN2_SCOTCH
-
-
 // stdint.h for int64_t in scotch header
-
 #include <stdint.h>
+extern "C" {
 #ifndef HAVE_ZOLTAN2_MPI
 #include "scotch.h"
 #else
 #include "ptscotch.h"
 #endif
+}
 
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
 //
@@ -113,148 +110,77 @@ void AlgPTScotch(
 // and compile scotch with -DCOMMON_MEMORY_TRACE
 //
 #ifdef HAVE_SCOTCH_GETMEMORYMAX
-
-extern "C"{
-extern size_t SCOTCH_getMemoryMax();
-}
-
+  extern "C"{
+    extern size_t SCOTCH_getMemoryMax();
+  }
 #else
-
 #error "Either turn off ZOLTAN2_ENABLE_SCOTCH_MEMORY_REPORT in cmake configure, or see SHOW_ZOLTAN2_SCOTCH_MEMORY comment in Zoltan2_AlgScotch.hpp"
-
-#endif
-
-#endif
-
-
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_Scotch.hpp
-//! \brief Parallel graph partitioning using Scotch.
-
-namespace Zoltan2{
-
-/////////////////////////////////////////////////////////////////////////////
-//  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
-/////////////////////////////////////////////////////////////////////////////
-
-// General case:  SCOTCH_Num and gno_t/lno_t (called zno_t here) differ.
-template <typename zno_t>
-struct SCOTCH_Num_Traits {
-
-  static inline SCOTCH_Num ASSIGN_TO_SCOTCH_NUM(
-    SCOTCH_Num &a,
-    zno_t b,
-    const RCP<const Environment> &env)
-  {
-    // Assign a = b; make sure SCOTCH_Num is large enough to accept zno_t.
-    if (b <= SCOTCH_NUMMAX) a = b;
-    else 
-      env->localInputAssertion(__FILE__, __LINE__, 
-       "Value too large for SCOTCH_Num, Rebuild Scotch with larger SCOTCH_Num",
-       false, BASIC_ASSERTION);
-    return a;
-  }
-
-  static inline void ASSIGN_SCOTCH_NUM_ARRAY(
-    SCOTCH_Num **a,
-    ArrayView<const zno_t> &b,
-    const RCP<const Environment> &env)
-  {
-    // Allocate array a; copy b values into a.
-    size_t size = b.size();
-    if (size > 0) {
-      *a = new SCOTCH_Num[size];
-      for (size_t i = 0; i < size; i++) ASSIGN_TO_SCOTCH_NUM((*a)[i], b[i], env);
-    }
-    else {
-      *a = NULL;
-      // Note:  the Scotch manual says that if any rank has a non-NULL array,
-      //        every process must have a non-NULL array.  In practice, 
-      //        however, this condition is not needed for the arrays we use.
-      //        For now, we'll set these arrays to NULL.  We could allocate
-      //        a dummy value here if needed.  KDD 1/23/14
-    }
-  }
-
-  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num **a)
-  {
-    // Delete the copy made in ASSIGN_SCOTCH_NUM_ARRAY.
-    delete [] *a;
-  }
-};
-
-
-// Special case:  zno_t == SCOTCH_Num. No error checking or copies needed.
-template <>
-struct SCOTCH_Num_Traits<SCOTCH_Num> {
-  static inline SCOTCH_Num ASSIGN_TO_SCOTCH_NUM(
-    SCOTCH_Num &a,
-    SCOTCH_Num b,
-    const RCP<const Environment> &env)
-  {
-    a = b;
-    return a;
-  }
-  static inline void ASSIGN_SCOTCH_NUM_ARRAY(
-    SCOTCH_Num **a,
-    ArrayView<const SCOTCH_Num> &b,
-    const RCP<const Environment> &env)
-  {
-    if (b.size() > 0)
-      *a = const_cast<SCOTCH_Num *> (b.getRawPtr());
-    else {
-      *a = NULL;
-      // Note:  the Scotch manual says that if any rank has a non-NULL array,
-      //        every process must have a non-NULL array.  In practice, 
-      //        however, this condition is not needed for the arrays we use.
-      //        For now, we'll set these arrays to NULL, because if we
-      //        allocated a dummy value here, we'll have to track whether or
-      //        not we can free it.  KDD 1/23/14
-    }
-  }
-  static inline void DELETE_SCOTCH_NUM_ARRAY(SCOTCH_Num **a) { }
-};
-
-///////////////////////////////////////////////////////////////////////
-// Now, the actual Scotch algorithm.
-///////////////////////////////////////////////////////////////////////
-
-/*! Scotch partitioning method.
- *
- *  \param env  parameters for the problem and library configuration
- *  \param problemComm  the communicator for the problem
- *  \param model a graph
- *  \param solution  a Solution object
- *
- *  Preconditions: The parameters in the environment have been
- *    processed (committed).
- */
+#endif  // HAVE_SCOTCH_GETMEMORYMAX
+#endif  // SHOW_ZOLTAN2_SCOTCH_MEMORY
 
 template <typename Adapter>
-void AlgPTScotch(
-  const RCP<const Environment> &env,        // parameters & app comm
-  const RCP<const Comm<int> > &problemComm, // problem comm
+class AlgPTScotch : public Algorithm<Adapter>
+{
+public:
+
+  typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::part_t part_t;
+
+  /*! Scotch constructor
+   *  \param env  parameters for the problem and library configuration
+   *  \param problemComm  the communicator for the problem
+   *  \param model a graph
+   *
+   *  Preconditions: The parameters in the environment have been processed.
+   *  TODO:  THIS IS A MINIMAL CONSTRUCTOR FOR NOW.
+   *  TODO:  WHEN ADD SCOTCH ORDERING OR MAPPING, MOVE SCOTCH GRAPH CONSTRUCTION
+   *  TODO:  TO THE CONSTRUCTOR SO THAT CODE MAY BE SHARED.
+   */
+  AlgPTScotch(const RCP<const Environment> &env__,
+              const RCP<const Comm<int> > &problemComm__,
+              const RCP<graphModel_t> &model__) :
+    env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpicomm,
+    mpicomm(TeuchosConst2MPI(problemComm__)),
 #endif
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model, // the graph
-  RCP<PartitioningSolution<Adapter> > &solution
+    model(model__)
+  { }
+
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+
+private:
+
+  const RCP<const Environment> env;
+  const RCP<const Comm<int> > problemComm;
+#ifdef HAVE_ZOLTAN2_MPI
+  const MPI_Comm mpicomm;
+#endif
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
+
+  void scale_weights(size_t n, StridedData<lno_t, scalar_t> &fwgts,
+                     SCOTCH_Num *iwgts);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgPTScotch<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
   HELLO;
 
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::scalar_t scalar_t;
-
-  int ierr = 0;
-
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
-  SCOTCH_Num partnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
+  SCOTCH_Num partnbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts, env);
 
 #ifdef HAVE_ZOLTAN2_MPI
+  int ierr = 0;
+  int me = problemComm->getRank();
 
   const SCOTCH_Num  baseval = 0;  // Base value for array indexing.
                                   // GraphModel returns GNOs from base 0.
@@ -273,10 +199,10 @@ void AlgPTScotch(
   // Get vertex info
   ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > xyz;
-  ArrayView<StridedData<lno_t, scalar_t> > vtxWt;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
-  SCOTCH_Num vertlocnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(vertlocnbr, nVtx, env);
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
+  SCOTCH_Num vertlocnbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx, env);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
@@ -285,17 +211,17 @@ void AlgPTScotch(
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
-  size_t nEdges = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
 
-  SCOTCH_Num edgelocnbr;
-  SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(edgelocnbr, nEdges, env);
+  SCOTCH_Num edgelocnbr=0;
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  SCOTCH_Num_Traits<lno_t>::ASSIGN_SCOTCH_NUM_ARRAY(&vertloctab, offsets, env);
+  TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets, env);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  SCOTCH_Num_Traits<gno_t>::ASSIGN_SCOTCH_NUM_ARRAY(&edgeloctab, edgeIds, env);
+  TPL_Traits<SCOTCH_Num, gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds, env);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -303,28 +229,49 @@ void AlgPTScotch(
   SCOTCH_Num *edgegsttab = NULL;  // Array for ghost vertices
 
   // Get weight info.
-  // TODO:  Actually get the weights; for now, not using weights.
-  SCOTCH_Num *veloloctab = NULL;  // Vertex weights
-  SCOTCH_Num *edloloctab = NULL;  // Edge weights
-  //TODO int vwtdim = model->getVertexWeightDim();
-  //TODO int ewtdim = model->getEdgeWeightDim();
-  //TODO if (vwtdim) veloloctab = new SCOTCH_Num[nVtx];
-  //TODO if (ewtdim) edloloctab = new SCOTCH_Num[nEdges];
-  //TODO scale weights to SCOTCH_Nums.
+  SCOTCH_Num *velotab = NULL;  // Vertex weights
+  SCOTCH_Num *edlotab = NULL;  // Edge weights
+
+  int nVwgts = model->getNumWeightsPerVertex();
+  int nEwgts = model->getNumWeightsPerEdge();
+  if (nVwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per vertex."
+              << std::endl;
+  }
+  if (nEwgts > 1 && me == 0) {
+    std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
+              << " but Scotch allows only one weight. "
+              << " Zoltan2 will use only the first weight per edge."
+              << std::endl;
+  }
+
+  if (nVwgts) {
+    velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
+                                       // to have non-NULL arrays
+    scale_weights(nVtx, vwgts[0], velotab);
+  }
+
+  if (nEwgts) {
+    edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
+                                         // to have non-NULL arrays
+    scale_weights(nEdge, ewgts[0], edlotab);
+  }
 
   // Build PTScotch distributed data structure
   ierr = SCOTCH_dgraphBuild(gr, baseval, vertlocnbr, vertlocmax,
-                            vertloctab, vendloctab, veloloctab, vlblloctab,
+                            vertloctab, vendloctab, velotab, vlblloctab,
                             edgelocnbr, edgelocsize,
-                            edgeloctab, edgegsttab, edloloctab);
+                            edgeloctab, edgegsttab, edlotab);
 
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphBuild", 
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
-  ArrayRCP<partId_t> partList(new partId_t [nVtx], 0, nVtx,true);
+  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx,true);
   SCOTCH_Num *partloctab = NULL;
-  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(partId_t))) {
+  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(part_t))) {
     // Can write directly into the solution's memory
     partloctab = (SCOTCH_Num *) partList.getRawPtr();
   }
@@ -357,7 +304,7 @@ void AlgPTScotch(
   // vertex weight.  I think we should use the latter.
   // Fix this when we add vertex weights.
   for (SCOTCH_Num i = 0; i < partnbr; i++)
-    goalsizes[i] = ceil(velosum * partsizes[i]);
+    goalsizes[i] = SCOTCH_Num(ceil(velosum * partsizes[i]));
   delete [] partsizes;
 
   SCOTCH_archCmpltw(&archdat, partnbr, goalsizes);
@@ -387,12 +334,12 @@ void AlgPTScotch(
 
   // Clean up PTScotch
   SCOTCH_dgraphExit(gr);
-  delete gr;
+  free(gr);
   SCOTCH_stratExit(&stratstr);
 
   // Load answer into the solution.
 
-  if ((sizeof(SCOTCH_Num) != sizeof(partId_t)) || (nVtx == 0)) {
+  if ((sizeof(SCOTCH_Num) != sizeof(part_t)) || (nVtx == 0)) {
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
     delete [] partloctab;
   }
@@ -403,14 +350,12 @@ void AlgPTScotch(
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
-  //if (me == 0) cout << " done." << endl;
-  // Clean up Zoltan2
-  //TODO if (vwtdim) delete [] velotab;
-  //TODO if (ewtdim) delete [] edlotab;
-
   // Clean up copies made due to differing data sizes.
-  SCOTCH_Num_Traits<lno_t>::DELETE_SCOTCH_NUM_ARRAY(&vertloctab);
-  SCOTCH_Num_Traits<gno_t>::DELETE_SCOTCH_NUM_ARRAY(&edgeloctab);
+  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
+
+  if (nVwgts) delete [] velotab;
+  if (nEwgts) delete [] edlotab;
 
 #else // DO NOT HAVE_MPI
 
@@ -422,15 +367,83 @@ void AlgPTScotch(
   // TODO:  Actual logic should call Scotch when number of processes == 1.
   ArrayView<const gno_t> vtxID;
   ArrayView<StridedData<lno_t, scalar_t> > xyz;
-  ArrayView<StridedData<lno_t, scalar_t> > vtxWt;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vtxWt);
+  ArrayView<StridedData<lno_t, scalar_t> > vwgts;
+  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
 
+  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
+  solution->setParts(gnos, partList, true);
 
 #endif // DO NOT HAVE_MPI
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Scale and round scalar_t weights (typically float or double) to 
+// SCOTCH_Num (typically int or long).
+// subject to sum(weights) <= max_wgt_sum.
+// Only scale if deemed necessary.
+//
+// Note that we use ceil() instead of round() to avoid
+// rounding to zero weights.
+// Based on Zoltan's scale_round_weights, mode 1.
+
+template <typename Adapter>
+void AlgPTScotch<Adapter>::scale_weights(
+  size_t n,
+  StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> &fwgts,
+  SCOTCH_Num *iwgts
+)
+{
+  const double INT_EPSILON = 1e-5;
+
+  SCOTCH_Num nonint, nonint_local = 0;
+  double sum_wgt, sum_wgt_local = 0.;
+  double max_wgt, max_wgt_local = 0.;
+
+  // Compute local sums of the weights 
+  // Check whether all weights are integers
+  for (size_t i = 0; i < n; i++) {
+    double fw = double(fwgts[i]);
+    if (!nonint_local){
+      SCOTCH_Num tmp = (SCOTCH_Num) floor(fw + .5); /* Nearest int */
+      if (fabs((double)tmp-fw) > INT_EPSILON) {
+        nonint_local = 1;
+      }
+    }
+    sum_wgt_local += fw;
+    if (fw > max_wgt_local) max_wgt_local = fw;
+  }
+
+  Teuchos::reduceAll<int,SCOTCH_Num>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                              &nonint_local,  &nonint);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_SUM, 1,
+                                 &sum_wgt_local, &sum_wgt);
+  Teuchos::reduceAll<int,double>(*problemComm, Teuchos::REDUCE_MAX, 1,
+                                 &max_wgt_local, &max_wgt);
+
+  double scale = 1.;
+  const double max_wgt_sum = double(SCOTCH_NUMMAX/8);
+
+  // Scaling needed if weights are not integers or weights' 
+  // range is not sufficient
+  if (nonint || (max_wgt <= INT_EPSILON) || (sum_wgt > max_wgt_sum)) {
+    /* Calculate scale factor */
+    if (sum_wgt != 0.) scale = max_wgt_sum/sum_wgt;
+  }
+
+  /* Convert weights to positive integers using the computed scale factor */
+  for (size_t i = 0; i < n; i++)
+    iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
+
 }
+
+} // namespace Zoltan2
+
 #endif // HAVE_ZOLTAN2_SCOTCH
+
+////////////////////////////////////////////////////////////////////////
+
+
 #endif

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,10 @@
  * 
  */
 
-#include <string.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, VAR_WHOLE_TIME, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_var_double, etc
 
 /*!
 
@@ -63,7 +64,6 @@ The following code segment will read the time values for all time
 steps stored in the data file:
 
 \code
-#include "exodusII.h"
 int error, exoid, num_time_steps;
 float *time_values;
 

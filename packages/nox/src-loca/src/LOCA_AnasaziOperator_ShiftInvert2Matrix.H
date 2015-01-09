@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_ANASAZIOPERATOR_SHIFTINVERT2MATRIX_H
 #define LOCA_ANASAZIOPERATOR_SHIFTINVERT2MATRIX_H
 
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
@@ -67,13 +67,13 @@ namespace LOCA {
 namespace LOCA {
 
   namespace AnasaziOperator {
-    
-    /*! \brief Anasazi operator for computing generalized eigenvalues 
+
+    /*! \brief Anasazi operator for computing generalized eigenvalues
      * using shift-invert.
      */
-    /*! 
-     * This class implements the LOCA::AnasaziOperator::AbstractStrategy 
-     * interface for computing generalized eigenvalues \f$\lambda\f$ and 
+    /*!
+     * This class implements the LOCA::AnasaziOperator::AbstractStrategy
+     * interface for computing generalized eigenvalues \f$\lambda\f$ and
      * eigenvectors \f$z\f$ of the system
      *\f[
      *    J z = \lambda M z
@@ -100,17 +100,17 @@ namespace LOCA {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       /*!
        * Argument \em grp must be of type LOCA::TimeDependent::AbstractGroup.
        * See class description for a list of eigenParams.
        */
       ShiftInvert2Matrix(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp);
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+    const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp);
 
       //! Destructor
       virtual ~ShiftInvert2Matrix();
@@ -119,8 +119,8 @@ namespace LOCA {
        * \brief Return name of this operator
        */
       virtual const std::string& label() const;
-  
-      /*! 
+
+      /*!
        * \brief Apply the operator.
        *
        * Applies the inverse of the shifted operator, i.e., solves
@@ -130,22 +130,22 @@ namespace LOCA {
        * for \f$z\f$, where \f$r = \mbox{input}\f$ and \f$z = \mbox{output}\f$.
        */
       virtual void
-      apply(const NOX::Abstract::MultiVector& input, 
-	    NOX::Abstract::MultiVector& output) const;
+      apply(const NOX::Abstract::MultiVector& input,
+        NOX::Abstract::MultiVector& output) const;
 
-      /*! 
+      /*!
        * \brief  Begin PostProcessing of eigenvalues
        *
-       * Compute Jacobian and mass matrix once, for use in subsequent 
+       * Compute Jacobian and mass matrix once, for use in subsequent
        * repeated calls to rayleighQuotient
        */
       virtual void
       beginPostProcessing();
 
-      /*! 
+      /*!
        * \brief Transform eigenvalue.
        *
-       * Transforms the given eigenvalue to the eigenvalue of the 
+       * Transforms the given eigenvalue to the eigenvalue of the
        * Jacobian-mass matrix system by shifting and inverting it.
        */
       virtual void
@@ -157,10 +157,10 @@ namespace LOCA {
        * Computes the Rayleigh quotient \f$z^T J z / z^T M z\f$ for
        * the eigenvector \f$z\f$.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       rayleighQuotient(NOX::Abstract::Vector& evec_r,
-		       NOX::Abstract::Vector& evec_i,
-		       double& rq_r, double& rq_i) const;
+               NOX::Abstract::Vector& evec_i,
+               double& rq_r, double& rq_i) const;
 
     protected:
 

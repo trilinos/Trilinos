@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -34,6 +34,9 @@
 #include <cstring>
 
 #include "Sacado_Traits.hpp"
+#if defined(HAVE_SACADO_KOKKOSCORE)
+#include "Kokkos_Core.hpp"
+#endif
 
 namespace Sacado {
 
@@ -43,11 +46,33 @@ namespace Sacado {
   template <typename T, bool isScalar = IsScalarType<T>::value>
   struct ds_array {
 
+    KOKKOS_INLINE_FUNCTION
+    static T* my_alloc(const int sz) {
+#if defined(__CUDACC__) && defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+      T* m;
+      cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
+#else
+      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+#endif
+      return m;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static void my_free(T* m, int sz) {
+      if (sz > 0) {
+#if defined(__CUDACC__) && defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+        cudaFree(m);
+#else
+        operator delete((void*) m);
+#endif
+      }
+    }
+
     //! Get memory for new array of length \c sz and fill with zeros
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         T* p = m;
         for (int i=0; i<sz; ++i)
           new (p++) T(0.0);
@@ -63,7 +88,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         T* p = m;
         for (int i=0; i<sz; ++i)
           new (p++) T(*(src++));
@@ -79,7 +104,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         T* p = m;
         for (int i=0; i<sz; ++i) {
           new (p++) T(*(src));
@@ -130,7 +155,7 @@ namespace Sacado {
       T* e = m+sz;
       for (T* b = m; b!=e; b++)
         b->~T();
-      operator delete((void*) m);
+      my_free(m, sz);
     }
   };
 
@@ -141,11 +166,33 @@ namespace Sacado {
   template <typename T>
   struct ds_array<T,true> {
 
+    KOKKOS_INLINE_FUNCTION
+    static T* my_alloc(const int sz) {
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+      T* m;
+      cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
+#else
+      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+#endif
+      return m;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    static void my_free(T* m, int sz) {
+      if (sz > 0) {
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
+        cudaFree(m);
+#else
+        operator delete((void*) m);
+#endif
+      }
+    }
+
     //! Get memory for new array of length \c sz and fill with zeros
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         std::memset(m,0,sz*sizeof(T));
         return m;
       }
@@ -159,7 +206,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         for (int i=0; i<sz; ++i)
           m[i] = src[i];
         return m;
@@ -174,7 +221,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
-        T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+        T* m = my_alloc(sz);
         for (int i=0; i<sz; ++i)
           m[i] = src[i*stride];
         return m;
@@ -218,7 +265,7 @@ namespace Sacado {
     //! Destroy array elements and release memory
     KOKKOS_INLINE_FUNCTION
     static void destroy_and_release(T* m, int sz) {
-      operator delete((void*) m);
+      my_free(m, sz);
     }
   };
 

@@ -84,35 +84,7 @@ extern double seacas_timer();
 namespace {
   void exodus_error(int lineno) {
     std::ostringstream errmsg;
-    // Create errmsg here so that the exerrval doesn't get cleared by
-    // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "Exodus error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
 	   << " in file epu.C. Please report to gdsjaar@sandia.gov if you need help.";
 
     ex_err(NULL, NULL, EX_PRTLASTMSG);
@@ -1722,7 +1694,7 @@ namespace {
     global_element_map.resize(tot_size);
 
     {
-      size_t error = 0;
+      int error = 0;
       size_t offset = 0;
       for (int p = 0; p < part_count; p++) {
 	ExodusFile id(p);
@@ -1782,7 +1754,6 @@ namespace {
 								  global_element_map.end(),
 								  global_element);
 	    SMART_ASSERT(iter.first  != iter.second);
-	    element_value = iter.first - global_element_map.begin();
 	    cur_pos = iter.first;
 	  }
 	  element_value = cur_pos - global_element_map.begin();
@@ -1904,7 +1875,7 @@ namespace {
     global_node_map.resize(tot_size);
 
     size_t offset = 0;
-    size_t error = 0;
+    int error = 0;
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
       error = ex_get_node_num_map(id, TOPTR(global_node_numbers[p]));
@@ -1947,7 +1918,6 @@ namespace {
 								global_node_map.end(),
 								global_node);
 	  SMART_ASSERT(iter.first  != iter.second);
-	  nodal_value = iter.first - global_node_map.begin();
 	  cur_pos = iter.first;
 	}
 	nodal_value = cur_pos - global_node_map.begin();

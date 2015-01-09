@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -10,26 +9,9 @@ FILE(GLOB SOURCES *.cpp ../common/*.cpp)
 
 SET(LIBRARIES kokkoscore)
 
-IF( Kokkos_ENABLE_Cuda )
-
-  # add MPI include dir to nvcc
-  IF( TPL_ENABLE_MPI )
-    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
-
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
-  LIST( APPEND LIBRARIES ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY} )
-
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE(
   proxyapp
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS ${LIBRARIES}
   )
 

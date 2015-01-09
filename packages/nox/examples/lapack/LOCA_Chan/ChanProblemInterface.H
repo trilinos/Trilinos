@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -65,30 +65,30 @@ namespace LOCA {
   \brief LOCA-LAPACK problem interface for the Chan problem.
 */
 /*!
-  %ChanProblemInterface implements the LOCA::LAPACK::Interface for a 
+  %ChanProblemInterface implements the LOCA::LAPACK::Interface for a
   1D finite-difference discretization of the Chan problem:
   \f[
       \frac{d^2 T}{d x^2} + \alpha s \left(1 + \frac{x + 0.5 x^2}{1 + 0.01 x^2}\right) = 0
   \f]
    subject to the boundary conditions \f$T(0) = T(1) = \beta\f$.  The parameters
-   are \f$\alpha\f$, \f$\beta\f$, \f$s\f$, and \f$n\f$, the size of the 
+   are \f$\alpha\f$, \f$\beta\f$, \f$s\f$, and \f$n\f$, the size of the
    discretization.  The scaling factor \f$s\f$ is used to test continuation
    at different scales of \f$\alpha\f$.
 */
-class ChanProblemInterface : 
+class ChanProblemInterface :
   public LOCA::LAPACK::Interface {
 
 public:
 
   //! Constructor.  Also generates an initial guess
   ChanProblemInterface(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		  int N, double a, double b, double s);
- 
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          int N, double a, double b, double s);
+
   //! Constructor.  Also generates an initial guess
   ChanProblemInterface(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s, std::ofstream& file);
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int N, double a, double b, double s, std::ofstream& file);
 
   //! Destructor
   ~ChanProblemInterface() {};
@@ -99,11 +99,11 @@ public:
   //! Evaluates residual
   bool
   computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
-  
+
   //! Evalues jacobian
   bool
-  computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		  const NOX::LAPACK::Vector & x);
+  computeJacobian(NOX::LAPACK::Matrix<double>& J,
+          const NOX::LAPACK::Vector & x);
 
   //! Sets parameters
   void setParams(const LOCA::ParameterVector& p);
@@ -128,7 +128,7 @@ private:
 
   //! Private to prohibit copying
   ChanProblemInterface(const ChanProblemInterface&);
-  
+
   //! Private to prohibit copying
   ChanProblemInterface& operator=(const ChanProblemInterface&);
 

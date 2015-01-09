@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -52,7 +52,7 @@
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 //=============================================================================
-Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, 
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem,
 																													 const Epetra_Map & RedistMap)
   : OrigProblem_(OrigProblem),
 		NumProc_(0),
@@ -68,7 +68,7 @@ Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem 
 {
 }
 //=============================================================================
-Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, 
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem,
 																													 int NumProc,
 																													 bool Replicate)
   : OrigProblem_(OrigProblem),
@@ -175,8 +175,8 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 }
 
 //=========================================================================
-int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTranspose, 
-																											const bool MakeDataContiguous, 
+int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTranspose,
+																											const bool MakeDataContiguous,
 																											Epetra_LinearProblem *& RedistProblem) {
 
 	if (RedistProblemCreated_) EPETRA_CHK_ERR(-1);  // This method can only be called once
@@ -206,7 +206,7 @@ int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTransp
 		// If not, then just do the redistribution based on the the RedistMap
 		RedistMatrix = new Epetra_CrsMatrix(Copy, *RedistMap_, 0);
 		// need to do this next step until we generalize the Import/Export ops for CrsMatrix
-		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix); 
+		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix);
 		EPETRA_CHK_ERR(RedistMatrix->Export(*OrigCrsMatrix, *RedistExporter_, Add));
 		EPETRA_CHK_ERR(RedistMatrix->FillComplete());
 	}
@@ -263,7 +263,7 @@ int Epetra_LinearProblemRedistor::UpdateRedistProblemValues(Epetra_LinearProblem
 		
 		EPETRA_CHK_ERR(RedistMatrix->PutScalar(0.0));
 		// need to do this next step until we generalize the Import/Export ops for CrsMatrix
-		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix); 
+		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix);
 
 		if (OrigCrsMatrix==0) EPETRA_CHK_ERR(-3); // Broken for a RowMatrix at this point
 		EPETRA_CHK_ERR(RedistMatrix->Export(*OrigCrsMatrix, *RedistExporter_, Add));
@@ -285,9 +285,9 @@ int Epetra_LinearProblemRedistor::UpdateRedistProblemValues(Epetra_LinearProblem
 
 //=========================================================================
 // NOTE: This method should be removed and replaced with calls to Epetra_Util_ExtractHbData()
-int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int * & ptr, 
-																								int * & ind, double * & val, int & Nrhs, 
-																								double * & rhs, int & ldrhs, 
+int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int * & ptr,
+																								int * & ind, double * & val, int & Nrhs,
+																								double * & rhs, int & ldrhs,
 																								double * & lhs, int & ldlhs) const {
 
 	Epetra_CrsMatrix * RedistMatrix = dynamic_cast<Epetra_CrsMatrix *>(RedistProblem_->GetMatrix());
@@ -300,7 +300,7 @@ int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int 
 	M = RedistMatrix->NumMyRows();
 	N = RedistMatrix->NumMyCols();
 	nz = RedistMatrix->NumMyNonzeros();
-	val = (*RedistMatrix)[0];        // Dangerous, but cheap and effective way to access first element in 
+	val = (*RedistMatrix)[0];        // Dangerous, but cheap and effective way to access first element in
 
 	const Epetra_CrsGraph & RedistGraph = RedistMatrix->Graph();
 	ind = RedistGraph[0];  // list of values and indices

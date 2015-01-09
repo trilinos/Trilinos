@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -56,11 +56,11 @@ class Epetra_Export;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
-    
+
   public:
 
     //! @name Constructors/destructors
-  //@{ 
+  //@{
   //! Primary Epetra_RowMatrixTransposer constructor.
   /*!
     \param Matrix (In) An existing Epetra_RowMatrix object.  The Epetra_RowMatrix, the LHS and RHS pointers
@@ -68,34 +68,34 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 
     \return Pointer to a Epetra_RowMatrixTransposer object.
 
-  */ 
+  */
   Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMatrix);
 
   //! Epetra_RowMatrixTransposer copy constructor.
-  
+
   Epetra_RowMatrixTransposer(const Epetra_RowMatrixTransposer& Source);
-  
+
   //! Epetra_RowMatrixTransposer destructor.
-  
+
   virtual ~Epetra_RowMatrixTransposer();
   //@}
-  
+
   //! @name Forward transformation methods
-  //@{ 
-  
+  //@{
+
   //! Generate a new Epetra_CrsMatrix as the transpose of an Epetra_RowMatrix passed into the constructor.
   /*! Constructs a new Epetra_CrsMatrix that is a copy of the Epetra_RowMatrix passed in to the constructor.
 		
 		\param MakeDataContiguous (In) Causes the output matrix, LHS and RHS to be stored in a form compatible with
 		       Fortran-style solvers.  The output matrix will be compatible with the Harwell-Boeing compressed
-					 column format.  The RHS and LHS will be stored such that the last value in column j of the 
+					 column format.  The RHS and LHS will be stored such that the last value in column j of the
 					 multivector is stored next to the first value in column j+1.
 		\param TransposeRowMap (Optional/In) If this argument is defined, the transpose matrix will be distributed
 		       using this map as the row map for the transpose.  If it is set to zero, the transpose matrix will use
 					 the OrigMatrix->RowMatrixDomainMap as the row map.
 
 		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
-					 
+					
   */
   int CreateTranspose(const bool MakeDataContiguous,
 											Epetra_CrsMatrix *& TransposeMatrix,
@@ -103,7 +103,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 
 	
   //! Update the values of an already-redistributed problem.
-  /*! Updates the values of an already-redistributed problem.  This method allows updating 
+  /*! Updates the values of an already-redistributed problem.  This method allows updating
 		  the redistributed problem without
 		  allocating new storage.
 
@@ -112,19 +112,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 					 this instance of Epetra_RowMatrixTransposer.
 
 		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
-					 
+					
   */
   int UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues);
   //@}
-  
+
   //! @name Reverse transformation methods
-  //@{ 
+  //@{
   //! Update values of original matrix (Not implemented and not sure if we will implement this).
    int UpdateOriginalMatrixValues();
   //@}
-  
+
   //! @name Attribute accessor methods
-  //@{ 
+  //@{
 
   //! Returns const reference to the Epetra_Map object describing the row distribution of the transpose matrix.
   /*! The RedistExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
@@ -134,13 +134,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
   const Epetra_Map & TransposeRowMap() const {return(*TransposeRowMap_);};
   //! Returns const reference to the Epetra_Export object used to redistribute the original matrix.
   /*! The TransposeExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
-		  the original matrix. 
+		  the original matrix.
 			\warning Must not be called before CreateTranspose() is called.
   */
   const Epetra_Export & TransposeExporter() const{return(*TransposeExporter_);};
   //@}
-  
- private: 
+
+ private:
   void DeleteData();
   Epetra_RowMatrixTransposer& operator=(const Epetra_RowMatrixTransposer& src);
 

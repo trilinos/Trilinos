@@ -47,9 +47,10 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlgScotch.hpp>
+#include <Zoltan2_AlgParMETIS.hpp>
 #include <Zoltan2_AlgBlock.hpp>
 #include <Zoltan2_AlgRCB.hpp>
-#include <Zoltan2_AlgPQJagged.hpp>
-
+#include <Zoltan2_AlgMultiJagged.hpp>
+#include <Zoltan2_AlgWolf.hpp>
 
 #endif

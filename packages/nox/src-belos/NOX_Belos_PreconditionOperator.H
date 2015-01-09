@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,18 +54,18 @@
 #include "BelosOperator.hpp"            // base class
 #include "NOX_Abstract_Group.H"         // data member
 
-namespace NOX { 
+namespace NOX {
 
-  namespace Belos { 
+  namespace Belos {
 
-    /*! 
-     * \brief Implementation of Belos::Operator for a preconditioner 
+    /*!
+     * \brief Implementation of Belos::Operator for a preconditioner
      * defined by a NOX::Abstract::Group
      */
     /*!
-     * This class implements the Belos::Operator interface representing a 
-     * preconditioner operation using the NOX::Abstract::Group.  It 
-     * implements the operator Apply() method via 
+     * This class implements the Belos::Operator interface representing a
+     * preconditioner operation using the NOX::Abstract::Group.  It
+     * implements the operator Apply() method via
      * applyRightPreconditioningMultiVector.
      */
     class PreconditionOperator : public ::Belos::Operator<double> {
@@ -74,7 +74,7 @@ namespace NOX {
 
       //! Constructor.
       PreconditionOperator(NOX::Abstract::Group& g,
-			   NOX::Parameter::List& preconditionerParameters);
+               NOX::Parameter::List& preconditionerParameters);
 
       //! Destructor.
       virtual ~PreconditionOperator();
@@ -83,37 +83,37 @@ namespace NOX {
       /*!
        * Calls underlying group's applyRightPreconditioningMultiVector
        */
-      virtual ::Belos::ReturnType 
-      Apply(const ::Belos::MultiVec<double>& x, 
-	    ::Belos::MultiVec<double>& y, 
-	    ::Belos::ETrans trans=::Belos::NOTRANS) const;
+      virtual ::Belos::ReturnType
+      Apply(const ::Belos::MultiVec<double>& x,
+        ::Belos::MultiVec<double>& y,
+        ::Belos::ETrans trans=::Belos::NOTRANS) const;
 
       //! ApplyInverse operator
       /*!
        * Returns ::Belos::Undefined
        */
-      virtual ::Belos::ReturnType 
-      ApplyInverse(const ::Belos::MultiVec<double>& x, 
-		   ::Belos::MultiVec<double>& y, 
-		   ::Belos::ETrans trans=::Belos::NOTRANS) const;
+      virtual ::Belos::ReturnType
+      ApplyInverse(const ::Belos::MultiVec<double>& x,
+           ::Belos::MultiVec<double>& y,
+           ::Belos::ETrans trans=::Belos::NOTRANS) const;
 
     protected:
 
-      /*! 
+      /*!
        * \brief Converts NOX::Abstract::Group::ReturnType to the corresponding
        * Belos type.
        */
-      ::Belos::ReturnType 
+      ::Belos::ReturnType
       noxReturnTypeToBelos(NOX::Abstract::Group::ReturnType noxStatus) const;
 
     protected:
 
       //! Underlying group
-      NOX::Abstract::Group& grp;  
+      NOX::Abstract::Group& grp;
 
       //! Parameter list for applyRightPreconditioning
       NOX::Parameter::List& precondParams;
-  
+
     };
   } // namespace Belos
 } // namespace LOCA

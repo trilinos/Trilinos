@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -55,7 +55,7 @@ extern "C" {
 class Epetra_OskiError {
   public:
 	//! @name Constructors/Destructor
-        //@{        
+        //@{
 	//! Default Constructor
 	Epetra_OskiError();
 
@@ -69,7 +69,7 @@ class Epetra_OskiError {
 	Epetra_OskiError OskiGetErrorHandler();
 
 	//! Sets the error handling routine to be used by OSKI to NewErrorHandler.
-	void OskiSetErrorHandler(Epetra_OskiError& NewErrorHandler); 
+	void OskiSetErrorHandler(Epetra_OskiError& NewErrorHandler);
 	//@}
 
   private:

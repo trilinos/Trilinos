@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -119,7 +119,7 @@ int quad1(const Epetra_Map& map, bool verbose)
   int len = elemMatrixDim*elemMatrixDim;
   double* elemMatrix = new double[len];
 
-  //In an actual finite-element problem, we would calculate and fill 
+  //In an actual finite-element problem, we would calculate and fill
   //meaningful element stiffness matrices. But for this simple matrix assembly
   //test, we're just going to fill our element matrix with 1.0's. This will
   //make it easy to see whether the matrix is correct after it's assembled.
@@ -280,7 +280,7 @@ int quad2(const Epetra_Map& map, bool verbose)
   int len = elemMatrixDim*elemMatrixDim;
   double* elemMatrix = new double[len];
 
-  //In an actual finite-element problem, we would calculate and fill 
+  //In an actual finite-element problem, we would calculate and fill
   //meaningful element stiffness matrices. But for this simple matrix assembly
   //test, we're just going to fill our element matrix with 1.0's. This will
   //make it easy to see whether the matrix is correct after it's assembled.
@@ -360,13 +360,13 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 {
   const Epetra_Comm & Comm = Map.Comm();
   int ierr = 0, i, j;
-  
+
   /* get number of processors and the name of this processor */
-  
+
   int MyPID   = Comm.MyPID();
-  
+
   // Construct FEVbrMatrix
-  
+
   if (verbose && MyPID==0) cout << "constructing Epetra_FEVbrMatrix" << endl;
 
   //
@@ -378,7 +378,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
   int rowLengths = 3;
 
   Epetra_FEVbrMatrix A(Copy, Map, rowLengths);
- 
+
   if (verbose && MyPID==0) {
     cout << "calling A.InsertGlobalValues with 1-D data array"<<endl;
   }
@@ -465,7 +465,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 }
 
 int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
-{   
+{
   if (verbose) {
     cout << "******************* four_quads ***********************"<<endl;
   }
@@ -494,9 +494,9 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   //Depending on the number of processors being used, the locations of the
   //specific matrix positions (in terms of which processor owns them) will vary.
   //
-  
+
   int numProcs = Comm.NumProc();
-  
+
   int numNodes = 9;
   int numElems = 4;
   int numNodesPerElem = 4;
@@ -596,7 +596,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 	err = A->BeginInsertGlobalValues(nodes[j], numNodesPerElem, nodes);
 	if (err<0) return(err);
       }
-    
+
       for(k=0; k<numNodesPerElem; ++k) {
 	err = A->SubmitBlockEntry(values_1d, blockSize, blockSize, blockSize);
 	if (err<0) return(err);

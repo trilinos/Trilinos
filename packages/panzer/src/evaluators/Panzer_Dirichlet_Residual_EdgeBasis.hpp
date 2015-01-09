@@ -50,6 +50,7 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_PureBasis.hpp"
+#include "Panzer_Dimension.hpp"
 #include "Panzer_PointRule.hpp"
 #include "Panzer_PointValues.hpp"
 
@@ -63,13 +64,17 @@ namespace panzer {
   */
 PHX_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   
-  PHX::MDField<ScalarT> residual;
-  PHX::MDField<ScalarT> dof;
-  PHX::MDField<ScalarT> value;
+  PHX::MDField<ScalarT,Cell,BASIS> residual;
+  PHX::MDField<ScalarT,Cell,Point,Dim> dof;
+  PHX::MDField<ScalarT,Cell,Point,Dim> value;
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation; // will scale residual
+                                                    // by orientation to ensure
+                                                    // parallel consistency
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
   Intrepid::FieldContainer<ScalarT> edgeTan; // edge tangents
+  Intrepid::FieldContainer<ScalarT> refEdgeTan; // reference edge tangents
 
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
 

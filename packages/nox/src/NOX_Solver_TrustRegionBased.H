@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -90,7 +90,7 @@ The trust region subproblem (TRSP) at iteration \f$k\f$ is given by
 \quad \mbox{(TRSP)}
 \f$
 
-where 
+where
 
 <ul>
 <li>\f$ f_k = f(x_k) = \frac{1}{2} \|F(x_k)\|^2_2 \f$,
@@ -99,7 +99,7 @@ where
 <li>\f$ J(x_k)\f$ is the Jacobian of \f$F\f$ at \f$x_k\f$, and
 <li>\f$ \Delta_k \f$ is the trust region radius.
 </ul>
-  
+
 The "improvement ratio" for a given step \f$ s \f$ is defined as
 
 &nbsp;&nbsp;
@@ -122,7 +122,7 @@ An iteration consists of the following steps.
 
 <li> While \f$\rho < \rho_{\min}\f$ and \f$\Delta > \Delta_{\min}\f$, do the following.
 
-     <ul> 
+     <ul>
      <li> Compute the direction \f$d\f$ as follows:
 
           <ul>
@@ -134,14 +134,14 @@ An iteration consists of the following steps.
                step by setting \f$d =
                \displaystyle\frac{\Delta}{\|c\|_2} c\f$
 
-	  <li> Otherwise, take a Dog Leg step by setting 
-               \f$ d = (1-\gamma) c + \gamma n \f$ where 
+	  <li> Otherwise, take a Dog Leg step by setting
+               \f$ d = (1-\gamma) c + \gamma n \f$ where
 	       \f$
 	       \gamma = \displaystyle\frac
 	       {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
 	       \f$
 	       with \f$a = n-c\f$.
-     
+
           </ul>
 
      <li> Set \f$x_{\rm new} = x + d\f$ and calculate \f$f_{\rm new}\f$
@@ -228,7 +228,7 @@ sublist based to the solver.
   - \f$\rho = \frac{\|F(x) \| - \| F(x + d) \| }
                    {\| F(x) \| - \| F(x) + Jd \| } \f$
 
-  - "Solver Options" - Sublist of general solver options.  
+  - "Solver Options" - Sublist of general solver options.
      <ul>
      <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
      </ul>
@@ -249,19 +249,19 @@ class TrustRegionBased : public Generic {
 
 public:
 
-  /*! 
+  /*!
     \brief Constructor
 
-    See reset() for description. 
+    See reset() for description.
   */
-  TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		   const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+  TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+		   const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
 		   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -277,7 +277,7 @@ public:
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
 
 protected:
-  
+
   //! Print out initialization information and calcuation the RHS.
   virtual void init();
 
@@ -288,7 +288,7 @@ protected:
   virtual void printUpdate();
 
 protected:
-  
+
   //! Pointer to the global data object.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
@@ -296,9 +296,9 @@ protected:
   Teuchos::RCP<NOX::Utils> utilsPtr;
 
   //! Current solution.
-  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;
 
-  //! Previous solution pointer. 
+  //! Previous solution pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
   Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;
@@ -324,25 +324,28 @@ protected:
   Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
-  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
 
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
-  //! %Newton %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> newtonPtr; 
+  //! %Newton %Search %Direction.
+  Teuchos::RCP<NOX::Direction::Generic> newtonPtr;
 
-  //! Cauchy %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr; 
+  //! Cauchy %Search %Direction.
+  Teuchos::RCP<NOX::Direction::Generic> cauchyPtr;
 
   //! Radius of the trust region
   double radius;
 
   //! Minimum improvement ratio to accept step
   double minRatio;
+
+  //! Initial trust region radius
+  double initRadius;
 
   //! Minimum trust region radius
   double minRadius;
@@ -375,18 +378,18 @@ protected:
   double dx;
 
   //! Number of nonlinear iterations.
-  int nIter;                    
+  int nIter;
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
   //! Enumerated list for each direction that may be required in the Trust region computation.
-  enum StepType 
+  enum StepType
   {
     //! Use the Newton direction
-    Newton, 
+    Newton,
     //! Use the Cauchy direction
-    Cauchy, 
+    Cauchy,
     //! Use the doglog direction
     Dogleg
   };
@@ -397,7 +400,7 @@ protected:
   //! Stores a user supplied merit function if supplied in the parameter list.
   Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
-  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
+  //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach.
   bool useAredPredRatio;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
@@ -408,4 +411,3 @@ protected:
 } // namespace NOX
 
 #endif
-

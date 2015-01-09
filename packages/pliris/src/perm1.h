@@ -55,5 +55,5 @@ void perm1_(DATA_TYPE *, int *);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif

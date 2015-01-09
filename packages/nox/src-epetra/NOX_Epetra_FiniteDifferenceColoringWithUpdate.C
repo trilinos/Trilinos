@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,14 +63,14 @@ using namespace NOX::Epetra;
 // Constructor with no frills
 FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       Teuchos::ParameterList& printingParams_,
-      const Teuchos::RCP<Interface::Required>& i_, 
-      const NOX::Epetra::Vector& initialGuess_, 
+      const Teuchos::RCP<Interface::Required>& i_,
+      const NOX::Epetra::Vector& initialGuess_,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
   use_update(false),
-  use_probing_diags(false),  
+  use_probing_diags(false),
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -79,15 +79,15 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   //! Constructor with graph
  FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       Teuchos::ParameterList& printingParams_,
-      const Teuchos::RCP<Interface::Required>& i_, 
-      const NOX::Epetra::Vector& initialGuess_, 
+      const Teuchos::RCP<Interface::Required>& i_,
+      const NOX::Epetra::Vector& initialGuess_,
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
   use_update(false),
-  use_probing_diags(false),  
+  use_probing_diags(false),
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -96,15 +96,15 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
 
 FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       Teuchos::ParameterList& printingParams_,
-      const Teuchos::RCP<Interface::Required>& i_, 
-      const NOX::Epetra::Vector& initialGuess_, 
+      const Teuchos::RCP<Interface::Required>& i_,
+      const NOX::Epetra::Vector& initialGuess_,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       const Teuchos::RCP<Epetra_MapColoring>& updatecolorMap,
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
   use_update(true),
-  use_probing_diags(false),  
+  use_probing_diags(false),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -112,8 +112,8 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
 
 FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       Teuchos::ParameterList& printingParams_,
-      const Teuchos::RCP<Interface::Required>& i_, 
-      const NOX::Epetra::Vector& initialGuess_, 
+      const Teuchos::RCP<Interface::Required>& i_,
+      const NOX::Epetra::Vector& initialGuess_,
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       const Teuchos::RCP<Epetra_MapColoring>& updatecolorMap,
@@ -121,7 +121,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
   use_update(true),
-  use_probing_diags(false),  
+  use_probing_diags(false),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -144,7 +144,7 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
     dynamic_cast<FiniteDifferenceColoringWithUpdate*>(&Jac);
   if (testMatrix == 0) {
     std::cerr << "ERROR: NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian() - "
-	 << "Jacobian to evaluate is not a FiniteDifferenceColoringWithUpdate object!"
+     << "Jacobian to evaluate is not a FiniteDifferenceColoringWithUpdate object!"
          << std::endl;
     throw "NOX Error";
   }
@@ -161,7 +161,7 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
 
 
 /****************************************************/
-bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x, Epetra_CrsMatrix& jac,const Epetra_MapColoring& colors){  
+bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x, Epetra_CrsMatrix& jac,const Epetra_MapColoring& colors){
 
   // Allocate space for perturbation, get column version of x for scaling
   Epetra_Vector xp(x);
@@ -171,7 +171,7 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
   if(jac.ColMap().SameAs(x.Map()))
      xcol=const_cast<Epetra_Vector*>(&x);
   else{
-    xcol=new Epetra_Vector(jac.ColMap(),true);//zeros out by default  
+    xcol=new Epetra_Vector(jac.ColMap(),true);//zeros out by default
     xcol->Import(x,*jac.Importer(),InsertAdd);
   }
 
@@ -206,11 +206,11 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
     xp=x;
     for(int i=0;i<N;i++){
       if(colors[i]==j)
-	xp[i] += scaleFactor*(alpha*abs(x[i])+beta);
+    xp[i] += scaleFactor*(alpha*abs(x[i])+beta);
     }
 
     computeF(xp, fp, NOX::Epetra::Interface::Required::FD_Res);
-    
+
     // Do the subtraction to estimate the Jacobian (w/o including step length)
     Jc.Update(1.0, fp, -1.0, fo, 0.0);
 
@@ -219,19 +219,19 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
        Jc.Norm2(&tmp);
        jc_norm+=tmp*tmp;
      }
-     
+
     for(int i=0;i<N;i++){
       // Skip for uncolored row/columns, else update entries
       if(colors[i]==0) continue;
 
       jac.ExtractMyRowView(i,entries,values,indices);
       for(int k=0;k<jac.NumMyEntries(i);k++){
-	if(colors[indices[k]]==j){
-	  values[k]=Jc[i] / (scaleFactor*(alpha*abs((*xcol)[indices[k]])+beta));
-	  // If probing diagnostics are on, zero out the entries as they are used
-	  if(use_probing_diags) Jc[i]=0.0;
-	  break;// Only one value per row...
-	}    
+    if(colors[indices[k]]==j){
+      values[k]=Jc[i] / (scaleFactor*(alpha*abs((*xcol)[indices[k]])+beta));
+      // If probing diagnostics are on, zero out the entries as they are used
+      if(use_probing_diags) Jc[i]=0.0;
+      break;// Only one value per row...
+    }
       }
     }
     if(use_probing_diags){

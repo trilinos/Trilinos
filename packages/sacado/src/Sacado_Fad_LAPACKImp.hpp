@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -150,7 +150,6 @@ Sacado::Fad::Fad_LAPACK<OrdinalType,FadType>::
 Fad_LAPACK(bool use_default_impl_,
            bool use_dynamic_, 
            OrdinalType static_workspace_size_) : 
-  LAPACKType(),
   arrayTraits(use_dynamic_, static_workspace_size_),
   lapack(),
   use_default_impl(use_default_impl_)
@@ -160,7 +159,6 @@ Fad_LAPACK(bool use_default_impl_,
 template <typename OrdinalType, typename FadType>
 Sacado::Fad::Fad_LAPACK<OrdinalType,FadType>::
 Fad_LAPACK(const Fad_LAPACK& x) : 
-  LAPACKType(x),
   arrayTraits(x.arrayTraits),
   lapack(x.lapack),
   use_default_impl(x.use_default_impl) 

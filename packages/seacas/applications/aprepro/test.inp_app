@@ -32,8 +32,12 @@ Test max, min, sign, dim, abs
 {nonzero = 1} {sign(0.5, nonzero) + sign(0.5, -nonzero)} $ Should be 1 0
 {dim(5.5, 4.5)}	{dim(4.5, 5.5)}	$ Should be 1 0
 
-$ Test ifdef lines
 {ifyes = 1} {ifno = 0}
+$ Test ternary...
+{ifyes == 1 ? "correct" : "incorrect"}
+{ifno == 1 ? "incorrect" : "correct"}
+
+$ Test ifdef lines
 	{Ifdef(ifyes)}
 This line should be echoed. (a)
  {Endif}
@@ -71,7 +75,7 @@ This line should be echoed. (7)
 This line should not be echoed (8)
   {Endif}
 $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
-$ Check line counting -- should be on line 74: {Parse Error}
+$ Check line counting -- should be on line 78: {Parse Error}
 {ifdef(ifyes)} {This should be an error}
 {endif}
 
@@ -127,7 +131,33 @@ $ Test if - else lines
   make sure it is still good
 {endif}
 $ ========================================================================
+$ Test switch
+{switch(PI)}
+This is in a switch, but prior to any case, it should not run
+{a = 0.5} Should not execute
 
+{case (1)}
+This should not echo
+{a = 1}
+
+{case (2)}
+This should not echo
+{a = 2}
+
+{case (PI)}
+This should echo
+{a = PI}
+
+{case (PI)}
+This should not echo since a previous case matched.
+{a = 2}
+
+{default}
+{a=4}
+
+{endswitch}
+
+This should be equal to PI --  {PI}
 $ Test int and [] (shortcut for int)
 {int(5.01)}	{int(-5.01)}
 {[5.01]}	{[-5.01]}

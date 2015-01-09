@@ -367,8 +367,10 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   }
   else if (SmootherType_ == ML_MFP_BLOCK_JACOBI)
   {
-    if (verbose_);
+    if (verbose_)
+    {
       std::cout << "Diagonal coloring type         = " << DiagonalColoringType << std::endl;
+    }
     ML_CHK_ERR(GetBlockDiagonal(Graph, DiagonalColoringType));
 
     AddAndResetStartTime("block diagonal construction", true);
@@ -528,7 +530,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   // nonzero entry after the matrix-matrix product between the Operator_
   // and the tentative prolongator.
 
-  std::vector<vector<int> > aggregates(NumAggregates);
+  std::vector<std::vector<int> > aggregates(NumAggregates);
   std::vector<int>::iterator iter;
 
   for (int i = 0; i < NumAggregates; ++i)
@@ -975,8 +977,10 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
           int GRID = CoarseMap.GID(AID * NullSpaceDim + k);
           int ierr = R_->InsertGlobalValues(GRID, 1, &val, &GCID);
-          if (ierr < 0)
+          if (ierr < 0) {
+            if(AP_ML != NULL) ML_free(AP_ML);
             ML_CHK_ERR(-1);
+          }
         }
   }
 

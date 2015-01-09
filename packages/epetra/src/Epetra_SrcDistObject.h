@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,7 +51,7 @@ class Epetra_BlockMap;
 
 //! Epetra_SrcDistObject: A class for supporting flexible source distributed objects for import/export operations.
 
-/*! The Epetra_SrcDistObject is a base class for all Epetra distributed global objects that are potential 
+/*! The Epetra_SrcDistObject is a base class for all Epetra distributed global objects that are potential
     source objects for the general Epetra_DistObject class.  It provides a way to send a very general distributed
     object as the potential source object for an import or export object.  For example, it is possible to pass
     an Epetra_RowMatrix object as the source object for an import/export where the target is an Epetra_CrsMatrix, or
@@ -64,14 +64,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SrcDistObject {
 
   public:
     //! @name Destructor
-  //@{ 
-  //! Epetra_SrcDistObject destructor.  
+  //@{
+  //! Epetra_SrcDistObject destructor.
   virtual ~Epetra_SrcDistObject() {};
   //@}
 
-  
+
   //! @name Attribute accessor methods
-  //@{ 
+  //@{
   //! Returns a reference to the Epetra_BlockMap for this object.
   virtual const Epetra_BlockMap & Map() const = 0;
 };

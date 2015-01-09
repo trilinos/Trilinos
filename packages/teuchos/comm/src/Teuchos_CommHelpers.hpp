@@ -83,21 +83,7 @@ enum EReductionType {
  *
  * \relates EReductionType
  */
-inline
-const char* toString( const EReductionType reductType )
-{
-  switch (reductType) {
-    case REDUCE_SUM: return "REDUCE_SUM";
-    case REDUCE_MIN: return "REDUCE_MIN";
-    case REDUCE_MAX: return "REDUCE_MAX";
-    case REDUCE_AND: return "REDUCE_AND";
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Teuchos::toString(EReductionType): "
-        "Invalid EReductionType value " << reductType << ".  Valid values "
-        "include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.");
-  }
-}
+const char* toString (const EReductionType reductType);
 
 /** \brief Get the process rank.
  *
@@ -1442,7 +1428,13 @@ void Teuchos::reduceAll(
 
 namespace Teuchos {
 
-#ifdef TEUCHOS_HAVE_COMPLEX
+// amb 11 Nov 2014. I am disabling these specializations for
+// now. MPI_C_DOUBLE_COMPLEX is causing a problem in some builds. This code was
+// effectively turned on only yesterday (10 Nov 2014) when TEUCHOS_HAVE_COMPLEX
+// was corrected to be HAVE_TEUCHOS_COMPLEX, so evidently there are no users of
+// these specializations.
+#if 0
+#ifdef HAVE_TEUCHOS_COMPLEX
 // Specialization for Ordinal=int and Packet=std::complex<double>.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1520,7 +1512,8 @@ isend<int, std::complex<float> > (const ArrayRCP<const std::complex<float> >& se
                                   const int destRank,
                                   const int tag,
                                   const Comm<int>& comm);
-#endif // TEUCHOS_HAVE_COMPLEX
+#endif // HAVE_TEUCHOS_COMPLEX
+#endif // if 0
 
 // Specialization for Ordinal=int and Packet=double.
 template<>
@@ -1600,7 +1593,7 @@ isend<int, float> (const ArrayRCP<const float>& sendBuffer,
                    const int tag,
                    const Comm<int>& comm);
 
-#ifdef TEUCHOS_HAVE_LONG_LONG_INT
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 // Specialization for Ordinal=int and Packet=long long.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
@@ -1656,7 +1649,63 @@ isend<int, long long> (const ArrayRCP<const long long>& sendBuffer,
                        const int destRank,
                        const int tag,
                        const Comm<int>& comm);
-#endif // TEUCHOS_HAVE_LONG_LONG_INT
+
+// Specialization for Ordinal=int and Packet=unsigned long long.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gather<int, unsigned long long> (const unsigned long long sendBuf[],
+                                 const int sendCount,
+                                 unsigned long long recvBuf[],
+                                 const int recvCount,
+                                 const int root,
+                                 const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, unsigned long long> (const unsigned long long sendBuf[],
+                                  const int sendCount,
+                                  unsigned long long recvBuf[],
+                                  const int recvCounts[],
+                                  const int displs[],
+                                  const int root,
+                                  const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduceAll<int, unsigned long long> (const Comm<int>& comm,
+                                    const EReductionType reductType,
+                                    const int count,
+                                    const unsigned long long sendBuffer[],
+                                    unsigned long long globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned long long> (const Comm<int>& comm,
+                                   const ArrayRCP<unsigned long long>& recvBuffer,
+                                   const int sourceRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned long long> (const ArrayRCP<unsigned long long> &recvBuffer,
+                                   const int sourceRank,
+                                   const int tag,
+                                   const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned long long> (const Comm<int>& comm,
+                               const int count,
+                               const unsigned long long sendBuffer[],
+                               const int destRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned long long> (const unsigned long long sendBuffer[],
+                               const int count,
+                               const int destRank,
+                               const int tag,
+                               const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+isend<int, unsigned long long> (const ArrayRCP<const unsigned long long>& sendBuffer,
+                                const int destRank,
+                                const int tag,
+                                const Comm<int>& comm);
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 // Specialization for Ordinal=int and Packet=long.
 template<>
@@ -1713,6 +1762,62 @@ isend<int, long> (const ArrayRCP<const long>& sendBuffer,
                   const int destRank,
                   const int tag,
                   const Comm<int>& comm);
+
+// Specialization for Ordinal=int and Packet=unsigned long.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gather<int, unsigned long> (const unsigned long sendBuf[],
+                            const int sendCount,
+                            unsigned long recvBuf[],
+                            const int recvCount,
+                            const int root,
+                            const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, unsigned long> (const unsigned long sendBuf[],
+                             const int sendCount,
+                             unsigned long recvBuf[],
+                             const int recvCounts[],
+                             const int displs[],
+                             const int root,
+                             const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduceAll<int, unsigned long> (const Comm<int>& comm,
+                               const EReductionType reductType,
+                               const int count,
+                               const unsigned long sendBuffer[],
+                               unsigned long globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned long> (const Comm<int>& comm,
+                              const ArrayRCP<unsigned long>& recvBuffer,
+                              const int sourceRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned long> (const ArrayRCP<unsigned long> &recvBuffer,
+                              const int sourceRank,
+                              const int tag,
+                              const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned long> (const Comm<int>& comm,
+                          const int count,
+                          const unsigned long sendBuffer[],
+                          const int destRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned long> (const unsigned long sendBuffer[],
+                          const int count,
+                          const int destRank,
+                          const int tag,
+                          const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+isend<int, unsigned long> (const ArrayRCP<const unsigned long>& sendBuffer,
+                           const int destRank,
+                           const int tag,
+                           const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=int.
 template<>
@@ -1780,6 +1885,62 @@ isend<int, int> (const ArrayRCP<const int>& sendBuffer,
                  const int destRank,
                  const int tag,
                  const Comm<int>& comm);
+
+// Specialization for Ordinal=int and Packet=unsigned int.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gather<int, unsigned int> (const unsigned int sendBuf[],
+                           const int sendCount,
+                           unsigned int recvBuf[],
+                           const int recvCount,
+                           const int root,
+                           const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+gatherv<int, unsigned int> (const unsigned int sendBuf[],
+                            const int sendCount,
+                            unsigned int recvBuf[],
+                            const int recvCounts[],
+                            const int displs[],
+                            const int root,
+                            const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduceAll<int, unsigned int> (const Comm<int>& comm,
+                              const EReductionType reductType,
+                              const int count,
+                              const unsigned int sendBuffer[],
+                              unsigned int globalReducts[]);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned int> (const Comm<int>& comm,
+                             const ArrayRCP<unsigned int>& recvBuffer,
+                             const int sourceRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+ireceive<int, unsigned int> (const ArrayRCP<unsigned int> &recvBuffer,
+                             const int sourceRank,
+                             const int tag,
+                             const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned int> (const Comm<int>& comm,
+                         const int count,
+                         const unsigned int sendBuffer[],
+                         const int destRank);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+send<int, unsigned int> (const unsigned int sendBuffer[],
+                         const int count,
+                         const int destRank,
+                         const int tag,
+                         const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT RCP<CommRequest<int> >
+isend<int, unsigned int> (const ArrayRCP<const unsigned int>& sendBuffer,
+                          const int destRank,
+                          const int tag,
+                          const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=short.
 template<>

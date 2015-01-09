@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef _NOX_OFFBLOCK_MANAGER_H
 #define _NOX_OFFBLOCK_MANAGER_H
 
@@ -62,11 +62,11 @@
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
-#endif  
+#endif
 
 #include <vector>
 
-class OffBlock_Manager : GenericEpetraProblem 
+class OffBlock_Manager : GenericEpetraProblem
 {
 
   friend class Problem_Manager;
@@ -85,10 +85,10 @@ public:
   virtual ~OffBlock_Manager()
   { };
 
-  // Return the underlying Group 
+  // Return the underlying Group
   Teuchos::RCP<NOX::Epetra::Group> getGroup();
 
-  // Return the underlying CrsMatrix 
+  // Return the underlying CrsMatrix
   Epetra_CrsMatrix& getMatrix();
 
   // Return the rowMapVec
@@ -132,8 +132,8 @@ private:
   int problemEqId;      // Problem Id of off-diagonal block equations
   int problemVarId;     // Problem Id of off-diagonal block variables
 
-  Teuchos::RCP<Problem_Interface> offBlockInterface; // A problem interface to 
-  // this off-block problem manager.  
+  Teuchos::RCP<Problem_Interface> offBlockInterface; // A problem interface to
+  // this off-block problem manager.
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
@@ -149,8 +149,8 @@ private:
   Teuchos::RCP<NOX::Epetra::FiniteDifference>           matrixOperator  ;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO>        linearSystem    ;
   Teuchos::RCP<NOX::Epetra::Group>                      group           ;
-  
-  // These are needed to shift indices for coloring and 
+
+  // These are needed to shift indices for coloring and
   // block-based condition number estimates
   map< int, int > rowBlockToComposite;
   map< int, int > rowCompositeToBlock;

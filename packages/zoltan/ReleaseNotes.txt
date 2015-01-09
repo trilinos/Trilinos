@@ -1,3 +1,13 @@
+Zoltan release notes for Trilinos v11.8
+
+Revised Scotch TPL specification in Trilinos' CMake environment to link
+with all libraries needed by Scotch v6.
+
+Fixed bug in interface to ParMETIS v4 when multiple vertex weights are used.
+Fixed bug in interface to Scotch when some processor has no vertices.
+
+-----------------------
+
 Zoltan release notes for Trilinos v11.
 
 Highlights are listed below; for more details, see 

@@ -1,4 +1,3 @@
-INCLUDE(TribitsPackageMacros)
 
 #
 # A) Define the package
@@ -44,6 +43,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LAPACK
   "Enable the dense serial solver interface"
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
+  HAVE_AMESOS2_KLU2
+  "Enable KLU2 in Amesos2"
+  OFF
+)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Basker
+   HAVE_AMESOS2_BASKER
+   "Enable Basker in Amesos2"
+   OFF
+)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -69,8 +79,8 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 # D) Do standard postprocessing
 #
 
-TRIBITS_EXCLUDE_FILES(
-  src/SuiteSparse
-  )
+#leaving in place for future excludes
+#TRIBITS_EXCLUDE_FILES(
+#  )
 
 TRIBITS_PACKAGE_POSTPROCESS()

@@ -44,11 +44,13 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
+#include "Panzer_STK_ScatterCellAvgVector.hpp"
 #include "Panzer_STK_ScatterCellQuantity.hpp"
+#include "Panzer_STK_ScatterFields.hpp"
 
 template< >
 Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > 
-panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::
+panzer_stk_classic::IOClosureModelFactory<panzer::Traits::Residual>::
 buildClosureModels(const std::string& model_id,
 		   const Teuchos::ParameterList& models,
 		   const panzer::FieldLayoutLibrary& fl,
@@ -93,7 +95,29 @@ buildClosureModels(const std::string& model_id,
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Avg_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+            = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+        fm.registerEvaluator<panzer::Traits::Residual>(eval);
+        fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+   
+        evaluators->push_back(eval);
+   
+        blockIdEvaluated_[block_id] = true;
+     } 
+
+     // if a requested field is found then add in cell avg vector evaluator
+     BlockIdToFields::const_iterator cellAvgVecItr = blockIdToCellAvgVectors_.find(block_id);
+     if(cellAvgVecItr != blockIdToCellAvgVectors_.end() ) {
+        justOnce = true;
+        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(cellAvgVecItr->second));
+   
+        // setup cell average vectors
+        Teuchos::ParameterList pl;
+        pl.set("Mesh",mesh_);
+        pl.set("IR",ir);
+        pl.set("Field Names",fieldNames);
+        pl.set("Scatter Name", block_id+"_Cell_Avg_Vectors");
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+            = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgVector<panzer::Traits::Residual,panzer::Traits>(pl));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -115,7 +139,26 @@ buildClosureModels(const std::string& model_id,
         pl.set("Field Names",fieldNames);
         pl.set("Scatter Name", block_id+"_Cell_Fields");
         Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-            = Teuchos::rcp(new panzer_stk::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+            = Teuchos::rcp(new panzer_stk_classic::ScatterCellQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+        fm.registerEvaluator<panzer::Traits::Residual>(eval);
+        fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
+   
+        evaluators->push_back(eval);
+   
+        blockIdEvaluated_[block_id] = true;
+     } 
+
+     // if a requested field is found then add in cell quantity evaluator
+     BlockIdToFields::const_iterator nodalItr = blockIdToNodalFields_.find(block_id);
+     if(nodalItr!=blockIdToNodalFields_.end() ) {
+        justOnce = true;
+        Teuchos::RCP<std::vector<std::string> > fieldNames = Teuchos::rcp(new std::vector<std::string>(nodalItr->second));
+
+        Teuchos::RCP<const panzer::PureBasis> basis = Teuchos::rcp(new panzer::PureBasis("HGrad",1,ir->workset_size,ir->topology));
+   
+        // setup scatter nodal fields
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
+            = Teuchos::rcp(new panzer_stk_classic::ScatterFields<panzer::Traits::Residual,panzer::Traits>(block_id+"Nodal_Fields",mesh_,basis,*fieldNames));
         fm.registerEvaluator<panzer::Traits::Residual>(eval);
         fm.requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
    
@@ -137,6 +180,6 @@ buildClosureModels(const std::string& model_id,
 #include "Panzer_STK_IOClosureModel_Factory_decl.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk::IOClosureModelFactory)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_ONE_T(panzer_stk_classic::IOClosureModelFactory)
 
 #endif

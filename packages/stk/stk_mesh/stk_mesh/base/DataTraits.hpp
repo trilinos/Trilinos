@@ -1,23 +1,47 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_MESH_DATA_TRAITS_HPP
 #define STK_MESH_DATA_TRAITS_HPP
 
-#include <cstddef>
-#include <iosfwd>
-#include <typeinfo>
-#include <vector>
-#include <string>
-#include <complex>
-
-#include <stk_util/parallel/ParallelComm.hpp>
+#include <complex>                      // for complex
+#include <cstddef>                      // for size_t
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
+namespace stk { class CommBuffer; }
+namespace stk { namespace mesh { class DataTraits; } }
 
 namespace stk {
 namespace mesh {
@@ -27,7 +51,7 @@ class DataTraits ;
 //----------------------------------------------------------------------
 /** \brief  Query singleton for data traits of a given data type. */
 template< typename T > const DataTraits & data_traits();
- 
+
 /** \brief  Query DataTraits for a given data value. */
 template< typename T >
 inline
@@ -44,7 +68,9 @@ template<> const DataTraits & data_traits< unsigned short >();
 template<> const DataTraits & data_traits< signed   int >();
 template<> const DataTraits & data_traits< unsigned int >();
 template<> const DataTraits & data_traits< signed   long >();
+template<> const DataTraits & data_traits< signed   long long>();
 template<> const DataTraits & data_traits< unsigned long >();
+template<> const DataTraits & data_traits< unsigned long long>();
 template<> const DataTraits & data_traits< float >();
 template<> const DataTraits & data_traits< double >();
 template<> const DataTraits & data_traits< std::complex<float> >();
@@ -58,7 +84,9 @@ template<> const DataTraits & data_traits< unsigned short * >();
 template<> const DataTraits & data_traits< signed   int * >();
 template<> const DataTraits & data_traits< unsigned int * >();
 template<> const DataTraits & data_traits< signed   long * >();
+template<> const DataTraits & data_traits< signed   long long * >();
 template<> const DataTraits & data_traits< unsigned long * >();
+template<> const DataTraits & data_traits< unsigned long long * >();
 template<> const DataTraits & data_traits< float * >();
 template<> const DataTraits & data_traits< double * >();
 template<> const DataTraits & data_traits< std::complex<float> * >();
@@ -72,7 +100,7 @@ public:
   // Standard properties:
   const std::type_info & type_info ;
   std::size_t            size_of ;
- 
+
   //------------------------------
   // TR1 primary type categories:
   bool         is_void ;
@@ -96,11 +124,11 @@ public:
 
   // TR1 type manipulators:
   const DataTraits * remove_pointer ; // if 'is_pointer'
- 
+
   //------------------------------
   /** \brief  Namespace-qualified text name as it appears in source code */
   std::string  name ;
- 
+
   //------------------------------
   // Only If 'is_enum'
   struct EnumMember {
@@ -108,7 +136,7 @@ public:
     long         value ;
   };
   std::vector< EnumMember > enum_info ;
- 
+
   //------------------------------
   // Only If 'is_class':
   struct ClassMember {
@@ -117,7 +145,7 @@ public:
     std::size_t        offset ;
   };
   std::vector< ClassMember > class_info ;
- 
+
   //------------------------------
   // Functions required for all field data:
 
@@ -153,7 +181,7 @@ protected:
               const char * const     arg_name ,
               const std::size_t      arg_size ,
               const std::size_t      arg_align );
- 
+
   /** \brief  CTOR for pointer type */
   DataTraits( const std::type_info & arg_type , const DataTraits & );
 

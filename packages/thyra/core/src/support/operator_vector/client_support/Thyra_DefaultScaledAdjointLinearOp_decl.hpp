@@ -581,6 +581,7 @@ inline
 DefaultScaledAdjointLinearOp<Scalar>::DefaultScaledAdjointLinearOp()
   :overallScalar_(Teuchos::ScalarTraits<Scalar>::zero())
   ,overallTransp_(NOTRANS)
+  ,my_index_(0)
 {}
 
 

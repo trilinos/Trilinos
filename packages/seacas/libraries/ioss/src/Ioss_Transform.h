@@ -33,13 +33,15 @@
 #ifndef IOSS_Ioss_Transform_h
 #define IOSS_Ioss_Transform_h
 
-#include <string>
-#include <vector>
-#include <map>
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace Ioss { class Field; }
+namespace Ioss { class VariableType; }
+namespace Iotr { class Factory; }
 
 namespace Ioss {
-  class Field;
-  class VariableType;
 }
 namespace Ioss {
   class Transform
@@ -67,7 +69,6 @@ namespace Ioss {
 
 namespace Iotr {
 
-  class Factory;
 
   typedef std::vector<std::string> NameList;
   typedef std::map<std::string, Factory*, std::less<std::string> > FactoryMap;

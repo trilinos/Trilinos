@@ -19,7 +19,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
@@ -139,7 +139,7 @@ operator()( OriginalTypeRef orig )
   blockPtr_ = BTFTrans.BlockPtr();
   numBlocks_ = BTFTrans.NumBlocks();
  
-  if (myPID == matProc && verbose_) {
+  if ( (myPID == matProc) && verbose_) {
     bool isSym = true;
     for (int i=0; i<nGlobal; ++i) {
       if (rowPerm_[i] != colPerm_[i]) {
@@ -181,8 +181,8 @@ operator()( OriginalTypeRef orig )
 
   Teuchos::RCP<Epetra_Map> balancedMap;
   
-  if (balance_ == "linear") {
-    
+  if (balance_ == "linear") 
+  {
     // Distribute block somewhat evenly across processors
     std::vector<int> rowDist(numProcs+1,0);
     int balRows = nGlobal / numProcs + 1;
@@ -203,11 +203,12 @@ operator()( OriginalTypeRef orig )
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
     
     if ( verbose_ ) 
+    {
       std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
-    //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, 0, serialMatrix->Comm() ) );
+    }
   }
-  else if (balance_ == "isorropia") {
-	
+  else if (balance_ == "isorropia") 
+  {
     // Compute block adjacency graph for partitioning.
     std::vector<double> weight;
     EpetraExt::BlockAdjacencyGraph adjGraph;
@@ -252,7 +253,9 @@ operator()( OriginalTypeRef orig )
     //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, myElements, &myGlobalElements[0], 0, serialMatrix->Comm() ) );
 
     if ( verbose_ ) 
+    {
       std::cout << "Processor " << myPID << " has " << myElements << " rows." << std::endl;
+    }
   }
   
   // Use New Domain and Range Maps to Generate Importer
@@ -322,20 +325,7 @@ rvs()
 {
   //  std::cout << "AmesosBTFGlobal_LinearProblem: NewLHS_" << std::endl;
   //  std::cout << *NewLHS_ << std::endl;
-
   OldLHS_->Import( *NewLHS_, *Importer2_, Insert );
-  int numrhs = OldLHS_->NumVectors();
-  std::vector<double> actual_resids( numrhs ), rhs_norm( numrhs );
-  Epetra_MultiVector resid( OldLHS_->Map(), numrhs );
-  OldMatrix_->Apply( *OldLHS_, resid );
-  resid.Update( -1.0, *OldRHS_, 1.0 );
-  resid.Norm2( &actual_resids[0] );
-  OldRHS_->Norm2( &rhs_norm[0] );
-  if (OldLHS_->Comm().MyPID() == 0 ) {
-    for (int i=0; i<numrhs; i++ ) {
-      std::cout << "Problem " << i << " (in AmesosBTFGlobal): \t" << actual_resids[i]/rhs_norm[i] << std::endl;
-    }
-  }
   //std::cout << "AmesosBTFGlobal_LinearProblem: OldLHS_" << std::endl;
   //std::cout << *OldLHS_ << std::endl;
 

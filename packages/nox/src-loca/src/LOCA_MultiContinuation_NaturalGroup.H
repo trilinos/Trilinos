@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,11 +53,11 @@
 
 #include "LOCA_MultiContinuation_ExtendedGroup.H"       // base class
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
+    /*!
      * \brief Specialization of LOCA::MultiContinuation::ExtendedGroup
      * to natural continuation.
      */
@@ -68,17 +68,17 @@ namespace LOCA {
      *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
      *         p-p_0-v_p \Delta s
      * \f]
-     * where \f$v_p\f$ is the parameter component of the predictor direction 
-     * \f$v\f$. This corresponds geometrically to constraining the nonlinear 
-     * solver steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the 
+     * where \f$v_p\f$ is the parameter component of the predictor direction
+     * \f$v\f$. This corresponds geometrically to constraining the nonlinear
+     * solver steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the
      * parameter axis.  The natural constraint \f$g\f$ is
      * represented by a LOCA::MultiContinuation::NaturalConstraint object.
      */
-    class NaturalGroup : 
+    class NaturalGroup :
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
     public:
-  
+
       //! Constructor
       /*!
        * \param global_data [in] Global data object
@@ -97,29 +97,29 @@ namespace LOCA {
       const std::vector<int>& paramIDs);
 
       //! Copy constructor
-      NaturalGroup(const NaturalGroup& source, 
-		     NOX::CopyType type = NOX::DeepCopy);
+      NaturalGroup(const NaturalGroup& source,
+             NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~NaturalGroup();
 
-      /*! 
-       * @name Implementation of NOX::Abstract::Group virtual methods 
+      /*!
+       * @name Implementation of NOX::Abstract::Group virtual methods
        */
       //@{
 
       //! Assignment operator
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
       virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
-      
+
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods
        */
       //@{
 

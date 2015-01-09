@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,7 +64,7 @@ namespace LOCA {
 
   namespace Hopf {
 
-    /*! 
+    /*!
      * \brief %Vector class to hold two vectors to represent a complex vector.
      */
     /*!
@@ -75,76 +75,76 @@ namespace LOCA {
      */
     class ComplexVector : public LOCA::Extended::Vector {
 
-      /*! 
-       * \brief Declare LOCA::Hopf::ComplexMultiVector 
+      /*!
+       * \brief Declare LOCA::Hopf::ComplexMultiVector
        * as a friend class so it can call protected methods.
        */
       friend class ComplexMultiVector;
 
     public:
-  
+
       //! Constructor.
       ComplexVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& realVec,
-		    const NOX::Abstract::Vector& imagVec);
+            const NOX::Abstract::Vector& realVec,
+            const NOX::Abstract::Vector& imagVec);
 
       //! Copy constructor.
-      ComplexVector(const ComplexVector& source, 
-		    NOX::CopyType type = NOX::DeepCopy);
+      ComplexVector(const ComplexVector& source,
+            NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~ComplexVector();
 
       //! Assignment operator
-      virtual NOX::Abstract::Vector& 
+      virtual NOX::Abstract::Vector&
       operator=(const NOX::Abstract::Vector& y);
 
       //! Assignment operator
-      virtual LOCA::Extended::Vector& 
+      virtual LOCA::Extended::Vector&
       operator=(const LOCA::Extended::Vector& y);
-  
+
       //! Assignment operator
-      virtual ComplexVector& 
+      virtual ComplexVector&
       operator=(const ComplexVector& y);
 
       //! Cloning function
-      virtual Teuchos::RCP<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-      //! Sets the vector by setting its components 
+      //! Sets the vector by setting its components
       virtual void setVec(const NOX::Abstract::Vector& realVec,
-			  const NOX::Abstract::Vector& imagVec);
+              const NOX::Abstract::Vector& imagVec);
 
       //! Returns the real component of extended vector
-      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector>
       getRealVec() const;
 
       //! Returns the imaginary component of extended vector
-      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector>
       getImagVec() const;
 
       //! Returns the real component of extended vector
-      virtual Teuchos::RCP<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector>
       getRealVec();
 
       //! Returns the imaginary component of extended vector
-      virtual Teuchos::RCP<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector>
       getImagVec();
 
     protected:
 
       //! Default Constructor
       ComplexVector(
-		   const Teuchos::RCP<LOCA::GlobalData>& global_data);
+           const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! generate an extended multi-vector
       /*!
-       * Returns an empty multivector of type 
+       * Returns an empty multivector of type
        * LOCA::Hopf::ComplexMultiVector
        */
       virtual Teuchos::RCP<LOCA::Extended::MultiVector>
-      generateMultiVector(int nColumns, int nVectorRows, 
-			  int nScalarRows) const;
+      generateMultiVector(int nColumns, int nVectorRows,
+              int nScalarRows) const;
 
     }; // class ComplexVector
   } // namespace Hopf

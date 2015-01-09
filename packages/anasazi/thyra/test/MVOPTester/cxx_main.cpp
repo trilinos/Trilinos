@@ -1,29 +1,29 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //
 //                 Anasazi: Block Eigensolvers Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 //
@@ -42,6 +42,7 @@
 #endif
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMVOPTester.hpp"
@@ -59,7 +60,7 @@ int runTest(
 int argc,
 char* argv[],
 #ifdef HAVE_MPI
-Teuchos::RCP<Epetra_MpiComm>& Comm 
+Teuchos::RCP<Epetra_MpiComm>& Comm
 #else
 Teuchos::RCP<Epetra_SerialComm>& Comm
 #endif
@@ -90,24 +91,24 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   }
 
 #ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings) 
+  MyOM->stream(Anasazi::Warnings)
     << "Please configure Anasazi with:" << endl
     << "--enable-epetra-thyra" << endl
     << "--enable-anasazi-thyra" << endl;
   return -1;
 #endif
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Teuchos::RCP<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
-  
+
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
   std::vector<int> MyGlobalElements(NumMyElements);
   Map->MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
   // on this processor
   std::vector<int> NumNz(NumMyElements);
 
@@ -124,7 +125,7 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
 
   // Create an Epetra_Matrix
   Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
-   
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -153,17 +154,13 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
     ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     assert(ierr==0);
   }
-   
+
   // Finish building the epetra matrix A
   ierr = A->FillComplete();
   assert(ierr==0);
 
   // Create an Anasazi::EpetraSymOp from this Epetra_CrsMatrix
   Teuchos::RCP<Anasazi::EpetraSymOp> op = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
-
-  // Issue several useful typedefs;
-  typedef Anasazi::MultiVec<double> EMV;
-  typedef Anasazi::Operator<double> EOP;
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
@@ -178,15 +175,15 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   // create thyra objects from the epetra objects
 
   // first, a Thyra::VectorSpaceBase
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > epetra_vs = 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > epetra_vs =
     Thyra::create_VectorSpace(Map);
 
   // then, a MultiVectorBase (from the Epetra_MultiVector)
-  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec = 
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec =
     Thyra::create_MultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs);
 
   // then, a LinearOpBase (from the Epetra_CrsMatrix)
-  Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op = 
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op =
     Thyra::epetraLinearOp(A);
 
   // test the Thyra adapter multivector
@@ -199,7 +196,7 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
     MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" << endl << endl;
   }
 
-  // test the Thyra adapter operator 
+  // test the Thyra adapter operator
   ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
   gerr |= ierr;
   if (ierr) {
@@ -257,11 +254,19 @@ int main(int argc, char *argv[])
   // If we aren't using MPI, then setup a serial communicator.
   Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
-  int toReturn = runTest(argc, argv, Comm);
+
+  bool success = false;
+  bool verbose = false;
+  try {
+    int toReturn = runTest(argc, argv, Comm);
+    success = toReturn==0;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
   Comm = Teuchos::null;
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return toReturn;
 
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

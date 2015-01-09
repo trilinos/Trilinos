@@ -284,14 +284,7 @@ public:
  *   of representation.
  */
 template<class TypeTo, class TypeFrom>
-inline TypeTo as( const TypeFrom& t )
-{
-#ifdef HAVE_TEUCHOS_DEBUG
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
-#else
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::convert(t);
-#endif // HAVE_TEUCHOS_DEBUG
-}
+inline TypeTo as( const TypeFrom& t );
 
 
 /** \brief Convert from one value type to another, with validity checks if appropriate.
@@ -360,10 +353,7 @@ inline TypeTo as( const TypeFrom& t )
  *   of representation.
  */
 template<class TypeTo, class TypeFrom>
-inline TypeTo asSafe( const TypeFrom& t )
-{
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
-}
+inline TypeTo asSafe( const TypeFrom& t );
 
 
 /// \class asFunc
@@ -621,7 +611,7 @@ public:
   static OutType convert (const std::string& t) {
     std::istringstream in (t);
     OutType out;
-    t >> out;
+    in >> out;
     return out;
   }
 };
@@ -813,6 +803,37 @@ public:
     return safeConvert (t);
   }
 };
+
+
+// Windows size_t is not unsigned long(32 bit), but unsigned long long(64 bit)
+#ifdef HAVE_TEUCHOS___INT64
+/// \brief Convert an \c std::string to an <tt>unsigned __int64</tt>.
+///
+/// We assume the string stores a base-10 integer, if it stores an integer at all.
+template<>
+class ValueTypeConversionTraits<unsigned __int64, std::string> {
+public:
+        /// \brief Convert the given std::string to an <tt>unsigned long long</tt>, with checks.
+        ///
+        /// If the string overflows <tt>unsigned __int64</tt>, this throws
+        /// <tt>std::range_error</tt>.  If it does not contain an integer,
+        /// this throws <tt>std::invalid_argument</tt>.
+        static unsigned __int64 safeConvert(const std::string& t) {
+                unsigned __int64 output;
+                std::istringstream stream(t);
+                stream >> output;
+                return output;
+        }
+
+        //! Convert the given \c std::string to an <tt>unsigned __int64</tt>.
+        static unsigned __int64 convert(const std::string& t) {
+                unsigned __int64 output;
+                std::istringstream stream(t);
+                stream >> output;
+                return output;
+        }
+};
+#endif // HAVE_TEUCHOS___INT64
 
 
 /// \brief Convert an \c std::string to an \c int.
@@ -1346,7 +1367,7 @@ public:
   }
 
   //! Convert the given \c double to <tt>long long</tt>, checking for overflow first.
-  static long safeConvert (const double t) {
+  static long long safeConvert (const double t) {
     // Cases:
     // 1. sizeof(long long) < sizeof(double) == 8
     // 2. sizeof(long long) == sizeof(double) == 8
@@ -2168,6 +2189,41 @@ public:
   }
 };
 
+//! Convert from <tt>unsigned long</tt> to <tt>unsigned short</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned short, unsigned long> {
+public:
+  /// \brief Convert the given <tt>unsigned long</tt> to an <tt>unsigned short</tt>.
+  ///
+  /// \warning <tt>unsigned long</tt> integer values may overflow
+  ///   <tt>unsigned short</tt>, depending on your platform.  You should
+  ///   use safeConvert() if you aren't sure that the given
+  ///   <tt>unsigned long</tt> value fits in an <tt>unsigned short</tt>.
+  static unsigned short convert (const unsigned long t) {
+    // Implicit conversion from unsigned long to unsigned short may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<unsigned short> (t);
+  }
+
+  //! Convert from <tt>unsigned long</tt> to <tt>unsigned short</tt>, checking for overflow first.
+  static unsigned short safeConvert (const unsigned long t) {
+    const unsigned short minShort = 0; // Had better be, since it's unsigned.
+    const unsigned short maxShort = std::numeric_limits<unsigned short>::max ();
+
+    // t >= 0 by definition, because it is unsigned.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t > static_cast<unsigned long> (maxShort),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned short, unsigned long>::safeConvert: "
+      "Input unsigned long t = " << t << " is out of the valid range [" << minShort
+      << ", " << maxShort << "] for conversion to unsigned short.");
+
+    // Implicit conversion from unsigned long to unsigned short may
+    // cause compiler warnings, but static_cast does not.
+    return static_cast<unsigned short> (t);
+  }
+};
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
 //! Convert from <tt>long long</tt> to \c int.
@@ -2792,6 +2848,21 @@ public:
 
 // ToDo: Add more specializations as needed!
 
+template<class TypeTo, class TypeFrom>
+inline TypeTo as( const TypeFrom& t )
+{
+#ifdef HAVE_TEUCHOS_DEBUG
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
+#else
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::convert(t);
+#endif // HAVE_TEUCHOS_DEBUG
+}
+
+template<class TypeTo, class TypeFrom>
+inline TypeTo asSafe( const TypeFrom& t )
+{
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
+}
 
 } // end namespace Teuchos
 

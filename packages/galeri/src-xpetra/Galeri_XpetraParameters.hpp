@@ -46,10 +46,15 @@
 #ifndef GALERI_XPETRAPARAMETERS_HPP
 #define GALERI_XPETRAPARAMETERS_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_VerboseObject.hpp>
+
+#if defined(_MSC_VER) && !defined(M_PI)
+#define M_PI 3.14159265358979323846
+#endif
 
 namespace Galeri {
 
@@ -58,10 +63,7 @@ namespace Galeri {
     // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
 
     template<typename GO>
-    class Parameters
-      : public Teuchos::VerboseObject<Parameters<GO> >, public Teuchos::Describable
-    {
-
+    class Parameters : public Teuchos::VerboseObject<Parameters<GO> >, public Teuchos::Describable {
     public:
 
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx = 16, GO ny = -1, GO nz = -1, const std::string& matrixType = "Laplace1D",
@@ -98,73 +100,77 @@ namespace Galeri {
         clp.setOption("model",      &model_,        "velocity model");
       }
 
-      void check() const {
-        //if (nx < 0) ...
-      }
-
       GO GetNumGlobalElements() const {
-        check();
+        const Teuchos::ParameterList& pL = GetParameterList();
+
+        const std::string& matrixType = pL.get<std::string>("matrixType");
+        const GO nx = pL.get<GO>("nx");
+        const GO ny = pL.get<GO>("ny");
+        const GO nz = pL.get<GO>("nz");
 
         GO numGlobalElements = -1;
-        if (matrixType_ == "Laplace1D" || matrixType_ == "Helmholtz1D") {
-          numGlobalElements = nx_;
+        if (matrixType == "Laplace1D" || matrixType == "Helmholtz1D")
+          numGlobalElements = nx;
 
-        } else if (matrixType_ == "Laplace2D"    ||
-                   matrixType_ == "Star2D"       ||
-                   matrixType_ == "BigStar2D"    ||
-                   matrixType_ == "Elasticity2D" ||
-                   matrixType_ == "Helmholtz2D") {
-          numGlobalElements = nx_*ny_;
+        else if (matrixType == "Laplace2D"    ||
+                 matrixType == "Star2D"       ||
+                 matrixType == "BigStar2D"    ||
+                 matrixType == "Elasticity2D" ||
+                 matrixType == "Helmholtz2D")
+          numGlobalElements = nx*ny;
 
-        } else if (matrixType_ == "Laplace3D"    ||
-                   matrixType_ == "Brick3D"      ||
-                   matrixType_ == "BigStar2D"    ||
-                   matrixType_ == "Elasticity3D" ||
-                   matrixType_ == "Helmholtz3D") {
-          numGlobalElements = nx_*ny_*nz_;
+        else if (matrixType == "Laplace3D"    ||
+                 matrixType == "Brick3D"      ||
+                 matrixType == "BigStar2D"    ||
+                 matrixType == "Elasticity3D" ||
+                 matrixType == "Helmholtz3D")
+          numGlobalElements = nx*ny*nz;
 
-        } //TODO else throw
-
-        if (numGlobalElements < 0)
-          throw std::runtime_error("Gallery: numGlobalElements < 0 (did you forget --ny (or --nz) for 2D (3D) problems?)");
+        TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements < 0, std::runtime_error,
+                                   "Gallery: numGlobalElements < 0 (did you forget --ny (or --nz) for 2D (3D) problems?)");
 
         return numGlobalElements;
       }
 
-      const std::string & GetMatrixType() const {
-        check();
-        return matrixType_;
+      const std::string& GetMatrixType() const {
+        const Teuchos::ParameterList& paramList = GetParameterList();
+        return paramList.get<std::string>("matrixType");
       }
 
-      Teuchos::ParameterList & GetParameterList() const {
-        paramList_ = Teuchos::ParameterList();
+      void check() const { }
+
+      Teuchos::ParameterList& GetParameterList() const {
+        if (!paramList_.is_null())
+          return *paramList_;
+
+        paramList_ = rcp(new Teuchos::ParameterList());
+
+        paramList_->set("nx",          nx_);
+        paramList_->set("ny",          ny_);
+        paramList_->set("nz",          nz_);
+        paramList_->set("mx",          mx_);
+        paramList_->set("my",          my_);
+        paramList_->set("mz",          mz_);
+        paramList_->set("model",       model_);
+        paramList_->set("stretchx",    stretchx_);
+        paramList_->set("stretchy",    stretchy_);
+        paramList_->set("stretchz",    stretchz_);
+        paramList_->set("keepBCs",     static_cast<bool>(keepBCs_));
+        paramList_->set("matrixType",  matrixType_);
+        paramList_->set("h",           h_);
+        paramList_->set("delta",       delta_);
+        paramList_->set("PMLx_left",   PMLx_left);
+        paramList_->set("PMLx_right",  PMLx_right);
+        paramList_->set("PMLy_left",   PMLy_left);
+        paramList_->set("PMLy_right",  PMLy_right);
+        paramList_->set("PMLz_left",   PMLz_left);
+        paramList_->set("PMLz_right",  PMLz_right);
+        paramList_->set("omega",       omega_);
+        paramList_->set("shift",       shift_);
 
         check();
 
-        paramList_.set("nx",          nx_);
-        paramList_.set("ny",          ny_);
-        paramList_.set("nz",          nz_);
-        paramList_.set("mx",          mx_);
-        paramList_.set("my",          my_);
-        paramList_.set("mz",          mz_);
-        paramList_.set("model",       model_);
-        paramList_.set("stretchx",    stretchx_);
-        paramList_.set("stretchy",    stretchy_);
-        paramList_.set("stretchz",    stretchz_);
-        paramList_.set("keepBCs",     static_cast<bool>(keepBCs_));
-        paramList_.set("matrixType",  matrixType_);
-        paramList_.set("h",           h_);
-        paramList_.set("delta",       delta_);
-        paramList_.set("PMLx_left",   PMLx_left);
-        paramList_.set("PMLx_right",  PMLx_right);
-        paramList_.set("PMLy_left",   PMLy_left);
-        paramList_.set("PMLy_right",  PMLy_right);
-        paramList_.set("PMLz_left",   PMLz_left);
-        paramList_.set("PMLz_right",  PMLz_right);
-        paramList_.set("omega",       omega_);
-        paramList_.set("shift",       shift_);
-
-        return paramList_;
+        return *paramList_;
       }
 
       //! @name Overridden from Teuchos::Describable
@@ -174,7 +180,8 @@ namespace Galeri {
       std::string description() const {
         std::ostringstream out;
         out << Teuchos::Describable::description();
-        out << "{type = "  << matrixType_ << ", size = " << GetNumGlobalElements() << "} ";
+        out << "{type = "  << GetMatrixType() << ", size = " << GetNumGlobalElements() << "} ";
+
         return out.str();
       }
 
@@ -192,15 +199,20 @@ namespace Galeri {
         if (vl == Teuchos:: VERB_MEDIUM || vl == Teuchos::VERB_HIGH || vl == Teuchos::VERB_EXTREME) {
           Teuchos::OSTab tab1(out);
 
-          out << "Matrix type: " << matrixType_ << std::endl
+          const Teuchos::ParameterList& paramList = GetParameterList();
+          std::string matrixType = paramList.get<std::string>("matrixType");
+          GO nx = paramList.get<GO>("nx");
+          GO ny = paramList.get<GO>("ny");
+          GO nz = paramList.get<GO>("nz");
+
+          out << "Matrix type: "  << matrixType << std::endl
               << "Problem size: " << GetNumGlobalElements();
 
-          if      (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D" || matrixType_ == "Helmholtz2D")  out << " (" << nx_ << "x" << ny_ << ")";
-          else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D" || matrixType_ == "Helmholtz3D")  out << " (" << nx_ << "x" << ny_ << "x" << nz_ << ")";
+          if      (matrixType == "Laplace2D" || matrixType == "Elasticity2D" || matrixType == "Helmholtz2D")  out << " (" << nx << "x" << ny << ")";
+          else if (matrixType == "Laplace3D" || matrixType == "Elasticity3D" || matrixType == "Helmholtz3D")  out << " (" << nx << "x" << ny << "x" << nz << ")";
 
           out << std::endl;
         }
-
       }
 
       //@}
@@ -215,24 +227,22 @@ namespace Galeri {
 
       mutable int    keepBCs_;
 
-      mutable double h_;
-      mutable double delta_;
-      mutable int    PMLx_left, PMLx_right;
-      mutable int    PMLy_left, PMLy_right;
-      mutable int    PMLz_left, PMLz_right;
-      mutable double omega_;
-      mutable double shift_;
-      mutable int model_;
+      mutable double    h_;
+      mutable double    delta_;
+      mutable int       PMLx_left, PMLx_right;
+      mutable int       PMLy_left, PMLy_right;
+      mutable int       PMLz_left, PMLz_right;
+      mutable double    omega_;
+      mutable double    shift_;
+      mutable int       model_;
 
-      mutable Teuchos::ParameterList paramList_; // only used by GetParameterList(). It's temporary data. TODO: bad design...
+      // There is a major assumption here:
+      // As soon as somebody call GetParameterList(), we freeze all other variables into the list,
+      // and ignore them. This allows us to make the modification of the list from outside.
+      mutable Teuchos::RCP<Teuchos::ParameterList> paramList_;
     };
 
   }
 }
 
 #endif
-
-
-//TODO: add capability to read from file ??
-
-//GOAL: link between InputReader and ParameterList + Hide everything from examples

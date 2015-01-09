@@ -64,7 +64,8 @@ namespace Ifpack2 {
 \brief ILU(k) factorization of a given Tpetra::RowMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.
+This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.  It is based upon the ILU algorithms
+outlined in Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd edition, Chapter 10.
 
 \section Ifpack2_RILUK_Parameters Parameters
 
@@ -127,6 +128,23 @@ the details of diagonal perturbations.
 </li>
 
 </ul>
+
+\section Ifpack2_RILUK_GlobalOrdering An important note about ordering
+
+Note that the factorization is calculated based upon local ordering.   This means
+that the ordering of the GIDs in the row map is ignored.
+Initial entries in \f$L\f$, the strictly lower triangular part of A, and \f$U\f$, the strictly upper
+triangular part of A, are given by
+
+\f$L(i,j) = A(i,j)\f$ if \f$j < i\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$>\f$ GID\f$(i)\f$,
+
+and
+
+\f$U(i,j) = A(i,j)\f$ if \f$i < j\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$<\f$ GID\f$(i)\f$.
+
+In particular, if the row map GIDs are not in ascending
+order on processor, then the incomplete factors will be different than those produced by ILU(k) using global IDs.
+If the row map GIDs are in ascending order, then the factors produced based on LID and GID ordering are the same.
 
 \section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
 
@@ -251,7 +269,7 @@ class RILUK:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -595,19 +613,30 @@ private:
   void allocate_L_and_U();
   void initAllValues (const row_matrix_type& A);
 
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! The ILU(k) graph.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type> > > Graph_;
   /// \brief The matrix used to to compute ILU(k).
   ///
-  /// If A_ (the original input matrix) is a Tpetra::CrsMatrix, then
-  /// this is just A_.  Otherwise, this class reserves the right for
-  /// A_crs_ to be a copy of A_.  This is because the current
-  /// implementation of ILU(k) only knows how to factor a
-  /// Tpetra::CrsMatrix.  That may change in the future.
-  Teuchos::RCP<const crs_matrix_type> A_crs_;
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current implementation of ILU(k)
+  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
@@ -639,7 +668,7 @@ private:
 
 //Set necessary local solve parameters when using ThrustGPU node
 namespace detail {
-  template<class MatrixType, class NodeType, class MatSolveType>
+  template<class MatrixType, class NodeType>
   struct setLocalSolveParams{
     static Teuchos::RCP<Teuchos::ParameterList>
     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
@@ -647,10 +676,8 @@ namespace detail {
     }
   };
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
-  template<class MatrixType, class Scalar>
-  struct setLocalSolveParams<MatrixType,
-                             KokkosClassic::ThrustGPUNode,
-                             KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >
+  template<class MatrixType>
+  struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode>
   {
     static Teuchos::RCP<Teuchos::ParameterList>
     setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
@@ -671,14 +698,12 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef typename NewMatrixType::node_type new_node_type;
-  typedef typename NewMatrixType::mat_solve_type mat_solve_type;
   typedef RILUK<NewMatrixType> new_riluk_type;
 
   RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
 
   RCP<ParameterList> plClone = Teuchos::parameterList ();
-  plClone = detail::setLocalSolveParams<NewMatrixType,
-    new_node_type, mat_solve_type>::setParams (plClone);
+  plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
 
   RCP<new_node_type> new_node = A_newnode->getNode ();
   new_riluk->L_ = L_->clone (new_node, plClone);

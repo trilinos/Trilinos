@@ -162,8 +162,8 @@ int Ifpack_SILU::TInitialize()
     int size = A_->MaxNumEntries();
     int N=A_->NumMyRows();
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
-    vector<int_type> Indices(size);
-    vector<double> Values(size);
+    std::vector<int_type> Indices(size);
+    std::vector<double> Values(size);
 
     int i,j,ct,*rowptr,*colind;
     double *values;
@@ -188,9 +188,9 @@ int Ifpack_SILU::TInitialize()
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
     if (Aover_.get() == 0) IFPACK_CHK_ERR(-5); // memory allocation error
 
-    vector<int> Indices1(size);
-    vector<int_type> Indices2(size);
-    vector<double> Values1(size),Values2(size);
+    std::vector<int> Indices1(size);
+    std::vector<int_type> Indices2(size);
+    std::vector<double> Values1(size),Values2(size);
 
     // extract each row at-a-time, and insert it into
     // the graph, ignore all off-process entries

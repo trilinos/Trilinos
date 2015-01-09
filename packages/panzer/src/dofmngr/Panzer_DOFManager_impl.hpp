@@ -609,6 +609,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     typedef boost::unordered_set<GO> HashTable;
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
 
+    for(std::size_t i=0;i<owned_.size();i++) {
+      hashTable.insert(owned_[i]);
+      owned_and_ghosted_.push_back(owned_[i]);
+    }
+
     // this cute trick (blah) of constructing a accessor vector is to eliminate a copy
     // of the block of code computing shared/owned DOFs
     std::vector<ElementBlockAccess> blockAccessVec;
@@ -836,30 +841,38 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
      // grab field patterns, will be necessary to compute orientations
     const FieldPattern & fieldPattern = *fa_fps_[bid];
 
+    //Should be ga_fp_ (geometric aggregate field pattern)
     std::vector<std::pair<int,int> > topEdgeIndices;
-    //Should be ga_fp_
     orientation_helpers::computePatternEdgeIndices(*ga_fp_,topEdgeIndices);
 
+    // grab face orientations if 3D
+    std::vector<std::vector<int> > topFaceIndices;
+    if(ga_fp_->getDimension()==3)
+      orientation_helpers::computePatternFaceIndices(*ga_fp_,topFaceIndices);
+
     //How many GIDs are associated with a particular element bloc
-    //std::size_t numGIDs = getElementBlockGIDCount(blockName);
     const std::vector<LO> & elmts = connMngr_->getElementBlock(blockName);
     for(std::size_t e=0;e<elmts.size();e++) {
-        // this is the vector of orientations to fill: initialize it correctly
+       // this is the vector of orientations to fill: initialize it correctly
       std::vector<char> & eOrientation = orientation_[elmts[e]];
-      //This resize seems to be the same as fieldPattern.numberIDs(). 
-      //When computer ede orientations is called, that is the assert.
-      //There should be no reason to make it anymore complicated.
+
+      // This resize seems to be the same as fieldPattern.numberIDs(). 
+      // When computer edge orientations is called, that is the assert.
+      // There should be no reason to make it anymore complicated.
       eOrientation.resize(fieldPattern.numberIds());
-      //eOrientation.resize(8);
       for(std::size_t s=0;s<eOrientation.size();s++)
         eOrientation[s] = 1; // put in 1 by default 
 
-        // get geometry ids
+      // get geometry ids
       LO connSz = connMngr_->getConnectivitySize(elmts[e]);
       const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
+
+      // compute face orientations in 3D
+      if(ga_fp_->getDimension()==3)
+        orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity, fieldPattern, eOrientation);
     }
   }
 }

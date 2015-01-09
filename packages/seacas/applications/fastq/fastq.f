@@ -119,7 +119,7 @@ C     is set to 'GENESIS', write exodusI format
       CALL EXCPUS (TIME1)
       TITLE = ' '
       DEFSCH = 'M'
-      VERSN = 'FASTQ 3.21'
+      VERSN = 'FASTQ 3.22'
       DEFSIZ = 0.
       SNAP = .TRUE.
       TBZOOM = .FALSE.
@@ -1063,7 +1063,7 @@ C
          CALL STRLNG (CIN(ICOM), LEN)
          IF (((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'X')) .OR.
      &      ((LEN .GT. 1) .AND. (CIN(ICOM)(2:2) .NE. 'x'))) THEN
-            CALL HELP(6)
+            CALL HELP_FQ(6)
          ELSE
             CALL FEXIT (WROTE, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN,
      &         TIME1, BATCH, VERSN)
@@ -1123,7 +1123,7 @@ C  GET THE APPROPRIATE HELP MESAGE
 C
       ELSE
          ICOM = ICOM + 1
-         CALL HELP (1)
+         CALL HELP_FQ (1)
       END IF
       GO TO 120
 C

@@ -146,41 +146,51 @@ INCLIST = \
 	Ioss_BoundingBox.h \
 	Ioss_CodeTypes.h \
 	Ioss_CommSet.h \
+	Ioss_CompositeVariableType.h \
 	Ioss_ConcreteVariableType.h \
 	Ioss_CoordinateFrame.h \
+	Ioss_ConstructedVariableType.h \
 	Ioss_DBUsage.h \
 	Ioss_DataSize.h \
 	Ioss_DatabaseIO.h \
+	Ioss_EdgeBlock.h \
+	Ioss_EdgeSet.h \
+	Ioss_ElementBlock.h \
+	Ioss_ElementSet.h \
 	Ioss_ElementTopology.h \
+	Ioss_ElementVariableType.h \
 	Ioss_EntityBlock.h \
 	Ioss_EntitySet.h \
 	Ioss_EntityType.h \
+	Ioss_FaceBlock.h \
+	Ioss_FaceSet.h \
 	Ioss_Field.h \
 	Ioss_FieldManager.h \
 	Ioss_FileInfo.h \
 	Ioss_GroupingEntity.h \
 	Ioss_IOFactory.h \
+	Ioss_Initializer.h \
+	Ioss_Map.h \
+	Ioss_NamedSuffixVariableType.h \
+	Ioss_Node.h \
 	Ioss_NodeBlock.h \
-	Ioss_EdgeBlock.h \
-	Ioss_FaceBlock.h \
-	Ioss_ElementBlock.h \
 	Ioss_NodeSet.h \
-	Ioss_EdgeSet.h \
-	Ioss_FaceSet.h \
-	Ioss_ElementSet.h \
-	Ioss_SideBlock.h \
-	Ioss_SideSet.h \
+	Ioss_NullEntity.h \
 	Ioss_ParallelUtils.h \
 	Ioss_Property.h \
 	Ioss_PropertyManager.h \
 	Ioss_Region.h \
 	Ioss_SerializeIO.h \
+	Ioss_SideBlock.h \
+	Ioss_SideSet.h \
+	Ioss_Sphere.h \
 	Ioss_State.h \
-	Ioss_SurfaceSplit.h \
 	Ioss_SubSystem.h \
+	Ioss_Super.h \
+	Ioss_SurfaceSplit.h \
 	Ioss_Transform.h \
-	Ioss_VariableType.h \
-	Ioss_Utils.h 
+	Ioss_Utils.h \
+	Ioss_VariableType.h
 
 # Can be empty.  Is used in Trilinos, so just create dummy here.
 SEACASIoss_config.h:

@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -47,14 +47,14 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef LOCA_EPETRA_LOWRANKUPDATEOP_H
 #define LOCA_EPETRA_LOWRANKUPDATEOP_H
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-#include "Epetra_Operator.h"	// base class
+#include "Epetra_Operator.h"    // base class
 #include "Epetra_LocalMap.h"    // class data element
 #include "Epetra_MultiVector.h" // class data element
 #include "NOX_Common.H"         // for std::string data member
@@ -67,21 +67,21 @@ namespace LOCA {
 namespace LOCA {
 
   namespace Epetra {
-    
-    /*! 
+
+    /*!
      * \brief An Epetra operator for implementing the operator
      * \f$P = J + U V^T\f$.
      */
     /*!
-     * This class implements the Epetra_Operator interface for 
-     * \f$P = J + U V^T\f$ where \f$J\f$ is an Epetra_Operator and 
-     * \f$U\f$ and \f$V\f$ are Epetra_MultiVectors.  
+     * This class implements the Epetra_Operator interface for
+     * \f$P = J + U V^T\f$ where \f$J\f$ is an Epetra_Operator and
+     * \f$U\f$ and \f$V\f$ are Epetra_MultiVectors.
      */
     class LowRankUpdateOp : public virtual Epetra_Operator {
-      
+
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] The global data object
        * \param jacOperator [in] Jacobian operator J
@@ -90,10 +90,10 @@ namespace LOCA {
        */
       LowRankUpdateOp(
         const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
-	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
-	bool setup_for_solve);
+    const Teuchos::RCP<Epetra_Operator>& jacOperator,
+    const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec,
+    const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec,
+    bool setup_for_solve);
 
       //! Destructor
       virtual ~LowRankUpdateOp();
@@ -101,53 +101,53 @@ namespace LOCA {
       //! Set to true if the transpose of the operator is requested
       virtual int SetUseTranspose(bool UseTranspose);
 
-      /*! 
-       * \brief Returns the result of a Epetra_Operator applied to a 
+      /*!
+       * \brief Returns the result of a Epetra_Operator applied to a
        * Epetra_MultiVector Input in Result as described above.
        */
-      virtual int Apply(const Epetra_MultiVector& Input, 
-			Epetra_MultiVector& Result) const;
+      virtual int Apply(const Epetra_MultiVector& Input,
+            Epetra_MultiVector& Result) const;
 
       /*!
        * \brief This method does nothing.
        */
-      virtual int ApplyInverse(const Epetra_MultiVector& X, 
-			       Epetra_MultiVector& Y) const;
-  
+      virtual int ApplyInverse(const Epetra_MultiVector& X,
+                   Epetra_MultiVector& Y) const;
+
       //! Returns an approximate infinity norm of the operator matrix.
       /*!
        * This is defined only if %NormInf() of the underlying operator \f$J\f$
-       * is defined and is given by 
+       * is defined and is given by
        * \f$\|J\|_\infty+\|U\|_\infty\|V\|_\infty\f$.
        */
       virtual double NormInf() const;
-    
+
       //! Returns a character std::string describing the operator
       virtual const char* Label () const;
-  
+
       //! Returns the current UseTranspose setting.  Always returns false.
       virtual bool UseTranspose() const;
 
-      /*! 
-       * \brief Returns true if the \e this object can provide an 
+      /*!
+       * \brief Returns true if the \e this object can provide an
        * approximate Inf-norm, false otherwise.
        */
       virtual bool HasNormInf() const;
 
-      /*! 
-       * \brief Returns a reference to the Epetra_Comm communicator 
+      /*!
+       * \brief Returns a reference to the Epetra_Comm communicator
        * associated with this operator.
        */
       virtual const Epetra_Comm & Comm() const;
 
       /*!
-       * \brief Returns the Epetra_Map object associated with the 
+       * \brief Returns the Epetra_Map object associated with the
        * domain of this matrix operator.
        */
       virtual const Epetra_Map& OperatorDomainMap () const;
 
-      /*! 
-       * \brief Returns the Epetra_Map object associated with the 
+      /*!
+       * \brief Returns the Epetra_Map object associated with the
        * range of this matrix operator.
        */
       virtual const Epetra_Map& OperatorRangeMap () const;
@@ -170,10 +170,10 @@ namespace LOCA {
 
       //! Local map for generating temporary matrices
       Epetra_LocalMap localMap;
-    
+
       //! Stores operator representing J
       Teuchos::RCP<Epetra_Operator> J;
-  
+
       //! Stores multivector representing U
       Teuchos::RCP<const Epetra_MultiVector> U;
 
@@ -202,4 +202,4 @@ namespace LOCA {
   } // namespace Epetra
 } // namespace LOCA
 
-#endif 
+#endif

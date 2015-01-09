@@ -46,11 +46,6 @@
 #ifndef MUELU_PGPFACTORY_DEF_HPP
 #define MUELU_PGPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <vector>
 
 #include <Xpetra_Vector.hpp>
@@ -72,48 +67,31 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory()
-    : diagonalView_("current") {
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
-    validParamList->set< MinimizationNorm >      ("Minimization norm", DINVANORM,  "Norm to be minimized.");
-    validParamList->set< bool >                  ("ReUseRowBasedOmegas", false,    "Reuse omegas for prolongator for restrictor (default: false).");
-    // validParamList->set                       ("Diagonal view",      "current", "Diagonal view used during the prolongator smoothing process");
+    validParamList->set< MinimizationNorm >      ("Minimization norm", DINVANORM,  "Norm to be minimized");
+    validParamList->set< bool >                  ("ReUseRowBasedOmegas", false,    "Reuse omegas for prolongator for restrictor");
 
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
-    diagonalView_ = diagView;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMinimizationMode(MinimizationNorm minnorm) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetMinimizationMode(MinimizationNorm minnorm) {
     SetParameter("Minimization norm", ParameterEntry(minnorm)); // revalidate
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  MueLu::MinimizationNorm PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMinimizationMode() {
-    //return min_norm_;
-    const ParameterList & pL = GetParameterList();
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MueLu::MinimizationNorm PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMinimizationMode() {
+    const ParameterList& pL = GetParameterList();
     return pL.get<MueLu::MinimizationNorm>("Minimization norm");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
-    return diagonalView_;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
@@ -144,8 +122,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing (PG-AMG)", coarseLevel);
 
     // Level Get
@@ -234,7 +212,8 @@ namespace MueLu {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
 
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
+      if (IsPrint(Statistics1))
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P_smoothed, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -245,7 +224,8 @@ namespace MueLu {
       RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "P", params);
+      if (IsPrint(Statistics1))
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -254,8 +234,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeRowBasedOmega(Level& fineLevel, Level &coarseLevel, const RCP<Matrix>& A, const RCP<Matrix>& P0, const RCP<Matrix>& DinvAP0, RCP<Vector > & RowBasedOmega) const {
     FactoryMonitor m(*this, "PgPFactory::ComputeRowBasedOmega", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -376,9 +356,9 @@ namespace MueLu {
       }
 
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < min_local)
-	{ min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > max_local)
-	{ max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
     }
 
     { // be verbose
@@ -440,8 +420,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiplySelfAll(const RCP<Matrix>& Op, Teuchos::RCP<Vector >& InnerProdVec) const {
 
     // note: InnerProdVec is based on column map of Op
     TEUCHOS_TEST_FOR_EXCEPTION(!InnerProdVec->getMap()->isSameAs(*Op->getColMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplySelfAll: map of InnerProdVec must be same as column map of operator. error");
@@ -478,8 +458,8 @@ namespace MueLu {
 
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiplyAll(const RCP<Matrix>& left, const RCP<Matrix>& right, Teuchos::RCP<Vector >& InnerProdVec) const {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!left->getDomainMap()->isSameAs(*right->getDomainMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: domain maps of left and right do not match. Error.");
     TEUCHOS_TEST_FOR_EXCEPTION(!left->getRowMap()->isSameAs(*right->getRowMap()), Exceptions::RuntimeError, "MueLu::PgPFactory::MultiplyAll: row maps of left and right do not match. Error.");
@@ -704,13 +684,13 @@ namespace MueLu {
 #endif
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     std::cout << "TODO: remove me" << std::endl;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReUseDampingParameters(bool bReuse) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReUseDampingParameters(bool bReuse) {
     SetParameter("ReUseRowBasedOmegas", ParameterEntry(bReuse));
   }
 

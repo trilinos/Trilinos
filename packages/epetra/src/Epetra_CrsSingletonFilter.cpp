@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -97,7 +97,7 @@ Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter(){
 
 }
 //==============================================================================
-void Epetra_CrsSingletonFilter::InitializeDefaults() { 
+void Epetra_CrsSingletonFilter::InitializeDefaults() {
 
 // Initialize all attributes that have trivial default values
 
@@ -154,7 +154,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
 
   int i, j, jj;
 
-  FullMatrix_ = fullMatrix; 
+  FullMatrix_ = fullMatrix;
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
   if (fullMatrix==0) EPETRA_CHK_ERR(-2); // Input matrix pointer is zero
@@ -166,7 +166,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   Epetra_IntVector ColProfiles(FullMatrixColMap()); ColProfiles.PutValue(0);
   Epetra_IntVector ColHasRowWithSingleton(FullMatrixColMap()); ColHasRowWithSingleton.PutValue(0);
 
-  // RowIDs[j] will contain the local row ID associated with the jth column, 
+  // RowIDs[j] will contain the local row ID associated with the jth column,
   // if the jth col has a single entry
   Epetra_IntVector RowIDs(FullMatrixColMap()); RowIDs.PutValue(-1);
 
@@ -181,7 +181,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   int NumMyCols = fullMatrix->NumMyCols();
 
   // Set up for accessing full matrix.  Will do so row-by-row.
-  EPETRA_CHK_ERR(InitFullMatrixAccess()); 
+  EPETRA_CHK_ERR(InitFullMatrixAccess());
 
   // Scan matrix for singleton rows, build up column profiles
   int NumIndices;
@@ -210,8 +210,8 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   // 1) The vector ColProfiles has column nonzero counts for each processor's contribution
   // Combine these to get total column profile information and then redistribute to processors
   // so each can determine if it is the owner of the row associated with the singleton column
-  // 2) The vector ColHasRowWithSingleton[i] contain count of singleton rows  that are associated with 
-  // the ith column on this processor.  Must tell other processors that they should also eliminate 
+  // 2) The vector ColHasRowWithSingleton[i] contain count of singleton rows  that are associated with
+  // the ith column on this processor.  Must tell other processors that they should also eliminate
   // these columns.
 
   // Make a copy of ColProfiles for later use when detecting columns that disappear locally
@@ -224,7 +224,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
     Epetra_IntVector tmpVec(FullMatrixDomainMap()); // Use for gather/scatter of column vectors
     EPETRA_CHK_ERR(tmpVec.Export(ColProfiles, *fullMatrix->RowMatrixImporter(), Add));
     EPETRA_CHK_ERR(ColProfiles.Import(tmpVec, *fullMatrix->RowMatrixImporter(), Insert));
-    
+
     EPETRA_CHK_ERR(tmpVec.PutValue(0));
     EPETRA_CHK_ERR(tmpVec.Export(ColHasRowWithSingleton, *fullMatrix->RowMatrixImporter(), Add));
     EPETRA_CHK_ERR(ColHasRowWithSingleton.Import(tmpVec, *fullMatrix->RowMatrixImporter(), Insert));
@@ -241,7 +241,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
 
   Epetra_IntVector RowHasColWithSingleton(fullMatrix->RowMatrixRowMap()); // Use to check for errors
   RowHasColWithSingleton.PutValue(0);
- 
+
   NumMyColSingletons_ = 0;
   // Count singleton columns (that were not already counted as singleton rows)
   for (j=0; j<NumMyCols; j++) {
@@ -254,16 +254,16 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   rowMapColors[i] = 2; // Use 2 for now, to distinguish between row eliminated directly or via column singletons
   colMapColors[j] = 1;
   NumMyColSingletons_++;
-  // If we delete a row, we need to keep track of associated column entries that were also deleted 
+  // If we delete a row, we need to keep track of associated column entries that were also deleted
   // in case all entries in a column are eventually deleted, in which case the column should
   // also be deleted.
   EPETRA_CHK_ERR(GetRow(i, NumIndices, Indices));
   for (jj=0; jj<NumIndices; jj++) NewColProfiles[Indices[jj]]--;
-  
+
       }
     }
-    // Check if some other processor eliminated this column    
-    else if (ColHasRowWithSingleton[j]==1 && rowMapColors[i]!=1) { 
+    // Check if some other processor eliminated this column
+    else if (ColHasRowWithSingleton[j]==1 && rowMapColors[i]!=1) {
   colMapColors[j] = 1;
     }
   }
@@ -317,7 +317,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   if (FullMatrixIsCrsMatrix_) {
     if (FullCrsMatrix()->Exporter()!=0) { // Non-trivial exporter
       Epetra_MapColoring RangeMapColors(FullMatrixRangeMap());
-      EPETRA_CHK_ERR(RangeMapColors.Export(*RowMapColors_, *FullCrsMatrix()->Exporter(), 
+      EPETRA_CHK_ERR(RangeMapColors.Export(*RowMapColors_, *FullCrsMatrix()->Exporter(),
              AbsMax));
       ReducedMatrixRangeMap_ = RangeMapColors.GenerateMap(0);
     }
@@ -331,15 +331,15 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   // If not, we need to remap entries of the LHS multivector so that they are distributed
   // conformally with the rows of the reduced matrix and the RHS multivector
   SymmetricElimination_ = ReducedMatrixRangeMap_->SameAs(*OrigReducedMatrixDomainMap_);
-  if (!SymmetricElimination_) 
-    ConstructRedistributeExporter(OrigReducedMatrixDomainMap_, ReducedMatrixRangeMap_, 
+  if (!SymmetricElimination_)
+    ConstructRedistributeExporter(OrigReducedMatrixDomainMap_, ReducedMatrixRangeMap_,
           RedistributeDomainExporter_, ReducedMatrixDomainMap_);
   else {
     ReducedMatrixDomainMap_ = OrigReducedMatrixDomainMap_;
     OrigReducedMatrixDomainMap_ = 0;
     RedistributeDomainExporter_ = 0;
   }
-  
+
   // Create pointer to Full RHS, LHS
   Epetra_MultiVector * FullRHS = FullProblem()->GetRHS();
   Epetra_MultiVector * FullLHS = FullProblem()->GetLHS();
@@ -365,14 +365,14 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
     if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
 
       EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (Indices are global)
-      
-      int ierr = ReducedMatrix()->InsertGlobalValues(curGRID, NumEntries, 
+
+      int ierr = ReducedMatrix()->InsertGlobalValues(curGRID, NumEntries,
                  Values, Indices); // Insert into reduce matrix
       // Positive errors will occur because we are submitting col entries that are not part of
       // reduced system.  However, because we specified a column map to the ReducedMatrix constructor
       // these extra column entries will be ignored and we will be politely reminded by a positive
       // error code
-      if (ierr<0) EPETRA_CHK_ERR(ierr); 
+      if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
     else {
       EPETRA_CHK_ERR(GetRow(i, NumEntries, Values, Indices)); // Get current row
@@ -383,7 +383,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   for (j=0; j<NumVectors; j++)
     (*tempExportX_)[j][indX] = (*FullRHS)[j][i]/pivot;
       }
-      // Otherwise, this is a singleton column and we will scan for the pivot element needed 
+      // Otherwise, this is a singleton column and we will scan for the pivot element needed
       // for post-solve equations
       else {
   int targetCol = ColSingletonColLIDs_[ColSingletonCounter];
@@ -417,7 +417,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   // First compute influence of already-known values of X on RHS
   tempX_ = new Epetra_MultiVector(FullMatrixDomainMap(), NumVectors);
   tempB_ = new Epetra_MultiVector(FullRHS->Map(), NumVectors);
-  
+
   //Inject known X values into tempX for purpose of computing tempB = FullMatrix*tempX
   // Also inject into full X since we already know the solution
 
@@ -450,7 +450,7 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   RatioOfDimensions_ = (fn-rn)/fn;
   RatioOfNonzeros_ = (fnnz-rnnz)/fnnz;
   HaveReducedProblem_ = true;
-  
+
   return(0);
 }
 
@@ -482,13 +482,13 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
     int curGRID = FullMatrixRowMap().GID64(i); // CJ FIXME TODO long long
     if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
       EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (indices global)
-      int ierr = ReducedMatrix()->ReplaceGlobalValues(curGRID, NumEntries, 
+      int ierr = ReducedMatrix()->ReplaceGlobalValues(curGRID, NumEntries,
                   Values, Indices);
       // Positive errors will occur because we are submitting col entries that are not part of
       // reduced system.  However, because we specified a column map to the ReducedMatrix constructor
       // these extra column entries will be ignored and we will be politely reminded by a positive
       // error code
-      if (ierr<0) EPETRA_CHK_ERR(ierr); 
+      if (ierr<0) EPETRA_CHK_ERR(ierr);
     }
     // Otherwise if singleton row we explicitly eliminate this row and solve for corresponding X value
     else {
@@ -500,7 +500,7 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
   for (j=0; j<NumVectors; j++)
     (*tempExportX_)[j][indX] = (*FullRHS)[j][i]/pivot;
       }
-      // Otherwise, this is a singleton column and we will scan for the pivot element needed 
+      // Otherwise, this is a singleton column and we will scan for the pivot element needed
       // for post-solve equations
       else {
   j = ColSingletonPivotLIDs_[ColSingletonCounter];
@@ -525,7 +525,7 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
   // Zero out temp space
   tempX_->PutScalar(0.0);
   tempB_->PutScalar(0.0);
-  
+
   //Inject known X values into tempX for purpose of computing tempB = FullMatrix*tempX
   // Also inject into full X since we already know the solution
 
@@ -561,7 +561,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   int TargetNumMyElements = TargetMap->NumMyElements();
   int SourceNumMyElements = SourceMap->NumMyElements();
 
-  // ContiguousTargetMap has same number of elements per PE as TargetMap, but uses contigious indexing 
+  // ContiguousTargetMap has same number of elements per PE as TargetMap, but uses contigious indexing
   Epetra_Map ContiguousTargetMap(-1, TargetNumMyElements, IndexBase,Comm);
 
   // Same for ContiguousSourceMap
@@ -577,16 +577,16 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_LongLongVector *SourceIndices_LL = 0;
-  Epetra_LongLongVector *TargetIndices_LL = 0;  
+  Epetra_LongLongVector *TargetIndices_LL = 0;
 #endif
 
-  if(SourceMap->GlobalIndicesInt()) 
+  if(SourceMap->GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     SourceIndices = new Epetra_IntVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
 #else
     throw "Epetra_CrsSingletonFilter::ConstructRedistributeExporter: GlobalIndicesInt but no int API";
 #endif
-  else if(SourceMap->GlobalIndicesLongLong()) 
+  else if(SourceMap->GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     SourceIndices_LL = new Epetra_LongLongVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements64());
 #else
@@ -597,7 +597,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
 
   // Create an exporter to send the SourceMap global IDs to the target distribution
   Epetra_Export Exporter(ContiguousSourceMap, ContiguousTargetMap);
-  
+
   // Create a vector to catch the global IDs in the target distribution
   if(TargetMap->GlobalIndicesInt()) {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -620,13 +620,13 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   // Create a new map that describes how the Source MultiVector should be laid out so that it has
   // the same number of elements on each processor as the TargetMap
 
-  if(TargetMap->GlobalIndicesInt()) 
+  if(TargetMap->GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices->Values(), IndexBase, Comm);
 #else
     throw "Epetra_CrsSingletonFilter::ConstructRedistributeExporter: GlobalIndicesInt but no int API";
 #endif
-  else if(TargetMap->GlobalIndicesLongLong()) 
+  else if(TargetMap->GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     RedistributeMap = new Epetra_Map((long long) -1, TargetNumMyElements, TargetIndices_LL->Values(), IndexBase, Comm);
 #else
@@ -644,8 +644,8 @@ int Epetra_CrsSingletonFilter::ComputeFullSolution() {
 
   int jj, k;
 
-  Epetra_MultiVector * FullLHS = FullProblem()->GetLHS(); 
-  Epetra_MultiVector * FullRHS = FullProblem()->GetRHS(); 
+  Epetra_MultiVector * FullLHS = FullProblem()->GetLHS();
+  Epetra_MultiVector * FullRHS = FullProblem()->GetRHS();
 
   tempX_->PutScalar(0.0); tempExportX_->PutScalar(0.0);
   // Inject values that the user computed for the reduced problem into the full solution vector
@@ -674,7 +674,7 @@ int Epetra_CrsSingletonFilter::ComputeFullSolution() {
 
   // Finally, insert values from post-solve step and we are done!!!!
 
-  
+
   if (FullMatrix()->RowMatrixImporter()!=0) {
     EPETRA_CHK_ERR(tempX_->Export(*tempExportX_, *FullMatrix()->RowMatrixImporter(), Add));
   }
@@ -683,13 +683,13 @@ int Epetra_CrsSingletonFilter::ComputeFullSolution() {
   }
 
   FullLHS->Update(1.0, *tempX_, 1.0);
-    
+
   return(0);
 }
 //==============================================================================
 int Epetra_CrsSingletonFilter::InitFullMatrixAccess() {
 
-  MaxNumMyEntries_ = FullMatrix()->MaxNumEntries(); 
+  MaxNumMyEntries_ = FullMatrix()->MaxNumEntries();
 
   // Cast to CrsMatrix, if possible.  Can save some work.
   FullCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix *>(FullMatrix());
@@ -703,35 +703,35 @@ int Epetra_CrsSingletonFilter::InitFullMatrixAccess() {
 int Epetra_CrsSingletonFilter::GetRow(int Row, int & NumIndices, int * & Indices) {
 
   if (FullMatrixIsCrsMatrix_) { // View of current row
-    EPETRA_CHK_ERR(FullCrsMatrix()->Graph().ExtractMyRowView(Row, NumIndices, Indices)); 
+    EPETRA_CHK_ERR(FullCrsMatrix()->Graph().ExtractMyRowView(Row, NumIndices, Indices));
   }
   else { // Copy of current row (we must get the values, but we ignore them)
-    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
+    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
               Values_.Values(), Indices_));
     Indices = Indices_;
-  } 
+  }
   return(0);
 }
 //==============================================================================
-int Epetra_CrsSingletonFilter::GetRow(int Row, int & NumIndices, 
+int Epetra_CrsSingletonFilter::GetRow(int Row, int & NumIndices,
               double * & Values, int * & Indices) {
 
   if (FullMatrixIsCrsMatrix_) { // View of current row
-    EPETRA_CHK_ERR(FullCrsMatrix_->ExtractMyRowView(Row, NumIndices, Values, Indices)); 
+    EPETRA_CHK_ERR(FullCrsMatrix_->ExtractMyRowView(Row, NumIndices, Values, Indices));
   }
   else { // Copy of current row (we must get the values, but we ignore them)
-    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
+    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
               Values_.Values(), Indices_));
     Values = Values_.Values();
     Indices = Indices_;
-  } 
+  }
   return(0);
 }
 //==============================================================================
-int Epetra_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices, 
+int Epetra_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices,
              double * & Values, int * & GlobalIndices) {
 
-    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
+    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
               Values_.Values(), Indices_));
     for (int j=0; j<NumIndices; j++) Indices_[j] = FullMatrixColMap().GID64(Indices_[j]); // FIXME long long
     Values = Values_.Values();
@@ -758,7 +758,7 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
   ColSingletonColLIDs_ = new int[NumMyColSingletons_];
   ColSingletonPivotLIDs_ = new int[NumMyColSingletons_];
   ColSingletonPivots_ = new double[NumMyColSingletons_];
-  
+
   // Register singleton columns (that were not already counted as singleton rows)
   // Check to see if any columns disappeared because all associated rows were eliminated
   int NumMyColSingletonstmp = 0;
@@ -769,7 +769,7 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
       ColSingletonColLIDs_[NumMyColSingletonstmp] = j;
       NumMyColSingletonstmp++;
     }
-    // Also check for columns that were eliminated implicitly by 
+    // Also check for columns that were eliminated implicitly by
     // having all associated row eliminated
     else if (NewColProfiles[j]==0 && ColHasRowWithSingleton[j]!=1 && rowMapColors[i]==0) {
     colMapColors[j] = 1;
@@ -779,7 +779,7 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
   assert(NumMyColSingletonstmp==NumMyColSingletons_); //Sanity check
   Epetra_Util sorter;
   sorter.Sort(true, NumMyColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_, 0, 0);
-    
+
   return(0);
 }
 

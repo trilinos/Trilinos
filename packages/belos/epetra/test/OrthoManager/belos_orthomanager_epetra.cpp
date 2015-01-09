@@ -66,7 +66,7 @@
 #include <Epetra_CrsMatrix.h>
 
 // I/O for Harwell-Boeing files
-#include <iohb.h>
+#include <Trilinos_Util_iohb.h>
 
 #include <algorithm>
 #include <iostream>
@@ -107,8 +107,8 @@ namespace {
   {
     using std::endl;
 
-    debugOut << "Belos version information:" << endl 
-	     << Belos::Belos_Version() << endl << endl;
+    debugOut << "Belos version information:" << endl
+       << Belos::Belos_Version() << endl << endl;
   }
 
   int
@@ -117,18 +117,18 @@ namespace {
     // NOTE Calling this a "MsgType" (its correct type) or even an
     // "enum MsgType" confuses the compiler.
     int theType = Belos::Errors; // default (always print errors)
-    if (verbose) 
+    if (verbose)
       {
-	// "Verbose" also means printing out Debug messages (as well
-	// as everything else).
-	theType = theType | 
-	  Belos::Warnings | 
-	  Belos::IterationDetails |
-	  Belos::OrthoDetails | 
-	  Belos::FinalSummary | 
-	  Belos::TimingDetails |
-	  Belos::StatusTestDetails | 
-	  Belos::Debug;
+  // "Verbose" also means printing out Debug messages (as well
+  // as everything else).
+  theType = theType |
+    Belos::Warnings |
+    Belos::IterationDetails |
+    Belos::OrthoDetails |
+    Belos::FinalSummary |
+    Belos::TimingDetails |
+    Belos::StatusTestDetails |
+    Belos::Debug;
       }
     if (debug)
       // "Debug" doesn't necessarily mean the same thing as
@@ -147,12 +147,12 @@ namespace {
   /// that the domain, range, and row maps are the same) and a
   /// sparse_matrix_type (the sparse matrix itself).
   ///
-  std::pair< Teuchos::RCP< map_type >, 
-	     Teuchos::RCP< sparse_matrix_type > >
+  std::pair< Teuchos::RCP< map_type >,
+       Teuchos::RCP< sparse_matrix_type > >
   loadSparseMatrix (const Teuchos::RCP< const Epetra_Comm >& pComm,
-		    const std::string& filename,
-		    int& numRows,
-		    std::ostream& debugOut)
+        const std::string& filename,
+        int& numRows,
+        std::ostream& debugOut)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -162,158 +162,158 @@ namespace {
     RCP< map_type > pMap;
     RCP< sparse_matrix_type > pMatrix;
 
-    if (filename != "") 
+    if (filename != "")
       {
-	debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
+  debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
 
-	int loadedNumRows = 0;
-	int numCols = 0;
-	int nnz = -1;
-	int rnnzmax = 0;
-	double *dvals = NULL;
-	int *colptr = NULL;
-	int *rowind = NULL;
+  int loadedNumRows = 0;
+  int numCols = 0;
+  int nnz = -1;
+  int rnnzmax = 0;
+  double *dvals = NULL;
+  int *colptr = NULL;
+  int *rowind = NULL;
 
-	// The Harwell-Boeing routines use info == 0 to signal failure.
-	int info = 0;
+  // The Harwell-Boeing routines use info == 0 to signal failure.
+  int info = 0;
 
-	if (myRank == 0) 
-	  {
-	    // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
-	    // format) from the file into the tuple (loadedNumRows, numCols, nnz,
-	    // colptr, rowind, dvals).  The routine allocates memory for
-	    // colptr, rowind, and dvals using malloc().
-	    info = readHB_newmat_double (filename.c_str(), &loadedNumRows, 
-					 &numCols, &nnz, &colptr, &rowind, 
-					 &dvals);
-	    // Make sure that loadedNumRows has a sensible value,
-	    // since we'll need to allocate an std::vector with that
-	    // many elements.
-	    TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
-			       "Harwell-Boeing sparse matrix file reports that "
-			       "the matrix has # rows = " << loadedNumRows 
-			       << " < 0.");
+  if (myRank == 0)
+    {
+      // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
+      // format) from the file into the tuple (loadedNumRows, numCols, nnz,
+      // colptr, rowind, dvals).  The routine allocates memory for
+      // colptr, rowind, and dvals using malloc().
+      info = readHB_newmat_double (filename.c_str(), &loadedNumRows,
+           &numCols, &nnz, &colptr, &rowind,
+           &dvals);
+      // Make sure that loadedNumRows has a sensible value,
+      // since we'll need to allocate an std::vector with that
+      // many elements.
+      TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows < 0, std::runtime_error,
+             "Harwell-Boeing sparse matrix file reports that "
+             "the matrix has # rows = " << loadedNumRows
+             << " < 0.");
 
-	    // The Harwell-Boeing routines use info == 0 to signal failure.
-	    if (info != 0)
-	      {
-		// rnnzmax := maximum number of nonzeros per row, over all
-		// rows of the sparse matrix.
-		std::vector<int> rnnz (loadedNumRows, 0);
-		for (int *ri = rowind; ri < rowind + nnz; ++ri) {
-		  ++rnnz[*ri-1];
-		}
-		// This business with the iterator ensures that results
-		// are sensible even if the sequence is empty.
-		std::vector<int>::const_iterator iter = 
-		  std::max_element (rnnz.begin(),rnnz.end());
-		if (iter != rnnz.end())
-		  rnnzmax = *iter;
-		else
-		  // The matrix has zero rows, so the max number of
-		  // nonzeros per row is trivially zero.
-		  rnnzmax = 0;
-	      }
-	  }
+      // The Harwell-Boeing routines use info == 0 to signal failure.
+      if (info != 0)
+        {
+    // rnnzmax := maximum number of nonzeros per row, over all
+    // rows of the sparse matrix.
+    std::vector<int> rnnz (loadedNumRows, 0);
+    for (int *ri = rowind; ri < rowind + nnz; ++ri) {
+      ++rnnz[*ri-1];
+    }
+    // This business with the iterator ensures that results
+    // are sensible even if the sequence is empty.
+    std::vector<int>::const_iterator iter =
+      std::max_element (rnnz.begin(),rnnz.end());
+    if (iter != rnnz.end())
+      rnnzmax = *iter;
+    else
+      // The matrix has zero rows, so the max number of
+      // nonzeros per row is trivially zero.
+      rnnzmax = 0;
+        }
+    }
 
-	// Proc 0 now broadcasts the sparse matrix data to the other
-	// process(es).  First things broadcast are info and nnz, which
-	// tell the other process(es) whether reading the sparse matrix
-	// succeeded.  (info should be nonzero if so.  The
-	// Harwell-Boeing routines return "C boolean true" rather than
-	// the POSIX-standard "zero for success.")
-	pComm->Broadcast (&info, 1, 0);
-	pComm->Broadcast (&nnz,  1, 0);
+  // Proc 0 now broadcasts the sparse matrix data to the other
+  // process(es).  First things broadcast are info and nnz, which
+  // tell the other process(es) whether reading the sparse matrix
+  // succeeded.  (info should be nonzero if so.  The
+  // Harwell-Boeing routines return "C boolean true" rather than
+  // the POSIX-standard "zero for success.")
+  pComm->Broadcast (&info, 1, 0);
+  pComm->Broadcast (&nnz,  1, 0);
 
-	TEUCHOS_TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
-			   "Error reading Harwell-Boeing sparse matrix file \"" 
-			   << filename << "\"" << std::endl);
-	
-	TEUCHOS_TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
-			   "Harwell-Boeing sparse matrix file \"" 
-			   << filename << "\" reports having negative nnz "
-			   << "(= " << nnz << ")"
-			   << std::endl);
-	
-	TEUCHOS_TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
-			   "Test matrix in Harwell-Boeing sparse matrix file '" 
-			   << filename << "' " << "has zero nonzero values, which "
-			   << "means it does not define a valid inner product." 
-			   << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
+         "Error reading Harwell-Boeing sparse matrix file \""
+         << filename << "\"" << std::endl);
 
-	pComm->Broadcast (&loadedNumRows, 1, 0);
-	pComm->Broadcast (&numCols, 1, 0);
-	pComm->Broadcast (&rnnzmax, 1, 0);
+  TEUCHOS_TEST_FOR_EXCEPTION(nnz < 0, std::runtime_error,
+         "Harwell-Boeing sparse matrix file \""
+         << filename << "\" reports having negative nnz "
+         << "(= " << nnz << ")"
+         << std::endl);
 
-	TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
-			   "Test matrix in Harwell-Boeing sparse matrix file '" 
-			   << filename << "' " << "is not square: it is " 
-			   << loadedNumRows << " by " << numCols << std::endl);
-	// We've fully validated the number of rows, so set the
-	// appropriate output parameter.
-	numRows = loadedNumRows;
+  TEUCHOS_TEST_FOR_EXCEPTION(nnz == 0, std::runtime_error,
+         "Test matrix in Harwell-Boeing sparse matrix file '"
+         << filename << "' " << "has zero nonzero values, which "
+         << "means it does not define a valid inner product."
+         << std::endl);
 
-	// Create Epetra_Map to represent multivectors in the range of
-	// the sparse matrix.
-	pMap = rcp (new map_type (numRows, 0, *pComm));
+  pComm->Broadcast (&loadedNumRows, 1, 0);
+  pComm->Broadcast (&numCols, 1, 0);
+  pComm->Broadcast (&rnnzmax, 1, 0);
 
-	// Third argument: max number of nonzero entries per row.
-	pMatrix = rcp (new sparse_matrix_type (Copy, *pMap, rnnzmax));
+  TEUCHOS_TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
+         "Test matrix in Harwell-Boeing sparse matrix file '"
+         << filename << "' " << "is not square: it is "
+         << loadedNumRows << " by " << numCols << std::endl);
+  // We've fully validated the number of rows, so set the
+  // appropriate output parameter.
+  numRows = loadedNumRows;
 
-	if (myRank == 0) 
-	  {
-	    // Convert from Harwell-Boeing format (compressed sparse
-	    // column, one-indexed) to CrsMatrix format (compressed
-	    // sparse row, zero-index).  We do this by iterating over
-	    // all the columns of the matrix.
-	    int curNonzeroIndex = 0;
-	    for (int c = 0; c < numCols; ++c) 
-	      {
-		for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
-		  {
-		    // Row index: *rptr - 1 (1-based -> 0-based indexing)
-		    // Column index: c
-		    // Value to insert there: *dptr
-		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
-		    const scalar_type curValue = dvals[curNonzeroIndex];
-		    pMatrix->InsertGlobalValues (curGlobalRowIndex, 
-						 1, &curValue, &c);
-		    curNonzeroIndex++;
-		  }
-	      }
-	  }
-	if (myRank == 0) 
-	  {
-	    // Free memory allocated by the Harwell-Boeing input routine.
-	    if (dvals != NULL)
-	      {
-		free (dvals);
-		dvals = NULL;
-	      }
-	    if (colptr != NULL)
-	      {
-		free (colptr);
-		colptr = NULL;
-	      }
-	    if (rowind != NULL)
-	      {
-		free (rowind);
-		rowind = NULL;
-	      }
-	  }
-	// We're done reading in the sparse matrix.  Now distribute it
-	// among the processes.  The domain, range, and row maps are
-	// the same (the matrix must be square).
-	pMatrix->FillComplete();
-	debugOut << "Completed loading and distributing sparse matrix" << endl;
+  // Create Epetra_Map to represent multivectors in the range of
+  // the sparse matrix.
+  pMap = rcp (new map_type (numRows, 0, *pComm));
+
+  // Third argument: max number of nonzero entries per row.
+  pMatrix = rcp (new sparse_matrix_type (Copy, *pMap, rnnzmax));
+
+  if (myRank == 0)
+    {
+      // Convert from Harwell-Boeing format (compressed sparse
+      // column, one-indexed) to CrsMatrix format (compressed
+      // sparse row, zero-index).  We do this by iterating over
+      // all the columns of the matrix.
+      int curNonzeroIndex = 0;
+      for (int c = 0; c < numCols; ++c)
+        {
+    for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz)
+      {
+        // Row index: *rptr - 1 (1-based -> 0-based indexing)
+        // Column index: c
+        // Value to insert there: *dptr
+        const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
+        const scalar_type curValue = dvals[curNonzeroIndex];
+        pMatrix->InsertGlobalValues (curGlobalRowIndex,
+             1, &curValue, &c);
+        curNonzeroIndex++;
+      }
+        }
+    }
+  if (myRank == 0)
+    {
+      // Free memory allocated by the Harwell-Boeing input routine.
+      if (dvals != NULL)
+        {
+    free (dvals);
+    dvals = NULL;
+        }
+      if (colptr != NULL)
+        {
+    free (colptr);
+    colptr = NULL;
+        }
+      if (rowind != NULL)
+        {
+    free (rowind);
+    rowind = NULL;
+        }
+    }
+  // We're done reading in the sparse matrix.  Now distribute it
+  // among the processes.  The domain, range, and row maps are
+  // the same (the matrix must be square).
+  pMatrix->FillComplete();
+  debugOut << "Completed loading and distributing sparse matrix" << endl;
       } // else M == null
-    else 
+    else
       {
-	debugOut << "Testing with Euclidean inner product" << endl;
+  debugOut << "Testing with Euclidean inner product" << endl;
 
-	// Let M remain null, and allocate map using the number of rows
-	// (numRows) specified on the command line.
-	pMap = rcp (new map_type (numRows, 0, *pComm));
+  // Let M remain null, and allocate map using the number of rows
+  // (numRows) specified on the command line.
+  pMap = rcp (new map_type (numRows, 0, *pComm));
       }
     return std::make_pair (pMap, pMatrix);
   }
@@ -322,8 +322,8 @@ namespace {
 
 /// \fn main
 /// \brief Test driver for (Mat)OrthoManager subclasses
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Belos::OutputManager;
   using Belos::OrthoManager;
@@ -356,211 +356,215 @@ main (int argc, char *argv[])
   std::string filename;
 
   bool verbose = false;
-  bool debug = false;
+  bool success = false;
 
-  // The OrthoManager is tested with three different multivectors: S,
-  // X1, and X2.  sizeS is the number of columns in S, sizeX1 the
-  // number of columns in X1, and sizeX2 the number of columns in X2.
-  // The values below are defaults and may be changed by command-line
-  // arguments with corresponding names.
-  int sizeS  = 5;
-  int sizeX1 = 11;
-  int sizeX2 = 13;
+  try {
+    bool debug = false;
 
-  // Default global number of rows.  The number of rows per MPI
-  // process must be no less than max(sizeS, sizeX1, sizeX2).  To
-  // ensure that the test always passes with default parameters, we
-  // scale by the number of processes.  The default value below may be
-  // changed by a command-line parameter with a corresponding name.
-  int numRows = 100 * pComm->NumProc();
+    // The OrthoManager is tested with three different multivectors: S,
+    // X1, and X2.  sizeS is the number of columns in S, sizeX1 the
+    // number of columns in X1, and sizeX2 the number of columns in X2.
+    // The values below are defaults and may be changed by command-line
+    // arguments with corresponding names.
+    int sizeS  = 5;
+    int sizeX1 = 11;
+    int sizeX2 = 13;
 
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption ("verbose", "quiet", &verbose,
-		  "Print messages and results.");
-  cmdp.setOption ("debug", "nodebug", &debug,
-		  "Print debugging information.");
-  cmdp.setOption ("filename", &filename,
-		  "Filename of a Harwell-Boeing sparse matrix, used as the "
-		  "inner product operator by the orthogonalization manager."
-		  "  If not provided, no matrix is read and the Euclidean "
-		  "inner product is used.");
-  {
-    std::ostringstream os;
-    const int numValid = factory.numOrthoManagers();
-    const bool plural = numValid > 1 || numValid == 0;
+    // Default global number of rows.  The number of rows per MPI
+    // process must be no less than max(sizeS, sizeX1, sizeX2).  To
+    // ensure that the test always passes with default parameters, we
+    // scale by the number of processes.  The default value below may be
+    // changed by a command-line parameter with a corresponding name.
+    int numRows = 100 * pComm->NumProc();
 
-    os << "OrthoManager subclass to test.  There ";
-    os << (plural ? "are " : "is ") << numValid << (plural ? "s: " : ": ");
-    factory.printValidNames (os);
-    os << ".";
-    cmdp.setOption ("ortho", &ortho, os.str().c_str());
-  }
-  cmdp.setOption ("numRows", &numRows, 
-		  "Controls the number of rows of the test "
-		  "multivectors.  If an input matrix is given, this "
-		  "parameter\'s value is ignored, since the vectors must "
-		  "be commensurate with the dimensions of the matrix.");
-  cmdp.setOption ("sizeS", &sizeS, "Controls the number of columns of the "
-		  "input multivector.");
-  cmdp.setOption ("sizeX1", &sizeX1, "Controls the number of columns of the "
-		  "first basis.");
-  cmdp.setOption ("sizeX2", &sizeX2, "Controls the number of columns of the "
-		  "second basis.  We require for simplicity of testing (the "
-		  "routines do not require it) that sizeX1 >= sizeX2.");
-  // Parse the command-line arguments.
-  {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
-    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
-      {
-	if (pComm->MyPID() == 0)
-	  std::cout << "End Result: TEST PASSED" << endl;
-	return EXIT_SUCCESS;
-      }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
-		       std::invalid_argument, 
-		       "Failed to parse command-line arguments");
-  }
-  //
-  // Validate command-line arguments
-  //
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
-		     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
-    
-  // Declare an output manager for handling local output.  Initialize,
-  // using the caller's desired verbosity level.
-  //
-  // NOTE In Anasazi, this class is called BasicOutputManager.  In
-  // Belos, this class is called OutputManager.  We should eventually
-  // resolve this difference.
-  RCP<OutputManager<scalar_type> > outMan (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
-
-  // Stream for debug output.  If debug output is not enabled, then
-  // this stream doesn't print anything sent to it (it's a "black
-  // hole" stream).
-  std::ostream& debugOut = outMan->stream(Belos::Debug);
-  printVersionInfo (debugOut);
-
-  // Load the inner product operator matrix from the given filename.
-  // If filename == "", use the identity matrix as the inner product
-  // operator (the Euclidean inner product), and leave M as
-  // Teuchos::null.  Also return an appropriate Map (which will
-  // always be initialized; it should never be Teuchos::null).
-  RCP< map_type > map;
-  RCP< sparse_matrix_type > M; 
-  {
-    // If the sparse matrix is loaded successfully, this call will
-    // modify numRows to be the number of rows in the sparse matrix.
-    // Otherwise, it will leave numRows alone.
-    std::pair< RCP< map_type >, RCP< sparse_matrix_type > > results = 
-      loadSparseMatrix (pComm, filename, numRows, debugOut);
-    map = results.first;
-    M = results.second;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
-		     "Error: (Mat)OrthoManager test code failed to "
-		     "initialize the Map");
-  {
-    // The maximum number of columns that will be passed to a
-    // MatOrthoManager's normalize() routine.  Some MatOrthoManager
-    // subclasses (e.g., Tsqr(Mat)OrthoManager) need to have the
-    // number of columns no larger than the number of rows on any
-    // process.  We check this _after_ attempting to load any sparse
-    // matrix to be used as the inner product matrix, because if a
-    // sparse matrix is successfully loaded, its number of rows will
-    // override the number of rows specified on the command line (if
-    // specified), and will also override the default number of rows.
-    const int maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
-    if (map->NumMyElements() < maxNormalizeNumCols)
-      {
-	std::ostringstream os;
-	os << "The number of elements on this process " << pComm->MyPID() 
-	   << " is too small for the number of columns that you want to test."
-	   << "  There are " << map->NumMyElements() << " elements on "
-	  "this process, but the normalize() method of the MatOrthoManager "
-	  "subclass will need to process a multivector with " 
-	   << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
-	  "subclasses can handle a local row block with fewer rows than "
-	  "columns.";
-	throw std::invalid_argument(os.str());
-      }
-  }
-
-  // Using the factory object, instantiate the specified
-  // OrthoManager subclass to be tested.
-  //
-  // TODO Read in a ParameterList for configuring the specific
-  // OrthoManager subclass.
-
-  std::string timingLabel ("Belos");
-  // Flush before computation, to ensure the message gets out
-  // before any possible errors.
-  debugOut << "Asking factory to create the OrthoManager subclass..." 
-	   << std::flush; 
-  RCP<OrthoManager<scalar_type, MV> > OM = 
-    factory.makeOrthoManager (ortho, M, outMan, timingLabel, null);
-  TEUCHOS_TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error, 
-		     "The OrthoManager factory returned null, "
-		     "for ortho=\"" << ortho << "\".");
-  debugOut << "done." << endl;
-
-  // Whether the specific OrthoManager subclass promises to compute
-  // rank-revealing orthogonalizations.  If yes, then test it on
-  // rank-deficient multivectors, otherwise only test it on full-rank
-  // multivectors.
-  const bool isRankRevealing = factory.isRankRevealing (ortho);
-  if (isRankRevealing)
-    debugOut << "OrthoManager \"" << ortho << "\" claims to be "
-      "rank revealing." << endl;
-  else
-    debugOut << "OrthoManager \"" << ortho << "\" does not claim "
-      "to be rank revealing." << endl;
-
-  // "Prototype" multivector.  The test code will use this (via
-  // Belos::MultiVecTraits) to clone other multivectors as necessary.
-  // (This means the test code doesn't need the Map, and it also makes
-  // the test code independent of the idea of a Map.)
-  RCP<MV> S = rcp (new MV (*map, sizeS));
-
-  // Test the OrthoManager subclass.  Return the number of tests
-  // that failed.  None of the tests should fail (this function
-  // should return zero).
-  int numFailed = 0;
-  {
-    typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
-    debugOut << "Running OrthoManager tests..." << endl;
-    numFailed = tester_type::runTests (OM, isRankRevealing, S, 
-				       sizeX1, sizeX2, outMan);
-    debugOut << "...done running OrthoManager tests." << endl;
-  }
-
-  // Only Rank 0 gets to write to cout.  The other processes dump
-  // output to a black hole.
-  //std::ostream& finalOut = (pComm->MyPID() == 0) ? std::cout : Teuchos::oblackholestream;
-
-  if (numFailed != 0) // Oops, at least one test didn't pass
+    CommandLineProcessor cmdp(false,true);
+    cmdp.setOption ("verbose", "quiet", &verbose,
+        "Print messages and results.");
+    cmdp.setOption ("debug", "nodebug", &debug,
+        "Print debugging information.");
+    cmdp.setOption ("filename", &filename,
+        "Filename of a Harwell-Boeing sparse matrix, used as the "
+        "inner product operator by the orthogonalization manager."
+        "  If not provided, no matrix is read and the Euclidean "
+        "inner product is used.");
     {
+      std::ostringstream os;
+      const int numValid = factory.numOrthoManagers();
+      const bool plural = numValid > 1 || numValid == 0;
+
+      os << "OrthoManager subclass to test.  There ";
+      os << (plural ? "are " : "is ") << numValid << (plural ? "s: " : ": ");
+      factory.printValidNames (os);
+      os << ".";
+      cmdp.setOption ("ortho", &ortho, os.str().c_str());
+    }
+    cmdp.setOption ("numRows", &numRows,
+        "Controls the number of rows of the test "
+        "multivectors.  If an input matrix is given, this "
+        "parameter\'s value is ignored, since the vectors must "
+        "be commensurate with the dimensions of the matrix.");
+    cmdp.setOption ("sizeS", &sizeS, "Controls the number of columns of the "
+        "input multivector.");
+    cmdp.setOption ("sizeX1", &sizeX1, "Controls the number of columns of the "
+        "first basis.");
+    cmdp.setOption ("sizeX2", &sizeX2, "Controls the number of columns of the "
+        "second basis.  We require for simplicity of testing (the "
+        "routines do not require it) that sizeX1 >= sizeX2.");
+    // Parse the command-line arguments.
+    {
+      const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
+      if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
+      {
+        if (pComm->MyPID() == 0)
+          std::cout << "End Result: TEST PASSED" << endl;
+        return EXIT_SUCCESS;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+          std::invalid_argument,
+          "Failed to parse command-line arguments");
+    }
+    //
+    // Validate command-line arguments
+    //
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows <= 0, std::invalid_argument, "numRows <= 0 is not allowed");
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument,
+        "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
+
+    // Declare an output manager for handling local output.  Initialize,
+    // using the caller's desired verbosity level.
+    //
+    // NOTE In Anasazi, this class is called BasicOutputManager.  In
+    // Belos, this class is called OutputManager.  We should eventually
+    // resolve this difference.
+    RCP<OutputManager<scalar_type> > outMan (new OutputManager<scalar_type> (selectVerbosity (verbose, debug)));
+
+    // Stream for debug output.  If debug output is not enabled, then
+    // this stream doesn't print anything sent to it (it's a "black
+    // hole" stream).
+    std::ostream& debugOut = outMan->stream(Belos::Debug);
+    printVersionInfo (debugOut);
+
+    // Load the inner product operator matrix from the given filename.
+    // If filename == "", use the identity matrix as the inner product
+    // operator (the Euclidean inner product), and leave M as
+    // Teuchos::null.  Also return an appropriate Map (which will
+    // always be initialized; it should never be Teuchos::null).
+    RCP< map_type > map;
+    RCP< sparse_matrix_type > M;
+    {
+      // If the sparse matrix is loaded successfully, this call will
+      // modify numRows to be the number of rows in the sparse matrix.
+      // Otherwise, it will leave numRows alone.
+      std::pair< RCP< map_type >, RCP< sparse_matrix_type > > results =
+        loadSparseMatrix (pComm, filename, numRows, debugOut);
+      map = results.first;
+      M = results.second;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
+        "Error: (Mat)OrthoManager test code failed to "
+        "initialize the Map");
+    {
+      // The maximum number of columns that will be passed to a
+      // MatOrthoManager's normalize() routine.  Some MatOrthoManager
+      // subclasses (e.g., Tsqr(Mat)OrthoManager) need to have the
+      // number of columns no larger than the number of rows on any
+      // process.  We check this _after_ attempting to load any sparse
+      // matrix to be used as the inner product matrix, because if a
+      // sparse matrix is successfully loaded, its number of rows will
+      // override the number of rows specified on the command line (if
+      // specified), and will also override the default number of rows.
+      const int maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
+      if (map->NumMyElements() < maxNormalizeNumCols)
+      {
+        std::ostringstream os;
+        os << "The number of elements on this process " << pComm->MyPID()
+          << " is too small for the number of columns that you want to test."
+          << "  There are " << map->NumMyElements() << " elements on "
+          "this process, but the normalize() method of the MatOrthoManager "
+          "subclass will need to process a multivector with "
+          << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
+          "subclasses can handle a local row block with fewer rows than "
+          "columns.";
+        throw std::invalid_argument(os.str());
+      }
+    }
+
+    // Using the factory object, instantiate the specified
+    // OrthoManager subclass to be tested.
+    //
+    // TODO Read in a ParameterList for configuring the specific
+    // OrthoManager subclass.
+
+    std::string timingLabel ("Belos");
+    // Flush before computation, to ensure the message gets out
+    // before any possible errors.
+    debugOut << "Asking factory to create the OrthoManager subclass..."
+      << std::flush;
+    RCP<OrthoManager<scalar_type, MV> > OM =
+      factory.makeOrthoManager (ortho, M, outMan, timingLabel, null);
+    TEUCHOS_TEST_FOR_EXCEPTION(OM.is_null(), std::logic_error,
+        "The OrthoManager factory returned null, "
+        "for ortho=\"" << ortho << "\".");
+    debugOut << "done." << endl;
+
+    // Whether the specific OrthoManager subclass promises to compute
+    // rank-revealing orthogonalizations.  If yes, then test it on
+    // rank-deficient multivectors, otherwise only test it on full-rank
+    // multivectors.
+    const bool isRankRevealing = factory.isRankRevealing (ortho);
+    if (isRankRevealing)
+      debugOut << "OrthoManager \"" << ortho << "\" claims to be "
+        "rank revealing." << endl;
+    else
+      debugOut << "OrthoManager \"" << ortho << "\" does not claim "
+        "to be rank revealing." << endl;
+
+    // "Prototype" multivector.  The test code will use this (via
+    // Belos::MultiVecTraits) to clone other multivectors as necessary.
+    // (This means the test code doesn't need the Map, and it also makes
+    // the test code independent of the idea of a Map.)
+    RCP<MV> S = rcp (new MV (*map, sizeS));
+
+    // Test the OrthoManager subclass.  Return the number of tests
+    // that failed.  None of the tests should fail (this function
+    // should return zero).
+    int numFailed = 0;
+    {
+      typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
+      debugOut << "Running OrthoManager tests..." << endl;
+      numFailed = tester_type::runTests (OM, isRankRevealing, S,
+          sizeX1, sizeX2, outMan);
+      debugOut << "...done running OrthoManager tests." << endl;
+    }
+
+    // Only Rank 0 gets to write to cout.  The other processes dump
+    // output to a black hole.
+    //std::ostream& finalOut = (pComm->MyPID() == 0) ? std::cout : Teuchos::oblackholestream;
+
+    if (numFailed != 0) // Oops, at least one test didn't pass
+    {
+      success = false;
       outMan->stream(Belos::Errors) << numFailed << " errors." << endl;
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly,
       // since the verbosity setting of the OutputManager may cause it
       // not to print something.
       if (pComm->MyPID() == 0)
-	{
-	  std::cout << "Total number of errors: " << numFailed << endl;
-	  std::cout << "End Result: TEST FAILED" << endl;	
-	}
-      return EXIT_FAILURE;
+      {
+        std::cout << "Total number of errors: " << numFailed << endl;
+        std::cout << "End Result: TEST FAILED" << endl;
+      }
     }
-  else // All the tests passed, yay!
+    else // All the tests passed, yay!
     {
+      success = true;
       // The Trilinos test framework depends on seeing this message to
       // know that the test passed.
       if (pComm->MyPID() == 0)
-	std::cout << "End Result: TEST PASSED" << endl;
-      return EXIT_SUCCESS;
+        std::cout << "End Result: TEST PASSED" << endl;
     }
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-
-

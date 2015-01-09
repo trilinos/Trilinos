@@ -17,7 +17,7 @@
 /* #undef FC_DUMMY_MAIN_EQ_F77 */
 
 /* Define if you have a BLAS library. */
-/* #undef HAVE_BLAS */
+#define HAVE_BLAS
 
 /* define if bool is a built-in type */
 /* #undef HAVE_BOOL */
@@ -29,7 +29,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define if you have LAPACK library. */
-/* #undef HAVE_LAPACK */
+#define HAVE_LAPACK
 
 /* Define if want to build libcheck */
 /* #undef HAVE_LIBCHECK */
@@ -119,7 +119,7 @@
 #define HAVE_NEW_FOR_SCOPING
 
 /* Define if want to build with petsc enabled */
-/* #undef HAVE_PETSC */
+/* #undef HAVE_ML_PETSC */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1

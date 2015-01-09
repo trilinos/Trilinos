@@ -54,8 +54,8 @@
 #include "Galeri_Workspace.h"
 #include <vector>
 #include <algorithm>
+#include <limits>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {
@@ -200,8 +200,16 @@ public:
 
   virtual void VertexCoord(const int LocalID, double* coord) const
   {
-    int GlobalID;
-    GlobalID = VertexMap_->GID(LocalID);
+    long long LLGlobalID = VertexMap_->GID64(LocalID);
+
+    if(LLGlobalID > std::numeric_limits<int>::max())
+    {
+      cerr << "Vertex ID out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
+    int GlobalID = (int) LLGlobalID;
 
     if (GlobalID == -1)
     {
@@ -224,7 +232,16 @@ public:
     for (int i = 0 ; i < Length ; ++i)
     {
       int ID;
-      ID = VertexMap_->GID(IDs[i]);
+      long long LLID = VertexMap_->GID64(IDs[i]);
+
+      if(LLID > std::numeric_limits<int>::max())
+      {
+        cerr << "LLID ID out of int bound" << endl;
+        cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+        throw(-1);
+      }
+
+      ID = (int) LLID;
 
       int ix, iy;
       ix = ID % NumGlobalVerticesX();
@@ -307,7 +324,17 @@ public:
   virtual void FaceVertices(const int LocalFace, int& tag, int* IDs) const
   {
     // FIXME: the tag is not correct for parallel runs
-    int face = BoundaryFaceMap_->GID(LocalFace);
+
+    long long LLface = BoundaryFaceMap_->GID64(LocalFace);
+
+    if(LLface > std::numeric_limits<int>::max())
+    {
+      cerr << "Face ID out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
+    int face = (int) LLface;
 
     if (face < NumGlobalElementsX())
     {
@@ -351,7 +378,16 @@ public:
 
   inline int FacePatch(const int LocalFace) const
   {
-    int GlobalFace = BoundaryFaceMap_->GID(LocalFace);
+    long long  LLGlobalFace = BoundaryFaceMap_->GID64(LocalFace);
+
+    if(LLGlobalFace > std::numeric_limits<int>::max())
+    {
+      cerr << "Face ID out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
+    int GlobalFace = (int) LLGlobalFace;
 
     int Patch;
 
@@ -490,8 +526,17 @@ private:
   inline void IL_ElementVertices(const int LocalID, int* elements,
                                  const bool ReturnGlobal = false) const
   {
+    long long LLGlobalID = ElementMap_->GID64(LocalID);
+
+    if(LLGlobalID > std::numeric_limits<int>::max())
+    {
+      cerr << "LLGlobalID out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
     int GlobalID;
-    GlobalID = ElementMap_->GID(LocalID);
+    GlobalID = (int) LLGlobalID;
 
     int ix, iy;
     ix = GlobalID % NumGlobalElementsX();
@@ -529,7 +574,11 @@ private:
     int size = (endx - startx) * (endy - starty);
 
     int count = 0;
-    vector<int> itmp(size);
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> itmp(size);
+#else
+    std::vector<int> itmp(size);
+#endif
     for (int j = starty ; j < endy ; ++j) 
     {
       for (int i = startx ; i < endx ; ++i) 
@@ -566,7 +615,11 @@ private:
     NumMyElementsY_ = endy - starty;
     NumMyElements_ = (endx - startx) * (endy - starty);
 
-    vector<int> itmp(NumMyElements());
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> itmp(NumMyElements());
+#else
+    std::vector<int> itmp(NumMyElements());
+#endif
     int count = 0;
 
     for (int j = starty ; j < endy ; ++j) 
@@ -598,7 +651,12 @@ private:
     if (xpid == 0) 
       NumMyBoundaryFaces_ += NumMyElementsY();
 
-    vector<int> itmp(NumMyBoundaryFaces());
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> itmp(NumMyBoundaryFaces());
+#else
+    std::vector<int> itmp(NumMyBoundaryFaces());
+#endif
+
     int count = 0;
 
     if (ypid == 0)
@@ -643,14 +701,26 @@ private:
       throw(-1);
     }
 
-    NumGlobalBoundaryFaces_ = BoundaryFaceMap_->NumGlobalElements();
+    if(BoundaryFaceMap_->NumGlobalElements64() > std::numeric_limits<int>::max())
+    {
+      cerr << "BoundaryFaceMap_->NumGlobalElements64() out of int bound" << endl;
+      cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+      throw(-1);
+    }
+
+    NumGlobalBoundaryFaces_ = (int) BoundaryFaceMap_->NumGlobalElements64();
     return;
   }
 
   void CreateVertexMap()
   {
-    vector<int> tmp;
-    vector<int>::iterator where;
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+    std::vector<long long> tmp;
+    std::vector<long long>::iterator where;
+#else
+    std::vector<int> tmp;
+    std::vector<int>::iterator where;
+#endif
     int Vertices[4];
 
     for (int i = 0 ; i < NumMyElements() ; ++i)

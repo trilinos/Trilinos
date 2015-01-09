@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,22 +61,22 @@
 
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 LeftPreconditioning(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	     const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+         const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),
   jac(),
   prec()
 {
-  // This strategy makes sense only if the linear system defines a 
+  // This strategy makes sense only if the linear system defines a
   // preconditioner
   if (!linsys->hasPreconditioner())
     globalData->locaErrorCheck->throwError(
-	  std::string("LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning") + 
-	  std::string("::LeftPreconditioning()"),
-	  std::string("Left preconditioning for transpose solve is valid only") + 
-	  std::string(" when the linear system defines a preconditioner"));
+      std::string("LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning") +
+      std::string("::LeftPreconditioning()"),
+      std::string("Left preconditioning for transpose solve is valid only") +
+      std::string(" when the linear system defines a preconditioner"));
 }
 
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
@@ -86,22 +86,22 @@ LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 
 bool
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
-applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
-			      const NOX::Epetra::Vector &input, 
-			      NOX::Epetra::Vector &result)
-{  
+applyJacobianTransposeInverse(Teuchos::ParameterList &params,
+                  const NOX::Epetra::Vector &input,
+                  NOX::Epetra::Vector &result)
+{
   // Create preconditioned operator
-  Teuchos::RCP<Epetra_Operator> left_prec_jac = 
+  Teuchos::RCP<Epetra_Operator> left_prec_jac =
     Teuchos::rcp(new LOCA::Epetra::LeftPreconditionedOp(jac, prec));
 
   // Replace Jacobian operator with transposed, left preconditioned op
   linsys->setJacobianOperatorForSolve(left_prec_jac);
 
   // Create identity operator as a right preconditioner
-  Teuchos::RCP<Epetra_Operator> identity_prec = 
+  Teuchos::RCP<Epetra_Operator> identity_prec =
     Teuchos::rcp(new LOCA::Epetra::IdentityOp(
-			   Teuchos::rcp(&(jac->Comm()), false), 
-			   Teuchos::rcp(&(jac->OperatorDomainMap()), false)));
+               Teuchos::rcp(&(jac->Comm()), false),
+               Teuchos::rcp(&(jac->OperatorDomainMap()), false)));
 
   // Replace preconditioner with identity
   linsys->setPrecOperatorForSolve(identity_prec);
@@ -129,8 +129,8 @@ createJacobianTranspose()
 
 bool
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
-createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-			      Teuchos::ParameterList& p)
+createTransposePreconditioner(const NOX::Epetra::Vector& x,
+                  Teuchos::ParameterList& p)
 {
   // Compute the preconditioner and set it to use the transpose
   bool res1 = linsys->destroyPreconditioner();
@@ -142,14 +142,14 @@ createTransposePreconditioner(const NOX::Epetra::Vector& x,
   return res1 && res2;
 }
 
-Teuchos::RCP<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator>
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 getJacobianTransposeOperator()
 {
   return jac;
 }
 
-Teuchos::RCP<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator>
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 getTransposePreconditioner()
 {
@@ -159,7 +159,7 @@ getTransposePreconditioner()
 void
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 setJacobianTransposeOperator(
-	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans)
+           const Teuchos::RCP<Epetra_Operator>& new_jac_trans)
 {
   jac = new_jac_trans;
 }
@@ -167,7 +167,7 @@ setJacobianTransposeOperator(
 void
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 setTransposePreconditioner(
-	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans)
+          const Teuchos::RCP<Epetra_Operator>& new_prec_trans)
 {
   prec = new_prec_trans;
 }

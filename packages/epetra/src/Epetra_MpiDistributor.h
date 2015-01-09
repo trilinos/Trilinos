@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -57,11 +57,11 @@ class Epetra_MpiComm;
 /// computer.  An Epetra_MpiDistributor instance is actually produced
 /// by calling a method in the Epetra_MpiComm class.
 class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distributor {
-    
+
   public:
 
   //! @name Constructors/Destructor
-  //@{ 
+  //@{
 
   //! Default constructor.
   Epetra_MpiDistributor(const Epetra_MpiComm & Comm);
@@ -72,7 +72,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //! Clone method
   Epetra_Distributor * Clone(){return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*this)));};
 
-  //! Create and extract the reverse version of the distributor.  
+  //! Create and extract the reverse version of the distributor.
   /*! This is not a const method since a reverse distributor might need to be created.
     This works like Clone, returning a new object the user must deallocate.
    */
@@ -82,9 +82,9 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   virtual ~Epetra_MpiDistributor();
   //@}
 
-  
+
   //! @name Gather/Scatter Constructors
-  //@{ 
+  //@{
 
   /// \brief Create a communication plan from send list.
   ///
@@ -126,7 +126,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   /// \param ExportGIDs [out] List of data IDs that the calling
   ///   process will send out.
   /// \param ExportPIDs [out] List of IDs of the processes that will
-  ///   receive the data IDs sent by the calling process.  
+  ///   receive the data IDs sent by the calling process.
   ///
   /// \note This method allocates the output arrays using \c new.  The
   ///   caller is responsible for deallocating them after use.
@@ -192,12 +192,12 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 			       const int * RemotePIDs,
 			       bool Deterministic);
 #endif
-			     
+			
 
   //@}
 
   //! @name Execute Gather/Scatter Operations
-  //@{ 
+  //@{
 
   //! Execute plan on buffer of export objects in a single step
   int Do( char * export_objs,
@@ -230,7 +230,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //@}
 
   //! @name Execute Gather/Scatter Operations (Non-constant size objects)
-  //@{ 
+  //@{
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
   int Do( char * export_objs,
@@ -238,21 +238,21 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
           int *& sizes,
           int & len_import_objs,
           char *& import_objs );
-  
+
   //! Execute reverse of plan on buffer of export objects in a single step (object size may vary)
   int DoReverse( char * export_objs,
                  int obj_size,
                  int *& sizes,
                  int & len_import_objs,
                  char *& import_objs );
-  
+
   //! Post buffer of export objects (can do other local work before executing Waits)
   int DoPosts( char * export_objs,
                int obj_size,
                int *& sizes,
                int & len_import_objs,
                char *& import_objs);
-  
+
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
   int DoReversePosts( char * export_objs,
                       int obj_size,
@@ -260,10 +260,10 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
                       int & len_import_objs,
                       char *& import_objs );
   //@}
-  
+
 
   //! @name Attribute Accessor Methods
-  //@{ 
+  //@{
   //! The number of procs from which we will receive data
   int NumReceives() const {return nrecvs_;}
 
@@ -278,22 +278,22 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   //! A list of procs sending values to this proc.
   const int * ProcsFrom() const {return procs_from_;}
-  
-  //! A list of procs to which this proc is sending values. 
+
+  //! A list of procs to which this proc is sending values.
   const int * ProcsTo() const {return procs_to_;}
 
-  //! Number of values we're receiving from each proc. 
+  //! Number of values we're receiving from each proc.
   /*! We will receive <tt>LengthsFrom[i]</tt> values from proc <tt>ProcsFrom[i]</tt>. */
   const int * LengthsFrom() const {return lengths_from_;}
 
-  //! Number of values we're sending to each proc. 
+  //! Number of values we're sending to each proc.
   /*! We will send <tt>LengthsTo[i]</tt> values to procs <tt>ProcsTo[i]</tt>. */
   const int * LengthsTo() const {return lengths_to_;}
 
   //@}
 
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   void Print(std::ostream & os) const;
   //@}
   private:
@@ -309,7 +309,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 
   int ComputeRecvs_( int my_proc,
 		     int nprocs );
-  
+
   template<typename id_type>
     int ComputeSends_( int num_imports,
 		       const id_type *& import_ids,

@@ -44,12 +44,13 @@
 // @HEADER
 
 /*! \file Zoltan2_AlgAMD.hpp
-    \brief The AMD ordering algorithm.
+    \brief The AMD ordering algorithm uses SuiteSparse.
 */
 
 #ifndef _ZOLTAN2_ALGAMD_HPP_
 #define _ZOLTAN2_ALGAMD_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 
@@ -98,18 +99,25 @@ class AMDTraits<long>
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgAMD
+class AlgAMD : public Algorithm<Adapter>
 {
+    private:
+
+    const RCP<GraphModel<Adapter> > model;
+    const RCP<Teuchos::ParameterList> &pl;
+    const RCP<Teuchos::Comm<int> > &comm;
+      
     public:
 
-    AlgAMD()
-    {
-    }
+    AlgAMD(
+      const RCP<GraphModel<Adapter> > &model__,
+      const RCP<Teuchos::ParameterList> &pl__,
+      const RCP<Teuchos::Comm<int> > &comm__
+    ) : model(model__), pl(pl__), comm(comm__)
+    { }
 
-    int order ( const RCP<GraphModel<Adapter> > &model,
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-    typename Adapter::lno_t> > &solution, const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm )
+    int order(const RCP<OrderingSolution<typename Adapter::zgid_t,
+                                         typename Adapter::lno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(
@@ -118,7 +126,7 @@ class AlgAMD
 #else
       typedef typename Adapter::lno_t lno_t;
       typedef typename Adapter::gno_t gno_t;
-      typedef typename Adapter::gid_t gid_t;
+      typedef typename Adapter::zgid_t zgid_t;
       typedef typename Adapter::scalar_t scalar_t;
 
       int ierr= 0;

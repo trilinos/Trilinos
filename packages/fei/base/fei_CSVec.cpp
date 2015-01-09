@@ -8,6 +8,7 @@
 
 #include <fei_CSVec.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace fei {
 
@@ -87,6 +88,13 @@ void remove_entry(CSVec& vec, int eqn)
 
     std::vector<double>::iterator coef_iter = v_coef.begin()+offset;
     v_coef.erase(coef_iter);
+  }
+}
+
+void CSVec::subtract(const CSVec& rhs)
+{
+  for(size_t i=0; i<rhs.coefs_.size(); ++i) {
+    add_entry(*this, rhs.indices_[i], -rhs.coefs_[i]);
   }
 }
 

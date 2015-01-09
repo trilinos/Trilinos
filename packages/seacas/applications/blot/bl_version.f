@@ -37,8 +37,8 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       CHARACTER*(MXQARC) QAINFO(6)
 
       QAINFO(1) = 'blot                            '
-      QAINFO(2) = '2013/10/23                      '
-      QAINFO(3) = ' 3.06                           '
+      QAINFO(2) = '2014/06/23                      '
+      QAINFO(3) = ' 3.07                           '
       QAINFO(4) = '                                '
 
       RETURN

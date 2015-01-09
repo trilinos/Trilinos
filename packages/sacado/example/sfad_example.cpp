@@ -21,7 +21,7 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -56,7 +56,7 @@ ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
 // The analytic derivative of func(a,b,c) with respect to a and b
 void func_deriv(double a, double b, double c, double& drda, double& drdb)
 {
-  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
+  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2.))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
 }
 

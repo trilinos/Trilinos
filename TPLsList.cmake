@@ -111,20 +111,21 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MKL             "cmake/TPLs/"    EX
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "cmake/TPLs/"    SS
+  CUDA            "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/"    SS
   CUSPARSE        "cmake/TPLs/"    SS
   Thrust          "cmake/TPLs/"    SS
   Cusp            "cmake/TPLs/"    SS
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    SS
   HWLOC           "cmake/TPLs/"    SS
-  BinUtils        "cmake/TPLs/"    SS
+  QTHREAD         "cmake/TPLs/"    SS
+  BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    SS
   ARPREC          "cmake/TPLs/"    SS
   QD              "cmake/TPLs/"    SS
-  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    PS
-  BLAS            "cmake/TPLs/"    PS
-  LAPACK          "cmake/TPLs/"    PS
-  Boost           "cmake/TPLs/"    SS
+  MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PS
+  BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
+  LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
+  Boost           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
   Scotch          "cmake/TPLs/"    SS
   OVIS            "cmake/TPLs/"    SS
   gpcd            "cmake/TPLs/"    SS
@@ -140,19 +141,20 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ExodusII        "cmake/TPLs/"    SS
   Nemesis         "cmake/TPLs/"    SS
   XDMF            "cmake/TPLs/"    TS
+  Zlib            "cmake/TPLs/"    SS
+  HDF5            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    EX
   Netcdf          "cmake/TPLs/"    SS
   y12m            "cmake/TPLs/"    SS
   SuperLUDist     "cmake/TPLs/"    SS
   SuperLUMT	  "cmake/TPLs/"	   SS
   SuperLU         "cmake/TPLs/"    SS
   Cholmod	  "cmake/TPLs/"	   EX
-  Zlib            "cmake/TPLs/"    SS
   UMFPACK         "cmake/TPLs/"    SS
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
   HYPRE           "cmake/TPLs/"    EX
-  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"   SS
+  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   SS
   BLACS           "cmake/TPLs/"    SS
   SCALAPACK       "cmake/TPLs/"    SS
   MUMPS           "cmake/TPLs/"    SS
@@ -163,7 +165,6 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ForUQTK         "cmake/TPLs/"    EX
   Dakota          "cmake/TPLs/"    EX
   HIPS            "cmake/TPLs/"    EX
-  HDF5            "cmake/TPLs/"    EX
   MATLAB          "cmake/TPLs/"    EX
   CASK            "cmake/TPLs/"    EX
   SPARSKIT        "cmake/TPLs/"    SS
@@ -189,6 +190,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MATLABLib       "cmake/TPLs/"    EX
   Eigen           "cmake/TPLs/"    EX
   X11             "cmake/TPLs/"    SS
+  Lemon           "cmake/TPLs/"    EX
+  GLM             "cmake/TPLs/"    EX
   )
 
 # NOTES:

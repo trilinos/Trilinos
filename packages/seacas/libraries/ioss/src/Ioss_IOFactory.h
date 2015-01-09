@@ -52,7 +52,7 @@ typedef std::map<std::string, IOFactory*, std::less<std::string> > IOFactoryMap;
 class DatabaseIO;
 class IOFactory {
 public:
-  virtual ~IOFactory() {};
+  virtual ~IOFactory() {}
   static DatabaseIO* create(const std::string& type,
                             const std::string& filename,
                             DatabaseUsage db_usage,

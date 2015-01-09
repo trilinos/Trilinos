@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@
 #include "LOCA_AnasaziOperator_Cayley2Matrix.H"
 
 LOCA::AnasaziOperator::Factory::Factory(
-	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -84,99 +84,99 @@ LOCA::AnasaziOperator::Factory::create(
   const std::string& name = strategyName(*eigenParams);
 
   if (name == "Jacobian Inverse")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::AnasaziOperator::JacobianInverse(globalData,
-							      topParams,
-							      eigenParams,
-							      solverParams,
-							      grp));
+                                  topParams,
+                                  eigenParams,
+                                  solverParams,
+                                  grp));
   else if (name == "Shift-Invert") {
-    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp =
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
-	methodName, 
-	std::string("Group argument for Shift-Invert Anasazi operator ") + 
-	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
-    strategy = 
+    methodName,
+    std::string("Group argument for Shift-Invert Anasazi operator ") +
+    std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
+    strategy =
       Teuchos::rcp(new LOCA::AnasaziOperator::ShiftInvert(globalData,
-							  topParams,
-							  eigenParams,
-							  solverParams,
-							  tdGrp));
+                              topParams,
+                              eigenParams,
+                              solverParams,
+                              tdGrp));
   }
   else if (name == "Shift-Invert 2 Matrix") {
-    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp =
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
-	methodName, 
-	std::string("Group argument for Shift-Invert 2 Matrix Anasazi operator ") + 
-	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
-    strategy = 
+    methodName,
+    std::string("Group argument for Shift-Invert 2 Matrix Anasazi operator ") +
+    std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
+    strategy =
       Teuchos::rcp(new LOCA::AnasaziOperator::ShiftInvert2Matrix(globalData,
-							  topParams,
-							  eigenParams,
-							  solverParams,
-							  tdGrp));
+                              topParams,
+                              eigenParams,
+                              solverParams,
+                              tdGrp));
   }
   else if (name == "Cayley") {
-    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp =
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
-	methodName, 
-	std::string("Group argument for Cayley Anasazi operator ") + 
-	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
-    strategy = 
+    methodName,
+    std::string("Group argument for Cayley Anasazi operator ") +
+    std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
+    strategy =
       Teuchos::rcp(new LOCA::AnasaziOperator::Cayley(globalData,
-						     topParams,
-						     eigenParams,
-						     solverParams,
-						     tdGrp));
+                             topParams,
+                             eigenParams,
+                             solverParams,
+                             tdGrp));
   }
   else if (name == "Cayley 2 Matrix") {
-    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp =
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
-	methodName, 
-	std::string("Group argument for Cayley 2 Matrix Anasazi operator ") + 
-	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
-    strategy = 
+    methodName,
+    std::string("Group argument for Cayley 2 Matrix Anasazi operator ") +
+    std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
+    strategy =
       Teuchos::rcp(new LOCA::AnasaziOperator::Cayley2Matrix(globalData,
-						     topParams,
-						     eigenParams,
-						     solverParams,
-						     tdGrp));
+                             topParams,
+                             eigenParams,
+                             solverParams,
+                             tdGrp));
   }
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    std::string userDefinedName = 
+    std::string userDefinedName =
       eigenParams->get("Operator User-Defined Name", "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
+    isType< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName);
+    get< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
-				       methodName,
-				       "Cannot find user-defined strategy: " + 
-				       userDefinedName);
+                       methodName,
+                       "Cannot find user-defined strategy: " +
+                       userDefinedName);
   }
   else
     globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Invalid Anasazi operator strategy: " + 
-				      name);
+                      methodName,
+                      "Invalid Anasazi operator strategy: " +
+                      name);
 
   return strategy;
 }
 
 const std::string&
 LOCA::AnasaziOperator::Factory::strategyName(
-				  Teuchos::ParameterList& eigenParams) const
+                  Teuchos::ParameterList& eigenParams) const
 {
   return eigenParams.get("Operator", "Jacobian Inverse");
 }

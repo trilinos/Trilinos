@@ -33,12 +33,16 @@
 #ifndef IOSS_Ioss_NodeBlock_h
 #define IOSS_Ioss_NodeBlock_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_EntityBlock.h>
-#include <string>
+#include <Ioss_EntityBlock.h>           // for EntityBlock
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include "Ioss_EntityType.h"            // for EntityType, etc
+#include "Ioss_Property.h"              // for Property
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class DatabaseIO;
 
   class NodeBlock : public EntityBlock {
   public:

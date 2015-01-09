@@ -1,7 +1,5 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_DIR}/../../src)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_BINARY_DIR}/../../src)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Thyra_Belos_StatusTest_UnitTests
@@ -19,6 +17,14 @@ TRIBITS_ADD_EXECUTABLE(
     test_single_belos_thyra_solver_driver.cpp
     test_single_belos_thyra_solver.cpp
   COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  test_belos_nan_handler
+  SOURCES
+    test_stratimikos_belos_nan_handler.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
   )
 
 # FIXME (mfh 12 Dec 2011) The tests that use preconditioners will fail

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -58,7 +58,7 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   Epetra_Map RowMap(NumGlobalEquations, 0, Comm);
   Epetra_Map XMap(NumGlobalVariables, 0, Comm);
   Epetra_Map& YMap = RowMap;
-  
+
   // Get update list and number of local equations from newly created Map
   int * MyGlobalElements = new int[RowMap.NumMyElements()];
   RowMap.MyGlobalElements(MyGlobalElements);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   // We need vectors to compute:
   // X = A^T*Y
   // AATY = A*A^T*Y = A*X
-  //  and 
+  //  and
   // BY = B*Y
 
   Epetra_Vector Y(YMap);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix A(Copy, RowMap, 3);
   Epetra_CrsMatrix ATAssembly(Copy, ATAssemblyMap, 2);
   Epetra_CrsMatrix AT(Copy, XMap, 2);
-  
+
   //cout << "ATAssemblyMap = "<< endl<< ATAssemblyMap << endl
   //     << "XMap = " << endl << XMap << endl
   //     << "RowMap = " << endl << RowMap << endl;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(AT.FillComplete(YMap, XMap)==0),ierr);
 
 
-  if (verbose1 && NumGlobalEquations<20) { 
+  if (verbose1 && NumGlobalEquations<20) {
     if (verbose) cout << "\n\n Matrix A\n" << endl;
     cout << A << endl;
     if (verbose) cout << " \n\n Matrix A Transpose\n" << endl;
@@ -262,13 +262,13 @@ int main(int argc, char *argv[])
   double elapsed_time = timer.ElapsedTime();
   double total_flops = B.Flops();
   counter.ResetFlops();
-  
+
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for B*Y = " << MFLOPs << endl<< endl;
   if (verbose && NumGlobalEquations<20) cout << "\n\nVector Z = B*Y \n";
   if (verbose1 && NumGlobalEquations<20) cout << BY << endl;
- 
+
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
     AL.SetFlopCounter(A);
     Epetra_Vector YL(YLMap);
     Epetra_Vector ALX(YLMap);
-  
+
     timer.ResetStartTime();
     for (i=0; i<ntrials; i++) {
       EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Residual = " << residual << endl<< endl;
 			
 
-    // 
+    //
     // Multiply by transpose
     //
 
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
     AL.SetFlopCounter(A);
     Epetra_Vector XL(XLMap);
     Epetra_Vector ALX(XLMap);
-  
+
     timer.ResetStartTime();
     for (i=0; i<ntrials; i++) {
       EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
     //if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist X range map\n";
     //if (verbose1 && NumGlobalEquations<20) cout << A << endl;
 
-    // Now gather X values from the distributed X 
+    // Now gather X values from the distributed X
     Epetra_Import g2limporter(XLMap, XMap); // Import from distributed X map to local X map
     EPETRA_TEST_ERR(!(XL.Import(X, g2limporter, Insert)==0),ierr);
     if (verbose && NumGlobalEquations<20) cout << "\n\nVector XL = imported from distributed X \n";
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Residual = " << residual << endl<< endl;
 			
 
-    // 
+    //
     // Multiply by transpose
     //
 

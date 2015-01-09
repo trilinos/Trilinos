@@ -47,6 +47,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Algorithm.hpp>
 
 #include <sstream>
 #include <string>
@@ -55,8 +56,6 @@
 /*! \file Zoltan2_AlgBlock.hpp
  *  \brief The algorithm for block partitioning.
  */
-
-typedef zoltan2_partId_t partId_t;
 
 namespace Zoltan2{
 
@@ -76,14 +75,12 @@ enum blockParams{
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
  *  \param ids    an Identifier model
- *  \param solution  a Solution object, containing part information
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
  *    identifiers.
  *
  *   \todo Block partitioning uses one weight only
- *   \todo Block partitioning assumes one part per process.
  *   \todo check for memory allocation failures
  *   \todo The metrics come out really bad.  Is it an error in
  *                algorithm or in metrics.
@@ -91,175 +88,167 @@ enum blockParams{
 
 
 template <typename Adapter>
-void AlgBlock(
-  const RCP<const Environment> &env,
-  const RCP<Comm<int> > &problemComm,
-  const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids, 
-  RCP<PartitioningSolution<Adapter> > &solution
-) 
+class AlgBlock : public Algorithm<Adapter>
 {
-  using std::string;
-  using std::ostringstream;
+
+private:
+  const RCP<const Environment> env;
+  const RCP<Comm<int> > problemComm;
+  const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > ids;
+
+public:
   typedef typename Adapter::lno_t lno_t;     // local ids
   typedef typename Adapter::gno_t gno_t;     // global ids
   typedef typename Adapter::scalar_t scalar_t;   // scalars
+  typedef typename Adapter::part_t part_t;   // part numbers
 
-  env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
+  // Constructor
+  AlgBlock(
+    const RCP<const Environment> &env_,
+    const RCP<Comm<int> > &problemComm_,
+    const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids_
+  ) : 
+    env(env_), problemComm(problemComm_), ids(ids_)
+  {}
 
-  int rank = env->myRank_;
-  int nprocs = env->numProcs_;
+  // Partitioning method
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution)
+  {
+    using std::string;
+    using std::ostringstream;
 
-  ////////////////////////////////////////////////////////
-  // Partitioning problem parameters of interest:
-  //    objective
-  //    imbalance_tolerance
+    env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
-  std::bitset<NUM_BLOCK_PARAMS> params;
-  double imbalanceTolerance=1.1;
+    int rank = env->myRank_;
+    int nprocs = env->numProcs_;
 
-  const Teuchos::ParameterList &pl = env->getParameters();
+    ////////////////////////////////////////////////////////
+    // From the IdentifierModel we need:
+    //    the number of gnos
+    //    number of weights per gno
+    //    the weights
 
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+    size_t numGnos = ids->getLocalNumIdentifiers();
 
-  if (pe){
-    string po;
-    po = pe->getValue<string>(&po);
-    if (po == string("balance_object_count"))
-      params.set(block_balanceCount);
-    else if (po == string("multicriteria_minimize_total_weight"))
-      params.set(block_minTotalWeight);
-    else if (po == string("multicriteria_minimize_maximum_weight"))
-      params.set(block_minMaximumWeight);
-    else if (po == string("multicriteria_balance_total_maximum"))
-      params.set(block_balanceTotalMaximum);
-  }
-  else
-    params.set(block_balanceWeight);
-
-  pe = pl.getEntryPtr("imbalance_tolerance");
-
-  if (pe)
-    imbalanceTolerance = pe->getValue<double>(&imbalanceTolerance);
-
-  ////////////////////////////////////////////////////////
-  // From the IdentifierModel we need:
-  //    the number of gnos
-  //    number of weights per gno
-  //    the weights
-
-  size_t numGnos = ids->getLocalNumIdentifiers();
-
-  ArrayView<const gno_t> idList;
-  typedef StridedData<lno_t, scalar_t> input_t;
-  ArrayView<input_t> wgtList;
+    ArrayView<const gno_t> idList;
+    typedef StridedData<lno_t, scalar_t> input_t;
+    ArrayView<input_t> wgtList;
   
-  ids->getIdentifierList(idList, wgtList);
+    ids->getIdentifierList(idList, wgtList);
 
-  // If user supplied no weights, we use uniform weights.
-  Array<input_t> uwArray(1);
-  if (wgtList.size() == 0)
-    wgtList = uwArray.view(0,1);
+    // If user supplied no weights, we use uniform weights.
+    bool uniformWeights = (wgtList.size() == 0);
 
-  bool uniformWeights = (wgtList[0].size() == 0);
+    ////////////////////////////////////////////////////////
+    // Partitioning problem parameters of interest:
+    //    objective
+    //    imbalance_tolerance
 
-  ////////////////////////////////////////////////////////
-  // From the Solution we get part information.
+    const Teuchos::ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe;
 
-  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
+    pe = pl.getEntryPtr("partitioning_objective");
+    if (pe) {
+      string po = pe->getValue<string>(&po);
+      if (po == string("balance_object_count"))
+        uniformWeights = true;    // User requests that we ignore weights
+    }
 
-  size_t numLocalParts = solution->getLocalNumberOfParts();
+    double imbalanceTolerance=1.1;
+    pe = pl.getEntryPtr("imbalance_tolerance");
+    if (pe) imbalanceTolerance = pe->getValue<double>(&imbalanceTolerance);
 
-  env->localInputAssertion(__FILE__, __LINE__, 
-    "can only compute one part per proc",
-    numLocalParts == 1, BASIC_ASSERTION);
-  
-  ////////////////////////////////////////////////////////
-  // The algorithm
-  //
-  // Block partitioning algorithm lifted from zoltan/src/simple/block.c
-  // The solution is:
-  //    a list of part numbers in gno order
-  //    an imbalance for each weight 
+    ////////////////////////////////////////////////////////
+    // From the Solution we get part information:
+    // number of parts and part sizes
 
-  scalar_t wtsum(0);
+    size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
-  if (!uniformWeights){
-    for (size_t i=0; i<numGnos; i++)
-      wtsum += wgtList[0][i];          // [] operator knows stride
+    Array<scalar_t> part_sizes(numGlobalParts);
+
+    if (solution->criteriaHasUniformPartSizes(0))
+      for (unsigned int i=0; i<numGlobalParts; i++)
+        part_sizes[i] = 1.0 / numGlobalParts;
+    else
+      for (unsigned int i=0; i<numGlobalParts; i++)
+        part_sizes[i] = solution->getCriteriaPartSize(0, i);
+
+    for (unsigned int i=1; i<numGlobalParts; i++)
+      part_sizes[i] += part_sizes[i-1];
+
+    // TODO assertion that last part sizes is about equal to 1.0
+
+
+    ////////////////////////////////////////////////////////
+    // The algorithm
+    //
+    // Block partitioning algorithm lifted from zoltan/src/simple/block.c
+    // The solution is:
+    //    a list of part numbers in gno order
+    //    an imbalance for each weight 
+
+    scalar_t wtsum(0);
+
+    if (!uniformWeights) {
+      for (size_t i=0; i<numGnos; i++)
+        wtsum += wgtList[0][i];          // [] operator knows stride
+    }
+    else
+      wtsum = static_cast<scalar_t>(numGnos);
+
+    Array<scalar_t> scansum(nprocs+1, 0);
+
+    Teuchos::gatherAll<int, scalar_t>(*problemComm, 1, &wtsum, nprocs,
+      scansum.getRawPtr()+1);
+
+    /* scansum = sum of weights on lower processors, excluding self. */
+
+    for (int i=2; i<=nprocs; i++)
+      scansum[i] += scansum[i-1];
+
+    scalar_t globalTotalWeight = scansum[nprocs];
+
+    if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS) {
+      ostringstream oss("Part sizes: ");
+      for (unsigned int i=0; i < numGlobalParts; i++)
+        oss << part_sizes[i] << " ";
+      oss << std::endl << std::endl << "Weights : ";
+      for (int i=0; i <= nprocs; i++)
+        oss << scansum[i] << " ";
+      oss << std::endl;
+      env->debug(VERBOSE_DETAILED_STATUS, oss.str());
+    }
+
+    /* Loop over objects and assign part. */
+    part_t part = 0;
+    wtsum = scansum[rank];
+    Array<scalar_t> partTotal(numGlobalParts, 0);
+    ArrayRCP<part_t> gnoPart= arcp(new part_t[numGnos], 0, numGnos);
+
+    env->memory("Block algorithm memory");
+
+    for (size_t i=0; i<numGnos; i++){
+      scalar_t gnoWeight = (uniformWeights ? 1.0 : wgtList[0][i]);
+      /* wtsum is now sum of all lower-ordered object */
+      /* determine new part number for this object,
+         using the "center of gravity" */
+      while (unsigned(part)<numGlobalParts-1 && 
+             (wtsum+0.5*gnoWeight) > part_sizes[part]*globalTotalWeight)
+        part++;
+      gnoPart[i] = part;
+      partTotal[part] += gnoWeight;
+      wtsum += gnoWeight;
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Done
+
+    ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
+    solution->setParts(gnos, gnoPart, true);
+
+    env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
   }
-  else
-    wtsum = static_cast<scalar_t>(numGnos);
-
-  Array<scalar_t> scansum(nprocs+1, 0);
-
-  Teuchos::gatherAll<int, scalar_t>(*problemComm, 1, &wtsum, nprocs,
-    scansum.getRawPtr()+1);
-
-  /* scansum = sum of weights on lower processors, excluding self. */
-
-  for (int i=2; i<=nprocs; i++)
-    scansum[i] += scansum[i-1];
-
-  scalar_t globalTotalWeight = scansum[nprocs];
-
-  /* part_sizes - inclusive sum */
-
-  Array<scalar_t> part_sizes(numGlobalParts);
-
-  if (!solution->criteriaHasUniformPartSizes(0))
-    for (unsigned int i=0; i<numGlobalParts; i++)
-      part_sizes[i] = solution->getCriteriaPartSize(0, i);
-  else
-    for (unsigned int i=0; i<numGlobalParts; i++)
-      part_sizes[i] = 1.0 / numGlobalParts;
-
-  for (unsigned int i=1; i<numGlobalParts; i++)
-    part_sizes[i] += part_sizes[i-1];
-
-  // TODO assertion that last part sizes is about equal to 1.0
-
-  if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS) {
-    ostringstream oss("Part sizes: ");
-    for (unsigned int i=0; i < numGlobalParts; i++)
-      oss << part_sizes[i] << " ";
-    oss << "\n";
-    oss << std::endl << "Weights : ";
-    for (int i=0; i <= nprocs; i++)
-      oss << scansum[i] << " ";
-    oss << "\n";
-    env->debug(VERBOSE_DETAILED_STATUS, oss.str());
-  }
-
-  /* Loop over objects and assign partition. */
-  partId_t part = 0;
-  wtsum = scansum[rank];
-  Array<scalar_t> partTotal(numGlobalParts, 0);
-  ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
-
-  env->memory("Block algorithm memory");
-
-  for (size_t i=0; i<numGnos; i++){
-    scalar_t gnoWeight = (uniformWeights ? 1.0 : wgtList[0][i]);
-    /* wtsum is now sum of all lower-ordered object */
-    /* determine new partition number for this object,
-       using the "center of gravity" */
-    while (unsigned(part)<numGlobalParts-1 && 
-           (wtsum+0.5*gnoWeight) > part_sizes[part]*globalTotalWeight)
-      part++;
-    gnoPart[i] = part;
-    partTotal[part] += gnoWeight;
-    wtsum += gnoWeight;
-  }
-
-  ////////////////////////////////////////////////////////////
-  // Done
-
-  ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
-
-  solution->setParts(gnos, gnoPart, true);
-
-  env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
-}
+};
 
 }   // namespace Zoltan2
 

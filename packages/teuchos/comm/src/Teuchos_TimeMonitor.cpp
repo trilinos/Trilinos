@@ -200,6 +200,45 @@ namespace Teuchos {
     }
   };
 
+  /** \class MinLocNonzero
+   * \brief same as MinLoc, but don't allow zero
+  */
+  template<class Ordinal, class ScalarType, class IndexType>
+  class MinLocNonzero :
+    public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
+  public:
+    void
+    reduce (const Ordinal count,
+            const std::pair<ScalarType, IndexType> inBuffer[],
+            std::pair<ScalarType, IndexType> inoutBuffer[]) const;
+  };
+
+  template<class Ordinal>
+  class MinLocNonzero<Ordinal, double, int> :
+    public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
+  public:
+    void
+    reduce (const Ordinal count,
+            const std::pair<double, int> inBuffer[],
+            std::pair<double, int> inoutBuffer[]) const
+    {
+      for (Ordinal ind = 0; ind < count; ++ind) {
+        const std::pair<double, int>& in = inBuffer[ind];
+        std::pair<double, int>& inout = inoutBuffer[ind];
+
+        if ( (in.first < inout.first && in.first != 0) || (inout.first == 0 && in.first != 0) ) {
+          inout.first = in.first;
+          inout.second = in.second;
+        } else if (in.first > inout.first) {
+          // Don't need to do anything; inout has the values.
+        } else { // equal, or at least one is NaN.
+          inout.first = in.first;
+          inout.second = std::min (in.second, inout.second);
+        }
+      }
+    }
+  };
+
   // Typedef used internally by TimeMonitor::summarize() and its
   // helper functions.  The map is keyed on timer label (a string).
   // Each value is a pair: (total number of seconds over all calls to
@@ -598,26 +637,36 @@ namespace Teuchos {
     /// to help prevent overflow.)  Along with the mean timing comes
     /// the same mean call count as mentioned above.
     ///
-    /// \param statData [out] On output: Global timer statistics.  See
+    /// Statistics may optionally be calculated in a mode that ignores
+    /// contributions from processes that either do not have a timer
+    /// or have a hard zero for that time.  This is slightly more expensive
+    /// than the default mode, as it requires one additional all-reduce.
+    ///
+    /// \param[out] statData On output: Global timer statistics.  See
     ///   the \c stat_map_type typedef documentation for an explanation
     ///   of the data structure.
     ///
-    /// \param statNames [out] On output: Each value in the statData
+    /// \param[out] statNames On output: Each value in the statData
     ///   map is a vector.  That vector v has the same number of
     ///   entries as statNames.  statNames[k] is the name of the
     ///   statistic (e.g., "Min", "MeanOverProcs", "Max", or
     ///   "MeanOverCallCounts") stored as v[k].
     ///
-    /// \param comm [in] Communicator over which to compute statistics.
+    /// \param[in] comm Communicator over which to compute statistics.
     ///
-    /// \param globalTimerData [in] Output with the same name of the
+    /// \param[in] globalTimerData Output with the same name of the
     ///   \c collectGlobalTimerData() function.  That function assures
     ///   that all processes have the same keys stored in this map.
+    ///
+    /// \param[in] ignoreZeroTimers [in] Processes that either do not have
+    ///   a particular timer or have zero time for a timer are not used
+    ///   in calculating global statistics.
     void
     computeGlobalTimerStats (stat_map_type& statData,
                              std::vector<std::string>& statNames,
                              Ptr<const Comm<int> > comm,
-                             const timer_map_t& globalTimerData)
+                             const timer_map_t& globalTimerData,
+                             const bool ignoreZeroTimers)
     {
       using Teuchos::ScalarTraits;
 
@@ -640,8 +689,12 @@ namespace Teuchos {
       // be used.
       Array<std::pair<double, int> > minTimingsAndCallCounts (numTimers);
       if (numTimers > 0) {
-        reduceAll (*comm, MinLoc<int, double, int>(), numTimers,
-                   &timingsAndCallCounts[0], &minTimingsAndCallCounts[0]);
+        if (ignoreZeroTimers)
+          reduceAll (*comm, MinLocNonzero<int, double, int>(), numTimers,
+                     &timingsAndCallCounts[0], &minTimingsAndCallCounts[0]);
+        else
+          reduceAll (*comm, MinLoc<int, double, int>(), numTimers,
+                     &timingsAndCallCounts[0], &minTimingsAndCallCounts[0]);
       }
 
       // For each timer name, compute the max timing and its
@@ -668,20 +721,48 @@ namespace Teuchos {
       Array<double> meanOverCallCountsTimings (numTimers);
       Array<double> meanOverProcsTimings (numTimers);
       Array<double> meanCallCounts (numTimers);
+      Array<int>    ICallThisTimer (numTimers);
+      Array<int>    numProcsCallingEachTimer (numTimers);
       {
+        // Figure out how many processors actually call each timer.
+        if (ignoreZeroTimers) {
+          for (int k = 0; k < numTimers; ++k) {
+            const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
+            if (callCount > 0) ICallThisTimer[k] = 1;
+            else               ICallThisTimer[k] = 0;
+          }
+          if (numTimers > 0) {
+            reduceAll (*comm, REDUCE_SUM, numTimers, &ICallThisTimer[0],
+                       &numProcsCallingEachTimer[0]);
+          }
+        }
+
         // When summing, first scale by the number of processes.  This
         // avoids unnecessary overflow, and also gives us the mean
         // call count automatically.
         Array<double> scaledTimings (numTimers);
         Array<double> scaledCallCounts (numTimers);
         const double P = static_cast<double> (numProcs);
-        for (int k = 0; k < numTimers; ++k) {
-          const double timing = timingsAndCallCounts[k].first;
-          const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
 
-          scaledTimings[k] = timing / P;
-          scaledCallCounts[k] = callCount / P;
+        if (ignoreZeroTimers) {
+          for (int k = 0; k < numTimers; ++k) {
+            const double timing = timingsAndCallCounts[k].first;
+            const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
+
+            scaledTimings[k] = timing / numProcsCallingEachTimer[k];
+            scaledCallCounts[k] = callCount / numProcsCallingEachTimer[k];
+          }
         }
+        else {
+          for (int k = 0; k < numTimers; ++k) {
+            const double timing = timingsAndCallCounts[k].first;
+            const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
+
+            scaledTimings[k] = timing / P;
+            scaledCallCounts[k] = callCount / P;
+          }
+        }
+
         if (numTimers > 0) {
           reduceAll (*comm, REDUCE_SUM, numTimers, &scaledTimings[0],
                      &meanOverProcsTimings[0]);
@@ -794,7 +875,7 @@ namespace Teuchos {
                             localTimerData, localTimerNames,
                             comm, alwaysWriteLocal, setOp);
     // Compute statistics on the data.
-    computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
+    computeGlobalTimerStats (statData, statNames, comm, globalTimerData, false);
   }
 
 
@@ -805,7 +886,8 @@ namespace Teuchos {
                           const bool writeGlobalStats,
                           const bool writeZeroTimers,
                           const ECounterSetOp setOp,
-                          const std::string& filter)
+                          const std::string& filter,
+                          const bool ignoreZeroTimers)
   {
     //
     // We can't just call computeGlobalTimerStatistics(), since
@@ -840,7 +922,7 @@ namespace Teuchos {
       // contains more than one process.  Otherwise, statistics don't
       // make sense and we don't print them (see below).
       if (numProcs > 1) {
-        computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
+        computeGlobalTimerStats (statData, statNames, comm, globalTimerData, ignoreZeroTimers);
       }
     }
 
@@ -962,7 +1044,8 @@ namespace Teuchos {
                           const bool writeGlobalStats,
                           const bool writeZeroTimers,
                           const ECounterSetOp setOp,
-                          const std::string& filter)
+                          const std::string& filter,
+                          const bool ignoreZeroTimers)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
@@ -970,7 +1053,7 @@ namespace Teuchos {
     RCP<const Comm<int> > comm = getDefaultComm();
 
     summarize (comm.ptr(), out, alwaysWriteLocal,
-               writeGlobalStats, writeZeroTimers, setOp, filter);
+               writeGlobalStats, writeZeroTimers, setOp, filter, ignoreZeroTimers);
   }
 
   void

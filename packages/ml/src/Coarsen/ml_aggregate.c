@@ -103,6 +103,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->cheap_minimizing_energy    = 0;
    (*ag)->coarsen_rate               = -1;
    (*ag)->semicoarsen_levels         = -1;
+   (*ag)->semicoarsen_coordinate     = 'z';
 
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
@@ -2294,6 +2295,13 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       if ((ml->comm->ML_mypid == 0) && (ML_Get_PrintLevel() > 0))
         printf("ML*WRN* ML_repartition_Acoarse: problem dimension was not previously set.\nML*WRN* Now setting dimension to %d.\n",N_dimensions);
     }
+    if(ag != NULL){
+      if (ag->N_dimensions != N_dimensions) {
+	N_dimensions = ag->N_dimensions;
+	if  (N_dimensions < 3)  zcoord = NULL;
+	if  (N_dimensions < 2)  ycoord = NULL;
+      }
+    }
   }
 
   /* Turn off implicit transpose because the getrow is needed to apply
@@ -2407,6 +2415,16 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX);
     ML_Operator_Copy_Statistics(Pmat,newP);
     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
+
+    /* used to print error message for those         */
+    /* attempting to semicoarsen afer repartiitoning.*/
+    if (ml->ML_finest_level == 0) {
+      for (i=coarse; i < ml->ML_num_levels; i++) {(ml->Pmat)[i].NumZDir = -7;(ml->Pmat)[i].Zorientation= 1;}
+    }
+    else {
+      for (i=coarse; i >= 0; i--) {(ml->Pmat)[i].NumZDir = -7;(ml->Pmat)[i].Zorientation= 1;}
+    }
+
 
     if (R_is_Ptranspose == ML_TRUE) {
       newR = ML_Operator_Create(Rmat->comm);

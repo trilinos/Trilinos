@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,7 +57,7 @@ LOCA::SingularJacobianSolve::Default::Default(Teuchos::ParameterList& params)
 }
 
 LOCA::SingularJacobianSolve::Default::Default(
-			  const LOCA::SingularJacobianSolve::Default& source)
+              const LOCA::SingularJacobianSolve::Default& source)
 {
 }
 
@@ -66,52 +66,52 @@ LOCA::SingularJacobianSolve::Default::~Default()
 }
 
 LOCA::SingularJacobianSolve::Generic*
-LOCA::SingularJacobianSolve::Default::clone() const 
+LOCA::SingularJacobianSolve::Default::clone() const
 {
   return new Default(*this);
 }
 
 LOCA::SingularJacobianSolve::Generic&
 LOCA::SingularJacobianSolve::Default::operator=(
-			  const LOCA::SingularJacobianSolve::Generic& source)
+              const LOCA::SingularJacobianSolve::Generic& source)
 {
   return operator=(dynamic_cast<const LOCA::SingularJacobianSolve::Default&>(source));
 }
 
 LOCA::SingularJacobianSolve::Default&
 LOCA::SingularJacobianSolve::Default::operator=(
-			  const LOCA::SingularJacobianSolve::Default& source)
+              const LOCA::SingularJacobianSolve::Default& source)
 {
   return *this;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::Default::reset(Teuchos::ParameterList& params) 
+NOX::Abstract::Group::ReturnType
+LOCA::SingularJacobianSolve::Default::reset(Teuchos::ParameterList& params)
 {
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::Default::compute(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector& input,
-			        const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector& result) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector& input,
+                    const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector& result)
 {
   return grp.applyJacobianInverse(params, input, result);
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::Default::computeMulti(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector*const* inputs,
-				const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector** results,
-				int nVecs) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector*const* inputs,
+                const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector** results,
+                int nVecs)
 {
   return grp.applyJacobianInverseMulti(params, inputs, results, nVecs);
 }

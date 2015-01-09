@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(Shards_ENABLE_Teuchos)
 

@@ -231,17 +231,20 @@ in_normal_side(
     Vector<T, N> const & p,
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
-    Vector<T, N> const & p2)
+    Vector<T, N> const & p2,
+    T const tolerance)
 {
   Vector<T, N> const v0 = p1 - p0;
   Vector<T, N> const v1 = p2 - p0;
 
-  Vector<T, N> const n = cross(v0, v1);
+  T const h = std::min(norm(v0), norm(v1));
+
+  Vector<T, N> const n = unit(cross(v0, v1));
   Vector<T, N> const v = p - p0;
 
   T const s = dot(v, n);
 
-  if (s < 0.0) return false;
+  if (s < -tolerance * h) return false;
 
   return true;
 }
@@ -355,21 +358,22 @@ in_tetrahedron(
     Vector<T, N> const & p0,
     Vector<T, N> const & p1,
     Vector<T, N> const & p2,
-    Vector<T, N> const & p3)
+    Vector<T, N> const & p3,
+    T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2) == false) {
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p0, p3, p1) == false) {
+  } else if (in_normal_side(p, p0, p3, p1, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p1, p3, p2) == false) {
+  } else if (in_normal_side(p, p1, p3, p2, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p2, p3, p0) == false) {
+  } else if (in_normal_side(p, p2, p3, p0, tolerance) == false) {
 
     return false;
 
@@ -394,29 +398,30 @@ in_hexahedron(
     Vector<T, N> const & p4,
     Vector<T, N> const & p5,
     Vector<T, N> const & p6,
-    Vector<T, N> const & p7)
+    Vector<T, N> const & p7,
+    T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2) == false) {
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p0, p4, p5) == false) {
+  } else if (in_normal_side(p, p0, p4, p5, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p1, p5, p6) == false) {
+  } else if (in_normal_side(p, p1, p5, p6, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p2, p6, p7) == false) {
+  } else if (in_normal_side(p, p2, p6, p7, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p3, p7, p4) == false) {
+  } else if (in_normal_side(p, p3, p7, p4, tolerance) == false) {
 
     return false;
 
-  } else if (in_normal_side(p, p4, p7, p6) == false) {
+  } else if (in_normal_side(p, p4, p7, p6, tolerance) == false) {
 
     return false;
 
@@ -484,7 +489,7 @@ median(Iterator begin, Iterator end)
   }
 
   Index const
-  size = std::distance(begin, end);
+  size = static_cast<Index>(std::distance(begin, end));
 
   T
   median;

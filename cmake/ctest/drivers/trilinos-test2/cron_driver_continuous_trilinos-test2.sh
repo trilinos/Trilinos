@@ -23,6 +23,8 @@ echo "Starting Trilinos continuous integration testing on trilinos-test2: `date`
 echo
 
 
+export LD_LIBRARY_PATH="/home/trilinos/gcc4.7.2/base/lib64:$LD_LIBRARY_PATH"
+
 echo
 echo "Checking out just the skeleton cmake/ctest code: `date`"
 echo

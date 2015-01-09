@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -6,10 +5,22 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../src )
 
 SET(SOURCES
   UnitTestMain.cpp 
-  TestThreads.cpp
+  TestCuda.cpp
   )
 
 SET(LIBRARIES kokkoscore)
+
+IF(Kokkos_ENABLE_Pthread)
+  LIST( APPEND SOURCES
+    TestThreads.cpp
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_Serial)
+  LIST( APPEND SOURCES
+    TestSerial.cpp
+  )
+ENDIF()
 
 IF(Kokkos_ENABLE_OpenMP)
   LIST( APPEND SOURCES
@@ -17,16 +28,6 @@ IF(Kokkos_ENABLE_OpenMP)
   )
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda)
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
-
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} TestCuda.cpp )
-
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTest
@@ -34,6 +35,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  DEPLIBS ${LIBRARIES}
   )
   

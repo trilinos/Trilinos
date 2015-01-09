@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -101,12 +101,14 @@ int main(int argc, char *argv[]) {
   long long * MyGlobalElements = new long long[NumMyElements];
 
   for (i = 0; i<NumMyElements; i++) {
-    MyGlobalElements[i] = (Comm.MyPID()*MaxNumMyElements+i)*2;
+    MyGlobalElements[i] = (long long)(Comm.MyPID()*MaxNumMyElements+i)*2;
     ElementSizeList[i] = i%6 + 2; // elementsizes go from 2 to 7
   }
 
-  Epetra_BlockMap Map(-1LL, NumMyElements, MyGlobalElements, ElementSizeList,
-		      0, Comm);
+  Epetra_BlockMap Map(
+      -1LL, NumMyElements, MyGlobalElements, ElementSizeList,
+      0, Comm
+      );
 
   delete [] ElementSizeList;
   delete [] MyGlobalElements;
@@ -130,14 +132,14 @@ int main(int argc, char *argv[]) {
     elementColors[i] = C0[i]; // Record color of ith element for use below
     colorCount[C0[i]]++; // Count how many of each color for checking below
   }
-  
+
   if (veryVerbose)
     std::cout << "Original Map Coloring using element-by-element definitions" << std::endl;
   if (veryVerbose1)
     std::cout <<  C0 << std::endl;
 
   int numColors = 0;
-  for (i=0; i<maxcolor; i++) 
+  for (i=0; i<maxcolor; i++)
     if (colorCount[i]>0) {
       numColors++;
       colorLIDs[i] = new int[colorCount[i]];
@@ -145,7 +147,7 @@ int main(int argc, char *argv[]) {
   for (i=0; i<maxcolor; i++) colorCount[i] = 0;
   for (i=0; i<Map.NumMyElements(); i++) colorLIDs[C0[i]][colorCount[C0[i]]++] = i;
 
-  
+
 
   int newDefaultColor = -1;
   Epetra_MapColoring C1(Map, elementColors, newDefaultColor);
@@ -210,8 +212,10 @@ int main(int argc, char *argv[]) {
   elementIDs0.Import(elementIDs, importer, Insert);
   elementColorValues0.Import(elementColorValues, importer, Insert);
 
-  Epetra_BlockMap MapOnPE0(-1LL,NumMyElements0, elementIDs0.Values(), 
-			   elementSizes0.Values(), Map.IndexBase64(), Comm);
+  Epetra_BlockMap MapOnPE0(
+      -1LL,NumMyElements0, elementIDs0.Values(),
+      elementSizes0.Values(), Map.IndexBase64(), Comm
+      );
 
   Epetra_Import importer1(MapOnPE0, Map);
   Epetra_MapColoring ColoringOnPE0(MapOnPE0);
@@ -231,15 +235,15 @@ int main(int argc, char *argv[]) {
     std::cout << "Same Map Coloring after Import/Export exercise" << std::endl;
   if (veryVerbose1)
     std::cout <<  ColoringOnPE0 << std::endl;
-   
-  
+
+
   if (verbose) std::cout << "Checked OK\n\n" << std::endl;
 
   if (verbose1) {
     if (verbose) std::cout << "Test ostream << operator" << std::endl << std::flush;
     std::cout << C0 << std::endl;
   }
-	
+
 
   delete [] elementColors;
   for (i=0; i<maxcolor; i++) if (colorLIDs[i]!=0) delete [] colorLIDs[i];

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,13 +57,13 @@ namespace LOCA {
 
   namespace SingularJacobianSolve {
 
-    /*! 
-     * \brief This class computes the solution to \f$J x = b\f$ using 
+    /*!
+     * \brief This class computes the solution to \f$J x = b\f$ using
      * one step of iterative refinement.
      */
     /*!
      * This singular solve method uses one step of iterative refinement to
-     * improve the accuracy of the solution to the linear system 
+     * improve the accuracy of the solution to the linear system
      * \f$J x = b\f$.  In particular, the algorithm used here is
       * \f[
      *   \begin{aligned}
@@ -73,24 +73,24 @@ namespace LOCA {
      *     &x = x_1 + x_2
      *   \end{aligned}
      * \f]
-     * Both solves use the underlying group's applyJacobianInverse() method 
-     * and therefore this is a generic technique for computing solutions to 
-     * nearly singular system since it uses any supplied linear solver.  
+     * Both solves use the underlying group's applyJacobianInverse() method
+     * and therefore this is a generic technique for computing solutions to
+     * nearly singular system since it uses any supplied linear solver.
 
-     * This algorithm is selected by setting the "Method" parameter of the 
-     * "Singular Solve" sublist of the NOX linear solver parameter list to 
+     * This algorithm is selected by setting the "Method" parameter of the
+     * "Singular Solve" sublist of the NOX linear solver parameter list to
      * "Iterative Refinement".
      */
     class ItRef : public LOCA::SingularJacobianSolve::Generic {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       ItRef(Teuchos::ParameterList& params);
 
       //! Copy constructor
       ItRef(const ItRef& source);
-      
+
       //! Destructor
       virtual ~ItRef();
 
@@ -98,7 +98,7 @@ namespace LOCA {
       virtual LOCA::SingularJacobianSolve::Generic* clone() const;
 
       //! Assignment operator
-      virtual LOCA::SingularJacobianSolve::Generic& 
+      virtual LOCA::SingularJacobianSolve::Generic&
       operator = (const LOCA::SingularJacobianSolve::Generic& source);
 
       //! Assignment operator
@@ -107,29 +107,29 @@ namespace LOCA {
 
       //! Reset parameters
       /*!
-	There are no additional parameters for the Nic calculation.
+    There are no additional parameters for the Nic calculation.
       */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       reset(Teuchos::ParameterList& params);
-  
-      //! Computes the solution as described above.
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(Teuchos::ParameterList& params,
-	      LOCA::Continuation::AbstractGroup& grp,
-	      const NOX::Abstract::Vector& input,
-	      const NOX::Abstract::Vector& approxNullVec,
-	      const NOX::Abstract::Vector& jacApproxNullVec,
-	      NOX::Abstract::Vector& result);
 
-      //! Computes solution for multiple RHS 
-      virtual NOX::Abstract::Group::ReturnType 
+      //! Computes the solution as described above.
+      virtual NOX::Abstract::Group::ReturnType
+      compute(Teuchos::ParameterList& params,
+          LOCA::Continuation::AbstractGroup& grp,
+          const NOX::Abstract::Vector& input,
+          const NOX::Abstract::Vector& approxNullVec,
+          const NOX::Abstract::Vector& jacApproxNullVec,
+          NOX::Abstract::Vector& result);
+
+      //! Computes solution for multiple RHS
+      virtual NOX::Abstract::Group::ReturnType
       computeMulti(Teuchos::ParameterList& params,
-		   LOCA::Continuation::AbstractGroup& grp,
-		   const NOX::Abstract::Vector*const* inputs,
-		   const NOX::Abstract::Vector& approxNullVec,
-		   const NOX::Abstract::Vector& jacApproxNullVec,
-		   NOX::Abstract::Vector** results,
-		   int nVecs);
+           LOCA::Continuation::AbstractGroup& grp,
+           const NOX::Abstract::Vector*const* inputs,
+           const NOX::Abstract::Vector& approxNullVec,
+           const NOX::Abstract::Vector& jacApproxNullVec,
+           NOX::Abstract::Vector** results,
+           int nVecs);
 
     };
   } // namespace SingularJacobianSolve

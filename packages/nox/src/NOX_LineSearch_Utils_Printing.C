@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,40 +67,39 @@ NOX::LineSearch::Utils::Printing::~Printing()
 void NOX::LineSearch::Utils::Printing::
 reset(const Teuchos::RCP<NOX::Utils>& u)
 {
-  NOX::Utils* tmp = this;
-  tmp = u.get();
+  static_cast<NOX::Utils&>(*this) = *u;
 }
 
 void NOX::LineSearch::Utils::Printing::
 printOpeningRemarks(const std::string& lineSearchName) const
 {
-  if (this->isPrintType(NOX::Utils::InnerIteration)) 
+  if (this->isPrintType(NOX::Utils::InnerIteration))
     {
-      this->out() << "\n" << NOX::Utils::fill(72) << "\n" 
-		  << "-- " << lineSearchName << " -- \n";
+      this->out() << "\n" << NOX::Utils::fill(72) << "\n"
+          << "-- " << lineSearchName << " -- \n";
     }
 }
 
 
 void NOX::LineSearch::Utils::Printing::
-printStep(int n, double step, double oldf, double newf, const std::string s, 
-	  bool unscaleF) const
+printStep(int n, double step, double oldf, double newf, const std::string s,
+      bool unscaleF) const
 {
-  if (isPrintType(NOX::Utils::InnerIteration)) 
+  if (isPrintType(NOX::Utils::InnerIteration))
   {
     this->out() << std::setw(3) << n << ":";
     this->out() << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
     if (unscaleF == true) {
-      this->out() << NOX::Utils::fill(1,' ') << "old f = " 
-		  << sciformat(std::sqrt(2. * oldf));
-      this->out() << NOX::Utils::fill(1,' ') << "new f = " 
-		  << sciformat(std::sqrt(2. * newf));
+      this->out() << NOX::Utils::fill(1,' ') << "old f = "
+          << sciformat(std::sqrt(2. * oldf));
+      this->out() << NOX::Utils::fill(1,' ') << "new f = "
+          << sciformat(std::sqrt(2. * newf));
     }
     else {
       this->out() << NOX::Utils::fill(1,' ') << "old f = " << sciformat(oldf);
       this->out() << NOX::Utils::fill(1,' ') << "new f = " << sciformat(newf);
     }
-    if (!s.empty()) 
+    if (!s.empty())
     {
       this->out() << " " << s << "\n";
       this->out() << NOX::Utils::fill(72);

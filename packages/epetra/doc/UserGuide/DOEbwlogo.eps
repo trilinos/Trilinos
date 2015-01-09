@@ -19,7 +19,7 @@
 %AI3_ColorUsage: Black&White
 %AI7_ImageSettings: 0
 %%CMYKProcessColor: 1 1 1 1 ([Registration])
-%%AI6_ColorSeparationSet: 1 1 (AI6 Default Color Separation Set) 
+%%AI6_ColorSeparationSet: 1 1 (AI6 Default Color Separation Set)
 %%+ Options: 1 16 0 1 0 1 1 1 0 1 1 1 1 18 0 0 0 0 0 0 0 0 -1 -1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 1 2 3 4
 %%+ PPD: 1 21 0 0 60 45 2 2 1 0 0 1 0 0 0 0 0 0 0 0 0 0 ()
 %AI3_TemplateBox: 306 396 306 396
@@ -85,7 +85,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 		} bind def
 		/setcustomcolor
 		{
-			exch 
+			exch
 			aload pop dup
 			(AI8_CMYK_CustomColor) eq
 			{
@@ -105,7 +105,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 					3
 					{
 						1 exch sub
-						3 index mul 
+						3 index mul
 						1 exch sub
 						3 1 roll
 					} repeat
@@ -168,7 +168,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 		} if
  end
 } bind def
-userdict /currentScreenFreq  
+userdict /currentScreenFreq
 	level2? {currenthalftone level2ScreenFreq} {currentscreen pop pop} ifelse put
 level2? not
 	{
@@ -545,7 +545,7 @@ W B
 } def
 /e1
 {
-W F 
+W F
 } def
 /i0
 {
@@ -862,10 +862,10 @@ setpacking
 %%BeginProcSet: Adobe_ColorImage_AI6 1.3 0
 userdict /Adobe_ColorImage_AI6 known not
 {
-	userdict /Adobe_ColorImage_AI6 53 dict put 
+	userdict /Adobe_ColorImage_AI6 53 dict put
 } if
 userdict /Adobe_ColorImage_AI6 get begin
-/initialize { 
+/initialize {
 	Adobe_ColorImage_AI6 begin
 	Adobe_ColorImage_AI6 {
 		dup type /arraytype eq {
@@ -946,16 +946,16 @@ end
 			0 0 1 0 setcmykcolor systemdict /currentgray get exec 1 exch sub
 			0 0 0 1 setcmykcolor systemdict /currentgray get exec 1 exch sub
 			grestore
-			1 0 0 0 ci6foureq { 
+			1 0 0 0 ci6foureq {
 				/plateindex 0 def
 			}{
-				0 1 0 0 ci6foureq { 
+				0 1 0 0 ci6foureq {
 					/plateindex 1 def
 				}{
 					0 0 1 0 ci6foureq {
 						/plateindex 2 def
 					}{
-						0 0 0 1 ci6foureq { 
+						0 0 0 1 ci6foureq {
 							/plateindex 3 def
 						}{
 							0 0 0 0 ci6foureq {
@@ -995,7 +995,7 @@ end
 	} ifelse
 } def
 /ci6istint {
-	type /arraytype eq 
+	type /arraytype eq
 } def
 /ci6isspot {
 	dup type /arraytype eq {
@@ -1180,10 +1180,10 @@ end
 	pop 1 add
 } def
 /ci6rgbtograyproc {	
-	Adobe_ColorImage_AI6_Vars begin 
+	Adobe_ColorImage_AI6_Vars begin
 		sourcearray 0 get exec
 		XIBuffer3
-		dup 3 1 roll 
+		dup 3 1 roll
 		
 		/ci6putrgbtograystr load exch
 		ci6walkrgbstring
@@ -1193,7 +1193,7 @@ end
 	Adobe_ColorImage_AI6_Vars begin
 		sourcearray 0 get exec
 		XIBuffer3
-		dup 3 1 roll 
+		dup 3 1 roll
 		
 		/ci6putcmyktograystr load exch
 		ci6walkcmykstring
@@ -3204,7 +3204,7 @@ end
 		3 -1 roll put
 	} repeat
 	pop
-} def 
+} def
 /getint16 {
 	mark true 3 -1 roll
 	{
@@ -3228,7 +3228,7 @@ end
 		256 mod databuf 2 index 1 add 3 -1 roll put
 	} repeat
 	pop
-} def 
+} def
 /srcbuf 256 string def
 /rdcmntline {
 	currentfile srcbuf readline pop
@@ -3329,7 +3329,7 @@ end
 		/Channels 1 def
 		/MarksPlate {
 			isCMYKSep? {
-				1 exch ToCMYK 4 array astore getplateindex get 0 ne 
+				1 exch ToCMYK 4 array astore getplateindex get 0 ne
 			}{
 				pop false
 			} ifelse
@@ -3396,7 +3396,7 @@ TE
 [/_Times-Bold/Times-Bold 0 0 1 TZ
 %AI3_EndEncoding AdobeType
 [161/degree 173/notequal 176/infinity/plusminus/lessequal/greaterequal
-181/mu/partialdiff/summation/product/pi/integral 189/Omega 
+181/mu/partialdiff/summation/product/pi/integral 189/Omega
 195/radical 197/approxequal 198/Delta 214/divide/lozenge 240/apple
 /_Symbol_/Symbol 0 0 0 TZ
 %AI5_Begin_NonPrinting
@@ -4735,7 +4735,7 @@ TP
 100 100 Tz
 -20 Tt
 %_0 0 100 100 Xu
-%AI55J_GlyphSubst: GlyphSubstNone 
+%AI55J_GlyphSubst: GlyphSubstNone
 0 TA
 %_ 0 XL
 0 TY
@@ -4753,42 +4753,42 @@ XB
 25 0 Tl
 -0.5 Tc
 0 Tw
-(D) Tx 
+(D) Tx
 0.3609 0.8639 -0.8639 0.3609 208.2388 424.3232 Tm
-(E) Tx 
+(E) Tx
 0.4743 0.8073 -0.8073 0.4743 213.8438 437.8008 Tm
-(P) Tx 
+(P) Tx
 0.5829 0.7327 -0.7327 0.5829 220.4336 449.3364 Tm
-(A) Tx 
+(A) Tx
 0.6872 0.6359 -0.6359 0.6872 230.2192 461.769 Tm
-(R) Tx 
+(R) Tx
 0.7726 0.5288 -0.5288 0.7726 241.8223 472.5483 Tm
-(T) Tx 
+(T) Tx
 0.8516 0.3891 -0.3891 0.8516 253.5806 481.0522 Tm
-(M) Tx 
+(M) Tx
 0.9057 0.2376 -0.2376 0.9057 272.647 489.5723 Tm
-(E) Tx 
+(E) Tx
 0.9307 0.1018 -0.1018 0.9307 286.6929 493.3848 Tm
-(N) Tx 
+(N) Tx
 0.9357 -0.0341 0.0341 0.9357 302.4551 495.1357 Tm
-(T) Tx 
+(T) Tx
 0.9095 -0.2225 0.2225 0.9095 322.1772 494.1357 Tm
-(O) Tx 
+(O) Tx
 0.8667 -0.3542 0.3542 0.8667 338.8022 490.002 Tm
-(F) Tx 
+(F) Tx
 0.7863 -0.5083 0.5083 0.7863 355.7842 482.7041 Tm
-(E) Tx 
+(E) Tx
 0.7036 -0.6177 0.6177 0.7036 368.083 474.8999 Tm
-(N) Tx 
+(N) Tx
 0.6062 -0.7136 0.7136 0.6062 380.0059 464.4746 Tm
-(E) Tx 
+(E) Tx
 0.4954 -0.7945 0.7945 0.4954 389.5293 453.4565 Tm
-(R) Tx 
+(R) Tx
 0.3628 -0.8631 0.8631 0.3628 398.0088 440.126 Tm
-(G) Tx 
+(G) Tx
 0.2205 -0.91 0.91 0.2205 404.6646 424.3887 Tm
-(Y) Tx 
-( DEPARTMENT OF ENERGY \r) TX 
+(Y) Tx
+( DEPARTMENT OF ENERGY \r) TX
 TO
 0 To
 0.9271 0 0 0.9271 196.1235 390.4141 0 Tp
@@ -4799,8 +4799,8 @@ TP
 /_Times-Bold 26 24.3099 -5.6681 Tf
 26 0 Tl
 -0.52 Tc
-(\245) Tx 
-(\r) Tx 
+(\245) Tx
+(\r) Tx
 TO
 0 To
 0.9271 0 0 0.9271 417.2295 390.4141 0 Tp
@@ -4808,8 +4808,8 @@ TO
 TP
 -4.5499 0 Td
 0 Tr
-(\245) Tx 
-(\r) Tx 
+(\245) Tx
+(\r) Tx
 TO
 2 To
 1.0795 0 0 1.0811 -4014 4716 0.0002 Tp
@@ -4830,21 +4830,21 @@ TP
 /_Times-Bold 21.266 19.8837 -4.636 Tf
 21.266 0 Tl
 -0.4253 Tc
-(U) Tx 
+(U) Tx
 0.296 -1.0397 1.0381 0.2965 189.8828 367.7671 Tm
-(N) Tx 
+(N) Tx
 0.4133 -0.9987 0.9973 0.4139 194.9116 351.083 Tm
-(I) Tx 
+(I) Tx
 0.5193 -0.9478 0.9464 0.5201 198.5166 342.0317 Tm
-(T) Tx 
+(T) Tx
 0.6444 -0.8674 0.8661 0.6453 206.4839 327.6519 Tm
-(E) Tx 
+(E) Tx
 0.7612 -0.7666 0.7654 0.7623 216.356 314.4292 Tm
-(D) Tx 
+(D) Tx
 0.8851 -0.6189 0.618 0.8864 233.2866 298.4683 Tm
-(S) Tx 
+(S) Tx
 0.9559 -0.5024 0.5016 0.9573 244.5513 290.5688 Tm
-(T) Tx 
+(T) Tx
 1.0182 -0.3591 0.3585 1.0197 259.1855 282.9219 Tm
 (A) Tx
 1.0593 -0.208 0.2077 1.0609 275.98 277.1401 Tm
@@ -4854,24 +4854,24 @@ TP
 1.077 0.073 -0.0729 1.0786 308.2808 273.2808 Tm
 (S) Tx
 1.0447 0.2721 -0.2717 1.0463 327.8657 275.0117 Tm
-(O) Tx 
+(O) Tx
 0.9946 0.4203 -0.4197 0.996 346.2251 280.0249 Tm
-(F) Tx 
+(F) Tx
 0.8998 0.5972 -0.5964 0.9012 365.1851 288.5981 Tm
-(A) Tx 
+(A) Tx
 0.7841 0.7431 -0.742 0.7853 380.3311 298.5474 Tm
-(M) Tx 
+(M) Tx
 0.6506 0.8627 -0.8614 0.6515 396.8179 314.6948 Tm
-(E) Tx 
+(E) Tx
 0.5206 0.9471 -0.9457 0.5213 406.7275 327.8994 Tm
-(R) Tx 
+(R) Tx
 0.4098 1.0002 -0.9987 0.4104 414.8389 343.1924 Tm
-(I) Tx 
+(I) Tx
 0.2922 1.0407 -1.0392 0.2926 418.7197 352.2153 Tm
-(C) Tx 
+(C) Tx
 0.1332 1.0728 -1.0713 0.1334 423.4531 369.4292 Tm
-(A) Tx 
-(UNITED STATES OF AMERICA\r) TX 
+(A) Tx
+(UNITED STATES OF AMERICA\r) TX
 TO
 U
 U

@@ -68,22 +68,22 @@
 #include <fstream>
 #include <iomanip>
 
-/*!	
+/*!
   \class Belos::RCGIter
-  
+
   \brief This class implements the RCG iteration, where a
   single-std::vector Krylov subspace is constructed.
 
   \ingroup belos_solver_framework
- 
+
   \author Michael Parks and Heidi Thornquist
 */
 
 namespace Belos {
-  
+
   //! @name RCGIter Structures
   //@{
-  
+
   /** \brief Structure to contain pointers to RCGIter state variables.
    *
    * This struct is utilized by RCGIter::initialize()
@@ -95,7 +95,7 @@ namespace Belos {
      * This should always be equal to BlockGmresIter::getCurSubspaceDim()
      */
     int curDim;
-    
+
     /*! \brief The current Krylov basis. */
     Teuchos::RCP<MV> P;
 
@@ -104,13 +104,13 @@ namespace Belos {
 
     /*! \brief The current residual. */
     Teuchos::RCP<MV> r;
- 
+
     /*! \brief The current preconditioned residual. */
     Teuchos::RCP<MV> z;
- 
+
     /*! \brief Flag to indicate the recycle space should be used */
     bool existU;
-   
+
     /*! \brief The recycled subspace and its image. */
     Teuchos::RCP<MV> U, AU;
 
@@ -130,7 +130,7 @@ namespace Belos {
     Teuchos::RCP<std::vector<int> > ipiv;
 
 
-    RCGIterState() : curDim(0), P(Teuchos::null), Ap(Teuchos::null), r(Teuchos::null), 
+    RCGIterState() : curDim(0), P(Teuchos::null), Ap(Teuchos::null), r(Teuchos::null),
                      z(Teuchos::null),
                      existU(false),
 		     U(Teuchos::null), AU(Teuchos::null),
@@ -138,12 +138,12 @@ namespace Belos {
 		     Delta(Teuchos::null), LUUTAU(Teuchos::null), ipiv(Teuchos::null)
     {}
   };
-  
+
   //@}
-  
+
   //! @name RCGIter Exceptions
   //@{
-  
+
   /** \brief RCGIterInitFailure is thrown when the RCGIter object is unable to
    * generate an initial iterate in the RCGIter::initialize() routine.
    *
@@ -168,7 +168,7 @@ namespace Belos {
   class RCGIterFailure : public BelosError {public:
     RCGIterFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   /** \brief RCGIterOrthoFailure is thrown when the RCGIter object is unable to
    * compute independent direction vectors in the RCGIter::iterate() routine.
    *
@@ -178,7 +178,7 @@ namespace Belos {
   class RCGIterOrthoFailure : public BelosError {public:
     RCGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   /** \brief RCGIterLAPACKFailure is thrown when a nonzero return value is passed back
    * from an LAPACK routine.
    *
@@ -188,15 +188,15 @@ namespace Belos {
   class RCGIterLAPACKFailure : public BelosError {public:
     RCGIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   //@}
-  
-  
+
+
   template<class ScalarType, class MV, class OP>
   class RCGIter : virtual public Iteration<ScalarType,MV,OP> {
-    
+
   public:
-    
+
     //
     // Convenience typedefs
     //
@@ -204,10 +204,10 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
-    
+
     //! @name Constructors/Destructor
-    //@{ 
-    
+    //@{
+
     /*! \brief %RCGIter constructor with linear problem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the linear solver, in addition
@@ -215,19 +215,19 @@ namespace Belos {
      *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
      *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
      */
-    RCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+    RCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 		const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
 		Teuchos::ParameterList &params );
-    
+
     //! Destructor.
     virtual ~RCGIter() {};
     //@}
-    
-    
+
+
     //! @name Solver methods
-    //@{ 
-    
+    //@{
+
    /*! \brief This method performs RCG iterations until the status
     * test indicates the need to stop or an error occurs (in which case, an
     * std::exception is thrown).
@@ -241,7 +241,7 @@ namespace Belos {
     * The status test is queried at the beginning of the iteration.
     */
     void iterate();
-    
+
    /*! \brief Initialize the solver to an iterate, providing a complete state.
     *
     * The %RCGIter contains a certain amount of state, consisting of the current
@@ -257,7 +257,7 @@ namespace Belos {
     * the solver, the data is not copied.
     */
     void initialize(RCGIterState<ScalarType,MV> &newstate);
- 
+
    /*! \brief Initialize the solver with the initial vectors from the linear problem
     *  or random data.
     */
@@ -268,20 +268,20 @@ namespace Belos {
     }
 
     //@}
-    
+
     //! @name Status methods
-    //@{ 
-    
+    //@{
+
     //! \brief Get the current iteration count.
     int getNumIters() const { return iter_; }
-    
+
     //! \brief Reset the iteration count.
     void resetNumIters( int iter = 0 ) { iter_ = iter; }
-    
+
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return r_; }
-    
+
     //! Get the current update to the linear system.
     /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
       This method forces its computation.  Other solvers, like CG and RCG update the solution
@@ -289,40 +289,40 @@ namespace Belos {
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
-    
+
     //! Get the dimension of the search subspace used to generate the current solution to the linear problem.
-    int getCurSubspaceDim() const { 
+    int getCurSubspaceDim() const {
       if (!initialized_) return 0;
       return curDim_;
     };
-    
+
     //! Get the maximum dimension allocated for the search subspace.
     int getMaxSubspaceDim() const { return numBlocks_+1; }
-    
+
     //@}
-    
-    
+
+
     //! @name Accessor methods
-    //@{ 
-    
+    //@{
+
     //! Get a constant reference to the linear problem.
     const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
-    
+
     //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
     int getNumBlocks() const { return numBlocks_; }
-    
+
     //! \brief Set the maximum number of blocks used by the iterative solver.
     void setNumBlocks(int numBlocks) { setSize( recycleBlocks_, numBlocks ); };
-    
+
     //! Get the maximum number of recycled blocks used by the iterative solver in solving this linear problem.
     int getRecycledBlocks() const { return recycleBlocks_; }
 
     //! \brief Set the maximum number of recycled blocks used by the iterative solver.
     void setRecycledBlocks(int recycleBlocks) { setSize( recycleBlocks, numBlocks_ ); };
-    
+
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
-    
+
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) {
       TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
@@ -334,43 +334,43 @@ namespace Belos {
 
     //! States whether the solver has been initialized or not.
     bool isInitialized() { return initialized_; }
-    
+
     //@}
-    
+
   private:
-    
+
     //
     // Internal methods
     //
-    
+
     //
     // Classes input through constructor that define the linear problem to be solved.
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    
+
     //
     // Algorithmic parameters
-    //  
+    //
     // numBlocks_ is the size of the allocated space for the Krylov basis, in blocks.
-    int numBlocks_; 
+    int numBlocks_;
 
     // recycleBlocks_ is the size of the allocated space for the recycled subspace, in blocks.
-    int recycleBlocks_; 
-    
-    // 
+    int recycleBlocks_;
+
+    //
     // Current solver state
     //
     // initialized_ specifies that the basis vectors have been initialized and the iterate() routine
     // is capable of running; _initialize is controlled  by the initialize() member method
     // For the implications of the state of initialized_, please see documentation for initialize()
     bool initialized_;
-    
+
     // Current subspace dimension, and number of iterations performed.
     int curDim_, iter_;
-    
-    // 
+
+    //
     // State Storage
     //
     // Search vectors
@@ -405,11 +405,11 @@ namespace Belos {
     // The scalar r'*z
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old_;
   };
-  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  RCGIter<ScalarType,MV,OP>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  RCGIter<ScalarType,MV,OP>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 				     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 				     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
 					   Teuchos::ParameterList &params ):
@@ -420,7 +420,8 @@ namespace Belos {
     recycleBlocks_(0),
     initialized_(false),
     curDim_(0),
-    iter_(0)
+    iter_(0),
+    existU_(false)
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
@@ -434,7 +435,7 @@ namespace Belos {
     // Set the number of blocks and allocate data
     setSize( rb, nb );
   }
-  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
   template <class ScalarType, class MV, class OP>
@@ -456,16 +457,16 @@ namespace Belos {
   void RCGIter<ScalarType,MV,OP>::initialize(RCGIterState<ScalarType,MV> &newstate)
   {
 
-    if (newstate.P != Teuchos::null && 
-        newstate.Ap != Teuchos::null && 
-        newstate.r != Teuchos::null && 
-        newstate.z != Teuchos::null && 
-        newstate.U != Teuchos::null && 
-        newstate.AU != Teuchos::null && 
-        newstate.Alpha != Teuchos::null && 
-        newstate.Beta != Teuchos::null && 
-        newstate.D != Teuchos::null && 
-        newstate.Delta != Teuchos::null && 
+    if (newstate.P != Teuchos::null &&
+        newstate.Ap != Teuchos::null &&
+        newstate.r != Teuchos::null &&
+        newstate.z != Teuchos::null &&
+        newstate.U != Teuchos::null &&
+        newstate.AU != Teuchos::null &&
+        newstate.Alpha != Teuchos::null &&
+        newstate.Beta != Teuchos::null &&
+        newstate.D != Teuchos::null &&
+        newstate.Delta != Teuchos::null &&
         newstate.LUUTAU != Teuchos::null &&
         newstate.ipiv != Teuchos::null &&
         newstate.rTz_old != Teuchos::null) {
@@ -541,7 +542,7 @@ namespace Belos {
   {
     TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, RCGIterFailure,
                         "Belos::RCGIter::iterate(): RCGIter class not initialized." );
-    
+
     // We'll need LAPACK
     Teuchos::LAPACK<int,ScalarType> lapack;
 
@@ -555,12 +556,12 @@ namespace Belos {
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
- 
+
     // Check that the current solution std::vector only has one column.
     TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, RCGIterFailure,
                         "Belos::RCGIter::iterate(): current linear system has more than one std::vector!" );
-    
-    // Compute the current search dimension. 
+
+    // Compute the current search dimension.
     int searchDim = numBlocks_+1;
 
     // index of iteration within current cycle
@@ -605,7 +606,7 @@ namespace Belos {
       // z = M\r
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *r_, *z_ );
-      } 
+      }
       else if ( lp_->getRightPrec() != Teuchos::null ) {
         lp_->applyRightPrec( *r_, *z_ );
       }
@@ -651,15 +652,15 @@ namespace Belos {
       p_ = Teuchos::null;
       pnext_ = Teuchos::null;
 
-      // increment iteration count and dimension index  
+      // increment iteration count and dimension index
       i_++;
       iter_++;
       curDim_++;
 
     } // end while (statusTest == false)
-    
+
    }
 
 } // end Belos namespace
- 
+
 #endif /* BELOS_RCG_ITER_HPP */

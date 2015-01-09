@@ -4,7 +4,7 @@ module purge
 
 case $TARGET_COMPILER in
     gnu)
-        module load gnu/4.7.0
+        module load gnu/4.7.2
         module load openmpi-gnu/1.6
         ;;
     pgi)

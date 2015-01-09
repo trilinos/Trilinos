@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,11 @@
 *
 *****************************************************************************/
 
-#include <stdio.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
 
 /*!  
 
@@ -98,7 +100,6 @@ The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:
 
 \code
-#include "exodusII.h"
 int CPU_word_size,IO_word_size, exoid;
 float version;
 
@@ -236,7 +237,13 @@ int ex_open_int (const char  *path,
       stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
       stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
       if(stat_att != NC_NOERR || stat_dim != NC_NOERR) {
-	nc_redef(exoid);
+	if ((status=nc_redef (exoid)) != NC_NOERR) {
+	  exerrval = status;
+	  sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
+	  ex_err("ex_open",errmsg,exerrval);
+	  return (EX_FATAL);
+	}
+
 	if (stat_att != NC_NOERR) {
 	  int max_so_far = 32;
 	  nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
@@ -246,9 +253,22 @@ int ex_open_int (const char  *path,
 	if(stat_dim != NC_NOERR) {
 	  /* Not found; set to default value of 32+1. */
 	  int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
-	  nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name);
+	  if ((status = nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
+	    exerrval = status;
+	    sprintf(errmsg,
+		    "Error: failed to define string name dimension in file id %d",
+		    exoid);
+	    ex_err("ex_open",errmsg,exerrval);
+	    return (EX_FATAL);
+	  }
 	}
-	nc_enddef (exoid);
+	if ((exerrval=nc_enddef (exoid)) != NC_NOERR) {
+	  sprintf(errmsg,
+		  "Error: failed to complete definition in file id %d", 
+		  exoid);
+	  ex_err("ex_open",errmsg,exerrval);
+	  return (EX_FATAL);
+	}
       }
     }
 

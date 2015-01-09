@@ -77,14 +77,14 @@ namespace MueLu {
 
   void Level::SetLevelID(int levelID) {
     if (levelID_ != -1 && levelID_ != levelID)
-      GetOStream(Warnings1) << "Warning: Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
+      GetOStream(Warnings1) << "Level::SetLevelID(): Changing an already defined LevelID (previousID=" << levelID_ << ", newID=" << levelID << ")" << std::endl;
 
     levelID_ = levelID;
   }
 
   void Level::SetPreviousLevel(const RCP<Level> & previousLevel) {
     if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
-      GetOStream(Warnings1) << "Warning: Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
+      GetOStream(Warnings1) << "Level::SetPreviousLevel(): PreviousLevel was already defined" << std::endl;
 
     previousLevel_ = previousLevel;
   }
@@ -354,21 +354,10 @@ namespace MueLu {
     return out.str();
   }
 
-  void Level::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
-    RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
-    int previousSetting = out0->getOutputToRootOnly();
-    out0->setShowProcRank(true);
-
-    std::ostringstream ss;
-    print(ss, verbLevel);
-
-    out0->setOutputToRootOnly(-1);
-    *out0 << ss.str();
-    out0->setOutputToRootOnly(previousSetting);
-    out0->setShowProcRank(false);
-  }
-
   void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
+    if (!(verbLevel & Debug))
+      return;
+
     out << "LevelID = " << GetLevelID() << std::endl;
 
     typedef Teuchos::TabularOutputter TTO;
@@ -416,21 +405,22 @@ namespace MueLu {
         }
 
         if (IsAvailable(ename, factory)) {
-          std::string strType = it->second->GetData().getAny(true).typeName();
+          std::string strType = it->second->GetTypeName();
 
           if        (strType == "int") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<int>());
           } else if (strType == "double") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<double>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<double>());
           } else if (strType == "string") {
             outputter.outputField(strType);
-            outputter.outputField(Teuchos::getValue<std::string>(it->second->GetData()));
+            outputter.outputField(it->second->GetData<std::string>());
           } else {
             size_t npos = std::string::npos;
 
             if      (strType.find("Xpetra::Matrix")          != npos) outputter.outputField("Matrix" );
+            else if (strType.find("Xpetra::Operator")        != npos) outputter.outputField("Operator");
             else if (strType.find("Xpetra::MultiVector")     != npos) outputter.outputField("Vector");
             else if (strType.find("Xpetra::Map")             != npos) outputter.outputField("Map");
             else if (strType.find("Xpetra::Import")          != npos) outputter.outputField("Import");

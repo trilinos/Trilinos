@@ -109,10 +109,10 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -133,7 +133,6 @@ namespace {
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     my_DOFManager->buildGlobalUnknowns();
-    //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
 
@@ -164,10 +163,10 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -317,10 +316,10 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -366,10 +365,10 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -418,10 +417,10 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",2);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -495,10 +494,10 @@ namespace {
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
     
-    panzer_stk::CubeTetMeshFactory factory; 
+    panzer_stk_classic::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -545,10 +544,10 @@ namespace {
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
     
-    panzer_stk::CubeTetMeshFactory factory; 
+    panzer_stk_classic::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -600,10 +599,10 @@ namespace {
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
     
-    panzer_stk::CubeTetMeshFactory factory; 
+    panzer_stk_classic::CubeTetMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<int,int> > conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     RCP<panzer::DOFManager<int,int> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<int,int>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -675,10 +674,10 @@ namespace {
     pl->set("X Elements",5);
     pl->set("Y Elements",5);
     
-    panzer_stk::SquareQuadMeshFactory factory; 
+    panzer_stk_classic::SquareQuadMeshFactory factory; 
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<panzer::ConnManager<LO,GO> > conn = rcp(new panzer_stk_classic::STKConnManager<GO>(mesh));
 
     RCP<panzer::DOFManager<LO,GO> > my_DOFManager = Teuchos::rcp(new panzer::DOFManager<LO,GO>());
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
@@ -698,7 +697,6 @@ namespace {
 
 
     my_DOFManager->buildGlobalUnknowns();
-    //Now that we have created the SingleBlockDOFManager, we can ensure it was created correctly.
     TEST_EQUALITY(my_DOFManager->getConnManager(),conn);
 
     TEST_EQUALITY(my_DOFManager->getElementBlockGIDCount("eblock-0_0"),2*4);

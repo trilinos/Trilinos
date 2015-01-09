@@ -1,3 +1,4 @@
+// STATIC COPYRIGHT NOTICE
 // Copyright (c) 2005, Google Inc.
 // All rights reserved.
 //
@@ -97,7 +98,7 @@
 #define _SPARSEHASHTABLE_H_
 
 #ifndef SPARSEHASH_STAT_UPDATE
-#define SPARSEHASH_STAT_UPDATE(x) ((void) 0)
+#define SPARSEHASH_STAT_UPDATE(x) (static_cast<void>(0))
 #endif
 
 // The probing method

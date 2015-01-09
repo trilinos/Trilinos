@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,11 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_trim_internal, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_vara_text, etc
 
 /*!
 The function ex_get_qa() reads the QA records from the database. Each
@@ -62,7 +65,6 @@ The following will determine the number of QA records and
 read them from the open exodus file:
 
 \code
-#include "exodusII.h"
 int num_qa_rec, error, exoid
 char *qa_record[MAX_QA_REC][4];
 
@@ -88,23 +90,25 @@ int ex_get_qa (int exoid,
 
   char errmsg[MAX_ERR_LENGTH];
 
+  int rootid = exoid & EX_FILE_ID_MASK;
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_QA, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(rootid, DIM_NUM_QA, &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Warning: no qa records stored in file id %d", 
-            exoid);
+            rootid);
     ex_err("ex_get_qa",errmsg,exerrval);
     return (EX_WARN);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_qa_records)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(rootid, dimid, &num_qa_records)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to get number of qa records in file id %d",
-	    exoid);
+	    rootid);
     ex_err("ex_get_qa",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -112,10 +116,10 @@ int ex_get_qa (int exoid,
 
   /* do this only if there are any QA records */
   if (num_qa_records > 0) {
-    if ((status = nc_inq_varid(exoid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate qa record data in file id %d", exoid);
+	      "Error: failed to locate qa record data in file id %d", rootid);
       ex_err("ex_get_qa",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -127,10 +131,10 @@ int ex_get_qa (int exoid,
 	start[0] = i; count[0] = 1;
 	start[1] = j; count[1] = 1;
 	start[2] = 0; count[2] = MAX_STR_LENGTH+1;
-	if ((status = nc_get_vara_text(exoid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
+	if ((status = nc_get_vara_text(rootid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to get qa record data in file id %d", exoid);
+		  "Error: failed to get qa record data in file id %d", rootid);
 	  ex_err("ex_get_qa",errmsg,exerrval);
 	  return (EX_FATAL);
 	}

@@ -72,22 +72,13 @@ struct Parallel_IO
   int     NoSubdirectory;
 
   /* The root location of the parallel disks */
-  char    Par_Dsk_Root[MAX_FNL+1];
+  char    Par_Dsk_Root[MAX_FNL];
 
   /* The subdirectory to write files to */
-  char    Par_Dsk_SubDirec[MAX_FNL+1];
-
-  /* The name of the scalar load-balance file */
-  char    Scalar_LB_File_Name[MAX_FNL+1];
-
-  /* The name of the scalar mesh file. */
-  char    Scalar_Exo_File_Name[MAX_FNL+1];
-
-  /* The base name of the parallel results file. */
-  char    Par_Exo_Res_File_Name[MAX_FNL+1];
+  char    Par_Dsk_SubDirec[MAX_FNL];
 
   /* The filename extension for the parallel files */
-  char    Exo_Extension[MAX_FNL+1];
+  char    Exo_Extension[MAX_FNL];
   
   char    Staged_Writes[5];
 

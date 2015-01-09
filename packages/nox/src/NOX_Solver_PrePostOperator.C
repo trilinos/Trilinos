@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,11 +56,13 @@
 
 
 // Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator()
+NOX::Solver::PrePostOperator::PrePostOperator():
+  havePrePostOperator(false)
 { }
 
 // Disallowed
-NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p)
+NOX::Solver::PrePostOperator::PrePostOperator(const PrePostOperator& p):
+  havePrePostOperator(false)
 { }
 
 // Disallowed
@@ -70,7 +72,7 @@ operator=(const PrePostOperator& p)
 
 NOX::Solver::PrePostOperator::
 PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils,
-		Teuchos::ParameterList& p) :
+        Teuchos::ParameterList& p) :
   havePrePostOperator(false)
 { reset(utils, p); }
 
@@ -84,7 +86,7 @@ reset(const Teuchos::RCP<NOX::Utils>& utils, Teuchos::ParameterList& p)
 
   if (p.INVALID_TEMPLATE_QUALIFIER
       isType< Teuchos::RCP<NOX::Abstract::PrePostOperator> >
-      ("User Defined Pre/Post Operator")) 
+      ("User Defined Pre/Post Operator"))
   {
     prePostOperatorPtr = p.INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<NOX::Abstract::PrePostOperator> >

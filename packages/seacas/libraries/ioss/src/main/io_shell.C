@@ -49,7 +49,6 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <exodusII.h>
 #include <unistd.h>
 #include <sys/times.h>
 
@@ -255,6 +254,10 @@ namespace {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
     
+    if (interface.inputFile.size() > 1) {
+      properties.add(Ioss::Property("ENABLE_FILE_GROUPS", true));
+    }
+
     if (interface.debug)
       properties.add(Ioss::Property("LOGGING", 1));
 
@@ -292,8 +295,28 @@ namespace {
       if (interface.ints_64_bit)
 	dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     
+      if (!interface.groupName.empty()) {
+	bool success = dbi->open_group(interface.groupName);
+	if (!success) {
+	  OUTPUT << "ERROR: Unable to open group '" << interface.groupName
+		 << "' in file '" << inpfile << "\n";
+	  return;
+	}
+      }
+
       // NOTE: 'region' owns 'db' pointer at this time...
       Ioss::Region region(dbi, "region_1");
+    
+      if (interface.inputFile.size() > 1) {
+	properties.add(Ioss::Property("APPEND_OUTPUT",Ioss::DB_APPEND_GROUP)); 
+
+	if (input_db > 0) {
+	  // Putting each file into its own output group...
+	  // The name of the group will be the basename portion of the filename...
+	  Ioss::FileInfo file(interface.inputFile[input_db]);
+	  dbo->create_subgroup(file.tailname());
+	}
+      }
     
       if (interface.debug) OUTPUT << "DEFINING MODEL ... \n";
       if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {

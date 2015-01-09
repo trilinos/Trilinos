@@ -68,20 +68,28 @@ BEGIN {
         #fix minor difference between Epetra and Tpetra smoother tags
         sub(/Ifpack2Smoother/,"IfpackSmoother");
         sub(/Amesos2Smoother/,"AmesosSmoother");
-        if (match($0,"[(]level=[0-9][)]")) {
-          # timer is level-specific (and by its nature excludes calls to child factories)
-          foundTimersToReport=1;
-          factAndLevel = substr($0,1,RSTART-1+RLENGTH);
-          alltimes = substr($0,RSTART+RLENGTH);
-          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-          maxtime = ExtractTime(alltimes,cutCmd);
-          if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
-            #TODO figure out which solve labels to pull out
-            solveLabels[factAndLevel] = factAndLevel;
-            solveTimes[factAndLevel,FILENAME] = maxtime;
-          } else {
-            setupLabels[factAndLevel] = factAndLevel;
-            setupTimes[factAndLevel,FILENAME] = maxtime;
+        if (!match($0," sync ")) {
+          if (match($0,"[(]level=[0-9][)]")) {
+            # timer is level-specific (and by its nature excludes calls to child factories)
+            foundTimersToReport=1;
+            factAndLevel = substr($0,1,RSTART-1+RLENGTH);
+            alltimes = substr($0,RSTART+RLENGTH);
+            if (match(alltimes, "[(].*[)].*[(].*[)]")) {
+              # parallel timer, multiple times
+              cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+            } else {
+              # serial time, single time
+              cutCmd="cut -f1 -d')' | cut -f1 -d'('"
+            }
+            maxtime = ExtractTime(alltimes, cutCmd);
+            if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+              #TODO figure out which solve labels to pull out
+              solveLabels[factAndLevel] = factAndLevel;
+              solveTimes[factAndLevel,FILENAME] = maxtime;
+            } else {
+              setupLabels[factAndLevel] = factAndLevel;
+              setupTimes[factAndLevel,FILENAME] = maxtime;
+            }
           }
         }
       }
@@ -96,7 +104,13 @@ BEGIN {
         if (match($0,possibleTotalLabels[i])) {
           pattern = substr($0,RSTART,RLENGTH);
           alltimes = substr($0,RSTART+RLENGTH);
-          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          if (match(alltimes, "[(].*[)].*[(].*[)]")) {
+            # parallel timer, multiple times
+            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+          } else {
+            # serial time, single time
+            cutCmd="cut -f1 -d')' | cut -f1 -d'('"
+          }
           TotalSetup[pattern,FILENAME] = ExtractTime(alltimes,cutCmd);
         }
       }
@@ -141,9 +155,9 @@ function PrintTotalSetupTime()
   if (etDeltaTotal != 0)
     printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
   for (i in TotalSetup) {
-    split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
-                         #we only want the first one, sep[1]
-    printf("%60s  ==>   %6.3f seconds       \n",sep[1],TotalSetup[i]);
+    split(i, sep, SUBSEP); # breaks multiarray index i up into its constituent parts.
+                           # we only want the first one, sep[1]
+    printf("%60s  ==>   %6.3f seconds\n", sep[1], TotalSetup[i]);
   }
 }
 
@@ -166,7 +180,8 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == libToSortOn) break
     sortField++
   }
-  sortCmd = "sort -k" sortField" -n -t @"
+  #use -g to sort properly numbers in scientific notation
+  sortCmd = "sort -k" sortField" -g -t @"
   SystemSort(valuesAndLabels,sortedValuesAndLabels,sortCmd);
 
   jj=2
@@ -196,6 +211,15 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     printf("\n");
   }
 
+}
+###############################################################################
+function DumpLabelsAndTimers(timerLabels, timerValues, linalg)
+{
+  for (i in timerLabels) {
+    print "timer name: >" timerLabels[i] "<"
+    for (j in linalg)
+      print "    values: >" timerValues[i,j] "<"
+  }
 }
 ###############################################################################
 
@@ -241,7 +265,12 @@ function RemoveWhiteSpace(theString)
 END {
 
   if (foundTimersToReport) {
-    PrintHeader("Setup times (level specific) excluding child calls ",linalg);
+    if (debug) {
+      print "============================="
+      DumpLabelsAndTimers(setupLabels,setupTimes,linalg);
+      print "============================="
+    }
+    PrintHeader("Setup times (level specific) excluding child calls", linalg);
     SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
     PrintTotalSetupTime();
   } else {

@@ -44,7 +44,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // Instantiate test for Cuda device
 using Kokkos::Cuda;
@@ -161,13 +160,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
 
 // Notes:  SFS, DS are defined in main test header (we are also being lazy
 // and not putting ordinal/scalar/device in the names, assuming we will only
-// do one combination).  We can't do DefaultMultiply for DS because it
-// uses partitioning
+// do one combination).
 #define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, DefaultMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, EnsembleMultiply ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, KokkosMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, EnsembleMultiply ) \
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, DefaultMultiply ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
 
 CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE(int, double, Cuda)
@@ -176,7 +173,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::HostSpace::execution_space::initialize();
   Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
   Kokkos::Cuda::print_configuration(std::cout);
 
@@ -184,7 +181,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
   Kokkos::Cuda::finalize();
 
   return ret;

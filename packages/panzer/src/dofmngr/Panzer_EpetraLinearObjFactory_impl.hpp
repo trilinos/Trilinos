@@ -406,7 +406,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraDomainSpace() const
 {
-   if(domainSpace_==Teuchos::null);
+   if(domainSpace_ == Teuchos::null)
       domainSpace_ = Thyra::create_VectorSpace(getMap());
 
    return domainSpace_;
@@ -417,7 +417,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraRangeSpace() const
 {
-   if(rangeSpace_==Teuchos::null);
+   if(rangeSpace_ == Teuchos::null)
       rangeSpace_ = Thyra::create_VectorSpace(getMap());
 
    return rangeSpace_;

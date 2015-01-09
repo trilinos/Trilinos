@@ -50,7 +50,7 @@
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   class Zoltan2Interface;
 }
 

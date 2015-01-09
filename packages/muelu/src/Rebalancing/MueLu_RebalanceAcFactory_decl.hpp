@@ -67,7 +67,10 @@ namespace MueLu {
     @class RebalanceAcFactory
     @brief Factory for building coarse matrices.
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Node>::SparseOps>
+  template <class Scalar = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class RebalanceAcFactory : public TwoLevelFactoryBase {
 #undef MUELU_REBALANCEACFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -80,7 +83,7 @@ namespace MueLu {
 
     virtual ~RebalanceAcFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
     //@}
 
     //! @name Input

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,11 +53,11 @@
 
 #include "LOCA_MultiContinuation_ExtendedGroup.H"       // base class
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
+    /*!
      * \brief Specialization of LOCA::MultiContinuation::ExtendedGroup
      * to pseudo-arclength continuation.
      */
@@ -68,15 +68,15 @@ namespace LOCA {
      *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
      *         (x-x^\ast)^Tv_x + (p-p^\ast) v_p - \Delta s
      * \f]
-     * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components 
+     * where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components
      * of the predictor direction \f$v\f$ respectively.
-     * This corresponds geometrically to constraining the nonlinear solver 
-     * steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the 
+     * This corresponds geometrically to constraining the nonlinear solver
+     * steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the
      * predictor direction \f$v\f$.  The arclength constraint \f$g\f$ is
      * represented by a LOCA::MultiContinuation::ArcLengthConstraint object.
      *
-     * This class also reimplements the scaleTangent() and 
-     * computeScaledDotProduct() methods to implement a scaling method 
+     * This class also reimplements the scaleTangent() and
+     * computeScaledDotProduct() methods to implement a scaling method
      * that tries to ensure the solution and parameter contributions to the
      * arc-length equation are of the same order.  Specifically, the
      * arc-length equation is replaced by
@@ -98,19 +98,19 @@ namespace LOCA {
      * "Enable Arc Length Scaling", and the initial value for \f$\theta\f$
      * is given by "Initial Scale Factor".  A new value of \f$\theta\f$ is
      * chosen only if \f$\theta^2 v_p\f$ is larger than the value given by
-     * "Max Arc Length Parameter Contribution" and "Min Scale Factor" 
+     * "Max Arc Length Parameter Contribution" and "Min Scale Factor"
      * provides a minimum value for \f$\theta\f$.
      */
-    class ArcLengthGroup : 
+    class ArcLengthGroup :
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
     public:
-  
+
       //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param topParams [in] Parsed top-level parameter list.
-       * \param continuationParams [in] Continuation parameters as described 
+       * \param continuationParams [in] Continuation parameters as described
        * above.
        * \param grp [in] Group representing \f$F\f$.
        * \param pred [in] Predictor strategy.
@@ -125,29 +125,29 @@ namespace LOCA {
       const std::vector<int>& paramIDs);
 
       //! Copy constructor
-      ArcLengthGroup(const ArcLengthGroup& source, 
-		     NOX::CopyType type = NOX::DeepCopy);
+      ArcLengthGroup(const ArcLengthGroup& source,
+             NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~ArcLengthGroup();
 
-      /*! 
-       * @name Implementation of NOX::Abstract::Group virtual methods 
+      /*!
+       * @name Implementation of NOX::Abstract::Group virtual methods
        */
       //@{
 
       //! Assignment operator
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
       virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
-      
+
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy virtual methods
        */
       //@{
 
@@ -159,12 +159,12 @@ namespace LOCA {
 
       //! Computes a scaled dot product between two continuation vectors
       virtual double computeScaledDotProduct(
-			       const NOX::Abstract::Vector& x, 
-			       const NOX::Abstract::Vector& y) const;
+                   const NOX::Abstract::Vector& x,
+                   const NOX::Abstract::Vector& y) const;
 
       //! Calculates scale factors
       virtual void recalculateScaleFactor(double dpds, double thetaOld,
-					  double& thetaNew);
+                      double& thetaNew);
 
       //@}
 

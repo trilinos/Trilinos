@@ -1,13 +1,12 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     epetra_1DFEMNonlinear_Example
-    SOURCES 
+    SOURCES
     Example.C
     Basis.H
     Basis.C

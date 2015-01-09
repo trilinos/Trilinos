@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Get the number of local equations from the command line
-  if (argc!=2) { 
+  if (argc!=2) {
     cout << "Usage: " << argv[0] << " number_of_elements" << endl;
     exit(1);
   }
@@ -105,12 +105,12 @@ int main(int argc, char *argv[])
   int IndexBase = 0;
 
   if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
+    cout << "numGlobalBlocks = " << NumGlobalElements
 	 << " cannot be < number of processors = " << NumProc << endl;
     exit(1);
   }
 
-  // Construct a Source Map that puts approximately the same 
+  // Construct a Source Map that puts approximately the same
   // Number of equations on each processor in uniform global ordering
 
   Petra_Map& StandardMap = *new Petra_Map(NumGlobalElements, 0, Comm);
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
   //Petra_CRS_Graph& StandardGraph = *new Petra_CRS_Graph(Copy, StandardMap, 3);
   //assert(!StandardGraph.IndicesAreGlobal());
   //assert(!StandardGraph.IndicesAreLocal());
-  
-  // Construct an Overlapped Map of StandardMap that include 
+
+  // Construct an Overlapped Map of StandardMap that include
   // the endpoints from two neighboring processors.
 
   int OverlapNumMyElements;
@@ -137,12 +137,12 @@ int main(int argc, char *argv[])
 
   int * OverlapMyGlobalElements = new int[OverlapNumMyElements];
 
-  for (i=0; i< OverlapNumMyElements; i++) 
+  for (i=0; i< OverlapNumMyElements; i++)
                        OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
 
-  Petra_Map& OverlapMap = *new Petra_Map(-1, OverlapNumMyElements, 
+  Petra_Map& OverlapMap = *new Petra_Map(-1, OverlapNumMyElements,
 					 OverlapMyGlobalElements, 0, Comm);
-  
+
   int pS=3;
   int pO=3;
   // Create Linear Objects for Solve
@@ -180,9 +180,9 @@ int main(int argc, char *argv[])
   for (i=0; i < OverlapNumMyElements; i++) {
     x[i]=dx*((double) OverlapMinMyGID+i);
   }
-  
+
   // Begin Nonlinear solver LOOP ************************************
-  
+
   for (int NLS=0; NLS<2; NLS++) {
 
 
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-    
+
     // Loop Over Gauss Points (5th order GQ)
     for(int gp=0; gp < 3; gp++) {
       xx[0]=x[ne];
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
       uu[0]=u[ne];
       uu[1]=u[ne+1];
       basis.getBasis(gp, xx, uu);
-	            
+	
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
 	  rhs1[ne+i]+=basis.wt*basis.dx
@@ -217,13 +217,13 @@ int main(int argc, char *argv[])
 	  row=OverlapMap.GID(ne+i);
 	  column=OverlapMap.GID(ne+j);
 	  ierr=A1.SumIntoGlobalValues(row, 1, &jac, &column);
-	  if (ierr!=0) {	    
+	  if (ierr!=0) {	
 	    // printf("SumInto failed at (%d,%d)!!\n",row,column);
 	    ierr=A1.InsertGlobalValues(row, 1, &jac, &column);
 	    // if (ierr==0) printf("Insert SUCCEEDED at (%d,%d)!!\n",row,column);
-	  } //else if (ierr==0) 
+	  } //else if (ierr==0)
 	    // printf("SumInto SUCCEEDED at (%d,%d)!!\n",row,column);
-	  
+	
 	}
       }
     }
@@ -256,11 +256,11 @@ int main(int argc, char *argv[])
   /*
   // Print Matrix
   int StandardNumMyRows = A.NumMyRows();
-  int * StandardIndices; 
-  int StandardNumEntries; 
+  int * StandardIndices;
+  int StandardNumEntries;
   double * StandardValues;
   for (i=0; i< StandardNumMyRows; i++) {
-    A.ExtractMyRowView(i, StandardNumEntries, 
+    A.ExtractMyRowView(i, StandardNumEntries,
 				    StandardValues, StandardIndices);
     for (j=0; j < StandardNumEntries; j++) {
       printf("MyPID=%d, J[%d,%d]=%e\n",MyPID,i,j,StandardValues[j]);
@@ -268,36 +268,36 @@ int main(int argc, char *argv[])
   }
   */
 
-  // check if Converged   
+  // check if Converged
   ierr=rhs.Norm2(&residual);
   ierr=du.Norm2(&difference);
   if (MyPID==0) printf("\n***********************************************\n");
   if (MyPID==0) printf("Iteration %d  Residual L2=%e   Update L2=%e\n"
 			 ,NLS,residual,difference);
-  if (MyPID==0) printf("***********************************************\n");  
+  if (MyPID==0) printf("***********************************************\n");
   if ((residual < absTol)&&(difference < relTol)) {
     if (MyPID==0) printf("\n\nConvergence Achieved!!!!\n");
     return 0;
-  }    
-  
+  }
+
   Trilinos_LinearProblem *Problem = new  Trilinos_LinearProblem(&A,&du,&rhs);
   Problem->SetPDL(hard);
   Problem->Iterate(400, 1.0e-8);
   delete Problem;
 
-  // Update Solution    
+  // Update Solution
   for (i=0;i<NumMyElements;i++) soln[i] -= du[i];
-	 
+	
   Petra_Import & Importer2 = *new Petra_Import(OverlapMap, StandardMap);
   assert(u.Import(soln, Importer2, Insert)==0);
   delete &Importer2;
-  
-  for (i=0;i<OverlapNumMyElements;i++) 
+
+  for (i=0;i<OverlapNumMyElements;i++)
     printf("Proc=%d GID=%d u=%e soln=%e\n",MyPID,
 	   OverlapMap.GID(i),u[i],soln[i]);
 
   } // End NLS Loop *****************************************************
- 
+
 
 
   delete &OverlapMap;

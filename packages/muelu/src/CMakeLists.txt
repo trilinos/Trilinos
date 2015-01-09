@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 # Note about the use of wildcard in CMakeLists.txt: CMake dont't know
@@ -33,17 +32,18 @@ INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
-INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
-INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
-  INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
-ENDIF ()
+  INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
+  INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+ENDIF()
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Geometric-Interpolation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Smoothed-Aggregation)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Petrov-Galerkin-SA)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/User)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/SemiCoarsen)
 INCLUDE_DIRECTORIES(${DIR}/Utils)
 INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -53,13 +53,13 @@ ENDIF()
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
 APPEND_GLOB(HEADERS ${BDIR}/${PACKAGE_NAME}_config.hpp)
-APPEND_GLOB(HEADERS ${DIR}/Headers/${PACKAGE_NAME}_ConfigDefs.hpp)
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
-if (${PACKAGE_NAME}_ENABLE_Tpetra)
-  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
-ENDIF()
+# The Tpetra adapter headers are already pulled in by muelu-adapters.
+#if (${PACKAGE_NAME}_ENABLE_Tpetra)
+#  APPEND_GLOB(HEADERS ${DIR}/../adapters/tpetra/*.hpp)
+#ENDIF()
 
 SET(SOURCES "")
 APPEND_GLOB(SOURCES */*.cpp)
@@ -69,10 +69,8 @@ APPEND_GLOB(SOURCES Interface/*.cpp)
 APPEND_GLOB(SOURCES Smoothers/BlockedSmoothers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BaseClass/*.cpp)
 APPEND_GLOB(SOURCES Transfers/BlockedTransfers/*.cpp)
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
-  APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
-ENDIF ()
+APPEND_GLOB(SOURCES Transfers/Energy-Minimization/*.cpp)
+APPEND_GLOB(SOURCES Transfers/Energy-Minimization/Solvers/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Generic/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Geometric-Interpolation/*.cpp)
 APPEND_GLOB(SOURCES Transfers/Petrov-Galerkin-SA/*.cpp)
@@ -98,14 +96,13 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers/BlockedSmoothers NOSIER
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BaseClass NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlockedTransfers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Generic NOSIERRABJAM)
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
-  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
-ENDIF ()
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Geometric-Interpolation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Petrov-Galerkin-SA NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Smoothed-Aggregation NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/User NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/SemiCoarsen NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Utils NOSIERRABJAM)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/../adapters/tpetra NOSIERRABJAM)
@@ -115,20 +112,30 @@ INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Cpp file
+SET(CU_SOURCES "")
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   CONFIGURE_FILE(${DIR}/Utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
+  APPEND_GLOB(CU_SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cu)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
-  LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_SchwarzSmoother.hpp)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp)
+  LIST(REMOVE_ITEM SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_Threads.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_OpenMP.cpp)
+  LIST(REMOVE_ITEM CU_SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_Cuda.cu)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp)
+  LIST(REMOVE_ITEM SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_Threads.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_OpenMP.cpp)
+  LIST(REMOVE_ITEM CU_SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_Cuda.cu)
 ENDIF()
 
 
@@ -140,8 +147,19 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS xpetra xpetra-sup xpetra-ext
   )
+
+IF(TpetraClassic_ENABLE_ThrustGPUNode OR
+   (TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda))
+  IF( TPL_ENABLE_MPI )
+    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+  TRIBITS_ADD_LIBRARY(
+    muelu_cuda
+    SOURCES ${CU_SOURCES}
+    CUDALIBRARY
+    )
+ENDIF()
 
 # for debugging
 #MESSAGE("")
@@ -152,6 +170,4 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

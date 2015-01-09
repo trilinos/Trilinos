@@ -33,12 +33,13 @@
 #ifndef IOSS_Iogn_GeneratedMesh_h
 #define IOSS_Iogn_GeneratedMesh_h
 
-#include <string>
-#include <map>
-#include <vector>
-#include <stdint.h>
-#include <iostream>
-#include <Ioss_EntityType.h>
+#include <Ioss_EntityType.h>            // for EntityType
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;
@@ -373,8 +374,8 @@ namespace Iogn {
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    virtual void node_map(MapVector &map);
-    virtual void node_map(IntVector &map);
+    virtual void node_map(MapVector &map) const;
+    virtual void node_map(IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map

@@ -42,7 +42,8 @@
 #ifndef STOKHOS_TINY_VEC_HPP
 #define STOKHOS_TINY_VEC_HPP
 
-#if ! defined( __CUDACC__ )
+#include "Stokhos_ConfigDefs.h"
+#if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 extern "C" {
 #include <immintrin.h>
@@ -50,7 +51,11 @@ extern "C" {
 
 #endif
 
+#include "Kokkos_Macros.hpp"
+
 namespace Stokhos {
+
+#if defined(__INTEL_COMPILER) && ! defined( __CUDA_ARCH__)
 
 template <typename ValueType, int N, bool UseIntrinsics, bool Mask = false >
 class TinyVec {
@@ -58,84 +63,385 @@ public:
 
   static const int Num = N;
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec() {}
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a[]) {
     load(a);
   }
 
   template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a[], const OrdinalType idx[]) {
     gather(a,idx);
   }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a) {
     load(a);
   }
 
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const TinyVec& tv) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = tv.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec& operator=(const TinyVec& tv) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = tv.v[i];
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void load(const ValueType a) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void aligned_load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[i];
+  }
+
+  template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
+  void gather(const ValueType a[], const OrdinalType idx[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = a[idx[i]];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      a[i] = v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void aligned_scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      a[i] = v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void zero() {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] = ValueType(0.0);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void plus_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] += t.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void times_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] *= t.v[i];
+  }
+
+  // *this = *this + t1 * t2
+  KOKKOS_INLINE_FUNCTION
+  void multiply_add(const TinyVec& t1, const TinyVec& t2) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      v[i] += t1.v[i]*t2.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  ValueType sum() const {
+    ValueType s(0.0);
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<Num; ++i)
+      s += v[i];
+    return s;
+  }
+
+private:
+   ValueType v[Num] __attribute__((aligned(64)));
+};
+
+template <typename ValueType, int N, bool UseIntrinsics >
+class TinyVec<ValueType,N,UseIntrinsics,true> {
+public:
+
+  static const int Num = N;
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(int size) { sz = size; }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a[], int size) {
+    sz = size;
+    load(a);
+  }
+
+  template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a[], const OrdinalType idx[], int size) {
+    sz = size;
+    gather(a,idx);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a, int size) {
+    sz = size;
+    load(a);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const TinyVec& tv) {
+    sz = tv.sz;
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = tv.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec& operator=(const TinyVec& tv) {
+    sz = tv.sz;
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = tv.v[i];
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void load(const ValueType a) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void aligned_load(const ValueType a[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[i];
+  }
+
+  template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
+  void gather(const ValueType a[], const OrdinalType idx[]) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = a[idx[i]];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      a[i] = v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void aligned_scatter(ValueType a[]) const {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      a[i] = v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void zero() {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] = ValueType(0.0);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void plus_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] += t.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void times_equal(const TinyVec& t) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] *= t.v[i];
+  }
+
+  // *this = *this + t1 * t2
+  KOKKOS_INLINE_FUNCTION
+  void multiply_add(const TinyVec& t1, const TinyVec& t2) {
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      v[i] += t1.v[i]*t2.v[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  ValueType sum() const {
+    ValueType s(0.0);
+#pragma ivdep
+#pragma vector aligned
+    for (int i=0; i<sz; ++i)
+      s += v[i];
+    return s;
+  }
+
+private:
+  ValueType v[Num] __attribute__((aligned(64)));
+  int sz;
+};
+
+#else
+
+template <typename ValueType, int N, bool UseIntrinsics, bool Mask = false >
+class TinyVec {
+public:
+
+  static const int Num = N;
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec() {}
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a[]) {
+    load(a);
+  }
+
+  template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a[], const OrdinalType idx[]) {
+    gather(a,idx);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  TinyVec(const ValueType a) {
+    load(a);
+  }
+
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const TinyVec& tv) {
     for (int i=0; i<Num; ++i)
       v[i] = tv.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec& operator=(const TinyVec& tv) {
     for (int i=0; i<Num; ++i)
       v[i] = tv.v[i];
     return *this;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void load(const ValueType a[]) {
     for (int i=0; i<Num; ++i)
       v[i] = a[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void load(const ValueType a) {
     for (int i=0; i<Num; ++i)
       v[i] = a;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void aligned_load(const ValueType a[]) {
     for (int i=0; i<Num; ++i)
       v[i] = a[i];
   }
 
   template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
   void gather(const ValueType a[], const OrdinalType idx[]) {
     for (int i=0; i<Num; ++i)
       v[i] = a[idx[i]];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void scatter(ValueType a[]) const {
     for (int i=0; i<Num; ++i)
       a[i] = v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void aligned_scatter(ValueType a[]) const {
     for (int i=0; i<Num; ++i)
       a[i] = v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void zero() {
     for (int i=0; i<Num; ++i)
       v[i] = ValueType(0.0);
   }
 
+  KOKKOS_INLINE_FUNCTION
   void plus_equal(const TinyVec& t) {
     for (int i=0; i<Num; ++i)
       v[i] += t.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void times_equal(const TinyVec& t) {
     for (int i=0; i<Num; ++i)
       v[i] *= t.v[i];
   }
 
   // *this = *this + t1 * t2
+  KOKKOS_INLINE_FUNCTION
   void multiply_add(const TinyVec& t1, const TinyVec& t2) {
     for (int i=0; i<Num; ++i)
       v[i] += t1.v[i]*t2.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   ValueType sum() const {
     ValueType s(0.0);
     for (int i=0; i<Num; ++i)
@@ -153,30 +459,36 @@ public:
 
   static const int Num = N;
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(int size) { sz = size; }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a[], int size) {
     sz = size;
     load(a);
   }
 
   template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a[], const OrdinalType idx[], int size) {
     sz = size;
     gather(a,idx);
   }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const ValueType a, int size) {
     sz = size;
     load(a);
   }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec(const TinyVec& tv) {
     sz = tv.sz;
     for (int i=0; i<sz; ++i)
       v[i] = tv.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   TinyVec& operator=(const TinyVec& tv) {
     sz = tv.sz;
     for (int i=0; i<sz; ++i)
@@ -184,58 +496,69 @@ public:
     return *this;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void load(const ValueType a[]) {
     for (int i=0; i<sz; ++i)
       v[i] = a[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void load(const ValueType a) {
     for (int i=0; i<sz; ++i)
       v[i] = a;
   }
 
+  KOKKOS_INLINE_FUNCTION
   void aligned_load(const ValueType a[]) {
     for (int i=0; i<sz; ++i)
       v[i] = a[i];
   }
 
   template <typename OrdinalType>
+  KOKKOS_INLINE_FUNCTION
   void gather(const ValueType a[], const OrdinalType idx[]) {
     for (int i=0; i<sz; ++i)
       v[i] = a[idx[i]];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void scatter(ValueType a[]) const {
     for (int i=0; i<sz; ++i)
       a[i] = v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void aligned_scatter(ValueType a[]) const {
     for (int i=0; i<sz; ++i)
       a[i] = v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void zero() {
     for (int i=0; i<sz; ++i)
       v[i] = ValueType(0.0);
   }
 
+  KOKKOS_INLINE_FUNCTION
   void plus_equal(const TinyVec& t) {
     for (int i=0; i<sz; ++i)
       v[i] += t.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   void times_equal(const TinyVec& t) {
     for (int i=0; i<sz; ++i)
       v[i] *= t.v[i];
   }
 
   // *this = *this + t1 * t2
+  KOKKOS_INLINE_FUNCTION
   void multiply_add(const TinyVec& t1, const TinyVec& t2) {
     for (int i=0; i<sz; ++i)
       v[i] += t1.v[i]*t2.v[i];
   }
 
+  KOKKOS_INLINE_FUNCTION
   ValueType sum() const {
     ValueType s(0.0);
     for (int i=0; i<sz; ++i)
@@ -248,7 +571,9 @@ private:
   int sz;
 };
 
-#if ! defined( __CUDACC__ )
+#endif
+
+#if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 #ifdef __SSE2__
 template <>
@@ -648,7 +973,7 @@ private:
 };
 #endif
 
-#ifdef __MIC__
+#if defined( __MIC__ )
 template <>
 class TinyVec<double,8,true,false> {
 public:
@@ -991,11 +1316,13 @@ public:
     // to the low 256 bits (DCBA -> BADC where 128 bit lanes are read right to
     // left).  Then load the vectors into v1 and v2.
     // logather_pd only uses the low 256 bits in the index vector.
+    // Note:  permute4f128 overwrites its argument, so we need to load v1 first
     __m512i v1idx = _mm512_load_epi32(idx);
-    __m512i v2idx = _mm512_permute4f128_epi32(v1idx, _MM_PERM_BADC);
     v1 = _mm512_i32logather_pd(v1idx, a, 8);
+
+    v1idx = _mm512_permute4f128_epi32(v1idx, _MM_PERM_BADC);
     v2 = _mm512_setzero_pd();
-    v2 = _mm512_mask_i32logather_pd(v2, mask, v2idx, a, 8);
+    v2 = _mm512_mask_i32logather_pd(v2, mask, v1idx, a, 8);
   }
 
   void scatter(ValueType a[]) const {
@@ -1039,7 +1366,7 @@ private:
 };
 #endif
 
-#endif // #if ! defined( __CUDACC__ )
+#endif // #if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 } // namespace Stokhos
 

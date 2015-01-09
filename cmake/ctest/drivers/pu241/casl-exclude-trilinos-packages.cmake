@@ -14,6 +14,7 @@ IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
     Pamgen
     Komplex
     RBGen
+    STK
     Phdmesh
     Moertel
     TrilinosCouplings

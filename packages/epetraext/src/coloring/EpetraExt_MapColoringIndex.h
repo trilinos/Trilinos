@@ -39,54 +39,12 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef EpetraExt_CRSGRAPH_MAPCOLORINGINDEX_H
-#define EpetraExt_CRSGRAPH_MAPCOLORINGINDEX_H
+#ifndef EpetraExt_MAPCOLORINGINDEX_H
+#define EpetraExt_MAPCOLORINGINDEX_H
 
-#include <EpetraExt_Transform.h>
-#include <Epetra_GIDTypeVector.h>
-
-#include <vector>
-
-class Epetra_CrsGraph;
-class Epetra_MapColoring;
-class Epetra_IntVector;
+#include <EpetraExt_TCrsGraph_MapColoringIndex.h>
 
 namespace EpetraExt {
-
-///
-/** Generates a std::vector of Epetra_IntVector's to be used to map perturbation
- * contributions to a CrsGraph/CrsMatrix from a perturbed vector.
- */
-
-template<typename int_type>
-class TCrsGraph_MapColoringIndex
-: public StructuralTransform< Epetra_CrsGraph,std::vector<typename Epetra_GIDTypeVector<int_type>::impl> > {
-
-  const Epetra_MapColoring & ColorMap_;
-
- protected:
-
-  ///
-  /** Destructor
-   */
-  ~TCrsGraph_MapColoringIndex() {}
-
-  ///
-  /** Constructor
-   * input param ColorMap defines the perturbation coloring
-   */
-  TCrsGraph_MapColoringIndex( const Epetra_MapColoring & ColorMap )
-  : ColorMap_( ColorMap )
-  {}
-public:
-  typedef StructuralTransform< Epetra_CrsGraph,std::vector<typename Epetra_GIDTypeVector<int_type>::impl> > Base;
-  ///
-  /** Generates a std::vector<Epetra_IntVector> from the input Epetra_CrsGraph
-   */
-  typedef typename Base::NewTypeRef NewTypeRef;
-  typedef typename Base::OriginalTypeRef OriginalTypeRef;
-  NewTypeRef operator()( OriginalTypeRef orig );
-};
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
@@ -136,7 +94,26 @@ class CrsGraph_MapColoringIndex64
 };
 #endif
 
+// #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
+// std::vector<Epetra_IntVector>&
+// CrsGraph_MapColoringIndex::operator()( Epetra_CrsGraph& orig )
+// {
+//   return TCrsGraph_MapColoringIndex<int>::operator()(orig);
+// }
+
+// #endif
+
+// #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+// std::vector<Epetra_LongLongVector>&
+// CrsGraph_MapColoringIndex64::operator()( Epetra_CrsGraph& orig )
+// {
+//   return TCrsGraph_MapColoringIndex<long long>::operator()(orig);
+// }
+
+// #endif
+
 } //namespace EpetraExt
 
 #endif //EpetraExt_CRSGRAPH_MAPCOLORINGINDEX_H
-

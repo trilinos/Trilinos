@@ -1,14 +1,12 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA AND NOX_ENABLE_EpetraExt)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_ContinuationManager_XYZT_Example
-    SOURCES 
+    SOURCES
     PeriodicLinearSystem.H
     PeriodicLinearSystem.C
     mainPeriodic.C

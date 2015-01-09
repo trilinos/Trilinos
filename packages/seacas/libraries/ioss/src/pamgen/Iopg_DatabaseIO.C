@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <im_exodusII.h>
-#include <im_ne_nemesisI.h>
+#include <pamgen_im_exodusII.h>
+#include <pamgen_im_ne_nemesisI.h>
 #include <create_inline_mesh.h>
 
 #include <pamgen/Iopg_DatabaseIO.h>

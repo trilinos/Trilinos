@@ -1,26 +1,34 @@
 ----------------------------------------------------
-Directory layout for the Trilinos/cmake subdiretory
+Directory layout for the tribits/ directory
 ----------------------------------------------------
 
-Last updated: 2009/01/20
+Last updated: 2014/04/30
 
 The directories are layed out as follows:
 
 cmake
   |
-  |-- utils: Generic CMake utilties like simple macros and functions
+  |-- Copyright.txt: Given the copyright and license for TriBITS
   |
-  |-- doc: Generic documentation stuff for CMake 
+  |-- ReleaseNotes.txt: Release notes for TriBITS
   |
-  |-- config_tests: Generic configure-time tests
+  |-- utils/: Generic CMake utilties like simple macros and functions
   |
-  |-- package_arch: Contains macros for a package archetecture
-  |       system that Trilinos is based on but is independent
-  |       of Trilinos.  I.e. 'grep -i trilinos *.cmake' in this
-  |       directory should come up empty!
+  |-- common_tools/: Some common tools that are not specific to TriBITS
   |
-  |-- TPLs: Contains a collection of FindTPL${TPLNAME}.cmake
-  |      files for specific TPLs.  These are indirectly called
+  |-- doc/: Documentation, examples, etc. for TriBITS
+  |
+  |-- config_tests/: Generic CMake configure-time tests
+  |
+  |-- TriBITS.cmake: Single include for project-level CMakeLists.txt file
+  |
+  |-- package_arch/: Contains macros for a package archetecture
+  |      system that TriBITS is based on.
+  |
+  |-- cmake/: Contains the "TriBITS" package Dependnecies.cmake file
+  |
+  |-- tpls/: Contains a collection of FindTPL${TPLNAME}.cmake
+  |      files for standard TriBITS TPLs.  These are indirectly called
   |      by the package archetecture CMake code in package_arch.
   |      While these TPL defines are really independent of Trilinos,
   |      they are maintained in such a way that Trilinos gets what
@@ -35,10 +43,8 @@ cmake
   |       that drive nightly and other automated testing an a number
   |       of platforms.
   |
-  |-- DependencyUnitTests: Contains Trilinos-specific dependency analysis
-  |       unit tests.  These tests are critical tests for the generic
-  |       package architecture CMake code.
-  |
-  |-- refactoring: Mostly trilinos-specific auto text-replacement
-  |       refactoring scripts that can be used to refactor non-refactored
-  |       CMake code.  
+  |-- ProjectName.cmake, PackagesList.cmake, TPLsList.cmake, CMakeLists.txt:
+  |       Standard TriBITS project and repository and package files for the
+  |       "TriBITS" project and repository and the "TriBITS" package.
+
+

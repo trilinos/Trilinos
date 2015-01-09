@@ -77,8 +77,8 @@ Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix
   Indices_.resize(MaxNumEntriesA_);
   Values_.resize(MaxNumEntriesA_);
 
-  vector<int>    Ind(MaxNumEntriesA_);
-  vector<double> Val(MaxNumEntriesA_);
+  std::vector<int>    Ind(MaxNumEntriesA_);
+  std::vector<double> Val(MaxNumEntriesA_);
 
   for (int i = 0 ; i < NumRows_ ; ++i) {
     NumEntries_[i] = MaxNumEntriesA_;
@@ -150,8 +150,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
   Y.PutScalar(0.0);
 
-  vector<int> Indices(MaxNumEntries_);
-  vector<double> Values(MaxNumEntries_);
+  std::vector<int> Indices(MaxNumEntries_);
+  std::vector<double> Values(MaxNumEntries_);
 
   for (int i = 0 ; i < NumRows_ ; ++i) {
 
@@ -191,7 +191,8 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_DropFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
+  int ierr = Multiply(UseTranspose(),X,Y);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================

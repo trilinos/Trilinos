@@ -1,27 +1,11 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(SOURCES "")
-
-
-SET(LIBRARIES kokkoscore)
-
-IF( Kokkos_ENABLE_Cuda )
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA main.cu setup.cu neighbor.cu force.cu )
-
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
-  LIST( APPEND LIBRARIES ${CUDA_LIBRARIES} )
-
-ELSE()
+SET(LIBRARIES "")
 
 FILE(GLOB SOURCES *.cpp )
-
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
   md_skeleton 

@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -116,7 +116,7 @@ void Epetra_SerialDenseSolver::InitPointers()
   R_ = 0;
   C_ = 0;
   INFO_ = 0;
-  LWORK_ = 0;    
+  LWORK_ = 0;
 }
 //=============================================================================
 void Epetra_SerialDenseSolver::DeleteArrays()
@@ -133,7 +133,7 @@ void Epetra_SerialDenseSolver::DeleteArrays()
   if (R_ != 0) R_ = 0;
   if (C_ != 0)     {delete [] C_;C_ = 0;}
   INFO_ = 0;
-  LWORK_ = 0;    
+  LWORK_ = 0;
 }
 //=============================================================================
 void Epetra_SerialDenseSolver::ResetMatrix()
@@ -197,7 +197,7 @@ int Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X_in, Epetra
   if (X_in.A()==0) EPETRA_CHK_ERR(-4);
   if (X_in.LDA()<1) EPETRA_CHK_ERR(-5);
 
-  ResetVectors(); 
+  ResetVectors();
   LHS_ = &X_in;
   RHS_ = &B_in;
   NRHS_ = B_in.N();
@@ -233,11 +233,11 @@ int Epetra_SerialDenseSolver::Factor(void) {
       AF_ = Factor_->A();
       LDAF_ = Factor_->LDA();
     }
-  
+
   if (Equilibrate_) ierr = EquilibrateMatrix();
 
   if (ierr!=0) EPETRA_CHK_ERR(ierr-2);
-  
+
   if (IPIV_==0) IPIV_ = new int[Min_MN_]; // Allocated Pivot vector if not already done.
 
   GETRF (M_, N_, AF_, LDAF_, IPIV_, &INFO_);
@@ -255,7 +255,7 @@ int Epetra_SerialDenseSolver::Factor(void) {
 int Epetra_SerialDenseSolver::Solve(void) {
   int ierr = 0;
 
-  // We will call one of four routines depending on what services the user wants and 
+  // We will call one of four routines depending on what services the user wants and
   // whether or not the matrix has been inverted or factored already.
   //
   // If the matrix has been inverted, use DGEMM to compute solution.
@@ -293,7 +293,7 @@ int Epetra_SerialDenseSolver::Solve(void) {
   else {
 
     if (!Factored()) Factor(); // Matrix must be factored
-    
+
     if (B_!=X_) {
        *LHS_ = *RHS_; // Copy B to X if needed
        X_ = LHS_->A(); LDX_ = LHS_->LDA();
@@ -309,7 +309,7 @@ int Epetra_SerialDenseSolver::Solve(void) {
   if (ierr1!=0) EPETRA_CHK_ERR(ierr1)
   else
     EPETRA_CHK_ERR(ierr);
-  
+
   if (Equilibrate_) ierr1 = UnequilibrateLHS();
   EPETRA_CHK_ERR(ierr1);
   return(0);
@@ -328,18 +328,18 @@ int Epetra_SerialDenseSolver::ApplyRefinement(void)
   BERR_ = new double[NRHS_];
   AllocateWORK();
   AllocateIWORK();
-  
+
   GERFS(TRANS_, N_, NRHS_, A_, LDA_, AF_, LDAF_, IPIV_,
-	       B_, LDB_, X_, LDX_, FERR_, BERR_, 
+	       B_, LDB_, X_, LDX_, FERR_, BERR_,
 	       WORK_, IWORK_, &INFO_);
-  
-  
+
+
   SolutionErrorsEstimated_ = true;
   ReciprocalConditionEstimated_ = true;
   SolutionRefined_ = true;
-  
+
   UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(0);
 
@@ -348,19 +348,19 @@ int Epetra_SerialDenseSolver::ApplyRefinement(void)
 //=============================================================================
 int Epetra_SerialDenseSolver::ComputeEquilibrateScaling(void) {
   if (R_!=0) return(0); // Already computed
- 
+
   double DM = M_;
   double DN = N_;
   R_ = new double[M_];
   C_ = new double[N_];
-  
+
   GEEQU (M_, N_, AF_, LDAF_, R_, C_, &ROWCND_, &COLCND_, &AMAX_, &INFO_);
   if (INFO_ != 0) EPETRA_CHK_ERR(INFO_);
 
   if (COLCND_<0.1 || ROWCND_<0.1 || AMAX_ < Epetra_Underflow || AMAX_ > Epetra_Overflow) ShouldEquilibrate_ = true;
 
   UpdateFlops(4.0*DM*DN);
-  
+
   return(0);
 }
 
@@ -404,9 +404,9 @@ int Epetra_SerialDenseSolver::EquilibrateMatrix(void)
     }
     UpdateFlops(4.0*DM*DN);
   }
-  
+
   A_Equilibrated_ = true;
-  
+
   return(0);
 }
 
@@ -432,10 +432,10 @@ int Epetra_SerialDenseSolver::EquilibrateRHS(void)
     }
   }
 
-  
+
   B_Equilibrated_ = true;
   UpdateFlops((double) N_*(double) NRHS_);
-  
+
   return(0);
 }
 
@@ -458,9 +458,9 @@ int Epetra_SerialDenseSolver::UnequilibrateLHS(void)
     }
   }
 
-  
+
   UpdateFlops((double) N_ *(double) NRHS_);
-  
+
   return(0);
 }
 
@@ -469,7 +469,7 @@ int Epetra_SerialDenseSolver::Invert(void)
 {
   if (!Factored()) Factor(); // Need matrix factored.
 
-  /* This section work with LAPACK Version 3.0 only 
+  /* This section work with LAPACK Version 3.0 only
   // Setting LWORK = -1 and calling GETRI will return optimal work space size in WORK_TMP
   int LWORK_TMP = -1;
   double WORK_TMP;
@@ -481,7 +481,7 @@ int Epetra_SerialDenseSolver::Invert(void)
   WORK_ = new double[LWORK_];
   }
   */
-  // This section will work with any version of LAPACK 
+  // This section will work with any version of LAPACK
   AllocateWORK();
 
   GETRI ( N_, AF_, LDAF_, IPIV_, WORK_, &LWORK_, &INFO_);
@@ -490,7 +490,7 @@ int Epetra_SerialDenseSolver::Invert(void)
   UpdateFlops((DN*DN*DN));
   Inverted_ = true;
   Factored_ = false;
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(0);
 }

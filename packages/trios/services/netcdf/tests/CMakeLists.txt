@@ -40,11 +40,6 @@
 #  *************************************************************************
 # @HEADER
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddTest)
 
 # Need to include the binary dir so we can find config.h
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})

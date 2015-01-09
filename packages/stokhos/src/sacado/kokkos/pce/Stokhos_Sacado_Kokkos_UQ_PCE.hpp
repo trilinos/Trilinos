@@ -46,7 +46,7 @@
 
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 
-#include "KokkosCore_config.h"
+#include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 
@@ -64,6 +64,7 @@
 #include "Kokkos_Atomic_UQ_PCE.hpp"
 
 #include "Teuchos_SerialQRDenseSolver_UQ_PCE.hpp"
+#include "Teuchos_LAPACK_UQ_PCE.hpp"
 
 #endif // HAVE_STOKHOS_KOKKOSCORE
 

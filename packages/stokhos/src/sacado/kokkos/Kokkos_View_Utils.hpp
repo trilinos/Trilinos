@@ -46,6 +46,16 @@ namespace Kokkos {
 
 namespace Impl {
 
+KOKKOS_INLINE_FUNCTION
+void raise_error(const char *msg)
+{
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+  cuda_abort(msg);
+#else
+  throw std::runtime_error(msg);
+#endif
+}
+
 template< class T , class Device > struct RebindStokhosStorageDevice ;
 
 template< class T , class Device >
@@ -68,6 +78,18 @@ struct RebindStokhosStorageDevice< T[N] , Device >
 
 // Get Sacado size from a list of dimensions
 template <unsigned Rank> struct GetSacadoSize {};
+template <> struct GetSacadoSize<0> {
+  static size_t eval( const size_t n0 ,
+                      const size_t n1 = 0 ,
+                      const size_t n2 = 0 ,
+                      const size_t n3 = 0 ,
+                      const size_t n4 = 0 ,
+                      const size_t n5 = 0 ,
+                      const size_t n6 = 0 ,
+                      const size_t n7 = 0 ) {
+    return n0;
+  }
+};
 template <> struct GetSacadoSize<1> {
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,

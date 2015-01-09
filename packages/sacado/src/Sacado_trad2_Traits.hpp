@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,36 +43,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to ADvar types
-  template <typename T>
-  class Promote< Rad2::ADvar<T>, Rad2::ADvar<T> > {
-  public:
-
-    typedef Rad2::ADvar<T> type;
-  };
-
-  //! Specialization of %Promote to ADvar types
-  template <typename L, typename R>
-  class Promote< Rad2::ADvar<L>, R > {
-  public:
-
-    typedef typename ValueType< Rad2::ADvar<L> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Rad2::ADvar<value_type> type;
-  };
-
-  //! Specialization of %Promote to ADvar types
-  template <typename L, typename R>
-  class Promote< L, Rad2::ADvar<R> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Rad2::ADvar<R> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Rad2::ADvar<value_type> type;
-  };
+  SACADO_RAD_PROMOTE_SPEC( Rad2 )
 
   //! Specialization of %ScalarType to ADvar types
   template <typename T>
@@ -128,18 +97,18 @@ namespace Sacado {
   template <typename T>
   struct Value< Rad2::ADvar<T> > {
     typedef typename ValueType< Rad2::ADvar<T> >::type value_type;
-    static value_type eval(const Rad2::ADvar<T>& x) { 
+    static value_type eval(const Rad2::ADvar<T>& x) {
       return x.val(); }
   };
 
   //! Specialization of %MarkConstant to ADvar types
-  template <typename T> 
+  template <typename T>
   struct MarkConstant< Rad2::ADvar<T> > {
     static void eval(Rad2::ADvar<T>& x) { AD_Const(x); }
   };
 
   //! Specialization of %MarkConstant to ADvari types
-  template <typename T> 
+  template <typename T>
   struct MarkConstant< Rad2::ADvari<T> > {
     static void eval(Rad2::ADvari<T>& x) { AD_Const(x); }
   };
@@ -149,16 +118,16 @@ namespace Sacado {
   struct ScalarValue< Rad2::ADvar<T> > {
     typedef typename ValueType< Rad2::ADvar<T> >::type value_type;
     typedef typename ScalarType< Rad2::ADvar<T> >::type scalar_type;
-    static scalar_type eval(const Rad2::ADvar<T>& x) { 
+    static scalar_type eval(const Rad2::ADvar<T>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to ADvar types
   template <typename T>
   struct StringName< Rad2::ADvar<T> > {
-    static std::string eval() { 
-      return std::string("Sacado::Rad2::ADvar< ") + 
-	StringName<T>::eval() + " >"; }
+    static std::string eval() {
+      return std::string("Sacado::Rad2::ADvar< ") +
+        StringName<T>::eval() + " >"; }
   };
 
 } // namespace Sacado

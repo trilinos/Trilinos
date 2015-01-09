@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,14 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_set, ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
 /*!
  * writes the set parameters and optionally set data for 1 or more sets
@@ -91,6 +96,7 @@ int ex_put_sets (int   exoid,
 		ex_name_of_object(sets[i].type), exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
       }
+      free(sets_to_define);
       return (EX_FATAL);
     }
 
@@ -112,6 +118,7 @@ int ex_put_sets (int   exoid,
 	      "Error: failed to put file id %d into define mode",
 	      exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
+      free(sets_to_define);
       return (EX_FATAL);
     }
     
@@ -281,6 +288,7 @@ int ex_put_sets (int   exoid,
       sprintf(errmsg,
 	      "Error: failed to complete definition in file id %d", exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
+      free(sets_to_define);
       return (EX_FATAL);
     }
 
@@ -315,6 +323,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to locate %s %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -328,6 +337,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to store %s id %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -339,6 +349,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to locate %s status in file id %d", ex_name_of_object(sets[i].type),
 		exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -348,12 +359,14 @@ int ex_put_sets (int   exoid,
 		"Error: failed to store %s %"PRId64" status to file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
     }
-    free(sets_to_define);
   }
   
+  free(sets_to_define);
+
   /* Sets are now all defined; see if any set data needs to be output... */
   status = EX_NOERR;
   for (i=0; i < set_count; i++) {

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -59,21 +59,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CompObject {
   public:
 
     //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Basic Epetra_CompObject constuctor.
   Epetra_CompObject();
 
   //! Epetra_CompObject copy constructor.
-  
+
   Epetra_CompObject(const Epetra_CompObject& Source);
-  
-  
-  //! Epetra_CompObject destructor.  
+
+
+  //! Epetra_CompObject destructor.
   virtual ~Epetra_CompObject();
   //@}
 
   //! @name Set/Get counter method
-  //@{ 
+  //@{
   //! Set the internal Epetra_Flops() pointer.
   void SetFlopCounter(const Epetra_Flops & FlopCounter_in) {FlopCounter_= (Epetra_Flops *) &FlopCounter_in; return;}
   //! Set the internal Epetra_Flops() pointer to the flop counter of another Epetra_CompObject.
@@ -85,7 +85,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CompObject {
   //@}
 
   //! @name Set flop count methods
-  //@{ 
+  //@{
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void ResetFlops() const {if (FlopCounter_!=0) FlopCounter_->ResetFlops(); return;}
 
@@ -94,7 +94,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CompObject {
   //@}
 
   //! @name Update flop count methods
-  //@{ 
+  //@{
   //! Increment Flop count for \e this object
   void UpdateFlops(int Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 

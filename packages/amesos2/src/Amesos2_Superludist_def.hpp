@@ -76,25 +76,76 @@ namespace Amesos2 {
     , xvals_()
     , in_grid_(false)
   {
+    using Teuchos::Comm;
+    // It's OK to depend on MpiComm explicitly here, because
+    // SuperLU_DIST requires MPI anyway.
+    using Teuchos::MpiComm;
+    using Teuchos::outArg;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+    typedef global_ordinal_type GO;
+    typedef Tpetra::Map<local_ordinal_type, GO, node_type> map_type;
+
     ////////////////////////////////////////////
     // Set up the SuperLU_DIST processor grid //
     ////////////////////////////////////////////
 
-    int nprocs = this->getComm()->getSize();
+    RCP<const Comm<int> > comm = this->getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
     SLUD::int_t nprow, npcol;
-    get_default_grid_size(nprocs, nprow, npcol);
-    data_.mat_comm = dynamic_cast<const Teuchos::MpiComm<int>* >(this->matrixA_->getComm().getRawPtr())->getRawMpiComm()->operator()();
-    SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
+    get_default_grid_size (numProcs, nprow, npcol);
+
+    {
+      // FIXME (mfh 16 Dec 2014) getComm() just returns
+      // matrixA_->getComm(), so it's not clear why we need to ask for
+      // the matrix's communicator separately here.
+      RCP<const Comm<int> > matComm = this->matrixA_->getComm ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        matComm.is_null (), std::logic_error, "Amesos2::Superlustdist "
+        "constructor: The matrix's communicator is null!");
+      RCP<const MpiComm<int> > matMpiComm =
+        rcp_dynamic_cast<const MpiComm<int> > (matComm);
+      // FIXME (mfh 16 Dec 2014) If the matrix's communicator is a
+      // SerialComm, we probably could just use MPI_COMM_SELF here.
+      // I'm not sure if SuperLU_DIST is smart enough to handle that
+      // case, though.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        matMpiComm.is_null (), std::logic_error, "Amesos2::Superlustdist "
+        "constructor: The matrix's communicator is not an MpiComm!");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        matMpiComm->getRawPtrComm ().is_null (), std::logic_error, "Amesos2::"
+        "Superlustdist constructor: The matrix's communicator claims to be a "
+        "Teuchos::MpiComm<int>, but its getRawPtrComm() method returns "
+        "Teuchos::null!  This means that the underlying MPI_Comm doesn't even "
+        "exist, which likely implies that the Teuchos::MpiComm was constructed "
+        "incorrectly.  It means something different than if the MPI_Comm were "
+        "MPI_COMM_NULL.");
+      MPI_Comm rawMpiComm = (* (matMpiComm->getRawPtrComm ())) ();
+      data_.mat_comm = rawMpiComm;
+      // This looks a bit like ScaLAPACK's grid initialization (which
+      // technically takes place in the BLACS, not in ScaLAPACK
+      // proper). See http://netlib.org/scalapack/slug/node34.html.
+      // The main difference is that SuperLU_DIST depends explicitly
+      // on MPI, while the BLACS hides its communication protocol.
+      SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
+    }
 
     ////////////////////////////////////////////////////////
-    // Set Some default parameters.                       //
+    // Set some default parameters.                       //
     //                                                    //
     // Must do this after grid has been created in        //
     // case user specifies the nprow and npcol parameters //
     ////////////////////////////////////////////////////////
-    Teuchos::RCP<Teuchos::ParameterList> default_params
-      = Teuchos::parameterList( *(this->getValidParameters()) );
-    this->setParameters(default_params);
+    RCP<ParameterList> default_params =
+      parameterList (* (this->getValidParameters ()));
+    this->setParameters (default_params);
 
     // Set some internal options
     data_.options.Fact = SLUD::DOFACT;
@@ -111,39 +162,60 @@ namespace Amesos2 {
     // parallel symbolic factorization.                           //
     ////////////////////////////////////////////////////////////////
     data_.symb_comm = MPI_COMM_NULL;
-    int color = MPI_UNDEFINED;
-    int my_rank = this->rank_;
 
-    /* domains is the next power of 2 less than nprow*npcol.  This
-     * value will be used for creating an MPI communicator for the
-     * pre-ordering and symbolic factorization methods.
-     */
+    // domains is the next power of 2 less than nprow*npcol.  This
+    // value will be used for creating an MPI communicator for the
+    // pre-ordering and symbolic factorization methods.
     data_.domains = (int) ( pow(2.0, floor(log10((double)nprow*npcol)/log10(2.0))) );
 
-    if( this->rank_ < data_.domains ) color = 0;
-    MPI_Comm_split (data_.mat_comm, color, my_rank, &(data_.symb_comm));
+    const int color = (myRank < data_.domains) ? 0 : MPI_UNDEFINED;
+    MPI_Comm_split (data_.mat_comm, color, myRank, &(data_.symb_comm));
 
     //////////////////////////////////////////////////////////////////////
-    // Set up a row map that maps to only processors that are in the    //
-    // SuperLU processor grid.  This will be used for redistributing A. //
+    // Set up a row Map that only includes processes that are in the
+    // SuperLU process grid.  This will be used for redistributing A.
     //////////////////////////////////////////////////////////////////////
 
-    int my_weight = 0;
-    if( this->rank_ < nprow * npcol ){
-      in_grid_ = true; my_weight = 1; // I am in the grid, and I get some of the matrix rows
+    // mfh 16 Dec 2014: We could use createWeightedContigMapWithNode
+    // with myProcParticipates as the weight, but that costs an extra
+    // all-reduce.
+
+    // Set to 1 if I am in the grid, and I get some of the matrix rows.
+    int myProcParticipates = 0;
+    if (myRank < nprow * npcol) {
+      in_grid_ = true;
+      myProcParticipates = 1;
     }
+
+    // Compute how many processes in the communicator belong to the
+    // process grid.
+    int numParticipatingProcs = 0;
+    reduceAll<int, int> (*comm, REDUCE_SUM, myProcParticipates,
+                         outArg (numParticipatingProcs));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      this->globalNumRows_ != 0 && numParticipatingProcs == 0,
+      std::logic_error, "Amesos2::Superludist constructor: The matrix has "
+      << this->globalNumRows_ << " > 0 global row(s), but no processes in the "
+      "communicator want to participate in its factorization!  nprow = "
+      << nprow << " and npcol = " << npcol << ".");
+
+    // Divide up the rows among the participating processes.
+    size_t myNumRows = 0;
+    {
+      const GO GNR = static_cast<GO> (this->globalNumRows_);
+      const GO quotient = (numParticipatingProcs == 0) ? static_cast<GO> (0) :
+        GNR / static_cast<GO> (numParticipatingProcs);
+      const GO remainder =
+        GNR - quotient * static_cast<GO> (numParticipatingProcs);
+      const GO lclNumRows = (static_cast<GO> (myRank) < remainder) ?
+        (quotient + static_cast<GO> (1)) : quotient;
+      myNumRows = static_cast<size_t> (lclNumRows);
+    }
+
     // TODO: might only need to initialize if parallel symbolic factorization is requested.
-    // TODO: Need to fix this map for indexbase ?
-    superlu_rowmap_
-      = Tpetra::createWeightedContigMapWithNode<local_ordinal_type,
-      global_ordinal_type,
-      node_type>(my_weight,
-                 this->globalNumRows_,
-                 this->getComm(),
-                 KokkosClassic::DefaultNode::getDefaultNode());
-    // TODO: the node above should technically come from the matrix
-    // itself.  Might need to add a getNode method to the matrix
-    // adapter.
+    const GO indexBase = matrixA_->getRowMap ()->getIndexBase ();
+    superlu_rowmap_ =
+      rcp (new map_type (this->globalNumRows_, myNumRows, indexBase, comm));
 
     //////////////////////////////////
     // Do some other initialization //

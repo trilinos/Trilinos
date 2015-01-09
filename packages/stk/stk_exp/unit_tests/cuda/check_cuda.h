@@ -1,0 +1,3 @@
+
+int check_cuda();
+

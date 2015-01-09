@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -115,8 +115,11 @@ typedef tif_utest::Node Node;
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, GlobalOrdinal)
 {
+  using Teuchos::RCP;
   using std::endl;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vec_type;
   typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
   typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
 
@@ -129,9 +132,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   // The simple joy of tridiagonal matrices
   global_size_t num_rows_per_proc = 5;
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), d(rowmap);
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
+  Teuchos::RCP<const CRS> crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (rowmap);
+  vec_type x (rowmap), y (rowmap), z (rowmap), d (rowmap);
   Teuchos::ArrayRCP<Scalar> x_ptr = x.get1dViewNonConst();
   Teuchos::ArrayRCP<Scalar> y_ptr = y.get1dViewNonConst();
 
@@ -270,7 +275,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = rcp (new container_type (A, localRows));
+    MyContainer = Teuchos::rcp (new container_type (A, localRows));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -322,7 +327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "Computing results:" << endl;
   magnitude_type errNorm = STM::zero ();
   {
-    vec_type e (x);
+    vec_type e (x, Teuchos::Copy);
     e.update (-1.0, x_exact, 1.0); // e = x - x_exact
     errNorm = e.norm2 ();
     out << "  ||x - x_exact||_2 = " << errNorm << endl;

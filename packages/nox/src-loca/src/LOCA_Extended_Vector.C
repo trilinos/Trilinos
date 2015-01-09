@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,22 +55,22 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Extended::Vector::Vector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int nvecs, int nscalars) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int nvecs, int nscalars) :
   globalData(global_data),
-  vectorPtrs(nvecs), 
-  isView(nvecs), 
-  numScalars(nscalars), 
+  vectorPtrs(nvecs),
+  isView(nvecs),
+  numScalars(nscalars),
   scalarsPtr()
 {
-  scalarsPtr = 
+  scalarsPtr =
     Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(numScalars, 1));
 }
 
-LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source, 
-			       NOX::CopyType type) :
+LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source,
+                   NOX::CopyType type) :
   globalData(source.globalData),
-  vectorPtrs(source.vectorPtrs.size()), 
+  vectorPtrs(source.vectorPtrs.size()),
   isView(source.vectorPtrs.size()),
   numScalars(source.numScalars),
   scalarsPtr()
@@ -80,9 +80,9 @@ LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source,
     isView[i] = false;
   }
 
-  scalarsPtr = 
+  scalarsPtr =
     Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr));
-  
+
   if (type != NOX::DeepCopy)
     init(0.0);
 }
@@ -92,26 +92,26 @@ LOCA::Extended::Vector::~Vector()
 {
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::operator=(const NOX::Abstract::Vector& y)
 {
   operator=(dynamic_cast<const LOCA::Extended::Vector&>(y));
   return *this;
 }
 
-LOCA::Extended::Vector& 
+LOCA::Extended::Vector&
 LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
-{ 
+{
   if (this != &y) {
 
-    if (numScalars != y.numScalars) 
+    if (numScalars != y.numScalars)
       globalData->locaErrorCheck->throwError(
-			       "LOCA::Extended::Vector::operator=()",
-			       "Number of scalars must match in assignment");
+                   "LOCA::Extended::Vector::operator=()",
+                   "Number of scalars must match in assignment");
     if (vectorPtrs.size() != y.vectorPtrs.size())
       globalData->locaErrorCheck->throwError(
-			       "LOCA::Extended::Vector::operator=()",
-			       "Number of vectors must match in assignment");
+                   "LOCA::Extended::Vector::operator=()",
+                   "Number of vectors must match in assignment");
 
     globalData = y.globalData;
 
@@ -135,22 +135,20 @@ LOCA::Extended::Vector::clone(NOX::CopyType type) const
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::Vector::createMultiVector(
-				   const NOX::Abstract::Vector* const* vecs,
-				   int numVecs, 
-				   NOX::CopyType type) const
+                   const NOX::Abstract::Vector* const* vecs,
+                   int numVecs,
+                   NOX::CopyType type) const
 {
   // Pointers to sub-vectors of extended vectors
-  const NOX::Abstract::Vector** subvecs = 
+  const NOX::Abstract::Vector** subvecs =
     new const NOX::Abstract::Vector*[numVecs+1];
 
   // Pointer to sub-multivector of extended multivector
   Teuchos::RCP<NOX::Abstract::MultiVector> submvec;
 
   // Create empty extended multivector
-  Teuchos::RCP<LOCA::Extended::MultiVector> mvec = 
+  Teuchos::RCP<LOCA::Extended::MultiVector> mvec =
     generateMultiVector(numVecs+1, vectorPtrs.size(), numScalars);
-
-  const LOCA::Extended::Vector *evec;
 
   // Create sub multivectors
   for (unsigned int i=0; i<vectorPtrs.size(); i++) {
@@ -158,8 +156,9 @@ LOCA::Extended::Vector::createMultiVector(
     // Get the ith abstract vector from each column
     subvecs[0] = vectorPtrs[i].get();
     for (int j=0; j<numVecs; j++) {
-      evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
-      subvecs[j+1] = evec->vectorPtrs[i].get();
+      const LOCA::Extended::Vector & evec =
+        dynamic_cast<const LOCA::Extended::Vector&>(*vecs[j]);
+      subvecs[j+1] = evec.vectorPtrs[i].get();
     }
 
     // Create multivector for the ith row
@@ -171,29 +170,30 @@ LOCA::Extended::Vector::createMultiVector(
   }
 
   // Get scalars
-  for (int i=0; i<numScalars; i++) 
+  for (int i=0; i<numScalars; i++)
     mvec->getScalar(i,0) = (*scalarsPtr)(i,0);
   for (int j=0; j<numVecs; j++) {
-    evec = dynamic_cast<const LOCA::Extended::Vector*>(vecs[j]);
-    for (int i=0; i<numScalars; i++) 
-      mvec->getScalar(i,j+1) = (*evec->scalarsPtr)(i,0);
+    const LOCA::Extended::Vector & evec =
+      dynamic_cast<const LOCA::Extended::Vector&>(*vecs[j]);
+    for (int i=0; i<numScalars; i++)
+      mvec->getScalar(i,j+1) = (*evec.scalarsPtr)(i,0);
   }
 
   delete [] subvecs;
 
   return mvec;
-    
+
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
-LOCA::Extended::Vector::createMultiVector(int numVecs, 
-					  NOX::CopyType type) const
+LOCA::Extended::Vector::createMultiVector(int numVecs,
+                      NOX::CopyType type) const
 {
   // Pointer to sub-multivector of extended multivector
   Teuchos::RCP<NOX::Abstract::MultiVector> submvec;
 
   // Create empty extended multivector
-  Teuchos::RCP<LOCA::Extended::MultiVector> mvec = 
+  Teuchos::RCP<LOCA::Extended::MultiVector> mvec =
     generateMultiVector(numVecs, vectorPtrs.size(), numScalars);
 
   // Create sub multivectors
@@ -211,14 +211,14 @@ LOCA::Extended::Vector::createMultiVector(int numVecs,
   if (type == NOX::DeepCopy) {
     for (int j=0; j<numVecs; j++) {
       for (int i=0; i<numScalars; i++)
-	mvec->getScalar(i,j) = (*scalarsPtr)(i,0);
+    mvec->getScalar(i,j) = (*scalarsPtr)(i,0);
     }
   }
 
   return mvec;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::init(double gamma)
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
@@ -227,7 +227,7 @@ LOCA::Extended::Vector::init(double gamma)
   return *this;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::random(bool useSeed, int seed) {
   if (useSeed)
     NOX::Random::setSeed(seed);
@@ -239,12 +239,12 @@ LOCA::Extended::Vector::random(bool useSeed, int seed) {
   return *this;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::abs(const NOX::Abstract::Vector& y)
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->abs(*(Y.vectorPtrs[i]));
   for (int i=0; i<numScalars; i++)
@@ -253,21 +253,21 @@ LOCA::Extended::Vector::abs(const NOX::Abstract::Vector& y)
   return *this;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::reciprocal(const NOX::Abstract::Vector& y)
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->reciprocal(*(Y.vectorPtrs[i]));
   for (int i=0; i<numScalars; i++)
     (*scalarsPtr)(i,0) = 1.0 / (*Y.scalarsPtr)(i,0);
-  
+
   return *this;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::scale(double gamma)
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
@@ -277,12 +277,12 @@ LOCA::Extended::Vector::scale(double gamma)
   return *this;
 }
 
-NOX::Abstract::Vector& 
+NOX::Abstract::Vector&
 LOCA::Extended::Vector::scale(const NOX::Abstract::Vector& y)
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->scale(*(Y.vectorPtrs[i]));
   scalarsPtr->scale(*Y.scalarsPtr);
@@ -290,44 +290,44 @@ LOCA::Extended::Vector::scale(const NOX::Abstract::Vector& y)
   return *this;
 }
 
-NOX::Abstract::Vector& 
-LOCA::Extended::Vector::update(double alpha, const NOX::Abstract::Vector& y, 
-			       double gamma)
+NOX::Abstract::Vector&
+LOCA::Extended::Vector::update(double alpha, const NOX::Abstract::Vector& y,
+                   double gamma)
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), gamma);
   for (int i=0; i<numScalars; i++)
-    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + 
+    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) +
       gamma*((*scalarsPtr)(i,0));
 
   return *this;
 }
 
-NOX::Abstract::Vector& 
-LOCA::Extended::Vector::update(double alpha, 
-			       const NOX::Abstract::Vector& y, 
-			       double beta, const NOX::Abstract::Vector& b,
-			       double gamma)
+NOX::Abstract::Vector&
+LOCA::Extended::Vector::update(double alpha,
+                   const NOX::Abstract::Vector& y,
+                   double beta, const NOX::Abstract::Vector& b,
+                   double gamma)
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
-  const LOCA::Extended::Vector& B = 
+  const LOCA::Extended::Vector& B =
     dynamic_cast<const LOCA::Extended::Vector&>(b);
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->update(alpha, *(Y.vectorPtrs[i]), beta, *(B.vectorPtrs[i]),
-			  gamma);
+              gamma);
   for (int i=0; i<numScalars; i++)
-    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) + 
+    (*scalarsPtr)(i,0) = alpha*((*Y.scalarsPtr)(i,0)) +
       beta*((*B.scalarsPtr)(i,0)) + gamma*((*scalarsPtr)(i,0));
 
   return *this;
 }
 
-double 
+double
 LOCA::Extended::Vector::norm(NormType type) const
 {
   double n = 0.0;
@@ -336,13 +336,13 @@ LOCA::Extended::Vector::norm(NormType type) const
   switch (type) {
 
   case NOX::Abstract::Vector::MaxNorm:
-    for (unsigned int i=0; i<vectorPtrs.size(); i++) 
+    for (unsigned int i=0; i<vectorPtrs.size(); i++)
       n = NOX_MAX(n, vectorPtrs[i]->norm(type));
     n = NOX_MAX(n, scalarsPtr->normInf());
     break;
 
   case NOX::Abstract::Vector::OneNorm:
-    for (unsigned int i=0; i<vectorPtrs.size(); i++) 
+    for (unsigned int i=0; i<vectorPtrs.size(); i++)
       n += vectorPtrs[i]->norm(type);
     n += scalarsPtr->normOne();
     break;
@@ -363,10 +363,10 @@ LOCA::Extended::Vector::norm(NormType type) const
   return n;
 }
 
-double 
+double
 LOCA::Extended::Vector::norm(const NOX::Abstract::Vector& weights) const
 {
-  const LOCA::Extended::Vector& W = 
+  const LOCA::Extended::Vector& W =
     dynamic_cast<const LOCA::Extended::Vector&>(weights);
   double n = 0.0;
   double nv;
@@ -375,20 +375,20 @@ LOCA::Extended::Vector::norm(const NOX::Abstract::Vector& weights) const
     nv = vectorPtrs[i]->norm(*(W.vectorPtrs[i]));
     n += nv*nv;
   }
-  for (int i=0; i<numScalars; i++) 
+  for (int i=0; i<numScalars; i++)
     n += ((*W.scalarsPtr)(i,0))*((*scalarsPtr)(i,0))*((*scalarsPtr)(i,0));
   n = sqrt(n);
 
   return n;
 }
 
-double 
+double
 LOCA::Extended::Vector::innerProduct(const NOX::Abstract::Vector& y) const
 {
-  const LOCA::Extended::Vector& Y = 
+  const LOCA::Extended::Vector& Y =
     dynamic_cast<const LOCA::Extended::Vector&>(y);
   double d = 0.0;
-  
+
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     d += vectorPtrs[i]->innerProduct(*(Y.vectorPtrs[i]));
   for (int i=0; i<numScalars; i++)
@@ -397,10 +397,10 @@ LOCA::Extended::Vector::innerProduct(const NOX::Abstract::Vector& y) const
   return d;
 }
 
-int 
+NOX::size_type
 LOCA::Extended::Vector::length() const
 {
-  int l = 0;
+  NOX::size_type l = 0;
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     l += vectorPtrs[i]->length();
   l += numScalars;
@@ -408,7 +408,7 @@ LOCA::Extended::Vector::length() const
   return l;
 }
 
-void 
+void
 LOCA::Extended::Vector::print(std::ostream& stream) const
 {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
@@ -418,26 +418,26 @@ LOCA::Extended::Vector::print(std::ostream& stream) const
 
 }
 
-void 
+void
 LOCA::Extended::Vector::setVector(int i, const NOX::Abstract::Vector& v)
 {
-  if (vectorPtrs[i] != Teuchos::null) 
+  if (vectorPtrs[i] != Teuchos::null)
     *(vectorPtrs[i]) = v;
   else
     vectorPtrs[i] = v.clone(NOX::DeepCopy);
   isView[i] = false;
 }
 
-void 
+void
 LOCA::Extended::Vector::setVectorView(
-			 int i, 
-			 const Teuchos::RCP<NOX::Abstract::Vector>& v)
+             int i,
+             const Teuchos::RCP<NOX::Abstract::Vector>& v)
 {
   vectorPtrs[i] = v;
   isView[i] = true;
 }
 
-void 
+void
 LOCA::Extended::Vector::setScalar(int i, double s)
 {
   (*scalarsPtr)(i,0) = s;
@@ -446,12 +446,12 @@ LOCA::Extended::Vector::setScalar(int i, double s)
 void
 LOCA::Extended::Vector::setScalarArray(double *sv)
 {
-  scalarsPtr = 
+  scalarsPtr =
     Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-							     sv,
-							     numScalars,
-							     numScalars,
-							     1));
+                                 sv,
+                                 numScalars,
+                                 numScalars,
+                                 1));
 }
 
 Teuchos::RCP<const NOX::Abstract::Vector>
@@ -466,13 +466,13 @@ LOCA::Extended::Vector::getVector(int i)
   return vectorPtrs[i];
 }
 
-double 
+double
 LOCA::Extended::Vector::getScalar(int i) const
 {
   return (*scalarsPtr)(i,0);
 }
 
-double& 
+double&
 LOCA::Extended::Vector::getScalar(int i)
 {
   return (*scalarsPtr)(i,0);
@@ -503,12 +503,12 @@ LOCA::Extended::Vector::getNumVectors() const
 }
 
 Teuchos::RCP<LOCA::Extended::MultiVector>
-LOCA::Extended::Vector::generateMultiVector(int nColumns, int nVectorRows, 
-					    int nScalarRows) const
+LOCA::Extended::Vector::generateMultiVector(int nColumns, int nVectorRows,
+                        int nScalarRows) const
 {
-  return Teuchos::rcp(new LOCA::Extended::MultiVector(globalData, 
-						      nColumns, 
-						      nVectorRows, 
-						      nScalarRows));
+  return Teuchos::rcp(new LOCA::Extended::MultiVector(globalData,
+                              nColumns,
+                              nVectorRows,
+                              nScalarRows));
 }
 

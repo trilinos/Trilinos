@@ -30,12 +30,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_ElementVariableType.h>
 #include <Ioss_Super.h>
-#include <cstdlib>
-#include <string>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <stddef.h>                     // for size_t
+#include <cstdlib>                      // for atoi
+#include <string>                       // for string
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 
-#include "Ioss_ElementTopology.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -106,9 +106,9 @@
 class Rosenbrock : public NOX::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor
-  Rosenbrock() : 
+  Rosenbrock() :
     initialGuess(2),
     solution(2)
   {
@@ -138,9 +138,9 @@ public:
     f(1) = 1 - x(0);
     return true;
   };
-  
-  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		       const NOX::LAPACK::Vector & x)
+
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J,
+               const NOX::LAPACK::Vector & x)
   {
     J(0,0) = -20 * x(0);
     J(0,1) = 10;
@@ -166,21 +166,21 @@ int main()
 
   // Set up the problem interface
   Rosenbrock rosenbrock;
-  
+
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  Teuchos::RCP<NOX::LAPACK::Group> grp = 
+  Teuchos::RCP<NOX::LAPACK::Group> grp =
     Teuchos::rcp(new NOX::LAPACK::Group(rosenbrock));
 
   // Set up the status tests
-  Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
+  Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
-					    statusTestA, statusTestB));
+                        statusTestA, statusTestB));
 
   // Create the list of solver parameters
   Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
@@ -188,11 +188,11 @@ int main()
   Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
   // Set the level of output (this is the default)
-  solverParameters.sublist("Printing").set("Output Information", 
-						    NOX::Utils::Warning + 
-						    NOX::Utils::OuterIteration + 
-						    NOX::Utils::InnerIteration + 
-						    NOX::Utils::Parameters);
+  solverParameters.sublist("Printing").set("Output Information",
+                            NOX::Utils::Warning +
+                            NOX::Utils::OuterIteration +
+                            NOX::Utils::InnerIteration +
+                            NOX::Utils::Parameters);
 
   // Set the solver (this is the default)
   solverParameters.set("Nonlinear Solver", "Line Search Based");
@@ -220,9 +220,9 @@ int main()
   solver.getList().print(cout);
 
   // Get the answer
-  NOX::LAPACK::Group solnGrp = 
+  NOX::LAPACK::Group solnGrp =
     dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
-  
+
   // Print the answer
   std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
   solnGrp.print();

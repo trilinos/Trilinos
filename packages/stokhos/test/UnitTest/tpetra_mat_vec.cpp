@@ -184,8 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<Scalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<Scalar,MV> BMVT;
   typedef Belos::LinearProblem<Scalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -241,11 +239,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
 typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
-#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
+#elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
 typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 #else
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;

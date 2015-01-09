@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,19 +48,16 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-
-/*! \cond INTERNAL */
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
+#include <assert.h>                     // for assert
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, EX_MSG, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 /* Generic error message for element type/node count mapping...*/
 #define EL_NODE_COUNT_ERROR sprintf(errmsg, \
@@ -68,6 +65,12 @@ static void *safe_free(void *array)
                       elem_blk_parms[i].elem_type,\
                       elem_blk_parms[i].num_nodes_per_elem);\
               ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
+              ex_safe_free(elem_blk_ids); \
+              ex_safe_free(side_set_ids); \
+              ex_safe_free(ss_elem_ndx); \
+              ex_safe_free(side_set_elem_list); \
+              ex_safe_free(side_set_side_list); \
+              ex_safe_free(elem_blk_parms); \
               return(EX_FATAL);
 /*! \endcond */
 
@@ -89,7 +92,7 @@ int ex_get_concat_side_set_node_count(int exoid,
   int int_size, ids_size;
   int status;
   
-  struct elem_blk_parm  *elem_blk_parms;
+  struct elem_blk_parm  *elem_blk_parms = NULL;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -162,7 +165,7 @@ int ex_get_concat_side_set_node_count(int exoid,
             "Error: failed to get element block ids in file id %d",
             exoid);
     ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
-    return(EX_FATAL);
+    goto error_ret;
   } 
 
   /* Allocate space for the element block params */
@@ -196,7 +199,7 @@ int ex_get_concat_side_set_node_count(int exoid,
              "Error: failed to get element block  %"PRId64" parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
-      return(EX_FATAL);
+      goto error_ret;
     }
 
     elem_blk_parms[i].num_elem_in_blk = block.num_entry;
@@ -613,23 +616,27 @@ int ex_get_concat_side_set_node_count(int exoid,
 	goto error_ret;
       }
     }
-    ss_elem_ndx        = safe_free(ss_elem_ndx);
-    side_set_elem_list = safe_free(side_set_elem_list);
-    side_set_side_list = safe_free(side_set_side_list);
+    ss_elem_ndx        = ex_safe_free(ss_elem_ndx);
+    side_set_elem_list = ex_safe_free(side_set_elem_list);
+    side_set_side_list = ex_safe_free(side_set_side_list);
     ioff += tot_num_ss_elem;
   }
     
   /* All done: release allocated memory */
-  safe_free(elem_blk_ids);
-  safe_free(side_set_ids);
-
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(side_set_ids);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(side_set_elem_list);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(elem_blk_parms);
   return(EX_NOERR);
 
  error_ret:
-  safe_free(elem_blk_ids);
-  safe_free(side_set_ids);
-  safe_free(ss_elem_ndx);
-  safe_free(side_set_elem_list);
-  safe_free(side_set_side_list);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(side_set_ids);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(side_set_elem_list);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(elem_blk_parms);
   return (EX_FATAL);
 }

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -108,7 +108,7 @@ void Epetra_SerialDenseSVD::InitPointers()
   S_ = 0;
   Vt_ = 0;
   INFO_ = 0;
-  LWORK_ = 0;    
+  LWORK_ = 0;
 }
 //=============================================================================
 void Epetra_SerialDenseSVD::DeleteArrays()
@@ -130,7 +130,7 @@ void Epetra_SerialDenseSVD::DeleteArrays()
 //  if (R_ != 0) R_ = 0;
 //  if (C_ != 0)     {delete [] C_;C_ = 0;}
   INFO_ = 0;
-  LWORK_ = 0;    
+  LWORK_ = 0;
 }
 //=============================================================================
 void Epetra_SerialDenseSVD::ResetMatrix()
@@ -199,7 +199,7 @@ int Epetra_SerialDenseSVD::SetVectors(Epetra_SerialDenseMatrix & X_in, Epetra_Se
   if (X_in.A()==0) EPETRA_CHK_ERR(-4);
   if (X_in.LDA()<1) EPETRA_CHK_ERR(-5);
 
-  ResetVectors(); 
+  ResetVectors();
   LHS_ = &X_in;
   RHS_ = &B_in;
   NRHS_ = B_in.N();
@@ -237,7 +237,7 @@ int Epetra_SerialDenseSVD::Factor() {
 //  if (Equilibrate_) ierr = EquilibrateMatrix();
 
   if (ierr!=0) EPETRA_CHK_ERR(ierr-2);
-  
+
   //allocate temp work space
   int lwork = 5*M_;
   double *work = new double[lwork];
@@ -264,7 +264,7 @@ int Epetra_SerialDenseSVD::Solve(void) {
   //NO REFINEMENT!!!
   //NO EQUILIBRATION!!!
 
-  // We will call one of four routines depending on what services the user wants and 
+  // We will call one of four routines depending on what services the user wants and
   // whether or not the matrix has been inverted or factored already.
   //
   // If the matrix has been inverted, use DGEMM to compute solution.
@@ -304,7 +304,7 @@ int Epetra_SerialDenseSVD::Solve(void) {
   else {
 
     if (!Factored()) Factor(); // Matrix must be factored
-    
+
     if (B_!=X_) *LHS_ = *RHS_; // Copy B to X if needed
     GETRS(TRANS_, N_, NRHS_, AF_, LDAF_, IPIV_, X_, LDX_, &INFO_);
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
@@ -318,7 +318,7 @@ int Epetra_SerialDenseSVD::Solve(void) {
   if (ierr1!=0) EPETRA_CHK_ERR(ierr1)
   else
     EPETRA_CHK_ERR(ierr);
-  
+
   if (Equilibrate_) ierr1 = UnequilibrateLHS();
   EPETRA_CHK_ERR(ierr1);
 */
@@ -339,18 +339,18 @@ int Epetra_SerialDenseSVD::ApplyRefinement(void)
   BERR_ = new double[NRHS_];
   AllocateWORK();
   AllocateIWORK();
-  
+
   GERFS(TRANS_, N_, NRHS_, A_, LDA_, AF_, LDAF_, IPIV_,
-	       B_, LDB_, X_, LDX_, FERR_, BERR_, 
+	       B_, LDB_, X_, LDX_, FERR_, BERR_,
 	       WORK_, IWORK_, &INFO_);
-  
-  
+
+
   SolutionErrorsEstimated_ = true;
   ReciprocalConditionEstimated_ = true;
   SolutionRefined_ = true;
-  
+
   UpdateFlops(2.0*DN*DN*DNRHS); // Not sure of count
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(0);
 
@@ -359,19 +359,19 @@ int Epetra_SerialDenseSVD::ApplyRefinement(void)
 //=============================================================================
 int Epetra_SerialDenseSVD::ComputeEquilibrateScaling(void) {
   if (R_!=0) return(0); // Already computed
- 
+
   double DM = M_;
   double DN = N_;
   R_ = new double[M_];
   C_ = new double[N_];
-  
+
   GEEQU (M_, N_, AF_, LDAF_, R_, C_, &ROWCND_, &COLCND_, &AMAX_, &INFO_);
   if (INFO_ != 0) EPETRA_CHK_ERR(INFO_);
 
   if (COLCND_<0.1 || ROWCND_<0.1 || AMAX_ < Epetra_Underflow || AMAX_ > Epetra_Overflow) ShouldEquilibrate_ = true;
 
   UpdateFlops(4.0*DM*DN);
-  
+
   return(0);
 }
 
@@ -415,9 +415,9 @@ int Epetra_SerialDenseSVD::EquilibrateMatrix(void)
     }
     UpdateFlops(4.0*DM*DN);
   }
-  
+
   A_Equilibrated_ = true;
-  
+
   return(0);
 }
 
@@ -443,10 +443,10 @@ int Epetra_SerialDenseSVD::EquilibrateRHS(void)
     }
   }
 
-  
+
   B_Equilibrated_ = true;
   UpdateFlops((double) N_*(double) NRHS_);
-  
+
   return(0);
 }
 
@@ -469,9 +469,9 @@ int Epetra_SerialDenseSVD::UnequilibrateLHS(void)
     }
   }
 
-  
+
   UpdateFlops((double) N_ *(double) NRHS_);
-  
+
   return(0);
 }
 */
@@ -525,7 +525,7 @@ int Epetra_SerialDenseSVD::Invert( double rthresh, double athresh )
   UpdateFlops((DN*DN*DN));
   Inverted_ = true;
   Factored_ = false;
-  
+
   EPETRA_CHK_ERR(INFO_);
   return(num_replaced);
 }

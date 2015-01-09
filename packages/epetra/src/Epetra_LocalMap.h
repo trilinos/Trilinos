@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,16 +48,16 @@
 
 /*! Small matrix and vector objects are often replicated on distributed memory
   parallel machines. The Epetra_LocalMap class allows construction of these replicated
-  local objects and keeps information that describes 
-  this distribution.  
+  local objects and keeps information that describes
+  this distribution.
 
-  Epetra_LocalMap allows the storage and retrieval of the following information.  
-  Once a Epetra_Map is constructed any of the following attributes can 
+  Epetra_LocalMap allows the storage and retrieval of the following information.
+  Once a Epetra_Map is constructed any of the following attributes can
   be obtained
   by calling a query function that has the name as the attribute, e.g. to get the
   value of NumGlobalPoints, you can call a function NumGlobalElements().
   For attributes that
-  are lists, the query functions return the list values in a user allocated array.  
+  are lists, the query functions return the list values in a user allocated array.
 
 
   <ul>
@@ -72,7 +72,7 @@
   from Epetra_BlockMap.  As such,  Epetra_LocalMap has full access to all the functions in these other
   map classes.
 
-  In particular, the following function allows a boolean test:    
+  In particular, the following function allows a boolean test:
 
   <ul>
   <li> DistributedGlobal() - Returns false for a Epetra_LocalMap object.
@@ -87,7 +87,7 @@
 #include "Epetra_Map.h"
 
 class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
-    
+
   public:
   //! Epetra_LocalMap constructor for a user-defined replicate distribution of elements.
   /*! Creates a map that puts NumMyElements on the calling processor. Each processor should
@@ -95,18 +95,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
 
     \param In
             NumMyElements - Number of elements owned by the calling processor.
-    
+
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
 	    C/C++ and 1 for Fortran.
-	    
+	
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
 	    processors.
 
     \return Pointer to a Epetra_Map object.
 
-  */ 
+  */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 	Epetra_LocalMap(int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
@@ -116,9 +116,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
 #endif
 	
   //! Epetra_LocalMap copy constructor.
-  
+
 	Epetra_LocalMap(const Epetra_LocalMap& map);
-  
+
   //! Epetra_LocalMap destructor.
 	
 	virtual ~Epetra_LocalMap();

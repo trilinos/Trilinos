@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -222,6 +221,7 @@ IF (${PACKAGE_NAME}_BUILD_COLORING)
 
   SET(HEADERS ${HEADERS}
     coloring/EpetraExt_MapColoring.h
+    coloring/EpetraExt_TCrsGraph_MapColoringIndex.h
     coloring/EpetraExt_MapColoringIndex.h
     )
 

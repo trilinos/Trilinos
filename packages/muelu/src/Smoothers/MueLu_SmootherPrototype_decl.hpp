@@ -66,8 +66,21 @@ namespace MueLu {
     'Smoother prototypes' can be fully copied using the Copy() method.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>, public Factory {
+  template <class Scalar = SmootherBase<>::scalar_type,
+            class LocalOrdinal = typename SmootherBase<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename SmootherBase<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  class SmootherPrototype :
+    public SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+    public Factory
+  {
+  public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+
+  private:
 #undef MUELU_SMOOTHERPROTOTYPE_SHORT
 #include "MueLu_UseShortNames.hpp"
 

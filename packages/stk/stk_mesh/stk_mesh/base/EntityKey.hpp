@@ -1,193 +1,105 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef stk_mesh_EntityKey_hpp
-#define stk_mesh_EntityKey_hpp
+#ifndef STK_MESH_ENTITYKEY_HPP
+#define STK_MESH_ENTITYKEY_HPP
 
-#include <stdint.h>
-#include <limits>
-#include <boost/functional/hash.hpp>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for uint64_t
+#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
+#include <boost/type_traits/is_same.hpp>  // for is_same
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include "boost/functional/hash/hash.hpp"  // for hash_value
+#include "boost/mpl/bool.hpp"           // for bool_<>::value
 
-#include <stk_mesh/base/Types.hpp>
+
+
+
 
 namespace stk {
 namespace mesh {
 
+struct EntityKey
+{
+  BOOST_STATIC_ASSERT(( boost::is_same<EntityId, uint64_t>::value ));
 
-// Note:  EntityRank and EntityId typedefs are defined in Types.hpp
-
-/** \addtogroup stk_mesh_module
- * \{
- */
-
-//----------------------------------------------------------------------
-/** \brief  Integer type for the entity keys, which is an encoding
- *          of the entity type and entity identifier.
- *
- *  This type is used to fully order entities and entity pointers
- *  in numerous containers.  Ordering is first by type and second
- *  by identifier.  Values of this type are frequently compared for
- *  ordering and equality, and are frequently communicated between
- *  parallel processes.  Thus the motivation for this type to be
- *  a "plain old data" type.
- *
- * Notes on construction and validity:
- *
- * EntityKey takes constructor arguments entity_rank and entity_id which
- * are restricted to lie in a sub-range of what can be represented by the
- * EntityRank and EntityId types. The sub-range allowed by EntityKey is
- * dictated by the amount of space used to store the internal encoding of
- * those values (described further in the comments for the EntityKey
- * constructor below).
- *
- * The function entity_key_valid attempts to determine that the key was
- * not created by some erroneous operation such as assignment from a
- * smaller type like a 32-bit int.
- *
- * Note that an instance of stk::mesh may place further restrictions on a
- * 'valid' key, such as requiring that
- *         0 <= entity_rank(key) < meta_data.entity_rank_count().
- *
- * Typically stk::mesh does not take EntityKeys as input. A user of
- * stk::mesh would (for instance) request that an Entity be created by
- * specifying an entity-type and entity-id as input. The resulting
- * Entity would then hold a mesh-created EntityKey that could be queried.
- * Thus stk::mesh can control the validity of EntityKeys associated with
- * the mesh.
- */
-union EntityKey {
-public:
-  typedef uint64_t raw_key_type ;
-
-  enum { rank_digits = 8 };
-
-private:
-
-  enum {
-    invalid_key = ~raw_key_type(0) ,
-    raw_digits  = std::numeric_limits<raw_key_type>::digits ,
-    id_digits   = raw_digits - rank_digits ,
-    id_mask     = ~raw_key_type(0) >> rank_digits
+  enum entity_key_t {
+      RANK_SHIFT = 56ULL
+    , MIN_ID = 0ULL
+    , MAX_ID = (1ULL << RANK_SHIFT) - 1ULL
+    , ID_MASK = MAX_ID
+    , INVALID = ~0ULL
   };
 
-  raw_key_type key ;
-
-  struct {
-    raw_key_type id   : id_digits ;
-    raw_key_type rank : rank_digits ;
-  } normal_view ;
-
-  struct {
-    raw_key_type rank : rank_digits ;
-    raw_key_type id   : id_digits ;
-  } reverse_view ;
-
-public:
-  /** \brief  Destructor */
-  ~EntityKey() {}
-
-  /** Default constructor.
-   * Note that entity_key_valid(key) == false if key is default-constructed.
-   */
-  EntityKey() : key(invalid_key) { }
-
-  EntityKey( const EntityKey & rhs ) : key( rhs.key ) {}
-
-  EntityKey & operator = ( const EntityKey & rhs )
-    { key = rhs.key ; return *this ; }
-
-  /** Constructor
-   *
-   * \param entity_rank is required to lie in the range 0 to 255 (which is
-   *    the limit of what can be stored in 8 bits). This limit may be raised
-   *    if we decide to use more than 8 bits for encoding an entity-type.
-   *
-   * \param entity_id is required to lie in the range 1 to 2^id_digits.
-   *
-   * If entity_rank or entity_id lie outside these ranges an exception will
-   * be thrown.
-   */
-  EntityKey( EntityRank entity_rank, raw_key_type entity_id );
-
-  raw_key_type id() const { return key & id_mask ; }
-
-  EntityRank rank() const { return key >> id_digits ; }
-
-  EntityRank type() const { return rank(); }
-
-  bool operator==(const EntityKey &rhs) const {
-    return key == rhs.key;
+  static bool is_valid_id( EntityId id )
+  {
+    return id > MIN_ID && id <=  EntityKey::MAX_ID;
   }
 
-  bool operator!=(const EntityKey &rhs) const {
-    return !(key == rhs.key);
+  EntityKey()
+    : m_value(INVALID)
+  {}
+
+  EntityKey( entity_key_t value )
+    : m_value(value)
+  {}
+
+  EntityKey( EntityRank arg_rank, EntityId arg_id )
+    : m_value( static_cast<entity_key_t>( static_cast<uint64_t>(arg_rank) << RANK_SHIFT | arg_id) )
+  {
+    ThrowAssertMsg( arg_rank <= static_cast<EntityRank>(255), "Error: given an out of range entity rank " << arg_rank);
+    ThrowAssertMsg( arg_id <= MAX_ID, "Error: given an out of range entity id " << arg_id);
   }
 
-  bool operator<(const EntityKey &rhs) const {
-    return key < rhs.key;
-  }
+  EntityId   id() const   { return m_value & ID_MASK; }
+  EntityRank rank() const { return static_cast<EntityRank>(m_value >> RANK_SHIFT); }
 
-  bool operator>(const EntityKey &rhs) const {
-    return rhs.key < key;
-  }
+  bool is_valid() const { return m_value != INVALID; }
 
-  bool operator<=(const EntityKey &rhs) const {
-    return !(key < rhs.key);
-  }
+  operator entity_key_t() const { return m_value; }
 
-  bool operator>=(const EntityKey &rhs) const {
-    return !(rhs.key < key);
-  }
-
-  //------------------------------
-  // As safe and explict a conversion
-  // as possible between the raw_key_type and value.
-
-  explicit EntityKey( const raw_key_type * const value )
-   : key( *value ) {}
-
-  raw_key_type raw_key() const { return key ; }
+  entity_key_t m_value;
 };
 
-// Functions for encoding / decoding entity keys.
+std::ostream & operator << ( std::ostream & out, EntityKey  key);
 
-/** \brief  Given an entity key, return an entity type (rank). */
-inline
-EntityRank entity_rank( const EntityKey & key ) {
-  return key.rank();
+inline size_t hash_value(EntityKey k)
+{
+  return boost::hash_value(static_cast<size_t>(k.m_value));
 }
 
-/** \brief  Given an entity key, return the identifier for the entity.  */
-inline
-EntityId  entity_id( const EntityKey & key ) {
-  return key.id();
-}
+}} // namespace stk::mesh
 
-/** \brief  Query if an entity key is valid */
-inline
-bool entity_key_valid( const EntityKey & key ) {
-  return key != EntityKey();
-}
-
-inline
-bool entity_id_valid( EntityKey::raw_key_type id ) {
-  return 0 < id && id <= EntityKey().id();
-}
-
-inline
-size_t hash_value( EntityKey key) {
-  return boost::hash_value(key.raw_key());
-}
-
-
-
-} // namespace mesh
-} // namespace stk
-
-#endif /* stk_mesh_EntityKey_hpp */
-
+#endif /* STK_MESH_ENTITYKEY_HPP */

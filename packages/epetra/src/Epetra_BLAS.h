@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -54,24 +54,24 @@
     dot products, dense matrix-vector multiplication and dense matrix-matrix
     multiplication.
 
-    The standard BLAS interface is Fortran-specific.  Unfortunately, the 
+    The standard BLAS interface is Fortran-specific.  Unfortunately, the
     interface between C++ and Fortran is not standard across all computer
     platforms.  The Epetra_BLAS class provides C++ wrappers for the BLAS
     kernels in order to insulate the rest of Epetra from the details of C++ to Fortran
     translation.
     A Epetra_BLAS object is essentially nothing, but allows access to the BLAS wrapper
     functions.
-  
-    Epetra_BLAS is a serial interface only.  This is appropriate since the standard 
+
+    Epetra_BLAS is a serial interface only.  This is appropriate since the standard
     BLAS are only specified for serial execution (or shared memory parallel).
 */
 
 
 class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
-    
+
   public:
     //! @name Constructors/Destructor
-  //@{ 
+  //@{
    //! Epetra_BLAS Constructor.
   /*! Builds an instance of a serial BLAS object.
    */
@@ -86,9 +86,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
   //! Epetra_BLAS Destructor.
   virtual ~Epetra_BLAS(void);
   //@}
-  
+
   //! @name Level 1 BLAS
-  //@{ 
+  //@{
   //! Epetra_BLAS one norm function (SASUM).
   float ASUM(const int N, const float * X, const int INCX = 1) const;
   //! Epetra_BLAS one norm function (DASUM).
@@ -126,7 +126,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
   //@}
 
   //! @name Level 2 BLAS
-  //@{ 
+  //@{
   //! Epetra_BLAS matrix-vector multiply function (SGEMV)
   void GEMV(const char TRANS, const int M, const int N,
          const float ALPHA, const float * A, const int LDA, const float * X,
@@ -139,7 +139,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
 
 
   //! @name Level 3 BLAS
-  //@{ 
+  //@{
   //! Epetra_BLAS matrix-matrix multiply function (SGEMM)
   void GEMM(const char TRANSA, const char TRANSB, const int M, const int N, const int K,
 	    const float ALPHA, const float * A, const int LDA, const float * B,

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc(); 
+  int NumProc = Comm.NumProc();
 
   if (verbose && MyPID==0)
     cout << Epetra_Version() << endl << endl;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   int NumMyElements = 4;
   int NumGlobalElements = NumMyElements*NumProc;
   int IndexBase = 0;
-  
+
   Epetra_Map Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
   EPETRA_TEST_ERR( Drumm1(Map, verbose),ierr);

@@ -1,20 +1,50 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
-#include <stk_mesh/base/Trace.hpp>
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <cstring>                      // for NULL, strlen
+#include <iosfwd>                       // for ostringstream
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include "Shards_Array.hpp"             // for ArrayDimTag
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
+#include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
+#include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
-#include <stk_util/util/string_case_compare.hpp>
-
-#include <cstring>
-#include <sstream>
-#include <stdexcept>
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
@@ -26,6 +56,8 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
                              unsigned                            arg_rank ,
                              const shards::ArrayDimTag * const * arg_tags )
 {
+  ThrowRequireMsg(arg_rank < 8, "Invalid field rank: " << arg_rank);
+
   std::ostringstream oss;
   oss << "FieldBase<" ;
   oss << arg_traits.name ;
@@ -41,8 +73,7 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
 // 2) Number of states must match
 // 3) Dimension must be different by at most one rank,
 //    where the tags match for the smaller rank.
-void verify_field_type( const char                        * arg_method ,
-                        const FieldBase                   & arg_field ,
+void verify_field_type( const FieldBase                   & arg_field ,
                         const DataTraits                  & arg_traits ,
                         unsigned                            arg_rank ,
                         const shards::ArrayDimTag * const * arg_dim_tags ,
@@ -55,21 +86,21 @@ void verify_field_type( const char                        * arg_method ,
   const bool ok_number_states =
     ! arg_num_states || arg_num_states == arg_field.number_of_states();
 
-  bool ok_dimension = ! arg_rank || arg_rank     == arg_field.rank() ||
-                                    arg_rank + 1 == arg_field.rank() ||
-                                    arg_rank - 1 == arg_field.rank() ;
+  bool ok_dimension = ! arg_rank || arg_rank     == arg_field.field_array_rank() ||
+                                    arg_rank + 1 == arg_field.field_array_rank() ||
+                                    arg_rank - 1 == arg_field.field_array_rank() ;
 
-  const unsigned check_rank = arg_rank < arg_field.rank() ?
-                              arg_rank : arg_field.rank() ;
+  const unsigned check_rank = arg_rank < arg_field.field_array_rank() ?
+                              arg_rank : arg_field.field_array_rank() ;
 
   for ( unsigned i = 0 ; i < check_rank && ok_dimension ; ++i ) {
     ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i] ;
   }
 
   ThrowErrorMsgIf( ! ok_traits || ! ok_number_states || ! ok_dimension,
-                   arg_method << " FAILED: Existing field = " <<
+                   " verify_field_type FAILED: Existing field = " <<
                    print_field_type( arg_field.data_traits() ,
-                                     arg_field.rank() ,
+                                     arg_field.field_array_rank() ,
                                      arg_field.dimension_tags() ) <<
                    "[ name = \"" << arg_field.name() <<
                    "\" , #states = " << arg_field.number_of_states() << " ]" <<
@@ -81,33 +112,32 @@ void verify_field_type( const char                        * arg_method ,
 } //unamed namespace
 
 //----------------------------------------------------------------------
-
 FieldBase * FieldRepository::get_field(
-  const char                        * arg_method ,
+  stk::topology::rank_t               arg_entity_rank ,
   const std::string                 & arg_name ,
   const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank ,
+  unsigned                            arg_array_rank ,
   const shards::ArrayDimTag * const * arg_dim_tags ,
   unsigned                            arg_num_states ) const
 {
-  FieldBase * f = NULL ;
-
   for ( std::vector<FieldBase*>::const_iterator
-        j =  m_fields.begin() ;
-        j != m_fields.end() && NULL == f ; ++j ) {
+        j =  m_rankedFields[arg_entity_rank].begin();
+        j != m_rankedFields[arg_entity_rank].end(); ++j ) {
     if ( equal_case( (*j)->name() , arg_name ) ) {
 
-      f = *j ;
+      FieldBase* f = *j ;
 
-      verify_field_type( arg_method , *f , arg_traits ,
-                         arg_rank , arg_dim_tags , arg_num_states );
+      verify_field_type( *f , arg_traits , arg_array_rank , arg_dim_tags , arg_num_states );
+
+      return f;
     }
   }
-  return f ;
+  return NULL;
 }
 
 FieldBase * FieldRepository::declare_field(
   const std::string                 & arg_name ,
+  stk::topology::rank_t               arg_entity_rank ,
   const DataTraits                  & arg_traits ,
   unsigned                            arg_rank ,
   const shards::ArrayDimTag * const * arg_dim_tags ,
@@ -145,7 +175,7 @@ FieldBase * FieldRepository::declare_field(
   FieldBase * f[ MaximumFieldStates ] ;
 
   f[0] = get_field(
-                "FieldRepository::declare_field" ,
+                arg_entity_rank ,
                 arg_name ,
                 arg_traits ,
                 arg_rank ,
@@ -180,6 +210,7 @@ FieldBase * FieldRepository::declare_field(
 
       f[i] = new FieldBase(
           arg_meta_data ,
+          arg_entity_rank,
           m_fields.size() ,
           field_names[i] ,
           arg_traits ,
@@ -189,7 +220,7 @@ FieldBase * FieldRepository::declare_field(
           static_cast<FieldState>(i)
           );
 
-      m_fields.push_back( f[i] );
+      add_field( f[i] );
     }
 
     for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
@@ -200,15 +231,12 @@ FieldBase * FieldRepository::declare_field(
   return f[0] ;
 }
 
-void FieldRepository::verify_and_clean_restrictions(
-    const char       * arg_method ,
-    const Part& superset, const Part& subset,
-    const PartVector & arg_all_parts )
+void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
   TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
 
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( arg_method, superset, subset, arg_all_parts );
+    (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
   }
 }
 

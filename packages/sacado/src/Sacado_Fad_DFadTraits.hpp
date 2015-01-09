@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -61,32 +61,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to DFad types
-  template <typename ValueT>
-  struct Promote< Fad::DFad<ValueT>, Fad::DFad<ValueT> > {
-    typedef Fad::DFad<ValueT> type;
-  };
-
-  //! Specialization of %Promote to DFad types
-  template <typename ValueT, typename R>
-  struct Promote< Fad::DFad<ValueT>, R > {
-    typedef typename ValueType< Fad::DFad<ValueT> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::DFad<value_type> type;
-  };
-
-  //! Specialization of %Promote to DFad types
-  template <typename L, typename ValueT>
-  struct Promote< L, Fad::DFad<ValueT> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Fad::DFad<ValueT> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::DFad<value_type> type;
-  };
+  SACADO_FAD_PROMOTE_SPEC( Fad, DFad )
 
   //! Specialization of %ScalarType to DFad types
   template <typename ValueT>

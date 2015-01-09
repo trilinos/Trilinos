@@ -1,29 +1,202 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_util_parallel_ParallelReduce_hpp
 #define stk_util_parallel_ParallelReduce_hpp
 
-#include <cstddef>
-#include <iosfwd>
-#include <string>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/util/SimpleArrayOps.hpp>
+#include <stk_util/stk_config.h>
+#include <stdint.h>                     // for int64_t
+#include <cstddef>                      // for size_t
+#include <iosfwd>                       // for ostream
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
+#include <string>                       // for string
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/MPI.hpp>
+#include "stk_util/environment/ReportHandler.hpp"
 
 //------------------------------------------------------------------------
 
 namespace stk {
 
+#if defined (STK_HAS_MPI)
+template<typename T>
+void all_reduce_impl( ParallelMachine comm , const T * local , T * global , unsigned count, MPI_Op op )
+{
+  T * tmp = const_cast<T*>( local );
+  MPI_Allreduce( tmp , global , count , sierra::MPI::Datatype<T>::type() , op , comm );
+}
+
+void all_reduce_impl(ParallelMachine comm, const size_t * local, size_t * global, unsigned count, MPI_Op op);
+
+template<typename T>
+void all_reduce_max( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_MAX);
+}
+
+template<typename T>
+void all_reduce_min( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_MIN);
+}
+
+template<typename T>
+void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  all_reduce_impl(comm, local, global, count, MPI_SUM);
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_loc_impl(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned n,
+    MPI_Op mpiOp)
+{
+    typedef sierra::MPI::Loc<T, IdType> MpiLocType;
+    if ( n < 1 ) return;
+    MpiLocType * const vin  = new MpiLocType[n] ;
+    MpiLocType * const vout = new MpiLocType[n] ;
+    for (unsigned i = 0 ; i < n ; ++i ) {
+      vin[i].m_value = local_extrema[i] ;
+      vin[i].m_loc = local_loc[i] ;
+    }
+    ThrowRequire(MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n,
+                                       sierra::MPI::Datatype<MpiLocType >::type(),
+                                       mpiOp,
+                                       comm )
+        );
+
+    for (unsigned i = 0 ; i < n ; ++i ) {
+      global_extrema[i] = vout[i].m_value ;
+      global_loc[i] = vout[i].m_loc ;
+    }
+    delete[] vin ;
+    delete[] vout ;
+}
+
+
+
+template<typename T, typename IdType>
+void
+all_reduce_minloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  all_reduce_loc_impl(comm,
+                  local_extrema,
+                  local_loc,
+                  global_extrema,
+                  global_loc,
+                  count,
+                  sierra::MPI::get_mpi_loc_op<T, std::less<T>, IdType>());
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_maxloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  all_reduce_loc_impl(comm,
+                  local_extrema,
+                  local_loc,
+                  global_extrema,
+                  global_loc,
+                  count,
+                  sierra::MPI::get_mpi_loc_op<T, std::greater<T>, IdType>());
+}
+
+#else
+template<typename T>
+void all_reduce_max( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T>
+void all_reduce_min( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T>
+void all_reduce_sum( ParallelMachine comm , const T * local , T * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_minloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_extrema[i] = local_extrema[i] ; }
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_loc[i] = local_loc[i] ; }
+}
+
+template<typename T, typename IdType>
+void
+all_reduce_maxloc(ParallelMachine comm,
+    const T local_extrema[],
+    const IdType local_loc[],
+    T global_extrema[],
+    IdType global_loc[],
+    unsigned count)
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_extrema[i] = local_extrema[i] ; }
+  for ( unsigned i = 0 ; i < count ; ++i ) { global_loc[i] = local_loc[i] ; }
+}
+#endif
+
 /** \addtogroup parallel_module
  *  \{
  */
 
-// REFACTOR: Replace ReduceSum with Sum?, etc...  Should be possible
 
 /** \brief  Write string from any or all processors
  *          to the ostream on the root processor.
@@ -31,22 +204,6 @@ namespace stk {
 void all_write_string( ParallelMachine ,
                        std::ostream & ,
                        const std::string & );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const double * local , double * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const float * local , float * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const int * local , int * global , unsigned count );
-
-/** \brief  Parallel summation to all processors */
-void all_reduce_sum( ParallelMachine ,
-                     const size_t * local , size_t * global , unsigned count );
 
 /** \brief  Parallel bitwise-or to all processors */
 void all_reduce_bor( ParallelMachine ,
@@ -114,7 +271,7 @@ struct Reduce {
   // Copy values into buffer:
   void copyin( WorkType & w ) const
     { Copy<N>( w.m_value , m_value ); m_next.copyin( w.m_next ); }
-      
+
   // Copy value out from buffer:
   void copyout( WorkType & w ) const
     { Copy<N>( m_value , w.m_value ); m_next.copyout( w.m_next ); }

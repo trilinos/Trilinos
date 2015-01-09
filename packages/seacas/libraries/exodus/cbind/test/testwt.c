@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -59,18 +59,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-/* #include "netcdf.h" */
+#include <string.h>
+
 #include "exodusII.h"
 
 int main (int argc, char **argv)
 {
    int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-   int num_elem_in_block[10], num_nodes_per_elem[10];
    int num_face_in_sset[10], num_nodes_in_nset[10];
    int num_node_sets, num_side_sets, error;
    int i, j, k, m, *elem_map, *connect;
    int node_list[100],elem_list[100],side_list[100];
-   int ebids[10], ssids[10], nsids[10];
+   int ssids[10], nsids[10];
    int  num_qa_rec, num_info;
    int num_glo_vars, num_nod_vars, num_ele_vars, num_sset_vars, num_nset_vars;
    int *truth_tab;
@@ -87,6 +87,9 @@ int main (int argc, char **argv)
    char *block_names[10], *nset_names[10], *sset_names[10];
    char *prop_names[2], *attrib_names[2];
    char *title = "This is a test";
+
+   struct ex_block blocks[10];
+   
    ex_opts (EX_VERBOSE | EX_ABORT );
 
 /* Specify compute and i/o word size */
@@ -245,7 +248,16 @@ int main (int argc, char **argv)
    free (elem_map);
 
 
-/* write element block parameters */
+   /* write element block parameters */
+   for (i=0; i < 10; i++) {
+     blocks[i].type = EX_ELEM_BLOCK;
+     blocks[i].id = 0;
+     blocks[i].num_entry = 0;
+     blocks[i].num_nodes_per_entry = 0;
+     blocks[i].num_edges_per_entry = 0;
+     blocks[i].num_faces_per_entry = 0;
+     blocks[i].num_attribute = 0;
+   }
 
    block_names[0] = "block_1";
    block_names[1] = "block_2";
@@ -255,89 +267,53 @@ int main (int argc, char **argv)
    block_names[5] = "block_6";
    block_names[6] = "block_7";
 
-   num_elem_in_block[0] = 1;
-   num_elem_in_block[1] = 1;
-   num_elem_in_block[2] = 1;
-   num_elem_in_block[3] = 1;
-   num_elem_in_block[4] = 1;
-   num_elem_in_block[5] = 1;
-   num_elem_in_block[6] = 1;
+   strncpy(blocks[0].topology, "quad", 32);
+   strncpy(blocks[1].topology, "quad", 32);
+   strncpy(blocks[2].topology, "hex", 32);
+   strncpy(blocks[3].topology, "tetra", 32);
+   strncpy(blocks[4].topology, "wedge", 32);
+   strncpy(blocks[5].topology, "tetra", 32);
+   strncpy(blocks[6].topology, "tri", 32);
 
-   num_nodes_per_elem[0] = 4; /* elements in block #1 are 4-node quads  */
-   num_nodes_per_elem[1] = 4; /* elements in block #2 are 4-node quads  */
-   num_nodes_per_elem[2] = 8; /* elements in block #3 are 8-node hexes  */
-   num_nodes_per_elem[3] = 4; /* elements in block #4 are 4-node tetras */
-   num_nodes_per_elem[4] = 6; /* elements in block #5 are 6-node wedges */
-   num_nodes_per_elem[5] = 8; /* elements in block #6 are 8-node tetras */
-   num_nodes_per_elem[6] = 3; /* elements in block #7 are 3-node tris   */
+   blocks[0].num_entry = 1;
+   blocks[1].num_entry = 1;
+   blocks[2].num_entry = 1;
+   blocks[3].num_entry = 1;
+   blocks[4].num_entry = 1;
+   blocks[5].num_entry = 1;
+   blocks[6].num_entry = 1;
 
-   ebids[0] = 10;
-   ebids[1] = 11;
-   ebids[2] = 12;
-   ebids[3] = 13;
-   ebids[4] = 14;
-   ebids[5] = 15;
-   ebids[6] = 16;
+   blocks[0].num_attribute = 1;
+   blocks[1].num_attribute = 1;
+   blocks[2].num_attribute = 1;
+   blocks[3].num_attribute = 1;
+   blocks[4].num_attribute = 1;
+   blocks[5].num_attribute = 1;
+   blocks[6].num_attribute = 1;
 
-   error = ex_put_name(exoid, EX_ELEM_BLOCK, ebids[0], block_names[0]);
+   blocks[0].num_nodes_per_entry = 4; /* elements in block #1 are 4-node quads  */
+   blocks[1].num_nodes_per_entry = 4; /* elements in block #2 are 4-node quads  */
+   blocks[2].num_nodes_per_entry = 8; /* elements in block #3 are 8-node hexes  */
+   blocks[3].num_nodes_per_entry = 4; /* elements in block #4 are 4-node tetras */
+   blocks[4].num_nodes_per_entry = 6; /* elements in block #5 are 6-node wedges */
+   blocks[5].num_nodes_per_entry = 8; /* elements in block #6 are 8-node tetras */
+   blocks[6].num_nodes_per_entry = 3; /* elements in block #7 are 3-node tris   */
 
-   error = ex_put_elem_block (exoid, ebids[0], "quad", num_elem_in_block[0],
-                              num_nodes_per_elem[0], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
+   blocks[0].id = 10;
+   blocks[1].id = 11;
+   blocks[2].id = 12;
+   blocks[3].id = 13;
+   blocks[4].id = 14;
+   blocks[5].id = 15;
+   blocks[6].id = 16;
 
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
+   /* Generate an error that name is not found since blocks have not
+      yet been defined
+   */
+   error = ex_put_name(exoid, EX_ELEM_BLOCK, blocks[0].id, block_names[0]);
 
-   error = ex_put_elem_block (exoid, ebids[1], "quad", num_elem_in_block[1],
-                               num_nodes_per_elem[1], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[2], "hex", num_elem_in_block[2],
-                               num_nodes_per_elem[2], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[3], "tetra", num_elem_in_block[3],
-                               num_nodes_per_elem[3], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[4], "wedge", num_elem_in_block[4],
-                               num_nodes_per_elem[4], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[5], "tetra", num_elem_in_block[5],
-                               num_nodes_per_elem[5], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
-
-   if (error) {
-     ex_close (exoid);
-     exit(-1);
-   }
-
-   error = ex_put_elem_block (exoid, ebids[6], "tri", num_elem_in_block[6],
-                               num_nodes_per_elem[6], 1);
-   printf ("after ex_put_elem_block, error = %d\n", error);
+   error = ex_put_block_params(exoid, num_elem_blk, blocks);
+   printf ("after ex_put_block_params, error = %d\n", error);
 
    if (error) {
      ex_close (exoid);
@@ -345,8 +321,8 @@ int main (int argc, char **argv)
    }
 
    /* Write element block names */
-   for (i=0; i < 7; i++) {
-     error = ex_put_name(exoid, EX_ELEM_BLOCK, ebids[i], block_names[i]);
+   for (i=0; i < num_elem_blk; i++) {
+     error = ex_put_name(exoid, EX_ELEM_BLOCK, blocks[i].id, block_names[i]);
      printf ("after ex_put_names, error = %d\n", error);
    }
 
@@ -368,49 +344,49 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[0], prop_names[0], 10);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[0].id, prop_names[0], 10);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[1], prop_names[0], 20);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[1].id, prop_names[0], 20);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[2], prop_names[0], 30);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[2].id, prop_names[0], 30);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[3], prop_names[0], 40);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[3].id, prop_names[0], 40);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[4], prop_names[0], 50);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[4].id, prop_names[0], 50);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[5], prop_names[0], 60);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[5].id, prop_names[0], 60);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_prop(exoid, EX_ELEM_BLOCK, ebids[6], prop_names[0], 70);
+   error = ex_put_prop(exoid, EX_ELEM_BLOCK, blocks[6].id, prop_names[0], 70);
    printf ("after ex_put_prop, error = %d\n", error);
    if (error) {
      ex_close (exoid);
@@ -423,7 +399,7 @@ int main (int argc, char **argv)
    connect = (int *) calloc(8, sizeof(int));
    connect[0] = 1; connect[1] = 2; connect[2] = 3; connect[3] = 4;
 
-   error = ex_put_elem_conn (exoid, ebids[0], connect);
+   error = ex_put_elem_conn (exoid, blocks[0].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
    if (error) {
      ex_close (exoid);
@@ -433,7 +409,7 @@ int main (int argc, char **argv)
 
    connect[0] = 5; connect[1] = 6; connect[2] = 7; connect[3] = 8;
 
-   error = ex_put_elem_conn (exoid, ebids[1], connect);
+   error = ex_put_elem_conn (exoid, blocks[1].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -444,7 +420,7 @@ int main (int argc, char **argv)
    connect[0] = 9; connect[1] = 10; connect[2] = 11; connect[3] = 12;
    connect[4] = 13; connect[5] = 14; connect[6] = 15; connect[7] = 16;
 
-   error = ex_put_elem_conn (exoid, ebids[2], connect);
+   error = ex_put_elem_conn (exoid, blocks[2].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -454,7 +430,7 @@ int main (int argc, char **argv)
 
    connect[0] = 17; connect[1] = 18; connect[2] = 19; connect[3] = 20;
 
-   error = ex_put_elem_conn (exoid, ebids[3], connect);
+   error = ex_put_elem_conn (exoid, blocks[3].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -465,7 +441,7 @@ int main (int argc, char **argv)
    connect[0] = 21; connect[1] = 22; connect[2] = 23;
    connect[3] = 24; connect[4] = 25; connect[5] = 26;
 
-   error = ex_put_elem_conn (exoid, ebids[4], connect);
+   error = ex_put_elem_conn (exoid, blocks[4].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -476,7 +452,7 @@ int main (int argc, char **argv)
    connect[0] = 17; connect[1] = 18; connect[2] = 19; connect[3] = 20;
    connect[4] = 27; connect[5] = 28; connect[6] = 30; connect[7] = 29;
 
-   error = ex_put_elem_conn (exoid, ebids[5], connect);
+   error = ex_put_elem_conn (exoid, blocks[5].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -486,7 +462,7 @@ int main (int argc, char **argv)
 
    connect[0] = 31; connect[1] = 32; connect[2] = 33;
 
-   error = ex_put_elem_conn (exoid, ebids[6], connect);
+   error = ex_put_elem_conn (exoid, blocks[6].id, connect);
    printf ("after ex_put_elem_conn, error = %d\n", error);
 
    if (error) {
@@ -496,18 +472,16 @@ int main (int argc, char **argv)
 
    free (connect);
 
-
-/* write element block attributes */
-
+   /* write element block attributes */
    attrib[0] = 3.14159;
-   error = ex_put_elem_attr (exoid, ebids[0], attrib);
+   error = ex_put_attr (exoid, EX_ELEM_BLOCK, blocks[0].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[0], attrib);
+   error = ex_put_elem_attr (exoid, blocks[0].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
    if (error) {
      ex_close (exoid);
@@ -515,7 +489,7 @@ int main (int argc, char **argv)
    }
 
    attrib[0] = 6.14159;
-   error = ex_put_elem_attr (exoid, ebids[1], attrib);
+   error = ex_put_elem_attr (exoid, blocks[1].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -523,7 +497,7 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[2], attrib);
+   error = ex_put_elem_attr (exoid, blocks[2].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -531,7 +505,7 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[3], attrib);
+   error = ex_put_elem_attr (exoid, blocks[3].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -539,7 +513,7 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[4], attrib);
+   error = ex_put_elem_attr (exoid, blocks[4].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -547,7 +521,7 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[5], attrib);
+   error = ex_put_elem_attr (exoid, blocks[5].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -555,7 +529,7 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   error = ex_put_elem_attr (exoid, ebids[6], attrib);
+   error = ex_put_elem_attr (exoid, blocks[6].id, attrib);
    printf ("after ex_put_elem_attr, error = %d\n", error);
 
    if (error) {
@@ -564,8 +538,8 @@ int main (int argc, char **argv)
    }
 
    attrib_names[0] = "THICKNESS";
-   for (i=0; i < 7; i++) {
-     error = ex_put_elem_attr_names (exoid, ebids[i], attrib_names);
+   for (i=0; i < num_elem_blk; i++) {
+     error = ex_put_elem_attr_names (exoid, blocks[i].id, attrib_names);
      printf ("after ex_put_elem_attr_names, error = %d\n", error);
      if (error) {
        ex_close (exoid);
@@ -1145,14 +1119,14 @@ int main (int argc, char **argv)
      {
        for (j=0; j<num_elem_blk; j++)
        {
-         for (m=0; m<num_elem_in_block[j]; m++)
+         for (m=0; m<blocks[j].num_entry; m++)
          {
            elem_var_vals[m] = (float)(k+1) + (float)(j+2) + 
                               ((float)(m+1)*time_value);
            /* printf("elem_var_vals[%d]: %f\n",m,elem_var_vals[m]); */
          }
-         error = ex_put_elem_var (exoid, whole_time_step, k, ebids[j],
-                                  num_elem_in_block[j], elem_var_vals);
+         error = ex_put_elem_var (exoid, whole_time_step, k, blocks[j].id,
+                                  blocks[j].num_entry, elem_var_vals);
          printf ("after ex_put_elem_var, error = %d\n", error);
          if (error) {
            ex_close (exoid);

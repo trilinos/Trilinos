@@ -51,12 +51,16 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Product,p)
+  : scaling(1.0)
 {
   std::string product_name = p.get<std::string>("Product Name");
   Teuchos::RCP<std::vector<std::string> > value_names = 
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+
+  if(p.isType<double>("Scaling"))
+    scaling =  p.get<double>("Scaling");
   
   product = PHX::MDField<ScalarT>(product_name, data_layout);
   
@@ -84,7 +88,7 @@ PHX_POST_REGISTRATION_SETUP(Product,worksets,fm)
 PHX_EVALUATE_FIELDS(Product,workset)
 { 
   for (typename PHX::MDField<ScalarT>::size_type i = 0; i < product.size(); ++i) {
-    product[i] = 1.0;
+    product[i] = scaling;
     for (std::size_t j = 0; j < values.size(); ++j)
       product[i] *= (values[j])[i];
   }

@@ -45,9 +45,8 @@
 #include <fstream>
 #include <iomanip>
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 #include "Kokkos_CrsArray.hpp"
-#include "Kokkos_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -83,9 +82,9 @@ public:
   typedef Device device_type;
   typedef ValueType value_type;
   typedef Kokkos::View< value_type[], Layout, device_type > values_type;
-  typedef Kokkos::CrsArray< int , device_type , void , int > graph_type;
+  typedef Kokkos::CrsArray< int , Layout, device_type , int > graph_type;
 
-  typedef CrsMatrix< ValueType, Layout, typename device_type::host_mirror_device_type> HostMirror;
+  typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 
   values_type values;
   graph_type graph;
@@ -241,6 +240,186 @@ public:
 };
 
 #define USE_NEW 1
+#if USE_NEW
+// Generic matrix multi-vector multiply kernel for CrsMatrix
+// Experimenting with blocking of column and row loops to improve cache
+// performance.  Seems to help signficantly on SandyBridge, little difference
+// on MIC (although not extensive investigation of block sizes).
+template <typename MatrixValue,
+          typename Layout,
+          typename Device,
+          typename InputMultiVectorType,
+          typename OutputMultiVectorType >
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
+                InputMultiVectorType,
+                OutputMultiVectorType,
+                void,
+                IntegralRank<2> >
+{
+public:
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
+  typedef InputMultiVectorType input_multi_vector_type;
+  typedef OutputMultiVectorType output_multi_vector_type;
+
+  typedef Device device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename output_multi_vector_type::value_type scalar_type;
+
+  const matrix_type m_A;
+  const input_multi_vector_type m_x;
+  output_multi_vector_type m_y;
+  const size_type m_num_row;
+  const size_type m_num_col;
+
+  static const size_type m_block_row_size = 32;
+  static const size_type m_block_col_size = 20;
+
+  Multiply( const matrix_type& A,
+            const input_multi_vector_type& x,
+            output_multi_vector_type& y )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  , m_num_row( A.graph.row_map.dimension_0()-1 )
+  , m_num_col( m_y.dimension_1() )
+  {
+  }
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iBlockRow ) const
+  {
+    // Number of rows in this block
+    const size_type num_row =
+      iBlockRow+m_block_row_size <= m_num_row ?
+      m_block_row_size : m_num_row-iBlockRow;
+
+    // Loop over block columns of x
+    for (size_type iBlockCol=0; iBlockCol<m_num_col; iBlockCol+=m_block_col_size) {
+      // Number of columns in this block
+      const size_type num_col =
+        iBlockCol+m_block_col_size <= m_num_col ?
+        m_block_col_size : m_num_col-iBlockCol;
+
+      // Loop over rows in this block of A
+      const size_type iRowEnd = iBlockRow + num_row;
+      for (size_type iRow=iBlockRow; iRow<iRowEnd; ++iRow) {
+
+        // Range of column entries for this row
+        const size_type iEntryBegin = m_A.graph.row_map[iRow];
+        const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+
+        // Loop over columns in this block of x
+        const size_type iColEnd = iBlockCol + num_col;
+        for (size_type iCol=iBlockCol; iCol<iColEnd; iCol++) {
+
+          // Loop columns of A for this row
+          scalar_type sum = 0.0;
+          for (size_type iEntry = iEntryBegin; iEntry<iEntryEnd; ++iEntry) {
+            sum += m_A.values(iEntry) * m_x(  m_A.graph.entries(iEntry), iCol );
+          }
+          m_y( iRow, iCol ) = sum;
+
+        }
+
+      }
+
+    }
+
+  }
+
+  static void apply( const matrix_type & A,
+                     const input_multi_vector_type& x,
+                     output_multi_vector_type& y )
+  {
+    // Parallelize over row blocks of size m_block_row_size
+    const size_type num_row = A.graph.row_map.dimension_0() - 1;
+    const size_type n = (num_row+m_block_row_size-1) / m_block_row_size;
+    Kokkos::parallel_for( n , Multiply(A,x,y) );
+  }
+};
+#else
+// Generic matrix multi-vector multiply kernel for CrsMatrix
+template <typename MatrixValue,
+          typename Layout,
+          typename Device,
+          typename InputMultiVectorType,
+          typename OutputMultiVectorType >
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
+                InputMultiVectorType,
+                OutputMultiVectorType,
+                void,
+                IntegralRank<2> >
+{
+public:
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
+  typedef InputMultiVectorType input_multi_vector_type;
+  typedef OutputMultiVectorType output_multi_vector_type;
+
+  typedef Device device_type;
+  typedef typename device_type::size_type size_type;
+  typedef typename output_multi_vector_type::value_type scalar_type;
+
+  const matrix_type m_A;
+  const input_multi_vector_type m_x;
+  output_multi_vector_type m_y;
+  const size_type m_num_vecs;
+
+  Multiply( const matrix_type& A,
+            const input_multi_vector_type& x,
+            output_multi_vector_type& y)
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  , m_num_vecs( m_y.dimension_1() )
+  {}
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+
+    for (size_type iCol=0; iCol<m_num_vecs; iCol++) {
+
+      scalar_type sum = 0.0;
+
+      for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+        sum += m_A.values(iEntry) * m_x(  m_A.graph.entries(iEntry), iCol );
+      }
+
+      m_y( iRow, iCol ) = sum;
+
+    }
+
+  }
+
+  static void apply( const matrix_type& A,
+                     const input_multi_vector_type& x,
+                     output_multi_vector_type& y )
+  {
+    const size_t n = A.graph.row_map.dimension_0() - 1 ;
+    Kokkos::parallel_for( n , Multiply(A,x,y) );
+
+    // const size_t block_size = 20;
+    // const size_t num_vecs = col.size();
+    // std::vector<OrdinalType> block_col;
+    // block_col.reserve(block_size);
+    // for (size_t block=0; block<num_vecs; block+=block_size) {
+    //   const size_t bs =
+    //     block+block_size <= num_vecs ? block_size : num_vecs-block;
+    //   block_col.resize(bs);
+    //   for (size_t i=0; i<bs; ++i)
+    //     block_col[i] = col[block+i];
+    //   Kokkos::parallel_for( n , Multiply(A,x,y,block_col) );
+    // }
+  }
+};
+#endif
+
 #if USE_NEW
 // Generic matrix multi-vector multiply kernel for CrsMatrix
 // Experimenting with blocking of column and row loops to improve cache
@@ -442,7 +621,6 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
               SingleColumnMultivectorMultiply)
 {
   typedef CrsMatrix<MatrixValue,Device,Layout> MatrixType;
-  typedef std::vector<OrdinalType> ColumnIndicesType;
 
   typedef Kokkos::View<typename InputMultiVectorType::value_type*, typename InputMultiVectorType::array_layout, Device, Kokkos::MemoryUnmanaged> InputVectorType;
   typedef Kokkos::View<typename OutputMultiVectorType::value_type*, typename OutputMultiVectorType::array_layout, Device, Kokkos::MemoryUnmanaged> OutputVectorType;
@@ -473,6 +651,48 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
   }
 }
 
+} // namespace Stokhos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template <typename ValueType, typename Layout, typename Device>
+typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
+create_mirror(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
+  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
+  mirror_A.values = Kokkos::create_mirror(A.values);
+  mirror_A.graph = Kokkos::create_mirror(A.graph); // this deep copies
+  mirror_A.dev_config = A.dev_config;
+  return mirror_A;
+}
+
+template <typename ValueType, typename Layout, typename Device>
+typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
+create_mirror_view(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
+  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
+  mirror_A.values = Kokkos::create_mirror_view(A.values);
+  mirror_A.graph = Kokkos::create_mirror(A.graph); // this deep copies
+  mirror_A.dev_config = A.dev_config;
+  return mirror_A;
+}
+
+template <typename ValueType, typename Layout, typename DstDevice,
+          typename SrcDevice>
+void
+deep_copy(const Stokhos::CrsMatrix<ValueType,DstDevice,Layout>& dst,
+          const Stokhos::CrsMatrix<ValueType,SrcDevice,Layout>& src) {
+  Kokkos::deep_copy(dst.values, src.values);
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Stokhos {
+
 // MatrixMarket writer for CrsMatrix
 template < typename MatrixValue, typename Layout, typename Device >
 class MatrixMarketWriter< CrsMatrix<MatrixValue,Device,Layout> >
@@ -487,19 +707,20 @@ public:
     file.precision(16);
     file.setf(std::ios::scientific);
 
-    typename matrix_type::HostMirror hA = Kokkos::create_mirror(A);
+    typename matrix_type::HostMirror hA = Kokkos::create_mirror_view(A);
+    Kokkos::deep_copy(hA, A);
 
-    const size_type nRow = hA.graph.row_count();
+    const size_type nRow = hA.graph.row_map.dimension_0() - 1 ;
 
     // Write banner
     file << "%%MatrixMarket matrix coordinate real general" << std::endl;
-    file << nRow << " " << nRow << " " << hA.graph.entry_count() << std::endl;
+    file << nRow << " " << nRow << " " << hA.values.dimension_0() << std::endl;
 
     for (size_type row=0; row<nRow; ++row) {
-      size_type entryBegin = hA.graph.row_entry_begin(row);
-      size_type entryEnd = hA.graph.row_entry_end(row);
+      size_type entryBegin = hA.graph.row_map(row);
+      size_type entryEnd = hA.graph.row_map(row+1);
       for (size_type entry=entryBegin; entry<entryEnd; ++entry) {
-        file << row+1 << " " << hA.graph.column(entry)+1 << " "
+        file << row+1 << " " << hA.graph.entries(entry)+1 << " "
              << std::setw(22) << hA.values(entry) << std::endl;
       }
     }
@@ -508,22 +729,6 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 } // namespace Stokhos
-
-namespace Kokkos {
-
-template <typename ValueType, typename Layout, typename Device>
-typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
-create_mirror(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
-  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
-  mirror_A.values = Kokkos::create_mirror(A.values);
-  mirror_A.graph = Kokkos::create_mirror(A.graph);
-  return mirror_A;
-}
-
-}
 
 #endif /* #ifndef STOKHOS_CRSMATRIX_HPP */

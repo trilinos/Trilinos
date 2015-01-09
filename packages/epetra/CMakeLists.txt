@@ -1,11 +1,10 @@
 
-INCLUDE(TribitsPackageMacros)
 
 TRIBITS_PACKAGE(Epetra)
 
 SET(${PACKAGE_NAME}_VERSION "3.7d")
 
-# 
+#
 #   Exception added to deal with fixed form Fortran code on XL
 #
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()

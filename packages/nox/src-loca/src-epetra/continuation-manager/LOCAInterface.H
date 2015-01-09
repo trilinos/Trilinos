@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@
 #include "ProblemLOCAPrototype.H"
 #include "ContinuationManager.H"
 
-class  LOCAInterface : 
+class  LOCAInterface :
 //  public LOCA::Epetra::Interface::Required,
   public LOCA::Epetra::Interface::TimeDependent,
   public NOX::Epetra::Interface::Jacobian {
@@ -67,15 +67,15 @@ class  LOCAInterface :
 
       // Constructor
       LOCAInterface( Teuchos::RCP <ProblemLOCAPrototype> & aProblem ,
-	  Teuchos::RCP <ContinuationManager> aContinuationManager);
+      Teuchos::RCP <ContinuationManager> aContinuationManager);
 
       // Destructor
       ~LOCAInterface();
-      
+
       // Compute and return F
-      bool computeF(const Epetra_Vector& x, Epetra_Vector& f, 
-		    const NOX::Epetra::Interface::Required::FillType F);
-    
+      bool computeF(const Epetra_Vector& x, Epetra_Vector& f,
+            const NOX::Epetra::Interface::Required::FillType F);
+
       // Compute an explicit Jacobian
       bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
@@ -86,7 +86,7 @@ class  LOCAInterface :
       void printSolution (const Epetra_Vector &x, const double conParam);
 
       // Compute the Shifted matrix needed for linear stability
-      virtual bool computeShiftedMatrix (double alpha, double beta, 
+      virtual bool computeShiftedMatrix (double alpha, double beta,
                                  const Epetra_Vector &x, Epetra_Operator &A);
 
       virtual void setXdot(const Epetra_Vector& xdot, const double time);

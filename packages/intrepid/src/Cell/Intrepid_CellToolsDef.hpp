@@ -50,7 +50,7 @@
 #define INTREPID_CELLTOOLSDEF_HPP
 
 // disable clang warnings
-#ifdef __clang__
+#if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
 #endif
 
@@ -956,19 +956,29 @@ namespace Intrepid {
       case shards::Tetrahedron<11>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
+
+      case shards::Hexahedron<20>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
         
       case shards::Hexahedron<27>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Wedge<15>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
         
       case shards::Wedge<18>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
+
+      case shards::Pyramid<13>::key:
+	HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+	break;
         
         // These extended topologies are not used for mapping purposes
       case shards::Quadrilateral<8>::key:
-      case shards::Hexahedron<20>::key:
-      case shards::Wedge<15>::key:
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                             ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported. ");
         break;
@@ -1192,18 +1202,28 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
 
+    case shards::Hexahedron<20>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
     case shards::Hexahedron<27>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Wedge<15>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
       
     case shards::Wedge<18>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
+
+    case shards::Pyramid<13>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
       
     // These extended topologies are not used for mapping purposes
     case shards::Quadrilateral<8>::key:
-    case shards::Hexahedron<20>::key:
-    case shards::Wedge<15>::key:
       TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::mapToPhysicalFrame): Cell topology not supported. ");
       break;
@@ -1349,20 +1369,21 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
       cellCenter(0) = 1./6.;    cellCenter(1) =  1./6.;    cellCenter(2) =  1./6.;  break;
       
     case shards::Hexahedron<8>::key:
+    case shards::Hexahedron<20>::key:
     case shards::Hexahedron<27>::key:
       cellCenter(0) = 0.0;      cellCenter(1) =  0.0;       cellCenter(2) =  0.0;   break;
       
     case shards::Wedge<6>::key:
+    case shards::Wedge<15>::key:
     case shards::Wedge<18>::key:
       cellCenter(0) = 1./3.;    cellCenter(1) =  1./3.;     cellCenter(2) = 0.0;    break;
 
     case shards::Pyramid<5>::key:
+    case shards::Pyramid<13>::key:
       cellCenter(0) = 0.;       cellCenter(1) = 0.;         cellCenter(2) = 0.25;    break;
       
       // These extended topologies are not used for mapping purposes
     case shards::Quadrilateral<8>::key:
-    case shards::Hexahedron<20>::key:
-    case shards::Wedge<15>::key:
       TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::mapToReferenceFrame): Cell topology not supported. ");
       break;

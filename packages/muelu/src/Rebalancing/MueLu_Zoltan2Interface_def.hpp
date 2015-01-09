@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <sstream>
 #include <set>
 
@@ -71,15 +66,15 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Zoltan2Interface() {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::Zoltan2Interface() {
     defaultZoltan2Params = rcp(new ParameterList());
     defaultZoltan2Params->set("algorithm",             "multijagged");
     defaultZoltan2Params->set("partitioning_approach", "partition");
  }
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
@@ -91,14 +86,14 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
@@ -108,9 +103,6 @@ namespace MueLu {
     RCP<const Map>   map      = coords->getMap();
 
     GO               numParts = level.Get<GO>("number of partitions");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(rowMap->lib() == Xpetra::UseEpetra, Exceptions::RuntimeError,
-                               "Zoltan2 does not work with Epetra at the moment. Please use Zoltan through ZoltanInterface");
 
     size_t dim       = coords->getNumVectors();
     LO     blkSize   = A->GetFixedBlockSize();
@@ -203,7 +195,7 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-    const zoltan2_partId_t * parts = problem->getSolution().getPartList();
+    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartList();
 
     // K. Devine comment:
     //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed

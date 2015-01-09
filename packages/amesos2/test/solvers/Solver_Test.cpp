@@ -229,10 +229,10 @@ int main(int argc, char*argv[])
   fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if( !allprint ) fos->setOutputToRootOnly( root );
 
+  Teuchos::oblackholestream blackhole;
   if( verbosity > 3 ){
     compare_fos = fos;
   } else {
-    Teuchos::oblackholestream blackhole;
     compare_fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(blackhole));
   }
 
@@ -303,6 +303,7 @@ bool do_mat_test(const ParameterList& parameters)
       complex = parameters.get<bool>("complex");
     }
   }
+  (void) complex; // forestall warning for set but unused variable
 
   ParameterList solve_params("Amesos2");
   if( parameters.isSublist("all_solver_params") ){
@@ -765,9 +766,9 @@ bool do_epetra_test(const string& mm_file,
     // There isn't a really nice way to get a deep copy of an entire
     // CrsMatrix, so we just read the file again.
     MAT* A2_ptr;
-    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
-                                                     A2_ptr,
-                                                     false, false);
+    ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
+                                                 A2_ptr,
+                                                 false, false);
     if( ret == -1 ){
       *fos << "error reading file from disk, aborting run." << std::endl;
       return( false );
@@ -1306,7 +1307,7 @@ bool test_tpetra(const string& mm_file,
 #endif    // HAVE_TEUCHOS_QD
 #ifdef HAVE_TEUCHOS_COMPLEX
       if( scalar == "complex" ){
-#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT))
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT) && !(defined HAVE_AMESOS2_KLU2))
         if( mag == "float" ){
           typedef std::complex<float> cmplx;
           if( lo == "int" ){

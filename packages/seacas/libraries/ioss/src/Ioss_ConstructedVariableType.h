@@ -33,10 +33,9 @@
 #ifndef IOSS_Ioss_ConstructedVariableType_h
 #define IOSS_Ioss_ConstructedVariableType_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+#include <Ioss_VariableType.h>          // for VariableType
+#include <string>                       // for string
 
-#include <Ioss_VariableType.h>
 
 namespace Ioss {
   class ConstructedVariableType : public VariableType {

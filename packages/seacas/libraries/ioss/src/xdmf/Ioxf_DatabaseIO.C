@@ -31,24 +31,56 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <xdmf/Ioxf_DatabaseIO.h>
+#include <Ioss_CodeTypes.h>             // for HAVE_MPI
+#include <Ioss_ElementTopology.h>       // for NameList
+#include <Ioss_ParallelUtils.h>         // for ParallelUtils, etc
+#include <Ioss_SerializeIO.h>           // for SerializeIO
+#include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR, etc
+#include <assert.h>                     // for assert
+#include <ctype.h>                      // for isdigit
+#include <stdio.h>                      // for remove
+#include <stdlib.h>                     // for atoi
+#include <algorithm>                    // for fill_n, find, fill
+#include <cstring>                      // for NULL, strncasecmp, strcpy, etc
+#include <iostream>                     // for cout
+#include <map>                          // for _Rb_tree_iterator, etc
+#include <string>                       // for char_traits, string, etc
+#include <vector>                       // for vector, etc
+#include "H5public.h"                   // for H5close
+#include "Ioss_CommSet.h"               // for CommSet
+#include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_EdgeBlock.h"             // for EdgeBlock
+#include "Ioss_EdgeSet.h"               // for EdgeSet
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_ElementSet.h"            // for ElementSet
+#include "Ioss_EntityType.h"            // for EntityType::ELEMENTBLOCK
+#include "Ioss_FaceBlock.h"             // for FaceBlock
+#include "Ioss_FaceSet.h"               // for FaceSet
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_FileInfo.h"              // for FileInfo
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_Map.h"                   // for Map, MapContainer
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, SideSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideBlockContainer, SideSet
+#include "Ioss_VariableType.h"          // for VariableType
+#include "XdmfArray.h"                  // for XdmfArray
+#include "XdmfHDF.h"                    // for XdmfHDF
+#include "XdmfObject.h"                 // for ofstream, XdmfInt64, etc
+#include "libxml/globals.h"             // for xmlIndentTreeOutput
+#include "libxml/parser.h"              // for xmlParseFile
+#include "libxml/tree.h"                // for xmlNode, xmlFreeDoc, etc
+#include "libxml/xmlstring.h"           // for xmlChar, xmlStrcmp
+#include "xdmf/Ioxf_Internals.h"        // for SideSet, NodeSet, Block, etc
+namespace Ioss { class PropertyManager; }
 
-#include <string>
-#include <cstring>
-#include <algorithm>
-#include <vector>
-#include <map>
-#include <iterator>
 
-#include <string>
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_SerializeIO.h>
-#include <Ioss_ElementTopology.h>
 
-#include <assert.h>
 
 // The following eliminates the use of the "__ FILE __" variable which
 // was causing code bloat on janus.
@@ -106,8 +138,8 @@ namespace Ioxf {
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-			 const Ioss::PropertyManager &properties) :
-    Ioss::DatabaseIO(region, filename, db_usage, communicator, properties),
+			 const Ioss::PropertyManager &properties_x) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator, properties_x),
     databaseTitle(""), spatialDimension(0),
     nodeCount(0), elementCount(0),
     nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),

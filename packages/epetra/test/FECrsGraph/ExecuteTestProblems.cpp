@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -578,7 +578,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   Epetra_Map      RangeMap(-1, 3, RowIndices, 0, Comm);
   Epetra_Map & RowMap = RangeMap;
 
-  // Define a second map that gives col 0 to proc 0 and col 1 to proc 1 
+  // Define a second map that gives col 0 to proc 0 and col 1 to proc 1
   int             ColIndices[1];
   if (Comm.MyPID() == 0) {
     ColIndices[0] = 0;
@@ -598,7 +598,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   }
   BrokenGraph.GlobalAssemble(DomainMap, RangeMap);
 
-  // Check the size of the matrix that would be created from the graph 
+  // Check the size of the matrix that would be created from the graph
   int numCols1 = BrokenGraph.NumGlobalCols();
   if (verbose) {
     std::cout << "Number of global rows in the graph where only "
@@ -617,7 +617,7 @@ int Young1(const Epetra_Comm& Comm, bool verbose)
   }
   Graph.GlobalAssemble(DomainMap, RangeMap);
 
-  // Check the size of the matrix that would be created from the graph 
+  // Check the size of the matrix that would be created from the graph
   int numCols2 = Graph.NumGlobalCols();
   if (verbose) {
     std::cout << "Number of global rows in the graph where "

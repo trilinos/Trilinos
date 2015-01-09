@@ -1,22 +1,66 @@
-/**   ------------------------------------------------------------
- *    Copyright 2000-2007 Sandia Corporation.
- *    Under the terms of Contract DE-AC04-94AL85000, there is a
- *    non-exclusive license for use of this work by or on behalf
- *    of the U.S. Government.  Export of this program may require
- *    a license from the United States Government.
- *    ------------------------------------------------------------
+/*
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
  */
 
+#include <stk_util/stk_config.h>
 #include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 #include <stk_util/parallel/mpi_filebuf.hpp>
+#include <aprepro.h>
+#include <apr_tokenize.h>
 #include <assert.h>
 
 enum { buffer_default_length = 4096 };
 enum { buffer_putback_length =   16 };
 
-/*--------------------------------------------------------------------*/
+// --------------------------------------------------------------------
+namespace {
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+  double mpi_wall_time()
+  {
+#if defined(STK_HAS_MPI)
+    return MPI_Wtime();
+#else
+    return 0.0;
+#endif
+  }
+}
+// --------------------------------------------------------------------
 
-mpi_filebuf::mpi_filebuf()
+mpi_filebuf::mpi_filebuf(bool useAprepro, const std::string &apreproDefines)
   : std::streambuf(),
     comm( MPI_COMM_NULL ),
     comm_root( -1 ),
@@ -24,7 +68,12 @@ mpi_filebuf::mpi_filebuf()
     comm_output( 0 ),
     comm_buffer( NULL ),
     comm_buffer_len( buffer_default_length ),
-    comm_time(0.0)
+    comm_time(0.0),
+    use_aprepro(useAprepro),
+    aprepro_buffer(NULL),
+    aprepro_buffer_len(0),
+    aprepro_buffer_ptr(0),
+    aprepro_defines(apreproDefines)
 {}
 
 mpi_filebuf::~mpi_filebuf()
@@ -37,7 +86,7 @@ mpi_filebuf::~mpi_filebuf()
 mpi_filebuf * mpi_filebuf::set_buffer_length( const size_t len )
 {
   // If already open then abort
-  if ( NULL != comm_buffer ) return (mpi_filebuf *) NULL ;
+  if ( NULL != comm_buffer ) return NULL ;
 
   // Wait and verify upon the attempt to open
   comm_buffer_len = buffer_putback_length < len ? len : buffer_putback_length ;
@@ -47,25 +96,27 @@ mpi_filebuf * mpi_filebuf::set_buffer_length( const size_t len )
 
 /*--------------------------------------------------------------------*/
 
+#if defined( STK_HAS_MPI )
 mpi_filebuf * mpi_filebuf::open(
 	MPI_Comm       communicator ,
   const int            root_processor ,
   const std::ios_base::openmode file_mode ,
   const char * const   file_name )
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
   // If already open then abort
-  if ( NULL != comm_buffer ) return (mpi_filebuf *) NULL ;
+  if ( NULL != comm_buffer ) return NULL ;
 
   const int mode =
     ( std::ios::in  == file_mode ) ? 'r' : (
     ( std::ios::out == file_mode ) ? 'w' : (
     ( std::ios::app == file_mode ) ? 'a' : -1 ) );
 
-  int err ;
-  int rank ;
-  int local, global ;
+
+  int rank = 0 ;
+  int err = 0 ;
+  int local = 0, global = 0 ;
   int data[3] ;
 
   // Broadcast the selected root processor and 'C' file mode
@@ -79,15 +130,15 @@ mpi_filebuf * mpi_filebuf::open(
 
   // Verify that all processors have the same root, mode, and buffer length:
 
-  local = data[0] != root_processor || data[1] != mode || data[2] != (signed) comm_buffer_len ;
+  local = data[0] != root_processor || data[1] != mode || data[2] != static_cast<signed>(comm_buffer_len) ;
 
   if ( MPI_SUCCESS != ( err =
        MPI_Allreduce(&local,&global,1,MPI_INT,MPI_BOR,communicator) ) )
     MPI_Abort( communicator , err );
 
   if ( global ) {
-    comm_time += MPI_Wtime() - start_time ;
-    return (mpi_filebuf *) NULL ;
+    comm_time += mpi_wall_time() - start_time ;
+    return NULL ;
   }
 
   //--------------------------------------------------------------------
@@ -98,7 +149,7 @@ mpi_filebuf * mpi_filebuf::open(
   if ( MPI_SUCCESS != ( err =  MPI_Comm_rank( communicator , &rank ) ) )
     MPI_Abort( communicator , err );
 
-  char * const tmp_buf = (char *) std::malloc( comm_buffer_len );
+  char * const tmp_buf = static_cast<char*>(std::malloc( comm_buffer_len ));
   std::FILE *       tmp_fp  = NULL ;
 
   local = tmp_buf == NULL ; // Failed allocation ?
@@ -124,12 +175,42 @@ mpi_filebuf * mpi_filebuf::open(
   if ( global ) {
     if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
     if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
-    comm_time += MPI_Wtime() - start_time ;
-    return (mpi_filebuf *) NULL ;
+    comm_time += mpi_wall_time() - start_time ;
+    return NULL ;
+  }
+
+  // If input and use_aprepro, parse the file and store parsed results
+  // into buffer on root_processor.
+  if (use_aprepro && !comm_output) {
+    if (root_processor == rank) {
+      // Note that file is double-opened.  Aprepro uses an std::fstream
+      std::fstream infile(file_name, std::fstream::in);
+      if (!infile.good()) {
+	if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
+	if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
+	std::cerr << "APREPRO: Could not open file: " << file_name << std::endl;
+	return NULL;
+      }
+
+      SEAMS::Aprepro aprepro;
+
+      add_aprepro_defines(aprepro, aprepro_defines);
+
+      bool result = aprepro.parse_stream(infile);
+      if (result) {
+	// Get size of buffer needed to store the parsed data...
+	std::string tmp = aprepro.parsing_results().str();
+	aprepro.clear_results();
+	aprepro_buffer_len = tmp.size();
+	aprepro_buffer_ptr = 0; // At beginning of buffer...
+	aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
+	std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
+      }
+    }
   }
 
   //--------------------------------------------------------------------
-  // All memory allocated and root processor openned the file
+  // All memory allocated and root processor opened the file
   // Update the internal members accordingly.
 
   comm         = communicator ;
@@ -139,14 +220,74 @@ mpi_filebuf * mpi_filebuf::open(
   comm_output  = mode != 'r' ;
 
   // If output then set up put-buffer
-
   if ( comm_output ) setp( comm_buffer, comm_buffer + comm_buffer_len );
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
   return this ;
 }
+#else
+mpi_filebuf * mpi_filebuf::open(
+				      MPI_Comm       communicator,
+				const int            root_processor ,
+				const std::ios_base::openmode file_mode ,
+				const char * const   file_name )
+{
+  // If already open then abort
+  if ( NULL != comm_buffer ) return NULL ;
 
+  const int mode =
+    ( std::ios::in  == file_mode ) ? 'r' : (
+    ( std::ios::out == file_mode ) ? 'w' : (
+    ( std::ios::app == file_mode ) ? 'a' : -1 ) );
+
+  char * const tmp_buf = static_cast<char*>(std::malloc( comm_buffer_len ));
+  std::FILE *       tmp_fp  = std::fopen( file_name , ( ( ( mode == 'r' ) ? "r" :
+							  ( mode == 'w' ) ? "w" : "a" ) ) );
+  // If input and use_aprepro, parse the file and store parsed results
+  // into buffer on root_processor.
+  if (use_aprepro && !comm_output) {
+    // Note that file is double-opened.  Aprepro uses an std::fstream
+    std::fstream infile(file_name, std::fstream::in);
+    if (!infile.good()) {
+      if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
+      if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
+      std::cerr << "APREPRO: Could not open file: " << file_name << std::endl;
+      return NULL;
+    }
+
+    SEAMS::Aprepro aprepro;
+
+    add_aprepro_defines(aprepro, aprepro_defines);
+
+    bool result = aprepro.parse_stream(infile);
+    if (result) {
+      // Get size of buffer needed to store the parsed data...
+      std::string tmp = aprepro.parsing_results().str();
+      aprepro.clear_results();
+      aprepro_buffer_len = tmp.size();
+      aprepro_buffer_ptr = 0; // At beginning of buffer...
+      aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
+      std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
+    }
+  }
+
+  //--------------------------------------------------------------------
+  // All memory allocated and root processor opened the file
+  // Update the internal members accordingly.
+
+  comm         = communicator ;
+  comm_root    = root_processor ;
+  comm_root_fp = tmp_fp ;
+  comm_buffer  = tmp_buf ;
+  comm_output  = mode != 'r' ;
+
+  // If output then set up put-buffer
+  if ( comm_output ) setp( comm_buffer, comm_buffer + comm_buffer_len );
+
+  return this ;
+}
+#endif
 /*--------------------------------------------------------------------*/
 
 mpi_filebuf * mpi_filebuf::close()
@@ -172,6 +313,13 @@ mpi_filebuf * mpi_filebuf::close()
     comm_output  = 0 ;
     comm_buffer  = NULL ;
 
+    if (aprepro_buffer != NULL) {
+      std::free(aprepro_buffer);
+      aprepro_buffer = NULL;
+      aprepro_buffer_ptr = 0;
+      aprepro_buffer_len = 0;
+    }
+    
     tmp = this ;
   }
 
@@ -186,46 +334,50 @@ mpi_filebuf * mpi_filebuf::close()
 
 int mpi_filebuf::underflow()
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
-  if ( NULL != comm_buffer && ! comm_output &&     // Open for read
-       ( gptr() == NULL || gptr() >= egptr() ) ) { // valid get buffer
-
-
+  if ( NULL != comm_buffer && ! comm_output &&
+       (gptr() == NULL || gptr() >= egptr()) ) { // valid get buffer
     // Length of the buffer, consistent on all processors
     // Entire buffer is offset to accomodate putbacks
-
     const size_t size = comm_buffer_len - buffer_putback_length ;
     char * const buf  = comm_buffer     + buffer_putback_length ;
 
-    int nread ;
-    int err ;
+    int nread = 0;
+    if (comm_root_fp != NULL) {
+      if (use_aprepro) {
+	// Copy from current location in aprepro_buffer into comm_buffer
+	nread = size;
+	if (aprepro_buffer_ptr + size > aprepro_buffer_len) {
+	  nread = aprepro_buffer_len - aprepro_buffer_ptr;
+	}
+	std::memcpy(buf, aprepro_buffer+aprepro_buffer_ptr, nread);
+	aprepro_buffer_ptr += nread;
+      } else {
+	// Root processor reads from the file and broadcasts the result
+	nread = std::fread(buf,1,size,comm_root_fp);
+      }
+    }
 
-    // Root processor reads from the file and broadcasts the result
-
-    if ( NULL != comm_root_fp ) nread = std::fread(buf,1,size,comm_root_fp);
-
-    if ( MPI_SUCCESS != ( err =
-	 MPI_Bcast( &nread, 1, MPI_INT, comm_root, comm ) ) )
+#if defined( STK_HAS_MPI )
+    int err = MPI_Bcast(&nread, 1, MPI_INT, comm_root, comm );
+    if (err != MPI_SUCCESS)
       MPI_Abort(comm,err);
-
+#endif
+    
     // If the read is successfull then update the get buffer pointers:
-
-    if ( 0 < nread ) {
-
+    if (nread > 0) {
+#if defined( STK_HAS_MPI )
       // Broadcast the read buffer to all processors:
-
-      if ( MPI_SUCCESS != ( err =
-	   MPI_Bcast( buf, nread, MPI_BYTE, comm_root, comm ) ) )
+      err = MPI_Bcast(buf, nread, MPI_BYTE, comm_root, comm);
+      if (err != MPI_SUCCESS)
 	MPI_Abort(comm,err);
-
+#endif
       // Set the get buffer:
-
       setg( comm_buffer, buf, buf + nread );
 
       // Return the next character from the file:
-
-      comm_time += MPI_Wtime() - start_time ;
+      comm_time += mpi_wall_time() - start_time ;
 
       return *buf ;
     }
@@ -234,7 +386,7 @@ int mpi_filebuf::underflow()
   // Failed: set the get buffer to NULL and return EOF
   setg(NULL, NULL, NULL);
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
   return EOF;
 }
@@ -265,7 +417,7 @@ int mpi_filebuf::overflow( int c )
     else if ( cur_length <= cur_offset ) {
       // Not root processor, ran out of buffer space and
       // cannot write so increase the buffer size:
-      cur_buffer = (char *) std::realloc( cur_buffer , cur_length *= 2 );
+      cur_buffer = static_cast<char*>(std::realloc( cur_buffer , cur_length *= 2 ));
     }
 
     // If buffer is still good then reset the put-buffer
@@ -294,15 +446,16 @@ int mpi_filebuf::overflow( int c )
    write them to the output file.
 */
 
+#if defined( STK_HAS_MPI )
 mpi_filebuf * mpi_filebuf::flush()
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
   int result = -1 ; // Failure return value
 
   if ( NULL != comm_buffer && comm_output ) { // Open for write
 
-    int err ;
+    int err = 0 ;
 
     result = 0 ;
 
@@ -317,20 +470,19 @@ mpi_filebuf * mpi_filebuf::flush()
     int  * recv_len  = NULL ;
     int  * recv_disp = NULL ;
 
-    int nproc = 0 ;
+    int nproc = 1 ;
 
 
 //  if ( NULL != comm_root_fp ) {
 
-//  It should no be neccessary to allocate recv_len on non-root
+//  It should not be neccessary to allocate recv_len on non-root
 //  nodes, but the MPI_Gatherv on Janus always accesses recv_len
 //  even on non-root processors which causes a segmentaion
 //  violation if recv_len is set to NULL.
 
     if ( MPI_SUCCESS != ( err = MPI_Comm_size(comm,&nproc) ) )
       MPI_Abort( comm , err );
-
-    recv_len = (int*) std::malloc( sizeof(int) * nproc );
+    recv_len = static_cast<int*>(std::malloc( sizeof(int) * nproc ));
 
     if ( NULL == recv_len ) MPI_Abort( comm , MPI_ERR_UNKNOWN );
 
@@ -350,20 +502,18 @@ mpi_filebuf * mpi_filebuf::flush()
 
       recv_len[ comm_root ] = 0 ; // Don't send to self
 
-      int i ;
-
-      if ( NULL == ( recv_disp = (int*) std::malloc( sizeof(int) * (nproc + 1) ) ) )
+      if ( NULL == ( recv_disp = static_cast<int*>(std::malloc( sizeof(int) * (nproc + 1) )) ) )
 	result = -1 ;
 
       if ( 0 == result ) { // Allocation succeeded
 
 	recv_disp[0] = 0 ;
 
-	for ( i = 0 ; i < nproc ; ++i )
+	for (int i = 0 ; i < nproc ; ++i )
 	  recv_disp[i+1] = recv_disp[i] + recv_len[i] ;
 
 	if ( 0 < recv_disp[nproc] ) {
-	  if ( NULL == ( recv_buf = (char*) std::malloc( recv_disp[nproc] ) ) )
+	  if ( NULL == ( recv_buf = static_cast<char*>(std::malloc( recv_disp[nproc] ) ) ))
 	    result = -1 ;
 	}
 	else {
@@ -404,9 +554,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
       if ( NULL != comm_root_fp ) {
 
-	int i ;
-
-	for ( i = 1 ; i < nproc && 0 == result ; ++i ) {
+	for (int i = 1 ; i < nproc && 0 == result ; ++i ) {
 	  const int j   = ( i + comm_root ) % nproc ;
 	  const unsigned int len = recv_len[j] ;
 
@@ -440,11 +588,17 @@ mpi_filebuf * mpi_filebuf::flush()
     if ( NULL != recv_disp ) std::free( recv_disp );
   }
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
-  return -1 == result ? (mpi_filebuf *) NULL : this ;
+  return -1 == result ? NULL : this ;
 }
-
+#else
+mpi_filebuf * mpi_filebuf::flush()
+{
+  sync();
+  return this;
+}
+#endif
 /*--------------------------------------------------------------------*/
 
 int mpi_filebuf::sync()
@@ -472,4 +626,45 @@ int mpi_filebuf::sync()
 std::streambuf * mpi_filebuf::setbuf( char * s , std::streamsize n )
 {
   return this ;
+}
+
+namespace {
+  void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)
+  {
+    // See if any variables were defined on the command line...
+    if (!defines.empty()) {
+      // Defines are space/comma-separated pairs of the form 'var=value'
+      // or "options" of the form '-W' or '--warning'
+      // Split the string and then process each variable...
+      std::vector<std::string> tokens;
+      SEAMS::tokenize(defines, " ,\t", tokens);
+      for (size_t i=0; i<tokens.size(); i++) {
+	std::string token = tokens[i];
+	if (token[0] == '-') {
+	  aprepro.set_option(token);
+	}
+	else {
+	  // It is an aprepro variable definition
+	  std::vector<std::string> define;
+	  SEAMS::tokenize(token, "=", define);
+	  if (define.size() == 2) {
+	    // Determine whether the define is string type or double/int...
+	    bool immutable = define[0][0] != '_';
+	    std::stringstream ss(define[1]);
+	    double d = 0;
+	    ss >> d;
+	    if (ss.fail()) {
+	      // Not a valid number; treat as a string
+	      aprepro.add_variable(define[0], define[1], immutable);
+	    } else {
+	      aprepro.add_variable(define[0], d, immutable);
+	    }
+	  } else {
+	    std::cerr << "APREPRO: Invalid format for predefined variable: '" << token << "'\n"
+		      << "         Required format is 'var=value' or 'var=\"value\"'\n";
+	  }
+	}
+      }
+    }
+  }
 }

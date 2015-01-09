@@ -45,6 +45,7 @@
 // @HEADER
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -56,46 +57,58 @@
 
 typedef double Scalar;
 typedef int    LocalOrdinal;
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
 typedef int    GlobalOrdinal;
+#else
+typedef long long GlobalOrdinal;
+#endif
 
 int main(int argc, char *argv[]) {
-  GlobalOrdinal numGlobalElements = 256; // problem size
 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+  bool success = false;
+  bool verbose = false;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal>::createUniformContigMap(lib, numGlobalElements, comm);
+    GlobalOrdinal numGlobalElements = 256; // problem size
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 
-  const size_t numMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal>::createUniformContigMap(lib, numGlobalElements, comm);
 
-  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 3);
+    const size_t numMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
-                            Teuchos::tuple<Scalar> (2.0, -1.0));
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 3);
+
+    for (size_t i = 0; i < numMyElements; i++) {
+      if (myGlobalElements[i] == 0) {
+        A->insertGlobalValues(myGlobalElements[i],
+                              Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i], myGlobalElements[i] +1),
+                              Teuchos::tuple<Scalar> (2.0, -1.0));
+      }
+      else if (myGlobalElements[i] == numGlobalElements - 1) {
+        A->insertGlobalValues(myGlobalElements[i],
+                              Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
+                              Teuchos::tuple<Scalar> (-1.0, 2.0));
+      }
+      else {
+        A->insertGlobalValues(myGlobalElements[i],
+                              Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
+                              Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
+      }
     }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i]),
-                            Teuchos::tuple<Scalar> (-1.0, 2.0));
-    }
-    else {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<GlobalOrdinal>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
-                            Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
-    }
+
+    A->fillComplete();
+
+    success = true;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  A->fillComplete();
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 

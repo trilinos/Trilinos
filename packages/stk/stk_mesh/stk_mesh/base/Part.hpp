@@ -1,25 +1,53 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_Part_hpp
 #define stk_mesh_Part_hpp
 
 //----------------------------------------------------------------------
 
-#include <iosfwd>
-#include <string>
-#include <vector>
-#include <algorithm>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <algorithm>                    // for sort, unique
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for PartVector, OrdinalVector, etc
+#include <stk_mesh/baseImpl/PartImpl.hpp>  // for PartImpl
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector, vector<>::iterator
+#include "stk_topology/topology.hpp"    // for topology
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 
-#include <stk_util/util/CSet.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/PartRelation.hpp>
-#include <stk_mesh/baseImpl/PartImpl.hpp>
 
 //----------------------------------------------------------------------
 
@@ -27,7 +55,6 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-  class PartRepository;
 } // namespace impl
 
 /** \addtogroup stk_mesh_module
@@ -54,6 +81,8 @@ public:
    */
   MetaData & mesh_meta_data() const { return m_partImpl.mesh_meta_data(); }
 
+  BulkData & mesh_bulk_data() const;
+
   /** \brief  The primary entity type for this part.
    *
    *   For example, the primary purpose of an Element part
@@ -61,10 +90,38 @@ public:
    *   nodes of those elements are also members of an element part.
    *   Return InvalidEntityRank if no primary entity type.
    */
-  unsigned primary_entity_rank() const { return m_partImpl.primary_entity_rank(); }
+  EntityRank primary_entity_rank() const { return m_partImpl.primary_entity_rank(); }
 
-  /** \brief  Application-defined text name of this part */
+  stk::topology topology() const { return m_partImpl.topology(); }
+
+  /** \brief  Application-defined text name of this part, must be unique within the set of parts owned by a MetaData*/
   const std::string & name() const { return m_partImpl.name(); }
+
+  bool force_no_induce() const { return m_partImpl.force_no_induce(); }
+
+  /** \brief Should we induce this part
+   *
+   * We need the from_rank argument because part induction does not chain.
+   * IE, induced parts are not transitive. from_rank represents the rank
+   * of the entity that is the src entity of the connectivity.
+   */
+  bool should_induce(EntityRank from_rank) const
+  { return primary_entity_rank() == from_rank && !force_no_induce(); }
+
+  /** \brief Could an entity of a certain rank be induced into part
+   */
+  bool was_induced(EntityRank rank) const
+  {
+    return primary_entity_rank() != InvalidEntityRank &&
+           rank < primary_entity_rank() &&
+           !force_no_induce();
+  }
+
+  //whether an entity's membership in this part is required to be the same on each processor that shares/ghosts the entity.
+  bool entity_membership_is_parallel_consistent() const { return m_partImpl.entity_membership_is_parallel_consistent(); }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_partImpl.entity_membership_is_parallel_consistent(trueOrFalse); }
+
+  int64_t id() const { return m_partImpl.id(); }
 
   /** \brief  Internally generated ordinal of this part that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
@@ -77,11 +134,8 @@ public:
   /** \brief  Parts that are subsets of this part. */
   const PartVector & subsets() const { return m_partImpl.subsets(); }
 
-  /** \brief  Parts for which this part is defined as the intersection.  */
-  const PartVector & intersection_of() const { return m_partImpl.intersection_of(); }
-
-  /** \brief  PartRelations for which this part is a member, root or target */
-  const std::vector<PartRelation> & relations() const { return m_partImpl.relations(); }
+  /** \brief  Check if argument is subset of this */
+  bool contains(const Part& part) const;
 
   /** \brief  Equality comparison */
   bool operator == ( const Part & rhs ) const { return this == & rhs ; }
@@ -117,8 +171,8 @@ private:
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods on PartRepository.
    */
-  Part( MetaData * arg_meta_data , const std::string & arg_name, EntityRank arg_rank, size_t arg_ordinal)
-    : m_partImpl(arg_meta_data,arg_name,arg_rank,arg_ordinal)
+  Part( MetaData * arg_meta_data , const std::string & arg_name, EntityRank arg_rank, size_t arg_ordinal, bool arg_force_no_induce = false)
+    : m_partImpl(arg_meta_data, arg_name, arg_rank, arg_ordinal, arg_force_no_induce)
   { }
 
   ~Part() {}
@@ -127,23 +181,7 @@ private:
   Part & operator = ( const Part & );
 
 #endif /* DOXYGEN_COMPILE */
-
 };
-
-static const char INTERNAL_PART_PREFIX  = '{';
-static const char INTERNAL_PART_POSTFIX = '}';
-
-inline
-bool is_internal(const std::string& part_name)
-{
-  return part_name.size() > 2 && *part_name.begin() == INTERNAL_PART_PREFIX && *part_name.rbegin() == INTERNAL_PART_POSTFIX;
-}
-
-inline
-bool is_internal(const Part& part)
-{ return is_internal(part.name()); }
-
-std::string convert_to_internal_name(const std::string& part_name);
 
 //----------------------------------------------------------------------
 /** \brief  Ordering operator for parts. */
@@ -178,6 +216,7 @@ void order( OrdinalVector & v )
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.
  */
+bool insert( ConstPartVector & , const Part & );
 bool insert( PartVector & , Part & );
 
 inline
@@ -195,6 +234,8 @@ bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
   return true ;
 }
 
+void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets);
+
 /** \brief  Remove a part from a properly ordered collection of parts. */
 void remove( PartVector & , Part & );
 
@@ -202,6 +243,7 @@ void remove( PartVector & , Part & );
 Part * find( const PartVector & , const std::string & );
 
 /** \brief  Query containment within properly ordered PartVector */
+bool contain( const ConstPartVector & , const Part & );
 bool contain( const PartVector & , const Part & );
 
 template<class Iterator>
@@ -210,6 +252,16 @@ bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
 {
   for(Iterator i=beg; i!=end; ++i) {
     if (*i == part_ordinal) return true;
+  }
+
+  return false;
+}
+
+inline
+bool contains_ordinal_part( PartVector::const_iterator beg, PartVector::const_iterator end, unsigned part_ordinal )
+{
+  for(PartVector::const_iterator i=beg; i!=end; ++i) {
+    if ((*i)->mesh_meta_data_ordinal() == part_ordinal) return true;
   }
 
   return false;

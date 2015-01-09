@@ -56,6 +56,7 @@
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
 #include "Piro_Epetra_NOXSolver.hpp"
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
+#include "Piro_Epetra_NewmarkSolver.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -80,12 +81,13 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
 
-  for (int iTest=0; iTest<2; iTest++) {
+  for (int iTest=0; iTest<3; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Solve_VV.xml"; break;
        case 1: inputFile="input_Solve_TR.xml"; break;
+       case 2: inputFile="input_Solve_NB.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -125,6 +127,10 @@ int main(int argc, char *argv[]) {
       }
       else if (solver=="Trapezoid Rule") {
         piro = rcp(new Piro::Epetra::TrapezoidRuleSolver(
+                       piroParams, Model, observer));
+      }
+      else if (solver=="Newmark") {
+        piro = rcp(new Piro::Epetra::NewmarkSolver(
                        piroParams, Model, observer));
       }
       else

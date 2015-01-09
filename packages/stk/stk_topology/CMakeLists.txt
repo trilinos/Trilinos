@@ -1,0 +1,7 @@
+INCLUDE(TribitsSubPackageMacros)
+
+TRIBITS_SUBPACKAGE(Topology)
+
+ADD_SUBDIRECTORY(stk_topology)
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()

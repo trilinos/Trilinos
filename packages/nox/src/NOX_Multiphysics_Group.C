@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,8 +49,8 @@
 #include <iostream>
 
 NOX::Multiphysics::Group::Group(
-          const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
-          const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+          const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& t,
           const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solversVecPtr(solvers),
   normRHS(0.0)
@@ -67,15 +67,16 @@ NOX::Multiphysics::Group::Group(
   resetIsValid();
 }
 
-NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type )
+NOX::Multiphysics::Group::Group( const Group & source, NOX::CopyType type ):
+  normRHS(0.0)
 {
-  switch (type) 
+  switch (type)
   {
     case DeepCopy:
-      
+
       isValidRHS = source.isValidRHS;
       normRHS = source.normRHS;
-      
+
       break;
 
     case ShapeCopy:
@@ -92,20 +93,20 @@ NOX::Multiphysics::Group::~Group()
 {
 }
 
-void 
+void
 NOX::Multiphysics::Group::resetIsValid()
 {
   isValidRHS = false;
   return;
 }
 
-NOX::Abstract::Group & 
+NOX::Abstract::Group &
 NOX::Multiphysics::Group::operator=(const NOX::Abstract::Group& source)
 {
   return operator=(dynamic_cast<const NOX::Multiphysics::Group&> (source));
 }
 
-NOX::Abstract::Group & 
+NOX::Abstract::Group &
 NOX::Multiphysics::Group::operator=(const Group& source)
 {
   return *this;
@@ -118,13 +119,13 @@ NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector& y)
 }
 
 void
-NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group& grp, 
-			 const NOX::Abstract::Vector& d, double step)
+NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group& grp,
+             const NOX::Abstract::Vector& d, double step)
 {
   resetIsValid();
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Multiphysics::Group::computeF()
 {
   NOX::Abstract::Group::ReturnType status;
@@ -155,25 +156,25 @@ NOX::Multiphysics::Group::isF() const
   return isValidRHS;
 }
 
-const NOX::Abstract::Vector& 
+const NOX::Abstract::Vector&
 NOX::Multiphysics::Group::getX() const
 {
   return (*solversVecPtr)[0]->getSolutionGroup().getX();
 }
 
-const NOX::Abstract::Vector& 
+const NOX::Abstract::Vector&
 NOX::Multiphysics::Group::getF() const
 {
   return (*solversVecPtr)[0]->getSolutionGroup().getF();
 }
 
-const NOX::Abstract::Vector& 
+const NOX::Abstract::Vector&
 NOX::Multiphysics::Group::getGradient() const
 {
   return (*solversVecPtr)[0]->getSolutionGroup().getGradient();
 }
 
-const NOX::Abstract::Vector& 
+const NOX::Abstract::Vector&
 NOX::Multiphysics::Group::getNewton() const
 {
   return (*solversVecPtr)[0]->getSolutionGroup().getNewton();
@@ -210,15 +211,15 @@ NOX::Multiphysics::Group::getNormF() const
     std::cerr << "ERROR: NOX::Epetra::Group::getNormF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
-    
+
   return normRHS;
 
 }
 
-Teuchos::RCP<NOX::Abstract::Group> 
-NOX::Multiphysics::Group::clone(NOX::CopyType type) const 
+Teuchos::RCP<NOX::Abstract::Group>
+NOX::Multiphysics::Group::clone(NOX::CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp =
     Teuchos::rcp(new NOX::Multiphysics::Group(*this, type));
 
   return newgrp;

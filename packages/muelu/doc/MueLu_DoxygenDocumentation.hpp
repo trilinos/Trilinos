@@ -83,7 +83,7 @@ development of new multigrid preconditioning techniques.
 
 \section muelu_questions For All Questions and Comments...
 
-   Please contact Jonathan Hu       (jhu@sandia.gov), Jonathan Hu (jhu@sandia.gov),
+   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov),
    or Ray Tuminaro (rstumin@sandia.gov).
 
 */

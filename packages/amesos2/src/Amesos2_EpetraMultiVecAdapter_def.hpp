@@ -142,6 +142,7 @@ Teuchos::RCP<const Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_t,
 MultiVecAdapter<Epetra_MultiVector>::getVector( size_t j ) const
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Tpetra::MultiVector;
 
@@ -173,6 +174,7 @@ Teuchos::RCP<Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_t,
 MultiVecAdapter<Epetra_MultiVector>::getVectorNonConst( size_t j )
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Tpetra::MultiVector;
 
@@ -324,8 +326,7 @@ std::string MultiVecAdapter<Epetra_MultiVector>::description() const
 
 void MultiVecAdapter<Epetra_MultiVector>::describe(
   Teuchos::FancyOStream& os,
-  const Teuchos::EVerbosityLevel verbLevel=
-  Teuchos::Describable::verbLevel_default) const
+  const Teuchos::EVerbosityLevel verbLevel) const
 {
   // TODO: implement!
 }

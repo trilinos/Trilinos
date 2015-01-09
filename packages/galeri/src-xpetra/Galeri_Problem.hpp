@@ -87,22 +87,22 @@ namespace Galeri {
       }
 
       // Get methods
-      Teuchos::RCP<const Map>         getMap()                                   const { return Map_; }
-      Teuchos::RCP<const Matrix>      getMatrix()                                const { return A_; }
-      Teuchos::RCP<const MultiVector> getNullspace()                             const { return Nullspace_; }
-      Teuchos::RCP<const MultiVector> getCoords()                                const { return Coords_; }
+      Teuchos::RCP<const Map>           getMap()                                   const { return Map_; }
+      Teuchos::RCP<const Matrix>        getMatrix()                                const { return A_; }
+      Teuchos::RCP<const MultiVector>   getNullspace()                             const { return Nullspace_; }
+      Teuchos::RCP<const MultiVector>   getCoords()                                const { return Coords_; }
 
       // Set methods
-      Teuchos::RCP<const Map>         setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
+      Teuchos::RCP<const Map>           setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
 
     protected:
-      Teuchos::ParameterList&   list_;
-      Teuchos::RCP<const Map>   Map_;
-      Teuchos::RCP<Matrix>      A_;
-      Teuchos::RCP<MultiVector> Nullspace_;
-      Teuchos::RCP<MultiVector> Coords_;
+      Teuchos::ParameterList&           list_;
+      Teuchos::RCP<const Map>           Map_;
+      Teuchos::RCP<Matrix>              A_;
+      Teuchos::RCP<MultiVector>         Nullspace_;
+      Teuchos::RCP<MultiVector>         Coords_;
 
-      DirBC                     DirichletBC_;
+      DirBC                             DirichletBC_;
 
     private:
       void SetBoundary() {

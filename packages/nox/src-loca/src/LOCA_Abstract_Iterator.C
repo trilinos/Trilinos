@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -79,8 +79,8 @@ LOCA::Abstract::Iterator::Iterator(const LOCA::Abstract::Iterator& it) :
 
 LOCA::Abstract::Iterator::~Iterator() {}
 
-bool 
-LOCA::Abstract::Iterator::resetIterator(Teuchos::ParameterList& p) 
+bool
+LOCA::Abstract::Iterator::resetIterator(Teuchos::ParameterList& p)
 {
   stepNumber = 0;
   numFailedSteps = 0;
@@ -88,23 +88,23 @@ LOCA::Abstract::Iterator::resetIterator(Teuchos::ParameterList& p)
   iteratorStatus = LOCA::Abstract::Iterator::NotFinished;
 
   maxSteps = p.get("Max Steps",100);
-  
+
   return true;
 }
 
-LOCA::Abstract::Iterator::IteratorStatus 
+LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Abstract::Iterator::getIteratorStatus() const
 {
   return iteratorStatus;
 }
 
-int 
+int
 LOCA::Abstract::Iterator::getStepNumber() const
 {
   return stepNumber;
 }
 
-int 
+int
 LOCA::Abstract::Iterator::getNumFailedSteps() const
 {
   return numFailedSteps;
@@ -116,8 +116,8 @@ LOCA::Abstract::Iterator::getNumTotalSteps() const
   return numTotalSteps;
 }
 
-LOCA::Abstract::Iterator::IteratorStatus 
-LOCA::Abstract::Iterator::run() 
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Abstract::Iterator::run()
 {
   iteratorStatus = start();
   if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
@@ -128,14 +128,14 @@ LOCA::Abstract::Iterator::run()
   iteratorStatus = iterate();
 
   iteratorStatus = finish(iteratorStatus);
- 
+
   return iteratorStatus;
 }
 
-LOCA::Abstract::Iterator::IteratorStatus 
+LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Abstract::Iterator::iterate()
 {
-  LOCA::Abstract::Iterator::StepStatus stepStatus = 
+  LOCA::Abstract::Iterator::StepStatus stepStatus =
     LOCA::Abstract::Iterator::Successful;
   LOCA::Abstract::Iterator::StepStatus preStatus;
   LOCA::Abstract::Iterator::StepStatus compStatus;
@@ -166,7 +166,7 @@ LOCA::Abstract::Iterator::iterate()
   return iteratorStatus;
 }
 
-LOCA::Abstract::Iterator::IteratorStatus 
+LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Abstract::Iterator::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (numTotalSteps >= maxSteps)
@@ -176,23 +176,23 @@ LOCA::Abstract::Iterator::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 void
-LOCA::Abstract::Iterator::setLastIteration() 
+LOCA::Abstract::Iterator::setLastIteration()
 {
   iteratorStatus = LOCA::Abstract::Iterator::LastIteration;
   return;
 }
 
 bool
-LOCA::Abstract::Iterator::isLastIteration() 
+LOCA::Abstract::Iterator::isLastIteration()
 {
   return (iteratorStatus == LOCA::Abstract::Iterator::LastIteration);
 }
 
-LOCA::Abstract::Iterator::StepStatus 
+LOCA::Abstract::Iterator::StepStatus
 LOCA::Abstract::Iterator::computeStepStatus(
-		       LOCA::Abstract::Iterator::StepStatus preStatus, 
-		       LOCA::Abstract::Iterator::StepStatus compStatus,
-		       LOCA::Abstract::Iterator::StepStatus postStatus)
+               LOCA::Abstract::Iterator::StepStatus preStatus,
+               LOCA::Abstract::Iterator::StepStatus compStatus,
+               LOCA::Abstract::Iterator::StepStatus postStatus)
 {
   bool haveProvisional = false;
   bool haveUnsuccessful = false;
@@ -215,6 +215,6 @@ LOCA::Abstract::Iterator::computeStepStatus(
   }
   else if (haveUnsuccessful)
     return LOCA::Abstract::Iterator::Unsuccessful;
-  else 
+  else
     return LOCA::Abstract::Iterator::Successful;
 }

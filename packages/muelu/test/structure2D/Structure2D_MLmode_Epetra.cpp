@@ -60,6 +60,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra
 #include <EpetraExt_CrsMatrixIn.h>
@@ -174,117 +175,123 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out->setOutputToRootOnly(0);
-  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
+    *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  // Timing
-  Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
+    // Timing
+    Teuchos::Time myTime("global");
+    Teuchos::TimeMonitor M(myTime);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
 
-  int globalNumDofs = 7020; //3402;
-  int nProcs = comm->getSize();
-  int nDofsPerNode = 2;
+    int globalNumDofs = 7020; //3402;
+    int nProcs = comm->getSize();
+    int nDofsPerNode = 2;
 
-  int nLocalDofs = (int) globalNumDofs / nProcs;
-  nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
-  int nCumulatedDofs = 0;
-  sumAll(comm,nLocalDofs, nCumulatedDofs);
+    int nLocalDofs = (int) globalNumDofs / nProcs;
+    nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
+    int nCumulatedDofs = 0;
+    sumAll(comm,nLocalDofs, nCumulatedDofs);
 
-  if(comm->getRank() == nProcs-1) {
-    nLocalDofs += globalNumDofs - nCumulatedDofs;
+    if(comm->getRank() == nProcs-1) {
+      nLocalDofs += globalNumDofs - nCumulatedDofs;
+    }
+
+    std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
+
+    // read in problem
+    Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
+    //Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
+    Epetra_CrsMatrix * ptrA = 0;
+    Epetra_Vector * ptrf = 0;
+    Epetra_MultiVector* ptrNS = 0;
+
+    std::cout << "Reading matrix market file" << std::endl;
+    /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
+      EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+      EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
+    /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
+      EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
+      EpetraExt::MatrixMarketFileToMultiVector( "/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
+    EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
+    EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
+    RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
+    RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
+    RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
+
+    // Epetra_CrsMatrix -> Xpetra::Matrix
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
+    RCP<Matrix> Op = crsOp;
+
+    // Epetra_Vector -> Xpetra::Vector
+    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+
+    // Epetra_Map -> Xpetra::Map
+    const RCP< const Map> map = Xpetra::toXpetra<int>(emap);
+
+    Teuchos::ParameterList mlParams;
+    FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)
+
+    MLParameterListInterpreter mueLuFactory(mlParams);
+    RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+    H->GetLevel(0)->Set("A", Op);
+    H->GetLevel(0)->Set("Nullspace", xNS);
+    mueLuFactory.SetupHierarchy(*H);
+
+    H->SetVerbLevel(MueLu::High);
+
+    RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
+
+    // Use AMG directly as an iterative method
+    {
+      xLsg->putScalar( (SC) 0.0);
+
+      H->Iterate(*xRhs,*xLsg,10);
+
+      //xLsg->describe(*out,Teuchos::VERB_EXTREME);
+    }
+
+    //
+    // Solve Ax = b using AMG as a preconditioner in AztecOO
+    //
+    {
+      RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
+      X->PutScalar(0.0);
+      Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
+
+      AztecOO aztecSolver(epetraProblem);
+      aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
+
+      MueLu::EpetraOperator aztecPrec(H);
+      aztecSolver.SetPrecOperator(&aztecPrec);
+
+      int maxIts = 50;
+      double tol = 1e-8;
+
+      aztecSolver.Iterate(maxIts, tol);
+    }
+
+    /*for(int i=0; i<H->GetNumLevels(); i++) {
+      RCP<Level> l = H->GetLevel(i);
+     *out << std::endl << "Level " << i << std::endl;
+     l->print(*out);
+     }*/
+
+    success = true;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  std::cout << "PROC: " << comm->getRank() << " numLocalDofs=" << nLocalDofs << std::endl;
-
-  // read in problem
-  Epetra_Map emap (globalNumDofs, nLocalDofs, 0, *Xpetra::toEpetra(comm));
-  //Epetra_Map emap(3402,0,*Xpetra::toEpetra(comm));
-  Epetra_CrsMatrix * ptrA = 0;
-  Epetra_Vector * ptrf = 0;
-  Epetra_MultiVector* ptrNS = 0;
-
-  std::cout << "Reading matrix market file" << std::endl;
-  /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/tobias/trilinos/Trilinos_dev/ubuntu_openmpi/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
-  /*EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "/home/wiesner/trilinos/Trilinos_dev/fc8_openmpi_dbg_q52011/preCopyrightTrilinos/muelu/example/Structure/stru2d_ns.txt", emap, ptrNS);*/
-  EpetraExt::MatrixMarketFileToCrsMatrix("stru2d_A.txt",emap,emap,emap,ptrA);
-  EpetraExt::MatrixMarketFileToVector("stru2d_b.txt",emap,ptrf);
-  EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
-  RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
-  RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
-  RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
-
-  // Epetra_CrsMatrix -> Xpetra::Matrix
-  RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
-  RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
-  RCP<Matrix> Op = crsOp;
-
-  // Epetra_Vector -> Xpetra::Vector
-  RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
-
-  RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
-
-  // Epetra_Map -> Xpetra::Map
-  const RCP< const Map> map = Xpetra::toXpetra(emap);
-
-  Teuchos::ParameterList mlParams;
-  FillMLParameterList(mlParams); // fill ML parameter list (without nullspace)
-
-  MLParameterListInterpreter mueLuFactory(mlParams);
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-  H->GetLevel(0)->Set("A", Op);
-  H->GetLevel(0)->Set("Nullspace", xNS);
-  mueLuFactory.SetupHierarchy(*H);
-
-  H->SetVerbLevel(MueLu::High);
-
-  RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
-
-  // Use AMG directly as an iterative method
-  {
-    xLsg->putScalar( (SC) 0.0);
-
-    H->Iterate(*xRhs,10,*xLsg);
-
-    //xLsg->describe(*out,Teuchos::VERB_EXTREME);
-  }
-
-  //
-  // Solve Ax = b using AMG as a preconditioner in AztecOO
-  //
-  {
-    RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
-    X->PutScalar(0.0);
-    Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
-
-    AztecOO aztecSolver(epetraProblem);
-    aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
-
-    MueLu::EpetraOperator aztecPrec(H);
-    aztecSolver.SetPrecOperator(&aztecPrec);
-
-    int maxIts = 50;
-    double tol = 1e-8;
-
-    aztecSolver.Iterate(maxIts, tol);
-  }
-
-  /*for(int i=0; i<H->GetNumLevels(); i++) {
-    RCP<Level> l = H->GetLevel(i);
-    *out << std::endl << "Level " << i << std::endl;
-    l->print(*out);
-  }*/
-
-
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

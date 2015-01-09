@@ -35,7 +35,12 @@
 
 #ifndef _ELB_OUTPUT_CONST_H_
 #define _ELB_OUTPUT_CONST_H_
-#include "elb.h"
+#include <string>                       // for string
+struct Machine_Description;
+struct Problem_Description;
+struct Sphere_Info;
+template <typename INT> struct LB_Description;
+template <typename INT> struct Mesh_Description;
 
 template <typename INT>
 int write_nemesis(std::string &filename,

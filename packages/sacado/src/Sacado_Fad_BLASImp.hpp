@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -629,7 +629,7 @@ SCAL(const OrdinalType n, const FadType& alpha, FadType* x,
   ValueType alpha_val;
   const ValueType *alpha_dot;
   ValueType *x_val, *x_dot;
-  OrdinalType n_alpha_dot, n_x_dot, n_dot;
+  OrdinalType n_alpha_dot = 0, n_x_dot = 0, n_dot = 0;
   OrdinalType incx_val, incx_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   n_dot = n_alpha_dot;
@@ -848,10 +848,10 @@ GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n,
   const typename ArrayValueType<alpha_type>::type *alpha_dot;
   typename ArrayValueType<beta_type>::type beta_val;
   const typename ArrayValueType<beta_type>::type *beta_dot;
-  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
-  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
+  const typename ArrayValueType<A_type>::type *A_val = 0, *A_dot = 0;
+  const typename ArrayValueType<x_type>::type *x_val = 0, *x_dot = 0;
   ValueType *y_val, *y_dot;
-  OrdinalType n_alpha_dot, n_A_dot, n_x_dot, n_beta_dot, n_y_dot, n_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_x_dot, n_beta_dot, n_y_dot = 0, n_dot;
   OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, m, n, lda, n_A_dot, lda_val, lda_dot, A_val, A_dot);
@@ -907,7 +907,7 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
   // Unpack input values & derivatives
   const typename ArrayValueType<A_type>::type *A_val, *A_dot;
   ValueType *x_val, *x_dot;
-  OrdinalType n_A_dot, n_x_dot, n_dot;
+  OrdinalType n_A_dot = 0, n_x_dot = 0, n_dot = 0;
   OrdinalType lda_val, incx_val, lda_dot, incx_dot;
   arrayTraits.unpack(A, n, n, lda, n_A_dot, lda_val, lda_dot, A_val, A_dot);
   n_dot = n_A_dot;
@@ -973,8 +973,8 @@ GER(const OrdinalType m, const OrdinalType n, const alpha_type& alpha,
   // Unpack input values & derivatives
   typename ArrayValueType<alpha_type>::type alpha_val;
   const typename ArrayValueType<alpha_type>::type *alpha_dot;
-  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
-  const typename ArrayValueType<y_type>::type *y_val, *y_dot;
+  const typename ArrayValueType<x_type>::type *x_val = 0, *x_dot = 0;
+  const typename ArrayValueType<y_type>::type *y_val = 0, *y_dot = 0;
   ValueType *A_val, *A_dot;
   OrdinalType n_alpha_dot, n_x_dot, n_y_dot, n_A_dot, n_dot;
   OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot;
@@ -1048,7 +1048,7 @@ GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb,
   const typename ArrayValueType<A_type>::type *A_val, *A_dot;
   const typename ArrayValueType<B_type>::type *B_val, *B_dot;
   ValueType *C_val, *C_dot;
-  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot = 0, n_dot;
   OrdinalType lda_val, ldb_val, ldc_val, lda_dot, ldb_dot, ldc_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot,

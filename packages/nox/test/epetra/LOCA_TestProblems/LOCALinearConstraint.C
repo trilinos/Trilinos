@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,9 +51,9 @@
 #include "LOCALinearConstraint.H"
 #include "LOCA_Parameter_Vector.H"
 
-LinearConstraint::LinearConstraint(int NumConstraints, 
-				   const LOCA::ParameterVector& pVec,
-				   NOX::Abstract::Vector& cloneVec) :
+LinearConstraint::LinearConstraint(int NumConstraints,
+                   const LOCA::ParameterVector& pVec,
+                   NOX::Abstract::Vector& cloneVec) :
   m(NumConstraints),
   constraints(m,1),
   isValidConstraints(false),
@@ -70,8 +70,8 @@ LinearConstraint::LinearConstraint(int NumConstraints,
   dgdp.putScalar(0.0);
 }
 
-LinearConstraint::LinearConstraint(const LinearConstraint& source, 
-				   NOX::CopyType type) :
+LinearConstraint::LinearConstraint(const LinearConstraint& source,
+                   NOX::CopyType type) :
   m(source.m),
   constraints(source.constraints),
   isValidConstraints(false),
@@ -135,8 +135,8 @@ LinearConstraint::setParam(int paramID, double val)
 
 void
 LinearConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
     p[paramIDs[i]] = vals(i,0);
@@ -148,8 +148,8 @@ LinearConstraint::computeConstraints()
   // compute dg/dx*x + dg/dp*p
   x->multiply(1.0, *dgdx, constraints);
   if (pvec.numRows() > 0)
-    constraints.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, dgdp, 
-			 pvec, 1.0);
+    constraints.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, dgdp,
+             pvec, 1.0);
   isValidConstraints = true;
 
   return NOX::Abstract::Group::Ok;
@@ -162,9 +162,9 @@ LinearConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-LinearConstraint::computeDP(const std::vector<int>& paramIDs, 
-			  NOX::Abstract::MultiVector::DenseMatrix& dp, 
-			  bool isValidG)
+LinearConstraint::computeDP(const std::vector<int>& paramIDs,
+              NOX::Abstract::MultiVector::DenseMatrix& dp,
+              bool isValidG)
 {
   if (!isValidG) {
     for (int i=0; i<m; i++)

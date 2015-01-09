@@ -166,8 +166,8 @@ int Ifpack_ICT::TCompute()
 
   NumMyRows_ = A_.NumMyRows();
   int Length = A_.MaxNumEntries();
-  vector<int>    RowIndices(Length);
-  vector<double> RowValues(Length);
+  std::vector<int>    RowIndices(Length);
+  std::vector<double> RowValues(Length);
 
   bool distributed = (Comm().NumProc() > 1)?true:false;
 
@@ -335,12 +335,12 @@ int Ifpack_ICT::TCompute()
 
     int size = Hash.getNumEntries();
 
-    vector<double> AbsRow(size);
+    std::vector<double> AbsRow(size);
     int count = 0;
     
     // +1 because I use the extra position for diagonal in insert
-    vector<int_type> keys(size + 1);
-    vector<double> values(size + 1);
+    std::vector<int_type> keys(size + 1);
+    std::vector<double> values(size + 1);
 
     Hash.arrayify(&keys[0], &values[0]);
 

@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -25,7 +24,7 @@ SET(HEADERS ${HEADERS}
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
+ 
 SET(HEADERS ${HEADERS}
   Ifpack_ConfigDefs.h
   Ifpack_Version.h
@@ -51,6 +50,9 @@ SET(HEADERS ${HEADERS}
   Ifpack_Container.h
   Ifpack_SparseContainer.h
   Ifpack_DenseContainer.h
+  Ifpack_TriDiContainer.h
+  Ifpack_SerialTriDiMatrix.h
+  Ifpack_SerialTriDiSolver.h
   Ifpack_AdditiveSchwarz.h
   Ifpack_LocalFilter.h
   Ifpack_NodeFilter.h
@@ -64,6 +66,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_Graph_Epetra_CrsGraph.h
   Ifpack_Partitioner.h
   Ifpack_OverlappingPartitioner.h
+  Ifpack_LinePartitioner.h
   Ifpack_LinearPartitioner.h
   Ifpack_GreedyPartitioner.h
   Ifpack_METISPartitioner.h
@@ -106,6 +109,9 @@ SET(SOURCES ${SOURCES}
   Ifpack_Condest.cpp
   Ifpack.cpp
   Ifpack_DenseContainer.cpp
+  Ifpack_TriDiContainer.cpp
+  Ifpack_SerialTriDiMatrix.cpp
+  Ifpack_SerialTriDiSolver.cpp
   Ifpack_LocalFilter.cpp
   Ifpack_NodeFilter.cpp
   Ifpack_SingletonFilter.cpp
@@ -121,6 +127,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_Polynomial.cpp
   Ifpack_Krylov.cpp
   Ifpack_OverlappingPartitioner.cpp
+  Ifpack_LinePartitioner.cpp
   Ifpack_LinearPartitioner.cpp
   Ifpack_GreedyPartitioner.cpp
   Ifpack_METISPartitioner.cpp

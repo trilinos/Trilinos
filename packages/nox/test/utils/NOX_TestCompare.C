@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,10 +51,10 @@
 #include "NOX_TestCompare.H"
 #include "Teuchos_RCP.hpp"
 
-NOX::TestCompare::TestCompare(std::ostream& outputStream, 
-			      const NOX::Utils& utilities) :
+NOX::TestCompare::TestCompare(std::ostream& outputStream,
+                  const NOX::Utils& utilities) :
   os(outputStream),
-  utils(utilities) 
+  utils(utilities)
 {
 }
 
@@ -62,11 +62,11 @@ NOX::TestCompare::~TestCompare()
 {
 }
 
-int NOX::TestCompare::testValue(double value, 
-				double value_expected, 
-				double tolerance, 
-				const std::string& name, 
-				NOX::TestCompare::CompareType compareType)
+int NOX::TestCompare::testValue(double value,
+                double value_expected,
+                double tolerance,
+                const std::string& name,
+                NOX::TestCompare::CompareType compareType)
 {
   bool passed;
   double testValue;
@@ -74,7 +74,7 @@ int NOX::TestCompare::testValue(double value,
 
   // test for zero
   if (compareType == NOX::TestCompare::Relative && ((value_expected == 0.0) ||
-						    (value == 0.0)))
+                            (value == 0.0)))
     compareType = NOX::TestCompare::Absolute;
 
   testValue = fabs(value-value_expected);
@@ -90,22 +90,22 @@ int NOX::TestCompare::testValue(double value,
 
   if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
-	 << "\tChecking " << name << ":  ";
+     << "\tChecking " << name << ":  ";
     if (passed)
       os << "Passed." << std::endl;
     else
       os << "Failed." << std::endl;
-    os << "\t\tExpected value:       " << utils.sciformat(value_expected) 
+    os << "\t\tExpected value:       " << utils.sciformat(value_expected)
        << std::endl
-       << "\t\tComputed value:       " << utils.sciformat(value) 
+       << "\t\tComputed value:       " << utils.sciformat(value)
        << std::endl
-       << "\t\tTolerance:            " << utils.sciformat(tolerance) 
+       << "\t\tTolerance:            " << utils.sciformat(tolerance)
        << std::endl;
     if (compareType == NOX::TestCompare::Absolute)
       os << "\t\tAbsolute ";
     else
       os << "\t\tRelative ";
-    os << "Difference:  " 
+    os << "Difference:  "
        << utils.sciformat(testValue) << std::endl;
   }
 
@@ -115,10 +115,10 @@ int NOX::TestCompare::testValue(double value,
     return 1;
 }
 
-int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec, 
-				 const NOX::Abstract::Vector& vec_expected, 
-				 double rtol, double atol, 
-				 const std::string& name)
+int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
+                 const NOX::Abstract::Vector& vec_expected,
+                 double rtol, double atol,
+                 const std::string& name)
 {
   bool passed;
   double inf_norm = computeVectorNorm(vec, vec_expected, rtol, atol);
@@ -130,16 +130,16 @@ int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
 
   if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
-	 << "\tChecking " << name << ":  ";
+     << "\tChecking " << name << ":  ";
     if (passed)
       os << "Passed." << std::endl;
     else
       os << "Failed." << std::endl;
-    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm) 
+    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm)
        << std::endl
-       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol)
        << std::endl
-       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol)
        << std::endl;
   }
 
@@ -149,23 +149,23 @@ int NOX::TestCompare::testVector(const NOX::Abstract::Vector& vec,
     return 1;
 }
 
-int 
+int
 NOX::TestCompare::testMatrix(
-		 const NOX::Abstract::MultiVector::DenseMatrix& mat, 
-		 const NOX::Abstract::MultiVector::DenseMatrix& mat_expected, 
-		 double rtol, double atol, 
-		 const std::string& name)
+         const NOX::Abstract::MultiVector::DenseMatrix& mat,
+         const NOX::Abstract::MultiVector::DenseMatrix& mat_expected,
+         double rtol, double atol,
+         const std::string& name)
 {
   bool passed;
 
   NOX::Abstract::MultiVector::DenseMatrix tmp(mat_expected.numRows(),
-					      mat_expected.numCols());
+                          mat_expected.numCols());
 
   for (int j=0; j<mat_expected.numCols(); j++)
     for (int i=0; i<mat_expected.numRows(); i++)
-      tmp(i,j) = fabs(mat(i,j)-mat_expected(i,j)) / 
-	(atol + rtol * fabs(mat_expected(i,j)));
- 
+      tmp(i,j) = fabs(mat(i,j)-mat_expected(i,j)) /
+    (atol + rtol * fabs(mat_expected(i,j)));
+
   double inf_norm = tmp.normInf();
 
   if (inf_norm < 1)
@@ -175,16 +175,16 @@ NOX::TestCompare::testMatrix(
 
   if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
-	 << "\tChecking " << name << ":  ";
+     << "\tChecking " << name << ":  ";
     if (passed)
       os << "Passed." << std::endl;
     else
       os << "Failed." << std::endl;
-    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm) 
+    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm)
        << std::endl
-       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol)
        << std::endl
-       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol)
        << std::endl;
   }
 
@@ -194,12 +194,12 @@ NOX::TestCompare::testMatrix(
     return 1;
 }
 
-int 
+int
 NOX::TestCompare::testMultiVector(
-			     const NOX::Abstract::MultiVector& mvec, 
-			     const NOX::Abstract::MultiVector& mvec_expected, 
-			     double rtol, double atol, 
-			     const std::string& name)
+                 const NOX::Abstract::MultiVector& mvec,
+                 const NOX::Abstract::MultiVector& mvec_expected,
+                 double rtol, double atol,
+                 const std::string& name)
 {
   bool passed;
   double inf_norm;
@@ -218,16 +218,16 @@ NOX::TestCompare::testMultiVector(
 
   if (utils.isPrintType(NOX::Utils::TestDetails)) {
     os << std::endl
-	 << "\tChecking " << name << ":  ";
+     << "\tChecking " << name << ":  ";
     if (passed)
       os << "Passed." << std::endl;
     else
       os << "Failed." << std::endl;
-    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm_max) 
+    os << "\t\tComputed norm:        " << utils.sciformat(inf_norm_max)
        << std::endl
-       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol)
        << std::endl
-       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol)
        << std::endl;
   }
 
@@ -238,9 +238,9 @@ NOX::TestCompare::testMultiVector(
 }
 
 double NOX::TestCompare::computeVectorNorm(
-				   const NOX::Abstract::Vector& vec, 
-				   const NOX::Abstract::Vector& vec_expected, 
-				   double rtol, double atol)
+                   const NOX::Abstract::Vector& vec,
+                   const NOX::Abstract::Vector& vec_expected,
+                   double rtol, double atol)
 {
   // Compute atol + rtol*|vec_expected|
   Teuchos::RCP<NOX::Abstract::Vector> tmp1 = vec.clone(NOX::ShapeCopy);

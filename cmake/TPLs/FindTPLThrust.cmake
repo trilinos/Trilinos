@@ -53,7 +53,6 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
 # Thrust TPL requires CUDA
 IF (NOT TPL_ENABLE_CUDA)
@@ -63,7 +62,7 @@ ELSE()
     #SET(TPL_Thrust_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS} CACHE STRING "" FORCE)
     SET(TPL_Thrust_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS})
   ENDIF()
-  TRIBITS_TPL_DECLARE_LIBRARIES( Thrust
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Thrust
       REQUIRED_HEADERS thrust/for_each.h
   )
 ENDIF()

@@ -63,6 +63,12 @@ extern "C" {
  *  @{
  */
 
+typedef NNTI_result_t (*NNTI_callback_fn_t) (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          local_atomic,
+        void                   *context);
+
+
 /**
  * @brief Initialize NNTI to use a specific transport.
  *
@@ -117,13 +123,38 @@ NNTI_result_t NNTI_disconnect (
         NNTI_peer_t            *peer_hdl);
 
 /**
+ * @brief Allocate a block of memory and prepare it for network operations.
+ *
+ * \param[in]  trans_hdl A handle to the configured transport.
+ * \param[in]  size      The size (in bytes) of 'buffer'.
+ * \param[in]  ops       Allowable transport ops for 'buffer'.
+ * \param[out] reg_buf   A pointer to a NNTI_buffer_t.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_alloc (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf);
+
+/**
+ * @brief Cleanup after network operations are complete and release the block
+ * of memory.
+ *
+ * \param[in]  reg_buf The buffer to cleanup.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_free (
+        NNTI_buffer_t *reg_buf);
+
+/**
  * @brief Prepare a block of memory for network operations.
  *
  * \param[in]  trans_hdl A handle to the configured transport.
  * \param[in]  buffer    Pointer to a memory block.
  * \param[in]  size      The size (in bytes) of 'buffer'.
  * \param[in]  ops       Allowable transport ops for 'buffer'.
- * \param[in]  peer      Only exchange data with this peer (anyone if NULL).
  * \param[out] reg_buf   A pointer to a NNTI_buffer_t.
  * \return A result code (NNTI_OK or an error)
  */
@@ -133,7 +164,25 @@ NNTI_result_t NNTI_register_memory (
         const uint64_t          element_size,
         const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
-        const NNTI_peer_t      *peer,
+        NNTI_buffer_t          *reg_buf);
+
+/**
+ * @brief Prepare a list of memory segments for network operations.
+ *
+ * \param[in]  trans_hdl       A handle to the configured transport.
+ * \param[in]  segments        List of memory segments.
+ * \param[in]  segment_lengths List of segment lengths (in bytes).
+ * \param[in]  num_segments    The number of segments in the list.
+ * \param[in]  ops             Allowable transport ops.
+ * \param[out] reg_buf         A pointer to a NNTI_buffer_t.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_register_segments (
+        const NNTI_transport_t *trans_hdl,
+        char                  **segments,
+        const uint64_t         *segment_lengths,
+        const uint64_t          num_segments,
+        const NNTI_buf_ops_t    ops,
         NNTI_buffer_t          *reg_buf);
 
 /**
@@ -143,7 +192,7 @@ NNTI_result_t NNTI_register_memory (
  * \return A result code (NNTI_OK or an error)
  */
 NNTI_result_t NNTI_unregister_memory (
-        NNTI_buffer_t    *reg_buf);
+        NNTI_buffer_t *reg_buf);
 
 /**
  * @brief Send a message to a peer.
@@ -156,7 +205,8 @@ NNTI_result_t NNTI_unregister_memory (
 NNTI_result_t NNTI_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
-        const NNTI_buffer_t *dest_hdl);
+        const NNTI_buffer_t *dest_hdl,
+        NNTI_work_request_t *wr);
 
 /**
  * @brief Transfer data to a peer.
@@ -173,7 +223,8 @@ NNTI_result_t NNTI_put (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset);
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr);
 
 /**
  * @brief Transfer data from a peer.
@@ -190,7 +241,176 @@ NNTI_result_t NNTI_get (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset);
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr);
+
+/**
+ * @brief Transfer data to a peer.
+ *
+ * \param[in] src_buffer_hdl    A buffer containing the data to put.
+ * \param[in] src_length        The number of bytes to put.
+ * \param[in] dest_buffer_list  A list of buffers to put the data into.
+ * \param[in] dest_count        The number of destination buffers.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_scatter (
+        const NNTI_buffer_t  *src_buffer_hdl,
+        const uint64_t        src_length,
+        const NNTI_buffer_t **dest_buffer_list,
+        const uint64_t        dest_count,
+        NNTI_work_request_t  *wr);
+
+
+/**
+ * @brief Transfer data from a peer.
+ *
+ * \param[in] src_buffer_list  A list of buffers containing the data to get.
+ * \param[in] src_length       The number of bytes to get.
+ * \param[in] src_count        The number of source buffers.
+ * \param[in] dest_buffer_hdl  A buffer to get the data into.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_gather (
+        const NNTI_buffer_t **src_buffer_list,
+        const uint64_t        src_length,
+        const uint64_t        src_count,
+        const NNTI_buffer_t  *dest_buffer_hdl,
+        NNTI_work_request_t  *wr);
+
+
+/**
+ * assign a callback to an atomic variable
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  local_atomic  index of the local result variable
+ * \param[in]  cbfunc        callback function invoked when the atomic variable is modified
+ * \param[in]  context       data passed to cbfunc() at every invocation
+ *
+ * This function assigns a callback to the atomic variable {local_atomic}.
+ * {cbfunc} will be invoked after every successful atomic operation on
+ * {local_atomic}.  Reads are not considered an atomic operation.
+ */
+NNTI_result_t NNTI_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context);
+
+/**
+ * read a 64-bit value from an local atomic variable
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  local_atomic  index of the local atomic variable
+ * \param[out] value         current value of the atomic variable
+ *
+ *
+ */
+NNTI_result_t NNTI_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value);
+
+
+/**
+ * perform a 64-bit atomic operation with get semantics
+ *
+ * \param[in]  trans_hdl     A handle to the configured transport.
+ * \param[in]  peer          NNTI process that hosts the target atomic variable
+ * \param[in]  target_atomic index of the target atomic variable
+ * \param[in]  result_atomic index of the local result atomic variable
+ * \param[in]  operand       64-bit operand to the atomic operation
+ * \param[in]  op            atomic operation to execute
+ * \param[out] wr            work request to wait on
+ *
+ * This function executes an atomic operation with get semantics. When the operation
+ * is complete the result of the operation is visible in {target_atomic} and the
+ * previous value is visible in {result_atomic}.
+ */
+NNTI_result_t NNTI_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr);
+
+/**
+ * perform a 64-bit compare-and-swap operation
+ *
+ * \param[in]  trans_hdl       A handle to the configured transport.
+ * \param[in]  peer            NNTI process that hosts the target atomic variable
+ * \param[in]  target_atomic   index of the target atomic variable
+ * \param[in]  result_atomic   index of the local result atomic variable
+ * \param[in]  compare_operand 64-bit operand to compare with
+ * \param[in]  swap_operand    64-bit operand to swap in
+ * \param[out] wr              work request to wait on
+ *
+ * This function executes an atomic operation with get semantics. When the operation
+ * is complete the result of the operation is visible in (target_atomic} and the
+ * previous value is visible in {result_atomic}.
+ */
+NNTI_result_t NNTI_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr);
+
+
+/**
+ * @brief Create a receive work request that can be used to wait for buffer
+ * operations to complete.
+ *
+ */
+NNTI_result_t NNTI_create_work_request (
+        NNTI_buffer_t        *reg_buf,
+        NNTI_work_request_t  *wr);
+
+
+/**
+ * @brief Disassociates a receive work request from a previous receive
+ * and prepares it for reuse.
+ *
+ */
+NNTI_result_t NNTI_clear_work_request (
+        NNTI_work_request_t  *wr);
+
+
+/**
+ * @brief Disassociates a receive work request from reg_buf.
+ *
+ */
+NNTI_result_t NNTI_destroy_work_request (
+        NNTI_work_request_t  *wr);
+
+
+/**
+ * @brief Attempts to cancel an NNTI opertion.
+ *
+ */
+NNTI_result_t NNTI_cancel (
+        NNTI_work_request_t *wr);
+
+
+/**
+ * @brief Attempts to cancel a list of NNTI opertions.
+ *
+ */
+NNTI_result_t NNTI_cancelall (
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
+
+
+/**
+ * @brief Interrupts NNTI_wait*()
+ *
+ */
+NNTI_result_t NNTI_interrupt (
+        const NNTI_transport_t *trans_hdl);
+
 
 /**
  * @brief Wait for a specific buffer to be acted on by a peer.
@@ -202,8 +422,7 @@ NNTI_result_t NNTI_get (
  * \return A result code (NNTI_OK or an error)
  */
 NNTI_result_t NNTI_wait (
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t *wr,
         const int             timeout,
         NNTI_status_t        *status);
 
@@ -221,9 +440,8 @@ NNTI_result_t NNTI_wait (
  * Caveats: All buffers in buf_list must be registered with the same transport.
  */
 NNTI_result_t NNTI_waitany (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         uint32_t             *which,
         NNTI_status_t        *status);
@@ -241,9 +459,8 @@ NNTI_result_t NNTI_waitany (
  * Caveats: All buffers in buf_list must be registered with the same transport.
  */
 NNTI_result_t NNTI_waitall (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         NNTI_status_t       **status);
 
@@ -261,9 +478,7 @@ NNTI_result_t NNTI_fini (
 
 
 
-#if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
-#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_PORTALS
-#elif defined(HAVE_TRIOS_INFINIBAND)
+#if defined(HAVE_TRIOS_INFINIBAND)
 #define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_IB
 #elif defined(HAVE_TRIOS_GEMINI)
 #define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_GEMINI
@@ -273,6 +488,8 @@ NNTI_result_t NNTI_fini (
 #define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_PAMI
 #elif defined(HAVE_TRIOS_MPI)
 #define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_MPI
+#elif defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
+#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_PORTALS
 #else
 #define NSSI_DEFAULT_TRANSPORT NSSI_RPC_LOCAL
 #endif

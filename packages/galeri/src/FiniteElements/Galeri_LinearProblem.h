@@ -55,6 +55,7 @@
 #include "Galeri_AbstractGrid.h"
 #include "Galeri_AbstractVariational.h"
 #include "Galeri_AbstractProblem.h"
+#include <limits>
 
 namespace Galeri {
 namespace FiniteElements {
@@ -126,14 +127,14 @@ public:
     int size = Grid().NumVerticesPerElement();
 
     // allocate elemental matrices and RHS
-    vector<double> ElementMatrix(size * size);
-    vector<double> ElementRHS(size);
+    std::vector<double> ElementMatrix(size * size);
+    std::vector<double> ElementRHS(size);
 
-    vector<double> x(size);
-    vector<double> y(size);
-    vector<double> z(size);
-    vector<int>    LVID(size);
-    vector<int>    GVID(size);
+    std::vector<double> x(size);
+    std::vector<double> y(size);
+    std::vector<double> z(size);
+    std::vector<int>    LVID(size);
+    std::vector<int>    GVID(size);
 
     // ==================== //
     // Fill matrix elements //
@@ -152,14 +153,36 @@ public:
 
       for (int i = 0 ; i < size ; ++i)
       {
-        int row = VertexMap.GID(LVID[i]);
+        long long LLrow = VertexMap.GID64(LVID[i]);
+        if(LLrow > std::numeric_limits<int>::max())
+        {
+          cerr << "LLrow out of int bound" << endl;
+          cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+          throw(-1);
+        }
+
+        int row = (int) LLrow;
         assert (row != -1);
         for (int j = 0 ; j < size ; ++j)
         {
-          int col = VertexMap.GID(LVID[j]);
+          long long LLcol = VertexMap.GID64(LVID[j]);
+          if(LLcol > std::numeric_limits<int>::max())
+          {
+            cerr << "LLcol out of int bound" << endl;
+            cerr << "File " << __FILE__ << ", line " << __LINE__ << endl;
+            throw(-1);
+          }
+
+          int col = (int) LLcol;
+
           double mat_value = ElementMatrix[i + j * size];
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES
+          if (LocalA.SumIntoGlobalValues(row, 1, &mat_value, &LLcol) > 0)
+            LocalA.InsertGlobalValues(row, 1, &mat_value, &LLcol);
+#else
           if (LocalA.SumIntoGlobalValues(row, 1, &mat_value, &col) > 0)
             LocalA.InsertGlobalValues(row, 1, &mat_value, &col);
+#endif
         }
         LocalRHS[LVID[i]] += ElementRHS[i];
       }
@@ -264,11 +287,11 @@ public:
     }
 
     int size = Grid().NumVerticesPerElement();
-    vector<double> x(size);
-    vector<double> y(size);
-    vector<double> z(size);
-    vector<double> LocalSol(size);
-    vector<int>    Vertices(size);
+    std::vector<double> x(size);
+    std::vector<double> y(size);
+    std::vector<double> z(size);
+    std::vector<double> LocalSol(size);
+    std::vector<int>    Vertices(size);
 
     for (int i = 0 ; i < size ; ++i) 
     {

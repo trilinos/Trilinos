@@ -294,13 +294,13 @@ private:
  *   base class OpaqueWrapper.
  *
  * This subclass allows a client to easily wrap any opaque object that
- * needs a function to free it.  This function (or function object) 
+ * needs a function to free it.  This function (or function object)
  * must be callable as:
 
  \code
  opaqueFree(&opaque);
  \endcode
- 
+
  * It must also be copy constructible.  (A function pointer is
  * trivially copy constructible.)  Please refer to the documentation
  * of OpaqueWrapper for examples of how to supply a function for

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_block, ex_entity_id, etc
 
 /*!
 \deprecated Use ex_put_block()(exoid, EX_ELEM_BLOCK, elem_blk_id, elem_type, num_elem_this_blk, num_nodes_per_elem, 0, 0, num_attr_per_elem)

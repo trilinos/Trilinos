@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -49,9 +49,14 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_comp_ws, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_dim, etc
 
 /*!
  * writes the set ID's, set entry count array, set entry pointers array,
@@ -190,6 +195,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to locate %s status in file id %d", 
 	    ex_name_of_object(set_type), exoid);
     ex_err("ex_put_concat_sets",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -201,6 +207,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to store %s status array to file id %d",
 	    ex_name_of_object(set_type), exoid);
     ex_err("ex_put_concat_set",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -211,6 +218,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to put file id %d into define mode",
 	    exoid);
     ex_err("ex_put_concat_sets",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -368,7 +376,7 @@ int ex_put_concat_sets (int   exoid,
 	if (num_df != num_entry) {
 	  exerrval = EX_FATAL;
 	  sprintf(errmsg,
-		  "Error: # dist fact ("ST_ZU") not equal to # nodes ("ST_ZU") in node set %"PRId64" file id %d",
+		  "Error: # dist fact (%"ST_ZU") not equal to # nodes (%"ST_ZU") in node set %"PRId64" file id %d",
 		  num_df, num_entry, set_id,exoid);
 	  ex_err("ex_put_concat_sets",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */
@@ -424,6 +432,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to complete definition in file id %d",
 	    exoid);
     ex_err("ex_put_concat_sets",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -436,6 +445,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to locate %s ids array in file id %d",
 	    ex_name_of_object(set_type), exoid);
     ex_err("ex_put_concat_sets",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -452,6 +462,7 @@ int ex_put_concat_sets (int   exoid,
 	    "Error: failed to store %s id array in file id %d",
 	    ex_name_of_object(set_type), exoid);
     ex_err("ex_put_concat_sets",errmsg,exerrval);
+    ex_safe_free(set_stat);
     return (EX_FATAL);
   }
 
@@ -459,8 +470,10 @@ int ex_put_concat_sets (int   exoid,
    *  the user only wants us to define the sets and not populate
    *  the data structures.
    */
-  if (sets_entry_index == 0)
+  if (sets_entry_index == 0) {
+    ex_safe_free(set_stat);
     return(EX_NOERR);
+  }
   
   /* Now, use ExodusII call to store sets */
   for (i=0; i<num_sets; i++) {
@@ -495,8 +508,10 @@ int ex_put_concat_sets (int   exoid,
 			  &(((int*)set_specs->sets_entry_list)[((int*)sets_entry_index)[i]]),
 			  extra_list);
     }
-    if (status != NC_NOERR)
+    if (status != NC_NOERR) {
+      ex_safe_free(set_stat);
       return(EX_FATAL); /* error will be reported by subroutine */
+    }
 
     if (int_size == sizeof(int)) {
       num_df = ((int*)num_dist_per_set)[i];
@@ -516,6 +531,7 @@ int ex_put_concat_sets (int   exoid,
 		  ex_name_of_object(set_type), set_id,exoid);
 	  /* use error val from exodusII routine */
 	  ex_err("ex_put_concat_sets",errmsg,exerrval);
+	  ex_safe_free(set_stat);
 	  return (EX_FATAL);
 	}
       }
@@ -529,6 +545,7 @@ int ex_put_concat_sets (int   exoid,
 		  ex_name_of_object(set_type), set_id,exoid);
 	  /* use error val from exodusII routine */
 	  ex_err("ex_put_concat_sets",errmsg,exerrval);
+	  ex_safe_free(set_stat);
 	  return (EX_FATAL);
 	}
       }
@@ -539,16 +556,17 @@ int ex_put_concat_sets (int   exoid,
 	      "Error: unsupported floating point word size %d for file id %d",
 	      ex_comp_ws(exoid), exoid);
       ex_err("ex_put_concat_sets", errmsg, exerrval);
+      ex_safe_free(set_stat);
       return (EX_FATAL);
     }
   }
-  free(set_stat);
+  ex_safe_free(set_stat);
   return(EX_NOERR);
 
 
   /* Fatal error: exit definition mode and return */
  error_ret:
-  free(set_stat);
+  ex_safe_free(set_stat);
 
   if (nc_enddef (exoid) != NC_NOERR)     /* exit define mode */
     {

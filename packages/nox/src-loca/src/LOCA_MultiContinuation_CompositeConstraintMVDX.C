@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -74,15 +74,15 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
 
   // Create new multivector to store all constraint derivatives
   if (i < numConstraintObjects)
-    compositeDX = 
+    compositeDX =
       constraintMVDXPtrs[i]->getDX()->clone(totalNumConstraints);
   else
     compositeDX = Teuchos::null;
 }
 
 LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
-	      const LOCA::MultiContinuation::CompositeConstraintMVDX& source, 
-	      NOX::CopyType type) : 
+          const LOCA::MultiContinuation::CompositeConstraintMVDX& source,
+          NOX::CopyType type) :
   LOCA::MultiContinuation::CompositeConstraint(source),
   constraintMVDXPtrs(source.constraintMVDXPtrs),
   compositeDX()
@@ -99,9 +99,9 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::~CompositeConstraintMVDX()
 
 void
 LOCA::MultiContinuation::CompositeConstraintMVDX::copy(
-		   const LOCA::MultiContinuation::ConstraintInterface& src)
+           const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::MultiContinuation::CompositeConstraintMVDX& source = 
+  const LOCA::MultiContinuation::CompositeConstraintMVDX& source =
     dynamic_cast<const LOCA::MultiContinuation::CompositeConstraintMVDX&>(src);
 
   if (this != &source) {
@@ -125,7 +125,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::clone(NOX::CopyType type) cons
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
 {
-    std::string callingFunction = 
+    std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraintMVDX::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -143,12 +143,12 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
 
       // Compute constraint derivative
       status = constraintMVDXPtrs[i]->computeDX();
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
-      
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
+
       // Copy columns of constraint dervative into composite
       dx = compositeDX->subView(indices[i]);
       *dx = *(constraintMVDXPtrs[i]->getDX());
@@ -160,27 +160,27 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraintMVDX::multiplyDX(
-		      double alpha, 
-		      const NOX::Abstract::MultiVector& input_x,
-	              NOX::Abstract::MultiVector::DenseMatrix& result_p) const
+              double alpha,
+              const NOX::Abstract::MultiVector& input_x,
+                  NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
-  return 
+  return
     LOCA::MultiContinuation::ConstraintInterfaceMVDX::multiplyDX(alpha,
-								 input_x,
-								 result_p);
+                                 input_x,
+                                 result_p);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraintMVDX::addDX(
-		              Teuchos::ETransp transb,
-			      double alpha, 
-	                      const NOX::Abstract::MultiVector::DenseMatrix& b,
-			      double beta,
-			      NOX::Abstract::MultiVector& result_x) const
+                      Teuchos::ETransp transb,
+                  double alpha,
+                          const NOX::Abstract::MultiVector::DenseMatrix& b,
+                  double beta,
+                  NOX::Abstract::MultiVector& result_x) const
 {
-  return 
+  return
     LOCA::MultiContinuation::ConstraintInterfaceMVDX::addDX(transb, alpha, b,
-							    beta, result_x);
+                                beta, result_x);
 }
 
 const NOX::Abstract::MultiVector*

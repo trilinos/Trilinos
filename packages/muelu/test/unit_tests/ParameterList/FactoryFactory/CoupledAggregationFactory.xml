@@ -8,27 +8,27 @@
 
   <ParameterList name="Aggregates1">
     <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="Ordering" type="string" value="Natural"/>
+    <Parameter name="aggregation: ordering" type="string" value="natural"/>
   </ParameterList>
 
   <ParameterList name="Aggregates2">
     <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="Ordering" type="string" value="Random"/>
+    <Parameter name="aggregation: ordering" type="string" value="Random"/>
   </ParameterList>
 
   <ParameterList name="Aggregates3">
     <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="Ordering" type="string" value="Graph"/>
+    <Parameter name="aggregation: ordering" type="string" value="graph"/>
   </ParameterList>
 
   <ParameterList name="Aggregates4">
     <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="MaxNeighAlreadySelected" type="int" value="0"/>
+    <Parameter name="aggregation: max selected neighbors" type="int" value="0"/>
   </ParameterList>
 
   <ParameterList name="Aggregates5">
     <Parameter name="factory" type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="MinNodesPerAggregate" type="int" value="1"/>
+    <Parameter name="aggregation: min agg size" type="int" value="1"/>
   </ParameterList>
 
   <ParameterList name="Aggregates6">
@@ -38,9 +38,9 @@
 
   <ParameterList name="Aggregates7">
     <Parameter name="factory"  type="string" value="CoupledAggregationFactory"/>
-    <Parameter name="Ordering" type="string" value="Natural"/>
-    <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
-    <Parameter name="MinNodesPerAggregate"    type="int"    value="1"/>
+    <Parameter name="aggregation: ordering" type="string" value="natural"/>
+    <Parameter name="aggregation: max selected neighbors" type="int"    value="0"/>
+    <Parameter name="aggregation: min agg size"    type="int"    value="1"/>
     <Parameter name="Phase3AggCreation"       type="double" value=".5"/>
   </ParameterList>
 

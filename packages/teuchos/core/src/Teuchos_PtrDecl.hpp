@@ -173,6 +173,9 @@ public:
   /** \brief Get the raw C++ pointer to the underlying object. */
   inline T* getRawPtr() const;
 
+  //! Return true if the wrapped raw pointer is NULL, else return false.
+  inline bool is_null () const;
+
   /** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */

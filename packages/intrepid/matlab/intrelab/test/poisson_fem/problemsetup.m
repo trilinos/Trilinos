@@ -61,7 +61,7 @@ usr_par.cubDegree     = cubDegree;
 usr_par.numFields     = numFields;
 
 %%%%%%%%%% Generate computational mesh on [xmin,xmax]x[ymin,ymax]
-[mesh] = RectGrid( xmin, xmax, ymin, ymax, nxint, nyint);
+[mesh] = RectGrid( xmin, xmax, ymin, ymax, nxint, nyint, cellType);
 
 % Store the number of vertices and cells in the grid
 nVertGrid = max( max(mesh.t(:,1:3)) );

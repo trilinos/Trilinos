@@ -70,6 +70,12 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
+    subDomainProcs <= 0,
+    std::logic_error,
+    "ERROR: num subDomainProcs " << subDomainProcs <<
+    " must be strictly positive." << std::endl);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
     size % subDomainProcs != 0,
     std::logic_error,
     "ERROR: num subDomainProcs "<< subDomainProcs <<

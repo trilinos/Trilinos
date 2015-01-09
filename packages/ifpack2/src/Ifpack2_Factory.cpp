@@ -81,13 +81,14 @@ bool supportsUnsymmetric (const std::string& prec_type)
   //
   // mfh 12 Dec 2013: For some reason, this all has to be on one line,
   // otherwise the macro definition includes the whole rest of the file.
-#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&); template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&, const int);
+#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&); template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&, const int);  template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::RowMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::RowMatrix<S, LO, GO> >&); template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::RowMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::RowMatrix<S, LO, GO> >&, const int);
+
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
   Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string&,
@@ -100,7 +101,7 @@ bool supportsUnsymmetric (const std::string& prec_type)
                                                                                        const int overlap);
 #endif
 
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
   Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string&,

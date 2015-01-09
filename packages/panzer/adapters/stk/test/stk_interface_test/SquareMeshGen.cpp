@@ -119,18 +119,18 @@ int main(int argc, char * argv[])
      pl->set("Zf",zf);
    }
 
-   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
-   RCP<panzer_stk::STK_MeshFactory> factory; 
+   RCP<panzer_stk_classic::STK_MeshFactory> factory; 
    if(!threeD)
-     factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory); 
+     factory = Teuchos::rcp(new panzer_stk_classic::SquareQuadMeshFactory); 
    else
-     factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory); 
+     factory = Teuchos::rcp(new panzer_stk_classic::CubeHexMeshFactory); 
 
    factory->setParameterList(pl);
 
-   RCP<panzer_stk::STK_Interface> mesh = factory->buildMesh(MPI_COMM_WORLD);
+   RCP<panzer_stk_classic::STK_Interface> mesh = factory->buildMesh(MPI_COMM_WORLD);
    mesh->writeToExodus(output_file_name);
 
    return 0;

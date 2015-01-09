@@ -46,11 +46,6 @@
 #ifndef MUELU_AMALGAMATIONFACTORY_DEF_HPP
 #define MUELU_AMALGAMATIONFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_AmalgamationFactory.hpp"
@@ -61,20 +56,20 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A"); // sub-block from blocked A
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -122,7 +117,6 @@ namespace MueLu {
     LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(globalColDofs.size());
     RCP<std::vector<GlobalOrdinal> > gNodeIds; // contains global node ids on current proc
     gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
-    gNodeIds->empty();
     for (LocalOrdinal i = 0; i < nColEle; i++) {
       GlobalOrdinal gDofId = globalColDofs[i];
       GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
@@ -139,8 +133,8 @@ namespace MueLu {
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;

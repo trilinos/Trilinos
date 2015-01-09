@@ -126,6 +126,60 @@ Superlu<Matrix,Vector>::~Superlu( )
   }
 }
 
+template <class Matrix, class Vector>
+std::string
+Superlu<Matrix,Vector>::description() const
+{
+  std::ostringstream oss;
+  oss << "SuperLU solver interface";
+  if (ILU_Flag_) {
+    oss << ", \"ILUTP\" : {";
+    oss << "drop tol = " << data_.options.ILU_DropTol;
+    oss << ", fill factor = " << data_.options.ILU_FillFactor;
+    oss << ", fill tol = " << data_.options.ILU_FillTol;
+    switch(data_.options.ILU_MILU) {
+      case SLU::SMILU_1 :
+         oss << ", MILU 1";
+         break;
+      case SLU::SMILU_2  :
+         oss << ", MILU 2";
+         break;
+      case SLU::SMILU_3  :
+         oss << ", MILU 3";
+         break;
+      case SLU::SILU     :
+      default:
+         oss << ", regular ILU";
+    }
+    switch(data_.options.ILU_Norm) {
+      case SLU::ONE_NORM :
+         oss << ", 1-norm";
+         break;
+      case SLU::TWO_NORM  :
+         oss << ", 2-norm";
+         break;
+      case SLU::INF_NORM  :
+      default:
+         oss << ", infinity-norm";
+    }
+    oss << "}";
+  } else {
+    oss << ", direct solve";
+  }
+  return oss.str();
+  /*
+
+  // ILU parameters
+  if( parameterList->isParameter("RowPerm") ){
+    RCP<const ParameterEntryValidator> rowperm_validator = valid_params->getEntry("RowPerm").validator();
+    parameterList->getEntry("RowPerm").setValidator(rowperm_validator);
+    data_.options.RowPerm = getIntegralValue<SLU::rowperm_t>(*parameterList, "RowPerm");
+  }
+
+
+  */
+}
+
 template<class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::preOrdering_impl()

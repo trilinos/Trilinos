@@ -56,12 +56,12 @@ using std::cerr;
 using std::endl;
 using Teuchos::RCP;
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
-typedef float scalar_t;
-typedef int lno_t;
-typedef int gno_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
+typedef float zscalar_t;
+typedef int zlno_t;
+typedef int zgno_t;
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
 
 
 int main(int argc, char *argv[])

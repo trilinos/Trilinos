@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -72,21 +72,21 @@ namespace LOCA {
       <ul>
       <li> Initialize iteration (start)
       <li> Compute iteration (iterate)
-           <ul> 
+           <ul>
            <li> while iterator is not finished
                 <ul>
                 <li> preprocess step (preprocess)
                 <li> compute step (compute)
-	        <li> postprocess step (posprocess)
-	        <li> check iterator status (stop)
-	        </ul>
+            <li> postprocess step (posprocess)
+            <li> check iterator status (stop)
+            </ul>
             </ul>
       <li> Finalize iteration (finish)
       </ul>
 
       The run method of the iterator implements this iterative process with
-      start, finish, preprocess, compute and postprocess left as pure 
-      virtual methods to be implemented for the specific iterative process.  
+      start, finish, preprocess, compute and postprocess left as pure
+      virtual methods to be implemented for the specific iterative process.
 
       The iterator has one parameter, "Max Steps" (default 100) giving the
       maximum number of steps the iterator should take.  The default
@@ -99,20 +99,20 @@ namespace LOCA {
 
       //! Enumerated type for status of the iterator
       enum IteratorStatus {
-	LastIteration = 2,  //!< This is the last iteration
-	Finished = 1,       //!< The iterator is finished
-	Failed = 0,         //!< The iterator has failed
-	NotFinished = -1    //!< The iterator is not finished
+        LastIteration = 2,        //!< This is the last iteration
+        Finished = 1,             //!< The iterator is finished
+        Failed = 0,               //!< The iterator has failed
+        NotFinished = -1          //!< The iterator is not finished
       };
 
       //! Enumerated type for status of each step of iterator
       enum StepStatus {
-	Successful = 1,    //!< The last step was successful
-	Unsuccessful = 0,  //!< The last step was unsuccessful
-	Provisional = -1   //!< One more unsuccessful step means failure
+        Successful = 1,    //!< The last step was successful
+        Unsuccessful = 0,  //!< The last step was unsuccessful
+        Provisional = -1   //!< One more unsuccessful step means failure
       };
 
-      //! Constructor 
+      //! Constructor
       Iterator(Teuchos::ParameterList& p);
 
       //! Copy Constructor
@@ -141,7 +141,7 @@ namespace LOCA {
 
     protected:
 
-      //! Constructor 
+      //! Constructor
       Iterator();
 
       //! Perform iteration
@@ -172,14 +172,14 @@ namespace LOCA {
       virtual bool isLastIteration();
 
       //! Compute step, iterator status from status of each component of step
-      virtual StepStatus computeStepStatus(StepStatus preStatus, 
-					   StepStatus compStatus,
-					   StepStatus postStatus);
+      virtual StepStatus computeStepStatus(StepStatus preStatus,
+                       StepStatus compStatus,
+                       StepStatus postStatus);
 
     protected:
 
       //! Current step number of continuation algorithm (does not include failed steps).
-      int stepNumber;                    
+      int stepNumber;
 
       //! Number of continuation steps that have failed.
       int numFailedSteps;
@@ -192,7 +192,7 @@ namespace LOCA {
 
       //! Current status of the iterator
       IteratorStatus iteratorStatus;
-  
+
     };
 
   } // end namespace Abstract

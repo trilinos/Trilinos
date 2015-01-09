@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -96,9 +96,9 @@ Constraint(
   updateVectorsEveryIteration(false)
 {
   // Instantiate bordered solvers
-  borderedSolver = 
+  borderedSolver =
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							  hopfParams);
+                              hopfParams);
 
   (*a_vector)[0] = a_real;
   (*a_vector)[1] = a_imag;
@@ -112,17 +112,17 @@ Constraint(
   }
 
   // Options
-  updateVectorsEveryContinuationStep = 
-    hopfParams->get("Update Null Vectors Every Continuation Step", 
-		    true);
-  updateVectorsEveryIteration = 
-    hopfParams->get("Update Null Vectors Every Nonlinear Iteration", 
-		    false);
+  updateVectorsEveryContinuationStep =
+    hopfParams->get("Update Null Vectors Every Continuation Step",
+            true);
+  updateVectorsEveryIteration =
+    hopfParams->get("Update Null Vectors Every Nonlinear Iteration",
+            false);
 }
 
 LOCA::Hopf::MinimallyAugmented::Constraint::
-Constraint(const LOCA::Hopf::MinimallyAugmented::Constraint& source, 
-	   NOX::CopyType type) : 
+Constraint(const LOCA::Hopf::MinimallyAugmented::Constraint& source,
+       NOX::CopyType type) :
   globalData(source.globalData),
   parsedParams(source.parsedParams),
   hopfParams(source.hopfParams),
@@ -151,9 +151,9 @@ Constraint(const LOCA::Hopf::MinimallyAugmented::Constraint& source,
     isValidDX = true;
 
   // Instantiate bordered solvers
-  borderedSolver = 
+  borderedSolver =
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							  hopfParams);
+                              hopfParams);
 
   // We don't explicitly copy the group because the constrained group
   // will do that
@@ -226,7 +226,7 @@ void
 LOCA::Hopf::MinimallyAugmented::Constraint::
 copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::Hopf::MinimallyAugmented::Constraint& source = 
+  const LOCA::Hopf::MinimallyAugmented::Constraint& source =
   dynamic_cast<const LOCA::Hopf::MinimallyAugmented::Constraint&>(src);
 
   if (this != &source) {
@@ -247,15 +247,15 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
     isValidDX = source.isValidDX;
     bifParamID = source.bifParamID;
     omega = source.omega;
-    updateVectorsEveryContinuationStep = 
+    updateVectorsEveryContinuationStep =
       source.updateVectorsEveryContinuationStep;
-    updateVectorsEveryIteration = 
+    updateVectorsEveryIteration =
       source.updateVectorsEveryIteration;
 
     // Instantiate bordered solvers
-    borderedSolver = 
+    borderedSolver =
       globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							    hopfParams);
+                                hopfParams);
 
     // We don't explicitly copy the group because the constrained group
     // will do that
@@ -296,8 +296,8 @@ setParam(int paramID, double val)
 
 void
 LOCA::Hopf::MinimallyAugmented::Constraint::
-setParams(const std::vector<int>& paramIDs, 
-	  const NOX::Abstract::MultiVector::DenseMatrix& vals)
+setParams(const std::vector<int>& paramIDs,
+      const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
   isValidConstraints = false;
@@ -311,31 +311,31 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // Compute C
   status = grpPtr->computeComplex(omega);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Compute A and B blocks
-  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> A = 
-    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
-						    (*a_vector)[0], 2));
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> A =
+    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData,
+                            (*a_vector)[0], 2));
   (*(A->getRealMultiVec()))[0] = (*a_vector)[0];
   (*(A->getImagMultiVec()))[0] = (*a_vector)[1];
   (*(A->getRealMultiVec()))[1] = (*a_vector)[1];
   (*(A->getImagMultiVec()))[1] = (*a_vector)[0];
   (*(A->getRealMultiVec()))[1].scale(-1.0);
 
-  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> B = 
-    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
-						    (*b_vector)[0], 2));
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> B =
+    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData,
+                            (*b_vector)[0], 2));
   (*(B->getRealMultiVec()))[0] = (*b_vector)[0];
   (*(B->getImagMultiVec()))[0] = (*b_vector)[1];
   (*(B->getRealMultiVec()))[1] = (*b_vector)[1];
@@ -345,8 +345,8 @@ computeConstraints()
   // Set up bordered systems
   Teuchos::RCP<const LOCA::BorderedSolver::ComplexOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::ComplexOperator(grpPtr, omega));
-  borderedSolver->setMatrixBlocksMultiVecConstraint(op, A, B, 
-						    Teuchos::null);
+  borderedSolver->setMatrixBlocksMultiVecConstraint(op, A, B,
+                            Teuchos::null);
 
   // Create RHS
   NOX::Abstract::MultiVector::DenseMatrix one(2,1);
@@ -359,41 +359,41 @@ computeConstraints()
 
   // Compute sigma_1 and right null vector v
   NOX::Abstract::MultiVector::DenseMatrix s1(2,1);
-  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> V = 
-    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
-						    (*v_vector)[0], 1));
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> V =
+    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData,
+                            (*v_vector)[0], 1));
   (*(V->getRealMultiVec()))[0] = (*v_vector)[0];
   (*(V->getImagMultiVec()))[0] = (*v_vector)[1];
   status = borderedSolver->initForSolve();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
-  status = borderedSolver->applyInverse(*linear_solver_params, 
-					NULL, 
-					&one, 
-					*V, 
-					s1);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
+  status = borderedSolver->applyInverse(*linear_solver_params,
+                    NULL,
+                    &one,
+                    *V,
+                    s1);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
   (*v_vector)[0] = (*(V->getRealMultiVec()))[0];
   (*v_vector)[1] = (*(V->getImagMultiVec()))[0];
 
-//   Teuchos::RCP<NOX::Abstract::MultiVector> rV = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rV =
 //     v_vector->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs1(2,1);
 //   rV->init(0.0);
 //   rs1.putScalar(0.0);
-  
+
 //   grpPtr->applyComplex((*v_vector)[0], (*v_vector)[1], (*rV)[0], (*rV)[1]);
 //   (*rV)[0].update(s1(0,0), (*a_vector)[0], -s1(1,0), (*a_vector)[1], 1.0);
 //   (*rV)[1].update(s1(0,0), (*a_vector)[1],  s1(1,0), (*a_vector)[0], 1.0);
 
-//   rs1(0,0) = (*b_vector)[0].innerProduct((*v_vector)[0]) + 
+//   rs1(0,0) = (*b_vector)[0].innerProduct((*v_vector)[0]) +
 //     (*b_vector)[1].innerProduct((*v_vector)[1]);
-//   rs1(1,0) = (*b_vector)[0].innerProduct((*v_vector)[1]) - 
+//   rs1(1,0) = (*b_vector)[0].innerProduct((*v_vector)[1]) -
 //     (*b_vector)[1].innerProduct((*v_vector)[0]);
 //   rs1 -= one;
 
@@ -404,7 +404,7 @@ computeConstraints()
 //   rs1.print(cout);
 
 //   std::cout << "checking error..." << std::endl;
-//   Teuchos::RCP<NOX::Abstract::MultiVector> rV = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rV =
 //     V->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs1(2,1);
 //   borderedSolver->apply(*V, s1, *rV, rs1);
@@ -414,26 +414,26 @@ computeConstraints()
 
   // Compute sigma_2 and left null vector w
   NOX::Abstract::MultiVector::DenseMatrix s2(2,1);
-  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> W = 
-    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
-						    (*w_vector)[0], 1));
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> W =
+    Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData,
+                            (*w_vector)[0], 1));
   (*(W->getRealMultiVec()))[0] = (*w_vector)[0];
   (*(W->getImagMultiVec()))[0] = (*w_vector)[1];
   if (!isSymmetric) {
     status = borderedSolver->initForTransposeSolve();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-    status = borderedSolver->applyInverseTranspose(*linear_solver_params, 
-						   NULL, 
-						   &one, 
-						   *W, 
-						   s2);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
+    status = borderedSolver->applyInverseTranspose(*linear_solver_params,
+                           NULL,
+                           &one,
+                           *W,
+                           s2);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
     (*w_vector)[0] = (*(W->getRealMultiVec()))[0];
     (*w_vector)[1] = (*(W->getImagMultiVec()))[0];
@@ -444,20 +444,20 @@ computeConstraints()
     s2.assign(s1);
   }
 
-//   Teuchos::RCP<NOX::Abstract::MultiVector> rW = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rW =
 //     v_vector->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs2(2,1);
 //   rW->init(0.0);
 //   rs2.putScalar(0.0);
-  
-//   grpPtr->applyComplexTranspose((*w_vector)[0], (*w_vector)[1], 
-// 				(*rW)[0], (*rW)[1]);
+
+//   grpPtr->applyComplexTranspose((*w_vector)[0], (*w_vector)[1],
+//                 (*rW)[0], (*rW)[1]);
 //   (*rW)[0].update(s2(0,0), (*b_vector)[0], -s2(1,0), (*b_vector)[1], 1.0);
 //   (*rW)[1].update(s2(0,0), (*b_vector)[1],  s2(1,0), (*b_vector)[0], 1.0);
 
-//   rs2(0,0) = (*a_vector)[0].innerProduct((*w_vector)[0]) + 
+//   rs2(0,0) = (*a_vector)[0].innerProduct((*w_vector)[0]) +
 //     (*a_vector)[1].innerProduct((*w_vector)[1]);
-//   rs2(1,0) = (*a_vector)[0].innerProduct((*w_vector)[1]) - 
+//   rs2(1,0) = (*a_vector)[0].innerProduct((*w_vector)[1]) -
 //     (*a_vector)[1].innerProduct((*w_vector)[0]);
 //   rs2 -= one;
 
@@ -467,21 +467,21 @@ computeConstraints()
 //   std::cout << "rs2 = " << std::endl;
 //   rs2.print(cout);
 
-//   Teuchos::RCP<NOX::Abstract::MultiVector> rW = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rW =
 //     W->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs2(2,1);
 //   borderedSolver->applyTranspose(*W, s2, *rW, rs2);
 //   rs2 -= one;
 //   std::cout << "rW->norm() = " << (*rW)[0].norm() << std::endl;
 //   std::cout << "rs2.norm() = " << rs2.normInf() << std::endl;
-  
+
   // Compute sigma = -w^T*J*v
   status = grpPtr->applyComplex((*v_vector)[0], (*v_vector)[1],
-				(*Cv_vector)[0], (*Cv_vector)[1]);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+                (*Cv_vector)[0], (*Cv_vector)[1]);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
   NOX::Abstract::MultiVector::DenseMatrix tmp(2,2);
   Cv_vector->multiply(-1.0, *w_vector, tmp);
   constraints(0,0) = tmp(0,0) + tmp(1,1);
@@ -492,26 +492,26 @@ computeConstraints()
   constraints.scale(1.0/sigma_scale);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-    globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Complex Jacobian (sigma1) =\n\t\t" << 
+    globalData->locaUtils->out() <<
+      "\n\tEstimate for singularity of Complex Jacobian (sigma1) =\n\t\t" <<
       globalData->locaUtils->sciformat(s1(0,0));
-    if (s1(1,0) > 0.0) 
+    if (s1(1,0) > 0.0)
       globalData->locaUtils->out() << " + i ";
     else
       globalData->locaUtils->out() << " - i ";
     globalData->locaUtils->out() <<
       globalData->locaUtils->sciformat(std::fabs(s1(1,0)));
-    globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Complex Jacobian (sigma2) =\n\t\t" << 
+    globalData->locaUtils->out() <<
+      "\n\tEstimate for singularity of Complex Jacobian (sigma2) =\n\t\t" <<
       globalData->locaUtils->sciformat(s2(0,0));
-    if (s2(1,0) > 0.0) 
+    if (s2(1,0) > 0.0)
       globalData->locaUtils->out() << " + i ";
     else
       globalData->locaUtils->out() << " - i ";
-    globalData->locaUtils->out() << 
+    globalData->locaUtils->out() <<
       globalData->locaUtils->sciformat(std::fabs(s2(1,0)));
-    globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Complex Jacobian (sigma ) =\n\t\t" << 
+    globalData->locaUtils->out() <<
+      "\n\tEstimate for singularity of Complex Jacobian (sigma ) =\n\t\t" <<
       globalData->locaUtils->sciformat(constraints(0,0));
     if (constraints(1,0) > 0.0)
       globalData->locaUtils->out() << " + i ";
@@ -526,9 +526,9 @@ computeConstraints()
   // Update a and b if requested
   if (updateVectorsEveryIteration) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-      globalData->locaUtils->out() << 
-	"\n\tUpdating null vectors for the next nonlinear iteration" << 
-	std::endl;
+      globalData->locaUtils->out() <<
+    "\n\tUpdating null vectors for the next nonlinear iteration" <<
+    std::endl;
     }
     *a_vector = *w_vector;
     *b_vector = *v_vector;
@@ -551,7 +551,7 @@ computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -559,21 +559,21 @@ computeDX()
   // Compute sigma, w and v if necessary
   if (!isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Compute -(w^T*J*v)_x
-  status = grpPtr->computeDwtCeDx((*w_vector)[0], (*w_vector)[1], 
-				  (*v_vector)[0], (*v_vector)[1],
-				  omega,
-				  (*sigma_x)[0], (*sigma_x)[1]);
-  finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+  status = grpPtr->computeDwtCeDx((*w_vector)[0], (*w_vector)[1],
+                  (*v_vector)[0], (*v_vector)[1],
+                  omega,
+                  (*sigma_x)[0], (*sigma_x)[1]);
+  finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   sigma_x->scale(-1.0/sigma_scale);
 
   isValidDX = true;
@@ -583,11 +583,11 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::Constraint::
-computeDP(const std::vector<int>& paramIDs, 
-	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-	  bool isValidG)
+computeDP(const std::vector<int>& paramIDs,
+      NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+      bool isValidG)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -595,28 +595,28 @@ computeDP(const std::vector<int>& paramIDs,
   // Compute sigma, w and v if necessary
   if (!isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Compute -(w^T*J*v)_p
   NOX::Abstract::MultiVector::DenseMatrix dgdp_real(Teuchos::View, dgdp,
-						    1, paramIDs.size()+1,
-						    0, 0);
+                            1, paramIDs.size()+1,
+                            0, 0);
   NOX::Abstract::MultiVector::DenseMatrix dgdp_imag(Teuchos::View, dgdp,
-						    1, paramIDs.size()+1,
-						    1, 0);
-  status = grpPtr->computeDwtCeDp(paramIDs, 
-				  (*w_vector)[0], (*w_vector)[1],
-				  (*v_vector)[0], (*v_vector)[1],
-				  omega, 
-				  dgdp_real, dgdp_imag, false);
-  finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+                            1, paramIDs.size()+1,
+                            1, 0);
+  status = grpPtr->computeDwtCeDp(paramIDs,
+                  (*w_vector)[0], (*w_vector)[1],
+                  (*v_vector)[0], (*v_vector)[1],
+                  omega,
+                  dgdp_real, dgdp_imag, false);
+  finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   dgdp.scale(-1.0/sigma_scale);
 
   // Set the first column of dgdp
@@ -665,10 +665,10 @@ void
 LOCA::Hopf::MinimallyAugmented::Constraint::
 postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  if (stepStatus == LOCA::Abstract::Iterator::Successful && 
+  if (stepStatus == LOCA::Abstract::Iterator::Successful &&
       updateVectorsEveryContinuationStep) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-      globalData->locaUtils->out() << 
+      globalData->locaUtils->out() <<
       "\n\tUpdating null vectors for the next continuation step" << std::endl;
     }
     *a_vector = *w_vector;
@@ -687,7 +687,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Hopf::MinimallyAugmented::Constraint::
 computeDOmega(NOX::Abstract::MultiVector::DenseMatrix& domega)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Hopf::MinimallyAugmented::Constraint::computeDOmega()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -695,27 +695,27 @@ computeDOmega(NOX::Abstract::MultiVector::DenseMatrix& domega)
   // Compute sigma, w and v if necessary
   if (!isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Compute mass matrix M
   status = grpPtr->computeShiftedMatrix(0.0, 1.0);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Compute M*v
   Teuchos::RCP<NOX::Abstract::MultiVector> tmp_vector =
     v_vector->clone(NOX::ShapeCopy);
   status = grpPtr->applyShiftedMatrixMultiVector(*v_vector, *tmp_vector);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Compute u^T*M*v
   NOX::Abstract::MultiVector::DenseMatrix tmp_mat(2,2);

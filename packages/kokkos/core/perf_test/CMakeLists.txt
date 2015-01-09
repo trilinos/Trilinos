@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)   
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -6,25 +5,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(SOURCES
   PerfTestMain.cpp
   PerfTestHost.cpp
+  PerfTestCuda.cpp
   )
 
-IF(Kokkos_ENABLE_Cuda)
-
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  CUDA_INCLUDE_DIRECTORIES( ${Gtest_INCLUDE_DIRS} )
-  CUDA_COMPILE( OBJECTS_CUDA PerfTestCuda.cu )
-
-  LIST( APPEND SOURCES PerfTestCuda.cpp )
-  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
-
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ArrayPerfTest
+  PerfTest
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
   FAIL_REGULAR_EXPRESSION "  FAILED  "
-  DEPLIBS kokkoscore
   )

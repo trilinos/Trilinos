@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_mesh_Field_hpp
 #define stk_mesh_Field_hpp
@@ -13,7 +37,6 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldRelation.hpp>
 #include <stk_mesh/base/FieldTraits.hpp>
 
 //----------------------------------------------------------------------
@@ -33,7 +56,7 @@ namespace mesh {
  *   - Field type: Defines the type of this field's data. This can be scalar or multidimensional.
  *     If multidimensional (dimensions >= 1), a specification of each dimension will need
  *     to be provided in the form of a shards::ArrayDimTag. Many common ArrayDimTags are defined
- *     in stk_mesh/fem/CoordinateSystems.hpp, but apps are free to define their own as well.
+ *     in stk_mesh/base/CoordinateSystems.hpp, but apps are free to define their own as well.
  *     - Examples:
  *       - A scalar double field-type:
  *           stk::mesh::Field<double>
@@ -41,7 +64,7 @@ namespace mesh {
  *           stk::mesh::Field<double, stk::mesh::Cartesian>
  *
  *   - Field declaration: Defines/creates a specific field of a specified type. The API for
- *     declaring fields is in (FEM)MetaData. Declaration of a field requires a field-type,
+ *     declaring fields is in MetaData. Declaration of a field requires a field-type,
  *     field name, and number of states. The number of states defines the "memory" of the Field;
  *     if number-of-states is N, the last N values of the field are stored, and the user
  *     can advance/rotate the states by calling BulkData::update_field_data_states(). FieldState.hpp
@@ -71,21 +94,20 @@ namespace mesh {
  *       - Put a scalar field on all nodes in a part
  *           typedef stk::mesh::Field<double>  ScalarFieldType;
  *           ScalarFieldType& field = meta.declare_field<ScalarFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>);
+ *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>);
  *
  *       - Put a 1d (of size 3) field of doubles on all nodes in a part
  *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d>  CoordFieldType;
  *           CoordFieldType& field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size);
+ *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size);
  *
  *       - Put a 2d (of sizes 3 and 3) field of doubles on all nodes in a part
  *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d, stk::mesh::Cartesian3d> MultiDimFieldType;
  *           MultiFieldType& field = meta.declare_field<MultiFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
+ *           stk::mesh::put_field(field, stk::topology::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
  *
  * Items of interest
  *   - Accessing field data: see FieldData.hpp
- *   - Field relations: see FieldRelations.hpp
  *
  * Field-related API
  *   - stk_mesh/base/MetaData - Methods for...
@@ -100,11 +122,10 @@ namespace mesh {
  *   - stk_mesh/base/Field - Place to put Field template, not much API here
  *   - stk_mesh/base/FieldParallel - Free functions for some parallel operations
  *   - stk_mesh/base/FieldRestriction - Defines FieldRestriction class
- *   - stk_mesh/base/FieldRelation - Defines FieldRelation class
  *   - stk_mesh/base/FieldState - Defines enums to refer to field states
  *   - stk_mesh/base/FieldTraits - Defines API for querying field-types
- *   - stk_mesh/fem/CoordinateSystems - Defines common ArrayDimTags (used for defining Field types)
- *   - stk_mesh/fem/TopologyDimensions - Contains useful Field types / ArrayDimTags for setting up field relations
+ *   - stk_mesh/base/CoordinateSystems - Defines common ArrayDimTags (used for defining Field types)
+ *   - stk_mesh/base/TopologyDimensions - Contains useful Field types / ArrayDimTags for setting up field relations
  *   - Type-related in ArrayDim, DataTraits
  *
  * - TODO Describe relationship with Buckets
@@ -117,21 +138,81 @@ template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
 class Field : public FieldBase {
 public:
+  Field(
+       MetaData                   * arg_mesh_meta_data ,
+       unsigned                     arg_ordinal ,
+       const std::string          & arg_name ,
+       const DataTraits           & arg_traits ,
+       unsigned                     arg_rank,
+       const shards::ArrayDimTag  * const * arg_dim_tags,
+       unsigned                     arg_number_of_states ,
+       FieldState                   arg_this_state
+       )
+    : FieldBase(arg_mesh_meta_data,
+        arg_ordinal,
+        arg_name,
+        arg_traits,
+        arg_rank,
+        arg_dim_tags,
+        arg_number_of_states,
+        arg_this_state
+        )
+  {}
+
+  Field(
+       MetaData                   * arg_mesh_meta_data ,
+       stk::topology::rank_t        arg_entity_rank ,
+       unsigned                     arg_ordinal ,
+       const std::string          & arg_name ,
+       const DataTraits           & arg_traits ,
+       unsigned                     arg_rank,
+       const shards::ArrayDimTag  * const * arg_dim_tags,
+       unsigned                     arg_number_of_states ,
+       FieldState                   arg_this_state
+       )
+    : FieldBase(arg_mesh_meta_data,
+        arg_entity_rank,
+        arg_ordinal,
+        arg_name,
+        arg_traits,
+        arg_rank,
+        arg_dim_tags,
+        arg_number_of_states,
+        arg_this_state
+        )
+  {}
 
   /** \brief  Query this field for a given field state. */
   Field & field_of_state( FieldState input_state ) const {
+#ifndef NDEBUG
+    return dynamic_cast<Field &>( * FieldBase::field_state(input_state) );
+#else // NDEBUG
     return static_cast<Field &>( * FieldBase::field_state(input_state) );
+#endif
+  }
+
+  virtual ~Field(){}
+
+  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const
+  {
+    const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
+    Scalar* casted_data = reinterpret_cast<Scalar*>(data);
+
+    out << "{";
+    for (unsigned i = 0; i < num_scalar_values; ++i) {
+      out << casted_data[i] << " ";
+    }
+    out << "}";
+
+    return out;
   }
 
 private:
 
 #ifndef DOXYGEN_COMPILE
-
-  ~Field();
   Field();
   Field( const Field & );
   Field & operator = ( const Field & );
-
 #endif /* DOXYGEN_COMPILE */
 };
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.29f
-#define EX_API_VERS_NODOT 529
+#define EX_API_VERS 6.09f
+#define EX_API_VERS_NODOT 609
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -91,8 +91,8 @@ extern "C" {
    *@{
    */
   /* Modes for ex_open */
-#define EX_READ                 0x0000 /**< ex_open(): open file for reading (default) */
 #define EX_WRITE                0x0001 /**< ex_open(): open existing file for appending. */
+#define EX_READ                 0x0002 /**< ex_open(): open file for reading (default) */
 
 #define EX_NOCLOBBER            0x0004 /**< Don't overwrite existing database, default */
 #define EX_CLOBBER              0x0008 /**< Overwrite existing database if it exists */
@@ -176,7 +176,15 @@ extern "C" {
     EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH  = 48,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
     EX_INQ_DB_MAX_USED_NAME_LENGTH  = 49,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
     EX_INQ_MAX_READ_NAME_LENGTH = 50,     /**< inquire client-specified max size of returned names */
+
     EX_INQ_DB_FLOAT_SIZE = 51,      /**< inquire size of floating-point values stored on database */
+    EX_INQ_NUM_CHILD_GROUPS= 52,     /**< inquire number of groups contained in this (exoid) group */
+    EX_INQ_GROUP_PARENT    = 53,     /**< inquire id of parent of this (exoid) group; returns exoid if at root */
+    EX_INQ_GROUP_ROOT      = 54,     /**< inquire id of root group "/" of this (exoid) group; returns exoid if at root */
+    EX_INQ_GROUP_NAME_LEN  = 55,     /**< inquire length of name of group exoid */
+    EX_INQ_GROUP_NAME      = 56,     /**< inquire name of group exoid. "/" returned for root group */
+    EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< inquire length of full path name of this (exoid) group */
+    EX_INQ_FULL_GROUP_NAME = 58,     /**< inquire full "/"-separated path name of this (exoid) group */
     EX_INQ_INVALID         = -1};
 
   typedef enum ex_inquiry ex_inquiry;
@@ -378,7 +386,12 @@ extern "C" {
 
   EXODUS_EXPORT int ex_create_int (const char *path, int cmode, int *comp_ws, int *io_ws, int my_version);
 
- 
+  EXODUS_EXPORT int ex_create_group (int parent_id, const char *group_name);
+
+  EXODUS_EXPORT int ex_get_group_id(int exoid, const char *group_name, int *group_id);
+
+  EXODUS_EXPORT int ex_get_group_ids(int exoid, int *num_children, int *child_ids);
+  
   EXODUS_EXPORT int ex_get_all_times (int   exoid,
 				      void *time_values);
 
@@ -543,6 +556,11 @@ extern "C" {
 				 int   *comp_ws,
 				 int   *io_ws,
 				 float *version, int my_version);
+  
+  EXODUS_EXPORT int ex_add_attr(int exoid,
+				ex_entity_type obj_type,
+				ex_entity_id   obj_id,
+				int64_t     num_attr_per_entry);
   
   EXODUS_EXPORT int ex_put_attr_param (int   exoid,
 				       ex_entity_type obj_type,
@@ -775,6 +793,14 @@ extern "C" {
 
   EXODUS_EXPORT int ex_put_block_param(int exoid,
 				       const ex_block block);
+
+  EXODUS_EXPORT int ex_get_block_params(int exoid,
+					size_t block_count,
+					struct ex_block **blocks);
+
+  EXODUS_EXPORT int ex_put_block_params(int exoid,
+					size_t block_count,
+					const struct ex_block *blocks);
 
   /*  Write All Edge Face and Element Block Parameters */
   EXODUS_EXPORT int ex_put_concat_all_blocks(int exoid,
@@ -1976,8 +2002,10 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_WRONGFILETYPE 1003   /**< wrong file type for function             */
 #define EX_LOOKUPFAIL    1004   /**< id table lookup failed                   */
 #define EX_BADPARAM      1005   /**< bad parameter passed                     */
+#define EX_INTERNAL      1006   /**< internal logic error                     */
 #define EX_MSG          -1000   /**< message print code - no error implied    */
 #define EX_PRTLASTMSG   -1001   /**< print last error message msg code        */
+#define EX_NOTROOTID    -1002   /**< file id is not the root id; it is a subgroup id */
 #define EX_NULLENTITY   -1006   /**< null entity found                        */
 /* @} */
 

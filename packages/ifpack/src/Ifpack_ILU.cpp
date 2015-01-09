@@ -139,12 +139,12 @@ int Ifpack_ILU::ComputeSetup()
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<int> LI(MaxNumEntries);
-  vector<int> UI(MaxNumEntries);
-  vector<double> InV(MaxNumEntries);
-  vector<double> LV(MaxNumEntries);
-  vector<double> UV(MaxNumEntries);
+  std::vector<int> InI(MaxNumEntries); // Allocate temp space
+  std::vector<int> LI(MaxNumEntries);
+  std::vector<int> UI(MaxNumEntries);
+  std::vector<double> InV(MaxNumEntries);
+  std::vector<double> LV(MaxNumEntries);
+  std::vector<double> UV(MaxNumEntries);
 
   bool ReplaceValues = (L_->StaticGraph() || L_->IndicesAreLocal()); // Check if values should be inserted or replaced
 
@@ -261,11 +261,11 @@ int Ifpack_ILU::Initialize()
     if (CrsGraph_.get() == 0)
       IFPACK_CHK_ERR(-5); // memory allocation error
 
-	vector<double> Values(size);
+	std::vector<double> Values(size);
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
-      vector<int> Indices(size);
+      std::vector<int> Indices(size);
       // extract each row at-a-time, and insert it into
       // the graph, ignore all off-process entries
       for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
@@ -285,8 +285,8 @@ int Ifpack_ILU::Initialize()
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
-      vector<int> Indices_local(size);
-      vector<long long> Indices(size);
+      std::vector<int> Indices_local(size);
+      std::vector<long long> Indices(size);
       // extract each row at-a-time, and insert it into
       // the graph, ignore all off-process entries
       for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
@@ -362,9 +362,9 @@ int Ifpack_ILU::Compute()
   // Get Maximun Row length
   int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
 
-  vector<int> InI(MaxNumEntries+1);    // Allocate temp space, pad by one to 
-  vector<double> InV(MaxNumEntries+1); // to avoid debugger complaints for pathological cases
-  vector<int> colflag(NumMyCols());
+  std::vector<int> InI(MaxNumEntries+1);    // Allocate temp space, pad by one to 
+  std::vector<double> InV(MaxNumEntries+1); // to avoid debugger complaints for pathological cases
+  std::vector<int> colflag(NumMyCols());
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal

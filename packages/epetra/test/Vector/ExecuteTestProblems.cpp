@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -49,7 +49,7 @@
 #  include "Teuchos_VerboseObject.hpp"
 #endif
 
-  int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap, 
+  int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap,
     bool verbose)
   {
 
@@ -70,10 +70,10 @@
     /* get ID of this processor */
 
     // Test GEMM first.  7 cases:
-    
+
     //                                       Num
     //     OPERATIONS                        case  Notes
-    // 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No Comm needed) 
+    // 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No Comm needed)
     // 2) C(local) = A^T(distr) * B  (distr)  1   (2D dot product, replicate C)
     // 3) C(distr) = A  (distr) * B^X(local)  2   (2D vector update, no Comm needed)
 
@@ -91,7 +91,7 @@
     Epetra_Vector C_GEMM(Map2d);
 
     double **App, **Bpp, **Cpp;
-    
+
     Epetra_Vector *Ap, *Bp, *Cp;
 
     // For testing non-strided mode, create Vectors that are scattered throughout memory
@@ -102,7 +102,7 @@
     for (i=0; i<NumVectors; i++) App[i] = new double[A.MyLength()+i];
     for (i=0; i<NumVectors; i++) Bpp[i] = new double[B.MyLength()+i];
     for (i=0; i<NumVectors; i++) Cpp[i] = new double[C.MyLength()+i];
-    
+
     Epetra_Vector A1(View, LocalMap, App[0]);
     Epetra_Vector B1(View, LocalMap, Bpp[0]);
     Epetra_Vector C1(View, Map2d, Cpp[0]);
@@ -128,12 +128,12 @@
 	      B.ExtractCopy(Bpp[0]); Bp = &B1;
 	      C.ExtractCopy(Cpp[0]); Cp = &C1;
 	    }
-	  
+	
 	  localierr = Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
 	  if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
 	    ierr += Cp->Update(-1.0, C_GEMM, 1.0);
 	    ierr += Cp->Norm2(residual);
-	    
+	
 	    if (verbose && ierr==0)
 	      {
 		out << "XXXXX Replicated Local Vector GEMM tests";
@@ -159,7 +159,7 @@
     delete [] Bpp;
     delete [] Cpp;
   }
-      
+
     // ====================================
     // Case 5  (A, B distributed C  local)
     // ====================================
@@ -189,9 +189,9 @@
 	     <<", transb = " << transb;
       }
     if (BadResidual(verbose,residual)) return(-1);
-    
-    
-  }      
+
+
+  }
     // ====================================
     // Case 6-7  (A, C distributed, B local)
     // ====================================
@@ -226,7 +226,7 @@
       }
 
     delete [] residual;
-    
+
     return(ierr);
   }
   }
@@ -244,12 +244,12 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
 #else
   std::ostream &out = std::cout;
 #endif
-  
+
   Epetra_BLAS BLAS;
   /* get number of processors and the name of this processor */
-  
+
   // Construct Vectors
-  
+
   Epetra_Vector A(Map);
   Epetra_Vector sqrtA(Map);
   Epetra_Vector B(Map);
@@ -258,7 +258,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   Epetra_Vector C_alphaAplusB(Map);
   Epetra_Vector C_plusB(Map);
   Epetra_Vector Weights(Map);
-  
+
   // Construct double vectors
   double *dotvec_AB   = new double[NumVectors];
   double *norm1_A     = new double[NumVectors];
@@ -270,14 +270,14 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *meanval_A = new double[NumVectors];
 
   A.SetTracebackMode(1);
- 
-  // Generate data 
 
-  
+  // Generate data
+
+
   EPETRA_TEST_ERR(C.Random(),ierr); // Fill C with random numbers.
   double alpha = 2.0;
   BuildVectorTests (C,alpha, A, sqrtA, B, C_alphaA, C_alphaAplusB,
-			     C_plusB, dotvec_AB, norm1_A, norm2_sqrtA, norminf_A, 
+			     C_plusB, dotvec_AB, norm1_A, norm2_sqrtA, norminf_A,
 			     normw_A, Weights, minval_A, maxval_A, meanval_A);
 
   int err = 0;
@@ -312,7 +312,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   EPETRA_TEST_ERR(alphaA.Scale(alpha),err);
   EPETRA_TEST_ERR(alphaA.Update(-1.0, C_alphaA, 1.0),err);
   EPETRA_TEST_ERR(alphaA.Norm2(residual),err);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -325,7 +325,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   EPETRA_TEST_ERR(alphaAplusB.Update(1.0, B, alpha, A, 0.0),err);
   EPETRA_TEST_ERR(alphaAplusB.Update(-1.0, C_alphaAplusB, 1.0),err);
   EPETRA_TEST_ERR(alphaAplusB.Norm2(residual),err);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -338,7 +338,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   EPETRA_TEST_ERR(plusB.Update(1.0, B, 1.0),err);
   EPETRA_TEST_ERR(plusB.Update(-1.0, C_plusB, 1.0),err);
   EPETRA_TEST_ERR(plusB.Norm2(residual),err);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -350,31 +350,31 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *dotvec = residual;
   EPETRA_TEST_ERR(A.Dot(B,dotvec),err);
   BLAS.AXPY(NumVectors,-1.0,dotvec_AB,dotvec);
-  
+
   if (err) ierr += err;
   else {
   EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
   }
-  
+
   err = 0;
   if (verbose) out << "XXXXX Testing norm1_A      ";
   // Test A.norm1()
   double *norm1 = residual;
   EPETRA_TEST_ERR(A.Norm1(norm1),err);
   BLAS.AXPY(NumVectors,-1.0,norm1_A,norm1);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
   }
-	  
+	
   err = 0;
   if (verbose) out << "XXXXX Testing norm2_sqrtA     ";
   // Test sqrtA.norm2()
   double *norm2 = residual;
   EPETRA_TEST_ERR(sqrtA.Norm2(norm2),err);
   BLAS.AXPY(NumVectors,-1.0,norm2_sqrtA,norm2);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -386,7 +386,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *norminf = residual;
   EPETRA_TEST_ERR(A.NormInf(norminf),ierr);
   BLAS.AXPY(NumVectors,-1.0,norminf_A,norminf);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -398,7 +398,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *normw = residual;
   EPETRA_TEST_ERR(A.NormWeighted(Weights, normw),err);
   BLAS.AXPY(NumVectors,-1.0,normw_A,normw);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -410,7 +410,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *minval = residual;
   EPETRA_TEST_ERR(A.MinValue(minval),err);
   BLAS.AXPY(NumVectors,-1.0,minval_A,minval);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -422,7 +422,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *maxval = residual;
   EPETRA_TEST_ERR(A.MaxValue(maxval),err);
   BLAS.AXPY(NumVectors,-1.0,maxval_A,maxval);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -434,7 +434,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *meanval = residual;
   EPETRA_TEST_ERR(A.MeanValue(meanval),err);
   BLAS.AXPY(NumVectors,-1.0,meanval_A,meanval);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
@@ -452,9 +452,9 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual),ierr);
   }	
-  
+
   // Delete everything
-  
+
   delete [] dotvec_AB;
   delete [] norm1_A;
   delete [] norm2_sqrtA;
@@ -464,7 +464,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   delete [] maxval_A;
   delete [] meanval_A;
   delete [] residual;
-  
+
   return(ierr);
 }
 
@@ -487,6 +487,6 @@ int BadResidual(bool verbose, double * Residual)
     }
   if (verbose)
     if (ierr==0) out << "\t Checked OK" << endl;
-  
+
   return(ierr);
 }

@@ -44,7 +44,7 @@ as outlined below)
 repository or a release)
 
 - Add a minimal config file at "CDASH_ROOT/cdash/config.local.php"
-  - Initially, set the varibles $CDASH_PRODUCTION_MODE=false,
+  - Initially, set the variables $CDASH_PRODUCTION_MODE=false,
     $CDASH_TESTING_MODE=true
 
 - Make this CDash instance available via http (put it in /var/www/html or

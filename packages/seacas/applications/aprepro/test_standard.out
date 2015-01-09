@@ -32,23 +32,27 @@ Test max, min, sign, dim, abs
 1 0 $ Should be 1 0
 1	0	$ Should be 1 0
 
-$ Test ifdef lines
 1 0
-This line should be echoed. (a)
+$ Test ternary...
+correct
+correct
+
+$ Test ifdef lines
+	This line should be echoed. (a)
 This line should be echoed. (b)
-This line should be echoed. (c)
-This line should be echoed. (d)
+     This line should be echoed. (c)
+  This line should be echoed. (d)
 
 $ Test ifdef - else lines
-This line should be echoed. (1)
-This line should be echoed (4)
+             This line should be echoed. (1)
+		This line should be echoed (4)
 
 $ Test ifndef - else lines
-This line should be echoed (6)
-This line should be echoed. (7)
+ This line should be echoed (6)
+    This line should be echoed. (7)
 $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
-$ Check line counting -- should be on line 74: 
-
+$ Check line counting -- should be on line 78: 
+ 
 $ ========================================================================
 $ Test if lines
   This line should be echoed. (a)
@@ -66,7 +70,11 @@ $ Test if - else lines
   good
   make sure it is still good
 $ ========================================================================
+$ Test switch
+This should echo
+3.141592654
 
+This should be equal to PI --  3.141592654
 $ Test int and [] (shortcut for int)
 5	-5
 5	-5

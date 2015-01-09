@@ -63,7 +63,7 @@ class ExoII_Read {
 public:
   
   ExoII_Read();
-  explicit ExoII_Read(const char* file_name);
+  explicit ExoII_Read(const char* file_name_x);
   virtual ~ExoII_Read();
   const ExoII_Read& operator=(const ExoII_Read&);  // Not written.
   
@@ -208,13 +208,13 @@ protected:
   // GENESIS info:
   
   std::string  title;
-  size_t       num_nodes;
   std::vector<std::string> coord_names;
-  int          dimension;
-  size_t       num_elmts;
-  int          num_elmt_blocks;
-  int          num_node_sets;
-  int          num_side_sets;
+  INT    num_nodes;
+  INT    dimension;
+  INT    num_elmts;
+  INT    num_elmt_blocks;
+  INT    num_node_sets;
+  INT    num_side_sets;
   float        db_version;
   float        api_version;
   int          io_word_size;    // Note: The "compute word size" is always 8.

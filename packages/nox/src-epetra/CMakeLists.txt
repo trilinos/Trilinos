@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -58,9 +57,9 @@ IF (NOX_ENABLE_EpetraExt)
   )
 
   APPEND_SET(SOURCES
-    NOX_Epetra_FiniteDifferenceColoringWithUpdate.C	
+    NOX_Epetra_FiniteDifferenceColoringWithUpdate.C
   )
- 
+
 ENDIF()
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)

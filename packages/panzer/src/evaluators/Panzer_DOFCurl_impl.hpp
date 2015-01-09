@@ -50,8 +50,58 @@
 
 namespace panzer {
 
+namespace {
+
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DOFCurl,p) :
+template<typename ScalarT>                   
+void evaluateCurl_withSens(int numCells,
+                           int basis_dimension,
+                           PHX::MDField<ScalarT> & dof_curl, 
+                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           const Intrepid::FieldContainer<double> & curl_basis)
+{ 
+  if(numCells>0) {
+    // evaluate at quadrature points
+    if(basis_dimension==3) {
+
+      int numFields = curl_basis.dimension(1);
+      int numPoints = curl_basis.dimension(2);
+      int spaceDim  = curl_basis.dimension(3);
+
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d=0; d<spaceDim; d++) {
+            // first initialize to the right thing (prevents over writing with 0)
+            // then loop over one less basis function
+            ScalarT & curl = dof_curl(cell,pt,d);
+            curl = dof_value(cell, 0) * curl_basis(cell, 0, pt, d);
+            for (int bf=1; bf<numFields; bf++)
+              curl += dof_value(cell, bf) * curl_basis(cell, bf, pt, d);
+          }
+        }
+      }
+
+    }
+    else {
+      // Zero out arrays
+      for (int i = 0; i < dof_curl.size(); ++i)
+        dof_curl[i] = 0.0;
+
+      Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,curl_basis);
+    }
+  }
+}
+
+}
+
+//**********************************************************************
+// MOST EVALUATION TYPES
+//**********************************************************************
+
+//**********************************************************************
+template<typename EvalT, typename Traits>                   
+DOFCurl<EvalT, Traits>::
+DOFCurl(const Teuchos::ParameterList & p) :
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -66,65 +116,157 @@ PHX_EVALUATOR_CTOR(DOFCurl,p) :
                              "DOFCurl: Basis of type \"" << basis->name() << "\" in DOF Curl should require orientations. So we are throwing.");
 
   // build dof_curl
-  if(basis->dimension()==2)
+  basis_dimension = basis->dimension();
+  if(basis_dimension==2)
      dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
-  else if(basis->dimension()==3)
+  else if(basis_dimension==3)
      dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
   else
   { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
-  // build dof_orientation
-  dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Name")+" Orientation", 
-                                                     basis->functional);
   // add to evaluation graph
   this->addEvaluatedField(dof_curl);
   this->addDependentField(dof_value);
-  this->addDependentField(dof_orientation);
   
-  std::string n = "DOFCurl: " + dof_curl.fieldTag().name();
+  std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DOFCurl,sd,fm)
+template<typename EvalT, typename Traits>                   
+void DOFCurl<EvalT, Traits>::
+postRegistrationSetup(typename Traits::SetupData sd,
+                      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_curl,fm);
-  this->utils.setFieldData(dof_orientation,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DOFCurl,workset)
+template<typename EvalT, typename Traits>                   
+void DOFCurl<EvalT, Traits>::
+evaluateFields(typename Traits::EvalData workset)
 { 
-  // Zero out arrays
-  for (int i = 0; i < dof_curl.size(); ++i)
-    dof_curl[i] = 0.0;
-
-  if(workset.num_cells>0) {
-    Intrepid::FieldContainer<double> curls = (workset.bases[basis_index])->curl_basis;
-
-    // assign ScalarT "dof_orientation" to double "orientation"
-    Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
-                                                 dof_orientation.dimension(1));
-
-    for(int i=0;i<dof_orientation.dimension(0);i++)
-       for(int j=0;j<dof_orientation.dimension(1);j++)
-          orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
-
-    // make sure things are orientated correctly
-    Intrepid::FunctionSpaceTools::
-       applyFieldSigns<ScalarT>(curls,orientation);
-
-    // evaluate at quadrature points
-    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,curls);
-  }
+  evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
 }
 
 //**********************************************************************
+
+//**********************************************************************
+// JACOBIAN EVALUATION TYPES
+//**********************************************************************
+
+//**********************************************************************
+template<typename Traits>                   
+DOFCurl<panzer::Traits::Jacobian, Traits>::
+DOFCurl(const Teuchos::ParameterList & p) :
+  dof_value( p.get<std::string>("Name"), 
+	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
+  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+{
+  Teuchos::RCP<const PureBasis> basis 
+     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  // do you specialize because you know where the basis functions are and can
+  // skip a large number of AD calculations?
+  if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
+    offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+    accelerate_jacobian = true;  // short cut for identity matrix
+  }
+  else
+    accelerate_jacobian = false; // don't short cut for identity matrix
+
+  // Verify that this basis supports the curl operation
+  TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsCurl(),std::logic_error,
+                             "DOFCurl: Basis of type \"" << basis->name() << "\" does not support CURL");
+  TEUCHOS_TEST_FOR_EXCEPTION(!basis->requiresOrientations(),std::logic_error,
+                             "DOFCurl: Basis of type \"" << basis->name() << "\" in DOF Curl should require orientations. So we are throwing.");
+
+  // build dof_curl
+  basis_dimension = basis->dimension();
+  if(basis_dimension==2)
+     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
+  else if(basis_dimension==3)
+     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
+  else
+  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
+
+  // add to evaluation graph
+  this->addEvaluatedField(dof_curl);
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<panzer::Traits::Jacobian>::value+")";
+  this->setName(n);
+}
+
+//**********************************************************************
+template<typename Traits>                   
+void DOFCurl<panzer::Traits::Jacobian, Traits>::
+postRegistrationSetup(typename Traits::SetupData sd,
+                      PHX::FieldManager<Traits>& fm)
+{
+  this->utils.setFieldData(dof_value,fm);
+  this->utils.setFieldData(dof_curl,fm);
+
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+}
+
+template<typename Traits>                   
+void DOFCurl<panzer::Traits::Jacobian,Traits>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+  if(!accelerate_jacobian) {
+    // do the case where we use the AD types to determine the derivatives
+    evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
+    return;
+  }
+
+  if(workset.num_cells>0) {
+    // evaluate at quadrature points
+    if(basis_dimension==3) {
+      const Intrepid::FieldContainer<double> & curl_basis = workset.bases[basis_index]->curl_basis;
+
+      int numCells  = workset.num_cells;
+      int numFields = curl_basis.dimension(1);
+      int numPoints = curl_basis.dimension(2);
+      int spaceDim  = curl_basis.dimension(3);
+
+      int fadSize = dof_value(0,0).size(); // this is supposed to be fast
+                                           // so assume that everything is the
+                                           // same size!
+
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d=0; d<spaceDim; d++) {
+            // first initialize to the right thing (prevents over writing with 0)
+            // then loop over one less basis function
+            ScalarT & curl = dof_curl(cell,pt,d);
+            curl = ScalarT(fadSize, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
+            curl.fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt, d);
+            for (int bf=1; bf<numFields; bf++) {
+              curl.val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);
+              curl.fastAccessDx(offsets[bf]) += dof_value(cell, bf).fastAccessDx(offsets[bf]) * curl_basis(cell, bf, pt, d);
+            }
+          }
+        }
+      }
+
+    }
+    else {
+      // Zero out arrays
+      for (int i = 0; i < dof_curl.size(); ++i)
+        dof_curl[i] = 0.0;
+
+      Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
+    }
+  }
+}
 
 }
 

@@ -1,0 +1,37 @@
+================================================================================
+                      TriBITS Build Quick Reference Files
+================================================================================
+
+This directory contains files to create a project-specific build quick
+reference document <Project>BuildQuickRef.[rst,html,pdf].  The generic files
+used for this purpose are:
+
+  create-project-build-quickref.py
+  TribitsBuildQuickRefBody.rst
+
+See `create-project-build-quickref.py --help` for details.
+
+This directory also contains a generic build of a <Project>BuildQuickRef
+document.  The template file:
+
+  TribitsBuildQuickRefTemplate.rst
+
+is used to create the auto-generated (read-only) output files:
+
+  TribitsBuildQuickRef.html
+  TribitsBuildQuickRef.pdf
+  TribitsBuildQuickRef.rst
+
+using the script:
+
+  create-build-quickref.sh
+
+To run the script and update the output files, just do:
+
+  $ cd <this-dir>
+  $ ./create-build-quickref.sh
+
+That is all there is to it!
+
+The generated documents are then referred to by other general TriBITS
+documentation.

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -45,8 +45,8 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_ErrorCheck.H"	// class definition
-#include "LOCA_PhaseTransition_ExtendedGroup.H"	// class definition
+#include "LOCA_ErrorCheck.H"    // class definition
+#include "LOCA_PhaseTransition_ExtendedGroup.H"    // class definition
 
 extern "C" {
 extern void post_process(double**, char*, int*, double*, int, int);
@@ -59,8 +59,11 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   LOCA::Extended::MultiAbstractGroup(),
   LOCA::MultiContinuation::AbstractGroup(),
   grp(grp_), // Underlying group for regular system of size n
-  globalData(gD),
-  normF(0)
+  isValidF(false),
+  isValidJacobian(false),
+  isValidNewton(false),
+  normF(0.0),
+  globalData(gD)
 {
   const char *func = "LOCA::PhaseTransition::ExtendedGroup()";
 
@@ -72,7 +75,7 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   Teuchos::RCP<NOX::Abstract::Vector> secondSolution =
     (*ptParams_).INVALID_TEMPLATE_QUALIFIER
     get<Teuchos::RCP<NOX::Abstract::Vector> >("Second Solution Vector");
-  
+
   // Get Parameter componenet of extended vector, ptp
   if (!ptParams_->isParameter("Bifurcation Parameter")) {
     globalData->locaErrorCheck->throwError(func,
@@ -98,16 +101,21 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
   LOCA::Extended::MultiAbstractGroup(),
   LOCA::MultiContinuation::AbstractGroup(),
   grp(source.grp),
-  xVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.xVector, type))), 
-  fVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.fVector, type))), 
-  newtonVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.newtonVector, type))), 
-  globalData(source.globalData)
+  xVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.xVector, type))),
+  fVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.fVector, type))),
+  newtonVector(Teuchos::rcp(new LOCA::PhaseTransition::ExtendedVector(*source.newtonVector, type))),
+  isValidF(false),
+  isValidJacobian(false),
+  isValidNewton(false),
+  normF(0.0),
+  globalData(source.globalData),
+  bifParamID(0)
 {
- 
+
   switch (type) {
-    
+
   case NOX::DeepCopy:
-    
+
     isValidF = source.isValidF;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
@@ -125,7 +133,7 @@ LOCA::PhaseTransition::ExtendedGroup::ExtendedGroup(
 
 }
 
-LOCA::PhaseTransition::ExtendedGroup::~ExtendedGroup() 
+LOCA::PhaseTransition::ExtendedGroup::~ExtendedGroup()
 {
 }
 
@@ -137,9 +145,9 @@ void LOCA::PhaseTransition::ExtendedGroup::resetIsValid() //private
 }
 
 Teuchos::RCP<NOX::Abstract::Group> LOCA::PhaseTransition::ExtendedGroup::
-clone(NOX::CopyType type) const 
+clone(NOX::CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp =
     Teuchos::rcp(new LOCA::PhaseTransition::ExtendedGroup(*this, type));
   return newgrp;
 }
@@ -162,7 +170,7 @@ NOX::Abstract::Group& LOCA::PhaseTransition::ExtendedGroup::operator=(const Exte
     isValidF = source.isValidF;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
-    
+
     // Only copy vectors that are valid
     if (isValidF) {
       fVector = source.fVector;
@@ -171,43 +179,43 @@ NOX::Abstract::Group& LOCA::PhaseTransition::ExtendedGroup::operator=(const Exte
 
     if (isValidNewton)
       newtonVector = source.newtonVector;
-    
+
   }
 
   return *this;
 }
 
-void LOCA::PhaseTransition::ExtendedGroup::setX(const NOX::Abstract::Vector& y) 
+void LOCA::PhaseTransition::ExtendedGroup::setX(const NOX::Abstract::Vector& y)
 {
   setX(dynamic_cast<const LOCA::PhaseTransition::ExtendedVector&> (y));
 }
 
-void LOCA::PhaseTransition::ExtendedGroup::setX(const LOCA::PhaseTransition::ExtendedVector& y) 
+void LOCA::PhaseTransition::ExtendedGroup::setX(const LOCA::PhaseTransition::ExtendedVector& y)
 {
   resetIsValid();
   *xVector = y;
 }
 
-void LOCA::PhaseTransition::ExtendedGroup::computeX(const NOX::Abstract::Group& exgrp, 
-		     const NOX::Abstract::Vector& d, 
-		     double step) 
+void LOCA::PhaseTransition::ExtendedGroup::computeX(const NOX::Abstract::Group& exgrp,
+             const NOX::Abstract::Vector& d,
+             double step)
 {
   // Cast to appropriate type, then call the "native" computeX
   const ExtendedGroup& trgrp = dynamic_cast<const ExtendedGroup&> (exgrp);
   const LOCA::PhaseTransition::ExtendedVector& trd = dynamic_cast<const LOCA::PhaseTransition::ExtendedVector&> (d);
-  computeX(trgrp, trd, step); 
+  computeX(trgrp, trd, step);
 }
 
 void LOCA::PhaseTransition::ExtendedGroup::computeX(const ExtendedGroup& exgrp,
-        const LOCA::PhaseTransition::ExtendedVector& d, double step) 
+        const LOCA::PhaseTransition::ExtendedVector& d, double step)
 {
   resetIsValid();
   xVector->update(1.0, *exgrp.xVector, step, d);
 }
 
-NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeF() 
+NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeF()
 {
-  if (isValidF) 
+  if (isValidF)
     return NOX::Abstract::Group::Ok;
 
   grp->setParam(bifParamID, xVector->PTP());
@@ -230,13 +238,13 @@ NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeF(
   return (NOX::Abstract::Group::Ok);
 }
 
-NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeJacobian() 
+NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeJacobian()
 {
-  // To save memory, only compute Jacobians at withing applyJacobianInverse. 
+  // To save memory, only compute Jacobians at withing applyJacobianInverse.
   return (NOX::Abstract::Group::Ok);
 }
 
-NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeNewton(Teuchos::ParameterList& p) 
+NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeNewton(Teuchos::ParameterList& p)
 {
   if (isNewton())
     return NOX::Abstract::Group::Ok;
@@ -261,18 +269,18 @@ NOX::Abstract::Group::ReturnType LOCA::PhaseTransition::ExtendedGroup::computeNe
   return status;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const NOX::Abstract::Vector& input, 
-				  NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType
+LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const NOX::Abstract::Vector& input,
+                  NOX::Abstract::Vector& result) const
 {
-  const LOCA::PhaseTransition::ExtendedVector& lapackinput = 
+  const LOCA::PhaseTransition::ExtendedVector& lapackinput =
      dynamic_cast<const LOCA::PhaseTransition::ExtendedVector&> (input);
   LOCA::PhaseTransition::ExtendedVector& lapackresult =
      dynamic_cast<LOCA::PhaseTransition::ExtendedVector&> (result);
   return applyJacobian(lapackinput, lapackresult);
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const LOCA::PhaseTransition::ExtendedVector& input,
                                           LOCA::PhaseTransition::ExtendedVector& result) const
 {
@@ -281,27 +289,27 @@ LOCA::PhaseTransition::ExtendedGroup::applyJacobian(const LOCA::PhaseTransition:
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterList& p, 
-					 const NOX::Abstract::Vector& input, 
-					 NOX::Abstract::Vector& result) const 
+NOX::Abstract::Group::ReturnType
+LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterList& p,
+                     const NOX::Abstract::Vector& input,
+                     NOX::Abstract::Vector& result) const
 {
   const LOCA::PhaseTransition::ExtendedVector& lapackinput =
     dynamic_cast<const LOCA::PhaseTransition::ExtendedVector&> (input);
   LOCA::PhaseTransition::ExtendedVector& lapackresult =
-    dynamic_cast<LOCA::PhaseTransition::ExtendedVector&> (result); 
+    dynamic_cast<LOCA::PhaseTransition::ExtendedVector&> (result);
   return applyJacobianInverse(p, lapackinput, lapackresult);
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterList& p, 
-					 const LOCA::PhaseTransition::ExtendedVector& input, 
-					 LOCA::PhaseTransition::ExtendedVector& result) const 
+NOX::Abstract::Group::ReturnType
+LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterList& p,
+                     const LOCA::PhaseTransition::ExtendedVector& input,
+                     LOCA::PhaseTransition::ExtendedVector& result) const
 {
   // Algorithm from Equations 18-26 of Salinger&Frink JChemPhys (2003).
   // This implementation does not assume that input=f so it can solve
   // other RHS's for arclength or bifurcations of PhaseTransitions
-  
+
   const double eps=1.0e-7;
   double perturb = eps * (eps + fabs(xVector->PTP()));
   double pertParam = xVector->PTP() + perturb;
@@ -311,7 +319,7 @@ LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterLis
   LOCA::PhaseTransition::ExtendedVector bdvec(result);
   Teuchos::RCP<NOX::Abstract::Vector> fVec = result.X1()->clone();;
   Teuchos::RCP<NOX::Abstract::Vector> fPertVec = result.X1()->clone();;
- 
+
   // First matrix block...
 
   grp->setX(*xVector->X1());
@@ -359,27 +367,27 @@ LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterLis
   grp->applyJacobianInverse(p, *fPertVec, *bdvec.X2());
 
   // Compute contributions of equal-energy constraint equation
-  
+
   double g = input.PTP(); // may not be omega1 - omega2 !
   double dgdp = (omega1pert - omega1 - omega2pert + omega2) / perturb;
-  
+
   //For each of 4 terms: calc perturbation, calc perturbed energy, diff
   //Equation 22
   perturb = eps * xVector->X1()->norm() / (eps + result.X1()->norm());
   fPertVec->update(1.0, *xVector->X1(), perturb, *result.X1(), 0.0);
   grp->setX(*fPertVec);
   double dOmdx1a = (grp->computeFreeEnergy() - omega1) / perturb;
-  
+
   perturb = eps * xVector->X2()->norm() / (eps + result.X2()->norm());
   fPertVec->update(1.0, *xVector->X2(), perturb, *result.X2(), 0.0);
   grp->setX(*fPertVec);
   double dOmdx2c = (grp->computeFreeEnergy() - omega2) / perturb;
-  
+
   perturb = eps * xVector->X1()->norm() / (eps + bdvec.X1()->norm());
   fPertVec->update(1.0, *xVector->X1(), perturb, *bdvec.X1(), 0.0);
   grp->setX(*fPertVec);
   double dOmdx1b = (grp->computeFreeEnergy() - omega1) / perturb;
-  
+
   perturb = eps * xVector->X2()->norm() / (eps + bdvec.X2()->norm());
   fPertVec->update(1.0, *xVector->X2(), perturb, *bdvec.X2(), 0.0);
   grp->setX(*fPertVec);
@@ -394,28 +402,28 @@ LOCA::PhaseTransition::ExtendedGroup::applyJacobianInverse(Teuchos::ParameterLis
   return NOX::Abstract::Group::Ok;
 }
 
-bool LOCA::PhaseTransition::ExtendedGroup::isF() const 
-{   
+bool LOCA::PhaseTransition::ExtendedGroup::isF() const
+{
   return isValidF;
 }
 
-bool LOCA::PhaseTransition::ExtendedGroup::isJacobian() const 
-{  
+bool LOCA::PhaseTransition::ExtendedGroup::isJacobian() const
+{
   return isValidJacobian;
 }
 
-bool LOCA::PhaseTransition::ExtendedGroup::isNewton() const 
-{   
+bool LOCA::PhaseTransition::ExtendedGroup::isNewton() const
+{
   return isValidNewton;
 }
 
-const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getX() const 
+const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getX() const
 {
   return *xVector;
 }
 
-const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getF() const 
-{  
+const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getF() const
+{
   return *fVector;
 }
 
@@ -424,37 +432,37 @@ double LOCA::PhaseTransition::ExtendedGroup::getNormF() const
   return normF;
 }
 
-const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getNewton() const 
+const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getNewton() const
 {
   return *newtonVector;
 }
 
-const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getGradient() const 
+const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getGradient() const
 {
   std::cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << std::endl;
   return *newtonVector;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::PhaseTransition::ExtendedGroup::getXPtr() const 
+LOCA::PhaseTransition::ExtendedGroup::getXPtr() const
 {
   return xVector;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::PhaseTransition::ExtendedGroup::getFPtr() const 
-{  
+LOCA::PhaseTransition::ExtendedGroup::getFPtr() const
+{
   return fVector;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::PhaseTransition::ExtendedGroup::getNewtonPtr() const 
+LOCA::PhaseTransition::ExtendedGroup::getNewtonPtr() const
 {
   return newtonVector;
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::PhaseTransition::ExtendedGroup::getGradientPtr() const 
+LOCA::PhaseTransition::ExtendedGroup::getGradientPtr() const
 {
   std::cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << std::endl;
   return newtonVector;
@@ -473,7 +481,7 @@ void LOCA::PhaseTransition::ExtendedGroup::print() const
   else
     std::cout << "F(x) has not been computed" << "\n";
 */
-  
+
   std::cout << std::endl;
 }
 
@@ -481,7 +489,7 @@ void  LOCA::PhaseTransition::ExtendedGroup::setParams(const LOCA::ParameterVecto
 { grp->setParams(p);}
 
 void  LOCA::PhaseTransition::ExtendedGroup::setParam(std::string paramID, double val)
-{ 
+{
   resetIsValid();
   grp->setParam(paramID, val);
 }
@@ -517,14 +525,14 @@ LOCA::PhaseTransition::ExtendedGroup::computeDfDpMulti(
 {
    std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti()";
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  // NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   return  NOX::Abstract::Group::BadDependency;
 }
 
 
 void  LOCA::PhaseTransition::ExtendedGroup::printSolution(const NOX::Abstract::Vector& sol_,
       const double param) const
-{ 
+{
 
   const NOX::Abstract::Vector& sol =
     *((dynamic_cast<const LOCA::PhaseTransition::ExtendedVector&>(sol_)).X1());

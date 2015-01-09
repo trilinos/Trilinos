@@ -92,8 +92,8 @@ Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
 
   // allocate storage to extract matrix rows.
   int Length = Matrix->MaxNumEntries();
-  vector<double> Values(Length);
-  vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
 
   for (int j = 0 ; j < Matrix->NumMyRows() ; ++j)
   {
@@ -134,7 +134,7 @@ ComputeNorm(const Epetra_MultiVector* LHS, const Epetra_MultiVector* RHS)
   Epetra_MultiVector LHS2(*LHS);
   LHS2.Update(1.0, *RHS, -1.0);
 
-  vector<double> norm(LHS->NumVectors());
+  std::vector<double> norm(LHS->NumVectors());
   LHS2.Norm2(&norm[0]);
 
   for (int i = 0 ; i < LHS->NumVectors() ; ++i)
@@ -154,7 +154,7 @@ ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS,
   A->Multiply(false, *LHS, Ax);
   Ax.Update(1.0, *RHS, -1.0);
 
-  vector<double> norm(LHS->NumVectors());
+  std::vector<double> norm(LHS->NumVectors());
   Ax.Norm2(&norm[0]);
 
   for (int i = 0 ; i < LHS->NumVectors() ; ++i)
@@ -265,7 +265,7 @@ string toString(const int& x)
 string toString(const unsigned int& x)
 {
   char s[100];
-  sprintf(s, "%d", x);
+  sprintf(s, "%u", x);
   return string(s);
 }
 
@@ -274,6 +274,14 @@ string toString(const long int& x)
 {
   char s[100];
   sprintf(s, "%ld", x);
+  return string(s);
+}
+
+// ============================================================================
+string toString(const unsigned long int& x)
+{
+  char s[100];
+  sprintf(s, "%lu", x);
   return string(s);
 }
 
@@ -292,6 +300,26 @@ string toString(const long long& x)
   sprintf(s, "%lld", x);
   return string(s);
 }
+
+// ============================================================================
+string toString(const unsigned long long& x)
+{
+  char s[100];
+  sprintf(s, "%llu", x);
+  return string(s);
+}
+
+// ============================================================================
+// printf for size_t is not cleanly possible on all platforms and
+// different size_t sizes.  It is also not required since we
+// already have overloads for unsigned {int,long,long long}.
+// Hence commenting it out.
+//string toString(const size_t& x)
+//{
+//  char s[100];
+//  sprintf(s, "%lu", x);
+//  return string(s);
+//}
 
 // ============================================================================
 void GetNeighboursCartesian2d(const int i, const int nx, const int ny,
@@ -367,7 +395,7 @@ void GetNeighboursCartesian3d(const int i,
 // ============================================================================
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
-               const int nx, const int ny, int GID)
+               const int nx, const int ny, long long GID)
 {
   if (nx <= 0 || ny <= 0)
       throw(Exception(__FILE__, __LINE__, "Input parameter not valid"));
@@ -387,8 +415,8 @@ PrintStencil2D(const Epetra_CrsMatrix* Matrix,
 
   int MaxPerRow = Matrix->MaxNumEntries();
   int NumEntriesRow;   // local entries on each row
-  vector<double> Values(MaxPerRow);
-  vector<int>    Indices(MaxPerRow);
+  std::vector<double> Values(MaxPerRow);
+  std::vector<int>    Indices(MaxPerRow);
 
   int ierr = Matrix->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
                                       &Values[0], &Indices[0]);

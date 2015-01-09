@@ -47,7 +47,7 @@
 #include <cmath>
 #include <utility>
 #include <ParallelComm.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ public:
   Dot( const size_t n , const ArgX & arg_x , const ArgY & arg_y , double & result )
     : x( arg_x ), y( arg_y )
   {
-    vector_parallel_reduce( n , *this , result );
+    parallel_reduce( n , *this , result );
   }
 
   template< typename iType >
@@ -348,7 +348,7 @@ public:
   Dot1( const size_t n , const ArgX & arg_x , double & result )
     : x( arg_x )
   {
-    vector_parallel_reduce( n , *this , result );
+    parallel_reduce( n , *this , result );
   }
 
   template< typename iType >
@@ -411,7 +411,7 @@ public:
     : w( arg_w ), x( arg_x ), y( arg_y )
     , alpha( arg_alpha ), beta( arg_beta )
   {
-    vector_parallel_for( n , *this );
+    parallel_for( n , *this );
   }
 }; // WAXPBY
 
@@ -443,7 +443,7 @@ public:
     : w( arg_w )
     , beta( arg_beta )
   {
-    vector_parallel_for( n , *this );
+    parallel_for( n , *this );
   }
 };
 
@@ -473,7 +473,7 @@ public:
     : w( arg_w )
     , beta( arg_beta )
   {
-    vector_parallel_for( n , *this );
+    parallel_for( n , *this );
   }
 };
 
@@ -512,7 +512,7 @@ public:
     : w( arg_w ), x( arg_x )
     , alpha( arg_alpha )
   {
-    vector_parallel_for( n , *this );
+    parallel_for( n , *this );
   }
 }; // AXPY
 
@@ -549,7 +549,7 @@ public:
     : w( arg_w ), x( arg_x )
     , beta( arg_beta )
   {
-    vector_parallel_for( n , *this );
+    parallel_for( n , *this );
   }
 }; // XPBY
 

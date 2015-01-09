@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -30,7 +30,11 @@
 #ifndef SACADO_MATHFUNCTIONS_HPP
 #define SACADO_MATHFUNCTIONS_HPP
 
+#include <cmath>
+
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_Base.hpp"
+#include "Sacado_SFINAE_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
@@ -50,6 +54,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -57,6 +62,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -64,6 +70,7 @@ namespace Sacado {                                                      \
     template <typename T> class FADOP;                                  \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
   }                                                                     \
                                                                         \
@@ -76,20 +83,20 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Tay {                                                       \
     template <typename T> class Taylor;                                 \
-    template <typename T> Taylor<T> OP (const Taylor<T>&);              \
+    template <typename T> Taylor<T> OP (const Base< Taylor<T> >&);      \
   }                                                                     \
                                                                         \
   namespace FlopCounterPack {                                           \
     template <typename T> class ScalarFlopCounter;                      \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&);              \
+    ScalarFlopCounter<T> OP (const Base< ScalarFlopCounter<T> >&);      \
   }                                                                     \
                                                                         \
   namespace Rad {                                                       \
     template <typename T> class ADvari;                                 \
     template <typename T> class IndepADvar;                             \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&);         \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&); \
   }                                                                     \
 }                                                                       \
                                                                         \
@@ -131,11 +138,13 @@ namespace Sacado {                                                      \
   namespace Fad {                                                       \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
-                                                                        \
+    template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsFadExpr;                             \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
@@ -144,13 +153,23 @@ namespace Sacado {                                                      \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >              \
+    Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, typename Expr<T>::value_type > >              \
+    Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
                                                                         \
     template <typename T> class SimpleFad;                              \
     template <typename T>                                               \
@@ -172,63 +191,111 @@ namespace Sacado {                                                      \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsFadExpr;                             \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace CacheFad {                                                  \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsFadExpr;                             \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace ELRCacheFad {                                               \
     template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
+    template <typename T> struct IsFadExpr;                             \
+    template <typename T> struct ExprLevel;                             \
     template <typename T1, typename T2>                                 \
-    Expr< FADOP< Expr<T1>, Expr<T2> > >                                 \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)                               \
+    OP (const T1&, const T2&);                                          \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, Expr<T> > >                                   \
     OP (const Expr<T>&, const Expr<T>&);                                \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
     OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
                                                                         \
     template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
     OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
+    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
+                                                                        \
+    template <typename T>                                               \
+    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
+    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
   }                                                                     \
                                                                         \
   namespace LFad {                                                      \
@@ -254,77 +321,85 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Tay {                                                       \
     template <typename T> class Taylor;                                 \
-    template <typename T> Taylor<T> OP (const Taylor<T>&,               \
-                                        const Taylor<T>&);              \
-    template <typename T> Taylor<T> OP (const T&,                       \
-                                        const Taylor<T>&);              \
-    template <typename T> Taylor<T> OP (const Taylor<T>&,               \
-                                        const T&);                      \
+    template <typename T> Taylor<T> OP (                                \
+      const Base< Taylor<T> >&,                                         \
+      const Base< Taylor<T> >&);                                        \
+    template <typename T> Taylor<T> OP (                                \
+      const typename Taylor<T>::value_type&,                            \
+      const Base< Taylor<T> >&);                                        \
+    template <typename T> Taylor<T> OP (                                \
+      const Base< Taylor<T> >&,                                         \
+      const typename Taylor<T>::value_type&);                           \
   }                                                                     \
                                                                         \
   namespace FlopCounterPack {                                           \
     template <typename T> class ScalarFlopCounter;                      \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const ScalarFlopCounter<T>&);              \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const T&,                                  \
-                             const ScalarFlopCounter<T>);               \
+    ScalarFlopCounter<T> OP (                                           \
+      const typename ScalarFlopCounter<T>::value_type&,                 \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const T&);                                 \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const typename ScalarFlopCounter<T>::value_type&);                \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const int&,                                \
-                             const ScalarFlopCounter<T>);               \
+    ScalarFlopCounter<T> OP (                                           \
+      const int&,                                                       \
+      const Base< ScalarFlopCounter<T> >&);                             \
     template <typename T>                                               \
-    ScalarFlopCounter<T> OP (const ScalarFlopCounter<T>&,               \
-                             const int&);                               \
+    ScalarFlopCounter<T> OP (                                           \
+      const Base< ScalarFlopCounter<T> >&,                              \
+      const int&);                                                      \
   }                                                                     \
                                                                         \
   namespace Rad {                                                       \
     template <typename T> class ADvari;                                 \
     template <typename T> class IndepADvar;                             \
     template <typename T> class DoubleAvoid;                            \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         const ADvari<T>&);             \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         const Base< ADvari<T> >&);     \
     template <typename T> ADvari<T>& OP (T,                             \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (int,                           \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (long,                          \
-                                         const ADvari<T>&);             \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype,\
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::itype,\
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::ltype,\
+                                         const Base< ADvari<T> >&);     \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
                                          T);                            \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         typename DoubleAvoid<T>::dtype); \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         int);                          \
-    template <typename T> ADvari<T>& OP (const ADvari<T>&,              \
-                                         long);                         \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         const IndepADvar<T>&);         \
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename DoubleAvoid<T>::dtype);\
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename DoubleAvoid<T>::itype);\
+    template <typename T> ADvari<T>& OP (const Base< ADvari<T> >&,      \
+                                         typename DoubleAvoid<T>::ltype);\
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         const Base< IndepADvar<T> >&); \
     template <typename T> ADvari<T>& OP (T,                             \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (int,                           \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (long,                          \
-                                         const IndepADvar<T>&);         \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype,\
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::itype,\
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::ltype,\
+                                         const Base< IndepADvar<T> >&); \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
                                          T);                            \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         typename DoubleAvoid<T>::dtype); \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         int);                          \
-    template <typename T> ADvari<T>& OP (const IndepADvar<T>&,          \
-                                         long);                         \
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename DoubleAvoid<T>::dtype);\
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename DoubleAvoid<T>::itype);\
+    template <typename T> ADvari<T>& OP (const Base< IndepADvar<T> >&,  \
+                                         typename DoubleAvoid<T>::ltype);\
   }                                                                     \
                                                                         \
 }                                                                       \

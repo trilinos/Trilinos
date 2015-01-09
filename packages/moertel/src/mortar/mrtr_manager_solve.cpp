@@ -854,6 +854,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
            << "***ERR*** Cannot compute inverse of D_\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       std::cout << "lmdof " << lmdof << " dof " << dof << std::endl;
+      if (WT) delete WT; WT = NULL;
       return NULL;
     }
   }

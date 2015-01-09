@@ -71,10 +71,10 @@ enum MatrixEntityType {
     \li \c scalar_t row, column or non-zero weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c gid_t    application global Ids
+    \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
     may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
@@ -119,7 +119,8 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
@@ -160,10 +161,10 @@ public:
   /*! \brief Sets pointer to this process' rows' global IDs.
       \param rowIds will on return a pointer to row global Ids
    */
-  virtual void getRowIDsView(const gid_t *&rowIds) const
+  virtual void getRowIDsView(const zgid_t *&rowIds) const
   {
     rowIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -178,12 +179,12 @@ public:
          the non-zeros for each row.
    */
   virtual void getCRSView(const lno_t *&offsets,
-                          const gid_t *&colIds) const
+                          const zgid_t *&colIds) const
   {
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Sets pointers to this process' matrix entries
@@ -201,14 +202,14 @@ public:
          non-zeros for each row.
    */
   virtual void getCRSView(const lno_t *&offsets,
-                          const gid_t *& colIds,
+                          const zgid_t *& colIds,
                           const scalar_t *&values) const
   {
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
     values = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Returns the number of weights per row (0 or greater).
@@ -218,9 +219,7 @@ public:
 
   /*! \brief  Provide a pointer to the row weights, if any.
       \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  If weights for
-           this index are to be uniform for all rows in the
-           global problem, the \c weights should be a NULL pointer.
+           the rows returned in getRowIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
    */
@@ -230,7 +229,7 @@ public:
     // Default implementation
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Indicate whether row weight with index idx should be the
@@ -238,7 +237,7 @@ public:
    */
   virtual bool useNumNonzerosAsRowWeight(int idx) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the
@@ -251,10 +250,10 @@ public:
   /*! \brief Sets pointer to this process' columns' global IDs.
       \param colIds will on return a pointer to column global Ids
    */
-  virtual void getColumnIDsView(const gid_t *&colIds) const
+  virtual void getColumnIDsView(const zgid_t *&colIds) const
   {
     colIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -269,12 +268,12 @@ public:
          the non-zeros for each column.
    */
   virtual void getCCSView(const lno_t *&offsets,
-                          const gid_t *&rowIds) const
+                          const zgid_t *&rowIds) const
   {
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Sets pointers to this process' matrix entries
@@ -292,14 +291,14 @@ public:
          non-zeros for each column.
    */
   virtual void getCCSView(const lno_t *&offsets,
-                          const gid_t *&rowIds,
+                          const zgid_t *&rowIds,
                           const scalar_t *&values) const
   {
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
     values = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Returns the number of weights per column (0 or greater).
@@ -309,9 +308,7 @@ public:
 
   /*! \brief  Provide a pointer to the column weights, if any.
       \param weights is the list of weights with a given index for
-           the columns returned in getColumnIDsView().  If weights for
-           this index are to be uniform for all columns in the
-           global problem, the \c weights should be a NULL pointer.
+           the columns returned in getColumnIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerColumn().
    */
@@ -321,7 +318,7 @@ public:
     // Default implementation
     weights = NULL;
     stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
   /*! \brief Indicate whether column weight with index idx should be the
@@ -380,7 +377,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr)
+  void setPrimaryEntityType(std::string typestr)
   {
     if (typestr == "row") {
       this->primaryEntityType = MATRIX_ROW;
@@ -415,7 +412,7 @@ public:
     }
   }
 
-  void getIDsView(const gid_t *&Ids) const
+  void getIDsView(const zgid_t *&Ids) const
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
@@ -426,7 +423,7 @@ public:
       break;
     case MATRIX_NONZERO: {
       // TODO:  Need getNonzeroIDsView?  What is a Nonzero ID?
-      // TODO:  std::pair<gid_t, gid_t>?
+      // TODO:  std::pair<zgid_t, zgid_t>?
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
            << " error:  getIDsView not yet supported for matrix nonzeros."

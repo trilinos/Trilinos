@@ -785,9 +785,10 @@ double Zoltan_PHG_Compute_NetCut(
     else  {
        j = hg->hindex[i];
        netpart[i] = part[hg->hvertex[j]];
-       for (++j; j < hg->hindex[i+1]  &&  part[hg->hvertex[j]] == netpart[i]; ++j);
-         if (j != hg->hindex[i+1])
-           netpart[i] = -2;
+       for (++j; j < hg->hindex[i+1]  &&  part[hg->hvertex[j]] == netpart[i]; ++j) {
+       } /* find first pin that is not in the same part */
+       if (j != hg->hindex[i+1]) /* if it is found, then this is a cut net */
+         netpart[i] = -2;
     }
 
   if (hg->nEdge)

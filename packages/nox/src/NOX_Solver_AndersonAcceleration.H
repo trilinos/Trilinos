@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,10 +51,10 @@
 #ifndef NOX_SOLVER_ANDERSON_ACCELERATION_H
 #define NOX_SOLVER_ANDERSON_ACCELERATION_H
 
-#include "NOX_Solver_Generic.H"	         // base class
+#include "NOX_Solver_Generic.H"             // base class
 #include "NOX_Solver_PrePostOperator.H"  // class data element
-#include "Teuchos_ParameterList.hpp"	         // class data element
-#include "NOX_Utils.H"		         // class data element
+#include "Teuchos_ParameterList.hpp"             // class data element
+#include "NOX_Utils.H"                 // class data element
 #include "Teuchos_RCP.hpp"       // class data element
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -63,9 +63,6 @@
 namespace NOX {
   class GlobalData;
   namespace LineSearch {
-    class Generic;
-  }
-  namespace Direction {
     class Generic;
   }
 }
@@ -85,7 +82,7 @@ namespace Solver {
 
   Each iteration afterward, the solver does the following.
 
-  <ul> 
+  <ul>
   <li> Set \f$m_k = \min\{m,k\}\f$, where \f$m\f$ is a parameter that determines the maximum number of iterates for
        which we store iterate and function values in addition to the current iterate. \f$m_k\f$ represents the number
        of previous iterates stored currently.
@@ -97,21 +94,20 @@ namespace Solver {
   <li> Calculate the new iterate: $x_{k+1} = \sum_{i=0}^{m_k} \alpha_i[x_{k-i} + \beta M(x_{k-i})F(x_{k-i})]$.
 
   </ul>
-  
+
   The iterations progress until the status tests (see NOX::StatusTest) determine either
   failure or convergence.
 
   <B>Input Parameters</B>
 
   The following parameter list entries are valid for this solver:
- 
-  - "Anderson Parameters" - Sublist of parameters specific to AA, passed to
-    the NOX::LineSearch::Manager constructor.
 
-  - "Direction" - Sublist of the direction parameters, passed to
-    the NOX::Direction::Manager constructor. Defaults to an empty list.
+  - "Anderson Parameters" - Sublist of parameters specific to AA
 
-  - "Solver Options" - Sublist of general solver options.  
+  - "Line Search" - Sublist of the line search parameters, passed to
+    the NOX::LineSearch::Manager constructor. Defaults to an empty list.
+
+  - "Solver Options" - Sublist of general solver options.
      <ul>
      <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
      </ul>
@@ -125,7 +121,7 @@ namespace Solver {
   "Output":
 
   - "Nonlinear Iterations" - Number of nonlinear iterations
-  
+
   - "2-Norm of Residual" - Two-norm of final residual
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
@@ -139,15 +135,15 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		  const Teuchos::RCP<Teuchos::ParameterList>& params);
+  AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+          const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~AndersonAcceleration();
 
-  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
+             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
@@ -163,7 +159,7 @@ public:
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
 
 protected:
-  
+
   //! Print out initialization information and calcuation the RHS.
   virtual void init();
 
@@ -176,30 +172,36 @@ protected:
   //! Updates QR factors by deletion of a column
   void qrDelete();
 
+  //! Reorthogonalized columns of Q and updates factorization
+  void reorthogonalize();
+
 protected:
-  
+
   //! Pointer to the global data object.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
   Teuchos::RCP<NOX::Utils> utilsPtr;
-  
-  //! Current solution.
-  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
 
-  //! Previous solution pointer. 
-  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
+  //! Current solution.
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;
+
+  //! Previous solution pointer.
+  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;
 
   //! Stopping test.
-  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
 
   //! Input parameters.
-  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
+
+  //! Linesearch.
+  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr;
 
   //! Flag for preconditioning
   bool precond;
 
-  //! Flag to recompute Jacobian each iterate. Needed if Jacobian required to apply preconditioner. 
+  //! Flag to recompute Jacobian each iterate. Needed if Jacobian required to apply preconditioner.
   bool recomputeJacobian;
 
   //! Abstract vector for temporary storage
@@ -212,7 +214,7 @@ protected:
   Teuchos::RCP<NOX::Abstract::Vector> oldPrecF;
 
   //! Maximum storage depth
-  int storeParam; 
+  int storeParam;
 
   //! Current storage depth
   int nStore;
@@ -221,19 +223,22 @@ protected:
   double mixParam;
 
   //! Current step.
-  double stepSize;			
+  double stepSize;
 
   //! "Matrix" of successive iterate differences
   std::vector< Teuchos::RCP<NOX::Abstract::Vector> > xMat;
 
   //! Q factor the for least-squares problem
   std::vector< Teuchos::RCP<NOX::Abstract::Vector> > qMat;
-  
+
   //! R factor for the least-squares problem
   Teuchos::SerialDenseMatrix<int,double> rMat;
 
   //! Number of nonlinear iterations.
-  int nIter;                    
+  int nIter;
+
+  //! Frequency for reorthogonalization of QR factors. If nonpositive, we never reorthogonalize
+  int orthoFrequency;
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
@@ -256,7 +261,7 @@ protected:
   //! Value of the condition number above which the QR matrix is resized.
   double dropTolerance;
 
-  //! The nonlinear iteration where Anderson Acceleration will start. 
+  //! The nonlinear iteration where Anderson Acceleration will start.
   int accelerationStartIteration;
 
   //! Disables the storage depth size check - used for unit testing corner cases only.

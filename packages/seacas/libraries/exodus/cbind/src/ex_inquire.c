@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -360,33 +360,13 @@ static void flt_cvt(float *xptr,double x)
 }
 /*! \endcond */
 
-/*!
-  A variant of ex_inquire() which queries integer-valued information only. \see ex_inquire().
-  \param[in] exoid     exodus file ID returned from a previous call to ex_create() or ex_open().
-  \param[in] req_info  A flag which designates what information is requested.
-		       (See ex_inquire() documentation)
-  \return    result of inquiry.
-
- As an example, the following will return the number of nodes,
- elements, and element blocks stored in the exodus file :
-
-\code
-#include "exodusII.h"
-int exoid;
-int num_nodes = ex_inquire_int(exoid, EX_INQ_NODES);
-int num_elems = ex_inquire_int(exoid, EX_INQ_ELEM);
-int num_block = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
-\endcode
-
-*/
-
 static int ex_inquire_internal (int      exoid,
 				int      req_info,
 				int64_t *ret_int,
 				float   *ret_float,
 				char    *ret_char)
 {
-  int dimid, varid;
+  int dimid, varid, tmp_num, rootid;
   void_int *ids = NULL;
   size_t i;
   size_t ldum = 0;
@@ -408,6 +388,7 @@ static int ex_inquire_internal (int      exoid,
     return (EX_FATAL);
   }
     
+  rootid = exoid & EX_FILE_ID_MASK;
 
   switch (req_info) {
   case EX_INQ_FILE_TYPE:
@@ -430,12 +411,12 @@ static int ex_inquire_internal (int      exoid,
       return (EX_FATAL);
     }
 
-    if (nc_get_att_float(exoid, NC_GLOBAL, ATT_API_VERSION, ret_float) != NC_NOERR)
+    if (nc_get_att_float(rootid, NC_GLOBAL, ATT_API_VERSION, ret_float) != NC_NOERR)
       {  /* try old (prior to db version 2.02) attribute name */
-	if ((status = nc_get_att_float (exoid, NC_GLOBAL, ATT_API_VERSION_BLANK,ret_float)) != NC_NOERR) {
+	if ((status = nc_get_att_float (rootid, NC_GLOBAL, ATT_API_VERSION_BLANK,ret_float)) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to get EXODUS API version for file id %d", exoid);
+		  "Error: failed to get EXODUS API version for file id %d", rootid);
 	  ex_err("ex_inquire",errmsg,exerrval);
 	  return (EX_FATAL);
 	}
@@ -453,10 +434,10 @@ static int ex_inquire_internal (int      exoid,
       return (EX_FATAL);
     }
 
-    if ((status = nc_get_att_float (exoid, NC_GLOBAL, ATT_VERSION, ret_float)) != NC_NOERR) {
+    if ((status = nc_get_att_float (rootid, NC_GLOBAL, ATT_VERSION, ret_float)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get EXODUS database version for file id %d", exoid);
+	      "Error: failed to get EXODUS database version for file id %d", rootid);
       ex_err("ex_inquire",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -475,14 +456,14 @@ static int ex_inquire_internal (int      exoid,
        It will not include the space for the trailing null, so if it
        is defined as 33 on the database, 32 will be returned.
     */
-    if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(rootid, DIM_STR_NAME, &dimid)) != NC_NOERR) {
       /* If not found, then an older database */
       *ret_int = 32;
     }
     else {
       /* Get the name string length */
       size_t name_length = 0;
-      if ((status = nc_inq_dimlen(exoid,dimid,&name_length)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(rootid,dimid,&name_length)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
 		"Error: failed to get name string length in file id %d", exoid);
@@ -497,7 +478,7 @@ static int ex_inquire_internal (int      exoid,
 
   case EX_INQ_DB_FLOAT_SIZE:
     {
-      nc_get_att_longlong(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, (long long*)ret_int);
+      nc_get_att_longlong(rootid, NC_GLOBAL, ATT_FLT_WORDSIZE, (long long*)ret_int);
     }
     break;
     
@@ -514,10 +495,10 @@ static int ex_inquire_internal (int      exoid,
 	
       *ret_int = 32; /* Default size consistent with older databases */
 
-      status = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+      status = nc_inq_att(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
       if (status == NC_NOERR && att_type == NC_INT) {
 	/* The attribute exists, return it... */
-	nc_get_att_longlong(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, (long long*)ret_int);
+	nc_get_att_longlong(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, (long long*)ret_int);
       }
     }
     break;
@@ -530,12 +511,12 @@ static int ex_inquire_internal (int      exoid,
        * default if not set by the client is 32 characters. The value
        * does not include the trailing null.
        */
-      struct ex_file_item* file = ex_find_file_item(exoid);
+      struct ex_file_item* file = ex_find_file_item(rootid);
 
       if (!file ) {
 	exerrval = EX_BADFILEID;
-	sprintf(errmsg,"Error: unknown file id %d for ex_inquire_int().",exoid);
-	ex_err("ex_intquire",errmsg,exerrval);
+	sprintf(errmsg,"Error: unknown file id %d for ex_inquire_int().",rootid);
+	ex_err("ex_inquire",errmsg,exerrval);
 	*ret_int = 0;
       }
       else {
@@ -547,12 +528,13 @@ static int ex_inquire_internal (int      exoid,
   case EX_INQ_TITLE:
     if (!ret_char) {
       sprintf(errmsg,
-	      "Error: Requested title, but character pointer was null for file id %d", exoid);
+	      "Error: Requested title, but character pointer was null for file id %d", rootid);
       ex_err("ex_inquire",errmsg,exerrval);
       return (EX_FATAL);
     } else {
       /* returns the title of the database */
-      if ((status = nc_get_att_text (exoid, NC_GLOBAL, ATT_TITLE, tmp_title)) != NC_NOERR) {
+      /* Title is stored at root level... */
+      if ((status = nc_get_att_text (rootid, NC_GLOBAL, ATT_TITLE, tmp_title)) != NC_NOERR) {
 	*ret_char = '\0';
 	exerrval = status;
 	sprintf(errmsg,
@@ -644,7 +626,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of dist fact for "ST_ZU"'th node set in file id %d",
+		    "Error: failed to locate number of dist fact for %"ST_ZU"'th node set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -654,7 +636,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of nodes in "ST_ZU"'th node set in file id %d",
+		    "Error: failed to locate number of nodes in %"ST_ZU"'th node set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -663,7 +645,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to get number of nodes in "ST_ZU"'th node set in file id %d",
+		    "Error: failed to get number of nodes in %"ST_ZU"'th node set in file id %d",
 		    i,exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -827,7 +809,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of dist fact for "ST_ZU"'th side set in file id %d",
+		    "Error: failed to locate number of dist fact for %"ST_ZU"'th side set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -837,7 +819,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to get number of dist factors in "ST_ZU"'th side set in file id %d",
+		    "Error: failed to get number of dist factors in %"ST_ZU"'th side set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -851,7 +833,7 @@ static int ex_inquire_internal (int      exoid,
 
   case EX_INQ_QA:
     /* returns the number of QA records */
-    if (ex_get_dimension(exoid, DIM_NUM_QA, "QA records", &ldum, &dimid, NULL) != NC_NOERR)
+    if (ex_get_dimension(rootid, DIM_NUM_QA, "QA records", &ldum, &dimid, NULL) != NC_NOERR)
       *ret_int = 0;
     else
       *ret_int = ldum;
@@ -859,7 +841,7 @@ static int ex_inquire_internal (int      exoid,
 
   case EX_INQ_INFO:
     /* returns the number of information records */
-    if (ex_get_dimension(exoid, DIM_NUM_INFO, "info records", &ldum, &dimid, NULL) != NC_NOERR)
+    if (ex_get_dimension(rootid, DIM_NUM_INFO, "info records", &ldum, &dimid, NULL) != NC_NOERR)
       *ret_int = 0;
     else
       *ret_int = ldum;
@@ -1018,6 +1000,83 @@ static int ex_inquire_internal (int      exoid,
     if (ex_get_dimension_value(exoid, ret_int, 0, DIM_NUM_CFRAMES, 1) != EX_NOERR) return EX_FATAL;
     break;
 
+  case EX_INQ_NUM_CHILD_GROUPS:
+    /* return number of groups contained in this (exoid) group */
+#if !defined(NOT_NETCDF4)
+    nc_inq_grps(exoid, &tmp_num, NULL);
+    *ret_int = tmp_num;
+#endif
+    break;
+    
+  case EX_INQ_GROUP_PARENT:
+    /* return id of parent of this (exoid) group; returns exoid if at root */
+#if !defined(NOT_NETCDF4)
+    tmp_num = exoid;
+    nc_inq_grp_parent(exoid, &tmp_num);
+    *ret_int = tmp_num;
+#endif
+    break;
+    
+  case EX_INQ_GROUP_ROOT:
+    /* return id of root group "/" of this (exoid) group; returns exoid if at root */
+    *ret_int = (unsigned)exoid & EX_FILE_ID_MASK;
+    break;
+    
+  case EX_INQ_GROUP_NAME_LEN:
+    {
+#if !defined(NOT_NETCDF4)
+      size_t len_name = 0;
+      /* return name length of group exoid */
+      nc_inq_grpname_len(exoid, &len_name);
+      *ret_int = (int)len_name;
+#endif
+    }
+    break;
+    
+  case EX_INQ_GROUP_NAME:
+    /* return name of group exoid. "/" returned for root group */
+    /* Assumes that ret_char is large enough to hold name. */
+    if (!ret_char) {
+      sprintf(errmsg,
+	      "Error: Requested group name, but character pointer was null for file id %d", exoid);
+      ex_err("ex_inquire",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+#if !defined(NOT_NETCDF4)
+    nc_inq_grpname(exoid, ret_char);
+#endif    
+    break;
+    
+  case EX_INQ_FULL_GROUP_NAME_LEN:
+    {
+#if !defined(NOT_NETCDF4)
+      size_t len_name = 0;
+      /* return length of full group name which is the "/" separated path from root
+       * For example "/group1/subgroup1/subsubgroup1"
+       * length does not include the NULL terminator byte.
+       */
+      nc_inq_grpname_full(exoid, &len_name, NULL);
+      *ret_int = (int)len_name;
+#endif
+    }
+    break;
+    
+  case EX_INQ_FULL_GROUP_NAME:
+    /* return full path name of group exoid which is the "/" separated path from root
+     * For example "/group1/subgroup1/subsubgroup1"
+     * Assumes that ret_char is large enough to hold full path name.
+     */
+    if (!ret_char) {
+      sprintf(errmsg,
+	      "Error: Requested group name, but character pointer was null for file id %d", exoid);
+      ex_err("ex_inquire",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+#if !defined(NOT_NETCDF4)
+    nc_inq_grpname_full(exoid, NULL, ret_char);
+#endif    
+    break;
+    
   default:
     *ret_int = 0;
     exerrval = EX_FATAL;
@@ -1028,6 +1087,25 @@ static int ex_inquire_internal (int      exoid,
   return (EX_NOERR);
 }
 
+/*!
+  A variant of ex_inquire() which queries integer-valued information only. \see ex_inquire().
+  \param[in] exoid     exodus file ID returned from a previous call to ex_create() or ex_open().
+  \param[in] req_info  A flag which designates what information is requested.
+		       (See ex_inquire() documentation)
+  \return    result of inquiry.
+
+ As an example, the following will return the number of nodes,
+ elements, and element blocks stored in the exodus file :
+
+\code
+#include "exodusII.h"
+int exoid;
+int num_nodes = ex_inquire_int(exoid, EX_INQ_NODES);
+int num_elems = ex_inquire_int(exoid, EX_INQ_ELEM);
+int num_block = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
+\endcode
+
+*/
 int64_t ex_inquire_int (int exoid, int req_info)
 {
   char *cdummy = NULL; /* Needed just for function call, unused. */

@@ -502,6 +502,21 @@ private:
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 LSQRSolMgr<ScalarType,MV,OP,false>::LSQRSolMgr() :
+  lambda_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relRhsErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relMatErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  condMax_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  maxIters_(0),
+  termIterMax_(0),
+  orthoKappa_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  verbosity_(0),
+  outputStyle_(0),
+  outputFreq_(0),
+  numIters_(0),
+  matCondNum_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  resNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matResNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   isSet_(false),
   loaDetected_(false)
 {}
@@ -513,6 +528,21 @@ LSQRSolMgr<ScalarType,MV,OP,false>::
 LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
             const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
+  lambda_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relRhsErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relMatErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  condMax_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  maxIters_(0),
+  termIterMax_(0),
+  orthoKappa_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  verbosity_(0),
+  outputStyle_(0),
+  outputFreq_(0),
+  numIters_(0),
+  matCondNum_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  resNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matResNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   isSet_(false),
   loaDetected_(false)
 {

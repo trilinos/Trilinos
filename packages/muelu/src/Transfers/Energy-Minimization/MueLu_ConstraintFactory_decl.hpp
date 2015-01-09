@@ -62,7 +62,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
   */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class ConstraintFactory : public TwoLevelFactoryBase {
 #undef MUELU_CONSTRAINTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -83,7 +83,7 @@ namespace MueLu {
 
     //@}
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //! @name Input
     //@{

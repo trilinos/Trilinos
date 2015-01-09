@@ -16,6 +16,8 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
 
+#include <vector>
+
 // epetra objects
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -130,8 +132,8 @@ int UserPartitions(ML_Operator* Amatrix, char* bdry_nodes,
   //     Also, allocate space to hold the indices of the nonzeros
   //     in each row, and their values.
   int MaxRowEntries = 128;
-  vector<int> Indices(MaxRowEntries);
-  vector<double> Values(MaxRowEntries);
+  std::vector<int> Indices(MaxRowEntries);
+  std::vector<double> Values(MaxRowEntries);
 
   // 3.- loop over all local rows
   for (int i = 0 ; i < NumLocalRows ; ++i) {

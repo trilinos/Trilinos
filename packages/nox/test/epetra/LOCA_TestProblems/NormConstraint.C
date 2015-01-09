@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #include "LOCA_Parameter_Vector.H"
 
 NormConstraint::NormConstraint(int N, const LOCA::ParameterVector& pVec,
-			       NOX::Abstract::Vector& cloneVec) :
+                   NOX::Abstract::Vector& cloneVec) :
   n(N),
   constraints(1,1),
   isValidConstraints(false),
@@ -64,8 +64,8 @@ NormConstraint::NormConstraint(int N, const LOCA::ParameterVector& pVec,
   x = cloneVec.createMultiVector(1);
 }
 
-NormConstraint::NormConstraint(const NormConstraint& source, 
-			       NOX::CopyType type) :
+NormConstraint::NormConstraint(const NormConstraint& source,
+                   NOX::CopyType type) :
   n(source.n),
   constraints(source.constraints),
   isValidConstraints(false),
@@ -125,8 +125,8 @@ NormConstraint::setParam(int paramID, double val)
 
 void
 NormConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
     p[paramIDs[i]] = vals(i,0);
@@ -150,9 +150,9 @@ NormConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-NormConstraint::computeDP(const std::vector<int>& paramIDs, 
-			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-			  bool isValidG)
+NormConstraint::computeDP(const std::vector<int>& paramIDs,
+              NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+              bool isValidG)
 {
   if (!isValidG) {
     dgdp(0,0) = constraints(0,0);

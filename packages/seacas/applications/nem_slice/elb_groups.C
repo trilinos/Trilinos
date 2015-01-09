@@ -38,15 +38,17 @@
  * Functions contained in this file:
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-#include <stdio.h>                      // for printf, sscanf, NULL
-#include <stdlib.h>                     // for malloc, free
-#include <string.h>                     // for strchr, strlen
-
-#include "elb.h"                  // for Problem_Description, etc
 #include "elb_groups.h"
-#include "elb_elem.h"             // for E_Type, elem_names
-#include "elb_err.h"              // for Gen_Error
-#include "elb_format.h"
+#include <stdio.h>                      // for printf, sscanf, NULL
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strchr, strlen
+#include <sys/types.h>                  // for ssize_t
+#include <vector>                       // for vector
+#include "elb.h"                        // for Problem_Description, etc
+#include "elb_elem.h"                   // for elem_name_from_enum
+#include "elb_err.h"                    // for Gen_Error
+#include "elb_format.h"                 // for ST_ZU
+
 
 /*****************************************************************************/
 namespace {
@@ -148,7 +150,7 @@ int parse_groups(INT *el_blk_ids,
 
   {
     size_t first_el = 0;
-    printf("\nNumber of blocks: "ST_ZU"\n", mesh->num_el_blks);
+    printf("\nNumber of blocks: " ST_ZU "\n", mesh->num_el_blks);
     printf("Block ID and associated groups:\n");
     printf("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {

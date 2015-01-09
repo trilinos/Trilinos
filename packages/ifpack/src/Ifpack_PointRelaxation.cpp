@@ -45,6 +45,7 @@
 #include <cmath>
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
@@ -211,7 +212,10 @@ int Ifpack_PointRelaxation::Compute()
   if (NumSweeps_ < 0)
     IFPACK_CHK_ERR(-2); // at least one application
 
-  Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
+  // NOTE: RowMatrixRowMap doesn't work correctly for Epetra_VbrMatrix
+  const Epetra_VbrMatrix * VbrMat = dynamic_cast<const Epetra_VbrMatrix*>(&Matrix());
+  if(VbrMat)  Diagonal_ = Teuchos::rcp( new Epetra_Vector(VbrMat->RowMap()) );
+  else Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
 
   if (Diagonal_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
@@ -516,8 +520,8 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
   int NumVectors = X.NumVectors();
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_)
@@ -961,8 +965,8 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
 {
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {

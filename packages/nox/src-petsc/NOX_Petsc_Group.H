@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,12 +51,12 @@
 #ifndef NOX_PETSC_GROUP_H
 #define NOX_PETSC_GROUP_H
 
-#include "NOX_Abstract_Group.H"	// base class
-#include "NOX_Petsc_Vector.H"	// class data element
+#include "NOX_Abstract_Group.H"    // base class
+#include "NOX_Petsc_Vector.H"    // class data element
 #include "NOX_Common.H" // class data element (std::string)
 
-#include "petscsnes.h"	
-#include "petscksp.h"	
+#include "petscsnes.h"
+#include "petscksp.h"
 
 // Forward declares
 namespace Teuchos {
@@ -99,13 +99,13 @@ public:
   //! See above
   virtual void setX(const Abstract::Vector& y);
 
-  virtual void computeX(const Group& grp, 
-			const Vector& d, 
-			double step);
+  virtual void computeX(const Group& grp,
+            const Vector& d,
+            double step);
   //! See above.
   virtual void computeX(const Abstract::Group& grp,
-			const Abstract::Vector& d, 
-			double step);
+            const Abstract::Vector& d,
+            double step);
 
   virtual Abstract::Group::ReturnType computeF();
 
@@ -123,34 +123,34 @@ public:
    * matrix-free scenarios. */
 
   //@{
-  
-  virtual Abstract::Group::ReturnType 
+
+  virtual Abstract::Group::ReturnType
   applyJacobian(const Vector& input, Vector& result) const;
   //! See above
-  virtual Abstract::Group::ReturnType 
+  virtual Abstract::Group::ReturnType
   applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const;
 
-  virtual Abstract::Group::ReturnType 
+  virtual Abstract::Group::ReturnType
   applyJacobianTranspose(const Vector& input, Vector& result) const;
   //! See above
-  virtual Abstract::Group::ReturnType 
+  virtual Abstract::Group::ReturnType
   applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
-  
-  /*! 
+
+  /*!
       \brief Preconditions a vector using one of the available methods in %Petsc
- 
+
       Currently, the preconditioning method corresponds to whatever
       is available in the user's %Petsc installation and is specified
       in the local \b .petscrc file.  For example, a direct solve can
       be accomplished by specifying \b -pc_type \b lu (serial only),
       whereas diagonal scaling can be achieved via \b -pc_type \b jacobi.
-  */ 
-  virtual Abstract::Group::ReturnType 
+  */
+  virtual Abstract::Group::ReturnType
   applyRightPreconditioning(const Vector& input, Vector& result) const;
   //! See above
-  virtual Abstract::Group::ReturnType 
+  virtual Abstract::Group::ReturnType
   applyRightPreconditioning(Teuchos::ParameterList&, const Abstract::Vector& input, Abstract::Vector& result) const;
-  
+
   //@}
 
   /** @name "Is" functions
@@ -169,7 +169,7 @@ public:
 
   //@}
 
-  /** @name "Get" functions 
+  /** @name "Get" functions
    *
    * Note that these function do not check whether or not the vectors
    * are valid. Must use the "Is" functions for that purpose. */
@@ -178,7 +178,7 @@ public:
   virtual const Abstract::Vector& getX() const;
 
   virtual const Abstract::Vector& getF() const;
-  
+
   virtual double getNormF() const;
 
   virtual const Abstract::Vector& getGradient() const;
@@ -195,7 +195,7 @@ public:
 
   //@}
 
-  virtual Teuchos::RCP<NOX::Abstract::Group> 
+  virtual Teuchos::RCP<NOX::Abstract::Group>
   clone(CopyType type = DeepCopy) const;
 
 protected:
@@ -217,8 +217,8 @@ protected:
   Vector NewtonVector;
   //@}
 
-  /** @name IsValid flags 
-   *  
+  /** @name IsValid flags
+   *
    * True if the current solution is up-to-date with respect to the
    * currect xVector. */
   //@{
@@ -228,14 +228,14 @@ protected:
   bool isValidNewton;
   bool isValidPreconditioner;
   //@}
-  
+
   //! Norm of RHS
   double normRHS;
 
   //! Pointer to shared Jacobian matrix
   SharedJacobian* sharedJacobianPtr;
 
-  //! Reference to shared Jacobian matrix 
+  //! Reference to shared Jacobian matrix
   SharedJacobian& sharedJacobian;
 
   //! Specification of Jacobian Type

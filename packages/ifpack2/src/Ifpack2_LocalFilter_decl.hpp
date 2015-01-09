@@ -190,7 +190,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -213,6 +213,9 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
+
+  typedef typename row_matrix_type::mag_type mag_type;
+
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
@@ -247,7 +250,7 @@ public:
   //! Returns the communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-  //! Returns the underlying Kokkos Node object.
+  //! Returns the underlying Node object.
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
@@ -451,7 +454,7 @@ public:
   ///
   /// The Frobenius norm of a matrix \f$A\f$ is defined as
   /// \f$\|A\|_F = \sqrt{\sum_{i,j} \|A_{ij}\|^2}\f$.
-  virtual magnitude_type getFrobeniusNorm() const;
+  virtual mag_type getFrobeniusNorm() const;
 
   /// \brief Compute Y = beta*Y + alpha*A_local*X.
   ///
@@ -510,6 +513,13 @@ private:
   typedef Tpetra::RowGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> row_graph_type;
+  //! Special case of apply() for when X and Y do not alias one another.
+  void
+  applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+                   Teuchos::ETransp mode,
+                   scalar_type alpha,
+                   scalar_type beta) const;
 
   /// \brief Whether map1 is fitted to map2.
   ///
@@ -556,7 +566,7 @@ private:
   std::vector<size_t> NumEntries_;
 
   //! Temporary array used in getLocalRowCopy().
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
+  mutable Teuchos::Array<local_ordinal_type> localIndices_;
 
   //! Temporary array used in getLocalRowCopy().
   mutable Teuchos::Array<scalar_type> Values_;

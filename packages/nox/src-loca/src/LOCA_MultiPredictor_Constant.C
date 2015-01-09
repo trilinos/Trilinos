@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,8 +55,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Constant::Constant(
-	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor(),
   secant(),
@@ -69,8 +69,8 @@ LOCA::MultiPredictor::Constant::~Constant()
 }
 
 LOCA::MultiPredictor::Constant::Constant(
-				 const LOCA::MultiPredictor::Constant& source,
-				 NOX::CopyType type) :
+                 const LOCA::MultiPredictor::Constant& source,
+                 NOX::CopyType type) :
   globalData(source.globalData),
   predictor(),
   secant(),
@@ -85,9 +85,9 @@ LOCA::MultiPredictor::Constant::Constant(
 
 LOCA::MultiPredictor::AbstractStrategy&
 LOCA::MultiPredictor::Constant::operator=(
-			  const LOCA::MultiPredictor::AbstractStrategy& s)
+              const LOCA::MultiPredictor::AbstractStrategy& s)
 {
-  const LOCA::MultiPredictor::Constant& source = 
+  const LOCA::MultiPredictor::Constant& source =
     dynamic_cast<const LOCA::MultiPredictor::Constant&>(s);
 
   if (this != &source) {
@@ -110,15 +110,15 @@ LOCA::MultiPredictor::Constant::clone(NOX::CopyType type) const
   return Teuchos::rcp(new Constant(*this, type));
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Constant::compute(
-	      bool baseOnSecant, const std::vector<double>& stepSize,
-	      LOCA::MultiContinuation::ExtendedGroup& grp,
-	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec)
+          bool baseOnSecant, const std::vector<double>& stepSize,
+          LOCA::MultiContinuation::ExtendedGroup& grp,
+          const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+          const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
-    globalData->locaUtils->out() << 
+    globalData->locaUtils->out() <<
       "\n\tCalling Predictor with method: Constant" << std::endl;
 
   // Number of continuation parameters
@@ -128,7 +128,7 @@ LOCA::MultiPredictor::Constant::compute(
 
     // Allocate predictor vector
     predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(xVec.createMultiVector(numParams, NOX::ShapeCopy));
-    
+
     // Allocate secant
     secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(xVec.clone(NOX::ShapeCopy));
 
@@ -140,17 +140,17 @@ LOCA::MultiPredictor::Constant::compute(
     predictor->getScalar(i,i) = 1.0;
 
   // Set orientation based on parameter change
-  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXVec, 
-			  xVec, *secant, *predictor);
+  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXVec,
+              xVec, *secant, *predictor);
 
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Constant::evaluate(
-	      const std::vector<double>& stepSize,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec,
-	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
+          const std::vector<double>& stepSize,
+          const LOCA::MultiContinuation::ExtendedVector& xVec,
+          LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {
   // Number of continuation parameters
   int numParams = stepSize.size();
@@ -161,9 +161,9 @@ LOCA::MultiPredictor::Constant::evaluate(
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Constant::computeTangent(
-			LOCA::MultiContinuation::ExtendedMultiVector& v)
+            LOCA::MultiContinuation::ExtendedMultiVector& v)
 {
   v = *predictor;
 

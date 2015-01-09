@@ -1,5 +1,5 @@
 # Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 # retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ XCOMM Use include files locates in exodusii/cbind/include
 INCLUDES = IncRef-I../include
 REQUIREDLIBS = -L$(SHLIBDIR) $(NETCDF)
 
-#if !UseNetcdf4
+#if UseNetcdf4 == NO
 NET_DEF = -DNOT_NETCDF4
 #endif
 
@@ -65,6 +65,9 @@ SRCS =	ex_close.c \
 	ex_conv.c \
 	ex_copy.c \
 	ex_create.c \
+	ex_create_group.c \
+	ex_get_group_id.c \
+	ex_get_group_ids.c \
 	ex_cvt_nodes_to_sides.c \
 	ex_err.c \
 	ex_get_all_times.c \
@@ -202,6 +205,8 @@ SRCS =	ex_close.c \
 	ex_put_attr_param.c \
 	ex_put_block.c \
 	ex_put_block_param.c \
+	ex_get_block_params.c \
+	ex_put_block_params.c \
 	ex_put_cmap_params.c \
 	ex_put_cmap_params_cc.c \
 	ex_put_concat_all_blocks.c \
@@ -310,6 +315,7 @@ SRCS =	ex_close.c \
 	ex_put_var_param.c \
 	ex_put_var_tab.c \
 	ex_update.c \
+	ex_add_attr.c \
 	ex_utils.c
 
 OBJS   = ${SRCS:.c=.o}

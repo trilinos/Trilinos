@@ -54,63 +54,15 @@
 # @HEADER
 
 
-INCLUDE(TribitsListHelpers)
-
 #
-# Define the Trilinos package names, directories, and classification.
+# Define the Trilinos packages
 #
-# Package classifications are:
-#
-#   PS: Primary Stable Package
-#
-#     Primary Stable Packages have at least some Primary Stable Code which is
-#     expected to be fully tested before every push to the global repo.  The
-#     default enable for PS packages is empty "" which allows the PS package
-#     to be enabled implicitly based on other criteria.  The option
-#     Trilinos_ENABLE_ALL_PACKAGES=ON will cause all PS packages to be enabled
-#     unless they are explicitly disabled.
-#
-#   SS: Secondary Stable Package
-#
-#     Secondary Stable Packages have no PS code or they would be classified as
-#     PS packages.  A package must be classified as SS if it has a required
-#     dependency on another SS package or SS TPL.  A package may also be
-#     declared SS to avoid requiring it to be tested before every push to the
-#     global repo.  For example, a package that does not provide any
-#     significant functionally like Didasko is classified as a SS package even
-#     through it could be classified as PS just based on its required package
-#     and TPL dependencies.  SS packages will have their default enables set
-#     to empty "".  This allows them to be enabled implicilty.  When
-#     Trilinos_ENABLE_ALL_PACKAGES=ON but
-#     Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF, the SS packages will not be
-#     enabled.  However, when Trilinos_ENABLE_ALL_PACKAGES=ON and
-#     Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON, then SS packages will be
-#     enabled if they are not explicitly disabled.  Packages that are SS but
-#     not PS must be disabled in pre-push testing.  However, SS packages are
-#     tested by the post-push CI and nightly testing processes.
-#
-#   EX: Experimental Package
-#
-#     Experimental packages are those packages that contain no PS or SS
-#     code. The default enable for EX packages is always OFF which requires
-#     that they be explicitly enabled in order to be turned on. EX packages
-#     must be disabled in pre-push testring and are not tested as part of the
-#     post-push CI or nightly testing processes.  However, package developers
-#     of EX pacakges are encouraged to set up their own nightly testing for
-#     thier EX packages.
-#
-# NOTE: These packages must be listed in strictly ascending order in terms of
-# package dependencies.  If you get the order wrong, then an error message
-# will be printed during configuration with CMake.
-#
-
-SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-  TrilinosFramework     cmake                             PS # Only tests, no libraries/capabilities!
-  Teuchos               packages/teuchos                  PS
-  ThreadPool            packages/ThreadPool               PS # Depends on ptheads system library
-  RTOp                  packages/rtop                     PS
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Gtest                 commonTools/gtest                 SS
+  ThreadPool            packages/ThreadPool               PS # Depends on Pthreads
   Kokkos                packages/kokkos                   PS
+  Teuchos               packages/teuchos                  PS
+  RTOp                  packages/rtop                     PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
   Zoltan                packages/zoltan                   PS
@@ -120,6 +72,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
   Xpetra                packages/xpetra                   PS
+  Domi                  packages/domi                     EX
   Thyra                 packages/thyra                    PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS
@@ -127,8 +80,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Claps                 packages/claps                    EX
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
-  Amesos2               packages/amesos2                  SS
   Amesos                packages/amesos                   PS
+  Amesos2               packages/amesos2                  SS
   Pamgen                packages/pamgen                   PS
   SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
@@ -152,11 +105,11 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
-  TrilinosCouplings     packages/trilinoscouplings        SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
   Stokhos               packages/stokhos                  SS
+  ROL                   packages/rol                      EX
   Piro                  packages/piro                     SS
   Panzer                packages/panzer                   SS
   Sundance              packages/Sundance                 SS # Could be PS based on deps (BUG: 4669)
@@ -169,6 +122,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Optika		packages/optika		          SS
   Mesquite              packages/mesquite                 PS
   MeshingGenie          packages/meshinggenie             EX
+  TrilinosCouplings     packages/trilinoscouplings        SS
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
@@ -181,22 +135,22 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 # get enabled implicitly.
 #
 
-PACKAGE_DISABLE_ON_PLATFORMS(MOOCHO Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Phalanx Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Phdmesh Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(PyTrilinos Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Sundance Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Ifpack2 Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(SEACAS Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Mesquite AIX)
-PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Xpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Panzer Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(MOOCHO Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phalanx Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phdmesh Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(PyTrilinos Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Sundance Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Tpetra Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack2 Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(TriKota Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Pamgen Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(STK Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(SEACAS Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Xpetra Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)

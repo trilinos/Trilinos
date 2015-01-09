@@ -60,8 +60,8 @@ Epetra_CrsMatrix* Laplace1DNeumann(const Epetra_Map* Map)
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, 3);
 
-  vector<double> Values(2);
-  vector<int_type> Indices(2);
+  std::vector<double> Values(2);
+  std::vector<int_type> Indices(2);
   int NumEntries;
 
   for (int i = 0 ; i < NumMyElements ; ++i) 

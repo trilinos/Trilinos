@@ -43,15 +43,7 @@
 
 #include <gtest/gtest.h>
 
-// Force OMP atomics for testing only
-
-#define KOKKOS_ATOMICS_USE_OMP31
-#include <Kokkos_Atomic.hpp>
-
-#include <Kokkos_OpenMP.hpp>
-#include <Kokkos_hwloc.hpp>
-
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <Kokkos_CrsArray.hpp>
 
@@ -62,14 +54,20 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestViewSubview.hpp>
 
 #include <TestCrsArray.hpp>
-#include <TestRequest.hpp>
+#include <TestRange.hpp>
+#include <TestTeam.hpp>
 #include <TestReduce.hpp>
 #include <TestScan.hpp>
-#include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
+#include <TestTeamVector.hpp>
+#include <TestMemorySpaceTracking.hpp>
+#include <TestTemplateMetaFunctions.hpp>
 
 namespace Test {
 
@@ -85,9 +83,7 @@ protected:
                                    std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( threads_count );
-
-    std::cout << "OpenMP threads: " << omp_get_max_threads() << std::endl;
-    std::cout << "requested threads: " << threads_count << std::endl;
+    Kokkos::OpenMP::print_configuration( std::cout , true );
   }
 
   static void TearDownTestCase()
@@ -109,6 +105,49 @@ TEST_F( openmp, view_api) {
   TestViewAPI< double , Kokkos::OpenMP >();
 }
 
+
+TEST_F( openmp, view_subview_left_0 ) {
+  TestViewSubview::test_left_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_1 ) {
+  TestViewSubview::test_left_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_2 ) {
+  TestViewSubview::test_left_2< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_left_3 ) {
+  TestViewSubview::test_left_3< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_0 ) {
+  TestViewSubview::test_right_0< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_1 ) {
+  TestViewSubview::test_right_1< Kokkos::OpenMP >();
+}
+
+TEST_F( openmp, view_subview_right_3 ) {
+  TestViewSubview::test_right_3< Kokkos::OpenMP >();
+}
+
+
+
+TEST_F( openmp , range_tag )
+{
+  TestRange< Kokkos::OpenMP >::test_for(1000);
+  TestRange< Kokkos::OpenMP >::test_reduce(1000);
+  TestRange< Kokkos::OpenMP >::test_scan(1000);
+}
+
+TEST_F( openmp , team_tag )
+{
+  TestTeamPolicy< Kokkos::OpenMP >::test_for(1000);
+  TestTeamPolicy< Kokkos::OpenMP >::test_reduce(1000);
+}
 
 TEST_F( openmp, crsarray) {
   TestCrsArray< Kokkos::OpenMP >();
@@ -134,16 +173,16 @@ TEST_F( openmp, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::OpenMP >( 1000000 );
 }
 
-TEST_F( openmp, dev_long_reduce) {
-  TestReduceRequest< long ,   Kokkos::OpenMP >( 1000000 );
+TEST_F( openmp, team_long_reduce) {
+  TestReduceTeam< long ,   Kokkos::OpenMP >( 100000 );
 }
 
-TEST_F( openmp, dev_double_reduce) {
-  TestReduceRequest< double ,   Kokkos::OpenMP >( 1000000 );
+TEST_F( openmp, team_double_reduce) {
+  TestReduceTeam< double ,   Kokkos::OpenMP >( 100000 );
 }
 
-TEST_F( openmp, dev_shared_request) {
-  TestSharedRequest< Kokkos::OpenMP >();
+TEST_F( openmp, team_shared_request) {
+  TestSharedTeam< Kokkos::OpenMP >();
 }
 
 
@@ -227,16 +266,14 @@ TEST_F( openmp , view_remap )
 TEST_F( openmp , view_aggregate )
 {
   TestViewAggregate< Kokkos::OpenMP >();
+  TestViewAggregateReduction< Kokkos::OpenMP >();
 }
 
 //----------------------------------------------------------------------------
 
 TEST_F( openmp , scan )
 {
-  for ( int i = 0 ; i < 1000 ; ++i ) {
-    TestScan< Kokkos::OpenMP >( 10 );
-    TestScan< Kokkos::OpenMP >( 10000 );
-  }
+  TestScan< Kokkos::OpenMP >::test_range( 1 , 1000 );
   TestScan< Kokkos::OpenMP >( 1000000 );
   TestScan< Kokkos::OpenMP >( 10000000 );
   Kokkos::OpenMP::fence();
@@ -245,8 +282,8 @@ TEST_F( openmp , scan )
 
 TEST_F( openmp , team_scan )
 {
-  TestScanRequest< Kokkos::OpenMP >( 10 );
-  TestScanRequest< Kokkos::OpenMP >( 10000 );
+  TestScanTeam< Kokkos::OpenMP >( 10000 );
+  TestScanTeam< Kokkos::OpenMP >( 10000 );
 }
 
 //----------------------------------------------------------------------------
@@ -256,5 +293,49 @@ TEST_F( openmp , compiler_macros )
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , memory_space )
+{
+  TestMemorySpace< Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , template_meta_functions )
+{
+  TestTemplateMetaFunctions<int, Kokkos::OpenMP >();
+}
+
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
+TEST_F( openmp , cxx11 )
+{
+  if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::OpenMP >::value ) {
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(1) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(2) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(3) ) );
+    ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(4) ) );
+  }
+}
+#endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( openmp , team_vector )
+{
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(0) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(1) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(2) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(4) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(5) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(6) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(7) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(8) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(9) ) );
+  ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(10) ) );
+}
+#endif
 } // namespace test
 

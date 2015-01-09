@@ -1,36 +1,36 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
-#include "Sacado_Random.hpp"
 #include "Sacado.hpp"
+#include "Sacado_Random.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 
 #include "Fad/fad.h"
@@ -56,7 +56,7 @@ func1(const T& x1, const T& x2, T& y) {
 }
 
 inline void
-func1_and_deriv(int n, double x1, double x2, double* x1dot, double* x2dot, 
+func1_and_deriv(int n, double x1, double x2, double* x1dot, double* x2dot,
 		double& y, double* ydot) {
   double s = sin(x1);
   double c = cos(x1);
@@ -82,7 +82,7 @@ do_time(int nderiv, int nloop)
     x1.fastAccessDx(j) = urand.number();
     x2.fastAccessDx(j) = urand.number();
   }
-  
+
   Teuchos::Time timer("mult", false);
   timer.start(true);
   for (int j=0; j<nloop; j++) {
@@ -110,7 +110,7 @@ do_time_analytic(int nderiv, int nloop)
     x1dot[j] = urand.number();
     x2dot[j] = urand.number();
   }
-  
+
   Teuchos::Time timer("mult", false);
   timer.start(true);
   for (int j=0; j<nloop; j++) {
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << "Times (sec) for nderiv = " << nderiv 
+    std::cout << "Times (sec) for nderiv = " << nderiv
 	      << " nloop =  " << nloop << ":  " << std::endl;
 
     ta = do_time_analytic(nderiv, nloop);
@@ -167,12 +167,12 @@ int main(int argc, char* argv[]) {
 
     t = do_time< Sacado::Fad::SLFad<double,10> >(nderiv, nloop);
     std::cout << "SLFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
-    
+
     t = do_time< Sacado::Fad::DFad<double> >(nderiv, nloop);
     std::cout << "DFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
     t = do_time< Sacado::Fad::DMFad<double> >(nderiv, nloop);
-    std::cout << "DMFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl; 
+    std::cout << "DMFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
     t = do_time< Sacado::ELRFad::SFad<double,10> >(nderiv, nloop);
     std::cout << "ELRSFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
@@ -182,24 +182,24 @@ int main(int argc, char* argv[]) {
 
     t = do_time< Sacado::ELRFad::DFad<double> >(nderiv, nloop);
     std::cout << "ELRDFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
-    
+
     t = do_time< Sacado::CacheFad::DFad<double> >(nderiv, nloop);
     std::cout << "CacheFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
 
     t = do_time< Sacado::Fad::DVFad<double> >(nderiv, nloop);
     std::cout << "DVFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
-    
+
   }
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 

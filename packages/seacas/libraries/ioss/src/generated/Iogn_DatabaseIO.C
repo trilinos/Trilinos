@@ -31,13 +31,39 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_DatabaseIO.h>
-#include <generated/Iogn_GeneratedMesh.h>
+#include <Ioss_CodeTypes.h>             // for Int64Vector, IntVector
+#include <Ioss_SideBlock.h>             // for SideBlock
+#include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR
+#include <assert.h>                     // for assert
+#include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
+#include <math.h>                       // for sqrt
+#include <algorithm>                    // for copy
+#include <iostream>                     // for ostringstream, operator<<, etc
+#include <string>                       // for string, operator==, etc
+#include <utility>                      // for pair
+#include "Ioss_CommSet.h"               // for CommSet
+#include "Ioss_DBUsage.h"               // for DatabaseUsage
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_EntityType.h"            // for EntityType, etc
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_Map.h"                   // for Map, MapContainer
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_ParallelUtils.h"         // for ParallelUtils
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "Ioss_Region.h"                // for Region
+#include "Ioss_SideSet.h"               // for SideSet
+#include "Ioss_VariableType.h"          // for VariableType
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
-#include <Ioss_SideBlock.h>
-#include <string>
 
 namespace {
   template <typename INT>
@@ -154,6 +180,10 @@ namespace Iogn {
 
     assert(m_generatedMesh != NULL);
     
+    Ioss::Region *this_region = get_region();
+    this_region->property_add(Ioss::Property("global_node_count",    m_generatedMesh->node_count()));
+    this_region->property_add(Ioss::Property("global_element_count", m_generatedMesh->element_count()));
+
     spatialDimension = 3;
     nodeCount = m_generatedMesh->node_count_proc();
     elementCount = m_generatedMesh->element_count_proc();
@@ -169,7 +199,6 @@ namespace Iogn {
     get_sidesets();
     get_commsets();
 
-    Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"), 3));
   }
@@ -645,7 +674,7 @@ namespace Iogn {
       block->property_add(Ioss::Property("original_block_order", i));
       block->property_add(Ioss::Property("global_entity_count", (int64_t)m_generatedMesh->element_count(i+1)));
 
-      if(type == "shell4")
+      if(type == "shell4" || type == "tri3")
       {
         block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
                                      (int64_t)m_generatedMesh->element_count_proc(i+1)));

@@ -49,15 +49,23 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 
-#define IFPACK2_INST_DENSE_CONTAINER(S,LO,GO)                           \
-  template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO >, S >;  \
+// Explicit instantiation macro for DenseContainer.
+// Only instantiate in the Ifpack2 namespace.
+#define LCLINST(S, LO, GO ) template class DenseContainer<Tpetra::CrsMatrix< S , LO , GO >, S >; template class DenseContainer<Tpetra::RowMatrix< S , LO , GO >, S >;
 
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DENSE_CONTAINER)
+  IFPACK2_INSTANTIATE_SLG(LCLINST)
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+
+  template class DenseContainer<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, double >;
+  template class DenseContainer<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode>, double >;
+
+#endif
 
 }
 

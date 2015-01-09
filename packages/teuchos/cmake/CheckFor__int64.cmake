@@ -3,16 +3,16 @@ INCLUDE(CheckCXXSourceCompiles)
 # This compiler test checks to see if the compiler supports a intrinic
 # datatype __int64, such as on some 64 bit Windows compilers.
 #
-# The below test program checks to see that __int64 is defined , different
-# from any existing standard intrinsic 'int' types, except for 'long long
-# int'.  This is necessasry because Teuchos and other Trilinos packages
-# require usage of trait class specializations for datatypes like ptrdiff_t
-# and size_t which turn out to be a typedefs to the non-standard __int64
-# datatype on 64 bit Windows compilers.  See Trilinos bug 5801 for all of the
-# details.  However, we don't include 'long long int' in this below test
-# because on these windows platforms it seems that 'long long int' is treated
-# as the same type as __int64 with respect to template specializations (again,
-# see Trilinos bug 5801).
+# The below test program checks to see that __int64 is defined, different from
+# any existing standard intrinsic 'int' types, except for 'long long int'.
+# This is necessasry because Teuchos and other Trilinos packages require usage
+# of trait class specializations for datatypes like ptrdiff_t and size_t which
+# turn out to be a typedefs to the non-standard __int64 datatype on 64 bit
+# Windows compilers.  See Trilinos bug 5801 for all of the details.  However,
+# we don't include 'long long int' in this below test because on these windows
+# platforms it seems that 'long long int' is treated as the same type as
+# __int64 with respect to template specializations (again, see Trilinos bug
+# 5801).
 #
 FUNCTION(CHECK_FOR___INT64 VARNAME)
 

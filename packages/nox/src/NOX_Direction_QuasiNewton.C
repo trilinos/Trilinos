@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 
 #ifdef WITH_PRERELEASE
 
-#include "NOX_Direction_QuasiNewton.H" 
+#include "NOX_Direction_QuasiNewton.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
@@ -61,22 +61,22 @@
 
 //------------------------------------------------------------
 
-NOX::Direction::QuasiNewton::MemoryUnit::MemoryUnit() 
+NOX::Direction::QuasiNewton::MemoryUnit::MemoryUnit()
 {
   sdotyValue = 0;
   ydotyValue = 0;
   rhoValue = 0;
 }
 
-NOX::Direction::QuasiNewton::MemoryUnit::~MemoryUnit() 
+NOX::Direction::QuasiNewton::MemoryUnit::~MemoryUnit()
 {
 
 }
 
-void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX, 
-							 const Abstract::Vector& oldX, 
-							 const Abstract::Vector& newG, 
-							 const Abstract::Vector& oldG)
+void NOX::Direction::QuasiNewton::MemoryUnit::reset(const Abstract::Vector& newX,
+                             const Abstract::Vector& oldX,
+                             const Abstract::Vector& newG,
+                             const Abstract::Vector& oldG)
 {
   if (Teuchos::is_null(sPtr))
   {
@@ -118,7 +118,7 @@ double NOX::Direction::QuasiNewton::MemoryUnit::rho() const
 
 //------------------------------------------------------------
 
-NOX::Direction::QuasiNewton::Memory::Memory(int m) 
+NOX::Direction::QuasiNewton::Memory::Memory(int m)
 {
   reset(m);
 }
@@ -134,18 +134,18 @@ NOX::Direction::QuasiNewton::Memory::~Memory()
 {
 }
 
-void NOX::Direction::QuasiNewton::Memory::add(const NOX::Abstract::Vector& newX, 
-						   const NOX::Abstract::Vector& oldX, 
-						   const NOX::Abstract::Vector& newG, 
-						   const NOX::Abstract::Vector& oldG)
+void NOX::Direction::QuasiNewton::Memory::add(const NOX::Abstract::Vector& newX,
+                           const NOX::Abstract::Vector& oldX,
+                           const NOX::Abstract::Vector& newG,
+                           const NOX::Abstract::Vector& oldG)
 {
   int m = index.size();
-  
+
   if (m < (int) memory.size())
   {
     index.push_back(m);
   }
-  else 
+  else
   {
     // rotate(index, index + (m-1), index + m);
     int k = index[0];
@@ -167,7 +167,7 @@ int NOX::Direction::QuasiNewton::Memory::size() const
   return index.size();
 }
 
-const NOX::Direction::QuasiNewton::MemoryUnit& 
+const NOX::Direction::QuasiNewton::MemoryUnit&
 NOX::Direction::QuasiNewton::Memory::operator[](int i) const
 {
   return memory[index[i]];
@@ -176,8 +176,8 @@ NOX::Direction::QuasiNewton::Memory::operator[](int i) const
 //------------------------------------------------------------
 
 NOX::Direction::QuasiNewton::
-QuasiNewton(const Teuchos::RCP<NOX::GlobalData>& gd, 
-	    Teuchos::ParameterList& p) :
+QuasiNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
+        Teuchos::ParameterList& p) :
   paramsPtr(NULL)
 {
   reset(gd, p);
@@ -199,29 +199,29 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir, 
-					  NOX::Abstract::Group& soln, 
-					  const Solver::Generic& solver)
+bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
+                      NOX::Abstract::Group& soln,
+                      const Solver::Generic& solver)
 {
   NOX::Abstract::Group::ReturnType status;
-  
+
   // Compute F at current solution
   status = soln.computeF();
-  if (status != NOX::Abstract::Group::Ok) 
+  if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute F");
 
   // Compute Jacobian at current solution.
   status = soln.computeJacobian();
-  if (status != NOX::Abstract::Group::Ok) 
+  if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute Jacobian");
 
   // Compute the gradient at the current solution
   status = soln.computeGradient();
-  if (status != NOX::Abstract::Group::Ok) 
+  if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute gradient");
 
   // Push the old information onto the memory, but only after at least one previous iteration
-  if (solver.getNumIterations() > 0) 
+  if (solver.getNumIterations() > 0)
   {
     const NOX::Abstract::Group& oldSoln = solver.getPreviousSolutionGroup();
     if (oldSoln.isGradient())
@@ -229,18 +229,18 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
   }
 
   // *** Calculate the QN direction ***
-  
+
   // d = -g
   dir = soln.getGradient();
   dir.scale(-1.0);
 
-  if (!memory.empty()) 
+  if (!memory.empty())
   {
 
     int m = memory.size();
     std::vector<double> alpha(m);
     double beta;
-  
+
     for (int i = m-1; i >= 0; i --)
     {
       alpha[i] = memory[i].rho() * dir.innerProduct( memory[i].s() );
@@ -260,19 +260,19 @@ bool NOX::Direction::QuasiNewton::compute(NOX::Abstract::Vector& dir,
 }
 
 bool NOX::Direction::QuasiNewton::
-compute(NOX::Abstract::Vector& dir, 
-	NOX::Abstract::Group& soln, 
-	const Solver::LineSearchBased& solver)
+compute(NOX::Abstract::Vector& dir,
+    NOX::Abstract::Group& soln,
+    const Solver::LineSearchBased& solver)
 {
   return NOX::Direction::Generic::compute( dir, soln, solver );
 }
 
-void NOX::Direction::QuasiNewton::throwError(const std::string& functionName, 
-					     const std::string& errorMsg)
+void NOX::Direction::QuasiNewton::throwError(const std::string& functionName,
+                         const std::string& errorMsg)
 {
   if (utils->isPrintType(Utils::Error))
-    utils->err() << "NOX::Direction::QuasiNewton::" << functionName 
-		 << " - " << errorMsg << std::endl;
+    utils->err() << "NOX::Direction::QuasiNewton::" << functionName
+         << " - " << errorMsg << std::endl;
   throw "NOX Error";
 }
 

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,11 +54,11 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::ShiftInvert2Matrix::ShiftInvert2Matrix(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp_)
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+    const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp_)
   : globalData(global_data),
     myLabel("Shift-Invert"),
     eigenParams(eigenParams_),
@@ -87,10 +87,10 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::label() const
 
 void
 LOCA::AnasaziOperator::ShiftInvert2Matrix::apply(
-				     const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& output) const
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& output) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::AnasaziOperator::ShiftInvert2Matrix::apply()";
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -104,24 +104,24 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::apply(
 
   // Compute M*input
   status = grp->applySecondShiftedMatrixMultiVector(input, *tmp_r);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Compute J-omega*M -- done once in constructor
 
   // Solve (J-omega*M)*output = M*input
-  status = grp->applyShiftedMatrixInverseMultiVector(*solverParams, *tmp_r, 
-						     output);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  status = grp->applyShiftedMatrixInverseMultiVector(*solverParams, *tmp_r,
+                             output);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 }
 
 void
-LOCA::AnasaziOperator::ShiftInvert2Matrix::beginPostProcessing() 
+LOCA::AnasaziOperator::ShiftInvert2Matrix::beginPostProcessing()
 {
   // Make sure mass matrix is up-to-date
   NOX::Abstract::Group::ReturnType status;
@@ -133,8 +133,8 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::beginPostProcessing()
 }
 
 void
-LOCA::AnasaziOperator::ShiftInvert2Matrix::transformEigenvalue(double& ev_r, 
-							double& ev_i) const
+LOCA::AnasaziOperator::ShiftInvert2Matrix::transformEigenvalue(double& ev_r,
+                            double& ev_i) const
 {
   // compute inverse of eigenvalue, then shift
   double mag = ev_r*ev_r + ev_i*ev_i;
@@ -142,13 +142,13 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::transformEigenvalue(double& ev_r,
   ev_i = -ev_i / mag;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::AnasaziOperator::ShiftInvert2Matrix::rayleighQuotient(
-				         NOX::Abstract::Vector& evec_r,
-					 NOX::Abstract::Vector& evec_i,
-					 double& rq_r, double& rq_i) const
+                         NOX::Abstract::Vector& evec_r,
+                     NOX::Abstract::Vector& evec_i,
+                     double& rq_r, double& rq_i) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::AnasaziOperator::ShiftInvert2Matrix::rayleighQuotient()";
 
   // Allocate temporary vectors
@@ -162,31 +162,31 @@ LOCA::AnasaziOperator::ShiftInvert2Matrix::rayleighQuotient(
 
   // Compute z^T M z
   status = grp->applyShiftedMatrix(evec_r, (*tmp_r)[0]);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
-  status = grp->applyShiftedMatrix(evec_i, (*tmp_i)[0]);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 
-  double m_r = 
+  status = grp->applyShiftedMatrix(evec_i, (*tmp_i)[0]);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+                               callingFunction);
+
+  double m_r =
     evec_r.innerProduct((*tmp_r)[0]) + evec_i.innerProduct((*tmp_i)[0]);
-  double m_i = 
+  double m_i =
     evec_r.innerProduct((*tmp_i)[0]) - evec_i.innerProduct((*tmp_r)[0]);
   double m = m_r*m_r + m_i*m_i;
 
   // Compute z^T J z
   status = grp->applyJacobian(evec_r, (*tmp_r)[0]);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+                               callingFunction);
+
   status = grp->applyJacobian(evec_i, (*tmp_i)[0]);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 
   rq_r = evec_r.innerProduct((*tmp_r)[0]) + evec_i.innerProduct((*tmp_i)[0]);
   rq_i = evec_r.innerProduct((*tmp_i)[0]) - evec_i.innerProduct((*tmp_r)[0]);

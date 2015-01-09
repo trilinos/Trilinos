@@ -2,14 +2,9 @@
 #include <utility>
 #include <iostream>
 
-#include <KokkosCore_config.h>
+#include <Kokkos_Core.hpp>
 
 #include <BoxElemPart.hpp>
-
-#include <Kokkos_Threads.hpp>
-#if defined( KOKKOS_HAVE_CUDA )
-#include <Kokkos_Cuda.hpp>
-#endif
 
 namespace Kokkos {
 namespace Example {
@@ -17,20 +12,21 @@ template< class > void test_fixture();
 }
 }
 
-void test_box()
+int test_box( const size_t global_size
+            , const size_t global_box[][2]
+            , const bool print_verbose )
 {
-  const unsigned global_size = 2500 ;
-  const unsigned global_box[3][2] = { { 0 , 1000 } , { 0 , 1100 } , { 0 , 1200 } };
-
   size_t global_count = 0 ;
   size_t global_max = 0 ;
   size_t global_min = Kokkos::Example::box_count( global_box );
+  size_t global_box_max[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+  size_t global_box_min[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
   size_t intersect_error = 0 ;
   size_t neighbor_max = 0 ;
 
-  for ( unsigned global_rank = 0 ; global_rank < global_size ; ++global_rank ) {
-    unsigned box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
-    unsigned ghost_box[3][2] ;
+  for ( size_t global_rank = 0 ; global_rank < global_size ; ++global_rank ) {
+    size_t box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
+    size_t ghost_box[3][2] ;
     size_t neighbor_count = 0 ;
 
     Kokkos::Example::box_partition( global_size , global_rank , global_box , box );
@@ -40,17 +36,28 @@ void test_box()
     {
       const size_t n = Kokkos::Example::box_count( box );
 
+      for ( int i = 0 ; i < 3 ; ++i ) {
+        if ( ( box[i][1] - box[i][0] ) < ( global_box_min[i][1] - global_box_min[i][0] ) ) {
+          global_box_min[i][0] = box[i][0] ;
+          global_box_min[i][1] = box[i][1] ;
+        }
+        if ( ( box[i][1] - box[i][0] ) > ( global_box_max[i][1] - global_box_max[i][0] ) ) {
+          global_box_max[i][0] = box[i][0] ;
+          global_box_max[i][1] = box[i][1] ;
+        }
+      }
+
       global_max = std::max( global_max , n );
       global_min = std::min( global_min , n );
       global_count += n ;
     }
 
-    for ( unsigned other_rank = 0 ; other_rank  < global_size ; ++other_rank ) {
+    for ( size_t other_rank = 0 ; other_rank  < global_size ; ++other_rank ) {
 
       if ( other_rank == global_rank ) continue ;
 
-      unsigned other_box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
-      unsigned intersect_box[3][2] ;
+      size_t other_box[3][2] = { { 0 , global_box[0][1] } , { 0 , global_box[1][1] } , { 0 , global_box[2][1] } };
+      size_t intersect_box[3][2] ;
 
       Kokkos::Example::box_partition( global_size , other_rank , global_box , other_box );
 
@@ -65,6 +72,7 @@ void test_box()
       neighbor_count += Kokkos::Example::box_count( intersect_box ) ? 1 : 0 ;
 
       if ( n ) {
+        std::cout << "box partition intersection error" << std::endl ;
         std::cout << "box = {"
                   << " [ " << box[0][0] << " , " << box[0][1] << " )"
                   << " [ " << box[1][0] << " , " << box[1][1] << " )"
@@ -75,30 +83,47 @@ void test_box()
                   << " [ " << other_box[1][0] << " , " << other_box[1][1] << " )"
                   << " [ " << other_box[2][0] << " , " << other_box[2][1] << " )"
                   << " }" << std::endl ;
-        return ;
+        return 0 ;
       }
     }
 
     neighbor_max = std::max( neighbor_max , neighbor_count );
   }
 
-  std::cout << "count( global_box ) = " << Kokkos::Example::box_count( global_box ) << std::endl ;
-  std::cout << "sum partition( global_box ) = " << global_count << std::endl ;
-  std::cout << "avg partition( global_box ) = " << size_t( double(global_count) / double(global_size)) << std::endl ;
-  std::cout << "min partition( global_box ) = " << global_min << std::endl ;
-  std::cout << "max partition( global_box ) = " << global_max << std::endl ;
-  std::cout << "sum intersect( global_box ) = " << intersect_error << std::endl ;
-  std::cout << "max neighbor = " << neighbor_max << std::endl ;
+  if ( print_verbose ) {
+
+    std::cout << "global_part = " << global_size << std::endl ;
+    std::cout << "global_box  = { "
+              << " [ " << global_box[0][0] << " .. " << global_box[0][1] << " ) X"
+              << " [ " << global_box[1][0] << " .. " << global_box[1][1] << " ) X"
+              << " [ " << global_box[2][0] << " .. " << global_box[2][1] << " )"
+              << " }" << std::endl ;
+    std::cout << "count( global_box ) = " << Kokkos::Example::box_count( global_box ) << std::endl ;
+    std::cout << "sum partition( global_box ) = " << global_count << std::endl ;
+    std::cout << "avg partition( global_box ) = " << size_t( double(global_count) / double(global_size)) << std::endl ;
+    std::cout << "min partition( global_box ) = " << global_min << std::endl ;
+    std::cout << "min part X   ( global_box ) = [ " << global_box_min[0][0] << " .. " << global_box_min[0][1] << " )" << std::endl ;
+    std::cout << "min part Y   ( global_box ) = [ " << global_box_min[1][0] << " .. " << global_box_min[1][1] << " )" << std::endl ;
+    std::cout << "min part Z   ( global_box ) = [ " << global_box_min[2][0] << " .. " << global_box_min[2][1] << " )" << std::endl ;
+    std::cout << "max partition( global_box ) = " << global_max << std::endl ;
+    std::cout << "max part X   ( global_box ) = [ " << global_box_max[0][0] << " .. " << global_box_max[0][1] << " )" << std::endl ;
+    std::cout << "max part Y   ( global_box ) = [ " << global_box_max[1][0] << " .. " << global_box_max[1][1] << " )" << std::endl ;
+    std::cout << "max part Z   ( global_box ) = [ " << global_box_max[2][0] << " .. " << global_box_max[2][1] << " )" << std::endl ;
+    std::cout << "sum intersect( global_box ) = " << intersect_error << std::endl ;
+    std::cout << "max neighbor = " << neighbor_max << std::endl ;
+  }
+
+  return neighbor_max ;
 }
 
 void test_elem()
 {
   const Kokkos::Example::BoxElemPart::Decompose
     decompose = Kokkos::Example::BoxElemPart:: DecomposeElem ; // DecomposeElem | DecomposeNode ;
-  const unsigned global_size = 256 ;
-  const unsigned global_nx = 100 ;
-  const unsigned global_ny = 120 ;
-  const unsigned global_nz = 140 ;
+  const size_t global_size = 256 ;
+  const size_t global_nx = 100 ;
+  const size_t global_ny = 120 ;
+  const size_t global_nz = 140 ;
 
   double node_count_avg = 0 ;
   size_t node_count_max = 0 ;
@@ -113,7 +138,7 @@ void test_elem()
   size_t send_count_max = 0 ;
   size_t send_count_min = global_size ;
 
-  for ( unsigned r = 0 ; r < global_size ; ++r ) {
+  for ( size_t r = 0 ; r < global_size ; ++r ) {
     const Kokkos::Example::BoxElemPart
        fixture( Kokkos::Example::BoxElemPart::ElemLinear ,
                 decompose , global_size , r , global_nx , global_ny , global_nz );
@@ -125,19 +150,19 @@ void test_elem()
     // Verify recv/send alignment:
 
     {
-      unsigned recv_lid = fixture.owns_node_count();
+      size_t recv_lid = fixture.owns_node_count();
 
-      for ( unsigned i = 0 ; i < fixture.recv_node_msg_count() ; ++i ) {
-        const unsigned recv_rank  = fixture.recv_node_rank( i );
-        const unsigned recv_count = fixture.recv_node_count( i );
+      for ( size_t i = 0 ; i < fixture.recv_node_msg_count() ; ++i ) {
+        const size_t recv_rank  = fixture.recv_node_rank( i );
+        const size_t recv_count = fixture.recv_node_count( i );
 
         const Kokkos::Example::BoxElemPart other_fixture(
            Kokkos::Example::BoxElemPart::ElemLinear ,
            decompose , global_size , recv_rank , global_nx , global_ny , global_nz );
 
-        unsigned send_item = 0 ;
+        size_t send_item = 0 ;
 
-        unsigned j = 0 ;
+        size_t j = 0 ;
         while ( j < other_fixture.send_node_msg_count() && other_fixture.send_node_rank(j) != r ) {
           send_item += other_fixture.send_node_count( j );
            ++j ;
@@ -150,11 +175,11 @@ void test_elem()
         }
         else {
 
-          for ( unsigned k = 0 ; k < recv_count ; ++k , ++send_item , ++recv_lid ) {
+          for ( size_t k = 0 ; k < recv_count ; ++k , ++send_item , ++recv_lid ) {
 
-            const unsigned send_lid = other_fixture.send_node_id( send_item );
+            const size_t send_lid = other_fixture.send_node_id( send_item );
 
-            unsigned recv_coord[3] , send_coord[3] ;
+            size_t recv_coord[3] , send_coord[3] ;
 
             fixture.local_node_coord( recv_lid , recv_coord );
 
@@ -208,22 +233,31 @@ void test_elem()
 
 int main()
 {
-//  test_box();
-//  test_elem();
-  {
-    std::cout << "test_fixture< Threads >" << std::endl ;
-    Kokkos::Threads::initialize( 1 );
-    Kokkos::Example::test_fixture< Kokkos::Threads >();
-    Kokkos::Threads::finalize();
+  for ( int i = 1 ; i <= 32 ; ++i ) {
+    const size_t global_size = 16 * i ;
+    const size_t global_box[3][2] = { { 0 , 65 } , { 0 , 65 } , { 0 , 65 } };
+    if ( 30 < test_box( global_size , global_box , false ) ) {
+      test_box( global_size , global_box , true );
+    }
   }
+
+//  test_elem();
+
+  {
+    std::cout << "test_fixture< Host >" << std::endl ;
+    Kokkos::HostSpace::execution_space::initialize( 1 );
+    Kokkos::Example::test_fixture< Kokkos::HostSpace::execution_space >();
+    Kokkos::HostSpace::execution_space::finalize();
+  }
+
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Example::test_fixture< Kokkos::Cuda >();
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 #endif
 }

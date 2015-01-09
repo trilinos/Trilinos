@@ -96,7 +96,7 @@ public:
   explicit any(const ValueType & value)
     : content(new holder<ValueType>(value))
     {}
-  
+
   //! Copy constructor
   any(const any & other)
     : content(other.content ? other.content->clone() : 0)
@@ -114,7 +114,7 @@ public:
       std::swap(content, rhs.content);
       return *this;
     }
-  
+
   //! Copy the value <tt>rhs</tt>
   template<typename ValueType>
   any & operator=(const ValueType & rhs)
@@ -122,33 +122,33 @@ public:
       any(rhs).swap(*this);
       return *this;
     }
-  
+
   //! Copy the value held in <tt>rhs</tt>
   any & operator=(const any & rhs)
     {
       any(rhs).swap(*this);
       return *this;
     }
-  
+
   //! Return true if nothing is being stored
   bool empty() const
     {
       return !content;
     }
-  
+
   //! Return the type of value being stored
   const std::type_info & type() const
     {
       return content ? content->type() : typeid(void);
     }
-  
+
   //! Return the name of the type
   std::string typeName() const
     {
       return content ? content->typeName() : "NONE";
     }
-  
-  //! \brief Return if two any objects are the same or not. 
+
+  //! \brief Return if two any objects are the same or not.
   bool same( const any &other ) const
     {
       if( this->empty() && other.empty() )
@@ -188,7 +188,7 @@ public:
     /** \brief . */
     virtual void print(std::ostream & os) const = 0;
   };
-  
+
   /** \brief . */
   template<typename ValueType>
   class holder : public placeholder
@@ -239,7 +239,7 @@ private:
 
   // /////////////////////////
   // Private data members
-  
+
   placeholder * content;
 
 };
@@ -256,7 +256,7 @@ public:
 /*! \relates any
     \brief Used to extract the templated value held in Teuchos::any to a given value type.
 
-    \note <ul>   <li> If the templated value type and templated type are not the same then a 
+    \note <ul>   <li> If the templated value type and templated type are not the same then a
     bad_any_cast is thrown.
     <li> If the dynamic cast fails, then a Teuchos::bad_any_cast std::exception is thrown.
     </ul>
@@ -289,10 +289,10 @@ ValueType& any_cast(any &operand)
 }
 
 /*! \relates any
-    \brief Used to extract the const templated value held in Teuchos::any to a given 
+    \brief Used to extract the const templated value held in Teuchos::any to a given
   const value type.
 
-    \note <ul>   <li> If the templated value type and templated type are not the same then a 
+    \note <ul>   <li> If the templated value type and templated type are not the same then a
     bad_any_cast is thrown.
     <li> If the dynamic cast fails, then a logic_error is thrown.
     </ul>

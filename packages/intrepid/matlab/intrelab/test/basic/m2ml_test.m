@@ -19,7 +19,7 @@ ny=500;
 %%%%%%%%%%% get mesh data
 fprintf('%50s', 'get mesh data:  ');
 tic
-[mesh] = RectGrid(xmin, xmax, ymin, ymax, nx, ny);
+[mesh] = RectGrid(xmin, xmax, ymin, ymax, nx, ny, cellType);
 toc
 pause(0.01)
 fprintf('%50s', 'build index arrays:  ');

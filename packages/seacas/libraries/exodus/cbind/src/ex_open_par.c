@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,12 +52,14 @@
 *
 *****************************************************************************/
 
-#include <stdio.h>
-#include <mpi.h>
+#include <mpi.h>                        // for MPI_Comm, MPI_Info, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
+#include "netcdf_par.h"                 // for nc_open_par
 
-#include "netcdf_par.h"
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*!  
 
@@ -101,7 +103,6 @@ The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:
 
 \code
-#include "exodusII.h"
 int CPU_word_size,IO_word_size, exoid;
 float version;
 
@@ -176,61 +177,50 @@ int ex_open_par_int (const char  *path,
   
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
   if (!(mode & EX_WRITE)) { /* READ ONLY */
-      if ((status = nc_open_par (path, NC_NOWRITE|NC_SHARE|pariomode, comm, info, &exoid)) != NC_NOERR)
-	{
-	  /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
-	  if (status == 0) {
-	    exerrval = EX_FATAL;
-	  }
-	  else {
-	    /* It is possible that the user is trying to open a netcdf4
-	       file, but the netcdf4 capabilities aren't available in the
-	       netcdf linked to this library. Note that we can't just use a
-	       compile-time define since we could be using a shareable
-	       netcdf library, so the netcdf4 capabilities aren't known
-	       until runtime...
+    if ((status = nc_open_par (path, NC_NOWRITE|NC_SHARE|pariomode, comm, info, &exoid)) != NC_NOERR) {
+      /* It is possible that the user is trying to open a netcdf4
+	 file, but the netcdf4 capabilities aren't available in the
+	 netcdf linked to this library. Note that we can't just use a
+	 compile-time define since we could be using a shareable
+	 netcdf library, so the netcdf4 capabilities aren't known
+	 until runtime...
 	  
-	       Netcdf-4.X does not (yet?) have a function that can be
-	       queried to determine whether the library being used was
-	       compiled with --enable-netcdf4, so that isn't very
-	       helpful.. 
+	 Netcdf-4.X does not (yet?) have a function that can be
+	 queried to determine whether the library being used was
+	 compiled with --enable-netcdf4, so that isn't very
+	 helpful.. 
 
-	       At this time, query the beginning of the file and see if it
-	       is an HDF-5 file and if it is assume that the open failure
-	       is due to the netcdf library not enabling netcdf4 features...
-	    */
-	    int type = 0;
-	    ex_check_file_type(path, &type);
+	 At this time, query the beginning of the file and see if it
+	 is an HDF-5 file and if it is assume that the open failure
+	 is due to the netcdf library not enabling netcdf4 features...
+      */
+      int type = 0;
+      ex_check_file_type(path, &type);
 	  
-	    if (type == 5) {
-	      /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
-		 the assumption is that the netcdf doesn't have netcdf4
-		 capabilities enabled.  Tell the user...
-	      */
-	      fprintf(stderr,
-		      "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
-		      path);
-	    }
-	    exerrval = status;
-	  }
-	  sprintf(errmsg,"Error: failed to open %s read only",path);
-	  ex_err("ex_open",errmsg,exerrval); 
-	  return(EX_FATAL);
-	} 
+      if (type == 5) {
+	/* This is an hdf5 (netcdf4) file. Since the nc_open failed,
+	   the assumption is that the netcdf doesn't have netcdf4
+	   capabilities enabled.  Tell the user...
+	*/
+	fprintf(stderr,
+		"EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that (potentially) does not support netcdf-4\n",
+		path);
+      }
+      exerrval = status;
+      
+      sprintf(errmsg,"Error: failed to open %s read only",path);
+      ex_err("ex_open",errmsg,exerrval); 
+      return(EX_FATAL);
+    } 
   }
   else /* (mode & EX_WRITE) READ/WRITE */
     {
-	if ((status = nc_open_par (path, NC_WRITE|NC_SHARE|pariomode, comm, info, &exoid)) != NC_NOERR)
-	  {
-	    /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
-	    if (status == 0)
-	      exerrval = EX_FATAL;
-	    else
-	      exerrval = status;
-	    sprintf(errmsg,"Error: failed to open %s write only",path);
-	    ex_err("ex_open",errmsg,exerrval); 
-	    return(EX_FATAL);
-	  } 
+      if ((status = nc_open_par (path, NC_WRITE|NC_SHARE|pariomode, comm, info, &exoid)) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,"Error: failed to open %s write only",path);
+	ex_err("ex_open",errmsg,exerrval); 
+	return(EX_FATAL);
+      } 
 
       /* turn off automatic filling of netCDF variables */
       if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {

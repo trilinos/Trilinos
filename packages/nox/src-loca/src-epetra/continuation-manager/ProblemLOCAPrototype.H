@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -75,7 +75,7 @@ class ProblemLOCAPrototype :
 
       // Printing the solution at each step
       virtual bool PrintSolutionFile(const std::string & fileName, const Epetra_Vector & x,
-	  const Teuchos::ParameterList & xParams);
+      const Teuchos::ParameterList & xParams);
 
       // Setting the solution file parameters
       virtual bool SetSolutionFileParameters(const Epetra_Vector & x);
@@ -84,35 +84,35 @@ class ProblemLOCAPrototype :
       virtual Teuchos::RCP <Teuchos::ParameterList> GetSolutionFileParameters();
 
       // Updates the continuation file
-      virtual bool UpdateContinuationFile( const std::string & fileName, 
+      virtual bool UpdateContinuationFile( const std::string & fileName,
           const int & idStep,
-	  const Teuchos::ParameterList & continuationFileParams);
+      const Teuchos::ParameterList & continuationFileParams);
 
       // Setting the continuation file parameters
       virtual bool SetContinuationFileParameters(const Epetra_Vector & x);
 
       // Getting the continuation file parameters
-      virtual Teuchos::RCP <Teuchos::ParameterList> 
-	GetContinuationFileParameters();
+      virtual Teuchos::RCP <Teuchos::ParameterList>
+    GetContinuationFileParameters();
 
       // Compute derivative with respect to periodic direction
-      virtual bool ComputePeriodicDirectionDerivative(const Epetra_Vector & x, 
-	  Epetra_Vector & dx); 
+      virtual bool ComputePeriodicDirectionDerivative(const Epetra_Vector & x,
+      Epetra_Vector & dx);
 
 //      // Printing eigenvalues at each step
-//      virtual bool PrintEigenValues( 
-//	  const Teuchos::RCP < std::vector<double> > & evals_r,
-//	  const Teuchos::RCP < std::vector<double> > & evals_i,
-//	  const Teuchos::RCP < NOX::Abstract::MultiVector > & evecs_r,
-//	  const Teuchos::RCP < NOX::Abstract::MultiVector > & evecs_i
-//	  const int & stepId );
+//      virtual bool PrintEigenValues(
+//      const Teuchos::RCP < std::vector<double> > & evals_r,
+//      const Teuchos::RCP < std::vector<double> > & evals_i,
+//      const Teuchos::RCP < NOX::Abstract::MultiVector > & evecs_r,
+//      const Teuchos::RCP < NOX::Abstract::MultiVector > & evecs_i
+//      const int & stepId );
 //
 //      // Compute derivative with respect to time
-//      virtual bool ComputeTimeDerivative(const Epetra_Vector & x, 
-//          Epetra_Vector & dxdt); 
-//       
+//      virtual bool ComputeTimeDerivative(const Epetra_Vector & x,
+//          Epetra_Vector & dxdt);
+//
 //      // Compute derivative with respect to space
-//      virtual bool ComputeSpaceDerivative(const Epetra_Vector & x, 
+//      virtual bool ComputeSpaceDerivative(const Epetra_Vector & x,
 //          Epetra_Vector & dxdt);
 //
 //      // Compute a shifted version of the Jacobian, namely A = alpha*J + beta*M

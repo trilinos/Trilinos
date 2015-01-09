@@ -49,6 +49,6 @@
 #include "Panzer_STK_ScatterVectorFields_decl.hpp"
 #include "Panzer_STK_ScatterVectorFields_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk::ScatterVectorFields)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk_classic::ScatterVectorFields)
 
 #endif

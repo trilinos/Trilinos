@@ -122,10 +122,10 @@ namespace MueLuTests {
       Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
       mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
 
-        // Put in the diagonal entry
-        mtx->insertGlobalValues(grid,
-            Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
-            Teuchos::tuple<Scalar>(a) );
+      // Put in the diagonal entry
+      mtx->insertGlobalValues(grid,
+          Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
+          Teuchos::tuple<Scalar>(a) );
     }
 
     mtx->fillComplete(domainmap,rangemap);
@@ -178,12 +178,12 @@ namespace MueLuTests {
     RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,map2,3,-2,-1);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps>(mapExtractor,mapExtractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
 
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat11 = Op11->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat12 = Op12->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat21 = Op21->getCrsMatrix();
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > crsMat22 = Op22->getCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat11 = Op11->getCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat12 = Op12->getCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat21 = Op21->getCrsMatrix();
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat22 = Op22->getCrsMatrix();
     bOp->setMatrix(0,0,crsMat11);
     bOp->setMatrix(0,1,crsMat12);
     bOp->setMatrix(1,0,crsMat21);
@@ -193,9 +193,11 @@ namespace MueLuTests {
 
     // build hierarchy
     RCP<Level> levelOne = rcp(new Level());
-    levelOne->SetComm(comm);
     RCP<Level> levelTwo = rcp(new Level()); levelTwo->SetPreviousLevel(levelOne);
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    levelOne->SetComm(comm);
     levelTwo->SetComm(comm);
+#endif
     levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define sub block factories for blocked operator "A"
@@ -262,7 +264,7 @@ namespace MueLuTests {
     RCP<Matrix> P = levelTwo->Get<RCP<Matrix> >("P",PFact.get());
     TEST_EQUALITY(P!=Teuchos::null,true);
 
-    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> > bP = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node,LocalMatOps> >(P);
+    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bP = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> >(P);
     TEST_EQUALITY(bP!=Teuchos::null,true);
 
     TEST_EQUALITY(bP->Rows(),2);

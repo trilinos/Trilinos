@@ -113,7 +113,7 @@ namespace panzer {
   }
 
   Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize);
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY,bool solution);
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
@@ -122,7 +122,7 @@ namespace panzer {
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(20,20,true);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -142,7 +142,7 @@ namespace panzer {
 
     std::string scatterName = "xcoord-scatter-residual";
     Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-          = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
+          = Teuchos::rcp(new panzer_stk_classic::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
     fm->registerEvaluator<panzer::Traits::Residual>(eval);
     fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
 
@@ -176,7 +176,7 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk_classic::buildWorksets(*mesh,*physics_block_one);
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = volume_worksets;
@@ -200,7 +200,7 @@ namespace panzer {
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,false);
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(20,20,false);
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -238,7 +238,7 @@ namespace panzer {
        pl.set("Field Names",fieldNames);
        pl.set("Scatter Name", "xcoord-scatter-cell-residual");
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-             = Teuchos::rcp(new panzer_stk::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
+             = Teuchos::rcp(new panzer_stk_classic::ScatterCellAvgQuantity<panzer::Traits::Residual,panzer::Traits>(pl));
        fm->registerEvaluator<panzer::Traits::Residual>(eval);
        fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
     }
@@ -250,7 +250,7 @@ namespace panzer {
 
        std::string scatterName = "xcoord-scatter-residual";
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval
-             = Teuchos::rcp(new panzer_stk::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
+             = Teuchos::rcp(new panzer_stk_classic::ScatterFields<panzer::Traits::Residual,panzer::Traits>(scatterName,mesh,linBasis,*fieldNames));
        fm->registerEvaluator<panzer::Traits::Residual>(eval);
        fm->requireField<panzer::Traits::Residual>(*eval->evaluatedFields()[0]);
     }
@@ -286,7 +286,7 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,*physics_block_one);
+    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk_classic::buildWorksets(*mesh,*physics_block_one);
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = volume_worksets;
@@ -315,10 +315,10 @@ namespace panzer {
      return Teuchos::rcp(new panzer::PureBasis("HGrad",1,cellData)); 
   }
 
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
+    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
+    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -326,9 +326,9 @@ namespace panzer {
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
  
     // add in some fields
     mesh->addSolutionField("x-coord","eblock-0_0");

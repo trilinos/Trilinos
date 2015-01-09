@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -76,7 +76,11 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
   {
     // Check for MaxIters option
     int maxIters;
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+    PetscBool lflg;
+#else
     PetscTruth lflg;  // Needed to permit two ways of specification
+#endif
     ierr = PetscOptionsGetInt(PETSC_NULL,"-snes_max_it", &maxIters, &flg);CHKERRQ(ierr);
     ierr = PetscOptionsGetInt(PETSC_NULL,"-nox_conv_maxiters", &maxIters, &lflg);CHKERRQ(ierr);
     if(flg || lflg)
@@ -87,7 +91,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
       else
         testCombo->addStatusTest(testMaxIters);
     }
-   
+
     // Check for (absolute) residual norm (L2-norm) tolerance
     double absResNorm;
     PetscReal petscVal;
@@ -126,7 +130,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
       testNormF = Teuchos::rcp( new NOX::StatusTest::NormF(1.e-12) );
       testCombo = Teuchos::rcp( new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, testMaxIters, testNormF) );
     }
-    
+
 
   } // End of StatusTest construction
 
@@ -177,7 +181,11 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
       dirParams.set("Method", "Steepest Descent");
 
       // Check to see if any steepest_descent options are set
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+      PetscBool lflg;
+#else
       PetscTruth lflg;
+#endif
       ierr = PetscOptionsGetString(PETSC_NULL,"-nox_sd_scaling_type",
                    optionString, maxStringLength, &lflg);CHKERRQ(ierr);
       if(lflg)
@@ -189,14 +197,14 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
           sdParams.set("Scaling Type", "2-Norm");
         else if( !strcmp(optionString, "quadratic_model_min") )
           sdParams.set("Scaling Type", "Quadratic Model Min");
-        else 
+        else
         {
           if(rank == 0) std::cout << "WARNING: Unsupported Steepest Descent "
                              << "Scaling Type --> " << optionString << std::endl;
           sdParams.set("Scaling Type", "None"); // default
         }
       }
-    } 
+    }
 #ifdef WITH_PRERELEASE
     if( !strcmp(optionString, "nonlinearcg") )
       dirParams.set("Method", "Nonlinear CG");
@@ -211,7 +219,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
   else // default
     dirParams.set("Method", "Newton");
 
-  // Now set output parameters via the "Printing" sublist 
+  // Now set output parameters via the "Printing" sublist
   // These are hard-coded for now
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
   printParams.set("MyPID", rank);
@@ -228,7 +236,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
   return true;
 }
 
-Teuchos::RCP<NOX::StatusTest::Combo> & 
+Teuchos::RCP<NOX::StatusTest::Combo> &
 Options::getStatusTest()
 {
   return testCombo;

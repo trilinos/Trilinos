@@ -1,23 +1,47 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 #define STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 
-#include <iosfwd>
-#include <string>
+#include <streambuf>                    // for ostream, etc
+#include <string>                       // for string, char_traits, etc
+namespace stk { template <class Ch, class Tr> class basic_tee_streambuf; }
 
 // #include <stk_util/util/TeeStreambuf.hpp>
 
 namespace stk {
 
-template<class Ch, class Tr>
-class basic_tee_streambuf;
 
 /// Tee stream buffer for char
 typedef stk::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;
@@ -56,10 +80,9 @@ typedef stk::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;
  * @brief Function <b>register_ostream</b> registers an output stream with the output stream
  * registry.  The registration process creates an intermediate tee streambuf.
  *
- * @param name			a <b>std::string</b> const reference to the name of the output
- *                              stream. 
+ * @param os		a <b>std::ostream</b> reference to the output stream to register.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param name		a <b>std::string</b> const reference to the name of the output stream. 
  *
  */
 void register_ostream(std::ostream &os, const std::string &name);
@@ -67,7 +90,7 @@ void register_ostream(std::ostream &os, const std::string &name);
 /**
  * @brief Function <b>unregister_ostream</b> unregisters an output stream.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to unregister.
+ * @param os	a <b>std::ostream</b> reference to the output stream to unregister.
  *
  */
 void unregister_ostream(std::ostream &os);
@@ -98,10 +121,10 @@ void bind_output_streams(const std::string &output_description);
  * @brief Function <b>register_log_ostream</b> takes an existing std::ostream and makes it available
  * for output redirection.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param os	a <b>std::ostream</b> reference to the output stream to register.
  *
- * @param name			a <b>std::string</b> const reference to the name of this log
- *                              stream. 
+ * @param name	a <b>std::string</b> const reference to the name of this log
+ *              stream. 
  *
  */
 void register_log_ostream(std::ostream &os, const std::string &name);
@@ -110,7 +133,7 @@ void register_log_ostream(std::ostream &os, const std::string &name);
  * @brief Function <b>register_log_ostream</b> takes an existing std::ostream and makes it available
  * for output redirection.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param os		a <b>std::ostream</b> reference to the output stream to register.
  *
  */
 void unregister_log_ostream(std::ostream &os);

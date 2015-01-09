@@ -51,8 +51,6 @@ class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Comm;
 
-using namespace std;
-
 //! Ifpack_DiagPreconditioner: a class for diagonal preconditioning.
 /*
 Ifpack_DiagPreconditioner: a class to wrap a vector as diagonal preconditioner. The preconditioner is simply defined by

@@ -61,46 +61,108 @@ namespace {
 // this code is needed twice, once for a DOF evaluator pulling from
 // the workset and once for a DOF evaluator pulling from the field
 // manager.
-template <typename ScalarT,typename ArrayScalarT, typename ArrayT>
-inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
-                        PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,bool requires_orientation,
-                        int num_cells,
-                        panzer::BasisValues<ArrayScalarT,ArrayT> & basisValues)
+template <typename ScalarT,typename ArrayT>
+inline void evaluateDOF_withSens(const int numCells,
+                                 PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
+                                 bool is_vector_basis,
+                                 int num_cells,
+                                 ArrayT & basis)
 { 
-  // Zero out arrays (intrepid does a sum! 1/17/2012)
-  for (int i = 0; i < dof_ip.size(); ++i)
-    dof_ip[i] = 0.0;
 
   if(num_cells>0) {
-    if(requires_orientation) {
-       // copy basis values, this will be modified by the orientation, so we don't
-       // necessarily want to wipe them out
-       Teuchos::Array<int> dimension; 
-       for(int i=0;i<basisValues.basis.rank();i++)
-          dimension.push_back(basisValues.basis.dimension(i));
-       Intrepid::FieldContainer<ScalarT> bases(dimension);
-       for(int i=0;i<bases.size();i++)
-          bases[i] = basisValues.basis[i];
+    if(is_vector_basis) {
+      int numFields = basis.dimension(1);
+      int numPoints = basis.dimension(2);
+      int spaceDim  = basis.dimension(3);
 
-       // assign ScalarT "dof_orientation" to double "orientation"
-       Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
-                                                    dof_orientation.dimension(1));
-       for(int i=0;i<dof_orientation.dimension(0);i++)
-          for(int j=0;j<dof_orientation.dimension(1);j++)
-             orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d=0; d<spaceDim; d++) {
+            // first initialize to the right thing (prevents over writing with 0)
+            // then loop over one less basis function
+            ScalarT & val = dof_ip(cell,pt,d);
+            val = dof_basis(cell, 0) * basis(cell, 0, pt, d);
+            for (int bf=1; bf<numFields; bf++)
+              val += dof_basis(cell, bf) * basis(cell, bf, pt, d);
+          }
+        }
+      } // for numCells
 
-
-       // make sure things are orientated correctly
-       Intrepid::FunctionSpaceTools::
-          applyFieldSigns<ScalarT>(bases,orientation);
-
-       // evaluate at quadrature points
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,bases);
     }
-    else // no orientation needed
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
+    else { // no orientation needed
+      // Zero out arrays (intrepid does a sum! 1/17/2012)
+      for (int i = 0; i < dof_ip.size(); ++i)
+        dof_ip[i] = 0.0;
+
+      Intrepid::FunctionSpaceTools::
+        evaluate<ScalarT>(dof_ip,dof_basis,basis);
+    }
+  }
+}
+
+template <typename ScalarT,typename ArrayT>
+inline void evaluateDOF_fastSens(const int numCells,
+                                 PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
+                                 bool is_vector_basis,
+                                 int num_cells,
+                                 const std::vector<int> & offsets,
+                                 ArrayT & basis)
+{ 
+  if(num_cells>0) {
+    if(is_vector_basis) {
+      int numFields = basis.dimension(1);
+      int numPoints = basis.dimension(2);
+      int spaceDim  = basis.dimension(3);
+
+      int fadSize = dof_basis(0,0).size(); // this is supposed to be fast
+                                           // so assume that everything is the
+                                           // same size!
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d=0; d<spaceDim; d++) {
+            // first initialize to the right thing (prevents over writing with 0)
+            // then loop over one less basis function
+            ScalarT & val = dof_ip(cell,pt,d);
+
+            // This is a possible issue if you need sensitivity to coordinates (you will need to
+            // change basis and then use the product rule!)
+            val = ScalarT(fadSize,dof_basis(cell, 0).val() * basis(cell, 0, pt, d));
+            val.fastAccessDx(offsets[0]) = dof_basis(cell, 0).fastAccessDx(offsets[0]) * basis(cell, 0, pt, d);
+
+            for (int bf=1; bf<numFields; bf++) {
+              val.val() += dof_basis(cell, bf).val() * basis(cell, bf, pt, d);
+              val.fastAccessDx(offsets[bf]) += dof_basis(cell, bf).fastAccessDx(offsets[bf]) * basis(cell, bf, pt, d);
+            }
+          }
+        }
+      } // for numCells
+
+    }
+    else { // no orientation needed
+      int numFields = basis.dimension(1);
+      int numPoints = basis.dimension(2);
+
+      int fadSize = dof_basis(0,0).size(); // this is supposed to be fast
+                                           // so assume that everything is the
+                                           // same size!
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          // first initialize to the right thing (prevents over writing with 0)
+          // then loop over one less basis function
+          ScalarT & val = dof_ip(cell,pt);
+
+          // This is a possible issue if you need sensitivity to coordinates (you will need to
+          // change basis and then use the product rule!)
+          val = ScalarT(fadSize,dof_basis(cell, 0).val() * basis(cell, 0, pt));
+          val.fastAccessDx(offsets[0]) = dof_basis(cell, 0).fastAccessDx(offsets[0]) * basis(cell, 0, pt);
+
+          for (int bf=1; bf<numFields; bf++) {
+            val.val() += dof_basis(cell, bf).val() * basis(cell, bf, pt);
+            val.fastAccessDx(offsets[bf]) += dof_basis(cell, bf).fastAccessDx(offsets[bf]) * basis(cell, bf, pt);
+          }
+        }
+      } // for numCells
+    }
   }
 }
 
@@ -109,14 +171,22 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
 //**********************************************************************
 //* DOF evaluator
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DOF,p) :
+
+//**********************************************************************
+// MOST EVALUATION TYPES
+//**********************************************************************
+
+//**********************************************************************
+template<typename EvalT, typename Traits>                   
+DOF<EvalT, Traits>::
+DOF(const Teuchos::ParameterList & p) :
   dof_basis( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
-  requires_orientation = basis->requiresOrientations();
+  is_vector_basis = basis->isVectorBasis();
 
   // swap between scalar basis value, or vector basis value
   if(basis->isScalarBasis())
@@ -133,131 +203,99 @@ PHX_EVALUATOR_CTOR(DOF,p) :
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
-  if(requires_orientation) {
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Name")+" Orientation", 
-	                                                basis->functional);
-     
-     this->addDependentField(dof_orientation);
-  }
-  
-  std::string n = "DOF: " + dof_basis.fieldTag().name();
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
+template<typename EvalT, typename Traits>                   
+void DOF<EvalT, Traits>::
+postRegistrationSetup(typename Traits::SetupData sd,
+                      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
-
-  if(requires_orientation)
-     this->utils.setFieldData(dof_orientation,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DOF,workset)
+template<typename EvalT, typename Traits>                   
+void DOF<EvalT, Traits>::
+evaluateFields(typename Traits::EvalData workset)
 { 
   panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
 
-  evaluateDOF(dof_basis,dof_ip,dof_orientation,requires_orientation,workset.num_cells,basisValues);
+  evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,basisValues.basis);
 }
 
 //**********************************************************************
 
 //**********************************************************************
-//* DOF_PointValues evaluator
+// JACOBIAN EVALUATION TYPES
 //**********************************************************************
-PHX_EVALUATOR_CTOR(DOF_PointValues,p)
+
+//**********************************************************************
+template<typename Traits>                   
+DOF<panzer::Traits::Jacobian, Traits>::
+DOF(const Teuchos::ParameterList & p) :
+  dof_basis( p.get<std::string>("Name"), 
+	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
+  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
-  const std::string fieldName = p.get<std::string>("Name");
-  basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
-  Teuchos::RCP<const PointRule> pointRule = p.get< Teuchos::RCP<const PointRule> >("Point Rule");
-  requires_orientation = basis->requiresOrientations();
+  Teuchos::RCP<const PureBasis> basis 
+     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+  is_vector_basis = basis->isVectorBasis();
 
-  std::string evalName = fieldName+"_"+pointRule->getName();
-  if(p.isType<bool>("Use DOF Name")) {
-    if(p.get<bool>("Use DOF Name"))
-      evalName = fieldName;
+  if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
+    offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+    accelerate_jacobian = true;  // short cut for identity matrix
   }
-
-  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+  else
+    accelerate_jacobian = false; // don't short cut for identity matrix
 
   // swap between scalar basis value, or vector basis value
   if(basis->isScalarBasis())
      dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_scalar);
+                p.get<std::string>("Name"), 
+     	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
   else if(basis->isVectorBasis())
      dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_vector);
+                p.get<std::string>("Name"), 
+     	        p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector);
   else
   { TEUCHOS_ASSERT(false); }
 
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
-  if(requires_orientation) {
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(fieldName+" Orientation", 
-	                                                basis->functional);
-     
-     this->addDependentField(dof_orientation);
-  }
-
-  // setup all basis fields that are required
-  Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
-  MDFieldArrayFactory af_bv(basis->name()+"_"+pointRule->getName()+"_");
-  basisValues.setupArrays(layout,af_bv);
-
-  // the field manager will allocate all of these field
-
-  this->addDependentField(basisValues.basis_ref);      
-  this->addDependentField(basisValues.basis);           
-
-  if(basis->getElementSpace()==PureBasis::HGRAD) {
-    this->addDependentField(basisValues.grad_basis_ref);   
-    this->addDependentField(basisValues.grad_basis);        
-  }
-
-  if(basis->getElementSpace()==PureBasis::HCURL) {
-    this->addDependentField(basisValues.curl_basis_ref);     
-    this->addDependentField(basisValues.curl_basis);          
-  }
-  
-  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name();
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<panzer::Traits::Jacobian>::value+")";
   this->setName(n);
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DOF_PointValues,sd,fm)
+template<typename Traits>                   
+void DOF<panzer::Traits::Jacobian, Traits>::
+postRegistrationSetup(typename Traits::SetupData sd,
+                      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
-  if(requires_orientation)
-     this->utils.setFieldData(dof_orientation,fm);
-
-  // setup the pointers for the basis values data structure
-  this->utils.setFieldData(basisValues.basis_ref,fm);      
-  this->utils.setFieldData(basisValues.basis,fm);           
-
-  if(basis->getElementSpace()==PureBasis::HGRAD) {
-    this->utils.setFieldData(basisValues.grad_basis_ref,fm);   
-    this->utils.setFieldData(basisValues.grad_basis,fm);        
-  }
-
-  if(basis->getElementSpace()==PureBasis::HCURL) {
-    this->utils.setFieldData(basisValues.curl_basis_ref,fm);     
-    this->utils.setFieldData(basisValues.curl_basis,fm);          
-  }
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(DOF_PointValues,workset)
+template<typename Traits>                   
+void DOF<panzer::Traits::Jacobian, Traits>::
+evaluateFields(typename Traits::EvalData workset)
 { 
-  evaluateDOF(dof_basis,dof_ip,dof_orientation,requires_orientation,workset.num_cells,basisValues);
+  panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
+
+  if(accelerate_jacobian)
+    evaluateDOF_fastSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,offsets,basisValues.basis);
+  else
+    evaluateDOF_withSens(workset.num_cells,dof_basis,dof_ip,is_vector_basis,workset.num_cells,basisValues.basis);
 }
 
 }

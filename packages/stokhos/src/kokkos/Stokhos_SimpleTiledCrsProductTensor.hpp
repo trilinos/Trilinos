@@ -42,7 +42,7 @@
 #ifndef STOKHOS_SIMPLE_TILED_CRS_PRODUCT_TENSOR_HPP
 #define STOKHOS_SIMPLE_TILED_CRS_PRODUCT_TENSOR_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -51,7 +51,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Stokhos_TinyVec.hpp"
 
-#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -79,7 +78,11 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
+#if defined( KOKKOS_HAVE_CUDA )
     Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+#else
+    false ;
+#endif
   static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
 
   // Alignment in terms of number of entries of CRS rows
@@ -337,7 +340,6 @@ public:
     using Teuchos::Array;
 
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    typedef Stokhos::CijkData<OrdinalType,ValueType> Cijk_Data_type;
     typedef typename Cijk_type::i_iterator i_iterator;
     typedef typename Cijk_type::ik_iterator ik_iterator;
     typedef typename Cijk_type::ikj_iterator ikj_iterator;

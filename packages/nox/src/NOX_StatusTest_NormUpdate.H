@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef NOX_STATUSTEST_NORM_UPDATE_H
 #define NOX_STATUSTEST_NORM_UPDATE_H
 
-#include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_StatusTest_Generic.H"    // base class
 #include "NOX_Abstract_Vector.H"        // for NormType
 #include "Teuchos_RCP.hpp"
 
@@ -66,7 +66,7 @@ namespace NOX {
 
 namespace StatusTest {
 
-/*! 
+/*!
   \brief Various convergence tests based on the norm of the change in
   the solution vector, \f$ x \f$, between outer iterations.
 
@@ -132,12 +132,12 @@ public:
   //! Type that determines whether to scale the norm by the problem size.
   enum ScaleType {
     //! No norm scaling
-    Unscaled, 
+    Unscaled,
     //! Scale the norm by the length of the vector
     Scaled
   };
 
-  //! Constructor for absolute norm. 
+  //! Constructor for absolute norm.
   /*! This constructor defaults to the \c Absolute tolerance type. */
   NormUpdate(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
 
@@ -148,9 +148,9 @@ public:
   //! Destructor.
   virtual ~NormUpdate();
 
-  virtual NOX::StatusTest::StatusType 
-  checkStatus(const NOX::Solver::Generic& problem, 
-	      NOX::StatusTest::CheckType checkType);
+  virtual NOX::StatusTest::StatusType
+  checkStatus(const NOX::Solver::Generic& problem,
+          NOX::StatusTest::CheckType checkType);
 
   virtual NOX::StatusTest::StatusType getStatus() const;
 
@@ -163,7 +163,7 @@ public:
 
   //! Returns the value of the Update-norm computed in the last call to checkStatus.
   virtual double getNormUpdate() const;
-   
+
   //! Returns the true tolerance.
   virtual double getTolerance() const;
 
@@ -174,7 +174,7 @@ private:
   //! %Status
   NOX::StatusTest::StatusType status;
 
-  //! Vector containing the update for the current outer iteration 
+  //! Vector containing the update for the current outer iteration
   Teuchos::RCP<NOX::Abstract::Vector> updateVectorPtr;
 
   //! Type of norm to use

@@ -45,11 +45,11 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallbackBlocked(
-                      const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+                      const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
                       const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blocked_ugi)
    : connManager_(connManager), blocked_ugi_(blocked_ugi)
 {
@@ -123,16 +123,18 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(const std::string & key,const std::string & field,Teuchos::ParameterList & pl) const
 {
-   double * x = const_cast<double *>(&getCoordinateByField(0,field)[0]);
-   double * y = const_cast<double *>(&getCoordinateByField(1,field)[0]);
-   double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
-
-   if(key=="x-coordinates") 
+   if(key=="x-coordinates") {
+      double * x = const_cast<double *>(&getCoordinateByField(0,field)[0]);
       pl.set<double*>(key,x);
-   else if(key=="y-coordinates") 
+   }
+   else if(key=="y-coordinates") {
+      double * y = const_cast<double *>(&getCoordinateByField(1,field)[0]);
       pl.set<double*>(key,y);
-   else if(key=="z-coordinates") 
+   }
+   else if(key=="z-coordinates") {
+      double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
       pl.set<double*>(key,z);
+   }
    else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                          "ParameterListCallback cannot handle key=\"" << key << "\"");
@@ -227,7 +229,7 @@ getCoordinateByField(int dim,const std::string & field) const
 
   TEUCHOS_TEST_FOR_EXCEPTION(itr==coord->end(),std::runtime_error,
                       "ParameterListCallbackBlocked::getCoordinateByField: Coordinates for field \"" + field +
-                      "\" have not been built!");
+                      "\" dimension " << dim << " have not been built!");
 
   return itr->second;
 }

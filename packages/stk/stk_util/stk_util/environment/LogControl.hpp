@@ -1,20 +1,45 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
 #define STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
 
-#include <ostream>
-#include <sstream>
-#include <string>
-#include <map>
+#include <map>                          // for _Rb_tree_iterator, etc
+#include <sstream>                      // for ostream, ostringstream, etc
+#include <stk_util/util/string_case_compare.hpp>  // for LessCase
+#include <string>                       // for string
+#include <utility>                      // for pair
 
-#include <stk_util/util/string_case_compare.hpp>
 
 namespace stk {
 
@@ -30,14 +55,14 @@ struct LogControlRule
    */
   virtual ~LogControlRule()
   {}
-  
+
   /**
    * @brief Member function <code>clone</code> creates a clone of the rule.
    *
    * @return			a <code>LogControlRule</code> pointer to newly created duplicate.
    */
   virtual LogControlRule *clone() const = 0;
-  
+
   /**
    * @brief Member function <code>next</code> returns true if the log stream should write to the log
    * file, and false if the log stream should write to the cache.
@@ -51,7 +76,7 @@ struct LogControlRule
 
 /**
  * @brief Class <code>LogControlRuleAlways</code> is a log control rule that always wants to write to the log
- * file. 
+ * file.
  *
  */
 struct LogControlRuleAlways : public LogControlRule
@@ -62,7 +87,7 @@ struct LogControlRuleAlways : public LogControlRule
    */
   virtual ~LogControlRuleAlways()
   {}
-  
+
   /**
    * Creates a new <code>LogControlRuleAlways</code> instance.
    *
@@ -108,7 +133,7 @@ struct LogControlRuleInterval : public LogControlRule
    */
   virtual ~LogControlRuleInterval()
   {}
-  
+
   /**
    * @brief Member function <code>clone</code> creates a duplicate LogControlRuleAlways object.
    *
@@ -127,7 +152,7 @@ struct LogControlRuleInterval : public LogControlRule
    *                            to the log file.
    */
   virtual bool next();
-  
+
 private:
   int           m_interval;
   int           m_count;
@@ -147,12 +172,12 @@ public:
     for (Map::iterator it = m_ruleMap.begin(); it != m_ruleMap.end(); ++it)
       delete (*it).second;
   }
-  
+
   void addLogControlRule(const std::string &rule_name, const LogControlRule &rule) {
     Map::iterator it = m_ruleMap.find(rule_name);
     if (it != m_ruleMap.end())
       m_ruleMap.erase(it);
-    
+
     m_ruleMap[rule_name] = rule.clone();
   }
 
@@ -175,7 +200,7 @@ private:
 
 /**
  * @brief Enumeration <code>State</code> describes the current state of the caching for this
- * controller. 
+ * controller.
  *
  */
 enum State {
@@ -197,7 +222,7 @@ enum State {
  * then child is forced to cache.  This behavior could change by passing parent state to next().
  *
  * It's important to note that LogControl sentries nearly always shared the same output stream.  So
- * the parent's original output stream buffer 
+ * the parent's original output stream buffer
  */
 class LogControl
 {
@@ -222,7 +247,7 @@ public:
    *                            control the log stream.
    */
   LogControl(std::ostream &log_stream,const std::string &rule_name);
-  
+
   /**
    * Destroys a <code>LogControl</code> instance.
    *
@@ -238,7 +263,7 @@ public:
 
   /**
    * @brief Member function <code>fail</code> writes the cached output to the log stream due to an
-   * error. 
+   * error.
    *
    */
   void fail();

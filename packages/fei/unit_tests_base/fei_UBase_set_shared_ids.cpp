@@ -18,7 +18,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(set_shared_ids, test0, T)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = fei::numProcs(comm);
-  if (numProcs == 1) return;
+  if (numProcs < 2 || numProcs > 3) return;
 
   int localProc = fei::localProc(comm);
 
@@ -49,9 +49,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(set_shared_ids, test0, T)
   fei::SharedIDs<int>::map_type::iterator
     s_iter = shID_map.begin(), s_end = shID_map.end();
 
-  if (localProc == 0) {
+  if (localProc == 0 || localProc == numProcs-1) {
     size_t expected_num_shIDs = 2;
-    TEUCHOS_TEST_EQUALITY(shID_map.size(), expected_num_shIDs, out, success);
+    size_t num_shIDs = shID_map.size();
+    TEUCHOS_TEST_EQUALITY(num_shIDs, expected_num_shIDs, out, success);
 
     int ID0 = s_iter->first;
     TEUCHOS_TEST_EQUALITY(ID0, 0, out, success);
@@ -67,27 +68,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(set_shared_ids, test0, T)
     size_t expected_numprocs1 = numProcs>2 ? 3 : 2;
     TEUCHOS_TEST_EQUALITY(procs1.size(), expected_numprocs1, out, success);
   }
-  else if (localProc == numProcs-1) {
-    size_t expected_num_shIDs = 2;
-    TEUCHOS_TEST_EQUALITY(shID_map.size(), expected_num_shIDs, out, success);
-
-    int ID0 = s_iter->first;
-    TEUCHOS_TEST_EQUALITY(ID0, localProc-1, out, success);
-    std::set<int>& procs0 = s_iter->second;
-    size_t expected_numprocs0 = numProcs>2 ? 3 : 2;
-    TEUCHOS_TEST_EQUALITY(procs0.size(), expected_numprocs0, out, success);
-
-    ++s_iter;
-
-    int ID1 = s_iter->first;
-    TEUCHOS_TEST_EQUALITY(ID1, localProc, out, success);
-    std::set<int>& procs1 = s_iter->second;
-    size_t expected_numprocs1 = 2;
-    TEUCHOS_TEST_EQUALITY(procs1.size(), expected_numprocs1, out, success);
-  }
   else {
     size_t expected_num_shIDs = 3;
-    TEUCHOS_TEST_EQUALITY(shID_map.size(), expected_num_shIDs, out, success);
+    size_t num_shIDs = shID_map.size();
+    TEUCHOS_TEST_EQUALITY(num_shIDs, expected_num_shIDs, out, success);
 
     int ID0 = s_iter->first;
     TEUCHOS_TEST_EQUALITY(ID0, localProc-1, out, success);

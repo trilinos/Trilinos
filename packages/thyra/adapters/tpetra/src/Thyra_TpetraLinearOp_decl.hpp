@@ -44,6 +44,8 @@
 
 #include "Thyra_LinearOpDefaultBase.hpp"
 #include "Thyra_TpetraVectorSpace_decl.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
@@ -69,7 +71,9 @@ namespace Thyra {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
   class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearOp
-  : virtual public Thyra::LinearOpDefaultBase<Scalar>
+  : virtual public Thyra::LinearOpDefaultBase<Scalar>,
+    virtual public ScaledLinearOpBase<Scalar>,
+    virtual public Thyra::RowStatLinearOpBase<Scalar>
 #ifdef HAVE_THYRA_TPETRA_EPETRA
   , virtual public EpetraLinearOpBase
 #endif
@@ -157,6 +161,37 @@ protected:
     const Scalar alpha,
     const Scalar beta
     ) const;
+
+  //@}
+
+  /** \name Protected member functions overridden from ScaledLinearOpBase. */
+  //@{
+
+  /** \brief . */
+  virtual bool supportsScaleLeftImpl() const;
+
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const;
+
+  /** \brief . */
+  virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling);
+
+  /** \brief . */
+  virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling);
+  
+  //@}
+
+  /** \name Protected member functions overridden from RowStatLinearOpBase. */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+
+  /** \brief . */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat,
+    const Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   //@}
 

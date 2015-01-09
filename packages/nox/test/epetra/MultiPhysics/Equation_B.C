@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -57,7 +57,7 @@
 #include "Problem_Manager.H"
 #include "Equation_B.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
                                            std::string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
@@ -129,7 +129,7 @@ void Equation_B::initialize()
 {
   // Get id of required Species problem
   map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
-  if( id_ptr == nameToMyIndex.end() ) 
+  if( id_ptr == nameToMyIndex.end() )
   {
     std::string msg = "ERROR: Equation_B (\"" + myName + "\") could not get "
          + "vector for problem \"Temperature\" !!";
@@ -137,13 +137,13 @@ void Equation_B::initialize()
   }
   else
     id_temp = (*id_ptr).second;
-  
+
   // Check for dependence on velocity (convection)
 
   // Rather than merely existing, we should change this to search the
   // dependent problems vector
   id_ptr = nameToMyIndex.find("Burgers");
-  if( id_ptr == nameToMyIndex.end() ) 
+  if( id_ptr == nameToMyIndex.end() )
   {
     std::cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
          << "vector for problem \"Burgers\". Omitting convection." << std::endl;
@@ -155,7 +155,7 @@ void Equation_B::initialize()
     id_vel = (*id_ptr).second;
     useConvection = true;
   }
-  
+
   return;
 }
 
@@ -164,7 +164,7 @@ void Equation_B::initialize()
 // Empty Reset function
 void Equation_B::reset()
 {
-  std::cout << "WARNING: reset called without passing any update vector !!" 
+  std::cout << "WARNING: reset called without passing any update vector !!"
        << std::endl;
 }
 
@@ -184,17 +184,17 @@ void Equation_B::initializeSolution()
 
   for (int i=0; i<x.MyLength(); i++)
     soln[i] = 10.0/3.0 + 1.e-1*sin(1.0*pi*x[i]);
-  
+
   *oldSolution = soln;
-} 
+}
 
 //-----------------------------------------------------------------------------
 
 // Matrix and Residual Fills
 bool Equation_B::evaluate(
                     NOX::Epetra::Interface::Required::FillType fillType,
-		    const Epetra_Vector* soln, 
-		    Epetra_Vector* rhs) 
+            const Epetra_Vector* soln,
+            Epetra_Vector* rhs)
 {
   bool fillRes = false;
   bool fillJac = false;
@@ -252,13 +252,13 @@ bool Equation_B::evaluate(
   double beta = 2.0;
   double jac;
   double xx[2];
-  double uu[2]; 
+  double uu[2];
   double uuold[2];
   std::vector<double*> ddep(numDep);
   for( int i = 0; i<numDep; i++)
     ddep[i] = new double[2];
   Basis basis;
-  
+
   double convection = 0.0;
 
   // Zero out the objects that will be filled
@@ -266,19 +266,19 @@ bool Equation_B::evaluate(
   if ( fillRes ) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) 
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++)
   {
     // Loop Over Gauss Points
-    for(int gp=0; gp < 2; gp++) 
+    for(int gp=0; gp < 2; gp++)
     {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
       uu[0] = u[ne];
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      for( int i = 0; i<numDep; i++ ) 
+      for( int i = 0; i<numDep; i++ )
       {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
@@ -287,55 +287,55 @@ bool Equation_B::evaluate(
       basis.getBasis(gp, xx, uu, uuold, ddep);
 
       // Loop over Nodes in Element
-      for (int i=0; i< 2; i++) 
+      for (int i=0; i< 2; i++)
       {
-	row=OverlapMap->GID(ne+i);
-	if (StandardMap->MyGID(row)) 
+    row=OverlapMap->GID(ne+i);
+    if (StandardMap->MyGID(row))
         {
-	  if ( fillRes ) 
+      if ( fillRes )
           {
             convection = 0.0;
             if( useConvection )
               convection = basis.ddep[id_vel]*basis.duu/basis.dx;
 
-	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      + basis.wt*basis.dx
-	      * ((basis.uu - basis.uuold)/dt * basis.phi[i] 
-	      + convection * basis.phi[i] 
-	      + (1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
+        (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+          + basis.wt*basis.dx
+          * ((basis.uu - basis.uuold)/dt * basis.phi[i]
+          + convection * basis.phi[i]
+          + (1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -beta*basis.ddep[id_temp]
                  + basis.ddep[id_temp]*basis.ddep[id_temp]*basis.uu) );
-	  }
-	}
-	// Loop over Trial Functions
-	if ( fillJac ) 
+      }
+    }
+    // Loop over Trial Functions
+    if ( fillJac )
         {
-	  for( int j = 0; j < 2; ++j ) 
+      for( int j = 0; j < 2; ++j )
           {
-	    if (StandardMap->MyGID(row)) 
+        if (StandardMap->MyGID(row))
             {
-	      column=OverlapMap->GID(ne+j);
-	      jac=basis.wt*basis.dx*(
-                      basis.phi[j]/dt*basis.phi[i] 
+          column=OverlapMap->GID(ne+j);
+          jac=basis.wt*basis.dx*(
+                      basis.phi[j]/dt*basis.phi[i]
                       +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.dphide[j]*
                                                         basis.dphide[i]
                       + basis.phi[i] * basis.ddep[id_temp]*basis.ddep[id_temp]*
-		          basis.phi[j] );
-	      A->SumIntoGlobalValues(row, 1, &jac, &column);
-	    }
-	  }
-	}
+                  basis.phi[j] );
+          A->SumIntoGlobalValues(row, 1, &jac, &column);
+        }
       }
     }
-  } 
+      }
+    }
+  }
 
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(0)=1
-  if (MyPID==0) 
+  if (MyPID==0)
   {
     if ( fillRes )
       (*rhs)[0]= (*soln)[0] - beta/alpha;
-    if ( fillJac ) 
+    if ( fillJac )
     {
       int column=0;
       double jac=1.0;
@@ -346,12 +346,12 @@ bool Equation_B::evaluate(
     }
   }
   // U(1)=1
-  if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) 
+  if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 )
   {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
     if ( fillRes )
       (*rhs)[lastDof] = (*soln)[lastDof] - beta/alpha;
-    if ( fillJac ) 
+    if ( fillJac )
     {
       int row=StandardMap->MaxAllGID();
       int column = row;
@@ -365,7 +365,7 @@ bool Equation_B::evaluate(
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   A->FillComplete();
 
 #ifdef DEBUG
@@ -395,13 +395,13 @@ bool Equation_B::evaluate(
 Epetra_Vector& Equation_B::getOldSoln()
 {
   return *oldSolution;
-} 
-  
+}
+
 //-----------------------------------------------------------------------------
 
 void Equation_B::generateGraph()
 {
-  
+
   // Declare required variables
   int i;
   int row, column;
@@ -409,21 +409,21 @@ void Equation_B::generateGraph()
   int OverlapMinMyNodeGID;
   if (MyPID==0) OverlapMinMyNodeGID = StandardMap->MinMyGID();
   else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
-  
+
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) 
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++)
   {
     // Loop over Nodes in Element
-    for (i=0; i<2; i++) 
+    for (i=0; i<2; i++)
     {
       // If this node is owned by current processor, add indices
-      if (StandardMap->MyGID(OverlapMap->GID(ne+i))) 
+      if (StandardMap->MyGID(OverlapMap->GID(ne+i)))
       {
         // Loop over unknowns in Node
         row=OverlapMap->GID(ne+i);
 
         // Loop over supporting nodes
-        for(int j = 0; j < 2; ++j ) 
+        for(int j = 0; j < 2; ++j )
         {
           // Loop over unknowns at supporting nodes
           column=OverlapMap->GID(ne+j);
@@ -434,6 +434,6 @@ void Equation_B::generateGraph()
   }
 
   AA->FillComplete();
-  
+
   return;
 }

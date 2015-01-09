@@ -65,7 +65,7 @@ int buildCrsMatrix(int xdim, int ydim, int zdim, string problemType,
     if (comm->getRank() == 0) 
       cout << "AFTER GALERI BuildMatrix  M_=" << M_ << endl;
   }
-  catch (exception &e) {    // Probably not enough memory
+  catch (std::exception &e) {    // Probably not enough memory
     cout << "Error returned from Galeri " << e.what() << endl;
     exit(-1);
   }

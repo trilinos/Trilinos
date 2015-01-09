@@ -1,16 +1,19 @@
 #ifndef TEST_TILE_HPP
 #define TEST_TILE_HPP
 
-#include <Kokkos_ParallelReduce.hpp>
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
+
+namespace TestTile {
 
 template < typename Device , typename TileLayout>
 struct ReduceTileErrors
 {
-  typedef Device device_type;
-  typedef typename Device::size_type size_type;
+  typedef Device device_type ;
 
-  typedef Kokkos::View< ptrdiff_t**, TileLayout, Device> array_type;
+  typedef Kokkos::View< ptrdiff_t**, TileLayout, Device>  array_type;
+  typedef Kokkos::View< ptrdiff_t[ TileLayout::N0 ][ TileLayout::N1 ], Kokkos::LayoutLeft , Device >  tile_type ;
+
+  array_type m_array ;
 
   typedef ptrdiff_t value_type;
 
@@ -32,35 +35,78 @@ struct ReduceTileErrors
     errors += src_errors;
   }
 
-
+  // Initialize
   KOKKOS_INLINE_FUNCTION
-  void operator()( size_type global_i , value_type & errors ) const
+  void operator()( size_t iwork ) const
   {
-    typedef typename array_type::tile_type tile_type;
+    const size_t i = iwork % m_array.dimension_0();
+    const size_t j = iwork / m_array.dimension_0();
+    if ( j < m_array.dimension_1() ) {
+      m_array(i,j) = & m_array(i,j) - & m_array(0,0);
 
-    size_t t0 = m_array.global_to_tile_index_0(global_i);
-    size_t i = m_array.global_to_local_tile_index_0(global_i);
+// printf("m_array(%d,%d) = %d\n",int(i),int(j),int(m_array(i,j)));
 
-    for (size_t global_j = 0, dim_1 = m_array.dimension_1(); global_j < dim_1; ++global_j) {
-
-      ptrdiff_t offset = &m_array(global_i,global_j) - &m_array(0,0);
-
-      size_t t1 = m_array.global_to_tile_index_1(global_j);
-      size_t j = m_array.global_to_local_tile_index_1(global_j);
-
-      // tile_type tile = m_array.tile(t0,t1);
-
-      tile_type tile = Kokkos::subview< tile_type >( m_array , t0 , t1 );
-
-      tile(i,j) = (tile.dimension_0() * tile.dimension_1()) * (t0 + m_array.tiles_in_dimension_0() * t1) + i + (j * tile.dimension_0());
-
-      errors += (offset != m_array(global_i,global_j));
     }
   }
 
+  // Verify:
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_t iwork , value_type & errors ) const
+  {
+    const size_t tile_dim0 = ( m_array.dimension_0() + TileLayout::N0 - 1 ) / TileLayout::N0 ;
+    const size_t tile_dim1 = ( m_array.dimension_1() + TileLayout::N1 - 1 ) / TileLayout::N1 ;
 
-  array_type m_array;
+    const size_t itile = iwork % tile_dim0 ;
+    const size_t jtile = iwork / tile_dim0 ;
+
+    if ( jtile < tile_dim1 ) {
+
+      tile_type tile = Kokkos::tile_subview( m_array , itile , jtile );
+
+      if ( tile(0,0) != ptrdiff_t(( itile + jtile * tile_dim0 ) * TileLayout::N0 * TileLayout::N1 ) ) {
+        ++errors ;
+      }
+      else {
+
+        for ( size_t j = 0 ; j < size_t(TileLayout::N1) ; ++j ) {
+        for ( size_t i = 0 ; i < size_t(TileLayout::N0) ; ++i ) {
+          const size_t iglobal = i + itile * TileLayout::N0 ;
+          const size_t jglobal = j + jtile * TileLayout::N1 ;
+
+          if ( iglobal < m_array.dimension_0() && jglobal < m_array.dimension_1() ) {
+            if ( tile(i,j) != ptrdiff_t( tile(0,0) + i + j * TileLayout::N0 ) ) ++errors ;
+
+// printf("tile(%d,%d)(%d,%d) = %d\n",int(itile),int(jtile),int(i),int(j),int(tile(i,j)));
+
+          }
+        }
+        }
+      }
+    }
+  }
 };
 
+template< class Space , unsigned N0 , unsigned N1 >
+void test( const size_t dim0 , const size_t dim1 )
+{
+  typedef Kokkos::LayoutTileLeft<N0,N1>  array_layout ;
+  typedef ReduceTileErrors< Space , array_layout > functor_type ;
+
+  const size_t tile_dim0 = ( dim0 + N0 - 1 ) / N0 ;
+  const size_t tile_dim1 = ( dim1 + N1 - 1 ) / N1 ;
+  
+  typename functor_type::array_type array("",dim0,dim1);
+
+  Kokkos::parallel_for( Kokkos::RangePolicy<Space,size_t>(0,dim0*dim1) , functor_type( array ) );
+
+  ptrdiff_t error = 0 ;
+
+  Kokkos::parallel_reduce( Kokkos::RangePolicy<Space,size_t>(0,tile_dim0*tile_dim1) , functor_type( array ) , error );
+
+  EXPECT_EQ( error , ptrdiff_t(0) );
+}
+
+} /* namespace TestTile */
 
 #endif //TEST_TILE_HPP
+

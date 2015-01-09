@@ -1,30 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*      stk : Parallel Heterogneous Dynamic unstructured Mesh         */
-/*                Copyright (2007) Sandia Corporation                     */
-/*                                                                        */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*                                                                        */
-/*  This library is free software; you can redistribute it and/or modify  */
-/*  it under the terms of the GNU Lesser General Public License as        */
-/*  published by the Free Software Foundation; either version 2.1 of the  */
-/*  License, or (at your option) any later version.                       */
-/*                                                                        */
-/*  This library is distributed in the hope that it will be useful,       */
-/*  but WITHOUT ANY WARRANTY; without even the implied warranty of        */
-/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     */
-/*  Lesser General Public License for more details.                       */
-/*                                                                        */
-/*  You should have received a copy of the GNU Lesser General Public      */
-/*  License along with this library; if not, write to the Free Software   */
-/*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307   */
-/*  USA                                                                   */
-/*------------------------------------------------------------------------*/
-/**
- * @file
- * @author H. Carter Edwards
- * @date   January 2007
- */
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <iostream>
 #include <map>
@@ -58,7 +63,6 @@ inline unsigned int log2(unsigned int x)
 }
 
 }
-
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -198,237 +202,72 @@ bool hsfc_box_covering( const float     * const global_box ,
   return valid ;
 }
 
-
-namespace {
-
-//------------------------------------------//----------------------------------------------------------------------
-// Reset the accumulated node weights to only include
-// those nodes in the range [ k_first , k_last ]
-
-void accumulate_weights(
-  const stk::OctTreeKey &k_node_p ,
-  const stk::OctTreeKey &k_first_p ,
-  const unsigned ord_end ,
-  const unsigned depth ,
-        float * const weights )
-{
-  stk::OctTreeKey k_node (k_node_p);
-  stk::OctTreeKey k_first(k_first_p);
-  const unsigned ord_node_2 = 2 * oct_tree_offset( depth , k_node );
-
-  if ( k_node.depth() < depth ) {
-
-    double w = 0 ;
-
-    const unsigned d1 = k_node.depth() + 1 ;
-
-    unsigned i = k_first.index( d1 );
-
-    if ( i ) {
-      k_node.set_index( d1 , i );
-
-      const unsigned ord = oct_tree_offset( depth , k_node );
-      const unsigned ord_2 = ord * 2 ;
-
-      accumulate_weights( k_node , k_first , ord_end , depth , weights );
-
-      // Counts of this node and all of its descending nodes
-      w += weights[ord_2] + weights[ ord_2 + 1 ] ;
-
-      k_first = stk::OctTreeKey(); // Done with the lower bound
-    }
-
-    for ( ++i ; i <= 8 ; ++i ) {
-
-      k_node.set_index( d1 , i );
-
-      const unsigned ord = oct_tree_offset( depth , k_node );
-      const unsigned ord_2 = ord * 2 ;
-
-      if ( ord < ord_end ) {
-        accumulate_weights( k_node, k_first , ord_end , depth , weights );
-
-        // Counts of this node and all of its descending nodes
-        w += weights[ord_2] + weights[ ord_2 + 1 ] ;
-      }
-    }
-
-    // Descending node weight
-
-    weights[ ord_node_2 + 1 ] = static_cast<float>(w); 
-  }
-}
-
 //----------------------------------------------------------------------
 
-void oct_key_split(
-  const stk::OctTreeKey & key ,
-  const unsigned     upper_ord ,
-        stk::OctTreeKey & key_upper )
+void getNonZeroWeightsAndOffsets( float const * const weights, unsigned tree_size, float &totalWeight, std::vector<float> &nonZeroWeights, std::vector<unsigned> &ordinalsOfNonZeroWeights)
 {
-  // Split key at key.depth() + 1
-
-  unsigned d = key.depth();
-
-  key_upper = key ;
-
-  if ( upper_ord == 1 ) { // key_upper gets it all
-    while ( d && 1 == key_upper.index(d) ) {
-      key_upper.clear_index(d);
-      --d ;
+    for (size_t i=0;i<tree_size*2;i+=2)
+    {
+        unsigned index=i/2;
+        float totalWeightAtOrdinal = weights[i]+weights[i+1];
+        if ( totalWeightAtOrdinal > 0 )
+        {
+            nonZeroWeights.push_back(totalWeightAtOrdinal);
+            totalWeight += totalWeightAtOrdinal;
+            ordinalsOfNonZeroWeights.push_back(index);
+        }
     }
-  }
-  else if ( 8 < upper_ord ) { // key_upper get none of it, Increment key_upper
-
-    unsigned i = 0 ;
-    while ( d && 8 == ( i = key_upper.index(d) ) ) {
-      key_upper.clear_index(d);
-      --d ;
-    }
-    if ( d ) { key_upper.set_index( d , i + 1 ); }
-  }
-  else {
-    key_upper.set_index( d + 1 , upper_ord );
-  }
 }
 
-//----------------------------------------------------------------------
-
-void partition( 
-  const stk::OctTreeKey & k_first ,
-  const unsigned     i_end ,
-  const stk::OctTreeKey & key ,
-  const unsigned     depth ,
-  const float      * weights ,
-  const double tolerance ,
-  const double target_ratio ,
-  double w_lower ,
-  double w_upper ,
-  stk::OctTreeKey & k_upper )
+void partition_oct_tree(unsigned numProcsLocal, unsigned depth, const float * const weights, unsigned cuts_length, stk::OctTreeKey *cuts)
 {
-  const unsigned ord_node = oct_tree_offset( depth , key );
-  const float * const w_node = weights + ord_node * 2 ;
+    std::vector<float> nonZeroWeights;
+    std::vector<unsigned> offsetsOfNonZeroWeights;
 
-  const unsigned d1 = key.depth() + 1 ;
+    unsigned tree_size = stk::oct_tree_size(depth);
+    float totalWeight=0;
+    getNonZeroWeightsAndOffsets(weights, tree_size, totalWeight, nonZeroWeights, offsetsOfNonZeroWeights);
 
-  // Add weights from nested nodes and their descendents
-  // Try to achieve the ratio.
+    // Following code is taking the total weight on all nodes of the tree and calculating an average weight per processor.
+    // Using that it is determining the ordinal of the node on where to cut, and then switching the ordinal to a key
+    // that is being stored in the cuts array. Keys are what are used outside this function for the "physical" tree.
+    // Note: Partition assumes depth 4 while physical tree can be multiple depths.
+    // the weights array is 2*tree_size where tree_size is associated with depth 4 (unless the enum for depth has changed)
+    // weights[2*ordinal] = the number of boxes this node has. weights[2*ordinal+1] = the number of boxes
 
-  const unsigned i_first = k_first.index( d1 );
+    float targetWeightPerProc = totalWeight/numProcsLocal;
+    unsigned indexOfLastNodeInTree = tree_size - 1;
+    float totalAccumulatedWeight = 0;
 
-  unsigned i = ( i_first ) ? i_first : 1 ;
-  unsigned j = 8 ;
-  {
-    stk::OctTreeKey k_upp = key ;
-    k_upp.set_index( d1 , j );
-    while ( i_end <= oct_tree_offset( depth , k_upp ) ) {
-      k_upp.set_index( d1 , --j );
-    }
-  }
+    unsigned procCounter = 0;
+    cuts[procCounter] = stk::OctTreeKey();
+    procCounter++;
 
-  w_lower += w_node[0] ;
-  w_upper += w_node[0] ;
-
-  // At the maximum depth?
-
-  if ( key.depth() == depth ) {
-    // Assume weight from unrepresented nested nodes is
-    // evenly distributed among the nodes in the span [i,j]
-
-    const unsigned n = 1 + j - i ;
-
-    const double val = static_cast<double>(w_node[1]) / static_cast<double>(n);
-
-    // val = val_lower + val_upper
-    // ( w_lower + val_lower ) / ( w_upper + val_upper ) == target_ratio
-
-    const double val_lower =
-      ( target_ratio * ( w_upper + val ) - w_lower ) /
-      ( target_ratio + 1 ) ;
-
-    if ( 0 < val_lower ) {
-      // How much of the range does the lower portion get?
-      // Roundoff instead of merely truncating:
-      i += static_cast<unsigned>( 0.5 + ( n * val_lower ) / val );
-
-      // Can only get up to the maximum
-      if ( j < i ) { i = j ; }
-    }
-    oct_key_split( key , i , k_upper );
-  }
-  else {
-
-//    while ( i != j ) {
-    while ( i < j ) {
-      stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
-      stk::OctTreeKey kj = key ; kj.set_index( d1 , j );
-
-      const float * const vi = weights + 2 * oct_tree_offset( depth , ki );
-      const float * const vj = weights + 2 * oct_tree_offset( depth , kj );
-
-      const double vali = vi[0] + vi[1] ;
-      const double valj = vj[0] + vj[1] ;
-
-      if ( 0 < vali && 0 < valj ) {
-
-        // Choose between ( w_lower += vali ) vs. ( w_upper += valj )
-        // Knowing that the skipped value will be revisited.
-
-        if ( ( w_lower + vali ) < target_ratio * ( w_upper + valj ) ) {
-          // Add to 'w_lower' and will still need more later
-          w_lower += vali ;
-          ++i ;
+    unsigned weightIndex = 0;
+    while ( totalAccumulatedWeight < totalWeight && procCounter < numProcsLocal)
+    {
+        float accumulatedWeightForProc = 0;
+        unsigned offset = 0;
+        while ( accumulatedWeightForProc < targetWeightPerProc && weightIndex < nonZeroWeights.size() )
+        {
+            accumulatedWeightForProc += nonZeroWeights[weightIndex];
+            offset = offsetsOfNonZeroWeights[weightIndex] + 1;
+            if ( offset >= tree_size )
+            {
+                offset = tree_size-1;
+            }
+            weightIndex++;
         }
-        else {
-           // Add to 'w_upper' and will still need more later
-          w_upper += valj ;
-          --j ;
-        }
-      }
-      else {
-        if ( vali <= 0.0 ) { ++i ; }
-        if ( valj <= 0.0 ) { --j ; }
-      }
+        stk::search::calculate_key_using_offset(depth, offset, cuts[procCounter]);
+        totalAccumulatedWeight += accumulatedWeightForProc;
+        procCounter++;
     }
 
-    // If 'i' has not incremented then 'k_first' is still in force
-    stk::OctTreeKey nested_k_first ;
-    if ( i_first == i ) { nested_k_first = k_first ; }
-
-    // Split node nested[i] ?
-    stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
-
-    const float * const vi = weights + 2 * oct_tree_offset( depth , ki );
-    const double vali = vi[0] + vi[1] ;
-
-    double diff = 0.0 ;
-
-    if ( vali <= 0.0 ) {
-      diff = 0.0 ; // Nothing can be done.  Give 'i' to the upper range
+    for (unsigned i=procCounter; i<numProcsLocal; i++)
+    {
+        stk::search::calculate_key_using_offset(depth, indexOfLastNodeInTree, cuts[i]);
     }
-    else if ( w_lower < w_upper * target_ratio ) {
-      // Try adding to w_lower
-      diff = static_cast<double> (w_lower + vali) / static_cast<double>(w_upper) - target_ratio ;
-      ++i ;
-    }
-    else {
-      // Try adding to w_upper
-      diff = static_cast<double>(w_lower) / static_cast<double>(w_upper + vali) - target_ratio ;
-    }
-
-    if ( - tolerance < diff && diff < tolerance ) {
-      oct_key_split( key , i , k_upper );
-    }
-    else {
-      partition( nested_k_first , i_end , ki ,
-                 depth , weights ,
-                 tolerance , target_ratio ,
-                 w_lower , w_upper , k_upper );
-    }
-  }
 }
-
-} // namespace <empty>
 
 unsigned processor( const stk::OctTreeKey * const cuts_b ,
                     const stk::OctTreeKey * const cuts_e ,
@@ -446,67 +285,28 @@ unsigned processor( const stk::OctTreeKey * const cuts_b ,
 
 //----------------------------------------------------------------------
 
-void oct_tree_partition_private(
-  const unsigned p_first ,
-  const unsigned p_end ,
-  const unsigned depth ,
-  const double   tolerance ,
-  float * const weights ,
-  const unsigned cuts_length ,
-  stk::OctTreeKey * const cuts )
+
+void calculate_key_using_offset(unsigned depth, unsigned offset, stk::OctTreeKey &kUpper)
 {
-  // split tree between [ p_first , p_end )
-  const unsigned p_size  = p_end - p_first ;
-  const unsigned p_upper = ( p_end + p_first ) / 2 ;
-
-  const double target_fraction =
-    static_cast<double> ( p_upper - p_first ) / static_cast<double>(p_size);
-
-  const double target_ratio = target_fraction / ( 1.0 - target_fraction );
-
-  // Determine k_lower and k_upper such that
-  //
-  // Weight[ k_first , k_lower ] / Weight [ k_upper , k_last ] == target_ratio
-  //
-  // Within a tollerance
-
-  const stk::OctTreeKey k_first = cuts[ p_first ];
-
-  const unsigned i_end   =
-    p_end < cuts_length ? oct_tree_offset( depth , cuts[ p_end ] )
-                        : oct_tree_size( depth );
-
-  // Walk the tree [ k_first , k_last ] and accumulate weight
-
-  accumulate_weights( stk::OctTreeKey() , k_first , i_end , depth , weights );
-
-  stk::OctTreeKey k_root ;
-  stk::OctTreeKey & k_upper = cuts[ p_upper ] ;
-
-  unsigned w_lower = 0 ;
-  unsigned w_upper = 0 ;
-
-  partition( k_first, i_end, k_root ,
-             depth, weights,
-             tolerance, target_ratio,
-             w_lower, w_upper, k_upper );
-
-  const bool nested_lower_split = p_first + 1 < p_upper ;
-  const bool nested_upper_split = p_upper + 1 < p_end ;
-
-  // If splitting both lower and upper, and a thread is available
-  // then one of the next two calls could be a parallel thread
-  // with a local copy of the shared 'weights' array.
-
-  if ( nested_lower_split ) {
-    oct_tree_partition_private( p_first, p_upper, depth,
-                                tolerance, weights, cuts_length, cuts );
-  }
-
-  if ( nested_upper_split ) {
-    oct_tree_partition_private( p_upper, p_end, depth,
-                                tolerance, weights, cuts_length, cuts );
-  }
+    stk::OctTreeKey localKey;
+    for (int depthLevel = depth-1; depthLevel>=0; depthLevel--)
+    {
+        unsigned max = oct_tree_size(depthLevel);
+        unsigned index = (offset-1)/max;
+        if ( index > 0 && offset > 0)
+        {
+            offset -= (max*index + 1);
+            unsigned bitToSetIndexOn = depth-depthLevel;
+            index++;
+            localKey.set_index(bitToSetIndexOn, index);
+        }
+        else if ( offset > 0 )
+        {
+            offset--;
+            localKey.set_index(depth-depthLevel, 1);
+        }
+    }
+    kUpper = localKey;
 }
 
 } // namespace search

@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( PARDISO_MKL
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( PARDISO_MKL
   REQUIRED_HEADERS mkl_pardiso.h
   REQUIRED_LIBS_NAMES mkl_intel_lp64
   )

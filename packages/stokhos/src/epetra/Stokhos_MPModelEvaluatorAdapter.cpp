@@ -229,7 +229,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   Teuchos::Array<MPDerivative> dgdx_mp(outArgs.Ng());
   Teuchos::Array<MPDerivative> dgdx_dot_mp(outArgs.Ng());
   Teuchos::Array< Teuchos::Array<MPDerivative> > dgdp_mp(outArgs.Ng());
-  int num_mp;
+  int num_mp = 0;
   
   if (inArgs.supports(IN_ARG_x_mp)) {
     x_mp = inArgs.get_x_mp();

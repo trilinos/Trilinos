@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -66,7 +66,7 @@ namespace NOX {
 namespace Direction {
 
 //! %Calculates the steepest descent direction.
-/*! 
+/*!
 
   Calculates the direction
   \f[
@@ -109,33 +109,33 @@ public:
   //! Scaling types
   enum ScalingType {
     //! Scale by the 2-norm of the gradient
-    TwoNorm, 
+    TwoNorm,
     //! Scale by the step that minimizes the 1-D quadratic
-    QuadMin, 
+    QuadMin,
     //! Scale by the 2-norm of F
-    FunctionTwoNorm, 
+    FunctionTwoNorm,
     //! No scaling at all
     None
   };
 
   //! Constructor
-  SteepestDescent(const Teuchos::RCP<NOX::GlobalData>& gd, 
-		  Teuchos::ParameterList& params);
+  SteepestDescent(const Teuchos::RCP<NOX::GlobalData>& gd,
+          Teuchos::ParameterList& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
   bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
+         Teuchos::ParameterList& params);
 
   // derived
-  bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-	       const NOX::Solver::Generic& solver);
+  bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+           const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 private:
 
@@ -158,7 +158,7 @@ private:
 
   //! Pointer to a user defined merit function
   Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
-  
+
 };
 } // namespace Direction
 } // namespace NOX

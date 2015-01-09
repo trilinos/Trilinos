@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,8 +48,8 @@
 #ifndef NOX_EPETRA_LINEARSYSTEMAZTECOO_H
 #define NOX_EPETRA_LINEARSYSTEMAZTECOO_H
 
-#include "NOX_Epetra_LinearSystem.H"	// base class
-#include "NOX_Epetra_Vector.H"	// class data element
+#include "NOX_Epetra_LinearSystem.H"    // base class
+#include "NOX_Epetra_Vector.H"    // class data element
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (std::string)
 #include "Teuchos_ParameterList.hpp"
@@ -87,24 +87,24 @@ namespace NOX {
 //! Improved version of the Epetra support class.
 namespace Epetra {
 
-/*! 
+/*!
 
 \brief Concrete implementation of NOX::Epetra::LinearSolver for AztecOO.
 
 This solver provides the linear algebra services provided
 through the AztecOO parallel iterative linear solver.
- 
+
 The NOX::Epetra::LinearSystemAztecOO object provides a flexible
 and efficient way to interface an Epetra based application code
-to the Aztec linear solver.  This class handles construction 
+to the Aztec linear solver.  This class handles construction
 of both the preconditioners and AztecOO solver.  All options are
-determined through parameter lists and the basic constructors. 
+determined through parameter lists and the basic constructors.
 
 <B>Constructing a Linear System</B>
 
 There are four different constructors that can be used.  The difference
-between constructors is based on whether the user supplies a 
-Jacobian, a preconditioner, neither or both.  
+between constructors is based on whether the user supplies a
+Jacobian, a preconditioner, neither or both.
 
 If a Jacobian is not supplied then this object can create an
 internally constructed Jacobian based on a Finite Difference or
@@ -114,7 +114,7 @@ The choices are "Matrix-Free" or "Finite Difference".
 
 The user can supply their own preconditioner as an Epetra_Operator, or they can supply their own matrix (an Epetra_RowMatrix derived object) that can be used by one of the internal preconditioner libraries (currently aztecoo or ifpack).  If they supply their own preconditioner the object must implement the Epetra_Operator::ApplyInverse method.  This is the method called during the linear solve to introduce preconditoning into aztecoo.  If the user supplies a matrix to be used with an internal preconditioner, it must be derived from the Epetra_RowMatrix class and must implement all functionality in the Epetra_RowMatrix.  If a Preconditioner is not supplied, then this object can create an internal preconditioner matrix by finite differencing or it can use the Jacobian operator if the Jacobian derives from the Epetra_RowMatrix class.   The user can specify which type of object to use by setting the parameter "Preconditioner Operator" in the parameter list.  The choices are "Use Jacobian" or "Finite Difference".
 
-The Jacobian and preconditioner each require an interface to update the state of the operator with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::Epetra::Interface::Required,   NOX::Epetra::Interface::Jacobian, and NOX::Epetra::Interface::Preconditioner.  
+The Jacobian and preconditioner each require an interface to update the state of the operator with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::Epetra::Interface::Required,   NOX::Epetra::Interface::Jacobian, and NOX::Epetra::Interface::Preconditioner.
 
 NOX::Epetra::Interface::Required supplies the computeF() function so codes can tell NOX what the nonlinear equations are.  This is the minimum requirement to run nox through the epetra interface.  LinearSolverAztecOO requires this in some constructors so that if a Jacobian or preconditoner is not supplied, it will use computeF from the Required interface to estimate the Jacobian or preconditioner via finite differences or directional derivatives.
 
@@ -128,7 +128,7 @@ A Teuchos::ParameterList called linearSolverParams is required in the various co
 
 <li> "Aztec Solver" - Determine the iterative technique used in the solve.  The following options are valid:
 
-  <ul> 
+  <ul>
   <li> "GMRES" - Restarted generalized minimal residual (default).
   <li> "CG" - Conjugate gradient.
   <li> "CGS" - Conjugate gradient squared.
@@ -139,14 +139,14 @@ A Teuchos::ParameterList called linearSolverParams is required in the various co
 
 <li> "Size of Krylov Subspace" - When using restarted GMRES this sets
 the maximum size of the Krylov subspace (defaults to 300).
- 
+
 <li> "Orthogonalization" - The orthogonalization routine used for the
 Gram-Schmidt orthogonalization procedure in Aztec.  The following
 options are valid:
 
-  <ul> 
+  <ul>
   <li> "Classical" - (default).
-  <li> "Modified" 
+  <li> "Modified"
   </ul>
 
 <li> "Convergence Test" - Algorithm used to calculate the residual
@@ -161,8 +161,8 @@ are valid:
   <li> "no scaling"
   <li> "sol"
   </ul>
- 
-<li> "Tolerance" - Tolerance used by AztecOO to determine if an iterative linear solve has converged. 
+
+<li> "Tolerance" - Tolerance used by AztecOO to determine if an iterative linear solve has converged.
 
 <li> "Ill-Conditioning Threshold" - If the upper hessenberg matrix
 during GMRES generates a condition number greater than this parameter
@@ -175,7 +175,7 @@ only used if an AztecOO preconditioner is used and the solver makes a
 call to NOX::Epetra::Group::applyRightPreconditioning().  This is NOT a
 recomended approach.
 
-<li> "Max Iterations" - maximum number of iterations in the 
+<li> "Max Iterations" - maximum number of iterations in the
 linear solve.  Default is 400.
 
 <li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
@@ -197,13 +197,13 @@ AZ_last.
 
 <li> "Preconditioner" - Sets the choice of the preconditioner to use during linear solves. The validity of the choice of preconditioner will depend on the types of operators that are available for the Jacobian and preconditioner.  NOTE: This flag will override any constructor details.  For example, if you supply a preconditioner operator in the constructor, it will not be used if this flag is set to "None".  If you supply an Epetra_Operator for the preconditioner but the "Preconditioner" flag is set to "AztecOO" (this requires an Epetra_RowMatrix for the preconditioner operator), this object will exit with a failure.  The valid options and any requirements on the operator type are listed below:
 
-  <ul> 
+  <ul>
   <li> "None" - No preconditioning.  (default)
-  <li> "AztecOO" - AztecOO internal preconditioner.  This requires a preconditioner operator that derives from the Epetra_RowMatrix class.  
-  <li> "Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix. This option is deprecated.  Please use "New Ifpack". 
-  <li> "New Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix.  
-  <li> "User Defined" - The user supplies an Epetra_Operator derived 
-  class.  Users must implement at a minimum the ApplyInverse() function of the Epetra_Operator class since preconditioning of vectors is accomplished through calls to this method.  
+  <li> "AztecOO" - AztecOO internal preconditioner.  This requires a preconditioner operator that derives from the Epetra_RowMatrix class.
+  <li> "Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix. This option is deprecated.  Please use "New Ifpack".
+  <li> "New Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix.
+  <li> "User Defined" - The user supplies an Epetra_Operator derived
+  class.  Users must implement at a minimum the ApplyInverse() function of the Epetra_Operator class since preconditioning of vectors is accomplished through calls to this method.
   </ul>
 
 <li> "Jacobian Operator" - If a constructor is used that does not supply a Jacobian operator, nox will create an internal Jacobian operator.  This flag is ONLY valid in such cases.  This will determine which Operator is used:
@@ -228,16 +228,16 @@ below (See the Aztec 2.1 manual for more information):
   <ul>
   <li> "Overlap" - defaults to 0
   <li> "Graph Fill" - defaults to 0
-  </ul> 
+  </ul>
 
   <li> "ilut" - ilut preconditioning. This choice allows the following  additional parameters to be specified:
   <ul>
   <li> "Overlap" - defaults to 0
   <li> "Fill Factor" - defaults to 1.0
   <li> "Drop Tolerance" - defaults to 1.0e-12
-  </ul> 
+  </ul>
 
-  <li> "Jacobi" - k step Jacobi where k is set by the "Steps" flag: 
+  <li> "Jacobi" - k step Jacobi where k is set by the "Steps" flag:
   <ul>
   <li> "Steps" - defaults to 3.
   </ul>
@@ -269,7 +269,7 @@ below (See the Aztec 2.1 manual for more information):
     <ul>
     <li>"Rebuild" - The "Rebuild" option always completely destroys and then rebuilds the preconditioner each time a linear solve is requested.
     <li>"Reuse" - The group/linear solver will not recompute the preconditioner even if the group's solution vector changes.  It just blindly reuses what has been constructed.  This turns off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  We don't recommend users trying this.
-    <li>"Recompute" - Recomputes the preconditioner, but will try to efficiently reuse any objects that don't need to be destroyed.  How efficient the "Recompute" option is depends on the type of preconditioner.  For example if we are using ILU from the Ifpack library, we would like to not destroy and reallocate the graph each solve.  With this option, we tell Ifpack to reuse the graph from last time - e.g the sparisty pattern has not changed between applications of the preconditioner. 
+    <li>"Recompute" - Recomputes the preconditioner, but will try to efficiently reuse any objects that don't need to be destroyed.  How efficient the "Recompute" option is depends on the type of preconditioner.  For example if we are using ILU from the Ifpack library, we would like to not destroy and reallocate the graph each solve.  With this option, we tell Ifpack to reuse the graph from last time - e.g the sparisty pattern has not changed between applications of the preconditioner.
     </ul>
 
 <li> "Max Age Of Prec" - (int) If the "Preconditioner Reuse Policy" is set to "Reuse", this integer tells the linear system how many times to reuse the preconditioner before rebuilding it.  Defaults to 1.
@@ -278,16 +278,16 @@ below (See the Aztec 2.1 manual for more information):
 domain decomp incomplete factorization preconditioning.  The following
 options are valid:
 
-  <ul> 
+  <ul>
   <li> "Disabled" - (default).
-  <li> "Enabled" 
+  <li> "Enabled"
   </ul>
 
 <li> "Use Adaptive Linear Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".  (NOTE: This parameter is currently NOT supported)
 
 <li> "Max Adaptive Solve Iterations" - (integer) Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.  (NOTE: This parameter is currently NOT supported)
 
-<li> "Compute Scaling Manually" - (boolean) The linear system can be scaled if a NOX::Epetra::Scaling object is supplied to LinearSystemAztecOO.  When to compute the scaling can be handled either manually by the user, or this object can automatically compute the scaling prior to a linear solve.  By setting this flag to true, the user will call NOX::Epetra::Scaling::computeScaling() manually - on their own!  Setting this to false means the LinearSystemAztecOO object will call the computeScaling function right before it applies the scaling to the matrix in the applyJacobianInverse function.  Default is true (user will call compute scaling). 
+<li> "Compute Scaling Manually" - (boolean) The linear system can be scaled if a NOX::Epetra::Scaling object is supplied to LinearSystemAztecOO.  When to compute the scaling can be handled either manually by the user, or this object can automatically compute the scaling prior to a linear solve.  By setting this flag to true, the user will call NOX::Epetra::Scaling::computeScaling() manually - on their own!  Setting this to false means the LinearSystemAztecOO object will call the computeScaling function right before it applies the scaling to the matrix in the applyJacobianInverse function.  Default is true (user will call compute scaling).
 
 <li> "Output Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
 
@@ -299,8 +299,8 @@ options are valid:
 
 <B>"Output" sublist</B>
 
-The parameter list passed in during calls to ApplyJacobianInverse() 
-will have an "Output" sublist created that contains the following 
+The parameter list passed in during calls to ApplyJacobianInverse()
+will have an "Output" sublist created that contains the following
 parameters if the flag "Output Solver Details" is set to true:
 
 <ul>
@@ -325,7 +325,7 @@ protected:
   //! List of types of epetra objects that can be used for the Jacobian and/or Preconditioner.
   enum OperatorType {
     //! An Epetra_Operator derived object.
-    EpetraOperator, 
+    EpetraOperator,
     //! An Epetra_RowMatrix derived object.
     EpetraRowMatrix,
     //! An Epetra_VbrMatrix object.
@@ -335,89 +335,89 @@ protected:
   };
 
 public:
-  //! Constructor with no Operators.  
+  //! Constructor with no Operators.
   /*! Jacobian Operator will be constructed internally based on the
-    parameter "Jacobian Operator".  Defaults to using a 
+    parameter "Jacobian Operator".  Defaults to using a
     NOX::Epetra::MatrixFree object.
    */
   LinearSystemAztecOO(
-    Teuchos::ParameterList& printingParams, 
+    Teuchos::ParameterList& printingParams,
     Teuchos::ParameterList& linearSolverParams,
-    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
 
-  //! Constructor with a user supplied Jacobian Operator only.  
-  /*! Either there is no preconditioning or the preconditioner will be 
-    used/created internally.  The Jacobian (if derived from an 
-    Epetra_RowMatrix class can be used with an internal preconditioner. 
+  //! Constructor with a user supplied Jacobian Operator only.
+  /*! Either there is no preconditioning or the preconditioner will be
+    used/created internally.  The Jacobian (if derived from an
+    Epetra_RowMatrix class can be used with an internal preconditioner.
     See the parameter key "Preconditioner Operator" for more details.
    */
   LinearSystemAztecOO(
-    Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+    Teuchos::ParameterList& printingParams,
+    Teuchos::ParameterList& linearSolverParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
     const Teuchos::RCP<Epetra_Operator>& J,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
 
-  //! Constructor with a user supplied Preconditioner Operator only.  
+  //! Constructor with a user supplied Preconditioner Operator only.
   /*! Jacobian operator will be constructed internally based on the
-    parameter "Jacobian Operator" in the parameter list.  See the 
-    parameter key "Jacobian Operator" for more details.  Defaults 
+    parameter "Jacobian Operator" in the parameter list.  See the
+    parameter key "Jacobian Operator" for more details.  Defaults
     to using a NOX::Epetra::MatrixFree object.
    */
   LinearSystemAztecOO(
-    Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
+    Teuchos::ParameterList& printingParams,
+    Teuchos::ParameterList& linearSolverParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
     const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
     const Teuchos::RCP<Epetra_Operator>& M,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
-  
+
   //! Constructor with user supplied separate objects for the
-  //! Jacobian (J) and Preconditioner (M).  
+  //! Jacobian (J) and Preconditioner (M).
   //! linearSolverParams is the "Linear Solver" sublist of parameter list.
   LinearSystemAztecOO(
-    Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
-    const Teuchos::RCP<Epetra_Operator>& J,  
-    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+    Teuchos::ParameterList& printingParams,
+    Teuchos::ParameterList& linearSolverParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
+    const Teuchos::RCP<Epetra_Operator>& J,
+    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
     const Teuchos::RCP<Epetra_Operator>& M,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject =
     Teuchos::null);
 
   //! Destructor.
   virtual ~LinearSystemAztecOO();
 
-  virtual bool applyJacobian(const NOX::Epetra::Vector& input, 
-			     NOX::Epetra::Vector& result) const;
+  virtual bool applyJacobian(const NOX::Epetra::Vector& input,
+                 NOX::Epetra::Vector& result) const;
 
-  virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
-				      NOX::Epetra::Vector& result) const;
-  
-  virtual bool applyJacobianInverse(Teuchos::ParameterList& linearSolverParams, 
-				    const NOX::Epetra::Vector& input, 
-				    NOX::Epetra::Vector& result);
+  virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input,
+                      NOX::Epetra::Vector& result) const;
+
+  virtual bool applyJacobianInverse(Teuchos::ParameterList& linearSolverParams,
+                    const NOX::Epetra::Vector& input,
+                    NOX::Epetra::Vector& result);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
-				   Teuchos::ParameterList& linearSolverParams, 
-				   const NOX::Epetra::Vector& input, 
-				   NOX::Epetra::Vector& result) const;
+                   Teuchos::ParameterList& linearSolverParams,
+                   const NOX::Epetra::Vector& input,
+                   NOX::Epetra::Vector& result) const;
 
-  virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
-				    Teuchos::ParameterList& linearSolverParams,
-				    bool recomputeGraph) const;
-  
-  /*! 
-    \brief 
+  virtual bool createPreconditioner(const NOX::Epetra::Vector& x,
+                    Teuchos::ParameterList& linearSolverParams,
+                    bool recomputeGraph) const;
+
+  /*!
+    \brief
     Deletes all objects associated with the chosen preconditioner.
     This is called during linear solves and when the solution vector
     changes to reset the preconditioner.
@@ -425,16 +425,16 @@ public:
   virtual bool destroyPreconditioner() const;
 
   /*! \brief Recalculates the preconditioner using an already allocated graph.
-    
+
     Use this to compute a new preconditioner while using the same
     graph for the preconditioner.  This avoids deleting and
     reallocating the memory required for the preconditioner and
     results in a big speed-up for large-scale jobs.
   */
-  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
-			     Teuchos::ParameterList& linearSolverParams) const;
+  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x,
+                 Teuchos::ParameterList& linearSolverParams) const;
   // Derived class
-  virtual PreconditionerReusePolicyType 
+  virtual PreconditionerReusePolicyType
   getPreconditionerPolicy(bool advanceReuseCounter=true);
 
   //! Reset the linear solver parameters.
@@ -443,18 +443,18 @@ public:
   //! Get the scaling object.
   virtual Teuchos::RCP<NOX::Epetra::Scaling> getScaling();
 
-  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
+  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.
   void resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& s);
 
-  //! Compute the Jacobian 
+  //! Compute the Jacobian
   virtual bool computeJacobian(const NOX::Epetra::Vector& x);
 
   //! NOX::Interface::Jacobian accessor
-  virtual Teuchos::RCP<const NOX::Epetra::Interface::Jacobian> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Jacobian>
   getJacobianInterface() const;
 
   //! NOX::Interface::Preconditioiner accessor
-  virtual Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner>
   getPrecInterface() const;
 
   //! Indicates whether a preconditioner has been constructed
@@ -469,14 +469,14 @@ public:
   //! Jacobian Epetra_Operator accessor
   virtual Teuchos::RCP<Epetra_Operator> getJacobianOperator();
 
-  //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
+  //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack).
   virtual Teuchos::RCP<const Epetra_Operator> getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
-  virtual Teuchos::RCP<const Epetra_Operator> 
+  virtual Teuchos::RCP<const Epetra_Operator>
   getGeneratedPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
@@ -484,10 +484,10 @@ public:
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
-  //! Returns the total time (sec.) spent in createPreconditioner(). 
+  //! Returns the total time (sec.) spent in createPreconditioner().
   double getTimeCreatePreconditioner() const;
 
-  //! Returns the total time (sec.) spent in applyJacobianInverse(). 
+  //! Returns the total time (sec.) spent in applyJacobianInverse().
   double getTimeApplyJacobianInverse() const;
 
   //! Set Jacobian operator for solve
@@ -502,28 +502,28 @@ public:
 protected:
 
   //! Parse the parameter list and set the corresponding options in the AztecOO solver onject.
-  virtual void setAztecOptions(Teuchos::ParameterList& lsParams, 
-			       AztecOO& aztec) const;
-  
-  //! Creates an internally owned Epetra_Operator for the Jacobian. 
+  virtual void setAztecOptions(Teuchos::ParameterList& lsParams,
+                   AztecOO& aztec) const;
+
+  //! Creates an internally owned Epetra_Operator for the Jacobian.
   virtual bool createJacobianOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-       const NOX::Epetra::Vector& cloneVector); 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+       const NOX::Epetra::Vector& cloneVector);
 
-  //! Creates an internally owned Epetra_Operator for the Preconditioner. 
+  //! Creates an internally owned Epetra_Operator for the Preconditioner.
   virtual bool createPrecOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-       const NOX::Epetra::Vector& cloneVector); 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq,
+       const NOX::Epetra::Vector& cloneVector);
 
-  //! Checks to make sure that the supplied operators are valid for the requested preconditioning options set in the parameter list. 
+  //! Checks to make sure that the supplied operators are valid for the requested preconditioning options set in the parameter list.
   virtual bool checkPreconditionerValidity();
 
-  /*! 
-    \brief 
+  /*!
+    \brief
     Allocates the objects required for using ifpack preconditioners
     (NOX::Epetra::Group::ifpackGraph and
     NOX::Epetra::Group::ifpackPreconditioner).  This is called from
@@ -531,22 +531,22 @@ protected:
   */
   virtual bool createIfpackPreconditioner(Teuchos::ParameterList& p) const;
 
-  /*! 
-    \brief 
+  /*!
+    \brief
     Allocates the objects required for using the new version of ifpack preconditioners via the Ifpack Create factory.
     This is called from NOX::Epetra::Group::computePreconditioner().
   */
   virtual bool createNewIfpackPreconditioner(Teuchos::ParameterList& p) const;
 
 #ifdef HAVE_NOX_ML_EPETRA
-  /*! 
-    \brief 
+  /*!
+    \brief
     Allocates the objects required for using ML preconditioners
   */
   virtual bool createMLPreconditioner(Teuchos::ParameterList& p) const;
 #endif
 
-  /*! 
+  /*!
     \brief
 
     Deletes the AztecOO solver object.  This is called when the
@@ -574,14 +574,14 @@ protected:
   */
   virtual void setAztecOOPreconditioner() const;
 
-  virtual void throwError(const std::string& functionName, 
-			  const std::string& errorMsg) const;
+  virtual void throwError(const std::string& functionName,
+              const std::string& errorMsg) const;
 
   //! Prints a warning for ifpack preconditioner failures (error_code != 0).
-  virtual void precError(int error_code, 
-			 const std::string& nox_function,
-			 const std::string& prec_type,
-			 const std::string& prec_function) const;
+  virtual void precError(int error_code,
+             const std::string& nox_function,
+             const std::string& prec_type,
+             const std::string& prec_function) const;
 
 protected:
 
@@ -593,32 +593,32 @@ protected:
 
   //! Type of operator for the Jacobian.
   OperatorType jacType;
-  
+
   //! Pointer to the Jacobian operator.
   mutable Teuchos::RCP<Epetra_Operator> jacPtr;
 
   //! Reference to the user supplied preconditioner interface functions
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precInterfacePtr;
 
-  //! Type of operator for the preconditioner. 
+  //! Type of operator for the preconditioner.
   OperatorType precType;
 
   //! Pointer to the preconditioner operator.
   mutable Teuchos::RCP<Epetra_Operator> precPtr;
 
-  //! Source of the RowMatrix if using an AztecOO native preconditioner 
-  enum PreconditionerMatrixSourceType {UseJacobian, 
-				       SeparateMatrix};
+  //! Source of the RowMatrix if using an AztecOO native preconditioner
+  enum PreconditionerMatrixSourceType {UseJacobian,
+                       SeparateMatrix};
   PreconditionerMatrixSourceType precMatrixSource;
 
   enum PreconditionerType {None_, AztecOO_, Ifpack_, NewIfpack_, ML_, UserDefined_};
   PreconditionerType precAlgorithm;
-  
+
   //! Aztec solver object.
   mutable Teuchos::RCP<AztecOO> aztecSolverPtr;
 
-  /*! 
-    \brief Stores the ifpack graph. 
+  /*!
+    \brief Stores the ifpack graph.
     Mutable since the applyRightPreconditioner() is a const method.
   */
   mutable Teuchos::RCP<Ifpack_IlukGraph> ifpackGraphPtr;
@@ -626,20 +626,20 @@ protected:
   /*! \brief Stores the ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RCP<Ifpack_CrsRiluk> 
+  mutable Teuchos::RCP<Ifpack_CrsRiluk>
   ifpackPreconditionerPtr;
 
   /*! \brief Stores the new ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RCP<Ifpack_Preconditioner> 
+  mutable Teuchos::RCP<Ifpack_Preconditioner>
   newIfpackPreconditionerPtr;
 
 #ifdef HAVE_NOX_ML_EPETRA
   /*! \brief Stores the ml preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> 
+  mutable Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner>
   MLPreconditionerPtr;
 #endif
 
@@ -651,7 +651,7 @@ protected:
 
   mutable double conditionNumberEstimate;
 
-  //! True if the preconditioner has been computed 
+  //! True if the preconditioner has been computed
   mutable bool isPrecConstructed;
 
   //! If set to true, solver information is printed to the "Output" sublist of the "Linear Solver" list.
@@ -668,7 +668,7 @@ protected:
 
   //! Counter for number of times called since reset or construction
   int precQueryCounter;
-  
+
   //! Parameter to determine whether or not to recompute Preconditioner
   int maxAgeOfPrec;
 

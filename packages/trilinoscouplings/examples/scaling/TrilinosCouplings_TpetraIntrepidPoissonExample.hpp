@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -36,9 +36,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "TrilinosCouplings_config.h"
 
-// MueLu includes
-#include "MueLu_TpetraOperator.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#  include "MueLu_TpetraOperator.hpp"
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 
@@ -91,7 +93,6 @@ typedef Tpetra::CrsMatrix<ST, LO, GO, Node>    sparse_matrix_type;
 typedef Tpetra::Operator<ST, LO, GO, Node>     operator_type;
 typedef Tpetra::MultiVector<ST, LO, GO, Node>  multivector_type;
 typedef Tpetra::Vector<ST, LO, GO, Node>       vector_type;
-typedef KokkosClassic::DefaultKernels<ST,LO,Node>::SparseOps sparse_ops;
 
 /// \brief Create the mesh and build the linear system to solve.
 ///
@@ -204,6 +205,9 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 /// \param numItersPerformed [out] Number of iterations that the Belos
 ///   solver performed.
 ///
+/// \param solverName [in] Which iterative linear solver to use.
+///   Any name that Belos::SolverFactory knows will work here.
+///
 /// \param tol [in] Convergence tolerance for the iterative method.
 ///   The meaning of this depends on the particular iterative method.
 ///
@@ -231,6 +235,7 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
                 const int num_steps,

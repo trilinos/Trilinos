@@ -257,12 +257,12 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
   int NumNonzeroDiags = 0;
 
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<int> LI(MaxNumEntries);
-  vector<int> UI(MaxNumEntries);
-  vector<double> InV(MaxNumEntries);
-  vector<double> LV(MaxNumEntries);
-  vector<double> UV(MaxNumEntries);
+  std::vector<int> InI(MaxNumEntries); // Allocate temp space
+  std::vector<int> LI(MaxNumEntries);
+  std::vector<int> UI(MaxNumEntries);
+  std::vector<double> InV(MaxNumEntries);
+  std::vector<double> LV(MaxNumEntries);
+  std::vector<double> UV(MaxNumEntries);
 
   bool ReplaceValues = (L_->StaticGraph() || L_->IndicesAreLocal()); // Check if values should be inserted or replaced
 
@@ -381,9 +381,9 @@ int Ifpack_CrsRiluk::Factor() {
   // Get Maximun Row length
   int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<double> InV(MaxNumEntries);
-  vector<int> colflag(NumMyCols());
+  std::vector<int> InI(MaxNumEntries); // Allocate temp space
+  std::vector<double> InV(MaxNumEntries);
+  std::vector<int> colflag(NumMyCols());
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
@@ -623,7 +623,7 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
   }
 
   int Length = (BG.MaxNumIndices()+1) * BG.ImportMap().MaxMyElementSize();
-  vector<int> tmpIndices(Length);
+  std::vector<int> tmpIndices(Length);
 
   int BlockRow, BlockOffset, NumEntries;
   int NumBlockEntries;
@@ -681,8 +681,8 @@ int Ifpack_CrsRiluk::BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Teuchos
 	int MaxElementSize = BlockMap.MaxElementSize();
 	int PtNumMyElements = BlockMap.NumMyPoints();
 
-	vector<int> PtMyGlobalElements_int;
-	vector<long long> PtMyGlobalElements_LL;
+	std::vector<int> PtMyGlobalElements_int;
+	std::vector<long long> PtMyGlobalElements_LL;
 
 	int NumMyElements = BlockMap.NumMyElements();
 	int curID = 0;

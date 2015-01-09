@@ -64,7 +64,7 @@
 #include "stk_mesh/base/Selector.hpp"
 #include <stk_rebalance/ZoltanPartition.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 inline bool XOR(bool A,bool B)
 { return ! ( (A && B) || ( !A && !B)); }
@@ -72,7 +72,7 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk::mesh::Entity * a,stk::mesh::Entity * b) const 
+   bool operator()(stk_classic::mesh::Entity * a,stk_classic::mesh::Entity * b) const 
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
@@ -97,8 +97,8 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    pl->set("X Elements",2);
    pl->set("Y Elements",3);
 
-   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    TEUCHOS_ASSERT(numprocs==4);
@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    mesh->writeToExodus("TEST.exo");
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk_classic::mesh::Entity*> neighbors;
      mesh->getNeighborElements(neighbors);
 
      std::size_t vec[4];
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    }
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk_classic::mesh::Entity*> neighbors;
      mesh->getNeighborElements("eblock-0_0",neighbors);
 
      std::size_t vec[4];
@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    }
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk_classic::mesh::Entity*> neighbors;
      mesh->getNeighborElements("eblock-1_0",neighbors);
 
      std::size_t vec[4];

@@ -86,8 +86,8 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
   // computes the number of nonzero elements per row in the 
   // dropped matrix. Stores this number in NumEntries_.
   // Also, computes the global number of nonzeros.
-  vector<int>    Ind(MaxNumEntriesA_);
-  vector<double> Val(MaxNumEntriesA_);
+  std::vector<int>    Ind(MaxNumEntriesA_);
+  std::vector<double> Val(MaxNumEntriesA_);
 
   NumEntries_.resize(NumRows_);
   for (int i = 0 ; i < NumRows_ ; ++i)
@@ -123,7 +123,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   // this `if' is to define the cut-off value
   if (Nnz > AllowedEntries_) {
  
-    vector<double> Values2(Nnz);
+    std::vector<double> Values2(Nnz);
     int count = 0;
     for (int i = 0 ; i < Nnz ; ++i) {
       // skip diagonal entry (which is always inserted)
@@ -138,7 +138,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
       Values2[i] = 0.0;
 
     // sort in descending order
-    sort(Values2.rbegin(),Values2.rend());
+    std::sort(Values2.rbegin(),Values2.rend());
     // get the cut-off value
     Threshold = Values2[AllowedEntries_ - 1];
 
@@ -172,7 +172,8 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_SparsityFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  IFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
+  int ierr = A_->ExtractDiagonalCopy(Diagonal);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================
@@ -187,8 +188,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
   Y.PutScalar(0.0);
 
-  vector<int> Indices(MaxNumEntries_);
-  vector<double> Values(MaxNumEntries_);
+  std::vector<int> Indices(MaxNumEntries_);
+  std::vector<double> Values(MaxNumEntries_);
 
   for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
 
@@ -228,7 +229,8 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_SparsityFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
+  int ierr = Multiply(UseTranspose(),X,Y);
+  IFPACK_RETURN(ierr);
 }
 
 //==============================================================================

@@ -71,16 +71,15 @@ SET( CTEST_PARALLEL_LEVEL "12" )
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES Claps)
+SET(EXTRA_EXCLUDE_PACKAGES Claps Optika TrilinosCouplings)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
-  "-DMPI_BASE_DIR:PATH=/home/trilinos"
+  "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
@@ -91,6 +90,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SPPARKS:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_ENABLE_CppUnit:BOOL=ON"
+  "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
+  "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
+  "-DTrilinos_TRACE_ADD_TEST=ON"
   )
 
 #

@@ -10,28 +10,13 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
 IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  CUDA_DEBUG
-  ctest_linux_nightly_cuda_debug_zan.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 150
-)
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  CUDA_OPT
-  ctest_linux_nightly_cuda_opt_zan.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 150
-)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV
   ctest_linux_nightly_mpi_development_opt_zan.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
-  TIMEOUT_MINUTES 240
+  TIMEOUT_MINUTES 300
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -39,16 +24,16 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   ctest_linux_nightly_serial_development_debug_zan.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
-  TIMEOUT_MINUTES 300
+  TIMEOUT_MINUTES 360
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_DEBUG_ICPC
-  ctest_linux_nightly_serial_debug_icpc_zan.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 540
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  SERIAL_DEBUG_ICPC
+#  ctest_linux_nightly_serial_debug_icpc_zan.cmake
+#  CTEST_INSTALLER_TYPE release
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 540
+#)
 
 #Only run these builds once a week
 if(${DAYOFWEEK} MATCHES "Saturday")
@@ -72,14 +57,6 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 endif()
 
 ELSE()
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  CUDA_OPT_RELEASE
-  ctest_linux_nightly_cuda_opt_release_zan.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 150
-)
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
 #  SERIAL_OPT_RELEASE_ICPC 

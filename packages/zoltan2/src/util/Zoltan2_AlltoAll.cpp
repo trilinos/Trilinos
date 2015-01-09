@@ -130,9 +130,9 @@ void AlltoAllCount(
 template <>
 void AlltoAllv(const Comm<int> &comm,
                const Environment &env,
-               const ArrayView<const string> &sendBuf,
+               const ArrayView<const std::string> &sendBuf,
                const ArrayView<const int> &sendCount,
-               ArrayRCP<string> &recvBuf,
+               ArrayRCP<std::string> &recvBuf,
                const ArrayView<int> &recvCount
 )
 {
@@ -195,7 +195,7 @@ void AlltoAllv(const Comm<int> &comm,
   }
 
   // Data to return
-  string *newStrings = new string [numNewStrings];
+  std::string *newStrings = new std::string [numNewStrings];
 
   buf = inBuf;
   int next = 0;
@@ -205,7 +205,7 @@ void AlltoAllv(const Comm<int> &comm,
     endChar = buf + nchars;
     while (buf < endChar){
       int slen = *buf++;
-      string nextString;
+      std::string nextString;
       for (int i=0; i < slen; i++)
         nextString.push_back(*buf++);
       newStrings[next++] = nextString;
@@ -213,7 +213,7 @@ void AlltoAllv(const Comm<int> &comm,
     }
   }
 
-  recvBuf = arcp<string>(newStrings, 0, numNewStrings, true);
+  recvBuf = arcp<std::string>(newStrings, 0, numNewStrings, true);
 }
 
 

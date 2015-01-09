@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,9 +56,9 @@
 #include "LOCA_Abstract_TransposeSolveGroup.H"
 
 LOCA::TurningPoint::MooreSpence::SalingerBordering::SalingerBordering(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) : 
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) :
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -76,12 +76,12 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::~SalingerBordering()
 
 void
 LOCA::TurningPoint::MooreSpence::SalingerBordering::setBlocks(
-	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group_,
-	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup_,
-	 const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
-	 const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
-	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp_,
-	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp_)
+     const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group_,
+     const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup_,
+     const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
+     const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
+     const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp_,
+     const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp_)
 {
   group = group_;
   tpGroup = tpGroup_;
@@ -91,29 +91,29 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::setBlocks(
   dJndp = dJndp_;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
-	   Teuchos::ParameterList& params,
-	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+       Teuchos::ParameterList& params,
+       const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solve()";
   NOX::Abstract::Group::ReturnType status;
-  
+
   // Get components of input
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x =
     input.getXMultiVec();
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null =
     input.getNullMultiVec();
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
 
   // Get components of result
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x =
     result.getXMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null =
     result.getNullMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param =
     result.getScalars();
 
   int m = input.numVectors();
@@ -121,48 +121,48 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
   std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
-  
+
   // Create new multivectors with m+1 columns
   // First m columns store input_x, input_null, result_x, result_null
   // respectively, last column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
   // respectively
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x =
     input_x->clone(m+1);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null =
     input_null->clone(m+1);
-  
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
+
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x =
     result_x->clone(m+1);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null =
     result_null->clone(m+1);
-  
+
   // Set first m columns to input_x
   cont_input_x->setBlock(*input_x, index_input);
 
   // Set last column to dfdp
   (*cont_input_x)[m] = (*dfdp)[0];
-  
+
     // Set first m columns to input_null
   cont_input_null->setBlock(*input_null, index_input);
-  
+
   // Set last column to dJndp
   (*cont_input_null)[m] = (*dJndp)[0];
-  
+
   // Initialize result multivectors to 0
   cont_result_x->init(0.0);
   cont_result_null->init(0.0);
-    
+
   // Solve
-  status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			   *input_param, *cont_result_x, *cont_result_null, 
-			   *result_param);
-  
+  status = solveContiguous(params, *cont_input_x, *cont_input_null,
+               *input_param, *cont_result_x, *cont_result_null,
+               *result_param);
+
   // Create views of first m columns for result_x, result_null
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view =
     cont_result_x->subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view =
     cont_result_null->subView(index_input);
-  
+
   // Copy first m columns back into result_x, result_null
   *result_x = *cont_result_x_view;
   *result_null = *cont_result_null_view;
@@ -170,29 +170,29 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
    return status;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose(
-	   Teuchos::ParameterList& params,
-	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+       Teuchos::ParameterList& params,
+       const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose()";
   NOX::Abstract::Group::ReturnType status;
-  
+
   // Get components of input
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x =
     input.getXMultiVec();
-  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null =
     input.getNullMultiVec();
   Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
 
   // Get components of result
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x =
     result.getXMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null =
     result.getNullMultiVec();
-  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param =
     result.getScalars();
 
   int m = input.numVectors();
@@ -200,50 +200,50 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose(
   std::vector<int> index_input(m);
   for (int i=0; i<m; i++)
     index_input[i] = i;
-  
+
   // Create new multivectors with m+1 columns
   // First m columns store input_x, input_null, result_x, result_null
   // respectively, last column stores 0, -phi, J^-T tmp , -J^-T phi
   // respectively
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x =
     input_x->clone(m+1);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null =
     input_null->clone(m+1);
-  
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
+
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x =
     result_x->clone(m+1);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null =
     result_null->clone(m+1);
-  
+
   // Set first m columns to input_x
   cont_input_x->setBlock(*input_x, index_input);
 
   // Set last column to 0
   (*cont_input_x)[m].init(0);
-  
+
     // Set first m columns to input_null
   cont_input_null->setBlock(*input_null, index_input);
-  
+
   // Set last column to phi
   Teuchos::RCP<NOX::Abstract::Vector> phi = tpGroup->getLengthVector();
   (*cont_input_null)[m].update(-1.0, *phi, 0.0);
-  
+
   // Initialize result multivectors to 0
   cont_result_x->init(0.0);
   cont_result_null->init(0.0);
-    
+
   // Solve
-  status = solveTransposeContiguous(params, *cont_input_x, *cont_input_null, 
-				    *input_param, *cont_result_x, 
-				    *cont_result_null, 
-				    *result_param);
-  
+  status = solveTransposeContiguous(params, *cont_input_x, *cont_input_null,
+                    *input_param, *cont_result_x,
+                    *cont_result_null,
+                    *result_param);
+
   // Create views of first m columns for result_x, result_null
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view =
     cont_result_x->subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view =
     cont_result_null->subView(index_input);
-  
+
   // Copy first m columns back into result_x, result_null
   *result_x = *cont_result_x_view;
   *result_null = *cont_result_null_view;
@@ -256,17 +256,17 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTranspose(
 // the last column stores df/dp, d(Jn)/dp respectively.  Note however
 // input_param has only m columns (not m+1).  result_x, result_null,
 // are result_param have the same dimensions as their input counterparts
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
-		  Teuchos::ParameterList& params,
-		  const NOX::Abstract::MultiVector& input_x,
-		  const NOX::Abstract::MultiVector& input_null,
-	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
-		  NOX::Abstract::MultiVector& result_x,
-		  NOX::Abstract::MultiVector& result_null,
-	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
+          Teuchos::ParameterList& params,
+          const NOX::Abstract::MultiVector& input_x,
+          const NOX::Abstract::MultiVector& input_null,
+              const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+          NOX::Abstract::MultiVector& result_x,
+          NOX::Abstract::MultiVector& result_null,
+              NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -281,30 +281,30 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   // verify underlying Jacobian is valid
   if (!group->isJacobian()) {
     status = group->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
-  
+
   // compute [A b] = J^-1 [F df/dp]
   status = group->applyJacobianInverseMultiVector(params, input_x, result_x);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
+                               callingFunction);
+  Teuchos::RCP<NOX::Abstract::MultiVector> A =
     result_x.subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> b = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> b =
     result_x.subView(index_dp);
 
   // compute (Jn)_x[A b]
-  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp =
     result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
-				     *tmp);
-  finalStatus = 
+                     *tmp);
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 
   // compute (Jn)_x[A b] - [G d(Jn)/dp]
   tmp->update(-1.0, input_null, 1.0);
@@ -312,20 +312,20 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   // verify underlying Jacobian is valid
   if (!group->isJacobian()) {
     status = group->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute [C d] = J^-1 (Jn)_x[A b] - [G d(Jn)/dp]
   status = group->applyJacobianInverseMultiVector(params, *tmp, result_null);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  Teuchos::RCP<NOX::Abstract::MultiVector> C = 
+                               callingFunction);
+  Teuchos::RCP<NOX::Abstract::MultiVector> C =
     result_null.subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> d = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> d =
     result_null.subView(index_dp);
 
   // compute z = (h + phi^T C) / phi^T d
@@ -348,17 +348,17 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
 // the last column stores df/dp, d(Jn)/dp respectively.  Note however
 // input_param has only m columns (not m+1).  result_x, result_null,
 // are result_param have the same dimensions as their input counterparts
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
-		  Teuchos::ParameterList& params,
-		  const NOX::Abstract::MultiVector& input_x,
-		  const NOX::Abstract::MultiVector& input_null,
-	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
-		  NOX::Abstract::MultiVector& result_x,
-		  NOX::Abstract::MultiVector& result_null,
-	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const
+          Teuchos::ParameterList& params,
+          const NOX::Abstract::MultiVector& input_x,
+          const NOX::Abstract::MultiVector& input_null,
+              const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+          NOX::Abstract::MultiVector& result_x,
+          NOX::Abstract::MultiVector& result_null,
+              NOX::Abstract::MultiVector::DenseMatrix& result_param) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -368,7 +368,7 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
     Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(group);
   if (tsGroup == Teuchos::null)
     globalData->locaErrorCheck->throwError(callingFunction,
-					   "Underlying group must be derived from NOX::Abstract::TransposeSolveGroup for transpose solve");
+                       "Underlying group must be derived from NOX::Abstract::TransposeSolveGroup for transpose solve");
 
   int m = input_x.numVectors()-1;
   std::vector<int> index_input(m);
@@ -380,32 +380,32 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
   // verify underlying Jacobian is valid
   if (!group->isJacobian()) {
     status = group->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
-  
+
   // compute [A b] = J^-T [G -phi]
-  status = tsGroup->applyJacobianTransposeInverseMultiVector(params, 
-							     input_null, 
-							     result_null);
-  finalStatus = 
+  status = tsGroup->applyJacobianTransposeInverseMultiVector(params,
+                                 input_null,
+                                 result_null);
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
+                               callingFunction);
+  Teuchos::RCP<NOX::Abstract::MultiVector> A =
     result_null.subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> b = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> b =
     result_null.subView(index_dp);
 
   // compute (Jn)_x^T[A b]
-  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp =
     result_null.clone(NOX::ShapeCopy);
   status = group->computeDwtJnDxMulti(result_null, *nullVector, *tmp);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // compute [F 0] - (Jn)_x[A b]
   tmp->update(1.0, input_x, -1.0);
@@ -413,21 +413,21 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveTransposeContiguous(
   // verify underlying Jacobian is valid
   if (!group->isJacobian()) {
     status = group->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute [C d] = J^-T( [F 0] - (Jn)_x[A b] )
-  status = tsGroup->applyJacobianTransposeInverseMultiVector(params, *tmp, 
-							     result_x);
-  finalStatus = 
+  status = tsGroup->applyJacobianTransposeInverseMultiVector(params, *tmp,
+                                 result_x);
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  Teuchos::RCP<NOX::Abstract::MultiVector> C = 
+                               callingFunction);
+  Teuchos::RCP<NOX::Abstract::MultiVector> C =
     result_x.subView(index_input);
-  Teuchos::RCP<NOX::Abstract::MultiVector> d = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> d =
     result_x.subView(index_dp);
 
   // compute (Jn)_p^T*[A b]

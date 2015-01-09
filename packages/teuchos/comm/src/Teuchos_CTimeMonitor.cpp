@@ -88,7 +88,7 @@ int Teuchos_startTimer( char timerName[], int timerID )
     return -1;
   }
   return timerID;
-  (void)success; // To avoid wrong compiler warning on GCC 4.6.1 
+  (void)success; // To avoid wrong compiler warning on GCC 4.6.1
 }
 
 

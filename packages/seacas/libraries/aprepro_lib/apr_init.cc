@@ -1,81 +1,55 @@
+// Copyright (c) 2014, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 /***
    NAME
      init
    PURPOSE
      Initialize variables and functions Aprepro
 ***/
-#include "aprepro.h"
-#include <cstdio>
-#include <sys/types.h>
-#include "init_structs.h"
+#include "apr_builtin.h"
+#include <cstring>                      // for strncpy
+#include <string>                       // for string
+#include "aprepro.h"                    // for symrec, Aprepro, etc
+#include "init_structs.h"               // for array_a_init, array_c_init, etc
 
 namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;
 
 void init_table(const char *comment);
 char comm_string[32];
-
-extern double
-  do_fabs(double x),
-  do_acos(double x),
-  do_acosd(double x),
-  do_asin(double x),
-  do_asind(double x),
-  do_atan(double x),
-  do_atand(double x),
-  do_ceil(double x),
-  do_cos(double x),
-  do_cosd(double x),
-  do_cosh(double x),
-  do_d2r(double x),
-  do_exp(double x),
-  do_floor(double x),
-  do_int(double x),
-  do_log(double x),
-  do_log10(double x),
-  do_r2d(double x),
-  do_sin(double x),
-  do_sind(double x),
-  do_sinh(double x),
-  do_sqrt(double x),
-  do_tan(double x),
-  do_tand(double x),
-  do_tanh(double x),
-  do_lgamma(double val),
-  do_log1p(double x),
-  do_acosh(double x),
-  do_asinh(double x),
-  do_atanh(double x),
-  do_nint(double x),
-  do_atan2(double x, double y),
-  do_atan2d(double x, double y),
-  do_dim(double x, double y),
-  do_fmod(double x, double y),
-  do_max(double x, double y),
-  do_min(double x, double y),
-  do_srand(double seed),
-  do_rand(double xl, double xh),
-  do_sign(double x, double y),
-  do_rand_normal(double mean, double stddev),
-  do_rand_weibull(double alpha, double beta),
-  do_rand_lognormal(double mean, double stddev), 
-  do_hypot(double x, double y),
-  do_polarX(double rad, double ang),
-  do_polarY(double rad, double ang),
-  do_dist(double x1, double y1, double x2, double y2),
-  do_angle(double x1, double y1, double x2, double y2),
-  do_angled(double x1, double y1, double x2, double y2),
-  do_word_count(char *string, char *delm),
-  do_strtod(char *string),
-  do_rows(const array *arr),
-  do_cols(const array *arr);
-
-#if 0
-  do_julday(double mon, double day, double year),
-  do_juldayhms(double mon, double day, double year, double h, double mi, double se),
-  do_option(char *option, double value);
-#endif
-
+char vers_string[32];
+  
 struct init_d arith_fncts[] =
 {
   {"abs",            do_fabs,   "abs(x)",   "Absolute value of x. |x|."},
@@ -160,53 +134,23 @@ struct init_c arith_c_fncts[] =
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
-//TODO
-#if 0  
-  {"option",         do_option, "option(?,?)","Internal"},
-  {"julday",         do_julday, "julday(mm, dd, yy)","Julian day corresponding to mm/dd/yy. "},
-  {"juldayhms",      do_juldayhms,"juldayhms(mm, dd, yy, hh, mm, ss)","Julian day corresponding to mm/dd/yy at hh:mm:ss "},
-  {0, 0, 0, 0}				/* Last line must be 0, 0 */
+struct init_cd arith_cd_fncts[] =
+{
+  {"option", do_option, "option(?,?)", "Internal"},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
 };
-#endif
 
-extern const char
-  *do_dumpsym(),
-  *do_dumpfunc(),
-  *do_dumpvar(),
-  *do_get_date(),
-  *do_get_iso_date(),
-  *do_get_time(),
-  *do_get_temp_filename(),
-  
-  *do_tolower(char *string),
-  *do_toupper(char *string),
-  *do_Units(char *type),
-  *do_file_to_string(char *filename),
-  *do_error(char *error_string),
-  *do_include_path(char *new_path),
-  *do_getenv(char *env),
-  *do_output(char *filename),
-  *do_append(char *filename),
-  *do_execute(char *string),
-  *do_rescan(char *string),
+struct init_ddd arith_ddd_fncts[] =
+{
+  {"julday", do_julday, "julday(mm, dd, yy)", "Julian day corresponding to mm/dd/yy. "},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+};
 
-  *do_if(double x),
-  *do_notif(double x),
-  *do_elseif(double x),
-  *do_switch(double x),
-  *do_case(double x),
-  *do_intout(double intval),
-  *do_tostring(double x),
-
-  *do_get_word(double n, char *string, char *delm),
-  *do_extract(char *string, char *begin, char *end),
-  *do_print_array(const array *arr);
-  
-#if defined(EXODUSII)
-  *do_exodus_info(char *filename),
-  *do_exodus_meta(char *filename),
-#endif
-
+struct init_dddddd arith_dddddd_fncts[] =
+{
+  {"juldayhms", do_juldayhms, "juldayhms(mm, dd, yy, hh, mm, ss)", "Julian day corresponding to mm/dd/yy at hh:mm:ss "},
+  {0, 0, 0, 0} /* Last line must be 0, 0, 0, 0*/
+};
 
 struct str_init string_fncts[] =
 {
@@ -239,6 +183,15 @@ struct str_c_init string_c_fncts[] =
   {"exodus_info",    do_exodus_info, "exodus_info(ex_fn)","Parses the info records extracted from the exodus file 'ex_fn'"},
   {"exodus_meta",    do_exodus_meta, "exodus_meta(ex_fn)","Creates several variables related to the exodusII metadata in the specified file. Experimental."},
 #endif
+  {"delete",         do_delete,      "delete(var_name)", "Delete the variable with name 'var_name'."},
+  {"if",             do_str_if,      "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"If",             do_str_if,      "If(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"elseif",         do_str_elseif,  "elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"Elseif",         do_str_elseif,  "Elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"ifdef",          do_str_if,      "ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifdef",          do_str_if,      "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"ifndef",         do_str_notif,   "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
+  {"Ifndef",         do_str_notif,   "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
 };
   
@@ -248,13 +201,17 @@ struct str_d_init string_d_fncts[] =
   {"to_string",      do_tostring,    "to_string(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"tostring",       do_tostring,    "tostring(x)","Returns a string representation of the numerical variable x. The variable x is unchanged."},
   {"if",             do_if,          "if(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"If",             do_if,          "If(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
   {"elseif",         do_elseif,      "elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
+  {"Elseif",         do_elseif,      "Elseif(x)", "Handles the if statements. x can be any valid expression; nonzero is true"},
   {"ifdef",          do_if,          "ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"Ifdef",          do_if,          "Ifdef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"ifndef",         do_notif,       "ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"Ifndef",         do_notif,       "Ifndef(x)", "Handles the if statements. x can be any valid expression; nonzero is true (deprecated, use if)"},
   {"switch",         do_switch,      "switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
+  {"Switch",         do_switch,      "Switch(x)", "Switch statement. Select from the following case statements which matches 'x' and execute that one. End with endswitch"},
   {"case",           do_case,        "case(x)", "Switch statement. A case used in a containing switch statement."},
+  {"Case",           do_case,        "Case(x)", "Switch statement. A case used in a containing switch statement."},
   {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 
@@ -276,15 +233,26 @@ struct str_a_init string_a_fncts[] =
     {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 
-extern array *do_csv_array(const char *filename);
-extern array *do_make_array(double rows, double cols);
-extern array *do_identity(double size);
-extern array *do_transpose(const array *array);
-
 struct array_c_init array_c_fncts[] =
   {
-    {"csv_array",         do_csv_array,      "csv_array(filename)",
+    {"csv_array",         do_csv_array1,      "csv_array(filename)",
      "Create a 2D array from the data in a csv file."},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+struct array_cd_init array_cd_fncts[] =
+  {
+    {"csv_array",         do_csv_array,      "csv_array(filename, [skip])",
+     "Create a 2D array from the data in a csv file optionally skipping rows."
+     " If skip is integer skip that many rows; if skip is a character, skip lines beginning with that character"},
+    {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
+  };
+
+struct array_cc_init array_cc_fncts[] =
+  {
+    {"csv_array",         do_csv_array2,      "csv_array(filename, [skip])",
+     "Create a 2D array from the data in a csv file optionally skipping rows."
+     " If skip is integer skip that many rows; if skip is a character, skip lines beginning with that character"},
     {0, 0, 0, 0}				/* Last line must be 0, 0, 0, 0 */
   };
 
@@ -379,6 +347,27 @@ struct svar_init svariables[] =
       ptr->syntax = arith_c_fncts[i].syntax;
     }
 
+    for (int i = 0; arith_cd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_cd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_cd = arith_cd_fncts[i].fnct;
+      ptr->info = arith_cd_fncts[i].description;
+      ptr->syntax = arith_cd_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_ddd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_ddd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_ddd = arith_ddd_fncts[i].fnct;
+      ptr->info = arith_ddd_fncts[i].description;
+      ptr->syntax = arith_ddd_fncts[i].syntax;
+    }
+
+    for (int i = 0; arith_dddddd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(arith_dddddd_fncts[i].fname, FUNCTION, 1);
+      ptr->value.fnctptr_dddddd = arith_dddddd_fncts[i].fnct;
+      ptr->info = arith_dddddd_fncts[i].description;
+      ptr->syntax = arith_dddddd_fncts[i].syntax;
+    }
+
     for (int i = 0; string_fncts[i].fname != 0; i++) {
       symrec *ptr = putsym(string_fncts[i].fname, STRING_FUNCTION, 1);
       ptr->value.strfnct = string_fncts[i].fnct;
@@ -428,6 +417,20 @@ struct svar_init svariables[] =
       ptr->syntax = array_c_fncts[i].syntax;
     }
 
+    for (int i = 0; array_cc_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_cc_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_cc = array_cc_fncts[i].fnct;
+      ptr->info = array_cc_fncts[i].description;
+      ptr->syntax = array_cc_fncts[i].syntax;
+    }
+
+    for (int i = 0; array_cd_fncts[i].fname != 0; i++) {
+      symrec *ptr = putsym(array_cd_fncts[i].fname, ARRAY_FUNCTION, 1);
+      ptr->value.arrfnct_cd = array_cd_fncts[i].fnct;
+      ptr->info = array_cd_fncts[i].description;
+      ptr->syntax = array_cd_fncts[i].syntax;
+    }
+
     for (int i = 0; array_dd_fncts[i].fname != 0; i++) {
       symrec *ptr = putsym(array_dd_fncts[i].fname, ARRAY_FUNCTION, 1);
       ptr->value.arrfnct_dd = array_dd_fncts[i].fnct;
@@ -465,8 +468,10 @@ struct svar_init svariables[] =
     ptr->value.svar = comm_string;
 
     {
+      std::strncpy(vers_string, aprepro->version().c_str(), 32);
+      vers_string[31] = '\0';
       ptr = putsym("VERSION", STRING_VARIABLE, 1);
-      ptr->value.svar = aprepro->version().c_str();
+      ptr->value.svar = vers_string;
     }
   }
 } // namespace SEAMS

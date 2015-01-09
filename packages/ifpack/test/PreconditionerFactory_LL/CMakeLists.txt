@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AztecOO)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
@@ -11,6 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PreconditionerFactory_LL
   SOURCES cxx_main.cpp
   ARGS "-v"
+  XHOST zan.srn.sandia.gov
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )

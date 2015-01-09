@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -74,7 +74,7 @@ namespace LOCA {
     //! Factory for creating %EigenvalueSort strategy objects
     /*!
      * The parameters passed to the create() through the \c eigenParams
-     * argument method should specify the sorting method "Sorting Method" 
+     * argument method should specify the sorting method "Sorting Method"
      * as described below, as well as any additional parameters
      * for the particular strategy.
      * <ul>
@@ -107,8 +107,8 @@ namespace LOCA {
        */
       Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>
       create(
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
       //! Return strategy name given by \c eigenParams
       const std::string& strategyName(Teuchos::ParameterList& eigenParams) const;

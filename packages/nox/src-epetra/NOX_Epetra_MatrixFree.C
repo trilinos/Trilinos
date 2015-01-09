@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,9 +60,9 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-MatrixFree::MatrixFree(Teuchos::ParameterList& printParams, 
-		       const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
-		       const NOX::Epetra::Vector& x, bool p) :
+MatrixFree::MatrixFree(Teuchos::ParameterList& printParams,
+               const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
+               const NOX::Epetra::Vector& x, bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
@@ -111,7 +111,7 @@ int MatrixFree::SetUseTranspose(bool UseTranspose)
 {
   if (UseTranspose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
-	 << "unavailable in Matrix-Free mode!" << std::endl;
+     << "unavailable in Matrix-Free mode!" << std::endl;
     throw "NOX Error";
   }
   return (-1);
@@ -135,9 +135,9 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Convert X and Y from an Epetra_MultiVector to a Epetra_Vectors
   // and NOX::epetra::Vectors.  This is done so we use a consistent
   // vector space for norms and inner products.
-  Teuchos::RCP<Epetra_Vector> wrappedX = 
+  Teuchos::RCP<Epetra_Vector> wrappedX =
     Teuchos::rcp(new Epetra_Vector(View, X, 0));
-  Teuchos::RCP<Epetra_Vector> wrappedY = 
+  Teuchos::RCP<Epetra_Vector> wrappedY =
     Teuchos::rcp(new Epetra_Vector(View, Y, 0));
   NOX::Epetra::Vector nevX(wrappedX, NOX::Epetra::Vector::CreateView);
   NOX::Epetra::Vector nevY(wrappedY, NOX::Epetra::Vector::CreateView);
@@ -171,11 +171,11 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (computeEta) {
     if (useNewPerturbation) {
       double dotprod = currentX.getVectorSpace()->
-	innerProduct(currentX.getEpetraVector(), *wrappedX);
-      if (dotprod==0.0) 
-	dotprod = 1.0e-12;
-      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm)) 
-	* dotprod/fabs(dotprod);
+    innerProduct(currentX.getEpetraVector(), *wrappedX);
+      if (dotprod==0.0)
+    dotprod = 1.0e-12;
+      eta = lambda*(1.0e-12/lambda + fabs(dotprod)/(vectorNorm * vectorNorm))
+    * dotprod/fabs(dotprod);
     }
     else
       eta = lambda*(lambda + solutionNorm/vectorNorm);
@@ -186,12 +186,12 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Compute the perturbed RHS
   perturbX = currentX;
   Y = X;
-  Y.Scale(eta); 
+  Y.Scale(eta);
   perturbX.update(1.0,nevY,1.0);
 
   if (!useGroupForComputeF)
-      interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(), 
-			  NOX::Epetra::Interface::Required::MF_Res);
+      interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(),
+              NOX::Epetra::Interface::Required::MF_Res);
   else{
     groupPtr->setX(perturbX);
     groupPtr->computeF();
@@ -204,7 +204,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     perturbX.update(scaleFactor,nevY,1.0);
     if (!useGroupForComputeF)
       interface->computeF(perturbX.getEpetraVector(), fmPtr->getEpetraVector(),
-			  NOX::Epetra::Interface::Required::MF_Res);
+              NOX::Epetra::Interface::Required::MF_Res);
     else{
       groupPtr->setX(perturbX);
       groupPtr->computeF();
@@ -283,8 +283,8 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   bool ok = false;
   if (!useSolverForComputeJacobian) {
     if (!useGroupForComputeF)
-      ok = interface->computeF(x, fo.getEpetraVector(), 
-			       NOX::Epetra::Interface::Required::MF_Jac);
+      ok = interface->computeF(x, fo.getEpetraVector(),
+                   NOX::Epetra::Interface::Required::MF_Jac);
     else {
       groupPtr->setX(currentX);
       groupPtr->computeF();

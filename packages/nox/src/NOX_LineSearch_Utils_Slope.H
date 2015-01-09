@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -71,8 +71,8 @@ namespace LineSearch {
 namespace Utils {
 
 //! %Common line search utilites for computing the slope of a function.
-/*!  
-  This class provides routines for computing the slope of a give function.  There are two methods, one that uses a Jacobian and the other that estimates the action of the Jacobian by directional derivatives. 
+/*!
+  This class provides routines for computing the slope of a give function.  There are two methods, one that uses a Jacobian and the other that estimates the action of the Jacobian by directional derivatives.
 */
 
 class Slope {
@@ -90,7 +90,7 @@ public:
 
   //! Compute the inner product of the given direction and the gradient associated with the given group.
   /*!
-    Calculates and returns 
+    Calculates and returns
     \f[
     \zeta = d^T \nabla f(x).
     \f]
@@ -98,12 +98,12 @@ public:
     Here \f$d\f$ represents the input parameter \c dir and \f$\nabla
     f(x)\f$ is the gradient associated with the given group.
   */
-  double computeSlope(const NOX::Abstract::Vector& dir, 
-		      const NOX::Abstract::Group& grp);
+  double computeSlope(const NOX::Abstract::Vector& dir,
+              const NOX::Abstract::Group& grp);
 
-  //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.  
+  //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.
   /*!
-    Calculates and returns 
+    Calculates and returns
     \f[
     \zeta = d^T \nabla f(x) = d^TJ^TF
     \f]
@@ -114,7 +114,7 @@ public:
     We can rewrite this equation as:
 
     \f[ d^TJ^TF = F^TJd \f]
-    
+
     which allows us to use directional derivatives to estimate \f$ J^TF \f$:
 
     \f[ F^TJd = F^T \frac{F(x + \eta d) - F(x)}{\eta} \f]
@@ -128,8 +128,8 @@ where \f$\eta\f$ is a scalar perturbation calculated by:
 \f$ \lambda \f$ is a constant fixed at 1.0e-6.
 
   */
-  double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir, 
-				const NOX::Abstract::Group& grp);
+  double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir,
+                const NOX::Abstract::Group& grp);
 
 private:
   //! Disallow default constructor.

@@ -47,7 +47,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 SquareTriMeshFactory::SquareTriMeshFactory()
 {
@@ -60,7 +60,7 @@ SquareTriMeshFactory::~SquareTriMeshFactory()
 }
 
 //! Build the mesh object
-Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareTriMeshFactory::buildMesh()");
 
@@ -76,14 +76,14 @@ Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildMesh(stk::ParallelMachine
    return mesh;
 }
 
-Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareTriMeshFactory::buildUncomittedMesh()");
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
 
-   machRank_ = stk::parallel_machine_rank(parallelMach);
-   machSize_ = stk::parallel_machine_size(parallelMach);
+   machRank_ = stk_classic::parallel_machine_rank(parallelMach);
+   machSize_ = stk_classic::parallel_machine_size(parallelMach);
 
    if(xProcs_==-1) {
       // default x only decomposition
@@ -103,7 +103,7 @@ Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::Paral
    return mesh;
 }
 
-void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::SquareTriMeshFactory::completeMeshConstruction()");
 
@@ -190,7 +190,7 @@ void SquareTriMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareTriMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
    typedef shards::Triangle<> TriTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<TriTopo>();
@@ -220,7 +220,7 @@ void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_
    mesh.addSideset("bottom",side_ctd);
 }
 
-void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    mesh.beginModification();
       // build each block
@@ -232,7 +232,7 @@ void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_I
    mesh.endModification();
 }
 
-void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -262,15 +262,15 @@ void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlo
 
    std::stringstream blockName;
    blockName << "eblock-" << xBlock << "_" << yBlock;
-   stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
+   stk_classic::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
 
    // build the elements
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
       for(int ny=myYElems_start;ny<myYElems_end;++ny) {
-         stk::mesh::EntityId gid_a = 2*(totalXElems*ny+nx+1)-1;
-         stk::mesh::EntityId gid_b = gid_a+1;
-         std::vector<stk::mesh::EntityId> nodes(3);
-         stk::mesh::EntityId sw,se,ne,nw;
+         stk_classic::mesh::EntityId gid_a = 2*(totalXElems*ny+nx+1)-1;
+         stk_classic::mesh::EntityId gid_b = gid_a+1;
+         std::vector<stk_classic::mesh::EntityId> nodes(3);
+         stk_classic::mesh::EntityId sw,se,ne,nw;
          sw = nx+1+ny*(totalXElems+1);
          se = sw+1;
          ne = se+(totalXElems+1);
@@ -335,7 +335,7 @@ std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,u
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-const stk::mesh::Relation * SquareTriMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
+const stk_classic::mesh::Relation * SquareTriMeshFactory::getRelationByID(unsigned ID,stk_classic::mesh::PairIterRelation relations) const
 {
    for(std::size_t i=0;i<relations.size();i++) 
       if(relations[i].identifier()==ID)
@@ -352,20 +352,20 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
    std::size_t totalYElems = nYElems_*yBlocks_;
 
    // get all part vectors
-   stk::mesh::Part * left = mesh.getSideset("left");
-   stk::mesh::Part * right = mesh.getSideset("right");
-   stk::mesh::Part * top = mesh.getSideset("top");
-   stk::mesh::Part * bottom = mesh.getSideset("bottom");
+   stk_classic::mesh::Part * left = mesh.getSideset("left");
+   stk_classic::mesh::Part * right = mesh.getSideset("right");
+   stk_classic::mesh::Part * top = mesh.getSideset("top");
+   stk_classic::mesh::Part * bottom = mesh.getSideset("bottom");
 
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk_classic::mesh::Entity*> localElmts;
    mesh.getMyElements(localElmts);
 
    // loop over elements adding edges to sidesets
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk::mesh::Entity * element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
+      stk_classic::mesh::Entity * element = (*itr);
+      stk_classic::mesh::EntityId gid = element->identifier();      
+      stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
 
       bool lower = (gid%2 != 0);
       std::size_t block = lower ? (gid+1)/2 : gid/2;
@@ -377,7 +377,7 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems && lower) { 
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_)
@@ -385,7 +385,7 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx==0 && !lower) {
-         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(2,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_)
@@ -396,7 +396,7 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(ny==0 && lower) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(0,relations)->entity();
 
          // on the bottom
          if(edge->owner_rank()==machRank_)
@@ -404,7 +404,7 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(ny+1==totalYElems && !lower) {
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk_classic::mesh::Entity * edge = getRelationByID(1,relations)->entity();
 
          // on the top
          if(edge->owner_rank()==machRank_)

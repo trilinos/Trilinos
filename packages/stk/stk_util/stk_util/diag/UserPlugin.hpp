@@ -1,15 +1,51 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef STK_UTIL_DIAG_UserPlugin_h
 #define STK_UTIL_DIAG_UserPlugin_h
 
-#include <memory>
-#include <map>
-#include <vector>
-#include <string>
-#include <typeinfo>
+#include <stddef.h>                     // for NULL
+#include <functional>                   // for binary_function
+#include <iosfwd>                       // for ostream
+#include <map>                          // for map, map<>::value_compare
+#include <stk_util/diag/StringUtil.hpp>  // for less_nocase
+#include <stk_util/util/Fortran.hpp>    // for SIERRA_FORTRAN
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for make_pair, pair
+#include <vector>                       // for vector
+namespace stk { namespace diag { class Writer; } }
 
-#include <stk_util/diag/StringUtil.hpp>
-#include <stk_util/util/Fortran.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
 
 /**
  * @file
@@ -231,25 +267,25 @@ public:
 
   /**
    * @brief Member function <b>getFuncPtr</b> returns the function pointer with the
-   * specfied <it>name_pair</i>.
+   * specfied <it>name</it>.
    *
-   * @param name_pair		a <b>NamePair</b> const reference to the registered
+   * @param name		a <b>NamePair</b> const reference to the registered
    *				name pair.
    *
    * @returns			a <b>void</b> function pointer with the specfied
-   *				<it>name_pair</i>.
+   *				<it>name_pair</it>.
    */
   Registry *getFactoryPtr(const NamePair &name) const;
 
   /**
    * @brief Member function <b>getFuncPtr</b> returns the function pointer with the
-   * specfied <it>name_pair</i>.
+   * specfied <it>name_pair</it>.
    *
    * @param name_pair		a <b>NamePair</b> const reference to the registered
    *				name pair.
    *
    * @returns			a <b>void</b> function pointer with the specfied
-   *				<it>name_pair</i>.
+   *				<it>name_pair</it>.
    */
   void *getFuncPtr(const NamePair &name_pair) const;
 
@@ -290,17 +326,17 @@ public:
    * @param os			a <b>std::ostream</b> reference to dump the registry
    *				to.
    *
-   * @return			a <b>std::ostream</b> reference to <it>os</i>.
+   * @return			a <b>std::ostream</b> reference to <it>os</it>.
    */
   std::ostream &verbose_print(std::ostream &os) const;
 
   /**
    * @brief Member function <b>verbose_print</b> dumps the registry.
    *
-   * @param os			a <b>std::ostream</b> reference to dump the registry
+   * @param dout		a <b>stk::diag::Writer</b> reference to dump the registry
    *				to.
    *
-   * @return			a <b>std::ostream</b> reference to <it>os</i>.
+   * @return			a <b>std::ostream</b> reference to <it>os</it>.
    */
   stk::diag::Writer &verbose_print(stk::diag::Writer &dout) const;
 };
@@ -366,7 +402,8 @@ public:
    *
    */
   static void registerCreator(const std::string &derived_name, Signature function) {
-    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), derived_name), (void *) function);
+    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), derived_name),
+					reinterpret_cast<void *>(function));
   }
 
   /**
@@ -384,7 +421,7 @@ public:
    *				create function.
    */
   static Signature create(const std::string &derived_name) {
-    Signature creator_function = (Signature) Registry::rootInstance().getPluginPtr(std::make_pair(&typeid(Signature), derived_name));
+    Signature creator_function = reinterpret_cast<Signature>(Registry::rootInstance().getPluginPtr(std::make_pair(&typeid(Signature), derived_name)));
 
     return (*creator_function);
   }
@@ -393,8 +430,7 @@ public:
    * @brief Member function <b>create</b> returns the createInstance() function
    * associated with the specified base class and derived_name.
    *
-   * @param derived_name	a <b>std::string</b> const reference to the derived
-   *				classes name.
+   * @param derived_id	a <b>int</b> to the derived classes id 
    *
    * @throws			a <b>std::invalid_argument</b> exception is thrown
    *				if there is no instance creation function registered for
@@ -425,11 +461,11 @@ public:
   }
 
   /**
-   * @brief Class template <b>Register</b> registers the <i>createInstance()</i>
-   * function with the <i>derived_name</i> on object creation.
+   * @brief Class template <b>Register</b> registers the <it>createInstance()</it>
+   * function with the <it>derived_name</it> on object creation.
    *
-   * @param DerivedClass	a <b>class</b> which specifies the derived class
-   *				which holds the <i>createInstance()</i> function.
+   * DerivedClass a <b>class</b> which specifies the derived class
+   * which holds the <it>createInstance()</it> function.
    *
    */
   template <class DerivedClass>
@@ -440,8 +476,8 @@ public:
 
     /**
      * @brief Creates a new <b>Register</b> instance.  Upon creation, the
-     * <i>DerivedClass::createInstance()</i> instance creation function is registered
-     * with the <i>derived_name</i>.
+     * <it>DerivedClass::createInstance()</it> instance creation function is registered
+     * with the <it>derived_name</it>.
      *
      * @param derived_name	a <b>std::string</b> const reference to the derived
      *				class' name.
@@ -455,8 +491,8 @@ public:
 
     /**
      * @brief Creates a new <b>Register</b> instance.  Upon creation, the
-     * <i>DerivedClass::createInstance()</i> instance creation function is registered
-     * with the <i>derived_name</i>.
+     * <it>DerivedClass::createInstance()</it> instance creation function is registered
+     * with the <it>derived_name</it>.
      *
      * @param derived_name	a <b>std::string</b> const reference to the derived
      *				class' name.
@@ -470,8 +506,8 @@ public:
 
     /**
      * @brief Creates a new <b>Register</b> instance.  Upon creation, the
-     * <i>DerivedClass::createInstance()</i> instance creation function is registered
-     * with the <i>derived_id</i> and "enum id " derived_id.
+     * <it>DerivedClass::createInstance()</it> instance creation function is registered
+     * with the <it>derived_id</it> and "enum id " derived_id.
      *
      * @param derived_id	a <b>int</b> to the derived class' id.
      *
@@ -484,8 +520,8 @@ public:
 
     /**
      * @brief Creates a new <b>Register</b> instance.  Upon creation, the
-     * <i>DerivedClass::createInstance()</i> instance creation function is registered
-     * with the <i>derived_id</i> and "enum id " derived_id.
+     * <it>DerivedClass::createInstance()</it> instance creation function is registered
+     * with the <it>derived_id</it> and "enum id " derived_id.
      *
      * @param derived_id	a <b>int</b> to the derived class' id.
      *
@@ -525,7 +561,7 @@ private:
   UserSubroutine &operator=(const UserSubroutine&);	///< Not implemented
 
 public:
-  typedef S Signature;					///< Subroutine call signature
+  typedef S Signature; ///< Subroutine call signature
 
   /**
    * @brief Member function <b>instance</b> returns the instance of the registry,
@@ -554,7 +590,8 @@ public:
    *
    */
   inline static void registerFunction(const std::string &function_name, Signature *function) {
-    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), function_name), (void *) function);
+    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), function_name),
+					reinterpret_cast<void *>(function));
   }
 
   /**
@@ -571,7 +608,7 @@ public:
    * @return			a <b>Signature</b> user function.
    */
   static Signature *execute(const std::string &function_name) {
-    Signature *user_function = (Signature *) Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name));
+    Signature *user_function = reinterpret_cast<Signature *>(Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name)));
 
     return (*user_function);
   }
@@ -590,7 +627,7 @@ public:
    * @return			a <b>Signature</b> user function pointer.
    */
   static Signature *getFunction(const std::string &function_name) {
-    Signature *user_function = (Signature *) Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name));
+    Signature *user_function = reinterpret_cast<Signature *>(Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name)));
 
     return user_function;
   }
@@ -599,11 +636,11 @@ public:
    * @brief Member function <b>exists</b> returns true if user function specified by
    * derived_name exists.
    *
-   * @param function_name	a <b>std::string</b> const reference to the user
+   * @param derived_name	a <b>std::string</b> const reference to the user
    *				function's name.
    *
    * @return			a <b>bool</b> of true if user function specified
-   *				signature and <i>function_name</i> exists in BaseClass.
+   *				signature and <it>function_name</it> exists in BaseClass.
    */
   static bool exists(const std::string &derived_name) {
     return Registry::rootInstance().getFuncPtr(std::make_pair(&typeid(Signature), derived_name)) != NULL;
@@ -611,7 +648,7 @@ public:
 
   /**
    * @brief Class template <b>Register</b> registers the user function function
-   * pointer with the <i>function_name</i> on object creation.
+   * pointer with the <it>function_name</it> on object creation.
    *
    */
   class Register
@@ -619,7 +656,8 @@ public:
   public:
     /**
      * @brief Creates a new <b>Register</b> instance.  Upon creation, the
-     * <i>func_ptr()</i> function is registered with the <i>function_name</i>.
+     * <it>func_ptr()</it> function is registered with the
+     * <it>function_name</it>.
      *
      * @param function_name	a <b>std::string</b> const reference to the user
      *				function's name.
@@ -670,8 +708,8 @@ extern "C" {
 
 /**
  * Macro <b>FORTRAN_USER_SUBROUTINE</b> generates a FortranFunctionTraits template
- * specialization for the <i>RETURN</i> and <i>SIGNATURE</i> and creates a typedef
- * referencing the user function factory of <i>NAME</i>.
+ * specialization for the <it>RETURN</it> and <it>SIGNATURE</it> and creates a typedef
+ * referencing the user function factory of <it>NAME</it>.
  *
  * Note that the user function has extern "C" linkage.
  *

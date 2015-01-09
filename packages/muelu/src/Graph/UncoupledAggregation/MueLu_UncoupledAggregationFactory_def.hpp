@@ -43,20 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UncoupledAggregationFactory_def.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
+#include <climits>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
@@ -65,48 +55,60 @@
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
-#include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
 
+#include "MueLu_AggregationPhase1Algorithm.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm.hpp"
+#include "MueLu_AggregationPhase2bAlgorithm.hpp"
+#include "MueLu_AggregationPhase3Algorithm.hpp"
+
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UncoupledAggregationFactory()
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::UncoupledAggregationFactory()
   : bDefinitionPhase_(true)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // input parameters
+    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("aggregation: mode");
+    validParamList->getEntry("aggregation: mode").setValidator(
+      rcp(new validatorType(Teuchos::tuple<std::string>("new", "old"), "aggregation: mode")));
+    SET_VALID_ENTRY("aggregation: max agg size");
+    SET_VALID_ENTRY("aggregation: min agg size");
+    SET_VALID_ENTRY("aggregation: max selected neighbors");
+    SET_VALID_ENTRY("aggregation: ordering");
+    validParamList->getEntry("aggregation: ordering").setValidator(
+      rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
+    SET_VALID_ENTRY("aggregation: enable phase 1");
+    SET_VALID_ENTRY("aggregation: enable phase 2a");
+    SET_VALID_ENTRY("aggregation: enable phase 2b");
+    SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
+#undef  SET_VALID_ENTRY
+
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
-    typedef Teuchos::OrdinalTraits<LO> OTS;
-
     // Aggregation parameters (used in aggregation algorithms)
     // TODO introduce local member function for each aggregation algorithm such that each aggregation algorithm can define its own parameters
-    validParamList->set<Ordering>("Ordering", AggOptions::NATURAL, "Ordering strategy (NATURAL|GRAPH|RANDOM)");
-    validParamList->set<LO>      ("MaxNeighAlreadySelected",                   0, "Number of maximum neighbour nodes that are already aggregated already. "
-                                  "If a new aggregate has some neighbours that are already aggregated, "
-                                  "this node probably can be added to one of these aggregates. We don't need a new one.");
-    validParamList->set<LO>      ("MinNodesPerAggregate",                      2, "Minimum number of nodes for aggregate");
-    validParamList->set<LO>      ("MaxNodesPerAggregate",             OTS::max(), "Maximum number of nodes for aggregate");
 
     validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
-    validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm",   false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");
     validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
     validParamList->set<bool> ("UseUncoupledAggregationAlgorithm",          true, "Turn on/off uncoupled aggregation process. Do not turn off: this is "
                                "the main aggregation routine within the uncoupled aggregation process. (default = on)");
@@ -119,68 +121,60 @@ namespace MueLu {
 
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
-    validParamList->set< std::string >           ("SmallAgg aggregate map name",      "", "Name of input map for small aggregates. (default='')");
-    validParamList->set< RCP<const FactoryBase> >("SmallAgg aggregate map factory", null, "Generating factory of (DOF) map for small aggregates.");
 
     return validParamList;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
     Input(currentLevel, "DofsPerNode");
 
     const ParameterList& pL = GetParameterList();
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");
 
+    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
     if (mapOnePtName.length() > 0) {
       RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
       currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
     }
-    if (mapSmallAggName.length() > 0) {
-      RCP<const FactoryBase> mapSmallAggFact = GetFactory("SmallAgg aggregate map factory");
-      currentLevel.DeclareInput(mapSmallAggName, mapSmallAggFact.get());
-    }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    const ParameterList& pL = GetParameterList();
+    ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
-    bool bUseOnePtAggregationAlgorithm             = pL.get<bool>("UseOnePtAggregationAlgorithm");
-    bool bUseSmallAggregationAlgorithm             = pL.get<bool>("UseSmallAggregatesAggregationAlgorithm");
-    bool bUsePreserveDirichletAggregationAlgorithm = pL.get<bool>("UsePreserveDirichletAggregationAlgorithm");
-    bool bUseUncoupledAggregationAglorithm         = pL.get<bool>("UseUncoupledAggregationAlgorithm");
-    bool bUseMaxLinkAggregationAlgorithm           = pL.get<bool>("UseMaxLinkAggregationAlgorithm");
-    bool bUseIsolatedNodeAggregationAglorithm      = pL.get<bool>("UseIsolatedNodeAggregationAlgorithm");
-    bool bUseEmergencyAggregationAlgorithm         = pL.get<bool>("UseEmergencyAggregationAlgorithm");
+    if (pL.get<int>("aggregation: max agg size") == -1)
+      pL.set("aggregation: max agg size", INT_MAX);
 
     // define aggregation algorithms
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
 
     // TODO Can we keep different aggregation algorithms over more Build calls?
     algos_.clear();
-    if (bUseOnePtAggregationAlgorithm)             algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
-    if (bUseSmallAggregationAlgorithm)             algos_.push_back(rcp(new SmallAggregationAlgorithm             (graphFact)));
-    if (bUseUncoupledAggregationAglorithm)         algos_.push_back(rcp(new UncoupledAggregationAlgorithm         (graphFact)));
-    if (bUseMaxLinkAggregationAlgorithm)           algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
-    if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
-    if (bUseIsolatedNodeAggregationAglorithm)      algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
-    if (bUseEmergencyAggregationAlgorithm)         algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
+    algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm(graphFact)));
+    if (pL.get<std::string>("aggregation: mode") == "old") {
+      if (pL.get<bool>("UseOnePtAggregationAlgorithm")             == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
+      if (pL.get<bool>("UseUncoupledAggregationAlgorithm")         == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
+      if (pL.get<bool>("UseMaxLinkAggregationAlgorithm")           == true)   algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
+      if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
+                                                                              algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
 
+    } else {
+      if (pL.get<bool>("aggregation: enable phase 1" )             == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 2a")             == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm           (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 2b")             == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm           (graphFact)));
+      if (pL.get<bool>("aggregation: enable phase 3" )             == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm            (graphFact)));
+                                                                              algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));
+    }
 
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name"), mapSmallAggName = pL.get<std::string>("SmallAgg aggregate map name");
-    RCP<const Map> OnePtMap, SmallAggMap;
+    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
+    RCP<const Map> OnePtMap;
     if (mapOnePtName.length()) {
       RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
       OnePtMap = currentLevel.Get<RCP<const Map> >(mapOnePtName, mapOnePtFact.get());
-    }
-    if (mapSmallAggName.length()) {
-      RCP<const FactoryBase> mapSmallAggFact = GetFactory("SmallAgg aggregate map factory");
-      SmallAggMap = currentLevel.Get<RCP<const Map> >(mapSmallAggName, mapSmallAggFact.get());
     }
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
@@ -189,38 +183,27 @@ namespace MueLu {
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
     aggregates->setObjectLabel("UC");
 
-    const LO nRows = graph->GetNodeNumVertices();
+    const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    std::vector<unsigned> aggStat(nRows, NodeStats::READY);
+    std::vector<unsigned> aggStat(numRows, READY);
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    if (dirichletBoundaryMap != Teuchos::null) {
-      for (LO i = 0; i < nRows; i++)
+    if (dirichletBoundaryMap != Teuchos::null)
+      for (LO i = 0; i < numRows; i++)
         if (dirichletBoundaryMap[i] == true)
-          aggStat[i] = NodeStats::BOUNDARY;
-    }
+          aggStat[i] = BOUNDARY;
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
-    if (SmallAggMap != Teuchos::null || OnePtMap != Teuchos::null) {
-      for (LO i = 0; i < nRows; i++) {
+    if (OnePtMap != Teuchos::null) {
+      for (LO i = 0; i < numRows; i++) {
         // reconstruct global row id (FIXME only works for contiguous maps)
         GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
 
-        if (SmallAggMap != null) {
-          for (LO kr = 0; kr < nDofsPerNode; kr++) {
-            if (SmallAggMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = MueLu::NodeStats::SMALLAGG;
-          }
-        }
-
-        if (OnePtMap != null) {
-          for (LO kr = 0; kr < nDofsPerNode; kr++) {
-            if (OnePtMap->isNodeGlobalElement(grid + kr))
-              aggStat[i] = MueLu::NodeStats::ONEPT;
-          }
-        }
+        for (LO kr = 0; kr < nDofsPerNode; kr++)
+          if (OnePtMap->isNodeGlobalElement(grid + kr))
+            aggStat[i] = ONEPT;
       }
     }
 
@@ -228,24 +211,32 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
     GO numGlobalRows = 0;
     if (IsPrint(Statistics1))
-      sumAll(comm, as<GO>(nRows), numGlobalRows);
+      sumAll(comm, as<GO>(numRows), numGlobalRows);
 
-    LO numNonAggregatedNodes = nRows;
+    LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
 
+      int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
       algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+      algos_[a]->SetProcRankVerbose(oldRank);
 
       if (IsPrint(Statistics1)) {
-
-        GO numLocalAggregated = nRows - numNonAggregatedNodes,  numGlobalAggregated = 0;
-        GO numLocalAggs       = aggregates->GetNumAggregates(), numGlobalAggs = 0;
+        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
+        GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
         sumAll(comm, numLocalAggregated, numGlobalAggregated);
         sumAll(comm, numLocalAggs,       numGlobalAggs);
 
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
+        if (aggPercent > 99.99 && aggPercent < 100.00) {
+          // Due to round off (for instance, for 140465733/140466897), we could
+          // get 100.00% display even if there are some remaining nodes. This
+          // is bad from the users point of view. It is much better to change
+          // it to display 99.99%.
+          aggPercent = 99.99;
+        }
         GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
                                    << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
                                    << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"

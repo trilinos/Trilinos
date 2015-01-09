@@ -58,30 +58,30 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ProjectorSmoother(RCP<SmootherPrototype> coarseSolver)
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ProjectorSmoother(RCP<SmootherPrototype> coarseSolver)
     : coarseSolver_(coarseSolver)
   { }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~ProjectorSmoother() { }
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~ProjectorSmoother() { }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Factory::Input(currentLevel, "A");
     Factory::Input(currentLevel, "Nullspace");
 
     coarseSolver_->DeclareInput(currentLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &currentLevel) {
     FactoryMonitor monitor(*this, "Projector Smoother", currentLevel);
 
     coarseSolver_->Setup(currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      this->GetOStream(Warnings0) << "Warning: MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): Setup() has already been called" << std::endl;
 
     RCP<Matrix>      A = Factory::Get< RCP<Matrix> >     (currentLevel, "A");
     RCP<MultiVector> B = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
@@ -130,8 +130,8 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     coarseSolver_->Apply(X, B, InitialGuessIsZero);
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
@@ -152,24 +152,24 @@ namespace MueLu {
       }
     }
 #else
-    this->GetOStream(Warnings0) << "Warning: MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
+    this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
 #endif
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     return rcp( new ProjectorSmoother(*this) );
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
     return out.str();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
     out0 << "";
   }

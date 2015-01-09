@@ -49,6 +49,6 @@
 #include "Panzer_STK_ScatterCellQuantity_decl.hpp"
 #include "Panzer_STK_ScatterCellQuantity_impl.hpp"
 
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk::ScatterCellQuantity)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer_stk_classic::ScatterCellQuantity)
 
 #endif

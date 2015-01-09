@@ -202,7 +202,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
     // Now we check that the parameterlist is correct
     TEST_EQUALITY_CONST( validpl->get<std::string>("Foo Type"), "None" );
     const ParameterEntry pe = validpl->getEntry("Foo Type");
-    TEST_EQUALITY_CONST( pe.docString(), 
+    TEST_EQUALITY_CONST( pe.docString(),
         "Determines the type of Foo object that will be built.\nThe parameters for each Foo Type are specified in this sublist"
         );
   }
@@ -212,7 +212,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
     // Now we check that the parameterlist is correct
     TEST_EQUALITY_CONST( validpl->get<std::string>("Foo Type"), "None" );
     const ParameterEntry pe = validpl->getEntry("Foo Type");
-    TEST_EQUALITY_CONST( pe.docString(), 
+    TEST_EQUALITY_CONST( pe.docString(),
         "Determines the type of Foo object that will be built.\nThe parameters for each Foo Type are specified in this sublist"
         );
   }
@@ -277,7 +277,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getObjectName) {
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
   const RCP<ParameterList> pl = parameterList();
-  pl->setParameters(*ob->getValidParameters()); // copy parameters 
+  pl->setParameters(*ob->getValidParameters()); // copy parameters
   pl->set("Foo Type", "Foo A"); // change default
   // 1.
   TEST_EQUALITY_CONST( ob->getObjectName(), "Foo B" );
@@ -356,7 +356,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
 // important because we're storing a pointer to the parameter list and the user
 // can change it without ObjectBuilder knowing about it.
 // The parameter list is validated in four places:
-// 1. setParameterList 
+// 1. setParameterList
 // 2. unsetParameterList (only in debug mode)
 // 3. create (only in debug mode)
 // 4. destructor (only in debug mode)
@@ -374,7 +374,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     TEST_THROW( ob->create(), std::logic_error ); // 3.
     TEST_THROW( ob = null, std::logic_error ); // 4.
 #else // TEUCHOS_DEBUG
-    TEST_NOTHROW( ob->unsetParameterList() ); 
+    TEST_NOTHROW( ob->unsetParameterList() );
     RCP<Foo> foo;
     TEST_NOTHROW( foo = ob->create() );
     const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
@@ -383,7 +383,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 #endif // TEUCHOS_DEBUG
 }
 
-// Here we test 
+// Here we test
 // 1.  That it returns a null RCP before we give it a parameter list.
 // 2.  That we can set up a valid parameter list, give it to the ObjectBuilder, and get it back out.
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getParameterList) {
@@ -451,7 +451,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 
 // This function does several things.
 // 1.  It creates the validParameterList whenever it is deleted [already tested in setObjectFactory]
-// 2.  It creates the objectValidator 
+// 2.  It creates the objectValidator
 // 3.  It adds a docstring to the "Object Type" parameter in the parameter list [already tested in setNames]
 // 4.  It fills the parameter list out with the valid parameteres for each object it can create
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
@@ -477,7 +477,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
     validObjectNames.push_back("Foo A");
     validObjectNames.push_back("Foo B");
     validObjectNames.push_back("Foo C");
-    const RCP<const StringToIntegralParameterEntryValidator<int> > 
+    const RCP<const StringToIntegralParameterEntryValidator<int> >
       objectValidator = rcp(
         new StringToIntegralParameterEntryValidator<int>(
           validObjectNames,"Object Type"
@@ -486,7 +486,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
     validPL->set(
       "Object Type","Foo C"
       ,(std::string("Determines the type of Object object that will be built.\n")
-        + "The parameters for each Object Type are specified in this sublist" 
+        + "The parameters for each Object Type are specified in this sublist"
         ).c_str()
       ,objectValidator
       );
@@ -505,7 +505,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
 // 1.  Pass in empty parameter list and create an object.  We should get a
 // sublist and used parameters on the sublist for the object we created, but no
 // other sublists.
-// 2.  Pass in a full parameter list and create an object.  We should get 
+// 2.  Pass in a full parameter list and create an object.  We should get
 // used parameters for only the sublist of the object we created.
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
   const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
@@ -542,11 +542,11 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
     TEST_EQUALITY_CONST( pe.isUsed(), true ); // 2.
     TEST_EQUALITY_CONST( pe.isDefault(), false ); // 2.
     // verify the other sublists are unused
-    TEST_EQUALITY_CONST( outPL->sublist("Foo B").getEntry("String").isUsed(), false ); // 2. 
-    TEST_EQUALITY_CONST( outPL->sublist("Foo C").getEntry("String").isUsed(), false ); // 2. 
+    TEST_EQUALITY_CONST( outPL->sublist("Foo B").getEntry("String").isUsed(), false ); // 2.
+    TEST_EQUALITY_CONST( outPL->sublist("Foo C").getEntry("String").isUsed(), false ); // 2.
     ob->unsetParameterList();
   }
-}  
+}
 
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withOneUsePL ) {
   const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");

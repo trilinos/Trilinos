@@ -48,7 +48,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** Pure virtual base class used to construct 
   * worksets on volumes and side sets.

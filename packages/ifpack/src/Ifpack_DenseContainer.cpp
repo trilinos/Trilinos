@@ -159,9 +159,9 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix_in)
 
   // allocate storage to extract matrix rows.
   int Length = Matrix_in.MaxNumEntries();
-  vector<double> Values;
+  std::vector<double> Values;
   Values.resize(Length);
-  vector<int> Indices;
+  std::vector<int> Indices;
   Indices.resize(Length);
 
   for (int j = 0 ; j < NumRows_ ; ++j) {

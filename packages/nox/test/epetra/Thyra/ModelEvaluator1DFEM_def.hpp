@@ -25,9 +25,9 @@
 template<class Scalar>
 Teuchos::RCP<ModelEvaluator1DFEM<Scalar> >
 modelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const int num_global_elements,
-		    const Scalar z_min,
-		    const Scalar z_max)
+            const int num_global_elements,
+            const Scalar z_min,
+            const Scalar z_max)
 {
   return Teuchos::rcp(new ModelEvaluator1DFEM<Scalar>(comm,num_global_elements,z_min,z_max));
 }
@@ -37,13 +37,14 @@ modelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
 template<class Scalar>
 ModelEvaluator1DFEM<Scalar>::
 ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const int num_global_elements,
-		    const Scalar z_min,
-		    const Scalar z_max) :
+            const int num_global_elements,
+            const Scalar z_min,
+            const Scalar z_max) :
   comm_(comm),
   num_global_elements_(num_global_elements),
   z_min_(z_min),
   z_max_(z_max),
+  k_(0.0),
   showGetInvalidArg_(false)
 {
   using Teuchos::RCP;
@@ -51,7 +52,7 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
   using ::Thyra::VectorBase;
   typedef ::Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  
+
   TEUCHOS_ASSERT(nonnull(comm_));
 
   const int num_nodes = num_global_elements_ + 1;
@@ -68,25 +69,25 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
     int OverlapNumMyElements;
     int OverlapMinMyGID;
     OverlapNumMyElements = x_owned_map_->NumMyElements() + 2;
-    if ( (comm_->MyPID() == 0) || (comm_->MyPID() == (comm_->NumProc() - 1)) ) 
+    if ( (comm_->MyPID() == 0) || (comm_->MyPID() == (comm_->NumProc() - 1)) )
       OverlapNumMyElements --;
-    
-    if (comm_->MyPID() == 0) 
+
+    if (comm_->MyPID() == 0)
       OverlapMinMyGID = x_owned_map_->MinMyGID();
-    else 
+    else
       OverlapMinMyGID = x_owned_map_->MinMyGID() - 1;
-    
+
     int* OverlapMyGlobalElements = new int[OverlapNumMyElements];
-    
-    for (int i = 0; i < OverlapNumMyElements; i ++) 
+
+    for (int i = 0; i < OverlapNumMyElements; i ++)
       OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
-    
-    x_ghosted_map_ = 
-      Teuchos::rcp(new Epetra_Map(-1, 
-				  OverlapNumMyElements, 
-				  OverlapMyGlobalElements,
-				  0,
-				  *comm_));
+
+    x_ghosted_map_ =
+      Teuchos::rcp(new Epetra_Map(-1,
+                  OverlapNumMyElements,
+                  OverlapMyGlobalElements,
+                  0,
+                  *comm_));
 
     delete [] OverlapMyGlobalElements;
 
@@ -116,24 +117,24 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
       (*node_coordinates_)[i] = z_min_ + dx*((double) x_owned_map_->MinMyGID() + i);
     }
   }
-  
-  
+
+
 
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
   prototypeInArgs_ = inArgs;
-  
+
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
 //   outArgs.set_W_properties(DerivativeProperties(
-// 			     DERIV_LINEARITY_NONCONST
-// 			     ,DERIV_RANK_FULL
-// 			     ,true // supportsAdjoint
-// 			     ));
+//                  DERIV_LINEARITY_NONCONST
+//                  ,DERIV_RANK_FULL
+//                  ,true // supportsAdjoint
+//                  ));
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
@@ -143,35 +144,35 @@ ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
 // Initializers/Accessors
 
 template<class Scalar>
-Teuchos::RCP<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph>
 ModelEvaluator1DFEM<Scalar>::createGraph()
 {
   Teuchos::RCP<Epetra_CrsGraph> W_graph;
 
-  // Create the shell for the 
+  // Create the shell for the
   W_graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_owned_map_, 5));
 
   // Declare required variables
   int row;
   int column;
   int OverlapNumMyElements = x_ghosted_map_->NumMyElements();
-  
+
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-          
+
     // Loop over Nodes in Element
     for (int i=0; i< 2; i++) {
       row=x_ghosted_map_->GID(ne+i);
-      
+
       // Loop over Trial Functions
       for(int j=0;j < 2; j++) {
-	
-	// If this row is owned by current processor, add the index
-	if (x_owned_map_->MyGID(row)) {
-	  column=x_ghosted_map_->GID(ne+j);
-	  W_graph->InsertGlobalIndices(row, 1, &column);
-	}
-      } 	
+
+    // If this row is owned by current processor, add the index
+    if (x_owned_map_->MyGID(row)) {
+      column=x_ghosted_map_->GID(ne+j);
+      W_graph->InsertGlobalIndices(row, 1, &column);
+    }
+      }
     }
   }
   W_graph->FillComplete();
@@ -246,14 +247,14 @@ ModelEvaluator1DFEM<Scalar>::create_W_prec() const
   Teuchos::RCP<Epetra_CrsMatrix> W_epetra =
     Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
 
-  const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op = 
+  const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op =
     Thyra::nonconstEpetraLinearOp(W_epetra);
 
-  Teuchos::RCP<Thyra::DefaultPreconditioner<Scalar> > prec = 
+  Teuchos::RCP<Thyra::DefaultPreconditioner<Scalar> > prec =
     Teuchos::rcp(new Thyra::DefaultPreconditioner<Scalar>);
 
   prec->initializeRight(W_op);
-  
+
   return prec;
 }
 
@@ -293,9 +294,9 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
-  
+
   TEUCHOS_ASSERT(nonnull(inArgs.get_x()));
-		 
+
   //const Thyra::ConstDetachedVectorView<Scalar> x(inArgs.get_x());
 
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
@@ -337,7 +338,7 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
       u_ptr = Teuchos::rcp(new Epetra_Vector(*x_ghosted_map_));
 
     u_ptr->Import(*(Thyra::get_Epetra_Vector(*x_owned_map_,inArgs.get_x())), *importer_, Insert);
-    
+
     if (is_null(x_ptr)) {
       x_ptr = Teuchos::rcp(new Epetra_Vector(*x_ghosted_map_));
       x_ptr->Import(*node_coordinates_, *importer_, Insert);
@@ -350,111 +351,111 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
 
     int ierr = 0;
     int OverlapNumMyElements = x_ghosted_map_->NumMyElements();
-    
+
     double xx[2];
     double uu[2];
     Basis basis;
-    
+
     // Zero out the objects that will be filled
-    if (nonnull(f)) 
+    if (nonnull(f))
       f->PutScalar(0.0);
-    if (nonnull(J)) 
+    if (nonnull(J))
       J->PutScalar(0.0);
-    if (nonnull(M_inv)) 
+    if (nonnull(M_inv))
       M_inv->PutScalar(0.0);
-    
+
     // Loop Over # of Finite Elements on Processor
     for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-      
+
       // Loop Over Gauss Points
       for(int gp=0; gp < 2; gp++) {
-	// Get the solution and coordinates at the nodes 
-	xx[0]=x[ne];
-	xx[1]=x[ne+1];
-	uu[0]=u[ne];
-	uu[1]=u[ne+1];
-	// Calculate the basis function at the gauss point
-	basis.computeBasis(gp, xx, uu);
-	
-	// Loop over Nodes in Element
-	for (int i=0; i< 2; i++) {
-	  int row=x_ghosted_map_->GID(ne+i);
-	  //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	  //     MyPID, row, ne+i,x_owned_map_.MyGID(row));
-	  if (x_owned_map_->MyGID(row)) {
-	    if (nonnull(f)) {
-	      (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne+i))]+=
-		+basis.wt*basis.dz
-		*((1.0/(basis.dz*basis.dz))*basis.duu*
-		  basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
-	    }
-	  }
-	  // Loop over Trial Functions
-	  if (nonnull(J)) {
-	    for(int j=0;j < 2; j++) {
-	      if (x_owned_map_->MyGID(row)) {
-		int column=x_ghosted_map_->GID(ne+j);
-		double jac=basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
-				       basis.dphide[j]*basis.dphide[i]
-				       +2.0*factor*basis.uu*basis.phi[j]*
-				       basis.phi[i]);  
-		ierr=J->SumIntoGlobalValues(row, 1, &jac, &column);
-	      }
-	    }
-	  }
-	  if (nonnull(M_inv)) {
-	    for(int j=0;j < 2; j++) {
-	      if (x_owned_map_->MyGID(row)) {
-		int column=x_ghosted_map_->GID(ne+j);
-		if (row == column) {
-		  double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
-						  basis.dphide[j]*basis.dphide[i]
-						  +2.0*factor*basis.uu*basis.phi[j]*
-						 basis.phi[i]);
-		  ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
-		}
-	      }
-	    }
-	  }
-	}
+    // Get the solution and coordinates at the nodes
+    xx[0]=x[ne];
+    xx[1]=x[ne+1];
+    uu[0]=u[ne];
+    uu[1]=u[ne+1];
+    // Calculate the basis function at the gauss point
+    basis.computeBasis(gp, xx, uu);
+
+    // Loop over Nodes in Element
+    for (int i=0; i< 2; i++) {
+      int row=x_ghosted_map_->GID(ne+i);
+      //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+      //     MyPID, row, ne+i,x_owned_map_.MyGID(row));
+      if (x_owned_map_->MyGID(row)) {
+        if (nonnull(f)) {
+          (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne+i))]+=
+        +basis.wt*basis.dz
+        *((1.0/(basis.dz*basis.dz))*basis.duu*
+          basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
+        }
       }
-    } 
-    
+      // Loop over Trial Functions
+      if (nonnull(J)) {
+        for(int j=0;j < 2; j++) {
+          if (x_owned_map_->MyGID(row)) {
+        int column=x_ghosted_map_->GID(ne+j);
+        double jac=basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
+                       basis.dphide[j]*basis.dphide[i]
+                       +2.0*factor*basis.uu*basis.phi[j]*
+                       basis.phi[i]);
+        ierr=J->SumIntoGlobalValues(row, 1, &jac, &column);
+          }
+        }
+      }
+      if (nonnull(M_inv)) {
+        for(int j=0;j < 2; j++) {
+          if (x_owned_map_->MyGID(row)) {
+        int column=x_ghosted_map_->GID(ne+j);
+        if (row == column) {
+          double jac = basis.wt*basis.dz*((1.0/(basis.dz*basis.dz))*
+                          basis.dphide[j]*basis.dphide[i]
+                          +2.0*factor*basis.uu*basis.phi[j]*
+                         basis.phi[i]);
+          ierr = M_inv->SumIntoGlobalValues(row, 1, &jac, &column);
+        }
+          }
+        }
+      }
+    }
+      }
+    }
+
     // Insert Boundary Conditions and modify Jacobian and function (F)
     // U(0)=1
     if (comm_->MyPID() == 0) {
-      if (nonnull(f)) 
-	(*f)[0]= u[0] - 1.0;
+      if (nonnull(f))
+    (*f)[0]= u[0] - 1.0;
       if (nonnull(J)) {
-	int column=0;
-	double jac=1.0;
-	ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
-	column=1;
-	jac=0.0;
-	ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
+    int column=0;
+    double jac=1.0;
+    ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
+    column=1;
+    jac=0.0;
+    ierr = J->ReplaceGlobalValues(0, 1, &jac, &column);
       }
       if (nonnull(M_inv)) {
-	int column=0;
-	double jac=1.0;
-	ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
-	column=1;
-	jac=0.0;
-	ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
+    int column=0;
+    double jac=1.0;
+    ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
+    column=1;
+    jac=0.0;
+    ierr = M_inv->ReplaceGlobalValues(0, 1, &jac, &column);
       }
     }
 
     if (nonnull(J))
       J->FillComplete();
-    
+
     if (nonnull(M_inv)) {
       // invert the Jacobian diagonal for the preconditioner
       M_inv->ExtractDiagonalCopy(*J_diagonal_);
-      
+
       for (int i=0; i < J_diagonal_->MyLength(); ++i)
-	(*J_diagonal_)[i] = 1.0 / ((*J_diagonal_)[i]);
-      
+    (*J_diagonal_)[i] = 1.0 / ((*J_diagonal_)[i]);
+
       M_inv->PutScalar(0.0);
-      M_inv->ReplaceDiagonalValues(*J_diagonal_);	
+      M_inv->ReplaceDiagonalValues(*J_diagonal_);
       M_inv->FillComplete();
     }
 
@@ -468,7 +469,16 @@ void ModelEvaluator1DFEM<Scalar>::evalModelImpl(
 // Basis vector
 
 // Constructor
-Basis::Basis() {
+Basis::Basis():
+  uu(0.0),
+  zz(0.0),
+  duu(0.0),
+  eta(0.0),
+  wt(0.0),
+  dz(0.0),
+  uuold(0.0),
+  duuold(0.0)
+{
   phi = new double[2];
   dphide = new double[2];
 }
@@ -490,7 +500,7 @@ void Basis::computeBasis(int gp, double *z, double *u, double *uold) {
   phi[1]=(1.0+eta)/2.0;
   dphide[0]=-0.5;
   dphide[1]=0.5;
-  
+
   // Caculate basis function and derivative at GP.
   dz=0.5*(z[1]-z[0]);
   zz=0.0;

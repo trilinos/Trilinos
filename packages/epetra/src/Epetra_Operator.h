@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,31 +50,31 @@ class Epetra_Map;
 class Epetra_Comm;
 
 //! Epetra_Operator: A pure virtual class for using real-valued double-precision operators.
-/*! The Epetra_Operator class is a pure virtual class (specifies interface only) that 
+/*! The Epetra_Operator class is a pure virtual class (specifies interface only) that
     enable the use of real-valued double-precision operators. It is currently implemented by both the
     Epetra_CrsMatrix and Epetra_VbrMatrix classes and the Ifpack_CrsRiluk preconditioner class.
 
-   
-*/    
+
+*/
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
-      
+
  public:
 
    //! @name Destructor
-  //@{ 
+  //@{
     //! Destructor
     virtual ~Epetra_Operator() {};
   //@}
-  
+
   //! @name Attribute set methods
-  //@{ 
+  //@{
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
 	does not support transpose use, this method should return a value of -1.
-      
+
     \param In
 	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
 
@@ -82,12 +82,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
   */
     virtual int SetUseTranspose(bool UseTranspose) = 0;
   //@}
-  
+
   //! @name Mathematical functions
-  //@{ 
+  //@{
 
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
 	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
@@ -98,7 +98,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
     virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const = 0;
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
 	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
@@ -106,7 +106,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method must 
+    \warning In order to work with AztecOO, any implementation of this method must
               support the case where X and Y are the same object.
   */
     virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const = 0;
@@ -116,12 +116,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
        \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
 
        \warning This method must not be called unless HasNormInf() returns true.
-    */ 
+    */
     virtual double NormInf() const = 0;
   //@}
-  
+
   //! @name Attribute access functions
-  //@{ 
+  //@{
 
     //! Returns a character string describing the operator
     virtual const char * Label() const = 0;

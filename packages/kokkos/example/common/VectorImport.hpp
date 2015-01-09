@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <WrapMPI.hpp>
 
@@ -193,7 +193,7 @@ public:
 
     // Subvector for receives
     const std::pair<unsigned,unsigned> recv_range( count_owned , count_owned + count_receive );
-    const VectorType recv_vector = Kokkos::subview< VectorType >( v , recv_range );
+    const VectorType recv_vector = Kokkos::subview( v , recv_range );
 
     std::vector< MPI_Request > recv_request( recv_msg.dimension_0() , MPI_REQUEST_NULL );
 

@@ -1,9 +1,21 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE(
   Solver_Test
   SOURCES Solver_Test
   )
+
+##### KLU2 Tests #####
+IF (${PACKAGE_NAME}_ENABLE_KLU2)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    KLU2_UnitTests
+    SOURCES
+      KLU2_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    CATEGORIES NIGHTLY
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
 
 ##### SuperLu Tests #####
 
@@ -110,3 +122,14 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
 ENDIF()
 
 
+####   BASKER Tests ####
+IF (${PACKAGE_NAME}_ENABLE_Basker)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Basker_UnitTests
+    SOURCES
+      Basker_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()

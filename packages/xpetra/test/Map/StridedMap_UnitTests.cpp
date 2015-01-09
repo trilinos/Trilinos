@@ -688,8 +688,12 @@ namespace {
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 
+#ifndef XPETRA_TEST_USE_LONGLONG_GO
       UNIT_TEST_GROUP_ORDINAL(int , int)
-
+#else
+      typedef long long LongLongInt;
+      UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
+#endif
     // typedef short int ShortInt;
     // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
 

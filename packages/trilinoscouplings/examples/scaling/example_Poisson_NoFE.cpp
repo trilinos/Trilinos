@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -85,6 +85,7 @@
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -124,8 +125,8 @@
 
 // Pamgen includes
 #include "create_inline_mesh.h"
-#include "im_exodusII_l.h"
-#include "im_ne_nemesisI_l.h"
+#include "pamgen_im_exodusII_l.h"
+#include "pamgen_im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
 // AztecOO includes
@@ -406,9 +407,10 @@ int main(int argc, char *argv[]) {
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
 
-   // Generate mesh with Pamgen
-    long long maxInt = 9223372036854775807LL;
-    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  // Generate mesh with Pamgen
+  long long maxInt = 9223372036854775807LL;
+  long long cr_result = Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(std::cout,cr_result);
 
     string msg("Poisson: ");
     if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -717,7 +719,7 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Compute cell ordinal relative to the current workset
-          int worksetCellOrdinal = cell - worksetBegin;
+	  //          int worksetCellOrdinal = cell - worksetBegin;
 
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){

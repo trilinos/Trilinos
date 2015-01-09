@@ -57,7 +57,7 @@
 #include <vector>
 #include <map>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 template <typename GO> class STKConnManager;
 
@@ -68,7 +68,7 @@ template <typename GO> class STKConnManager;
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class ParameterListCallbackBlocked : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
-  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blkDofs);
 
   Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
@@ -99,7 +99,7 @@ private:
   Teuchos::RCP<const panzer::IntrepidFieldPattern> getFieldPattern(const std::string & fieldName) const;
 
   // Generally used members
-  Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
+  Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > blocked_ugi_;
 
   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;

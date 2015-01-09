@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -62,24 +62,24 @@
 
 // prototypes
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff, int nrhs,
-			const Epetra_Comm  &comm, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			const Epetra_Comm  &comm,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly);
- 
+
 
 void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
 			      int myPID, int * & myGlobalElements);
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   double MFLOPs;
   double global_dimension;
   double global_nonzero_count;
-    
+
 
 #ifdef EPETRA_MPI
 
@@ -203,21 +203,21 @@ int main(int argc, char *argv[])
   int xi = 0, yi = 0;
   int xo = -2, yo = -2;
   Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
   xo = -2, yo++;
   Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
   xo = -2, yo++;
   Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
   xo = -2, yo++;
   Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
   xo = -2, yo++;
   Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
-  
-  
+  Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
+
+
 
   Epetra_Map * map;
   Epetra_CrsMatrix * A;
@@ -239,32 +239,32 @@ int main(int argc, char *argv[])
   int ntimings = 0;
   for (int k=0; k<4; k++) {
     if (k>0) nrhs = nrhs*2;
-      
+
     GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 		       Xoff.Values(), Yoff.Values(), nrhs, comm,
 		       map, A, b, bt, xexact, true, false);
 
-      
+
     Epetra_MultiVector z(*b);
     Epetra_MultiVector r(*b);
     Epetra_SerialDenseVector resvec(b->NumVectors());
-    
+
     //Timings
     Epetra_Time timer(A->Comm());
     A->OptimizeStorage();
-    
+
     timer.ResetStartTime();
-    
+
     //maxtrials matvecs
     for( int i = 0; i < maxtrials; ++i )
       A->Multiply(false, *xexact, z); // Compute z = A*xexact or z = A'*xexact
-    
+
     double elapsed_time = timer.ElapsedTime();
     double total_flops = 2.0*global_nonzero_count *((double) maxtrials);
-    
+
     // Compute residual
     r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
-    
+
     r.Norm2(resvec.Values());
     double diff = resvec.NormInf();
     if (diff>1.0e-8 && comm.MyPID()==0) cerr << "Warning: Residual vector unusually large = " << diff << endl;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 
     delete A;
     delete b;
-    delete bt; 
+    delete bt;
     delete xexact;
   } // end of k loop
 
@@ -289,18 +289,18 @@ int main(int argc, char *argv[])
   Epetra_MultiVector q(*map, nrhs);
   Epetra_MultiVector z(q);
   Epetra_MultiVector r(q);
-  
+
   delete map;
 
   resvec.Resize(nrhs);
-  
-  
+
+
   timer.ResetStartTime();
-  
+
   //maxtrials norms
   for( int i = 0; i < maxtrials; ++i )
     q.Norm2( resvec.Values() );
-  
+
   elapsed_time = timer.ElapsedTime();
   total_flops = 2.0*global_dimension *((double) maxtrials);
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -311,24 +311,11 @@ int main(int argc, char *argv[])
 
 
   timer.ResetStartTime();
-  
+
   //maxtrials dot's
   for( int i = 0; i < maxtrials; ++i )
     q.Dot(z, resvec.Values());
-  
-  elapsed_time = timer.ElapsedTime();
-  total_flops = 2.0*global_dimension *((double) maxtrials);
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  results[ntimings][0] = total_flops;
-  results[ntimings][1] = elapsed_time;
-  results[ntimings++][2] = MFLOPs;
-  
-  timer.ResetStartTime();
-  
-  //maxtrials updates
-  for( int i = 0; i < maxtrials; ++i )
-    q.Update(1.0, z, 1.0, r, 0.0);
-  
+
   elapsed_time = timer.ElapsedTime();
   total_flops = 2.0*global_dimension *((double) maxtrials);
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -336,7 +323,20 @@ int main(int argc, char *argv[])
   results[ntimings][1] = elapsed_time;
   results[ntimings++][2] = MFLOPs;
 
-  if (makeheader) 
+  timer.ResetStartTime();
+
+  //maxtrials updates
+  for( int i = 0; i < maxtrials; ++i )
+    q.Update(1.0, z, 1.0, r, 0.0);
+
+  elapsed_time = timer.ElapsedTime();
+  total_flops = 2.0*global_dimension *((double) maxtrials);
+  MFLOPs = total_flops/elapsed_time/1000000.0;
+  results[ntimings][0] = total_flops;
+  results[ntimings][1] = elapsed_time;
+  results[ntimings++][2] = MFLOPs;
+
+  if (makeheader)
     cout << "Metric_\t\t_Procs_\t__SpMV__\t_SpMM2__\t_SpMM4__\t_SpMM8__\t__NORM___\t__DOT___\t__AXPY__" << endl;
   if (comm.MyPID()==0) {
     cout.setf(std::ios::scientific);
@@ -363,11 +363,11 @@ return ierr ;
 }
 
 // Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
-// 
+//
 // nx      (In) - number of grid points in x direction
 // ny      (In) - number of grid points in y direction
 //   The total number of equations will be nx*ny ordered such that the x direction changes
-//   most rapidly: 
+//   most rapidly:
 //      First equation is at point (0,0)
 //      Second at                  (1,0)
 //       ...
@@ -395,19 +395,19 @@ return ierr ;
 
 // Note: Caller of this function is responsible for deleting all output objects.
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
-  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
-		     xoff, yoff, 1, comm, 
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+		     xoff, yoff, 1, comm,
 		     map, A, b1, bt1, xexact1, StaticProfile, MakeLocalOnly);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
@@ -417,22 +417,22 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   return;
 }
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff, int nrhs,
 			const Epetra_Comm  &comm,
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
-  
+
   Epetra_Time timer(comm);
   // Determine my global IDs
   int * myGlobalElements;
   GenerateMyGlobalElements(numNodesX, numNodesY, numProcsX, numProcsY, comm.MyPID(), myGlobalElements);
 
   int numMyEquations = numNodesX*numNodesY;
-  
+
   map = new Epetra_Map(-1, numMyEquations, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
@@ -442,14 +442,14 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 #ifdef EPETRA_HAVE_STATICPROFILE
 
-  if (MakeLocalOnly) 
+  if (MakeLocalOnly)
     A = new Epetra_CrsMatrix(Copy, *map, *map, profile, StaticProfile); // Construct matrix with rowmap=colmap
   else
     A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
 
 #else
 
-  if (MakeLocalOnly) 
+  if (MakeLocalOnly)
     A = new Epetra_CrsMatrix(Copy, *map, *map, profile); // Construct matrix with rowmap=colmap
   else
     A = new Epetra_CrsMatrix(Copy, *map, profile); // Construct matrix
@@ -489,7 +489,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   A->FillComplete();
   double fillCompleteTime = timer.ElapsedTime();
 
-  if (nrhs<=1) {  
+  if (nrhs<=1) {
     b = new Epetra_Vector(*map);
     bt = new Epetra_Vector(*map);
     xexact = new Epetra_Vector(*map);
@@ -525,7 +525,7 @@ void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int n
     curGID+=numNodesX*numProcsX;
   }
   //for (int i=0; i<numNodesX*numNodesY; i++) cout << "MYPID " << myPID <<" GID "<< myGlobalElements[i] << endl;
-  
+
   return;
 }
 

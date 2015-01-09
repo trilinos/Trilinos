@@ -65,6 +65,8 @@ class InverseLibrary : public RequestHandlerContainer {
 public:
    InverseLibrary();
 
+   InverseLibrary(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & strat);
+
    //! add an unspecified inverse to the library
    void addInverse(const std::string & label,const Teuchos::ParameterList & pl);
 
@@ -114,6 +116,9 @@ protected:
 
    //! For handling requests and send requests back to the user
    Teuchos::RCP<RequestHandler> callbackHandler_;
+
+   //! This is the default builder used by stratimikos
+   Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> defaultBuilder_;
     
 public:
 
@@ -129,6 +134,19 @@ public:
      */
    static Teuchos::RCP<InverseLibrary> buildFromParameterList(const Teuchos::ParameterList & pl,bool useStratDefaults=true);
 
+   /** \brief Build an inverse library from a parameter list.
+     * 
+     * Build an inverse library from a parameter list. This will
+     * contain all the labeled inverses specified.
+     *
+     * \param[in] pl Parameter list to build the library from
+     * \param[in] strat Stratimikos object to use
+     *
+     * \returns A pointer to the inverse library created.
+     */
+   static Teuchos::RCP<InverseLibrary> buildFromParameterList(const Teuchos::ParameterList & pl,
+                                                              const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & strat);
+
    /** \brief Build an inverse library from Stratimikos
      * 
      * Build an inverse library from Stratimkos. The labels
@@ -140,6 +158,18 @@ public:
      */
    static Teuchos::RCP<InverseLibrary> buildFromStratimikos(
          const Stratimikos::DefaultLinearSolverBuilder & strat=Stratimikos::DefaultLinearSolverBuilder());
+
+   /** \brief Build an inverse library from Stratimikos
+     * 
+     * Build an inverse library from Stratimkos. The labels
+     * will just be the names in Stratimikos.
+     *
+     * \param[in] strat Stratimikos pointer to use
+     *
+     * \returns A pointer to the inverse library created.
+     */
+   static Teuchos::RCP<InverseLibrary> buildFromStratimikos(
+         const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & strat);
 };
 
 } // end namespace Teko

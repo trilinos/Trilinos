@@ -19,7 +19,7 @@
 #  
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 # 
@@ -98,11 +98,11 @@ PARSER = $(srcdir)/../parser/InputBlock.C \
 
 MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C \
-	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII_ext.h \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.C \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
         $(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
@@ -111,48 +111,48 @@ MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
 	$(srcdir)/../mesh_spec_lt/pamgen_fudges.C \
 	$(srcdir)/../mesh_spec_lt/pamgen_fudges.h 
 
-RTCOMPILER = $(srcdir)/../rtcompiler/ArrayIndexRTC.hh \
-	$(srcdir)/../rtcompiler/ArrayNumberRTC.hh \
-	$(srcdir)/../rtcompiler/ArrayVarRTC.hh \
+RTCOMPILER = $(srcdir)/../rtcompiler/RTC_ArrayIndexRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ArrayNumberRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ArrayVarRTC.hh \
 	$(srcdir)/../rtcompiler/Bessel_I.C \
-	$(srcdir)/../rtcompiler/Bessel_I.hh \
+	$(srcdir)/../rtcompiler/RTC_Bessel_I_RTC.hh \
 	$(srcdir)/../rtcompiler/Block.C \
-	$(srcdir)/../rtcompiler/BlockRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_BlockRTC.hh \
 	$(srcdir)/../rtcompiler/ConditionalBlock.C \
-	$(srcdir)/../rtcompiler/ConditionalBlockRTC.hh  \
-	$(srcdir)/../rtcompiler/ExecutableRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ConditionalBlockRTC.hh  \
+	$(srcdir)/../rtcompiler/RTC_ExecutableRTC.hh \
 	$(srcdir)/../rtcompiler/ForBlock.C \
-	$(srcdir)/../rtcompiler/ForBlockRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ForBlockRTC.hh \
 	$(srcdir)/../rtcompiler/Function.C \
-	$(srcdir)/../rtcompiler/FunctionRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_FunctionRTC.hh \
 	$(srcdir)/../rtcompiler/IfElseifElseBlock.C \
-	$(srcdir)/../rtcompiler/IfElseifElseBlockRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_IfElseifElseBlockRTC.hh \
 	$(srcdir)/../rtcompiler/Line.C \
-	$(srcdir)/../rtcompiler/LineRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_LineRTC.hh \
 	$(srcdir)/../rtcompiler/NormalBlock.C \
-	$(srcdir)/../rtcompiler/NormalBlockRTC.hh \
-	$(srcdir)/../rtcompiler/ObjectRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_NormalBlockRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ObjectRTC.hh \
 	$(srcdir)/../rtcompiler/Operator.C \
-	$(srcdir)/../rtcompiler/OperatorRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_OperatorRTC.hh \
 	$(srcdir)/../rtcompiler/Registrar.C \
-	$(srcdir)/../rtcompiler/RegistrarRTC.hh \
-	$(srcdir)/../rtcompiler/ScalarNumberRTC.hh \
-	$(srcdir)/../rtcompiler/ScalarVarRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_RegistrarRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ScalarNumberRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ScalarVarRTC.hh \
 	$(srcdir)/../rtcompiler/Tokenizer.C \
-	$(srcdir)/../rtcompiler/TokenizerRTC.hh \
-	$(srcdir)/../rtcompiler/ValueRTC.hh \
-	$(srcdir)/../rtcompiler/VariableRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_TokenizerRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_ValueRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_VariableRTC.hh \
 	$(srcdir)/../rtcompiler/WhileBlock.C \
-	$(srcdir)/../rtcompiler/WhileBlockRTC.hh \
+	$(srcdir)/../rtcompiler/RTC_WhileBlockRTC.hh \
 	$(srcdir)/../rtcompiler/common.C \
-	$(srcdir)/../rtcompiler/commonRTC.hh
+	$(srcdir)/../rtcompiler/RTC_commonRTC.hh
 
 
 
 CORE_H =  $(srcdir)/create_inline_mesh.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
-	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
-	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_exodusII_ext.h \
+	$(srcdir)/../mesh_spec_lt/pamgen_im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_mesh_specification.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_code_types.h \
 	$(srcdir)/../mesh_spec_lt/pamgen_fidges.h \

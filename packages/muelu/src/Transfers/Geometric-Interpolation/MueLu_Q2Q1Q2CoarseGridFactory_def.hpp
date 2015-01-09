@@ -70,18 +70,18 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Q2Q1Q2CoarseGridFactory(){
-    std::cout << "I constructed a Q2Q1Q2CoarseGridFactory object... Nothing else to do here." << std::endl;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Q2Q1Q2CoarseGridFactory(){
+    GetOStream(Runtime1) << "I constructed a Q2Q1Q2CoarseGridFactory object... Nothing else to do here." << std::endl;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Q2Q1Q2CoarseGridFactory(){
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~Q2Q1Q2CoarseGridFactory(){
     // Should be empty. All destruction should be handled by Level-based get stuff and RCP
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
     Input(fineLevel, "VElementList");
     Input(fineLevel, "PElementList");
@@ -95,10 +95,10 @@ namespace MueLu {
     //currentLevel.DeclareInput(varName_,factory_,this);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
 
-    std::cout << "Starting 'build' routine...\n";
+    GetOStream(Runtime1) << "Starting 'build' routine...\n";
 
     // This will create a list of elements on the coarse grid with a
     // predictable structure, as well as modify the fine grid list of
@@ -111,11 +111,11 @@ namespace MueLu {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Q2Q1Q2CoarseGridFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseGrid(Level &fineLevel, Level &coarseLevel) const
   {
 
-    std::cout << "starting 'BuildCoarseGrid' routine...\n";
+    GetOStream(Runtime1) << "starting 'BuildCoarseGrid' routine...\n";
 
     RCP<Teuchos::SerialDenseMatrix<GO,GO> > fineElementPDOFs = Get< RCP<Teuchos::SerialDenseMatrix<GO,GO> > >(fineLevel,"PElementList");
 
@@ -123,7 +123,7 @@ namespace MueLu {
 
     // Compute number of coarse grid elements in total:
     GO totalCoarseElements = totalFineElements/4;
-    LO nCoarseElements = sqrt(totalCoarseElements);
+    LO nCoarseElements = (int) sqrt(totalCoarseElements);
 
     // Initialize some counters:
     size_t EdgeCount = (nCoarseElements + 1) * (nCoarseElements + 1);

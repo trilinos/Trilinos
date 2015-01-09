@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,9 +53,9 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <string.h>                     // for strcpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_block, etc
 
 /*!
  * writes the parameters used to describe an element/face/edge block
@@ -83,7 +83,8 @@ int ex_put_block( int         exoid,
   ex_block block;
   block.type = blk_type;
   block.id   = blk_id;
-  strcpy(block.topology, entry_descrip);
+  strncpy(block.topology, entry_descrip, MAX_STR_LENGTH+1);
+  block.topology[MAX_STR_LENGTH] = '\0';
   block.num_entry           = num_entries_this_blk;
   block.num_nodes_per_entry = num_nodes_per_entry;
   block.num_edges_per_entry = num_edges_per_entry;

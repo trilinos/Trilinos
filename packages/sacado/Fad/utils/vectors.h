@@ -4,15 +4,15 @@
 //
 // SUMMARY: Templatized Oriented Object Finte Element Method
 //          TOOFEM
-// RELEASE: 0.1     
-// USAGE  : You may copy freely these files and use it for    
-//          teaching or research. These or part of these may   
-//          not be sold or used for a commercial purpose with- 
+// RELEASE: 0.1
+// USAGE  : You may copy freely these files and use it for
+//          teaching or research. These or part of these may
+//          not be sold or used for a commercial purpose with-
 //          out our consent : fax (33)1 44 27 72 00
-//			
+//
 // AUTHOR : Nicolas Di cesare
-// ORG    :          
-// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr     
+// ORG    :
+// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr
 //
 // ORIG-DATE: September 98
 // LAST-MOD : 15/09/98
@@ -36,7 +36,7 @@ namespace FAD {
 
 // Copy ala Blitz
 template <class T> class MEM_CPY {
- public:  
+ public:
   static void copy(T* RESTRICT dest, const T* src, const int N)
     {
       // Unwind the inner loop, four elements at a time
@@ -44,29 +44,29 @@ template <class T> class MEM_CPY {
 
       int i=0;
       for (; i< Nmod4; ++i)
-	dest[i] = src[i];
+  dest[i] = src[i];
 
       for (; i<N; i+=4)
         {
-	  // Common subexpression elimination: avoid doing i+1, i+2, i+3
-	  // multiple times (compilers *won't* do this cse automatically) 
-	  int i1 = i+1;
-	  int i2 = i+2;
-	  int i3 = i+3;
+    // Common subexpression elimination: avoid doing i+1, i+2, i+3
+    // multiple times (compilers *won't* do this cse automatically)
+    int i1 = i+1;
+    int i2 = i+2;
+    int i3 = i+3;
 
-	  // Reading all the results first avoids aliasing
-	  // ambiguities, and provides more flexibility in
-	  // register allocation & instruction scheduling
-	  T tmp0,tmp1, tmp2, tmp3;
-	  tmp0 = src[i];
-	  tmp1 = src[i1];
-	  tmp2 = src[i2];
-	  tmp3 = src[i3];
+    // Reading all the results first avoids aliasing
+    // ambiguities, and provides more flexibility in
+    // register allocation & instruction scheduling
+    T tmp0,tmp1, tmp2, tmp3;
+    tmp0 = src[i];
+    tmp1 = src[i1];
+    tmp2 = src[i2];
+    tmp3 = src[i3];
 
-	  dest[i]  = tmp0;
-	  dest[i1] = tmp1;
-	  dest[i2] = tmp2;
-	  dest[i3] = tmp3;
+    dest[i]  = tmp0;
+    dest[i1] = tmp1;
+    dest[i2] = tmp2;
+    dest[i3] = tmp3;
         }
     }
 };
@@ -88,7 +88,7 @@ public:
   typedef value_type& reference;
   typedef const value_type& const_reference;
   typedef size_t size_type;
-  typedef ptrdiff_t difference_type; 
+  typedef ptrdiff_t difference_type;
 
 // Constructors
   inline               Vector();
@@ -108,7 +108,7 @@ public:
                Vector< T >& operator=(const T & val);
 
   Vector< T >& operator+=(const Vector< T >& a)
-    { 
+    {
       int sz = size();
       if ( sz != a.size() ) error("operator-=(const Vector< T >& a), size error");
       for (int i=0; i<sz; ++i) (*this)[i] += a[i];
@@ -116,7 +116,7 @@ public:
     }
 
   Vector< T >& operator-=(const Vector< T >& a)
-    { 
+    {
       int sz = size();
       if ( sz != a.size() ) error("operator-=(const Vector< T >& a), size error");
       for (int i=0; i<sz; ++i) (*this)[i] -= a[i];
@@ -183,17 +183,17 @@ template < class T> Vector<T> operator*(const T& a, const Vector<T> & x)
   return y;
 }
 
-template <class T> inline ostream& operator << (ostream& os, const Vector<T>& x)
+template <class T> inline std::ostream& operator << (std::ostream& os, const Vector<T>& x)
 {
-  os.setf(ios::fixed,ios::floatfield);
+  os.setf(std::ios::fixed,std::ios::floatfield);
   os.width(12);
   int sz = x.size();
-  os << sz << endl;
+  os << sz << std::endl;
 
-  
+
   for (int i=0; i< sz; ++i) {
      os.width(12);
-     os << x[i] << endl;
+     os << x[i] << std::endl;
   }
 
   os << "\n";
@@ -215,10 +215,10 @@ template< class T > inline Vector< T >::Vector() : num_elts(0), ptr_to_data((T*)
 #ifdef FAD_DEBUG
     fprintf(stderr," adr =  %x \n", ptr_to_data);
 #endif
-} 
+}
 
 
-template< class T > inline Vector< T >::Vector(int csize) : num_elts(0), ptr_to_data((T*)0) 
+template< class T > inline Vector< T >::Vector(int csize) : num_elts(0), ptr_to_data((T*)0)
 // size constructor
 {
 #ifdef FAD_DEBUG
@@ -226,16 +226,16 @@ template< class T > inline Vector< T >::Vector(int csize) : num_elts(0), ptr_to_
 #endif
 
     if (csize > 0 ){
-	num_elts = csize;
-	ptr_to_data = new T[num_elts];
+  num_elts = csize;
+  ptr_to_data = new T[num_elts];
 
-	if ( ptr_to_data == 0 ) error("Vector<>::Vector(), Memoire insuffisante");
-    } 
+  if ( ptr_to_data == 0 ) error("Vector<>::Vector(), Memoire insuffisante");
+    }
 
 #ifdef FAD_DEBUG
     fprintf(stderr," adr =  %x \n", ptr_to_data);
 #endif
-} 
+}
 
 
 template< class T > inline Vector< T >::Vector(const Vector< T >& a) : num_elts(a.num_elts), ptr_to_data((T*)0)
@@ -244,7 +244,7 @@ template< class T > inline Vector< T >::Vector(const Vector< T >& a) : num_elts(
 #ifdef FAD_DEBUG
     cerr << "Vector<>::Vector(const Vector< T >& ) |copy constructor   |";
 #endif
-    
+
     if ( num_elts != 0 ) {
       ptr_to_data = new T[num_elts];
       copy(a);
@@ -257,15 +257,15 @@ template< class T > inline Vector< T >::Vector(const Vector< T >& a) : num_elts(
 
 
 
-template< class T > inline void Vector< T >::destroy() 
+template< class T > inline void Vector< T >::destroy()
 {
 #ifdef FAD_DEBUG
     fprintf(stderr,"Vector<>::destroy()         |                   | adr =  %x \n", ptr_to_data);
 #endif
-    if (ptr_to_data != 0) 
-	delete [] ptr_to_data; 
+    if (ptr_to_data != 0)
+  delete [] ptr_to_data;
     else {
-    }	
+    }
 
     num_elts = 0; ptr_to_data = (T*)0;
 }
@@ -324,10 +324,10 @@ template< class T > inline void Vector< T >::reserve(int ssize)
 #endif
 
     if (ssize != 0){
-	num_elts = ssize;
-	ptr_to_data = new T[num_elts];              
-	
-	if ( ptr_to_data == 0 ) error("Vector<>::reserve(), not enough memory");
+  num_elts = ssize;
+  ptr_to_data = new T[num_elts];
+
+  if ( ptr_to_data == 0 ) error("Vector<>::reserve(), not enough memory");
     }
 #ifdef FAD_DEBUG
     fprintf(stderr,"Vector<>::reserve()         |                   | adr =  %x \n", ptr_to_data);
@@ -345,8 +345,8 @@ template< class T > inline void Vector< T >::resize(int ssize)
       if ( num_elts != 0) destroy();
 
       num_elts = ssize;
-      ptr_to_data = new T[num_elts];              
-      
+      ptr_to_data = new T[num_elts];
+
       if ( ptr_to_data == 0 ) error("Vector<>::reserve(), not enough memory");
 
       for (int i=0; i<num_elts; i++) ptr_to_data[i] = T(0.0);
@@ -362,16 +362,16 @@ template< class T > inline void Vector< T >::resize(int ssize)
 
 
 template< class T > inline  int Vector< T >::capacity() const
-{ 
+{
     return num_elts;
-} 
+}
 
 
 
-template< class T > inline  T* Vector< T >::begin() const 
+template< class T > inline  T* Vector< T >::begin() const
 {
     return ptr_to_data;
-} 
+}
 
 
 template< class T > Vector< T >::Vector(int csize, const T& val) : num_elts(0), ptr_to_data((T*)0)
@@ -381,14 +381,14 @@ template< class T > Vector< T >::Vector(int csize, const T& val) : num_elts(0), 
 #endif
 
     if (csize > 0 ){
-	num_elts = csize;
-	ptr_to_data = new T[num_elts];
+  num_elts = csize;
+  ptr_to_data = new T[num_elts];
 
-	if ( ptr_to_data == 0 ) error("Vector<>::Vector(), Memoire insuffisante");
-    } 
+  if ( ptr_to_data == 0 ) error("Vector<>::Vector(), Memoire insuffisante");
+    }
 
   T* p = ptr_to_data + num_elts;
-  while ( p > ptr_to_data ) 
+  while ( p > ptr_to_data )
     *--p = val;//pb si = n'est pas surcharge pour le type T
 
 #ifdef FAD_DEBUG
@@ -431,7 +431,7 @@ template< class T > Vector< T >& Vector< T >::operator = (const Vector< T >& a)
       destroy();//on desalloue
       reserve(a.num_elts);
     }
-    
+
     copy(a);
   }
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 #ifndef NOX_EPETRA_FINITEDIFFERENCECOLORING_H
 #define NOX_EPETRA_FINITEDIFFERENCECOLORING_H
 
-#include "Epetra_RowMatrix.h"    	    // base class
+#include "Epetra_RowMatrix.h"            // base class
 #include "NOX_Epetra_FiniteDifference.H"    // base class
 #include "NOX_Common.H"
 #include "Teuchos_RCP.hpp"
@@ -109,7 +109,7 @@ where \f$ \alpha \f$ is a scalar value (defaults to 1.0e-4) and \f$
 
 Since both %FiniteDifferenceColoring and FiniteDifference inherit from
 the Epetra_RowMatrix class, they can be used as preconditioning matrices
-for AztecOO preconditioners.  
+for AztecOO preconditioners.
 
 As for FiniteDifference, 1st order accurate Forward and Backward differences
 as well as 2nd order accurate Centered difference can be specified using
@@ -119,11 +119,11 @@ the argument.
 <B>Using %FiniteDifferenceColoring in Parallel</B>
 
 Two ways of using this class in a distributed parallel environment are
-currently supported.  From an application standpoint, the two approaches 
+currently supported.  From an application standpoint, the two approaches
 differ only in the status of the solution iterate used in the residual
 fill.  If an object of this class is contructed with %parallelColoring = true
 the solution iterate will be passe back in a non-ghosted form.  On the
-contrary, setting this parameter to false in the constructor will 
+contrary, setting this parameter to false in the constructor will
 cause the solution iterate to be in a ghosted form when calling back for
 a residual fill.  When using the second approach, the user should be
 aware that the perturbed vector used to compute residuals has already
@@ -149,34 +149,34 @@ filled in a much more efficient manner.
 */
 
 class FiniteDifferenceColoring : public FiniteDifference {
-     
+
  protected:
- 
+
   enum ColoringType { NOX_SERIAL, NOX_PARALLEL };
-        
+
  public:
- 
+
   //! Constructor with output control
   FiniteDifferenceColoring(
       Teuchos::ParameterList& printingParams,
-      const Teuchos::RCP<Interface::Required>& i, 
-      const NOX::Epetra::Vector& initialGuess, 
+      const Teuchos::RCP<Interface::Required>& i,
+      const NOX::Epetra::Vector& initialGuess,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
-      bool parallelColoring = false, 
-      bool distance1 = false, 
+      bool parallelColoring = false,
+      bool distance1 = false,
       double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor with output control
   FiniteDifferenceColoring(
       Teuchos::ParameterList& printingParams,
-      const Teuchos::RCP<Interface::Required>& i, 
-      const NOX::Epetra::Vector& initialGuess, 
+      const Teuchos::RCP<Interface::Required>& i,
+      const NOX::Epetra::Vector& initialGuess,
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
       const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns,
       bool parallelColoring = false,
-      bool distance1 = false, 
+      bool distance1 = false,
       double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Pure virtual destructor
@@ -202,24 +202,24 @@ protected:
   //! bool flag for specifying special case of distance-1 coloring
   bool distance1;
 
-  //! Color Map created by external algorithm 
+  //! Color Map created by external algorithm
   Teuchos::RCP<const Epetra_MapColoring> colorMap;
 
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
   Teuchos::RCP<std::vector<Epetra_IntVector> > columns;
 
-  //! Number of colors in Color Map 
+  //! Number of colors in Color Map
   int numColors;
 
   //! Max Number of colors on all procs in Color Map
   int maxNumColors;
 
-  //! List of colors in Color Map 
+  //! List of colors in Color Map
   int* colorList;
 
   //! List of colors in Color Map
   std::list<int> listOfAllColors;
-  
+
   //! Inverse mapping from color id to its position in colorList
   std::map<int, int> colorToNumMap;
 
@@ -244,7 +244,7 @@ protected:
   //! Overlap Map (Column Map of Matrix Graph) needed for parallel
   const Epetra_BlockMap* columnMap;
 
-  //! An Import object needed in parallel to map from row-space to column-space 
+  //! An Import object needed in parallel to map from row-space to column-space
   Epetra_Import* rowColImporter;
 
 };

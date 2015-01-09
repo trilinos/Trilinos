@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -78,10 +78,10 @@ namespace LOCA {
     //! Factory for creating continuation strategy objects
     /*!
      * The parameters passed to the create() through the \c stepperParams
-     * argument method should specify the "Continuation Method" as described 
+     * argument method should specify the "Continuation Method" as described
      * below, as well as any additional parameters for the particular strategy.
      * <ul>
-     * <li> "Continuation Method" - Name of the continuation method. Valid 
+     * <li> "Continuation Method" - Name of the continuation method. Valid
      *      choices are
      *   <ul>
      *   <li> "Arc Length" (LOCA::MultiContinuation::ArcLengthGroup) [Default]
@@ -101,7 +101,7 @@ namespace LOCA {
 
       //! Create continuation strategy
       /*!
-       * \param topParams [in] Parsed top-level parameter list.  
+       * \param topParams [in] Parsed top-level parameter list.
        * \param stepperParams [in] Stepper parameters as described above
        * \param grp [in] Underlying group
        * \param pred [in] Predictor strategy

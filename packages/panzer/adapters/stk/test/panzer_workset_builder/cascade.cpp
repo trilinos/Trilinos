@@ -64,8 +64,8 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds);
+  void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
+		  std::vector<stk_classic::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -88,15 +88,15 @@ namespace panzer {
       pl->set("X Procs",1);
       pl->set("Y Procs",2);
   
-      panzer_stk::SquareQuadMeshFactory factory;
+      panzer_stk_classic::SquareQuadMeshFactory factory;
       factory.setParameterList(pl);
-      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk_classic::mesh::Entity*> sideEntities; 
       mesh->getMySides("left","eblock-0_0",sideEntities);
 
-      std::vector<std::vector<stk::mesh::Entity*> > subcells;
-      panzer_stk::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
+      std::vector<std::vector<stk_classic::mesh::Entity*> > subcells;
+      panzer_stk_classic::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
 
       if(tcomm->getRank()==0) {
         TEST_EQUALITY(subcells.size(),1);
@@ -115,18 +115,18 @@ namespace panzer {
       pl->set("X Procs",1);
       pl->set("Y Procs",2);
   
-      panzer_stk::SquareQuadMeshFactory factory;
+      panzer_stk_classic::SquareQuadMeshFactory factory;
       factory.setParameterList(pl);
-      RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+      RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk_classic::mesh::Entity*> sideEntities; 
       mesh->getMySides("left","eblock-0_0",sideEntities);
       TEST_ASSERT(sideEntities.size()==2);
 
       std::vector<std::size_t> localSubcellDim,localSubcellIds;
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
 
-      panzer_stk::workset_utils::getSideElementCascade(*mesh,"eblock-0_0",sideEntities,
+      panzer_stk_classic::workset_utils::getSideElementCascade(*mesh,"eblock-0_0",sideEntities,
                                                        localSubcellDim,localSubcellIds,elements);
 
       TEST_EQUALITY(localSubcellDim.size(),6);
@@ -148,12 +148,12 @@ namespace panzer {
     }
   }
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
-		  std::vector<stk::mesh::EntityId> & nodeIds)
+  void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,
+		  std::vector<stk_classic::mesh::EntityId> & nodeIds)
   {
-    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
+    stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
     
-    stk::mesh::PairIterRelation::iterator itr;
+    stk_classic::mesh::PairIterRelation::iterator itr;
     for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
       nodeIds.push_back(itr->entity()->identifier());
   }

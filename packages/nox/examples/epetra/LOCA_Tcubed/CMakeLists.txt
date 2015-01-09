@@ -1,14 +1,12 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Tcubed_Continuation_Example
-    SOURCES 
+    SOURCES
     Basis.H
     Basis.C
     FiniteElementProblem.H
@@ -24,7 +22,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Tcubed_TurningPoint_Example
-    SOURCES 
+    SOURCES
     Basis.H
     Basis.C
     FiniteElementProblem.H
@@ -40,7 +38,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_Tcubed_PhaseTransition_Example
-    SOURCES 
+    SOURCES
     Basis.H
     Basis.C
     FiniteElementProblem.H
@@ -58,14 +56,14 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       LOCA_Tcubed_MultiContinuation_Example
-      SOURCES 
+      SOURCES
       Basis.H
       Basis.C
       FiniteElementProblem.H
       FiniteElementProblem.C
       Problem_Interface.H
       Problem_Interface.C
-      ExampleMultiContinuation.C       
+      ExampleMultiContinuation.C
       COMM serial mpi
       NUM_MPI_PROCS 1
       ARGS -v

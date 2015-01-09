@@ -55,7 +55,8 @@
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
   template class MueLu::TopRAPFactory<S, LO, GO, N>; \
-  template class MueLu::TopSmootherFactory<S, LO, GO, N>;
+  template class MueLu::TopSmootherFactory<S, LO, GO, N>; \
+  template class MueLu::HierarchyUtils<S, LO, GO, N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

@@ -34,20 +34,23 @@
  */
 
 #include "EML_SystemInterface.h"
+#include <Ioss_FileInfo.h>              // for FileInfo
+#include <ctype.h>                      // for tolower
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for NULL, exit, strtod, etc
+#include <string.h>                     // for strcmp
+#include <algorithm>                    // for sort, transform
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, allocator, etc
+#include "EML_CodeTypes.h"              // for StringIdVector
+#include "EML_Version.h"                // for qainfo
+#include "GetLongOpt.h"                 // for GetLongOption, etc
+#include "SL_tokenize.h"                // for tokenize
 
-#include <iostream>
-#include <algorithm>
-#include <functional>
-#include <vector>
 
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
 
-#include "EML_Version.h"
-#include "SL_tokenize.h"
 
-#include <Ioss_FileInfo.h>
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
@@ -93,25 +96,27 @@ void SystemInterface::enroll_options()
 		  "Comma-separated list of global variables to be output or ALL or NONE.",
 		  "ALL");
 
+#if 0
   options_.enroll("evar", GetLongOption::MandatoryValue,
-		  "(NI) Comma-separated list of element variables to be output or ALL or NONE.\n"
+		  "(Not Yet Implemented) Comma-separated list of element variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
 		  0);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
-		  "(NI) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
+		  "(Not Yet Implemented) Comma-separated list of nodal variables to be output or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain nodes by appending a\n"
 		  "\t\tcolon followed by the node id.  E.g. -nvar disp:10:20",
 		  0);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-		  "(NI) Comma-separated list of nodeset variables to be output or ALL or NONE.",
+		  "(Not Yet Implemented) Comma-separated list of nodeset variables to be output or ALL or NONE.",
 		  0);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-		  "(NI) Comma-separated list of sideset variables to be output or ALL or NONE.",
+		  "(Not Yet Implemented) Comma-separated list of sideset variables to be output or ALL or NONE.",
 		  0);
+#endif
 
   options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
@@ -170,6 +175,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &globalVarNames_);
   }
 
+#if 0
   {
     const char *temp = options_.retrieve("nvar");
     parse_variable_names(temp, &nodeVarNames_);
@@ -189,6 +195,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("ssetvar");
     parse_variable_names(temp, &ssetVarNames_);
   }
+#endif
 
   {
     const char *temp = options_.retrieve("minimum_time");

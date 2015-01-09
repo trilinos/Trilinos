@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,11 +64,11 @@ namespace LOCA {
 
   namespace MultiContinuation {
 
-    /*! 
+    /*!
       \brief %Vector class to hold solution vectors, %Newton vectors, etc.
       for continuation equations.
     */
-    /*! 
+    /*!
        This class uses the LOCA::Extended::Vector implementation to store the
        solution and parameter components of the continuation vector
        and merely provides an interface for naming which components of the
@@ -76,35 +76,35 @@ namespace LOCA {
     */
     class ExtendedVector : public LOCA::Extended::Vector {
 
-      /*! 
-       * \brief Declare LOCA::MultiContinuation::ExtendedMultiVector as a 
+      /*!
+       * \brief Declare LOCA::MultiContinuation::ExtendedMultiVector as a
        * friend class so it can call protected methods.
        */
       friend class ExtendedMultiVector;
 
     public:
-  
+
       //! Constructor.
       ExtendedVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		     const NOX::Abstract::Vector& xVec, int nScalars);
+             const NOX::Abstract::Vector& xVec, int nScalars);
 
       //! Copy constructor.
-      ExtendedVector(const ExtendedVector& source, 
-		     NOX::CopyType type = NOX::DeepCopy);
+      ExtendedVector(const ExtendedVector& source,
+             NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~ExtendedVector();
 
       //! Assignment operator
-      virtual ExtendedVector& 
+      virtual ExtendedVector&
       operator=(const ExtendedVector& y);
 
       //! Assignment operator
-      virtual LOCA::Extended::Vector& 
+      virtual LOCA::Extended::Vector&
       operator=(const LOCA::Extended::Vector& y);
 
       //! Assignment operator
-      virtual NOX::Abstract::Vector& 
+      virtual NOX::Abstract::Vector&
       operator=(const NOX::Abstract::Vector& y);
 
       //! Assignment operator
@@ -112,7 +112,7 @@ namespace LOCA {
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Returns the solution vector component of extended vector
-      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector>
       getXVec() const;
 
       //! Returns the solution vector component of extended vector
@@ -122,16 +122,16 @@ namespace LOCA {
 
       //! Constructor
       ExtendedVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		     int nScalars);
+             int nScalars);
 
       //! generate an extended multi-vector
       /*!
-       * Returns an empty multivector of type 
+       * Returns an empty multivector of type
        * LOCA::MultiContinuation::ExtendedMultiVector
        */
       virtual Teuchos::RCP<LOCA::Extended::MultiVector>
-      generateMultiVector(int nColumns, int nVectorRows, 
-			  int nScalarRows) const;
+      generateMultiVector(int nColumns, int nVectorRows,
+              int nScalarRows) const;
 
     }; // class ExtendedVector
   } // namespace Continuation

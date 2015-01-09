@@ -1,3 +1,36 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
 #ifndef stk_expreval_Variable_hpp
 #define stk_expreval_Variable_hpp
 
@@ -122,8 +155,10 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const double &value) {
+    m_type = this->m_type;
+    m_use = this->m_use;
     if (m_type == INTEGER)
-      *m_intPtr = (int) value;
+      *m_intPtr = static_cast<int>(value);
     else if (m_type == DOUBLE)
       *m_doublePtr = value;
     return *this;
@@ -139,10 +174,12 @@ public:
    * @return			a <b>Variable</b> reference to the variable.
    */
   Variable &operator=(const int &value) {
+    m_type = this->m_type;
+    m_use = this->m_use;
     if (m_type == INTEGER)
       *m_intPtr = value;
     else if (m_type == DOUBLE)
-      *m_doublePtr = (double) value;
+      *m_doublePtr = static_cast<double>(value);
     return *this;
   }
 
@@ -165,28 +202,6 @@ public:
    * double values.  No bounds checkin is performed.  Not even if the variable is and
    * array is checked.
    *
-   * @param index		a <b>double</b> value of the zero based index into
-   *				the array to retrieve the value.
-   *
-   * @return			a <b>double</b> reference to the value.
-   */
-  inline double &operator[](double index) {
-    if (m_type != DOUBLE)
-      throw std::runtime_error("Only double arrays allowed");
-
-    if ((void *) m_doublePtr == 0)
-      throw std::runtime_error("Unbound variable");
-
-    int i = (int) index;
-
-    return m_doublePtr[i];
-  }
-
-  /**
-   * @brief Member function <b>operator[]</b> returns a value from an array of
-   * double values.  No bounds checkin is performed.  Not even if the variable is and
-   * array is checked.
-   *
    * @param index		a <b>int</b> value of the zero based index into the
    *				array to retrieve the value.
    *
@@ -196,7 +211,7 @@ public:
     if (m_type != DOUBLE)
       throw std::runtime_error("Only double arrays allowed");
 
-    if ((void *) m_doublePtr == 0)
+    if (m_doublePtr == 0)
       throw std::runtime_error("Unbound variable");
 
     return m_doublePtr[index];
@@ -266,7 +281,7 @@ public:
     case DOUBLE:
       return *m_doublePtr;
     case INTEGER:
-      return (double) *m_intPtr;
+      return *m_intPtr;
     }
     throw std::runtime_error("Invalid variable type");
   }
@@ -369,10 +384,8 @@ private:
     /**
      * @brief Member function <b>resolve</b> implements the default resolvers
      * function, which does nothing.  I.E. lets the local variable values stand.
-     *
-     * @param it		a <b>VariableMap::iterator</b> variable ...
      */
-    virtual void resolve(VariableMap::iterator &it)
+    virtual void resolve(VariableMap::iterator &)
     {}
     
   };
@@ -416,7 +429,7 @@ public:
    * @return			a <b>Variable</b> pointer to the new variable.
    */
   Variable *operator[](const std::string &s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable *) 0));
+    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, NULL));
     if (i.second)
       (*i.first).second = new Variable();
     return (*i.first).second;

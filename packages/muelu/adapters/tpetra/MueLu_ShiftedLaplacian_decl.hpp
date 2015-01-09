@@ -62,7 +62,7 @@
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_PgPFactory.hpp>
 #include <MueLu_GenericRFactory.hpp>
-#include <MueLu_SchwarzSmoother.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>
@@ -70,8 +70,7 @@
 // Belos
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosSolverFactory.hpp>
 
 namespace MueLu {
 
@@ -81,36 +80,67 @@ namespace MueLu {
     An AMG-Shifted Laplacian is used as a preconditioner for Krylov iterative
     solvers in Belos.
   */
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar        = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node          = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class ShiftedLaplacian : public BaseClass {
-
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
 
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
-    typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
-    typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
-    typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
-    typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
+    typedef Belos::LinearProblem<SC,TMV,OP>              LinearProblem;
+    typedef Belos::SolverManager<SC,TMV,OP>              SolverManager;
+    typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
 
   public:
 
     //! Constructors
-    ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
-	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
-	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
-	smoother_sweeps_(4), smoother_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5), krylov_preconditioner_(1),
-	ilu_leveloffill_(5.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_diagpivotthresh_(0.1), ilu_drop_tol_(0.01), ilu_fill_tol_(0.01), ilu_relax_val_(1.0),
-	ilu_rowperm_("LargeDiag"), ilu_colperm_("COLAMD"), ilu_drop_rule_("DROP_BASIC"), ilu_normtype_("INF_NORM"), ilu_milutype_("SILU"),
-	schwarz_overlap_(0), schwarz_usereorder_(true), schwarz_combinemode_(Tpetra::ADD), schwarz_ordermethod_("rcm"),
-	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
-	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
-	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
-	LevelShiftsSet_(false), isSymmetric_(true), useKrylov_(true)
+    ShiftedLaplacian():
+      numPDEs_(1),
+      Smoother_("schwarz"),
+      Aggregation_("uncoupled"),
+      Nullspace_("constant"),
+      numLevels_(5),
+      coarseGridSize_(100),
+      omega_(2.0*M_PI),
+      iters_(500),
+      blksize_(1),
+      tol_(1.0e-4),
+      nsweeps_(5),
+      ncycles_(1),
+      cycles_(8),
+      subiters_(10),
+      option_(1),
+      nproblems_(0),
+      solverType_(1),
+      restart_size_(100),
+      recycle_size_(25),
+      smoother_sweeps_(4),
+      smoother_damping_((SC)1.0),
+      krylov_type_(1),
+      krylov_iterations_(5),
+      krylov_preconditioner_(1),
+      ilu_leveloffill_(5.0),
+      ilu_abs_thresh_(0.0),
+      ilu_rel_thresh_(1.0),
+      ilu_diagpivotthresh_(0.1),
+      ilu_drop_tol_(0.01),
+      ilu_fill_tol_(0.01),
+      ilu_relax_val_(1.0),
+      ilu_rowperm_("LargeDiag"),
+      ilu_colperm_("COLAMD"),
+      ilu_drop_rule_("DROP_BASIC"),
+      ilu_normtype_("INF_NORM"),
+      ilu_milutype_("SILU"),
+      schwarz_overlap_(0),
+      schwarz_usereorder_(true),
+      schwarz_combinemode_(Tpetra::ADD),
+      schwarz_ordermethod_("rcm"),
+      GridTransfersExist_(false),
+      isSymmetric_(true)
     { }
 
     // Destructor
@@ -120,74 +150,74 @@ namespace MueLu {
     void setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList);
 
     // Set matrices
-    void setLaplacian(RCP<Matrix>& L);
     void setProblemMatrix(RCP<Matrix>& A);
-    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA);
+    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
-    void setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP);
+    void setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraP);
     void setstiff(RCP<Matrix>& K);
-    void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK);
+    void setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraK);
     void setmass(RCP<Matrix>& M);
-    void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM);
-    void setdamp(RCP<Matrix>& C);
-    void setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC);
+    void setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >& TpetraM);
     void setcoords(RCP<MultiVector>& Coords);
     void setNullSpace(RCP<MultiVector> NullSpace);
-    void setProblemShifts(Scalar ashift1, Scalar ashift2);
-    void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
     void setLevelShifts(std::vector<Scalar> levelshifts);
 
-    // various initialization/setup functions
+    // initialize: set parameters and factories, construct
+    // prolongation and restriction matrices
     void initialize();
+    // setupFastRAP: setup hierarchy with
+    // prolongators of the stiffness matrix
+    // constant complex shifts
     void setupFastRAP();
+    // setupSlowRAP: setup hierarchy with
+    // prolongators of the stiffness matrix
+    // variable complex shifts
     void setupSlowRAP();
+    // setupNormalRAP: setup hierarchy with
+    // prolongators of the preconditioning matrix
     void setupNormalRAP();
+    // setupSolver: initialize Belos solver
+    void setupSolver();
+    // resetLinearProblem: for multiple frequencies;
+    // reset the Belos operator if the frequency changes
     void resetLinearProblem();
+
 
     // Solve phase
     int solve(const RCP<TMV> B, RCP<TMV>& X);
-    void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
-    void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
+    void multigrid_apply(const RCP<MultiVector> B,
+			 RCP<MultiVector>& X);
+    void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
+			 RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
     double GetResidual();
+
+    RCP<FactoryManager>               Manager_;
 
   private:
 
     // Problem options
-    // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-
-    std::string Problem_;
-    int numPDEs_, numSetups_;
+    int numPDEs_;
 
     // Multigrid options
     // numLevels_      -> number of Multigrid levels
     // coarseGridSize_ -> size of coarsest grid (if current level has less DOFs, stop coarsening)
-
     std::string Smoother_, Aggregation_, Nullspace_;
     int numLevels_, coarseGridSize_;
 
-    // Shifted Laplacian parameters
-    // To be compatible with both real and complex scalar types,
-    // problem and preconditioning matrices are constructed in the following way:
-    //    A = K + ashift1*omega*C + (ashift2*omega^2)*M
-    //    P = K + pshift1*omega*C + (pshift2*omega^2)*M
-    // where K, C, and M are the stiffness, damping, and mass matrices, and
-    // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
-
-    double     omega_;
-    SC         ashift1_, ashift2_, pshift1_, pshift2_;
+    // Shifted Laplacian/Helmholtz parameters
+    double          omega_;
     std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations
     // tol    -> residual tolerance
-    // FMGRES -> if true, FGMRES is chosen as solver
-
     int    iters_, blksize_;
     double tol_;
     int    nsweeps_, ncycles_;
     int    cycles_, subiters_, option_, nproblems_, solverType_;
+    int    restart_size_, recycle_size_;
 
     // Smoother parameters
     int    smoother_sweeps_;
@@ -205,24 +235,18 @@ namespace MueLu {
 
     // flags for setup
     bool GridTransfersExist_;
-    bool UseLaplacian_, VariableShift_;
-    bool LaplaceOperatorSet_, ProblemMatrixSet_, PreconditioningMatrixSet_;
-    bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_, LevelShiftsSet_;
-    bool isSymmetric_, useKrylov_;
+    bool isSymmetric_;
 
     // Xpetra matrices
     // K_ -> stiffness matrix
-    // C_ -> damping matrix
     // M_ -> mass matrix
-    // L_ -> Laplacian
     // A_ -> Problem matrix
     // P_ -> Preconditioning matrix
-    RCP<Matrix>                       K_, C_, M_, L_, A_, P_;
+    RCP<Matrix>                       K_, M_, A_, P_;
     RCP<MultiVector>                  Coords_, NullSpace_;
 
-    // Multigrid Hierarchy and Factory Manager
+    // Multigrid Hierarchy
     RCP<Hierarchy>                    Hierarchy_;
-    RCP<FactoryManager>               Manager_;
 
     // Factories and prototypes
     RCP<TentativePFactory>            TentPfact_;
@@ -243,11 +267,12 @@ namespace MueLu {
 
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
-    RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;
+    RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >               TpetraA_;
 
     // Belos Linear Problem and Solver
-    RCP<BelosLinearProblem>           BelosLinearProblem_;
-    RCP<BelosSolverManager>           BelosSolverManager_;
+    RCP<LinearProblem>                LinearProblem_;
+    RCP<SolverManager>                SolverManager_;
+    RCP<SolverFactory>                SolverFactory_;
     RCP<Teuchos::ParameterList>       BelosList_;
 
   };

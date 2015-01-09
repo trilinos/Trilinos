@@ -236,6 +236,50 @@ extern "C" {
 
 
     /**
+     * @brief Setup an RPC request.
+     *
+     * @ingroup rpc_ptl_impl
+     *
+     * This method populates an RPC request.  All input parameters are copied
+     * into the request.  The request can be used to send the RPC to the service
+     * and wait for the result
+     *
+     * @param svc           @input descriptor for the NSSI service.
+     * @param opcode        @input descriptor for the remote method.
+     * @param args          @input pointer to the arguments.
+     * @param data          @input pointer to data (for bulk data transfers).
+     * @param data_size     @input length of data buffer
+     * @param result        @input where to put results.
+     * @param request       @output The request handle (used to test for
+     *                              completion).
+     */
+    extern int nssi_create_request(
+            const nssi_service *svc,
+            const int opcode,
+            void *args,
+            void *data,
+            uint32_t data_size,
+            void *result,
+            nssi_request *request);
+
+    /**
+     * @brief Send an RPC request to an NSSI server.
+     *
+     * @ingroup rpc_ptl_impl
+     *
+     * This method encodes and transfers an RPC request header and
+     * operation arguments to an NSSI server using NNTI. If the
+     * arguments are sufficiently small, \b nssi_send_request sends
+     * the request header and the arguments in a single message.
+     * If the arguments are large (i.e., too large for the request buffer),
+     * the server fetches the arguments from a client-side buffer.
+     *
+     * @param request   @inout The request handle (used to test for completion).
+     */
+    extern int nssi_send_request(
+            nssi_request *request);
+
+    /**
      * @brief Call a remote procedure.
      *
      * @ingroup rpc_client_api
@@ -315,7 +359,7 @@ extern "C" {
             void *data,
             uint32_t data_len,
             void *result,
-            nssi_request *req);
+            nssi_request *request);
 
 
     /**
@@ -376,8 +420,8 @@ extern "C" {
      */
     extern int nssi_timedwait(
             nssi_request *req,
-            int timeout,
-            int *remote_rc);
+            int           timeout,
+            int          *remote_rc);
 
     /**
      * @brief Wait for an RPC request to complete.
@@ -398,24 +442,7 @@ extern "C" {
      */
     extern int nssi_wait(
             nssi_request *req,
-            int *rc);
-
-
-    /**
-     * @brief Wait for all requests to complete.
-     *
-     * A request is not complete unless we receive the short
-     * result.
-     *
-     * @param req_array    The array of pending requests.
-     * @param size         The number of pending requests.
-     * @param timeout      The time to wait for any one request.
-     *
-     */
-    extern int nssi_waitall(
-            nssi_request *req_array,
-            nssi_size size,
-            int timeout);
+            int          *rc);
 
 
     /**
@@ -428,11 +455,11 @@ extern "C" {
      * to complete.
      *
      * @param req_array   Points to an array of requests.
-     * @param size        The size of the request array.
-     * @param timeout  The maximum amount of time (milliseconds) that the
+     * @param req_count   The size of the request array.
+     * @param timeout     The maximum amount of time (milliseconds) that the
      *                       function will block waiting for a request to complete.
-     * @param which        The index of the complete request.
-     * @param remote_rc    The return code of the completed request.
+     * @param which       The index of the complete request.
+     * @param remote_rc   The return code of the completed request.
      *
      * @return <b>\ref NSSI_OK</b> Indicates that a request completed
      *                             (possibly with an error).
@@ -441,11 +468,29 @@ extern "C" {
      *                                within the alloted time.
      */
     extern int nssi_waitany(
-            nssi_request **req_array,
-            nssi_size size,
-            int timeout,
-            int *which,
-            int *remote_rc);
+            nssi_request *req_array,
+            nssi_size     req_count,
+            int           timeout,
+            int          *which,
+            int          *remote_rc);
+
+
+    /**
+     * @brief Wait for all requests to complete.
+     *
+     * A request is not complete unless we receive the short
+     * result.
+     *
+     * @param req_array    The array of pending requests.
+     * @param req_count    The number of pending requests.
+     * @param timeout      The time to wait for any one request.
+     *
+     */
+    extern int nssi_waitall(
+            nssi_request *req_array,
+            nssi_size     req_count,
+            int           timeout);
+
 
     /**
      * @brief Return the status of an RPC request.
@@ -491,6 +536,23 @@ extern "C" {
             uint32_t data_size,
             void *results,
             nssi_size result_size);
+
+
+    extern int nssi_atomic_increment(
+            const nssi_service *svc,
+            const uint64_t      remote_atomic,
+            const uint64_t      local_atomic);
+
+    extern int nssi_atomic_decrement(
+            const nssi_service *svc,
+            const uint64_t      remote_atomic,
+            const uint64_t      local_atomic);
+
+    extern int nssi_atomic_read(
+            const nssi_service *svc,
+            const uint64_t      local_atomic,
+            int64_t            *value);
+
 
 #else /* K&R C */
 #endif

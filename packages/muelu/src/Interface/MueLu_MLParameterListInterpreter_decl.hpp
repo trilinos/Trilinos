@@ -51,6 +51,7 @@
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
+#include <Xpetra_Operator_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyManager.hpp"
@@ -62,6 +63,7 @@
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
@@ -118,8 +120,8 @@ namespace MueLu {
     TODO: A warning is issued if ML is not available
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -199,9 +201,6 @@ namespace MueLu {
     int     nullspaceDim_;
     double* nullspace_; //TODO: replace by Teuchos::ArrayRCP<>
 
-    //! export aggregates
-    bool    bExportAggregates_; //!< if set to true an AggregationExportFactory is used to export aggregation information (default = false)
-
     //! list of user-defined transfer Factories
     //! We use this vector to add some special user-given factories to the Hierarchy (RAPFactory)
     //! This way the user can extend the standard functionality of the MLParameterListInterpreter beyond the
@@ -210,8 +209,8 @@ namespace MueLu {
 
     //@{ Matrix configuration
 
-    //! Setup Matrix object
-    virtual void SetupMatrix(Matrix & Op) const;
+    //! Setup Operator object
+    virtual void SetupOperator(Operator & Op) const;
 
     //! Matrix configuration storage
     int blksize_;

@@ -43,7 +43,7 @@
 #define BELOS_MINRES_ITER_HPP
 
 /// \file BelosMinresIter.hpp
-/// \brief MINRES iteration implementation 
+/// \brief MINRES iteration implementation
 ///
 /// The Minimal Residual Method (MINRES) is a Krylov subspace method
 /// for solving symmetric (in real arithmetic, or Hermitian in complex
@@ -107,15 +107,15 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   typedef Teuchos::ScalarTraits< MagnitudeType > SMT;
 
   //! @name Constructors/Destructor
-  //@{ 
+  //@{
 
   /// \brief Constructor
   ///
   /// \params problem The linear problem to solve
   /// \params printer Output manager, for intermediate solver output
   /// \params tester Status test for determining when the current
-  ///   approximate solution has converged 
-  /// \params params Parameter list of solver options 
+  ///   approximate solution has converged
+  /// \params params Parameter list of solver options
   ///
   MinresIter (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > >& problem,
 	      const Teuchos::RCP< OutputManager< ScalarType > > &        printer,
@@ -128,7 +128,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
 
   //! @name Solver methods
-  //@{ 
+  //@{
 
   /// \brief Perform MINRES iterations until convergence or error
   ///
@@ -154,13 +154,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
    * initialize() gives the user the opportunity to manually set these,
    * although only the current unpreconditioned residual is required.
    *
-   * \post 
+   * \post
    * <li>isInitialized() == \c true (see post-conditions of isInitialize())
    *
-   * \note For any pointer in \c newstate which directly points to the multivectors in 
+   * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeMinres (MinresIterationState<ScalarType,MV> newstate);
+  void initializeMinres (const MinresIterationState<ScalarType,MV> & newstate);
 
   /// \brief Initialize the solver
   ///
@@ -195,21 +195,21 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //@}
 
-  
+
   //! @name Status methods
-  //@{ 
+  //@{
 
   //! \brief Get the current iteration count.
   int getNumIters() const { return iter_; }
-  
+
   //! \brief Reset the iteration count.
   void resetNumIters( int iter = 0 ) { iter_ = iter; }
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> 
-  getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
-  { 
+  Teuchos::RCP<const MV>
+  getNativeResiduals( std::vector<MagnitudeType> *norms ) const
+  {
     if (norms != NULL)
       {
 	std::vector<MagnitudeType>& theNorms = *norms;
@@ -217,7 +217,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 	  theNorms.resize(1);
 	theNorms[0] = phibar_;
       }
-    return Teuchos::null; 
+    return Teuchos::null;
   }
 
   //! Get the current update to the linear system.
@@ -231,7 +231,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //@}
 
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   //! Get a constant reference to the linear problem.
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
@@ -293,7 +293,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   /// Ax\|_2\fn$).
   MagnitudeType phibar_;
 
-  // 
+  //
   // State Storage
   //
 
@@ -333,7 +333,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     stest_(tester),
     initialized_(false),
     stateStorageInitialized_(false),
-    iter_(0)
+    iter_(0),
+    phibar_(0.0)
   {
   }
 
@@ -378,10 +379,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void MinresIter<ScalarType,MV,OP>::initializeMinres(MinresIterationState<ScalarType,MV> newstate)
+  void MinresIter<ScalarType,MV,OP>::initializeMinres(const MinresIterationState<ScalarType,MV> & newstate)
   {
     // Initialize the state storage if it isn't already.
-    if (!stateStorageInitialized_) 
+    if (!stateStorageInitialized_)
       setStateSize();
 
     TEUCHOS_TEST_FOR_EXCEPTION( !stateStorageInitialized_,
@@ -416,7 +417,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     if ( lp_->getLeftPrec() != Teuchos::null ) {
       lp_->applyLeftPrec( *newstate.Y, *Y_ );
-    } 
+    }
     else {
       if (newstate.Y != Y_) {
         // copy over the initial residual (unpreconditioned).
@@ -491,7 +492,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
-    // Check that the current solution vector only has one column. 
+    // Check that the current solution vector only has one column.
     TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1,
                         MinresIterateFailure,
                         "Belos::MinresIter::iterate(): current linear system has more than one vector!" );

@@ -75,7 +75,7 @@ namespace MueLu {
     the current level's system matrix's DOFS belong.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class RepartitionFactory : public SingleLevelFactoryBase {
 #undef MUELU_REPARTITIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -90,7 +90,7 @@ namespace MueLu {
     //! Destructor.
     virtual ~RepartitionFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 
@@ -123,7 +123,7 @@ namespace MueLu {
       Partitions are assigned to processes in order to minimize data movement.  The basic idea is that a good choice for partition
       owner is to choose the pid that already has the greatest number of nonzeros for a particular partition.
     */
-    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool keepProc0) const;
+    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const;
 
   }; // class RepartitionFactory
 

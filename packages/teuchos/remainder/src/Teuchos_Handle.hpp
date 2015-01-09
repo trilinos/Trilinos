@@ -47,7 +47,7 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Handleable.hpp"
 
-namespace Teuchos 
+namespace Teuchos
 {
 
   /** \brief Templated handle class with strong const protection.
@@ -55,7 +55,7 @@ namespace Teuchos
    * In writing derived types, it is usually simplest to use the
    * TEUCHOS_CONST_HANDLE_CTORS macro to generate boilerplate constructor
    * code.
-   * 
+   *
    * There are two modes of construction:
    * construction from an existing RCP,
    * \code
@@ -70,12 +70,12 @@ namespace Teuchos
    * second form, it is necessary that Derived implement the ConstHandleable
    * interface; this is necessary to avoid any implicit conversions from just
    * any raw pointer to a smart pointer.
-   * 
+   *
    * Note that the first form with rcp() must be used whenever the object
    * being handled has been allocated on the stack (using rcp(ptr,false) of
    * course).
    */
-  template <typename PointerType> 
+  template <typename PointerType>
   class ConstHandle : public virtual Describable
   {
   public:
@@ -95,9 +95,9 @@ namespace Teuchos
      *
      * The Handle ctors call the empty ConstHandle ctor and then set the
      * pointer in the ConstHandle with a call to setRcp(). */
-    void setRcp(const RCP<PointerType>& ptr) 
+    void setRcp(const RCP<PointerType>& ptr)
     {ptr_=rcp_const_cast<const PointerType>(ptr);}
-    /** \brief Protected non-const access to the underlying smart pointer. 
+    /** \brief Protected non-const access to the underlying smart pointer.
      *
      * This will be called by the nonConstPtr() method of the non-const Handle
      * subclass */
@@ -112,7 +112,7 @@ namespace Teuchos
    *
    * In writing derived types, it is usually simplest to use the
    * TEUCHOS_HANDLE_CTORS macro to generate boilerplate constructor code.
-   * 
+   *
    * There are two modes of construction:
    * construction from an existing RCP,
    * \code
@@ -123,15 +123,15 @@ namespace Teuchos
    * \code
    * Handle<Base> h = new Derived(blahblah);
    * \endcode
-   * The second form makes the code slightly cleaner. 
+   * The second form makes the code slightly cleaner.
    * Note that to use this second form, it is necessary that Derived implement the
    * Handleable interface; this is necessary to avoid any implicit conversions
    * from raw pointers to smart pointers.
-   * 
+   *
    * Note that the first form must be used whenever the object being handled has
    * been allocated on the stack.
    */
-  template <typename PointerType> 
+  template <typename PointerType>
   class Handle : public virtual ConstHandle<PointerType>
   {
   public:
@@ -140,7 +140,7 @@ namespace Teuchos
       : ConstHandle<PointerType>() {}
     /** \brief Construct with an existing RCP */
     Handle(const RCP<PointerType>& smartPtr)
-      : ConstHandle<PointerType>() 
+      : ConstHandle<PointerType>()
     {
       /* \brief We need to set the rcp in the base class */
       setRcp(smartPtr);
@@ -168,13 +168,13 @@ namespace Teuchos
 /** \brief This helper macro defines boilerplate constructors for classes
  * deriving from Handle.
  *
- * If class MyHandle is a handle to a type MyType, simply 
+ * If class MyHandle is a handle to a type MyType, simply
  * put
  * \code
  * TEUCHOS_HANDLE_CTORS(MyHandle, MyType);
  * \endcode
- * in the class declaration of MyHandle and the macro will create 
- * an empty ctor, a ctor from a smart ptr, and a ctor from a raw pointer. 
+ * in the class declaration of MyHandle and the macro will create
+ * an empty ctor, a ctor from a smart ptr, and a ctor from a raw pointer.
  * The macro will also create appropriate doxygen for the handle ctors */
 #define TEUCHOS_HANDLE_CTORS(handle, contents) \
 handle() : Teuchos::Handle<contents >() {;} \
@@ -184,13 +184,13 @@ handle(const Teuchos::RCP<contents >& smartPtr) : Teuchos::Handle<contents >(sma
 /** \brief. This helper macro defines boilerplate constructors for classes
  * deriving from ConstHandle.
  *
- * If class MyHandle is a const handle to a type MyType, simply 
+ * If class MyHandle is a const handle to a type MyType, simply
  * put
  * \code
  * TEUCHOS_CONST_HANDLE_CTORS(MyHandle, MyType);
  * \endcode
- * in the class declaration of MyHandle and the macro will create 
- * an empty ctor, a ctor from a smart ptr, and a ctor from a raw pointer. 
+ * in the class declaration of MyHandle and the macro will create
+ * an empty ctor, a ctor from a smart ptr, and a ctor from a raw pointer.
  * The macro will also create appropriate doxygen for the handle ctors */
 #define TEUCHOS_CONST_HANDLE_CTORS(handle, contents) \
 handle( Teuchos::ENull _null = Teuchos::null ) : Teuchos::ConstHandle<contents >() {;} \

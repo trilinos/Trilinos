@@ -1,6 +1,6 @@
 /* 
  * Copyright 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,27 +98,29 @@ char *do_exodus_info(char *filename)
     }
     size += count-1; /* newlines */
     lines = malloc(size * sizeof(char) + 1);
-    lines[0] = '\0';
+    if (lines) {
+      lines[0] = '\0';
 
-    for (i=0; i<count; i++) {
-      strcat(lines, info[i]);
-      strcat(lines, "\n");
+      for (i=0; i<count; i++) {
+	strcat(lines, info[i]);
+	strcat(lines, "\n");
+      }
+
+      NEWSTR(lines, ret_string);
+      free(lines);
     }
-
-    NEWSTR(lines, ret_string);
-    if (lines) free(lines);
-    
     if (count > 0) {
       for (i=0; i < count; i++) {
 	free(info[i]);
       }
       free(info);
     }
+    ex_close(exoid);
     return ret_string;
   } else {
+    ex_close(exoid);
     return "";
   }
-  ex_close(exoid);
 }
 
 char *do_exodus_meta(char *filename)
@@ -222,22 +224,22 @@ char *do_exodus_meta(char *filename)
     char *tmp = NULL;
     
     buffer = calloc(size, sizeof(char));
-    for (i=0; i < nblks; i++) {
-      sprintf(cid, "%d ", ids[i]);
-      if (strlen(buffer) + strlen(cid) +1 > size) {
-	if (realloc(buffer, size *=2) == NULL) {
-	  yyerror("Error allocating memory.");
+    if (buffer != NULL) {
+      for (i=0; i < nblks; i++) {
+	sprintf(cid, "%d ", ids[i]);
+	if (strlen(buffer) + strlen(cid) +1 > size) {
+	  if (realloc(buffer, size *=2) == NULL) {
+	    yyerror("Error allocating memory.");
+	  }
+	  memset(&buffer[size/2], 0, size/2);
 	}
-	memset(&buffer[size/2], 0, size/2);
+	strcat(buffer, cid);
       }
-      strcat(buffer, cid);
-    }
-    NEWSTR(buffer, tmp);
-    ptr = putsym("ex_block_ids", SVAR, 0);
-    ptr->value.svar = tmp;
-
-    if (buffer != NULL)
+      NEWSTR(buffer, tmp);
+      ptr = putsym("ex_block_ids", SVAR, 0);
+      ptr->value.svar = tmp;
       free(buffer);
+    }
   }
     
   {
@@ -304,24 +306,25 @@ char *do_exodus_meta(char *filename)
       ex_get_all_times(exoid, timesteps);
 
       buffer = calloc(size, sizeof(char));
+      if (buffer != NULL) {
 
-      for (i=0; i < ts_count; i++) {
-	sprintf(cid, format->value.svar, timesteps[i]);
-	if (strlen(buffer) + strlen(cid) +2 > size) {
-	  if (realloc(buffer, size *=2) == NULL) {
-	    yyerror("Error allocating memory.");
+	for (i=0; i < ts_count; i++) {
+	  sprintf(cid, format->value.svar, timesteps[i]);
+	  if (strlen(buffer) + strlen(cid) +2 > size) {
+	    if (realloc(buffer, size *=2) == NULL) {
+	      yyerror("Error allocating memory.");
+	    }
+	    memset(&buffer[size/2], 0, size/2);
 	  }
-	  memset(&buffer[size/2], 0, size/2);
+	  strcat(buffer, cid);
+	  strcat(buffer, " ");
 	}
-	strcat(buffer, cid);
-	strcat(buffer, " ");
-      }
-      NEWSTR(buffer, tmp);
-      ptr = putsym("ex_timestep_times", SVAR, 0);
-      ptr->value.svar = tmp;
+	NEWSTR(buffer, tmp);
+	ptr = putsym("ex_timestep_times", SVAR, 0);
+	ptr->value.svar = tmp;
 
-      if (buffer != NULL)
 	free(buffer);
+      }
     }
   }
   

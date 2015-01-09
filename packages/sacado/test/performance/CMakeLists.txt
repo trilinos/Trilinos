@@ -1,8 +1,6 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/Fad)
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/utils)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/Fad)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/utils)
 
 IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
@@ -37,7 +35,6 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     fe_jac_fill_funcs
     HEADERS fe_jac_fill_funcs.hpp
     SOURCES fe_jac_fill_funcs.cpp
-    DEPLIBS sacado
     TESTONLY
     )
 
@@ -46,7 +43,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     SOURCES fad_fe_jac_fill.cpp
     COMM serial mpi
     XHOSTTYPE AIX
-    DEPLIBS fe_jac_fill_funcs
+    TESTONLYLIBS fe_jac_fill_funcs
     )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -54,7 +51,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     SOURCES fad_fe_jac_fill_range.cpp
     COMM serial mpi
     XHOSTTYPE AIX
-    DEPLIBS fe_jac_fill_funcs
+    TESTONLYLIBS fe_jac_fill_funcs
     )
 
   TRIBITS_ADD_EXECUTABLE(

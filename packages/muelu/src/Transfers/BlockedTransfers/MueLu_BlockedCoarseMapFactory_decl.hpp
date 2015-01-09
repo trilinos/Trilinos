@@ -73,8 +73,11 @@ namespace MueLu {
      @ingroup MueLuTransferClasses
  */
 
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { //SingleLevelFactoryBase {
+template <class Scalar = double,
+          class LocalOrdinal = int,
+          class GlobalOrdinal = LocalOrdinal,
+          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> { //SingleLevelFactoryBase {
 #undef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -94,7 +97,7 @@ public:
   //! @name Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+  RCP<const ParameterList> GetValidParameterList() const;
 
   /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
@@ -111,21 +114,6 @@ public:
 
   //! Build an object with this factory.
   void Build(Level &currentLevel) const;
-
-  //@}
-
-  //! @name ovrloaded Get/Set functions
-
-  /*! @brief setDomainMapOffset
-     sets offset for domain map DOF Gids in tentative prolongation operator.
-     offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
-   */
-  void setDomainMapOffset(GlobalOrdinal offset);
-
-  /*! @brief getDomainMapOffset
-   * returns offset of the domain DOF map (=coarse map).
-   */
-  GlobalOrdinal getDomainMapOffset() const;
 
   //@}
 

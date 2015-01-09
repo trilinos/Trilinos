@@ -45,8 +45,7 @@
 #define KOKKOS_EXAMPLE_FEINT_FUNCTORS_HPP
 
 #include <stdio.h>
-#include <Kokkos_Serial.hpp>
-#include <Kokkos_Atomic.hpp>
+#include <Kokkos_Core.hpp>
 #include <BoxElemFixture.hpp>
 
 namespace Kokkos {
@@ -432,6 +431,8 @@ void map_node_to_elem( const ViewElemNode & elem_node ,
                        const ViewNodeScan & node_scan ,
                        const ViewNodeElem & node_elem )
 {
+  typedef typename ViewElemNode::host_mirror_space host_mirror_space ;
+
   const typename ViewElemNode::HostMirror host_elem_node =
     Kokkos::create_mirror_view(elem_node);
 
@@ -445,7 +446,7 @@ void map_node_to_elem( const ViewElemNode & elem_node ,
   const int elem_node_count = host_elem_node.dimension_1();
   const int node_count      = host_node_scan.dimension_0() - 1 ;
 
-  const View<int*,Kokkos::Serial>
+  const View<int*, host_mirror_space >
     node_elem_count( "node_elem_count" , node_count );
 
   Kokkos::deep_copy( host_elem_node , elem_node );

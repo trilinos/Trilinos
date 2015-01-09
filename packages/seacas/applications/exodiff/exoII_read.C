@@ -776,7 +776,7 @@ template <typename INT>
 string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(t1 > 0 && t2 <= num_times);
+  SMART_ASSERT(t1 > 0 && t1 <= num_times);
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
   
   if (!Open()) return "WARNING:  File not open!";
@@ -1274,6 +1274,7 @@ string ExoII_Read<INT>::Open_File(const char* fname)
     FILE *fid = fopen(file_name.c_str(),"r");
     if (fid != NULL) {
       oss << " File exists, but is not an exodusII file.";
+      fclose(fid);
     } else {
       oss << " File does not exist.";
     }
@@ -1300,14 +1301,10 @@ void ExoII_Read<INT>::Get_Init_Data()
   
   char title_buff[MAX_LINE_LENGTH+1];
   
-  INT num_nodes_t = 0;
-  INT num_elmts_t = 0;
-  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes_t,
-                        &num_elmts_t, &num_elmt_blocks, &num_node_sets,
+  int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes,
+                        &num_elmts, &num_elmt_blocks, &num_node_sets,
                         &num_side_sets);
-  num_nodes = num_nodes_t;
-  num_elmts = num_elmts_t;
-  
+
   if (err < 0) {
     std::cout << "EXODIFF ERROR: Failed to get init data!"
 	      << " Error number = " << err << ".  Aborting..." << std::endl;

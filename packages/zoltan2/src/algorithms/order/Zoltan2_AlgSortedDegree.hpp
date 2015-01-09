@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_SORTEDDEGREE_HPP_
 #define _ZOLTAN2_SORTEDDEGREE_HPP_
 
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_Sort.hpp>
@@ -59,27 +60,29 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgSortedDegree
+class AlgSortedDegree : public Algorithm<Adapter>
 {
   private:
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::gid_t gid_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
+
+  const RCP<GraphModel<Adapter> > model;
+  const RCP<Teuchos::ParameterList> &pl;
+  const RCP<Teuchos::Comm<int> > &comm;
+
   public:
 
-    AlgSortedDegree()
-    {
-    }
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::zgid_t zgid_t;
+  typedef typename Adapter::scalar_t scalar_t;
 
-  int order(
-    const RCP<GraphModel<Adapter> > &model, 
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-                               typename Adapter::lno_t> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
-  ) 
+  AlgSortedDegree(
+    const RCP<GraphModel<Adapter> > &model__,
+    const RCP<Teuchos::ParameterList> &pl__,
+    const RCP<Teuchos::Comm<int> > &comm__
+  ) : model(model__), pl(pl__), comm(comm__)
+  {
+  }
+
+  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution)
   {
     int ierr= 0;
   
@@ -89,7 +92,7 @@ class AlgSortedDegree
     perm = (lno_t *) (solution->getPermutation());
     if (perm==0){
       // Throw exception
-      cerr << "perm is NULL" << std::endl;
+      std::cerr << "perm is NULL" << std::endl;
       ierr = -1;
     }
   

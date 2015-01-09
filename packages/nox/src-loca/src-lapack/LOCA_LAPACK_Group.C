@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,18 +48,18 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_LAPACK_Group.H"	// class definition
+#include "LOCA_LAPACK_Group.H"    // class definition
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "Teuchos_LAPACK.hpp"
 
 LOCA::LAPACK::Group::Group(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    LOCA::LAPACK::Interface& interface) : 
-  NOX::LAPACK::Group(interface), 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            LOCA::LAPACK::Interface& interface) :
+  NOX::LAPACK::Group(interface),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
-  locaProblemInterface(interface), 
+  locaProblemInterface(interface),
   params(),
   shiftedSolver(jacSolver.getMatrix().numRows()),
   freq(0.0),
@@ -70,12 +70,12 @@ LOCA::LAPACK::Group::Group(
 {
 }
 
-LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source, 
-			   NOX::CopyType type) : 
-  NOX::LAPACK::Group(source,type), 
+LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source,
+               NOX::CopyType type) :
+  NOX::LAPACK::Group(source,type),
   LOCA::Abstract::Group(source,type),
   globalData(source.globalData),
-  locaProblemInterface(source.locaProblemInterface), 
+  locaProblemInterface(source.locaProblemInterface),
   params(source.params),
   shiftedSolver(source.shiftedSolver),
   freq(source.freq),
@@ -86,10 +86,10 @@ LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source,
 {
 }
 
-LOCA::LAPACK::Group::~Group() 
+LOCA::LAPACK::Group::~Group()
 {}
 
-LOCA::LAPACK::Group& 
+LOCA::LAPACK::Group&
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
 
   NOX::LAPACK::Group::operator=(source);
@@ -107,7 +107,7 @@ LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   return *this;
 }
 
-NOX::Abstract::Group& 
+NOX::Abstract::Group&
 LOCA::LAPACK::Group::operator=(const NOX::Abstract::Group& source) {
   operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
   return *this;
@@ -136,43 +136,43 @@ LOCA::LAPACK::Group::computeJacobian() {
   return NOX::LAPACK::Group::computeJacobian();
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverse(
-				     Teuchos::ParameterList& p, 
-				     const NOX::Abstract::Vector& input, 
-				     NOX::Abstract::Vector& result) const 
+                     Teuchos::ParameterList& p,
+                     const NOX::Abstract::Vector& input,
+                     NOX::Abstract::Vector& result) const
 {
 
   if (!isJacobian()) {
-    std::cerr << "ERROR: " 
-	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverse()"
-	 << " - invalid Jacobian" << std::endl;
+    std::cerr << "ERROR: "
+     << "LOCA::LAPACK::Group::applyJacobianTransposeInverse()"
+     << " - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
-  const NOX::LAPACK::Vector& lapack_input = 
+  const NOX::LAPACK::Vector& lapack_input =
     dynamic_cast<const NOX::LAPACK::Vector&> (input);
-  NOX::LAPACK::Vector& lapack_result = 
+  NOX::LAPACK::Vector& lapack_result =
     dynamic_cast<NOX::LAPACK::Vector&> (result);
 
   // Solve Jacobian transpose
   lapack_result = lapack_input;
   bool res = jacSolver.solve(true, 1, &lapack_result(0));
-    
+
   return res ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
-				     Teuchos::ParameterList& p, 
-				     const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& result) const 
+                     Teuchos::ParameterList& p,
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
 
   if (!isJacobian()) {
-    std::cerr << "ERROR: " 
-	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector()"
-	 << " - invalid Jacobian" << std::endl;
+    std::cerr << "ERROR: "
+     << "LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector()"
+     << " - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
 
@@ -186,6 +186,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -200,10 +201,11 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
   NOX::LAPACK::Vector* vecPtr;
   for (int j=0; j<nVecs; j++) {
     vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
+    TEUCHOS_ASSERT(vecPtr != NULL);
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = B(i,j);
   }
-    
+
   return NOX::Abstract::Group::Ok;
 }
 
@@ -213,7 +215,7 @@ LOCA::LAPACK::Group::copy(const NOX::Abstract::Group& source) {
 }
 
 void
-LOCA::LAPACK::Group::setParams(const LOCA::ParameterVector& p) 
+LOCA::LAPACK::Group::setParams(const LOCA::ParameterVector& p)
 {
   resetIsValid();
   params = p;
@@ -233,7 +235,7 @@ LOCA::LAPACK::Group::setParam(std::string paramID, double val)
   params.setValue(paramID, val);
 }
 
-const LOCA::ParameterVector& 
+const LOCA::ParameterVector&
 LOCA::LAPACK::Group::getParams() const
 {
   return params;
@@ -253,9 +255,9 @@ LOCA::LAPACK::Group::getParam(std::string paramID) const
 
 void
 LOCA::LAPACK::Group::projectToDraw(const NOX::Abstract::Vector& x,
-				   double *px) const
+                   double *px) const
 {
-  const NOX::LAPACK::Vector& lx = 
+  const NOX::LAPACK::Vector& lx =
     dynamic_cast<const NOX::LAPACK::Vector&>(x);
   locaProblemInterface.projectToDraw(lx, px);
 }
@@ -268,13 +270,13 @@ LOCA::LAPACK::Group::projectToDrawDimension() const
 
 double
 LOCA::LAPACK::Group::computeScaledDotProduct(
-				       const NOX::Abstract::Vector& a,
-				       const NOX::Abstract::Vector& b) const
+                       const NOX::Abstract::Vector& a,
+                       const NOX::Abstract::Vector& b) const
 {
   return a.innerProduct(b) / a.length();
 }
 
-void 
+void
 LOCA::LAPACK::Group::printSolution(const double conParam) const
 {
   printSolution(xVector, conParam);
@@ -297,9 +299,9 @@ NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::computeShiftedMatrix(double alpha, double beta)
 {
   // Compute alpha*J+beta*M
-  bool res = 
+  bool res =
     locaProblemInterface.computeShiftedMatrix(alpha, beta, xVector,
-					      shiftedSolver.getMatrix());
+                          shiftedSolver.getMatrix());
 
   if (res)
     return NOX::Abstract::Group::Ok;
@@ -309,14 +311,14 @@ LOCA::LAPACK::Group::computeShiftedMatrix(double alpha, double beta)
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
-					NOX::Abstract::Vector& result) const
+                    NOX::Abstract::Vector& result) const
 {
   // Cast inputs to LAPACK vectors
-  const NOX::LAPACK::Vector& lapack_input = 
+  const NOX::LAPACK::Vector& lapack_input =
     dynamic_cast<const NOX::LAPACK::Vector&>(input);
-  NOX::LAPACK::Vector& lapack_result = 
+  NOX::LAPACK::Vector& lapack_result =
     dynamic_cast<NOX::LAPACK::Vector&>(result);
-  
+
   // Apply shifted matrix
   shiftedSolver.apply(false, 1, &lapack_input(0), &lapack_result(0));
 
@@ -325,8 +327,8 @@ LOCA::LAPACK::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
-				   const NOX::Abstract::MultiVector& input,
-				   NOX::Abstract::MultiVector& result) const
+                   const NOX::Abstract::MultiVector& input,
+                   NOX::Abstract::MultiVector& result) const
 {
   // Number of RHS
   int nVecs = input.numVectors();
@@ -339,6 +341,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -350,18 +353,19 @@ LOCA::LAPACK::Group::applyShiftedMatrixMultiVector(
   NOX::LAPACK::Vector* vecPtr;
   for (int j=0; j<nVecs; j++) {
     vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
+    TEUCHOS_ASSERT(vecPtr != NULL);
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = C(i,j);
   }
-    
+
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
-			             Teuchos::ParameterList& params, 
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const
+                         Teuchos::ParameterList& params,
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
   // Number of RHS
   int nVecs = input.numVectors();
@@ -373,6 +377,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
     constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
+    TEUCHOS_ASSERT(constVecPtr != NULL);
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
@@ -389,7 +394,7 @@ LOCA::LAPACK::Group::applyShiftedMatrixInverseMultiVector(
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = B(i,j);
   }
-    
+
   return NOX::Abstract::Group::Ok;
 }
 
@@ -414,20 +419,20 @@ LOCA::LAPACK::Group::computeComplex(double frequency)
   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
   // Compute Mass matrix
-  bool res = 
+  bool res =
     locaProblemInterface.computeShiftedMatrix(0.0, 1.0, xVector,
-					      shiftedSolver.getMatrix());
+                          shiftedSolver.getMatrix());
 
   // Compute complex matrix
   NOX::LAPACK::Matrix<double>& jacobianMatrix = jacSolver.getMatrix();
   NOX::LAPACK::Matrix<double>& massMatrix = shiftedSolver.getMatrix();
-  NOX::LAPACK::Matrix< std::complex<double> >& complexMatrix = 
+  NOX::LAPACK::Matrix< std::complex<double> >& complexMatrix =
     complexSolver.getMatrix();
   int n = jacobianMatrix.numRows();
   for (int j=0; j<n; j++) {
     for (int i=0; i<n; i++) {
-      complexMatrix(i,j) = 
-	std::complex<double>(jacobianMatrix(i,j), frequency*massMatrix(i,j));
+      complexMatrix(i,j) =
+    std::complex<double>(jacobianMatrix(i,j), frequency*massMatrix(i,j));
     }
   }
 
@@ -448,13 +453,13 @@ LOCA::LAPACK::Group::computeComplex(double frequency)
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
-				  const NOX::Abstract::Vector& input_imag,
-				  NOX::Abstract::Vector& result_real,
-				  NOX::Abstract::Vector& result_imag) const
+                  const NOX::Abstract::Vector& input_imag,
+                  NOX::Abstract::Vector& result_real,
+                  NOX::Abstract::Vector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numCols();
@@ -462,21 +467,21 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
   // Copy inputs into a complex vector
   std::vector< std::complex<double> > input(n);
   std::vector< std::complex<double> > result(n);
-  const NOX::LAPACK::Vector& lapack_input_real = 
+  const NOX::LAPACK::Vector& lapack_input_real =
     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
-  const NOX::LAPACK::Vector& lapack_input_imag = 
+  const NOX::LAPACK::Vector& lapack_input_imag =
     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
   for (int i=0; i<n; i++)
     input[i] = std::complex<double>(lapack_input_real(i),
-				    lapack_input_imag(i));
+                    lapack_input_imag(i));
 
   // Apply complex matrix
   complexSolver.apply(false, 1, &input[0], &result[0]);
 
   // Copy result into NOX vectors
-  NOX::LAPACK::Vector& lapack_result_real = 
+  NOX::LAPACK::Vector& lapack_result_real =
     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
-  NOX::LAPACK::Vector& lapack_result_imag = 
+  NOX::LAPACK::Vector& lapack_result_imag =
     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
   for (int i=0; i<n; i++) {
     lapack_result_real(i) = result[i].real();
@@ -494,14 +499,14 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexMultiVector(
-				const NOX::Abstract::MultiVector& input_real,
-				const NOX::Abstract::MultiVector& input_imag,
-				NOX::Abstract::MultiVector& result_real,
-				NOX::Abstract::MultiVector& result_imag) const
+                const NOX::Abstract::MultiVector& input_real,
+                const NOX::Abstract::MultiVector& input_imag,
+                NOX::Abstract::MultiVector& result_real,
+                NOX::Abstract::MultiVector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numRows();
@@ -513,13 +518,15 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
   const NOX::LAPACK::Vector* lapack_input_real;
   const NOX::LAPACK::Vector* lapack_input_imag;
   for (int j=0; j<p; j++) {
-    lapack_input_real = 
+    lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
-    lapack_input_imag = 
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
+    lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
-					  (*lapack_input_imag)(i));
+                      (*lapack_input_imag)(i));
   }
 
   // Apply complex matrix
@@ -529,10 +536,12 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
   NOX::LAPACK::Vector* lapack_result_real;
   NOX::LAPACK::Vector* lapack_result_imag;
   for (int j=0; j<p; j++) {
-    lapack_result_real = 
+    lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
-    lapack_result_imag = 
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
+    lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = result[i+n*j].real();
       (*lapack_result_imag)(i) = result[i+n*j].imag();
@@ -550,15 +559,15 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverseMultiVector(
-				Teuchos::ParameterList& params,
-				const NOX::Abstract::MultiVector& input_real,
-				const NOX::Abstract::MultiVector& input_imag,
-				NOX::Abstract::MultiVector& result_real,
-				NOX::Abstract::MultiVector& result_imag) const
+                Teuchos::ParameterList& params,
+                const NOX::Abstract::MultiVector& input_real,
+                const NOX::Abstract::MultiVector& input_imag,
+                NOX::Abstract::MultiVector& result_real,
+                NOX::Abstract::MultiVector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numRows();
@@ -569,13 +578,15 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
   const NOX::LAPACK::Vector* lapack_input_real;
   const NOX::LAPACK::Vector* lapack_input_imag;
   for (int j=0; j<p; j++) {
-    lapack_input_real = 
+    lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
-    lapack_input_imag = 
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
+    lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
-					  (*lapack_input_imag)(i));
+                      (*lapack_input_imag)(i));
   }
 
   // Solve complex matrix
@@ -585,10 +596,12 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
   NOX::LAPACK::Vector* lapack_result_real;
   NOX::LAPACK::Vector* lapack_result_imag;
   for (int j=0; j<p; j++) {
-    lapack_result_real = 
+    lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
-    lapack_result_imag = 
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
+    lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = input[i+n*j].real();
       (*lapack_result_imag)(i) = input[i+n*j].imag();
@@ -609,14 +622,14 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTranspose(
-				  const NOX::Abstract::Vector& input_real,
-				  const NOX::Abstract::Vector& input_imag,
-				  NOX::Abstract::Vector& result_real,
-				  NOX::Abstract::Vector& result_imag) const
+                  const NOX::Abstract::Vector& input_real,
+                  const NOX::Abstract::Vector& input_imag,
+                  NOX::Abstract::Vector& result_real,
+                  NOX::Abstract::Vector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numCols();
@@ -624,21 +637,21 @@ LOCA::LAPACK::Group::applyComplexTranspose(
   // Copy inputs into a complex vector
   std::vector< std::complex<double> > input(n);
   std::vector< std::complex<double> > result(n);
-  const NOX::LAPACK::Vector& lapack_input_real = 
+  const NOX::LAPACK::Vector& lapack_input_real =
     dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
-  const NOX::LAPACK::Vector& lapack_input_imag = 
+  const NOX::LAPACK::Vector& lapack_input_imag =
     dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
   for (int i=0; i<n; i++)
     input[i] = std::complex<double>(lapack_input_real(i),
-				    lapack_input_imag(i));
+                    lapack_input_imag(i));
 
   // Apply complex matrix
   complexSolver.apply(true, 1, &input[0], &result[0]);
 
   // Copy result into NOX vectors
-  NOX::LAPACK::Vector& lapack_result_real = 
+  NOX::LAPACK::Vector& lapack_result_real =
     dynamic_cast<NOX::LAPACK::Vector&>(result_real);
-  NOX::LAPACK::Vector& lapack_result_imag = 
+  NOX::LAPACK::Vector& lapack_result_imag =
     dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
   for (int i=0; i<n; i++) {
     lapack_result_real(i) = result[i].real();
@@ -656,14 +669,14 @@ LOCA::LAPACK::Group::applyComplexTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
-				const NOX::Abstract::MultiVector& input_real,
-				const NOX::Abstract::MultiVector& input_imag,
-				NOX::Abstract::MultiVector& result_real,
-				NOX::Abstract::MultiVector& result_imag) const
+                const NOX::Abstract::MultiVector& input_real,
+                const NOX::Abstract::MultiVector& input_imag,
+                NOX::Abstract::MultiVector& result_real,
+                NOX::Abstract::MultiVector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numRows();
@@ -675,13 +688,15 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
   const NOX::LAPACK::Vector* lapack_input_real;
   const NOX::LAPACK::Vector* lapack_input_imag;
   for (int j=0; j<p; j++) {
-    lapack_input_real = 
+    lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
-    lapack_input_imag = 
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
+    lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
-					  (*lapack_input_imag)(i));
+                      (*lapack_input_imag)(i));
   }
 
   // Apply complex matrix
@@ -691,10 +706,12 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
   NOX::LAPACK::Vector* lapack_result_real;
   NOX::LAPACK::Vector* lapack_result_imag;
   for (int j=0; j<p; j++) {
-    lapack_result_real = 
+    lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
-    lapack_result_imag = 
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
+    lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = result[i+n*j].real();
       (*lapack_result_imag)(i) = result[i+n*j].imag();
@@ -712,15 +729,15 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
-				Teuchos::ParameterList& params,
-				const NOX::Abstract::MultiVector& input_real,
-				const NOX::Abstract::MultiVector& input_imag,
-				NOX::Abstract::MultiVector& result_real,
-				NOX::Abstract::MultiVector& result_imag) const
+                Teuchos::ParameterList& params,
+                const NOX::Abstract::MultiVector& input_real,
+                const NOX::Abstract::MultiVector& input_imag,
+                NOX::Abstract::MultiVector& result_real,
+                NOX::Abstract::MultiVector& result_imag) const
 {
 #ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
-  if (!isComplex()) 
+  if (!isComplex())
     return NOX::Abstract::Group::BadDependency;
 
   int n = complexSolver.getMatrix().numRows();
@@ -731,13 +748,15 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
   const NOX::LAPACK::Vector* lapack_input_real;
   const NOX::LAPACK::Vector* lapack_input_imag;
   for (int j=0; j<p; j++) {
-    lapack_input_real = 
+    lapack_input_real =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
-    lapack_input_imag = 
+    TEUCHOS_ASSERT(lapack_input_real != NULL);
+    lapack_input_imag =
       dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    TEUCHOS_ASSERT(lapack_input_imag != NULL);
     for (int i=0; i<n; i++)
       input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
-					  (*lapack_input_imag)(i));
+                      (*lapack_input_imag)(i));
   }
 
   // Solve complex matrix
@@ -747,10 +766,12 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
   NOX::LAPACK::Vector* lapack_result_real;
   NOX::LAPACK::Vector* lapack_result_imag;
   for (int j=0; j<p; j++) {
-    lapack_result_real = 
+    lapack_result_real =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
-    lapack_result_imag = 
+    TEUCHOS_ASSERT(lapack_result_real != NULL);
+    lapack_result_imag =
       dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    TEUCHOS_ASSERT(lapack_result_imag != NULL);
     for (int i=0; i<n; i++) {
       (*lapack_result_real)(i) = input[i+n*j].real();
       (*lapack_result_imag)(i) = input[i+n*j].imag();
@@ -769,7 +790,7 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
 #endif
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::augmentJacobianForHomotopy(double a, double b)
 {
   NOX::LAPACK::Matrix<double>& jacobianMatrix = jacSolver.getMatrix();
@@ -779,7 +800,7 @@ LOCA::LAPACK::Group::augmentJacobianForHomotopy(double a, double b)
   jacobianMatrix.scale(a);
 
   // Add the scaled identity matrix to the jacobian
-  for (int i = 0; i < size; i++) 
+  for (int i = 0; i < size; i++)
     jacobianMatrix(i,i) += b;
 
   return NOX::Abstract::Group::Ok;

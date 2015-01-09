@@ -527,6 +527,7 @@ including the ghost blocks
 
      if (block_size > 1) {
         Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
+        ML_free(neighbors);
         neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
 
@@ -983,7 +984,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
-   int     aggr_count, index = 0, mypid, num_PDE_eqns;
+   int     aggr_count = 0;
+   int     index = 0, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
    int     *new_ia = NULL, *new_ja = NULL, new_Nrows;

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -58,16 +58,16 @@ class Epetra_Import;
 
 */
 
-namespace Epetra_Import_Util { 
+namespace Epetra_Import_Util {
 
 //=========================================================================
-//! PackAndPrepareWithOwningPIDs.  
+//! PackAndPrepareWithOwningPIDs.
  /*! Note: The SourcePids vector should contain a list of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
    without the "-1 for local" option being used.
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
  */
-int PackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & SourceMatrix, 
+int PackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & SourceMatrix,
 				 int NumExportIDs,
 				 int * ExportLIDs,
 				 int & LenExports,
@@ -83,7 +83,7 @@ int PackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & SourceMatrix,
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
 */
-int UnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix, 
+int UnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
 			      int NumSameIDs,
 			      int NumRemoteIDs,
 			      const int * RemoteLIDs,
@@ -96,16 +96,16 @@ int UnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
 // ===================================================================
 //! UnpackAndCombineIntoCrsArrays
 /*! You should call UnpackWithOwningPIDsCount first and allocate all arrays accordingly.
-   
+
    Note: The SourcePids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
-   with the "-1 for local" option being used.  
+   with the "-1 for local" option being used.
 
    Note: The TargetPids vector (on output) will contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
-   with the "-1 for local" option being used.  
+   with the "-1 for local" option being used.
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
    */
-int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix, 
+int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  int NumSameIDs,
 				  int NumRemoteIDs,
 				  const int * RemoteLIDs,
@@ -125,16 +125,16 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 // ===================================================================
 //! UnpackAndCombineIntoCrsArrays
 /*! You should call UnpackWithOwningPIDsCount first and allocate all arrays accordingly.
-   
+
    Note: The SourcePids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
-   with the "-1 for local" option being used.  
+   with the "-1 for local" option being used.
 
    Note: The TargetPids vector (on output) will contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
-   with the "-1 for local" option being used.  
+   with the "-1 for local" option being used.
 
    \warning This method is intended for expert developer use only, and should never be called by user code.
    */
-int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix, 
+int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 				  int NumSameIDs,
 				  int NumRemoteIDs,
 				  const int * RemoteLIDs,
@@ -157,7 +157,7 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 // ===================================================================
 //! LowCommunicationMakeColMapAndReindex
 /*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
-   
+
    Note: The owningPids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
    with the "-1 for local" can be used, or not, here.
 
@@ -166,14 +166,14 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
    \warning This method is intended for expert developer use only, and should never be called by user code.
 */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, const Epetra_Map& domainMap, 
-					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, 
+int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, const Epetra_Map& domainMap,
+					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor,
 					 std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
-#endif 
+#endif
 // ===================================================================
 //! LowCommunicationMakeColMapAndReindex
 /*! If you know the owning PIDs already, you can make the colmap a lot less expensively.
-   
+
    Note: The owningPids vector (on input) should contain of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
    with the "-1 for local" can be used, or not, here.
 
@@ -182,7 +182,7 @@ int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind, 
    \warning This method is intended for expert developer use only, and should never be called by user code.
 */
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map& domainMap, 
+int LowCommunicationMakeColMapAndReindex(int N, const int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map& domainMap,
 					 const int *owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<int>& RemotePIDs, Epetra_BlockMap & NewColMap);
 #endif
 

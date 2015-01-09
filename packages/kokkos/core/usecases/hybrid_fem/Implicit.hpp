@@ -48,7 +48,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
 #include <ImplicitFunctors.hpp>

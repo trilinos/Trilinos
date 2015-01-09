@@ -75,6 +75,7 @@
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -87,15 +88,17 @@
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
 #include <XpetraExt_MatrixMatrix.hpp>
 
 #include <MueLu_Utilities_decl.hpp>
-
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
 #include <ml_operator.h>
 #include <ml_epetra_utils.h>
@@ -110,41 +113,41 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
   //defined after Utils class
-  template<typename SC,typename LO,typename GO,typename NO, typename LMO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Epetra_MultiVector> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2EpetraMV(const RCP<MultiVector> Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Epetra_MultiVector> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const RCP<MultiVector> Vec) {
     RCP<const EpetraMultiVector > tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
     return tmpVec->getEpetra_MultiVector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_MultiVector> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2NonConstEpetraMV(RCP<MultiVector> Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Epetra_MultiVector> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(RCP<MultiVector> Vec) {
     RCP<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
     return tmpVec->getEpetra_MultiVector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Epetra_MultiVector& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2NonConstEpetraMV(MultiVector &Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Epetra_MultiVector& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(MultiVector &Vec) {
     const EpetraMultiVector& tmpVec = dynamic_cast<const EpetraMultiVector&>(Vec);
     return *(tmpVec.getEpetra_MultiVector());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Epetra_MultiVector& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2EpetraMV(const MultiVector& Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Epetra_MultiVector& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const MultiVector& Vec) {
     const EpetraMultiVector& tmpVec = dynamic_cast<const EpetraMultiVector&>(Vec);
     return *(tmpVec.getEpetra_MultiVector());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(RCP<const Matrix> Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(RCP<const Matrix> Op) {
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -154,8 +157,8 @@ namespace MueLu {
     return tmp_ECrsMtx->getEpetra_CrsMatrix();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(RCP<Matrix> Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(RCP<Matrix> Op) {
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -165,8 +168,8 @@ namespace MueLu {
     return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Epetra_CrsMatrix& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(const Matrix& Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Epetra_CrsMatrix& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(const Matrix& Op) {
     try {
       const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
       try {
@@ -180,8 +183,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Epetra_CrsMatrix& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Matrix& Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Epetra_CrsMatrix& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(Matrix& Op) {
     try {
       CrsMatrixWrap& crsOp = dynamic_cast<CrsMatrixWrap&>(Op);
       try {
@@ -195,8 +198,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Epetra_Map& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2EpetraMap(const Map& map) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Epetra_Map& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2EpetraMap(const Map& map) {
     RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpFromRef(map));
     if (xeMap == Teuchos::null)
       throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
@@ -205,44 +208,44 @@ namespace MueLu {
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(RCP<MultiVector> const Vec) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<MultiVector> const Vec) {
     RCP<const TpetraMultiVector > tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
     return tmpVec->getTpetra_MultiVector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2NonConstTpetraMV(RCP<MultiVector> Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(RCP<MultiVector> Vec) {
     RCP<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
     return tmpVec->getTpetra_MultiVector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2NonConstTpetraMV(MultiVector& Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(MultiVector& Vec) {
     const TpetraMultiVector& tmpVec = dynamic_cast<const TpetraMultiVector&>(Vec);
     return *(tmpVec.getTpetra_MultiVector());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2NonConstTpetraMV2(MultiVector &Vec) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV2(MultiVector &Vec) {
     const TpetraMultiVector& tmpVec = dynamic_cast<const TpetraMultiVector&>(Vec);
     return tmpVec.getTpetra_MultiVector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MV2TpetraMV(const MultiVector& Vec) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(const MultiVector& Vec) {
     const TpetraMultiVector& tmpVec = dynamic_cast<const TpetraMultiVector&>(Vec);
     return *(tmpVec.getTpetra_MultiVector());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op) {
     // Get the underlying Tpetra Mtx
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
@@ -253,8 +256,8 @@ namespace MueLu {
     return tmp_ECrsMtx->getTpetra_CrsMatrix();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(RCP<Matrix> Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(RCP<Matrix> Op) {
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -264,8 +267,8 @@ namespace MueLu {
     return tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(const Matrix& Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(const Matrix& Op) {
     try {
       const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
       try {
@@ -279,8 +282,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstTpetraCrs(Matrix& Op) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(Matrix& Op) {
     try {
       CrsMatrixWrap& crsOp = dynamic_cast<CrsMatrixWrap&>(Op);
       try {
@@ -294,8 +297,49 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2TpetraMap(const Map& map) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraRow(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op) {
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+    if (crsOp == Teuchos::null)
+      throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+    RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
+    const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;
+    if(!tmp_Crs.is_null()) {
+      return tmp_Crs->getTpetra_CrsMatrixNonConst();
+    }
+    else {
+      tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
+      if (tmp_BlockCrs.is_null())
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(RCP<Matrix> Op) {
+    RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
+    if (crsOp == Teuchos::null)
+      throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+
+    RCP<const CrsMatrix> crsMat = crsOp->getCrsMatrix();
+    const RCP<const TpetraCrsMatrix> tmp_Crs = rcp_dynamic_cast<const TpetraCrsMatrix>(crsMat);
+    RCP<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmp_BlockCrs;
+    if(!tmp_Crs.is_null()) {
+      return tmp_Crs->getTpetra_CrsMatrixNonConst();
+    }
+    else {
+      tmp_BlockCrs= rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(crsMat);
+      if (tmp_BlockCrs.is_null())
+        throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+      return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+    }
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap(const Map& map) {
     const RCP<const TpetraMap>& tmp_TMap = rcp_dynamic_cast<const TpetraMap>(rcpFromRef(map));
     if (tmp_TMap == Teuchos::null)
       throw Exceptions::BadCast("Utils::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
@@ -308,14 +352,15 @@ namespace MueLu {
 
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
-									const Vector& Dinv,
-									const Matrix& A,
-									const Matrix& B,
-									RCP<Matrix> C_in,
-									Teuchos::FancyOStream &fos) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(Scalar omega,
+                                                           const Vector& Dinv,
+                                                           const Matrix& A,
+                                                           const Matrix& B,
+                                                           RCP<Matrix> C_in,
+                                                           Teuchos::FancyOStream &fos,
+                                                           const std::string & label) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -327,43 +372,44 @@ namespace MueLu {
     if (C == Teuchos::null)
       C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
-    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true);
+    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true,label);
     C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
     return C;
   } //Jacobi
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(const Matrix& A, bool transposeA,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(const Matrix& A, bool transposeA,
                                                                           const Matrix& B, bool transposeB,
                                                                           RCP<Matrix> C_in,
-                                                                          Teuchos::FancyOStream &fos,
+                                                                          Teuchos::FancyOStream& fos,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage) {
+                                                                          bool doOptimizeStorage,
+                                                                          const std::string & label) {
 
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
-    // Preconditions
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
-
-    // Optimization using ML Multiply when available
+    // Optimization using ML Multiply when available and requested
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML_MMM)
     if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A));
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(rcpFromRef(B));
       RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
 
-      RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epC);
+      RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> (epC);
       if (doFillComplete) {
         RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
         params->set("Optimize Storage", doOptimizeStorage);
         C->fillComplete(B.getDomainMap(), A.getRangeMap(), params);
       }
 
+      // Fill strided maps information
+      // This is necessary since the ML matrix matrix multiplication routine has no handling for this
+      // TODO: move this call to MLMultiply...
       C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
+
       return C;
     }
 #endif // EPETRA + EPETRAEXT + ML
@@ -387,7 +433,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
 
-        fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+        fos << "Matrix product nnz per row estimate = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
@@ -398,19 +444,14 @@ namespace MueLu {
       fos << "Reuse C pattern" << std::endl;
     }
 
-    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
-
-    // Fill strided maps information
-    // This is necessary since the ML matrix matrix multiplication routine has no handling for this
-    // TODO: move this call to MLMultiply...
-    C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
+    Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage,label);
 
     return C;
-  } //Multiply()
+  }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB, Teuchos::FancyOStream &fos) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB, Teuchos::FancyOStream &fos) {
 #if defined(HAVE_MUELU_ML_MMM)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
@@ -543,10 +584,11 @@ namespace MueLu {
   }
 #endif //ifdef HAVE_MUELU_EPETRAEXT
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
                          BlockedCrsMatrix& B, bool transposeB,
+                         Teuchos::FancyOStream& fos,
                          bool doFillComplete,
                          bool doOptimizeStorage) {
     if (transposeA || transposeB)
@@ -565,30 +607,43 @@ namespace MueLu {
 
     for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
       for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
-        // empty CrsMatrixWrap
-        RCP<Matrix> Cij = MatrixFactory::Build(A.getRangeMap(i), 33 /* TODO fix me */);
+        RCP<Matrix> Cij;
 
         for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
           RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
           RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+
+          if (crmat1.is_null() || crmat2.is_null()) {
+            continue;
+          }
+
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false,
-          *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))));
+          //RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos, fos);
+          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
-          // sum up
-          MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*temp, false, 1.0, *Cij, 1.0);
+          if (Cij.is_null ())
+            Cij = temp;
+          else
+            MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
         }
 
-        Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
+        if (!Cij.is_null())  {
+          if (Cij->isFillComplete())
+            Cij->resumeFill();
+          Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
 
-        RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
-        TEUCHOS_TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
-                                    "MatrixFactory failed in generating a CrsMatrixWrap." );
+          RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
+          TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
+                                      "MatrixFactory failed in generating a CrsMatrixWrap." );
 
-        RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
-        C->setMatrix(i, j, crsMatCij);
+          RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+          C->setMatrix(i, j, crsMatCij);
+
+        } else {
+          C->setMatrix(i, j, Teuchos::null);
+        }
       }
     }
 
@@ -598,8 +653,8 @@ namespace MueLu {
     return C;
   } // TwoMatrixMultiplyBlock
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix& A) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
@@ -625,8 +680,8 @@ namespace MueLu {
     return diag;
   } //GetMatrixDiagonal
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonalInverse(const Matrix& A,Magnitude tol) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A,Magnitude tol) {
     RCP<const Map> rowMap = A.getRowMap();
     RCP<Vector> diag      = VectorFactory::Build(rowMap);
     ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
@@ -641,12 +696,12 @@ namespace MueLu {
       LO j = 0;
       for (; j < cols.size(); ++j) {
         if (Teuchos::as<size_t>(cols[j]) == i) {
-	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-	  else
-	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-	  break;
-	}
+          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
+            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
+          else
+            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+          break;
+        }
       }
       if (j == cols.size()) {
         // Diagonal entry is absent
@@ -660,8 +715,8 @@ namespace MueLu {
 
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLumpedMatrixDiagonal(const Matrix &A) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -679,8 +734,8 @@ namespace MueLu {
     return diag;
   } //GetMatrixDiagonal
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix& A) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
 
@@ -712,11 +767,11 @@ namespace MueLu {
     return diagonal;
   } //GetMatrixOverlappedDiagonal
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doInverse) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doInverse) {
 #ifdef HAVE_MUELU_TPETRA
     try {
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpOp = Op2NonConstTpetraCrs(Op);
+      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
 
       Tpetra::Vector<SC,LO,GO,NO> x(tpOp.getRowMap(), scalingVector());
       if (doInverse){
@@ -735,9 +790,9 @@ namespace MueLu {
 #endif // HAVE_MUELU_TPETRA
   } //ScaleMatrix()
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResidualNorm(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 
@@ -748,8 +803,9 @@ namespace MueLu {
     return norms;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Residual(const Matrix& Op, const MultiVector& X, const MultiVector& RHS) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
     TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
     const size_t numVecs = X.getNumVectors();
 
@@ -762,10 +818,12 @@ namespace MueLu {
     return RES;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const Matrix& Op) {
-    std::string mapfile = "rowmap_" + fileName;
-    Write(mapfile, *(Op.getRowMap()));
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fileName, const Matrix& Op) {
+    Write("rowmap_"    + fileName, *(Op.getRowMap()));
+    Write("colmap_"    + fileName, *(Op.getColMap()));
+    Write("domainmap_" + fileName, *(Op.getDomainMap()));
+    Write("rangemap_"  + fileName, *(Op.getRangeMap()));
 
     const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
@@ -787,8 +845,8 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     const RCP<const TpetraCrsMatrix>& tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_TCrsMtx != Teuchos::null) {
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
-      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >::writeSparseFile(fileName, A);
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile(fileName, A);
       return;
     }
 #endif // HAVE_MUELU_TPETRA
@@ -796,8 +854,8 @@ namespace MueLu {
     throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
   } //Write
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map){
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map){
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
@@ -805,7 +863,7 @@ namespace MueLu {
 
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
       typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
       typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
@@ -824,14 +882,14 @@ namespace MueLu {
     return Teuchos::null;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
-  Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+  Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
     if (lib == Xpetra::UseEpetra) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
       RCP<Node> node = rcp(new Node());
@@ -852,10 +910,9 @@ namespace MueLu {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
-
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
     if (binary == false) {
       // Matrix Market file format (ASCII)
       if (lib == Xpetra::UseEpetra) {
@@ -867,7 +924,7 @@ namespace MueLu {
           throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
 
         RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-        RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
+        RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
 
         return A;
 #else
@@ -875,14 +932,13 @@ namespace MueLu {
 #endif
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-//        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
-	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
 
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
         //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-	Teuchos::ParameterList pl = Teuchos::ParameterList();
-	RCP<Node> node = rcp(new Node(pl));
+        Teuchos::ParameterList pl = Teuchos::ParameterList();
+        RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
@@ -910,11 +966,134 @@ namespace MueLu {
       ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
       ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
+      int myRank = comm->getRank();
+
       GO indexBase = 0;
-      RCP<Map>    map = MapFactory   ::Build(lib, m, indexBase, comm);
-      RCP<Matrix> A   = MatrixFactory::Build(map, 1);
+      RCP<Map>    rowMap = MapFactory::Build(lib, m, (myRank == 0 ? m : 0), indexBase, comm), rangeMap  = rowMap;
+      RCP<Map>    colMap = MapFactory::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
+      RCP<Matrix> A   = MatrixFactory::Build(rowMap, colMap, 1);
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+
+      if (myRank == 0) {
+        Teuchos::Array<GO> inds;
+        Teuchos::Array<SC> vals;
+        for (int i = 0; i < m; i++) {
+          int row, rownnz;
+          ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
+          ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+          inds.resize(rownnz);
+          vals.resize(rownnz);
+          for (int j = 0; j < rownnz; j++) {
+            int index;
+            ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+            inds[j] = Teuchos::as<GO>(index);
+          }
+          for (int j = 0; j < rownnz; j++) {
+            double value;
+            ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+            vals[j] = Teuchos::as<SC>(value);
+          }
+          A->insertGlobalValues(row, inds, vals);
+        }
+      }
+
+      A->fillComplete(domainMap, rangeMap);
+
+      return A;
+    }
+
+    return Teuchos::null;
+
+  } //Read()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string&   fileName,
+                                                                      const RCP<const Map> rowMap,
+                                                                            RCP<const Map> colMap,
+                                                                      const RCP<const Map> domainMap,
+                                                                      const RCP<const Map> rangeMap,
+                                                                      const bool           callFillComplete,
+                                                                      const bool           binary,
+                                                                      const bool           tolerant,
+                                                                      const bool           debug
+                                                                     ) {
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), Exceptions::RuntimeError, "Utils::Read() : rowMap cannot be null");
+
+    RCP<const Map> domain = (domainMap.is_null() ? rowMap : domainMap);
+    RCP<const Map> range  = (rangeMap .is_null() ? rowMap : rangeMap);
+
+    const Xpetra::UnderlyingLib lib = rowMap->lib();
+    if (binary == false) {
+      if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_CrsMatrix *eA;
+        const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
+        const Epetra_Map& epetraRowMap    = Map2EpetraMap(*rowMap);
+        const Epetra_Map& epetraDomainMap = (domainMap.is_null() ? epetraRowMap : Map2EpetraMap(*domainMap));
+        const Epetra_Map& epetraRangeMap  = (rangeMap .is_null() ? epetraRowMap : Map2EpetraMap(*rangeMap));
+        int rv;
+        if (colMap.is_null()) {
+          rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
+
+        } else {
+          const Epetra_Map& epetraColMap  = Map2EpetraMap(*colMap);
+          rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
+        }
+
+        if (rv != 0)
+          throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
+
+        RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
+        RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
+
+        return A;
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+      } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
+        typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>             reader_type;
+        typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               map_type;
+
+        const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
+        RCP<const map_type>       tpetraColMap    = (colMap.is_null()    ? Teuchos::null : Map2TpetraMap(*colMap));
+        const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null()  ? tpetraRowMap  : Map2TpetraMap(*rangeMap));
+        const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap  : Map2TpetraMap(*domainMap));
+
+        RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap,
+                                                                 callFillComplete, tolerant, debug);
+        if (tA.is_null())
+          throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
+
+        RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
+        RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
+        RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
+
+        return A;
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+      } else {
+        throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      }
+    } else {
+      // Custom file format (binary)
+      std::ifstream ifs(fileName.c_str(), std::ios::binary);
+      TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
+      int m, n, nnz;
+      ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
+      ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
+      ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
+
+      RCP<Matrix> A = MatrixFactory::Build(rowMap, colMap, 1);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
+
+      Teuchos::ArrayView<const GO> rowElements = rowMap->getNodeElementList();
+      Teuchos::ArrayView<const GO> colElements = colMap->getNodeElementList();
 
       Teuchos::Array<GO> inds;
       Teuchos::Array<SC> vals;
@@ -927,99 +1106,24 @@ namespace MueLu {
         for (int j = 0; j < rownnz; j++) {
           int index;
           ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
-          inds[j] = Teuchos::as<GO>(index);
+          inds[j] = colElements[Teuchos::as<LO>(index)];
         }
         for (int j = 0; j < rownnz; j++) {
           double value;
           ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
           vals[j] = Teuchos::as<SC>(value);
         }
-        A->insertGlobalValues(row, inds, vals);
+        A->insertGlobalValues(rowElements[row], inds, vals);
       }
-      A->fillComplete();
+      A->fillComplete(domainMap, rangeMap);
       return A;
     }
 
     return Teuchos::null;
+  }
 
-  } //Read()
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string&   fileName,
-                                                                      const RCP<const Map> rowMap,
-                                                                            RCP<const Map> colMap,
-                                                                      const RCP<const Map> domainMap,
-                                                                      const RCP<const Map> rangeMap,
-                                                                      const bool           callFillComplete,
-                                                                      const bool           tolerant,
-                                                                      const bool           debug
-                                                                     ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), Exceptions::RuntimeError, "Utils::Read() : rowMap cannot be null");
-
-    RCP<const Map> domain = (domainMap.is_null() ? rowMap : domainMap);
-    RCP<const Map> range  = (rangeMap .is_null() ? rowMap : rangeMap);
-
-    const Xpetra::UnderlyingLib lib = rowMap->lib();
-    if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      Epetra_CrsMatrix *eA;
-      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
-      const Epetra_Map& epetraRowMap    = Map2EpetraMap(*rowMap);
-      const Epetra_Map& epetraDomainMap = (domainMap.is_null() ? epetraRowMap : Map2EpetraMap(*domainMap));
-      const Epetra_Map& epetraRangeMap  = (rangeMap .is_null() ? epetraRowMap : Map2EpetraMap(*rangeMap));
-      int rv;
-      if (colMap.is_null()) {
-        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
-
-      } else {
-        const Epetra_Map& epetraColMap  = Map2EpetraMap(*colMap);
-        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
-      }
-
-      if (rv != 0)
-        throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
-
-      RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-      RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
-
-      return A;
-#else
-      throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
-#endif
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
-      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
-
-      const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
-      RCP<const map_type>       tpetraColMap    = (colMap.is_null()    ? Teuchos::null : Map2TpetraMap(*colMap));
-      const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null()  ? tpetraRowMap  : Map2TpetraMap(*rangeMap));
-      const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap  : Map2TpetraMap(*domainMap));
-
-      RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap,
-                                                               callFillComplete, tolerant, debug);
-      if (tA.is_null())
-        throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
-
-      RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
-      RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
-      RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
-
-      return A;
-#else
-      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
-#endif
-    } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
-    }
-
-    return Teuchos::null;
-  } //Read
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const MultiVector& x) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fileName, const MultiVector& x) {
 
     std::string mapfile = "map_" + fileName;
     Write(mapfile, *(x.getMap()));
@@ -1048,12 +1152,12 @@ namespace MueLu {
     }
 #endif // HAVE_MUELU_TPETRA
 
-    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 
   } //Write
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const Map& M) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fileName, const Map& M) {
     RCP<const Map> tmp_Map = rcpFromRef(M);
 #ifdef HAVE_MUELU_EPETRAEXT
     const RCP<const Xpetra::EpetraMap>& tmp_EMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(tmp_Map);
@@ -1078,14 +1182,15 @@ namespace MueLu {
     }
 #endif // HAVE_MUELU_TPETRA
 
-    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+    throw Exceptions::BadCast("Could not cast to EpetraMap or TpetraMap in map writing");
 
   } //Write
 
+#ifndef _WIN32
 #include <unistd.h>
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PauseForDebugger() {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PauseForDebugger() {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     int myPID = comm->getRank();
@@ -1103,13 +1208,22 @@ namespace MueLu {
     if (myPID == 0) {
       std::cout << "** Enter a character to continue > " << std::endl;
       char go = ' ';
-      scanf("%c", &go);
+      int r = scanf("%c", &go);
+      (void)r;
+      assert(r > 0);
     }
     comm->barrier();
   } //PauseForDebugger
+#else
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PauseForDebugger() {
+      throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
+  }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PowerMethod(const Matrix& A, bool scaleByDiag,
+#endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PowerMethod(const Matrix& A, bool scaleByDiag,
                                                                                     LO niters, Magnitude tolerance, bool verbose, unsigned int seed)
   {
     if (!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))))
@@ -1166,8 +1280,8 @@ namespace MueLu {
     return lambda;
   } //PowerMethod
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -1187,7 +1301,7 @@ namespace MueLu {
         break;
 
       case Xpetra::UseEpetra:
-        Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
+        Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
         break;
 
       default:
@@ -1196,14 +1310,14 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
 #ifdef HAVE_MUELU_TPETRA
     try {
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpOp = Op2NonConstTpetraCrs(Op);
+      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
 
       const RCP<const Tpetra::Map<LO,GO,NO> > rowMap    = tpOp.getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
@@ -1277,15 +1391,15 @@ namespace MueLu {
 #endif
   } //MyOldScaleMatrix_Tpetra()
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Teuchos::FancyOStream> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeFancy(std::ostream& os) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Teuchos::FancyOStream> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeFancy(std::ostream& os) {
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(os));
     return fancy;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) {
     size_t numVectors = v.getNumVectors();
 
     Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
@@ -1297,8 +1411,8 @@ namespace MueLu {
     return Teuchos::ScalarTraits<SC>::magnitude(d);
   }
 
-  template <class SC, class LO, class GO, class NO, class LMO>
-  ArrayRCP<const bool> Utils<SC, LO, GO, NO, LMO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+  template <class SC, class LO, class GO, class NO>
+  ArrayRCP<const bool> Utils<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
     LO numRows = A.getNodeNumRows();
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -1321,8 +1435,169 @@ namespace MueLu {
     return boundaryNodes;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Transpose(Matrix& Op, bool optimizeTranspose) {
+  //pulled directly from ml_utils.cpp
+  template <class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::SetRandomSeed(const Teuchos::Comm<int> &comm) {
+    // Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing
+    // about where in random number stream we are, but avoids overflow situations
+    // in parallel when multiplying by a PID.  It would be better to use
+    // a good parallel random number generator.
+
+    double one = 1.0;
+    int maxint = INT_MAX; //= 2^31-1 = 2147483647 for 32-bit integers
+    int mySeed = Teuchos::as<int>((maxint-1) * (one -(comm.getRank()+1)/(comm.getSize()+one)) );
+    if (mySeed < 1 || mySeed == maxint) {
+      std::ostringstream errStr;
+      errStr << "Error detected with random seed = " << mySeed << ". It should be in the interval [1,2^31-2].";
+      throw Exceptions::RuntimeError(errStr.str());
+    }
+
+    std::srand(mySeed);
+
+    // Tpetra:
+    //   MultiVector::randomize() -> Kokkos::DefaultArithmetic::Random() -> ScalarTraits<Scalar>::random() -> std::rand()
+    // So, theoretically, we could skip this call
+    Teuchos::ScalarTraits<SC>::seedrandom(mySeed);
+
+    // Epetra
+    //   MultiVector::Random() -> Epetra_Util::RandomDouble() -> Epetra_Utils::RandomInt()
+    // Its own random number generator, based on Seed_. Seed_ is initialized in Epetra_Util constructor with std::rand()
+    // So our setting std::srand() affects that too
+  }
+
+  template <class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::findDirichletRows(Teuchos::RCP<Matrix> A,
+                                                     std::vector<LO>& dirichletRows) {
+    dirichletRows.resize(0);
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      int nnz=0;
+      for (int j=0; j<indices.size(); j++) {
+        if (abs(values[j]) > 1.0e-16) {
+          nnz++;
+        }
+      }
+      if (nnz == 1 || nnz == 2) {
+        dirichletRows.push_back(i);
+      }
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::findDirichletCols(Teuchos::RCP<Matrix> A,
+                                                     std::vector<LO>& dirichletRows,
+                                                     std::vector<LO>& dirichletCols) {
+    Teuchos::RCP<const Map> domMap = A->getDomainMap();
+    Teuchos::RCP<const Map> colMap = A->getColMap();
+    Teuchos::RCP< Xpetra::Export<LO,GO,NO> > exporter
+      = Xpetra::ExportFactory<LO,GO,NO>::Build(colMap,domMap);
+    Teuchos::RCP<MultiVector> myColsToZero = MultiVectorFactory::Build(colMap,1);
+    Teuchos::RCP<MultiVector> globalColsToZero = MultiVectorFactory::Build(domMap,1);
+    myColsToZero->putScalar((SC)0.0);
+    globalColsToZero->putScalar((SC)0.0);
+    for(size_t i=0; i<dirichletRows.size(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(dirichletRows[i],indices,values);
+      for(int j=0; j<indices.size(); j++)
+        myColsToZero->replaceLocalValue(indices[j],0,(SC)1.0);
+    }
+    globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+    myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
+    Teuchos::ArrayRCP<const SC> myCols = myColsToZero->getData(0);
+    dirichletCols.resize(colMap->getNodeNumElements());
+    for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+      if(abs(myCols[i])>0.0)
+        dirichletCols[i]=1;
+      else
+        dirichletCols[i]=0;
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+                                                         std::vector<LO>& dirichletRows) {
+    for(size_t i=0; i<dirichletRows.size(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(dirichletRows[i],indices,values);
+      std::vector<SC> vec;
+      vec.resize(indices.size());
+      Teuchos::ArrayView<SC> zerovalues(vec);
+      for(int j=0; j<indices.size(); j++)
+        zerovalues[j]=(SC)1.0e-32;
+      A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+                                                         std::vector<LO>& dirichletCols) {
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      std::vector<SC> vec;
+      vec.resize(indices.size());
+      Teuchos::ArrayView<SC> zerovalues(vec);
+      for(int j=0; j<indices.size(); j++) {
+        if(dirichletCols[indices[j]]==1)
+          zerovalues[j]=(SC)1.0e-32;
+        else
+          zerovalues[j]=values[j];
+      }
+      A->replaceLocalValues(i,indices,zerovalues);
+    }
+  }
+
+  template<class SC, class LO, class GO, class NO>
+  void Utils<SC, LO, GO, NO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A,
+                                                      double tol) {
+    Teuchos::RCP<const Map> rowMap = A->getRowMap();
+    RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
+    RCP<Matrix> NewMatrix = MatrixFactory::Build(rowMap,1);
+    for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const SC> values;
+      A->getLocalRowView(i,indices,values);
+      int nnz=0;
+      for (int j=0; j<indices.size(); j++) {
+        if (abs(values[j]) > tol) {
+          nnz++;
+        }
+      }
+      SC one = (SC)1.0;
+      SC zero = (SC)0.0;
+      GO row = rowMap->getGlobalElement(i);
+      if (nnz == 0) {
+        DiagMatrix->insertGlobalValues(row,
+                                       Teuchos::ArrayView<GO>(&row,1),
+                                       Teuchos::ArrayView<SC>(&one,1));
+      }
+      else {
+        DiagMatrix->insertGlobalValues(row,
+                                       Teuchos::ArrayView<GO>(&row,1),
+                                       Teuchos::ArrayView<SC>(&zero,1));
+      }
+    }
+    DiagMatrix->fillComplete();
+    A->fillComplete();
+    // add matrices together
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Utils2<SC,LO,GO,NO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
+    NewMatrix->fillComplete();
+    A=NewMatrix;
+
+  }
+
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Transpose (Matrix& Op, bool optimizeTranspose) {
    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("YY Entire Transpose"));
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
@@ -1332,7 +1607,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     try {
-      const Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2NonConstEpetraCrs(Op);
+      const Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(Op);
       (void) epetraOp; // silence "unused variable" compiler warning
     } catch (...) {
       TorE = "tpetra";
@@ -1342,12 +1617,12 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
       try {
-        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(Op);
+        const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
-        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > A;
+        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
         {
           Teuchos::TimeMonitor tmm(*Teuchos::TimeMonitor::getNewTimer("YY Tpetra Transpose Only"));
-          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> transposer(rcpFromRef(tpetraOp)); //more than meets the eye
+          Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp)); //more than meets the eye
           A = transposer.createTranspose();
         }
 
@@ -1359,8 +1634,9 @@ namespace MueLu {
 
         return AAAA;
 
-      } catch (...) {
-        throw Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices");
+      } catch (std::exception& e) {
+        std::cout << "threw exception '" << e.what() << "'" << std::endl;
+        throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
     } //if
 #endif
@@ -1371,16 +1647,16 @@ namespace MueLu {
 
   } // Transpose
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MyOldScalematrix and Epetra cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -1389,8 +1665,8 @@ namespace MueLu {
 
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
-            Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(B);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
+            Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(B);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 #else
@@ -1400,8 +1676,8 @@ namespace MueLu {
   } //Utils2::TwoMatrixAdd()
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC const &alpha,
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC const &alpha,
                            const Matrix& B, bool transposeB, SC const &beta,
                            RCP<Matrix>& C, Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
@@ -1460,9 +1736,12 @@ namespace MueLu {
 
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >  tpC = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(C);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA =
+        Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB =
+        Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  tpC =
+        Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
 #else

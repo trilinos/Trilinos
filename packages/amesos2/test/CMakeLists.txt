@@ -1,5 +1,3 @@
-INCLUDE(AddSubdirectories)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ADD_SUBDIRECTORIES(
   solvers

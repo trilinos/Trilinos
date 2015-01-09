@@ -40,19 +40,20 @@
  *	read_cmd_file()
  *	check_inp_specs()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "elb_inp.h"
 #include <exodusII.h>                   // for ex_close, EX_READ, etc
-
-#include <stdio.h>                      // for sprintf, NULL, sscanf, etc
-#include <stdlib.h>                     // for malloc, realloc, exit, free
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for NULL, sprintf, printf, etc
+#include <stdlib.h>                     // for malloc, exit, free
 #include <string.h>                     // for strcmp, strstr, strchr, etc
-
-#include "elb.h"                  // for Weight_Description<INT>, etc
-#include "elb_err.h"              // for Gen_Error, error_lev, etc
-#include "elb_inp.h"              // for NONE
-#include "elb_util.h"             // for strip_string, token_compare, etc
-#include "elb_format.h"
+#include "elb.h"                        // for Problem_Description, etc
+#include "elb_err.h"                    // for Gen_Error, error_lev
+#include "elb_format.h"                 // for ST_ZU
+#include "elb_util.h"                   // for strip_string, token_compare, etc
 #include "getopt.h"                     // for getopt
 #include "md_getsubopt.h"               // for md_getsubopt
+
+
 
 namespace {
   void print_usage(void);
@@ -143,6 +144,7 @@ int cmd_line_arg_parse(
     "rcb",
     "rib",
     "hsfc",
+    "ignore_z",
     NULL
   };
 
@@ -619,6 +621,10 @@ int cmd_line_arg_parse(
           lb->cnctd_dom = 1;
           break;
 
+        case IGNORE_Z:
+          lb->ignore_z = 1;
+          break;
+
         case OUTFILE:
           if(value == NULL)
           {
@@ -942,6 +948,10 @@ int read_cmd_file(std::string &ascii_inp_file,
             {
               if(lb->refine < 0)
                 lb->refine = NONE;
+            }
+            else if(strcmp(cptr, "ignore_z") == 0)
+            {
+              lb->ignore_z = 1;
             }
             else if(strstr(cptr, "num_sects"))
             {
@@ -1924,7 +1934,7 @@ int check_inp_specs(std::string &exoII_inp_file,
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt=1; cnt < (int)weight->elemblk.size(); cnt++)
         if (weight->elemblk[cnt] == weight->elemblk[cnt-1]) {
-          sprintf(ctemp, "warning: multiple weight specified for block "ST_ZU"",
+          sprintf(ctemp, "warning: multiple weight specified for block " ST_ZU "",
                   (size_t)weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }

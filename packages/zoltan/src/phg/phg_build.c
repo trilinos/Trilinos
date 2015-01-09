@@ -396,7 +396,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   nVtx  = (myProc_x >= 0 ? (int)(dist_x[myProc_x+1] - dist_x[myProc_x]) : 0);
 
   if (method_repart){
-    /* For REPARTITION, we add one vertex per partition and one edge 
+    /* For REPARTITION, we add one vertex per part and one edge 
      * per object in a repartition part (connecting the object with 
      * its input partition vertex).
      * Compute the number of these per processor within the 2D distribution

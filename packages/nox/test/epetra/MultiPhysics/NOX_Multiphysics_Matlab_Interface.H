@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_MULTIPHYSICS_MATLAB_INTERFACE_H
 #define NOX_MULTIPHYSICS_MATLAB_INTERFACE_H
 
@@ -70,26 +70,26 @@ public:
 
    public:
 
-    CommandBase(  EpetraExt::EpetraExt_MatlabEngine & engine_, 
+    CommandBase(  EpetraExt::EpetraExt_MatlabEngine & engine_,
                   Problem_Manager &                         );
 
     // methods
-    
+
     virtual bool doCommand( std::string ) = 0 ;
 
 
     // Get the Coupling solver
-    const Problem_Manager & getCoupler() 
+    const Problem_Manager & getCoupler()
     { return problemManager; }
 
    protected:
-    
+
     // methods
 
     virtual ~CommandBase() { };
 
     // data
-   
+
     Problem_Manager      & problemManager;
 
   };
@@ -102,7 +102,7 @@ public:
     public:
 
     CMD_problemSummary( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = QUERY;
@@ -119,7 +119,7 @@ public:
    public:
 
     CMD_showAllValid( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager                 & solver_ ) : 
+             Problem_Manager                 & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = QUERY;
@@ -136,7 +136,7 @@ public:
    public:
 
     CMD_compPreconditioner( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager                 & solver_ ) : 
+             Problem_Manager                 & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -153,7 +153,7 @@ public:
    public:
 
     CMD_compJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -170,7 +170,7 @@ public:
    public:
 
     CMD_setXvec( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_SET;
@@ -187,7 +187,7 @@ public:
    public:
 
     CMD_compRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_COMPUTE;
@@ -204,7 +204,7 @@ public:
    public:
 
     CMD_syncAllGroupX( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager                 & solver_ ) : 
+             Problem_Manager                 & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_SET;
@@ -221,7 +221,7 @@ public:
    public:
 
     CMD_doXfers( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = CALLBACK_FUN;
@@ -238,7 +238,7 @@ public:
    public:
 
     CMD_getAllX( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_GET;
@@ -255,7 +255,7 @@ public:
    public:
 
     CMD_getJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_GET;
@@ -272,7 +272,7 @@ public:
    public:
 
     CMD_getAllJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_GET;
@@ -289,7 +289,7 @@ public:
    public:
 
     CMD_getRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_GET;
@@ -306,7 +306,7 @@ public:
    public:
 
     CMD_getAllRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager              & problemManager_ ) : 
+             Problem_Manager              & problemManager_ ) :
       CommandBase( engine_, problemManager_ )
     {
       myCategory = GROUP_GET;
@@ -323,7 +323,7 @@ public:
    public:
 
     CMD_getPrecMatrix( EpetraExt::EpetraExt_MatlabEngine & engine_,
-             Problem_Manager                 & solver_ ) : 
+             Problem_Manager                 & solver_ ) :
       CommandBase( engine_, solver_ )
     {
       myCategory = GROUP_GET;
@@ -342,7 +342,7 @@ protected:
 
   // Methods
 
-  // Data 
+  // Data
 
   Problem_Manager & problemManager;
 };

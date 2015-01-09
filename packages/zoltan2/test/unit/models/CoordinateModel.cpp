@@ -68,7 +68,7 @@ using Teuchos::DefaultComm;
 using std::cout;
 using std::endl;
 
-void testCoordinateModel(std::string &fname, int weightDim,
+void testCoordinateModel(std::string &fname, int nWeights,
   const RCP<const Comm<int> > &comm, bool consecutiveIds,
   bool nodeZeroHasAll, bool printInfo)
 {
@@ -76,7 +76,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   if (printInfo){
     cout << "Test: " << fname << endl;
-    cout << "Weight dim: " << weightDim;
+    cout << "Num Weights: " << nWeights;
     cout << " want consec ids: " << consecutiveIds;
     cout << " proc 0 has all: " << nodeZeroHasAll;
     cout << endl;
@@ -86,7 +86,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   // Input data
   //////////////////////////////////////////////////////////////
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
+  typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mv_t;
 
   RCP<UserInputForTests> uinput;
 
@@ -102,7 +102,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   RCP<mv_t> coords;
 
   try{
-    coords = uinput->getCoordinates();
+    coords = uinput->getUICoordinates();
   }
   catch(std::exception &e){
     fail=2;
@@ -114,7 +114,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   TEST_FAIL_AND_EXIT(*comm, coordDim <= 3, "dim 3 at most", 1);
 
-  const scalar_t *x=NULL, *y=NULL, *z=NULL;
+  const zscalar_t *x=NULL, *y=NULL, *z=NULL;
 
   x = coords->getData(0).getRawPtr();
   if (coordDim > 1){
@@ -126,7 +126,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   // Are these coordinates correct
 
   int nLocalIds = coords->getLocalLength();
-  ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = coords->getMap()->getNodeElementList();
 
   int nGlobalIds = 0;
   if (nodeZeroHasAll){
@@ -143,11 +143,11 @@ void testCoordinateModel(std::string &fname, int weightDim,
     nGlobalIds = coords->getGlobalLength();
   }
 
-  Array<ArrayRCP<const scalar_t> > coordWeights(weightDim);
+  Array<ArrayRCP<const zscalar_t> > coordWeights(nWeights);
 
   if (nLocalIds > 0){
-    for (int wdim=0; wdim < weightDim; wdim++){
-      scalar_t *w = new scalar_t [nLocalIds];
+    for (int wdim=0; wdim < nWeights; wdim++){
+      zscalar_t *w = new zscalar_t [nLocalIds];
       for (int i=0; i < nLocalIds; i++){
         w[i] = ((i%2) + 1) + wdim;
       }
@@ -165,7 +165,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   RCP<ia_t> ia;
 
-  if (weightDim == 0){   // use the simpler constructor
+  if (nWeights == 0){   // use the simpler constructor
     try{
       ia = rcp(new ia_t(nLocalIds, idList.getRawPtr(), x, y, z));
     }
@@ -174,7 +174,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
     }
   }
   else{
-    std::vector<const scalar_t *> values, weights;
+    std::vector<const zscalar_t *> values, weights;
     std::vector<int> valueStrides, weightStrides;  // default is 1
     values.push_back(x);
     if (y) {
@@ -182,7 +182,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
       if (z) 
         values.push_back(z);
     }
-    for (int wdim=0; wdim < weightDim; wdim++){
+    for (int wdim=0; wdim < nWeights; wdim++){
       weights.push_back(coordWeights[wdim].getRawPtr());
     }
 
@@ -203,7 +203,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   // Create an CoordinateModel with this input
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
+  typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
   typedef std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags_t;
   typedef Zoltan2::CoordinateModel<base_ia_t> model_t;
   modelFlags_t modelFlags;
@@ -235,7 +235,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   if (!fail && model->getGlobalNumCoordinates() != size_t(nGlobalIds))
     fail = 8;
 
-  if (!fail && model->getCoordinateWeightDim() !=  weightDim)
+  if (!fail && model->getNumWeightsPerCoordinate() !=  nWeights)
     fail = 9;
 
   gfail = globalFail(comm, fail);
@@ -243,7 +243,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   if (gfail)
     printFailureCode(comm, fail);
   
-  ArrayView<const gno_t> gids;
+  ArrayView<const zgno_t> gids;
   ArrayView<input_t> xyz;
   ArrayView<input_t> wgts;
   
@@ -257,10 +257,10 @@ void testCoordinateModel(std::string &fname, int weightDim,
       fail = 11;
   }
 
-  if (!fail && wgts.size() != weightDim)
+  if (!fail && wgts.size() != nWeights)
     fail = 12;
 
-  const scalar_t *vals[3] = {x, y, z};
+  const zscalar_t *vals[3] = {x, y, z};
 
   for (int dim=0; !fail && dim < coordDim; dim++){
     for (int i=0; !fail && i < nLocalIds; i++){
@@ -269,7 +269,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
     }
   }
 
-  for (int wdim=0; !fail && wdim < weightDim; wdim++){
+  for (int wdim=0; !fail && wdim < nWeights; wdim++){
     for (int i=0; !fail && i < nLocalIds; i++){
       if (wgts[wdim][i] != coordWeights[wdim][i])
         fail = 14;
@@ -277,7 +277,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   }
 
   if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<gno_t>::areConsecutive(
+    bool inARow = Zoltan2::IdentifierTraits<zgno_t>::areConsecutive(
       gids.getRawPtr(), nLocalIds);
 
     if (!inARow)

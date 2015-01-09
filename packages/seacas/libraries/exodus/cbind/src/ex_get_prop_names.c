@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,12 @@
  * 
  */
 
-#include <string.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strcpy
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ATT_PROP_NAME, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_att_text, etc
 
 /*!
   
@@ -77,7 +80,6 @@ As an example, the following code segment reads in properties assigned
 to node sets:
 
 \code
-#include "exodusII.h";
 int error, exoid, num_props, *prop_values;
 char *prop_names[MAX_PROPS];
 

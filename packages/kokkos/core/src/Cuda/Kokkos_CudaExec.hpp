@@ -48,61 +48,8 @@
 
 #include <string>
 #include <Kokkos_Parallel.hpp>
+#include <impl/Kokkos_Error.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-#if defined( __CUDACC__ )
-
-namespace Kokkos {
-namespace Impl {
-
-class CudaExec {
-public:
-
-  __device__ inline
-  CudaExec( const int shmem_begin , const int shmem_end )
-    : m_shmem_end(   shmem_end )
-    , m_shmem_iter(  shmem_begin )
-    {}
-
-  __device__ inline
-  void * get_shmem( const int size )
-  {
-    extern __shared__ int sh[];
-
-    // m_shmem_iter is in bytes, convert to integer offsets
-    const int offset = m_shmem_iter >> power_of_two<sizeof(int)>::value ;
-
-    m_shmem_iter += size ;
-
-    if ( m_shmem_end < m_shmem_iter ) {
-      cuda_abort("Cuda::get_shmem out of memory");
-    }
-
-    return sh + offset ;
-  }
-
-private:
-
-  const int m_shmem_end ;
-        int m_shmem_iter ;
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-#if defined( __CUDA_ARCH__ )
-
-namespace Kokkos {
-
-inline __device__ 
-void * Cuda::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
-
-} // namespace Kokkos
-
-#endif /* defined( __CUDA_ARCH__ ) */
-#endif /* defined( __CUDACC__ ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -127,7 +74,7 @@ struct CudaTraits {
   typedef unsigned long
     ConstantGlobalBufferType[ ConstantMemoryUsage / sizeof(unsigned long) ];
 
-  enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
+  enum { ConstantMemoryUseThreshold = 0x000200 /* 512 bytes */ };
 
   KOKKOS_INLINE_FUNCTION static
   CudaSpace::size_type warp_count( CudaSpace::size_type i )
@@ -160,6 +107,9 @@ CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type
 #if defined( __CUDACC__ )
 
 /** \brief  Access to constant memory on the device */
+#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+extern
+#endif
 __device__ __constant__
 Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
 kokkos_impl_cuda_constant_memory_buffer ;
@@ -209,12 +159,13 @@ template < class DriverType >
 struct CudaParallelLaunch< DriverType , true > {
 
   inline
-  CudaParallelLaunch( const DriverType & driver ,
-                      const dim3       & grid ,
-                      const dim3       & block ,
-                      const int          shmem )
+  CudaParallelLaunch( const DriverType & driver
+                    , const dim3       & grid
+                    , const dim3       & block
+                    , const int          shmem
+                    , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
            sizeof( DriverType ) ) {
@@ -234,7 +185,7 @@ struct CudaParallelLaunch< DriverType , true > {
       cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
       // Invoke the driver function on the device
-      cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+      cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem , stream >>>();
 
 #if defined( KOKKOS_EXPRESSION_CHECK )
       Kokkos::Cuda::fence();
@@ -247,12 +198,13 @@ template < class DriverType >
 struct CudaParallelLaunch< DriverType , false > {
 
   inline
-  CudaParallelLaunch( const DriverType & driver ,
-                      const dim3       & grid ,
-                      const dim3       & block ,
-                      const int          shmem )
+  CudaParallelLaunch( const DriverType & driver
+                    , const dim3       & grid
+                    , const dim3       & block
+                    , const int          shmem
+                    , const cudaStream_t stream = 0 )
   {
-    if ( grid.x && block.x ) {
+    if ( grid.x && ( block.x * block.y * block.z ) ) {
 
       if ( CudaTraits::SharedMemoryCapacity < shmem ) {
         Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
@@ -263,7 +215,7 @@ struct CudaParallelLaunch< DriverType , false > {
         cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
       }
 
-      cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+      cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem , stream >>>( driver );
 
 #if defined( KOKKOS_EXPRESSION_CHECK )
       Kokkos::Cuda::fence();
@@ -276,6 +228,9 @@ struct CudaParallelLaunch< DriverType , false > {
 
 } // namespace Impl
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif /* defined( __CUDACC__ ) */
 

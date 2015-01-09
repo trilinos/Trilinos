@@ -45,11 +45,7 @@
 #include <new>
 #include <cstring>
 
-#include "KokkosCore_config.h"
-#if defined(KOKKOS_HAVE_CUDA)
-#include "Kokkos_Cuda.hpp"
-#endif
-#include "Kokkos_Macros.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 namespace Stokhos {
 
@@ -449,7 +445,7 @@ namespace Stokhos {
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));
@@ -470,7 +466,7 @@ namespace Stokhos {
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));
@@ -490,7 +486,7 @@ namespace Stokhos {
     T* get_and_fill(const volatile T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));
@@ -505,7 +501,7 @@ namespace Stokhos {
     static
     KOKKOS_INLINE_FUNCTION
     void destroy_and_release(T* m, std::size_t sz) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       cudaFree(m);
 #else
       if (sz > 0) operator delete((void*) m);
@@ -516,7 +512,7 @@ namespace Stokhos {
     static
     KOKKOS_INLINE_FUNCTION
     void destroy_and_release(volatile T* m, std::size_t sz) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       cudaFree(m);
 #else
       if (sz > 0) operator delete((void*) m);
@@ -605,7 +601,7 @@ namespace Stokhos {
     T* get_and_fill(std::size_t sz, const T& x = T(0.0)) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));
@@ -626,7 +622,7 @@ namespace Stokhos {
     T* get_and_fill(const T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));
@@ -647,7 +643,7 @@ namespace Stokhos {
     T* get_and_fill(const volatile T* src, std::size_t sz) {
       T* m = 0;
       if (sz > 0) {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM) && !defined( __CUDA_ARCH__ )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
         cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
 #else
         m = static_cast<T* >(operator new(sz*sizeof(T)));

@@ -58,15 +58,15 @@ namespace Ioss {
   FileInfo::FileInfo(const std::string &my_filename)
     : filename_(my_filename), exists_(false), readable_(false)
   {
-    exists_   = internal_access(filename_, F_OK);
     readable_ = internal_access(filename_, R_OK);
+    exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
   FileInfo::FileInfo(const char   *my_filename)
     : filename_(std::string(my_filename)), exists_(false), readable_(false)
   {
-    exists_   = internal_access(filename_, F_OK);
     readable_ = internal_access(filename_, R_OK);
+    exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
   FileInfo::FileInfo(const FileInfo& copy_from)
@@ -84,8 +84,8 @@ namespace Ioss {
 	filename_ += SLASH;
     }
     filename_ += my_filename;
-    exists_   = internal_access(filename_, F_OK);
     readable_ = internal_access(filename_, R_OK);
+    exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
   FileInfo::~FileInfo() {}
@@ -232,16 +232,16 @@ namespace Ioss {
   void FileInfo::set_filename(const std::string &name)
   {
     filename_ = name;
-    exists_   = internal_access(filename_, F_OK);
     readable_ = internal_access(filename_, R_OK);
+    exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
   //: Sets the filename
   void FileInfo::set_filename(const char *name)
   {
     filename_ = std::string(name);
-    exists_   = internal_access(filename_, F_OK);
     readable_ = internal_access(filename_, R_OK);
+    exists_   = readable_ || internal_access(filename_, F_OK);
   }
 
   //: Returns the filename extension or the empty string if there is

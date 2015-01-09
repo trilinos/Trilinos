@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SimpleObjectTable, storeNew, T )
 TEUCHOS_UNIT_TEST( SimpleObjectTable, storeNewNull )
 {
   ECHO(SimpleObjectTable<A> sot);
-  TEST_THROW(sot.storeNew(NULL), NullReferenceError); 
+  TEST_THROW(sot.storeNew(NULL), NullReferenceError);
 }
 
 

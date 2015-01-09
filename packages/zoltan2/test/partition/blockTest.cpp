@@ -49,30 +49,32 @@
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 using namespace std;
 using Teuchos::Comm;
 using Teuchos::RCP;
 
-int main(int argc, char **argv)
+int main(int narg, char **arg)
 {
   int fail=0, gfail=0;
-  Teuchos::GlobalMPISession session(&argc, &argv);
+  Teuchos::GlobalMPISession session(&narg, &arg);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  gno_t numGlobalIdentifiers = 100;
-  lno_t numMyIdentifiers = numGlobalIdentifiers / nprocs;
+  // Construct the user input
+  int numGlobalIdentifiers = 100;
+  int numMyIdentifiers = numGlobalIdentifiers / nprocs;
   if (rank < numGlobalIdentifiers % nprocs)
     numMyIdentifiers += 1;
 
-  gno_t myBaseId = numGlobalIdentifiers * rank;
+  zgno_t myBaseId = zgno_t(numGlobalIdentifiers * rank);
 
-  int weightDim = 1;
-  gno_t *myIds = new gno_t [numMyIdentifiers];
-  scalar_t *myWeights = new scalar_t [numMyIdentifiers*weightDim];
+  zzgid_t *myIds = new zzgid_t[numMyIdentifiers];
+  zscalar_t *myWeights = new zscalar_t[numMyIdentifiers];
 
   if (!myIds || !myWeights){
     fail = 1;
@@ -88,25 +90,55 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  for (lno_t i=0; i < numMyIdentifiers; i++){
+  zscalar_t origsumwgts = 0;
+  for (int i=0; i < numMyIdentifiers; i++){
     myIds[i] = myBaseId+i;
     myWeights[i] = rank%3 + 1;
+    origsumwgts += myWeights[i];
   }
 
-  std::vector<const scalar_t *> weightValues;
+  // Some output
+  int *origcnt = new int[nprocs];
+  zscalar_t *origwgts = new zscalar_t[nprocs];
+  Teuchos::gather<int, int>(&numMyIdentifiers, 1, origcnt, 1, 0, *comm);
+  Teuchos::gather<int, zscalar_t>(&origsumwgts, 1, origwgts, 1, 0, *comm);
+  if (rank == 0) {
+    cout << "BEFORE PART CNTS: ";
+    for (int i = 0; i < nprocs; i++)
+      cout << origcnt[i] << " ";
+    cout << endl;
+    cout << "BEFORE PART WGTS: ";
+    for (int i = 0; i < nprocs; i++)
+      cout << origwgts[i] << " ";
+    cout << endl;
+  }
+  delete [] origcnt;
+  delete [] origwgts;
+
+  // Building Zoltan2 adapters
+  std::vector<const zscalar_t *> weightValues;
   std::vector<int> weightStrides;   // default is one
-  weightValues.push_back(const_cast<const scalar_t *>(myWeights));
+  weightValues.push_back(const_cast<const zscalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> mydata_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
+  typedef adapter_t::part_t part_t;
 
-  adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
+  adapter_t adapter(zlno_t(numMyIdentifiers),myIds,weightValues,weightStrides);
+
+  // Set up the parameters and problem
+  bool useWeights = true;
+  Teuchos::CommandLineProcessor cmdp (false, false);
+  cmdp.setOption("weights", "no-weights", &useWeights,
+                "Indicated whether to use identifier weights in partitioning");
+  cmdp.parse(narg, arg);
 
   Teuchos::ParameterList params("test parameters");
   params.set("compute_metrics", "true");
-  params.set("num_local_parts", 1);
+  params.set("num_global_parts", nprocs);
   params.set("algorithm", "block");
   params.set("partitioning_approach", "partition");
+  if (!useWeights) params.set("partitioning_objective", "balance_object_count");
   
   Zoltan2::PartitioningProblem<adapter_t> problem(&adapter, &params);
 
@@ -114,20 +146,26 @@ int main(int argc, char **argv)
 
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
-  scalar_t *totalWeight = new scalar_t [nprocs];
-  scalar_t *sumWeight = new scalar_t [nprocs];
-  memset(totalWeight, 0, nprocs * sizeof(scalar_t));
+  // Some output 
+  zscalar_t *totalWeight = new zscalar_t [nprocs];
+  zscalar_t *sumWeight = new zscalar_t [nprocs];
+  memset(totalWeight, 0, nprocs * sizeof(zscalar_t));
+  int *totalCnt = new int [nprocs];
+  int *sumCnt = new int [nprocs];
+  memset(totalCnt, 0, nprocs * sizeof(int));
 
-  const gno_t *idList = solution.getIdList();
-  const zoltan2_partId_t *partList = solution.getPartList();
-  const scalar_t libImbalance = problem.getImbalance();
+  const zzgid_t *idList = solution.getIdList();
+  const part_t *partList = solution.getPartList();
+  const zscalar_t libImbalance = problem.getWeightImbalance();
 
-  for (lno_t i=0; !fail && i < numMyIdentifiers; i++){
+  for (int i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])
       fail = 1;
 
-    if (!fail)
+    if (!fail) {
+      totalCnt[partList[i]]++;
       totalWeight[partList[i]] += myWeights[i];
+    }
   }
 
   gfail = globalFail(comm, fail);
@@ -140,26 +178,33 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
-    totalWeight, sumWeight);
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+                               totalCnt, sumCnt);
+  Teuchos::reduceAll<int, zscalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+                                    totalWeight, sumWeight);
 
   double epsilon = 10e-6;
 
   if (rank == 0){
-    std::cout << "Part weights: ";
-    scalar_t total = 0;
+    std::cout << "AFTER PART CNTS: ";
+    for (int i=0; i < nprocs; i++)
+      std::cout << sumCnt[i] << " ";
+    std::cout << std::endl;
+
+    zscalar_t total = 0;
+    std::cout << "AFTER PART WGTS: ";
     for (int i=0; i < nprocs; i++){
       std::cout << sumWeight[i] << " ";
       total += sumWeight[i];
     }
     std::cout << std::endl;
 
-    scalar_t avg = total / scalar_t(nprocs);
+    zscalar_t avg = total / zscalar_t(nprocs);
 
-    scalar_t imbalance = -1.0;
+    zscalar_t imbalance = -1.0;
 
     for (int i=0; i < nprocs; i++){
-      scalar_t imb = 0;
+      zscalar_t imb = 0;
       if (sumWeight[i] > avg)
         imb = (sumWeight[i] - avg) / avg;
       else
@@ -201,6 +246,8 @@ int main(int argc, char **argv)
 
   delete [] myWeights;
   delete [] myIds;
+  delete [] sumCnt;
+  delete [] totalCnt;
   delete [] sumWeight;
   delete [] totalWeight;
 

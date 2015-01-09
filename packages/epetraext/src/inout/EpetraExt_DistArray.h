@@ -220,7 +220,8 @@ COO(i, j) = 1.24
                                  int NumPermuteIDs,
                                  int * PermuteToLIDs,
                                  int * PermuteFromLIDs,
-                                 const Epetra_OffsetIndex * Indexor)
+                                 const Epetra_OffsetIndex * Indexor,
+                                 Epetra_CombineMode CombineMode = Zero)
       {
         const DistArray& S = dynamic_cast<const DistArray&>(Source);
         const std::vector<T>& From = S.ExtractView();

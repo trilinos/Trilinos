@@ -107,7 +107,7 @@ namespace Teuchos {
         /// common three-arrays representation of compressed sparse
         /// row (CSR) storage.
         ///
-        /// \param out [in/out] Output stream to which to write the 
+        /// \param out [in/out] Output stream to which to write the
         ///   sparse matrix.
         /// \param rowptr [in] Array of numRows+1 offsets, where
         ///   numRows is the number of rows in the sparse matrix.  For
@@ -147,7 +147,7 @@ namespace Teuchos {
 	  // Data type string for ScalarType.
 	  std::string dataType;
 	  if (STS::isComplex) {
-	    dataType = "complex"; 
+	    dataType = "complex";
 	  } else if (STS::isOrdinal) {
 	    dataType = "integer";
 	  } else {
@@ -169,7 +169,7 @@ namespace Teuchos {
 
           // Write the dimensions of the sparse matrix: (# rows, #
           // columns, # matrix entries (counting duplicates as
-          // separate entries)).  
+          // separate entries)).
 	  out << numRows << " " << numCols << " " << rowptr[numRows] << endl;
 
 	  for (size_type i = 0; i < numRows; ++i) {

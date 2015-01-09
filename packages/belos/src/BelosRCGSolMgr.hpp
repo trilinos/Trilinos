@@ -498,7 +498,10 @@ const Teuchos::RCP<std::ostream> RCGSolMgr<ScalarType,MV,OP,false>::outputStream
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-RCGSolMgr<ScalarType,MV,OP,false>::RCGSolMgr() {
+RCGSolMgr<ScalarType,MV,OP,false>::RCGSolMgr():
+  achievedTol_(0.0),
+  numIters_(0)
+{
   init();
 }
 
@@ -507,7 +510,9 @@ template<class ScalarType, class MV, class OP>
 RCGSolMgr<ScalarType,MV,OP,false>::RCGSolMgr(
                                                      const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
-  problem_(problem)
+  problem_(problem),
+  achievedTol_(0.0),
+  numIters_(0)
 {
   init();
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");

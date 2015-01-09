@@ -319,7 +319,6 @@ namespace TotalOrderBasisUnitTest {
 
     // Check non-zero structure
     typedef typename Cijk_LTB_type::CijkNode node_type;
-    typedef Stokhos::ProductBasisUtils::Cijk_1D_Iterator<ordinal_type> Cijk_Iterator;
 
     Teuchos::Array< Teuchos::RCP<const node_type> > node_stack;
     Teuchos::Array< ordinal_type > index_stack;

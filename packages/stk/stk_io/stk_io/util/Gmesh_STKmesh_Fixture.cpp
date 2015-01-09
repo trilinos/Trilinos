@@ -1,52 +1,76 @@
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
+
 #include "Gmesh_STKmesh_Fixture.hpp"
+#include <Ioss_Property.h>              // for Property
+#include <Ioss_Region.h>                // for Region
+#include <generated/Iogn_DatabaseIO.h>  // for DatabaseIO
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Teuchos_RCP.hpp"              // for RCP::operator->
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <stk_mesh/base/Part.hpp>
 
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <stk_io/IossBridge.hpp>
-
-#include <generated/Iogn_DatabaseIO.h>
-#include <generated/Iogn_GeneratedMesh.h>
-
-#include <init/Ionit_Initializer.h>
-#include <Ioss_Region.h>
-
-#include <Shards_BasicTopologies.hpp>
-
-#include <stdexcept>
-#include <sstream>
-
-using namespace stk::io::util;
-
-static const size_t spatial_dimension = 3;
+namespace stk {
+namespace io {
+namespace util {
+///////////////////////////////////////////////////////////////////////////////
+Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
+						, const std::string& gmesh_spec
+						, bool use_64bit_int_IO_api
+						, stk::mesh::ConnectivityMap * connectivity_map
+						)
+  : m_mesh_data(comm, connectivity_map)
 
 ///////////////////////////////////////////////////////////////////////////////
-Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
-                                             const std::string& gmesh_spec)
-///////////////////////////////////////////////////////////////////////////////
-  : 
-    m_meta_data(spatial_dimension),
-    m_bulk_data(m_meta_data.get_meta_data(m_meta_data), comm),
-    m_num_x(0),
-    m_num_y(0),
-    m_num_z(0)
 {
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh("generated", gmesh_spec, comm,
-			     m_meta_data, m_mesh_data);
+  if (use_64bit_int_IO_api) {
+    m_mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
+  }
+  size_t ifh = m_mesh_data.add_mesh_database(gmesh_spec, "generated", stk::io::READ_MESH);
+  m_mesh_data.set_active_mesh(ifh);
+  m_mesh_data.create_input_mesh();
 
   const Iogn::DatabaseIO* database =
-    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.m_input_region->get_database());
-
-  // compute m_num_{x|y|z}
-  m_num_x = database->get_generated_mesh()->get_num_x();
-  m_num_y = database->get_generated_mesh()->get_num_y();
-  m_num_z = database->get_generated_mesh()->get_num_z();
+    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.get_input_io_region()->get_database());
+//  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
   // get face parts names; need to convert these to strings
   const std::vector<std::string> sideset_names = database->get_sideset_names();
@@ -54,7 +78,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   for (std::vector<std::string>::const_iterator itr = sideset_names.begin();
        itr != sideset_names.end(); ++itr) {
     m_sideset_names.push_back(*itr);
-    m_sideset_parts.push_back(m_meta_data.get_part(*itr));
+    m_sideset_parts.push_back(m_mesh_data.meta_data().get_part(*itr));
   }
 }
 
@@ -62,88 +86,8 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
 void Gmesh_STKmesh_Fixture::commit()
 ///////////////////////////////////////////////////////////////////////////////
 {
-  m_meta_data.commit();
-
-  stk::io::populate_bulk_data(m_bulk_data, m_mesh_data);
+  m_mesh_data.meta_data().commit();
+  m_mesh_data.populate_bulk_data();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-size_t Gmesh_STKmesh_Fixture::getSurfElemCount(size_t surf_id) const
-///////////////////////////////////////////////////////////////////////////////
-{
-  if (Iogn::GeneratedMesh::PZ < surf_id) {
-    throw std::runtime_error("Invalid surface id");
-  }
-
-  switch( surf_id )
-  {
-    case Iogn::GeneratedMesh::MX:
-    case Iogn::GeneratedMesh::PX:
-      return m_num_y*m_num_z;
-      break;
-    case Iogn::GeneratedMesh::MY:
-    case Iogn::GeneratedMesh::PY:
-      return m_num_x*m_num_z;
-      break;
-    case Iogn::GeneratedMesh::MZ:
-    case Iogn::GeneratedMesh::PZ:
-      return m_num_x*m_num_y;
-      break;
-  }
-  return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-std::pair<int, double>
-Gmesh_STKmesh_Fixture::getSurfCoordInfo(size_t surf_id) const
-///////////////////////////////////////////////////////////////////////////////
-{
-  if (Iogn::GeneratedMesh::PZ < surf_id) {
-    throw std::runtime_error("Invalid surface id");
-  }
-
-  switch( surf_id )
-  {
-    case Iogn::GeneratedMesh::MX:
-      return std::make_pair<int, double>(0, 0.0);
-      break;
-    case Iogn::GeneratedMesh::PX:
-      return std::make_pair<int, double>(0, (double)m_num_x);
-      break;
-    case Iogn::GeneratedMesh::MY:
-      return std::make_pair<int, double>(1, 0.0);
-      break;
-    case Iogn::GeneratedMesh::PY:
-      return std::make_pair<int, double>(1, (double)m_num_y);
-      break;
-    case Iogn::GeneratedMesh::MZ:
-      return std::make_pair<int, double>(2, 0.0);
-      break;
-    case Iogn::GeneratedMesh::PZ:
-      return std::make_pair<int, double>(2, (double)m_num_z);
-      break;
-  }
-
-  return std::make_pair<int, double>(-1, -1.0);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-size_t Gmesh_STKmesh_Fixture::getSideCount() const
-///////////////////////////////////////////////////////////////////////////////
-{
-  return 2 * (m_num_x*m_num_y + m_num_x*m_num_z + m_num_y*m_num_z);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-size_t Gmesh_STKmesh_Fixture::getElemCount() const
-///////////////////////////////////////////////////////////////////////////////
-{
-  return m_num_x * m_num_y * m_num_z;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-size_t Gmesh_STKmesh_Fixture::getNodeCount() const
-///////////////////////////////////////////////////////////////////////////////
-{
-  return (m_num_x+1)*(m_num_y+1)*(m_num_z+1);
-}
+}}}

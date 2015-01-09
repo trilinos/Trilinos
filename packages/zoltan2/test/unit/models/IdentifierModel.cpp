@@ -68,7 +68,7 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
+void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
   const RCP<const Comm<int> > &comm, bool consecutiveIds)
 {
   int rank = comm->getRank();
@@ -83,20 +83,20 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   //////////////////////////////////////////////////////////////
   // Use an Tpetra::CrsMatrix for the user data.
   //////////////////////////////////////////////////////////////
-  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> tcrsMatrix_t;
+  typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t> tcrsMatrix_t;
   
-  UserInputForTests *input;
+  UserInputForTests *uinput;
   if (fname.size() > 0)
-    input = new UserInputForTests(testDataFilePath, fname, comm, true);
+    uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,string(""),comm, true);
+    uinput = new UserInputForTests(xdim,ydim,zdim,string(""),comm, true, true);
 
-  RCP<tcrsMatrix_t > M = input->getTpetraCrsMatrix();
-  lno_t nLocalIds = M->getNodeNumRows();
-  gno_t nGlobalIds =  M->getGlobalNumRows();
+  RCP<tcrsMatrix_t > M = uinput->getUITpetraCrsMatrix();
+  zlno_t nLocalIds = M->getNodeNumRows();
+  zgno_t nGlobalIds =  M->getGlobalNumRows();
 
-  ArrayView<const gno_t> idList = M->getRowMap()->getNodeElementList();
-  std::set<gno_t> idSet(idList.begin(), idList.end());
+  ArrayView<const zgno_t> idList = M->getRowMap()->getNodeElementList();
+  std::set<zgno_t> idSet(idList.begin(), idList.end());
 
   //////////////////////////////////////////////////////////////
   // Create an IdentifierModel with this input
@@ -104,7 +104,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
   typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
+  typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
   
@@ -141,20 +141,12 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     fail = 3;
   }
 
-  // For now, MatrixAdapter does not implement weights
-  if (!fail && model->getIdentifierWeightDim() !=  0) {
-    std::cerr << rank << ") getIdentifierWeightDim "
-              << model->getIdentifierWeightDim() << " "
-              << 0 << " " << ia->getNumWeightsPerID() << std::endl;
-    fail = 4;
-  }
-
   gfail = globalFail(comm, fail);
 
   if (gfail)
     printFailureCode(comm, fail);
   
-  ArrayView<const gno_t> gids;
+  ArrayView<const zgno_t> gids;
   ArrayView<input_t> wgts;
   
   model->getIdentifierList(gids, wgts);
@@ -173,8 +165,8 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     fail = 6;
   }
 
-  for (lno_t i=0; !fail && i < nLocalIds; i++){
-    std::set<gno_t>::iterator next = idSet.find(gids[i]);
+  for (zlno_t i=0; !fail && i < nLocalIds; i++){
+    std::set<zgno_t>::iterator next = idSet.find(gids[i]);
     if (next == idSet.end()) {
       std::cerr << rank << ") getIdentifierList gid not found "
               << gids[i] << std::endl;
@@ -183,7 +175,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   }
 
   if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<gno_t>::areConsecutive(
+    bool inARow = Zoltan2::IdentifierTraits<zgno_t>::areConsecutive(
       gids.getRawPtr(), nLocalIds);
 
     if (!inARow) {
@@ -198,7 +190,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     printFailureCode(comm, fail);
 
   delete model;
-  delete input;
+  delete uinput;
 }
 
 int main(int argc, char *argv[])

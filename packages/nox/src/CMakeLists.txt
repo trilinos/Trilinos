@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -27,7 +26,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   NOX.H
   NOX_Common.H
-  ) 
+  )
 
 # Abstract
 APPEND_SET(HEADERS
@@ -56,8 +55,8 @@ APPEND_SET(HEADERS
   NOX_LineSearch_Backtrack.H
   NOX_LineSearch_MoreThuente.H
   NOX_LineSearch_NonlinearCG.H
-  NOX_LineSearch_Polynomial.H 
-  NOX_LineSearch_SafeguardedStep.H 
+  NOX_LineSearch_Polynomial.H
+  NOX_LineSearch_SafeguardedStep.H
 )
 APPEND_SET(SOURCES
   NOX_LineSearch_Factory.C
@@ -68,8 +67,8 @@ APPEND_SET(SOURCES
   NOX_LineSearch_Backtrack.C
   NOX_LineSearch_MoreThuente.C
   NOX_LineSearch_NonlinearCG.C
-  NOX_LineSearch_Polynomial.C 
-  NOX_LineSearch_SafeguardedStep.C 
+  NOX_LineSearch_Polynomial.C
+  NOX_LineSearch_SafeguardedStep.C
 )
 
 # Direction
@@ -96,7 +95,7 @@ APPEND_SET(SOURCES
 
 # Prerelease Code
 IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
-  
+
   APPEND_SET(HEADERS
     NOX_Solver_TensorBasedTest.H
     NOX_LineSearch_Tensor.H
@@ -158,7 +157,7 @@ APPEND_SET(HEADERS
   NOX_StatusTest_MaxIters.H
   NOX_StatusTest_NormWRMS.H
   NOX_StatusTest_Stagnation.H
-  NOX_StatusTest_Divergence.H 
+  NOX_StatusTest_Divergence.H
   NOX_StatusTest_RelativeNormF.H
   NOX_StatusTest_NStep.H
   )
@@ -172,7 +171,7 @@ APPEND_SET(SOURCES
   NOX_StatusTest_MaxIters.C
   NOX_StatusTest_NormWRMS.C
   NOX_StatusTest_Stagnation.C
-  NOX_StatusTest_Divergence.C 
+  NOX_StatusTest_Divergence.C
   NOX_StatusTest_RelativeNormF.C
   NOX_StatusTest_NStep.C
   )
@@ -232,6 +231,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MatrixFree_ModelEvaluatorDecorator.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_SafeguardedDirection.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_TOpEleWiseMinSwap.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C

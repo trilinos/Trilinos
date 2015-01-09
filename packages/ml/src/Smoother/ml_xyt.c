@@ -480,6 +480,8 @@ int ML_xytsubmv(ML_Operator *Amat, double p[], double ap[])
      for (i = 0; i < Nrows; i++) p[i] = p2[i];
      ML_free(p2);
   }
+  ML_free(cols);
+  ML_free(vals);
   return(1);
 }
 int ML_xytsubmatvec(ML_Operator *Amat, double p[], double ap[], int mask)
@@ -527,6 +529,8 @@ int ML_xytsubmatvec(ML_Operator *Amat, double p[], double ap[], int mask)
      for (i = 0; i < Nrows; i++) p[i] = p2[i];
      ML_free(p2);
   }
+  ML_free(cols);
+  ML_free(vals);
   return(1);
 }
 int CSR_xytsubmatvec(ML_Operator *Amat, double p[], double ap[], int mask)

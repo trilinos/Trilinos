@@ -255,7 +255,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh,
     }
   	 
 
-    int name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
+    size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     char **names = new char* [max_entity];
     for (ssize_t i=0; i < max_entity; i++) {
       names[i] = new char [name_size+1];
@@ -372,6 +372,7 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
 				       const CommunicationMetaData&)
 {
   int numdimdim  = 0;
+  int timedim    = 0;
   int numnoddim  = 0;
   int strdim     = 0;
   int namestrdim = 0;
@@ -436,6 +437,28 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
 	    "Error: failed to define number of dimensions in file id %d",exodusFilePtr);
     ex_err(routine,errmsg,status);
     return(EX_FATAL);
+  }
+
+  if ((status = nc_def_dim(exodusFilePtr, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+	    "Error: failed to define time dimension in file id %d", exodusFilePtr);
+    ex_err(routine,errmsg,exerrval);
+    return (EX_FATAL);
+  }
+
+  {
+    int dim[1];
+    int varid = 0;
+    dim[0] = timedim;
+    if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim, &varid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define whole time step variable in file id %d",
+	      exodusFilePtr);
+      ex_err(routine,errmsg,exerrval);
+      return (EX_FATAL);
+    }
   }
 
   if (mesh.nodeCount > 0) {

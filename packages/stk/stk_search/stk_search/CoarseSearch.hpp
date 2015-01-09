@@ -1,159 +1,130 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef stk_search_CoarseSearch_hpp
 #define stk_search_CoarseSearch_hpp
 
+#include <stk_search/IdentProc.hpp>
+#include <stk_search/BoundingBox.hpp>
+#include <stk_search/CoarseSearchBoostRTree.hpp>
+#include <stk_search/OctTreeOps.hpp>
+#include <stk_search/SearchMethod.hpp>
+
 #include <vector>
 #include <utility>
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_search/IdentProc.hpp>
-#include <stk_search/BoundingBox.hpp>
-#include <stk_search/BihTree.hpp>
-#include <stk_search/BihTreeParallelOps.hpp>
-#include <stk_search/OctTreeOps.hpp>
 
-namespace stk {
-namespace search {
+namespace stk { namespace search {
 
-// Structure to hold factory specification
-struct FactoryOrder {
-  // Enumerate search algorithms
-  enum Algorithm {OCTREE, BIHTREE};
-
-  // Define virtual base class to derive holder for input processor cuts.
-  class Cuts {
-    Cuts(){}
-    // assignment operator not needed
-    // copy constructor not needed
-    virtual ~Cuts();
-  };
-
-  Algorithm             m_algorithm;
-  stk::ParallelMachine  m_communicator;
-  Cuts *                m_cuts;
-  unsigned *            m_search_tree_stats;
-  unsigned              m_debug_level;
-  FactoryOrder() :
-    m_algorithm        (OCTREE),
-    m_communicator     (MPI_COMM_SELF),
-    m_cuts             (NULL),
-    m_search_tree_stats(NULL),
-    m_debug_level      (0)
-  {}
-};
-
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool parallel_bihtree_search(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
+inline
+std::ostream& operator<<(std::ostream &out, SearchMethod method)
 {
-
-  //find the global box
-  std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      &global_box[0]);
-
-  //
-  stk::search::oct_tree_bih_tree_proximity_search(order.m_communicator,
-      &global_box[0],
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      NULL,
-      domain_to_range_keys ,
-      order.m_search_tree_stats);
-
-  return true;
-}
-
-
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search_bihtree(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
-{
-  const unsigned p_size = parallel_machine_size( order.m_communicator );
-  //const unsigned p_rank = parallel_machine_rank( order.m_communicator );
-
-  if (p_size == 1) {
-    bih::BihTree<RangeBoundingVolume> tree(range.begin(),range.end());
-    unsigned size = domain.size();
-    for (unsigned i = 0; i < size ; ++i) {
-      tree.intersect(domain[i],domain_to_range_keys);
-    }
+  switch( method )   {
+  case BOOST_RTREE: out << "BOOST_RTREE"; break;
+  case OCTREE:      out << "OCTREE"; break;
   }
-  else {
-    parallel_bihtree_search(domain_to_range_keys,range,domain,order);
-  }
-  return true;
+  return out;
 }
 
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search_octree(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
+// EXPERIMENTAL
+//
+// intersections returned will be those resulting from the (local) domain boxes
+// intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
+// WITH EXPLICIT TEMPLATE ARGUMENTS.
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_nonIdentProc(
+                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+                    std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
+                    SearchMethod                                          method,
+                    stk::ParallelMachine                                  comm,
+                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections
+                  )
 {
-
-  std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      &global_box[0]);
-
-  stk::search::oct_tree_proximity_search(order.m_communicator,
-      &global_box[0],
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      NULL,
-      domain_to_range_keys ,
-      order.m_search_tree_stats);
-  return true;
-}
-
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const  std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
-{
-  switch (order.m_algorithm) {
-    case FactoryOrder::BIHTREE:
-      return coarse_search_bihtree(domain_to_range_keys,range,domain,order);
-    case FactoryOrder::OCTREE:
-      return coarse_search_octree(domain_to_range_keys,range,domain,order);
-   break;
+  switch( method )
+  {
+  case BOOST_RTREE:
+    coarse_search_boost_rtree_output_locally<DomainBox, DomainIdent, RangeBox, RangeIdent>(domain,range,comm,intersections);
+    break;
+  case OCTREE:
+    std::cerr << "coarse_search_octree(..) does not support std::search::coarse_search_nonIdentProc(..) yet" << std::endl;
+    std::abort();
+    // coarse_search_octree(domain,range,comm,intersections);
+    break;
   }
-  return false;
 }
 
 
-} // namespace search
-} // namespace stk
+// THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search(
+                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+                    std::vector<std::pair<RangeBox, RangeIdent> >  const& range,
+                    SearchMethod                                          method,
+                    stk::ParallelMachine                                  comm,
+                    std::vector< std::pair< IdentProc<DomainIdent, unsigned int>,
+                                            IdentProc<RangeIdent, unsigned int> > > &  intersections
+                  )
+{
+  std::cerr << "Future version of coarse_search called" << std::endl;
+  abort();
+}
+
+// intersections will be those of distributed domain boxes associated with this
+// processor rank via get_proc<DomainIdent>(.) that intersect distributed range
+// boxes.  Optionally, also include intersections of distributed domain boxes
+// with distributed range boxes associated with this processor rank via
+// get_proc<RangeIdent>(.).
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+               std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
+               SearchMethod                                          method,
+               stk::ParallelMachine                                  comm,
+               std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections,
+               bool communicateRangeBoxInfo=true
+             )
+{
+  switch( method )
+  {
+  case BOOST_RTREE:
+    coarse_search_boost_rtree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    break;
+  case OCTREE:
+    coarse_search_octree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    break;
+  }
+}
+
+
+}} // namespace stk::search
 
 #endif // stk_search_CoarseSearch_hpp

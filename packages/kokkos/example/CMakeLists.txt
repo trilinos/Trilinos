@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsSubPackageMacros)
 
 # Subpackage name must match what appears in kokkos/cmake/Dependencies.cmake
 #
@@ -11,6 +10,10 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(feint)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(fenl)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(md_skeleton)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(global_2_local_ids)
-
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(grow_array)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(sort_array)
+if(NOT Kokkos_ENABLE_Cuda)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
+endif()
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

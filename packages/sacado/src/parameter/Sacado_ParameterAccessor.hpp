@@ -20,7 +20,7 @@
 // 
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // 
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
@@ -32,6 +32,8 @@
 #ifndef SACADO_PARAMETERACCESSOR_HPP
 #define SACADO_PARAMETERACCESSOR_HPP
 
+#include <vector>
+#include "Teuchos_RCP.hpp"
 #include "Sacado_ScalarParameterEntry.hpp"
 
   /*!
@@ -41,6 +43,9 @@
    */
 
 namespace Sacado {
+  template <typename EvalType, typename EvalTypeTraits>
+  class ParameterRegistration;
+
   template<typename EvalType, typename EvalTypeTraits = DefaultEvalTypeTraits> class ParameterAccessor {
   private:
     typedef typename EvalTypeTraits::template apply<EvalType>::type ScalarT;
@@ -52,7 +57,15 @@ namespace Sacado {
     //! Method that returns a reference to the parameter value given the name
     //! The ParameterLibrary call this method when a parameter value cahnges
     virtual ScalarT& getValue(const std::string &n) = 0;
+
+    void registerSacadoParameter(const std::string& name, Teuchos::RCP<ParamLib>& paramLib);
+
+  private:
+    std::vector< Teuchos::RCP< ParameterRegistration<EvalType, EvalTypeTraits> > > pr_;
   };
 }
+
+// Include implementation
+#include "Sacado_ParameterAccessorImp.hpp"
 
 #endif

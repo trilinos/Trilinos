@@ -66,6 +66,10 @@ namespace panzer {
 
       // Found a token, add it to the vector.
       tokens.push_back(token);
+
+      if(pos==string::npos)
+        break;
+
       // Skip delimiters.  Note the "not_of"
       lastPos = str.find_first_not_of(delimiters, pos);
       // Find next "non-delimiter"

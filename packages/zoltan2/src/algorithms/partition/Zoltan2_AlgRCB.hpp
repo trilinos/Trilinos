@@ -80,13 +80,42 @@ namespace Zoltan2{
  */
 
 template <typename Adapter>
-void AlgRCB(
-  const RCP<const Environment> &env,
-  RCP<Comm<int> > &problemComm,
-  const RCP<const CoordinateModel<
-    typename Adapter::base_adapter_t> > &coords, 
-  RCP<PartitioningSolution<Adapter> > &solution
-) 
+class AlgRCB : public Algorithm<Adapter> 
+{
+public:
+  typedef CoordinateModel<typename Adapter::base_adapter_t> coordModel_t;
+  typedef typename Adapter::node_t node_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::scalar_t scalar_t;
+
+
+  // TODO Minimal constructor for now; make it smarter later.
+  AlgRCB(const RCP<const Environment> &env__,
+         const RCP<Comm<int> > &problemComm__,
+         const RCP<const coordModel_t> &coords__) :
+         env(env__), problemComm(problemComm__), coords(coords__)
+  {
+#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+    Z2_THROW_EXPERIMENTAL("Zoltan2 RCB is strictly experimental software "
+                          "due to performance problems in its use of Tpetra.")
+#endif
+  }
+  
+  void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+
+private:
+  const RCP<const Environment> env;
+  const RCP<Comm<int> > problemComm;
+  const RCP<const coordModel_t> coords;
+  // TODO  Functions in Zoltan2_AlgRCB_Methods should be here.
+};
+
+template <typename Adapter>
+void AlgRCB<Adapter>::partition(
+  const RCP<PartitioningSolution<Adapter> > &solution
+)
 {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
@@ -94,11 +123,6 @@ void AlgRCB(
                         "due to performance problems in its use of Tpetra.")
 
 #else  // INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  typedef typename Adapter::node_t node_t;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::scalar_t scalar_t;
 
   // Make a copy of communicator because
   // we subdivide the communicator during the algorithm.
@@ -120,7 +144,7 @@ void AlgRCB(
 
   env->debug(DETAILED_STATUS, "Accessing parameters");
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-  string obj;
+  std::string obj;
 
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
   if (pe)
@@ -130,18 +154,18 @@ void AlgRCB(
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else if (obj == string("balance_object_count")){
+  else if (obj == std::string("balance_object_count")){
     params.set(rcb_balanceCount);
   }
-  else if (obj == string("multicriteria_minimize_total_weight")){
+  else if (obj == std::string("multicriteria_minimize_total_weight")){
     params.set(rcb_minTotalWeight);
     mcnorm = normMinimizeTotalWeight;
   }
-  else if (obj == string("multicriteria_minimize_maximum_weight")){
+  else if (obj == std::string("multicriteria_minimize_maximum_weight")){
     params.set(rcb_minMaximumWeight);
     mcnorm = normMinimizeMaximumWeight;
   }
-  else if (obj == string("multicriteria_balance_total_maximum")){
+  else if (obj == std::string("multicriteria_balance_total_maximum")){
     params.set(rcb_balanceTotalMaximum);
     mcnorm = normBalanceTotalMaximum;
   }
@@ -164,7 +188,7 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
   // Geometric partitioning problem parameters of interest:
   //    average_cuts
-  //    rectilinear_blocks
+  //    rectilinear
   //    bisection_num_test_cuts (experimental)
 
   int val = 0;
@@ -176,12 +200,12 @@ void AlgRCB(
     params.set(rcb_averageCuts);
 
   val = 0;
-  pe = pl.getEntryPtr("rectilinear_blocks");
+  pe = pl.getEntryPtr("rectilinear");
   if (pe)
     val = pe->getValue(&val);
 
   if (val == 1)
-    params.set(rcb_rectilinearBlocks);
+    params.set(rcb_rectilinear);
 
   int numTestCuts = 1;
   pe = pl.getEntryPtr("bisection_num_test_cuts");
@@ -197,8 +221,13 @@ void AlgRCB(
   env->debug(DETAILED_STATUS, "Accessing coordinate model");
   typedef StridedData<lno_t, scalar_t> input_t;
 
+  bool ignoreWeights = params.test(rcb_balanceCount);
+
   int coordDim = coords->getCoordinateDim();
-  int weightDim = coords->getCoordinateWeightDim();
+
+  int nWeightsPerCoord = 0;
+  if (!ignoreWeights) nWeightsPerCoord = coords->getNumWeightsPerCoordinate();
+
   size_t numLocalCoords = coords->getLocalNumCoordinates();
   global_size_t numGlobalCoords = coords->getGlobalNumCoordinates();
 
@@ -216,33 +245,16 @@ void AlgRCB(
   }
 
   env->debug(DETAILED_STATUS, "Storing weights");
-  int criteriaDim = (weightDim ? weightDim : 1);
-  bool ignoreWeights = params.test(rcb_balanceCount);
 
-  if (criteriaDim > 1 && ignoreWeights)
-    criteriaDim = 1;
-
-  ArrayRCP<bool> uniformWeights(new bool [criteriaDim], 0, criteriaDim, true);
-  Array<ArrayRCP<const scalar_t> > weights(criteriaDim);
-
-  if (weightDim == 0 || ignoreWeights)
-    uniformWeights[0] = true;
-  else{
-    for (int wdim = 0; wdim < weightDim; wdim++){
-      if (wgts[wdim].size() == 0){
-        uniformWeights[wdim] = true;
-      }
-      else{
-        uniformWeights[wdim] = false;
-        ArrayRCP<const scalar_t> ar;
-        wgts[wdim].getInputArray(ar);
-        weights[wdim] = ar;
-      }
-    }
+  Array<ArrayRCP<const scalar_t> > weights(nWeightsPerCoord);
+  for (int widx = 0; widx < nWeightsPerCoord; widx++){
+    ArrayRCP<const scalar_t> ar;
+    wgts[widx].getInputArray(ar);
+    weights[widx] = ar;
   }
 
   if (env->doStatus() && (numGlobalCoords < 500)){
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "Problem: ";
     for (size_t i=0; i < numLocalCoords; i++){
       oss << gnos[i] << " (";
@@ -262,35 +274,37 @@ void AlgRCB(
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
-  Array<bool> uniformParts(criteriaDim);
-  Array<ArrayRCP<scalar_t> > partSizes(criteriaDim);
+  int nSizesPerPart = (nWeightsPerCoord ? nWeightsPerCoord : 1);
 
-  for (int wdim = 0; wdim < criteriaDim; wdim++){
-    if (solution->criteriaHasUniformPartSizes(wdim)){
-      uniformParts[wdim] = true;
+  Array<bool> uniformParts(nSizesPerPart);
+  Array<ArrayRCP<scalar_t> > partSizes(nSizesPerPart);
+
+  for (int widx = 0; widx < nSizesPerPart; widx++){
+    if (solution->criteriaHasUniformPartSizes(widx)){
+      uniformParts[widx] = true;
     }
     else{
       scalar_t *tmp = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
     
       for (size_t i=0; i < numGlobalParts; i++){
-        tmp[i] = solution->getCriteriaPartSize(wdim, i);
+        tmp[i] = solution->getCriteriaPartSize(widx, i);
       }
 
-      partSizes[wdim] = arcp(tmp, 0, numGlobalParts);
+      partSizes[widx] = arcp(tmp, 0, numGlobalParts);
     }
   }
 
   // It may not be possible to solve the partitioning problem
-  // if we have multiple weight dimensions with part size
+  // if we have multiple weights with part size
   // arrays that differ. So let's be aware of this possibility.
 
   bool multiplePartSizeSpecs = false;
 
-  if (criteriaDim > 1){
-    for (int wdim1 = 0; wdim1 < criteriaDim; wdim1++)
-      for (int wdim2 = wdim1+1; wdim2 < criteriaDim; wdim2++)
-        if (!solution->criteriaHaveSamePartSizes(wdim1, wdim2)){
+  if (nSizesPerPart > 1){
+    for (int widx1 = 0; widx1 < nSizesPerPart; widx1++)
+      for (int widx2 = widx1+1; widx2 < nSizesPerPart; widx2++)
+        if (!solution->criteriaHaveSamePartSizes(widx1, widx2)){
           multiplePartSizeSpecs = true;
           break;
         }
@@ -303,16 +317,13 @@ void AlgRCB(
   // Create the distributed data for the algorithm.
   //
   // It is a multivector containing one vector for each coordinate
-  // dimension, plus a vector for each weight dimension that is not
-  // uniform.
+  // dimension, plus a vector for each weight.
 
   env->debug(DETAILED_STATUS, "Creating multivec");
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mvector_t;
 
-  int multiVectorDim = coordDim;
-  for (int wdim = 0; wdim < criteriaDim; wdim++)
-    if (!uniformWeights[wdim]) multiVectorDim++;
+  int multiVectorDim = coordDim + nWeightsPerCoord;
 
   gno_t gnoMin, gnoMax;
   coords->getIdentifierMap()->getGnoRange(gnoMin, gnoMax);
@@ -330,9 +341,8 @@ void AlgRCB(
   for (int dim=0; dim < coordDim; dim++)
     avList[dim] = values[dim].view(0, numLocalCoords);
 
-  for (int wdim=0, idx=coordDim; wdim < criteriaDim; wdim++)
-    if (!uniformWeights[wdim])
-      avList[idx++] = weights[wdim].view(0, numLocalCoords);
+  for (int widx=0, idx=coordDim; widx < nWeightsPerCoord; widx++)
+    avList[idx++] = weights[widx].view(0, numLocalCoords);
 
   ArrayRCP<const ArrayView<const scalar_t> > vectors =
     arcp(avList, 0, multiVectorDim);
@@ -354,8 +364,8 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
 
   env->debug(DETAILED_STATUS, "Beginning algorithm");
-  partId_t part0 = 0;
-  partId_t part1 = numGlobalParts-1;
+  part_t part0 = 0;
+  part_t part1 = numGlobalParts-1;
   int sanityCheck = numGlobalParts;
   int groupSize = comm->getSize();
   int rank = comm->getRank();
@@ -381,16 +391,14 @@ void AlgRCB(
     scalar_t cutValue=0;  // TODO eventually save this for user
     int cutDimension=0;
     scalar_t imbalance=0, weightLeft=0, weightRight=0;
-    partId_t leftHalfNumParts=0;
+    part_t leftHalfNumParts=0;
 
     env->timerStart(MICRO_TIMERS, "Find cut", iteration, 2);
 
     try{
       determineCut<mvector_t, Adapter>(env, comm, 
         params, numTestCuts, imbalanceTolerance,
-        coordDim, mvector, 
-        uniformWeights.view(0,criteriaDim), mcnorm, solution,
-        part0, part1,
+        coordDim, nWeightsPerCoord, mvector, mcnorm, solution, part0, part1,
         lrflags.view(0, numLocalCoords), 
         cutDimension, cutValue, imbalance, leftHalfNumParts,
         weightLeft, weightRight);
@@ -510,10 +518,10 @@ void AlgRCB(
   env->localBugAssertion(__FILE__, __LINE__, "partitioning failure", 
     sanityCheck, BASIC_ASSERTION);
 
-  ArrayRCP<partId_t> partId;
+  ArrayRCP<part_t> partId;
 
   if (numLocalCoords > 0){
-    partId_t *tmp = new partId_t [numLocalCoords];
+    part_t *tmp = new part_t [numLocalCoords];
     env->localMemoryAssertion(__FILE__, __LINE__, numLocalCoords, tmp);
     partId = arcp(tmp, 0, numLocalCoords, true);
   }
@@ -533,8 +541,7 @@ void AlgRCB(
 
       serialRCB<mvector_t, Adapter>(env, 1, params,
         numTestCuts, imbalanceTolerance,
-        coordDim, mvector, emptyIndex, 
-        uniformWeights.view(0,criteriaDim), solution,
+        coordDim, nWeightsPerCoord, mvector, emptyIndex, solution,
         part0, part1, partId.view(0,numLocalCoords));
     }
     Z2_FORWARD_EXCEPTIONS
@@ -555,9 +562,9 @@ void AlgRCB(
 
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
      (numGlobalCoords < 500)){
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "Solution: ";
-    for (gno_t i=0; i < gnoList.size(); i++)
+    for (typename ArrayRCP<const gno_t>::size_type i=0; i < gnoList.size(); i++)
       oss << gnoList[i] << " (" << partId[i] << ") ";
     
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());

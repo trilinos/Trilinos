@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,8 +44,8 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
-// 1D Finite Element Interfacial Coupling Problem from 
+
+// 1D Finite Element Interfacial Coupling Problem from
 // Yeckel, Pandy & Derby IJNME 2006.
 
 /* Solves the nonlinear equation:
@@ -77,21 +77,21 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
-// Headers needed for FD coloring 
-#include <vector> 
+// Headers needed for FD coloring
+#include <vector>
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h" 
+#include "EpetraExt_MapColoringIndex.h"
 #endif
 
 // New coupling library headers
-#include "NOX_Multiphysics_Solver_Manager.H" 
+#include "NOX_Multiphysics_Solver_Manager.H"
 
-// User's application specific files 
-#include "Problem_Manager.H" 
-#include "NOX_Epetra_SchurCoupler.H" 
-#include "Problem_Interface.H" 
-#include "ConvDiff_PDE.H"              
+// User's application specific files
+#include "Problem_Manager.H"
+#include "NOX_Epetra_SchurCoupler.H"
+#include "Problem_Interface.H"
+#include "ConvDiff_PDE.H"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
-  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) 
+  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL )
     return parse_return;
 
   outputDir += "/";
@@ -169,10 +169,10 @@ int main(int argc, char *argv[])
   NumGlobalNodes++; // convert #elements to #nodes
 
   // The number of unknowns must be at least equal to the number of processors.
-  if (NumGlobalNodes < NumProc) 
+  if (NumGlobalNodes < NumProc)
   {
-    std::cout << "numGlobalNodes = " << NumGlobalNodes 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "numGlobalNodes = " << NumGlobalNodes
+     << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
@@ -192,22 +192,22 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-  printParams.set("Output Information", 
-			NOX::Utils::Warning                  +
-			NOX::Utils::OuterIteration           + 
-			NOX::Utils::InnerIteration           +
-			NOX::Utils::Parameters               + 
-			NOX::Utils::Details                  + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::LinearSolverDetails      + 
-			NOX::Utils::TestDetails               );
+  printParams.set("Output Information",
+            NOX::Utils::Warning                  +
+            NOX::Utils::OuterIteration           +
+            NOX::Utils::InnerIteration           +
+            NOX::Utils::Parameters               +
+            NOX::Utils::Details                  +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::LinearSolverDetails      +
+            NOX::Utils::TestDetails               );
 
   NOX::Utils outputUtils(printParams);
 
-  // Sublist for line search 
+  // Sublist for line search
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
@@ -219,28 +219,28 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
   lsParams.set("Tolerance", 1e-4);
-  lsParams.set("Output Frequency", 50);    
-  lsParams.set("Preconditioner", "AztecOO");   
+  lsParams.set("Output Frequency", 50);
+  lsParams.set("Preconditioner", "AztecOO");
 
   // Create the convergence tests
-  // Note: as for the parameter list, both (all) problems use the same 
+  // Note: as for the parameter list, both (all) problems use the same
   // convergence test(s) for now, but each could have its own.
   Teuchos::RCP<NOX::StatusTest::NormF>          absresid  =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormUpdate>     update    = 
+  Teuchos::RCP<NOX::StatusTest::NormUpdate>     update    =
       Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RCP<NOX::StatusTest::Combo>          converged = 
+  Teuchos::RCP<NOX::StatusTest::Combo>          converged =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   //converged->addStatusTest(update);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(500));
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValue = 
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValue =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
   Problem_Manager problemManager(Comm, false, 0, useMatlab);
 
   // Note that each problem could contain its own nlParams list as well as
-  // its own convergence test(s). 
+  // its own convergence test(s).
   problemManager.registerParameters(nlParamsPtr);
   problemManager.registerStatusTest(combo);
 
@@ -259,30 +259,30 @@ int main(int argc, char *argv[])
   double Tright         = 1.0           ;
 
   // Distinguish certain parameters needed for T1_analytic
-  double peclet_1     	= 9.0           ;
-  double peclet_2     	= 0.0           ;
-  double kappa_1      	= 1.0           ;
-  double kappa_2	= 0.1           ;
+  double peclet_1         = 9.0           ;
+  double peclet_2         = 0.0           ;
+  double kappa_1          = 1.0           ;
+  double kappa_2    = 0.1           ;
 
   double T1_analytic = ConvDiff_PDE::computeAnalyticInterfaceTemp( radiation, Tleft, Tright, kappa_2, peclet_1 );
 
   // Create Region 1 PDE
   std::string myName         = "Region_1"    ;
   double radiation_reg1 = 0.0           ;
-  double xmin  		= 0.0           ;
-  double xmax  		= 1.0           ;
+  double xmin          = 0.0           ;
+  double xmax          = 1.0           ;
 
   ConvDiff_PDE Reg1_PDE (
-                  Comm, 
+                  Comm,
                   peclet_1,
                   radiation_reg1,
                   kappa_1,
                   alpha,
                   xmin,
-                  xmax, 
+                  xmax,
                   Tleft,
                   T1_analytic,
-                  NumGlobalNodes, 
+                  NumGlobalNodes,
                   myName  );
 
   // Override default initialization with values we want
@@ -292,21 +292,21 @@ int main(int argc, char *argv[])
 
 
   // Create Region 2 PDE
-  myName 		        = "Region_2"    ;
-  xmin  		        = 1.0           ;
-  xmax  		        = 2.0           ;
+  myName                 = "Region_2"    ;
+  xmin                  = 1.0           ;
+  xmax                  = 2.0           ;
 
   ConvDiff_PDE Reg2_PDE (
-                  Comm, 
+                  Comm,
                   peclet_2,
                   radiation,
                   kappa_2,
                   beta,
                   xmin,
-                  xmax, 
+                  xmax,
                   T1_analytic,
                   Tright,
-                  probSizeRatio*NumGlobalNodes, 
+                  probSizeRatio*NumGlobalNodes,
                   myName  );
 
   // For this problem involving interfacial coupling, the problems are given control
@@ -336,19 +336,19 @@ int main(int argc, char *argv[])
 
     // Loop over each problem being managed and ascertain its graph as well
     // as its graph from its dependencies
-    for( ; problemIter != problemLast; ++problemIter ) 
+    for( ; problemIter != problemLast; ++problemIter )
     {
       GenericEpetraProblem & problem = *(*problemIter).second;
       int probId = problem.getId();
 
-      // Get the indices map for copying data from this problem into 
+      // Get the indices map for copying data from this problem into
       // the composite problem
-      map<int, Teuchos::RCP<Epetra_IntVector> > & problemToCmpositeIndices = 
+      map<int, Teuchos::RCP<Epetra_IntVector> > & problemToCmpositeIndices =
         problemManager.getProblemToCompositeIndices();
       Epetra_IntVector & problemIndices = *(problemToCmpositeIndices[probId]);
 
       // Get known dependencies on the other problem
-      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
+      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k)
       {
         // Get the needed objects for the depend problem
         GenericEpetraProblem & dependProblem = *(problemManager.getProblems()[problem.getDependentProblems()[k]]);
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Solve the coupled problem
-  switch( method ) 
+  switch( method )
   {
     case MATRIX_FREE :
       problemManager.solveMF(); // Need a status test check here ....
@@ -458,8 +458,8 @@ int main(int argc, char *argv[])
       // Package the Problem_Manager as the DataExchange::Intreface
       Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
         Teuchos::rcp( &problemManager, false );
-      
-      Teuchos::RCP<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
+
+      Teuchos::RCP<NOX::StatusTest::MaxIters> fixedPt_maxiters =
         Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
 
       if( "jacobi" == solvType )
@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
       problemManager.resetAllCurrentGroupX();
     }
   }
-  
+
   // Output timing info
   if( 0 == MyPID )
     std::cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
@@ -505,10 +505,10 @@ int main(int argc, char *argv[])
     status += tester.testVector( numerical, analytic, reltol, abstol, msg );
   }
 
-  // Summarize test results  
+  // Summarize test results
   if( status == 0 )
     outputUtils.out() << "Test passed!" << std::endl;
-  else 
+  else
     outputUtils.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI

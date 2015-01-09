@@ -100,9 +100,9 @@ void init_seg(DATA_TYPE *seg, int seg_num)
   int k, l;          /* loop counters */
   int my_cols_this;  /* num of cols I have in a seg */
   DATA_TYPE *tp;     /* temp ptr for stepping through the matrix entries */
-  double drand48();  /* Rand number generator */ 
+  double drand48();  /* Rand number generator */
   long seedval;
- 
+
 
   if (me == 0) {
 #ifdef TOEPLITZ
@@ -118,9 +118,9 @@ void init_seg(DATA_TYPE *seg, int seg_num)
     printf("USING ALL ONES MATRIX\n");
 #endif
   }
-  
+
   my_cols_this = my_cols;
-    
+
   seedval = nrows_matrix + me;
   srand48(seedval);
 
@@ -129,7 +129,7 @@ void init_seg(DATA_TYPE *seg, int seg_num)
     for (k = 0 ; k < my_rows; k++) {
 #ifdef COMPLEX
 #ifdef TOEPLITZ
-      (*tp).r = ( seg_num*ncols_seg + l*nprocs_row + my_first_col + 
+      (*tp).r = ( seg_num*ncols_seg + l*nprocs_row + my_first_col +
                 k*nprocs_col + my_first_row ) % nrows_matrix;
       (*tp).i = 0.0;
       tp++;
@@ -153,7 +153,7 @@ void init_seg(DATA_TYPE *seg, int seg_num)
 #else
 
 #ifdef TOEPLITZ
-      *tp++ = ( seg_num*ncols_seg + l*nprocs_row + my_first_col + 
+      *tp++ = ( seg_num*ncols_seg + l*nprocs_row + my_first_col +
                 k*nprocs_col + my_first_row ) % nrows_matrix;
 #endif
 #ifdef RANDOM
@@ -198,7 +198,7 @@ void init_rhs(DATA_TYPE *rhs, DATA_TYPE *seg, int seg_num)
   }
 #ifdef DCPLX
   MPI_Allreduce((double *)rhs,(double *)col1,2*my_rows,MPI_DATA_TYPE,MPI_SUM,row_comm);
-#else 
+#else
 MPI_Allreduce((float *)rhs,(float *)col1,2*my_rows,MPI_DATA_TYPE,MPI_SUM,row_comm);
 #endif
 #ifdef ONES
@@ -238,7 +238,7 @@ double one_norm(DATA_TYPE *seg, int seg_num)
   double local_max;
   int indmax, stride;
   int one=1;               /* constant for BLAS routine  */
- 
+
   my_cols_this = my_cols;
 
   stride = my_rows;
@@ -278,7 +278,7 @@ double inf_norm(DATA_TYPE *seg, int seg_num)
   double local_max;
   int indmax, stride;
   int one = 1 ;                  /* Constant for BLAS operation  */
-  
+
   my_cols_this = my_cols;
 
   stride = my_rows;
@@ -320,16 +320,16 @@ double init_eps(void)
     eps = fabs(tempc-1.0);
   }
   return eps;
-} 
+}
 
-void mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec) 
+void mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec)
 {
   int j;
   int k;
 
   int start_col;
   int end_row;
-  int num_rows;    
+  int num_rows;
   int stride;
 
   int root;
@@ -351,7 +351,7 @@ void mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec)
   for (j=0; j<ncols_last; j++) {
 
     if (me == col_owner(j)) {
-    
+
       start_col = (j) / nprocs_row;
       if (my_first_col < (j)%nprocs_row) ++start_col;
 
@@ -397,7 +397,7 @@ void mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec)
       type = MATVECTYPE + j;
       MPI_Bcast((char *) ptr1, bytes, MPI_CHAR, mesh_row(root), col_comm);
     }
-  }      
+  }
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -421,4 +421,4 @@ void mat_vec(DATA_TYPE *seg, int seg_num, DATA_TYPE *vec)
 #else
   MPI_Allreduce(vec,col1,my_rows,MPI_DATA_TYPE,MPI_SUM,row_comm);
 #endif
-}  
+}

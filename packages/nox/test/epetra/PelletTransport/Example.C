@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,17 +49,17 @@
 
 /* Solves the nonlinear equation:
  *
- * dT       d2T    
+ * dT       d2T
  * --- - D1 --- - alpha + (beta+1)*T - C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * T(t,0) = T(t,1) = alpha = 0.6
  * T(0,x) = alpha + sinusoidal perturbation
  *
  *
- * dC       d2C    
+ * dC       d2C
  * --- - D2 --- - beta*T + C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * C(t,0) = C(t,1) = beta / alpha = 2.0 / 0.6
  * C(0,x) = beta / alpha + sinusoidal perturbation
@@ -110,17 +110,17 @@
 // Added to allow timings
 #include "Epetra_Time.h"
 
-// Headers needed for FD coloring 
-#include <vector> 
+// Headers needed for FD coloring
+#include <vector>
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h" 
+#include "EpetraExt_MapColoringIndex.h"
 #endif
 
-// User's application specific files 
+// User's application specific files
 #include "MaterialProps.H" // Interface file to NOX
 #include "Problem_Interface.H" // Interface file to NOX
-#include "PelletTransport.H"              
+#include "PelletTransport.H"
 
 using namespace std;
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
-  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) 
+  if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL )
     return parse_return;
 
   // Create and reset the Timer
@@ -186,9 +186,9 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  // The number of unknowns must be at least equal to the 
+  // The number of unknowns must be at least equal to the
   // number of processors.
-  //if (NumGlobalNodes < NumProc) 
+  //if (NumGlobalNodes < NumProc)
   //{
   //  std::cout << "numGlobalNodes = " << NumGlobalNodes << " cannot be < number of processors = " << NumProc << std::endl;
   //  std::cout << "Test failed!" << std::endl;
@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
   //}
 
   // Create the PelletTransport problem class.  This creates all required
-  // Epetra objects for the problem and allows calls to the 
+  // Epetra objects for the problem and allows calls to the
   // function (F) and Jacobian evaluation routines.
-  Teuchos::RCP<PelletTransport> Problem = 
+  Teuchos::RCP<PelletTransport> Problem =
     Teuchos::rcp(new PelletTransport(
                    NumGlobalElementsUO2  , xminUO2  , xmaxUO2  ,
                    NumGlobalElementsHe   , xminHe   , xmaxHe   ,
@@ -233,17 +233,17 @@ int main(int argc, char *argv[])
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
   if (verbose) {
-    printParams.set("MyPID", MyPID); 
+    printParams.set("MyPID", MyPID);
     printParams.set("Output Precision", 3);
     printParams.set("Output Processor", 0);
-    printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails + 
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
-			     NOX::Utils::Warning);
+    printParams.set("Output Information",
+                 NOX::Utils::OuterIteration +
+                 NOX::Utils::OuterIterationStatusTest +
+                 NOX::Utils::InnerIteration +
+                 NOX::Utils::LinearSolverDetails +
+                 NOX::Utils::Parameters +
+                 NOX::Utils::Details +
+                 NOX::Utils::Warning);
   }
   else
     printParams.set("Output Information", NOX::Utils::Error);
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
   // Create a print handle object
   NOX::Utils utils(printParams);
 
-  // Sublist for line search 
+  // Sublist for line search
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
@@ -263,52 +263,52 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
   lsParams.set("Tolerance", 1e-4);
-  lsParams.set("Output Frequency", 100);    
-  lsParams.set("Preconditioner", "AztecOO"); 
+  lsParams.set("Output Frequency", 100);
+  lsParams.set("Preconditioner", "AztecOO");
 
   // Create the interface between the test problem and the nonlinear solver
-  Teuchos::RCP<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface =
     Teuchos::rcp(new Problem_Interface(*Problem));
 
-#ifndef HAVE_NOX_EPETRAEXT 
+#ifndef HAVE_NOX_EPETRAEXT
   utils.out() << "Cannot use Coloring without package epetraext !!!!" << std::endl;
   utils.out() << "Test passed!" << std::endl;
   exit(0);
-#else 
+#else
   // Create a timer for performance
   Epetra_Time fillTime(Comm);
 
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
+  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
     EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN;
-  bool colorParallel = true; 
-  int reordering = 0; 
-  int verbosityLevel = 0; 
-  bool distance1 = false; 
+  bool colorParallel = true;
+  int reordering = 0;
+  int verbosityLevel = 0;
+  bool distance1 = false;
   EpetraExt::CrsGraph_MapColoring tmpMapColoring(
     algType, reordering, distance1, verbosityLevel);
-  Teuchos::RCP<Epetra_MapColoring> colorMap = 
+  Teuchos::RCP<Epetra_MapColoring> colorMap =
     Teuchos::rcp(&tmpMapColoring(*(Problem->getGraph())));
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  Teuchos::RCP< std::vector<Epetra_IntVector> > columns = 
+  Teuchos::RCP< std::vector<Epetra_IntVector> > columns =
     Teuchos::rcp(&colorMapIndex(*(Problem->getGraph())));
 
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoring> FDC = 
+  Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoring> FDC =
     Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
-							   iReq, 
-							   noxSoln, 
-							   Problem->getGraph(),
-							   colorMap, 
-							   columns, 
-							   colorParallel,
-							   distance1));
+                               iReq,
+                               noxSoln,
+                               Problem->getGraph(),
+                               colorMap,
+                               columns,
+                               colorParallel,
+                               distance1));
 
   if (verbose)
     printf("\n[%d]\tTime to color Jacobian --> %e sec.  for %d colors.\n\n",
-	   MyPID,fillTime.ElapsedTime(), colorMap->NumColors());
+       MyPID,fillTime.ElapsedTime(), colorMap->NumColors());
 
   FDC->setDifferenceMethod(NOX::Epetra::FiniteDifference::Centered);
 
@@ -317,34 +317,34 @@ int main(int argc, char *argv[])
 
   // Create the Linear System
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = FDC;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, FDC, 
-						      noxSoln));
+                              iReq, iJac, FDC,
+                              noxSoln));
 
   // Create the Group
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					noxSoln, 
-					linSys));  
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams,
+                    iReq,
+                    noxSoln,
+                    linSys));
   NOX::Epetra::Group& grp = *(grpPtr.get());
 
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-5, NOX::StatusTest::NormF::Unscaled));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteval = 
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteval =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue());
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(absresid);
   combo->addStatusTest(maxiters);
   combo->addStatusTest(finiteval);
 
   // Create the method
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
 
   // Initialize time integration parameters
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
   int timeStep = 0;
   double time = 100.;
   double dt = Problem->getdt();
-  
+
   // Print initial solution
   char file_name[25];
   FILE *ifp;
@@ -361,10 +361,10 @@ int main(int argc, char *argv[])
   (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
   ifp = fopen(file_name, "w");
   for( int i = 0; i < NumMyNodes; ++i )
-    fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-	    xMesh[i], (*soln)[2*i], (*soln)[2*i+1]);
+    fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i,
+        xMesh[i], (*soln)[2*i], (*soln)[2*i+1]);
   fclose(ifp);
-  
+
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
   // Time integration loop
@@ -372,26 +372,26 @@ int main(int argc, char *argv[])
 
     timeStep++;
     time += dt;
-  
+
     if (verbose)
       utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
-  
+
     status = NOX::StatusTest::Unconverged;
     status = solver->solve();
-  
+
     if (verbose)
       if (status != NOX::StatusTest::Converged)
-	if (MyPID==0) 
-	  utils.out() << "Nonlinear solver failed to converge!" << std::endl;
+    if (MyPID==0)
+      utils.out() << "Nonlinear solver failed to converge!" << std::endl;
 
     // Get the Epetra_Vector with the final solution from the solver
-    const NOX::Epetra::Group& finalGroup = 
+    const NOX::Epetra::Group& finalGroup =
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-    const Epetra_Vector& finalSolution = 
+    const Epetra_Vector& finalSolution =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     // Get the Epetra_Vector with the last residual from the solver
-    const Epetra_Vector& finalResidual = 
+    const Epetra_Vector& finalResidual =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
 
     // End Nonlinear Solver **************************************
@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
                                      xMesh[i], finalSolution[2*i]);
 
       fclose(ifp);
-      
+
       (void) sprintf(file_name, "x_output.%03d_%05d",MyPID,timeStep);
       ifp = fopen(file_name, "w");
       for( int i = 0; i < NumGlobalElementsUO2 + 1; ++i )
@@ -442,20 +442,20 @@ int main(int argc, char *argv[])
   if (verbose) {
     if (utils.isPrintType(NOX::Utils::Parameters)) {
       utils.out() << std::endl << "Final Parameters" << std::endl
-	   << "****************" << std::endl;
+       << "****************" << std::endl;
       solver->getList().print(utils.out());
       utils.out() << std::endl;
     }
   }
 
   // Output timing info
-  if (verbose) 
+  if (verbose)
   {
     if(MyPID==0)
       utils.out() << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
-	   << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-	   << " sec." << std::endl << std::endl;
-    
+       << "\n\tElapsedTime --> " << myTimer.ElapsedTime()
+       << " sec." << std::endl << std::endl;
+
   }
 
 #ifdef HAVE_MPI

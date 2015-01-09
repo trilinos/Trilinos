@@ -105,7 +105,7 @@ namespace MueLuTests {
     matrixParameters.set("nx",nEle);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, matrixParameters);
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", map, matrixParameters);
     RCP<Matrix> Op = Pr->BuildMatrix();
 
     // build nullspace
@@ -129,7 +129,7 @@ namespace MueLuTests {
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetMinNodesPerAggregate(3);
     CoupledAggFact->SetMaxNeighAlreadySelected(0);
-    CoupledAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+    CoupledAggFact->SetOrdering("natural");
     CoupledAggFact->SetPhase3AggCreation(0.5);
 
     RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
@@ -216,10 +216,10 @@ namespace MueLuTests {
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
 
     /*RCP<CrsMatrixWrap> crsP1 = rcp_dynamic_cast<CrsMatrixWrap>(P1);
-    RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
-    RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
-    RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
-    EpetraExt::RowMatrixToMatrixMarketFile( "Test.mat", *epMat);*/
+      RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
+      RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
+      RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
+      EpetraExt::RowMatrixToMatrixMarketFile( "Test.mat", *epMat);*/
 
     //P1->describe(*fos,Teuchos::VERB_EXTREME);
 
@@ -239,7 +239,7 @@ namespace MueLuTests {
     for (int i=1; i<5; i++) {
       // generate problem
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(50*i*comm->getSize());
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(50*i*comm->getSize());
 
       // Multigrid Hierarchy
       Hierarchy H(A);
@@ -289,9 +289,9 @@ namespace MueLuTests {
       M2.SetFactory("CoarseSolver", SmooFact);
 
       bool bIsLastLevel = false;
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1));
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));
-      if(!bIsLastLevel) bIsLastLevel = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null );
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));
+      if(!bIsLastLevel) bIsLastLevel = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null );
 
       RCP<Level> l0 = H.GetLevel(0);
       RCP<Level> l1;
@@ -303,9 +303,9 @@ namespace MueLuTests {
       if (H.GetNumLevels() > 2) l2 = H.GetLevel(2);
 
       /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      l0->print(*stdout,Teuchos::VERB_EXTREME);
-      if(l1 != Teuchos::null) l1->print(*stdout,Teuchos::VERB_EXTREME);
-      if(l2 != Teuchos::null) l2->print(*stdout,Teuchos::VERB_EXTREME);*/
+        l0->print(*stdout,Teuchos::VERB_EXTREME);
+        if(l1 != Teuchos::null) l1->print(*stdout,Teuchos::VERB_EXTREME);
+        if(l2 != Teuchos::null) l2->print(*stdout,Teuchos::VERB_EXTREME);*/
 
       TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
       TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), (H.GetNumLevels() > 1 ? true : false));

@@ -41,14 +41,24 @@
 //@HEADER
 */
 
+#include <stdint.h>
+#include <string>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Cuda.hpp>
-#include <stdint.h>
+#include <Kokkos_Core.hpp>
 
-#include <iomanip>
+#if defined( KOKKOS_HAVE_CUDA )
+
+#include <Kokkos_UnorderedMap.hpp>
+
+#include <TestGlobal2LocalIds.hpp>
+
+#include <TestUnorderedMapPerformance.hpp>
 
 namespace Performance {
 
@@ -57,33 +67,34 @@ protected:
   static void SetUpTestCase()
   {
     std::cout << std::setprecision(5) << std::scientific;
-    Kokkos::Cuda::host_mirror_device_type::initialize();
+    Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::Cuda::host_mirror_device_type::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
   }
 };
 
-extern void cuda_test_global_to_local_ids();
-extern void cuda_unordered_map_performance_near();
-extern void cuda_unordered_map_performance_far();
-
 TEST_F( cuda, global_2_local)
 {
-  cuda_test_global_to_local_ids();
+  std::cout << "Cuda" << std::endl;
+  std::cout << "size, create, generate, fill, find" << std::endl;
+  for (unsigned i=Performance::begin_id_size; i<=Performance::end_id_size; i *= Performance::id_step)
+    test_global_to_local_ids<Kokkos::Cuda>(i);
 }
 
 TEST_F( cuda, unordered_map_performance_near)
 {
-  cuda_unordered_map_performance_near();
+  Perf::run_performance_tests<Kokkos::Cuda,true>("cuda-near");
 }
 
 TEST_F( cuda, unordered_map_performance_far)
 {
-  cuda_unordered_map_performance_far();
+  Perf::run_performance_tests<Kokkos::Cuda,false>("cuda-far");
 }
 
 }
+
+#endif  /* #if defined( KOKKOS_HAVE_CUDA ) */

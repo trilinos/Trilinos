@@ -68,7 +68,7 @@ PHX_EVALUATOR_CTOR(DOFGradient,p) :
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
   
-  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name();
+  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 

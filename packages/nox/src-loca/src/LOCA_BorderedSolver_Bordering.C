@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,9 +60,9 @@
 #include "LOCA_Abstract_TransposeSolveGroup.H"
 
 LOCA::BorderedSolver::Bordering::Bordering(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<Teuchos::ParameterList>& slvrParams):
   globalData(global_data),
   solverParams(slvrParams),
   op(),
@@ -84,9 +84,9 @@ LOCA::BorderedSolver::Bordering::~Bordering()
 void
 LOCA::BorderedSolver::Bordering::setMatrixBlocks(
          const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& oper,
-	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+     const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+     const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+     const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   op = oper;
   A = blockA;
@@ -98,39 +98,39 @@ LOCA::BorderedSolver::Bordering::setMatrixBlocks(
   isZeroC = (C.get() == NULL);
 
   // ensure blocks B and C are not both zero
-  if (isZeroB && isZeroC) 
+  if (isZeroB && isZeroC)
     globalData->locaErrorCheck->throwError(
-			    "LOCA::BorderedSolver::Bordering::setMatrixBlocks",
-			    "Blocks B and C cannot both be zero");
+                "LOCA::BorderedSolver::Bordering::setMatrixBlocks",
+                "Blocks B and C cannot both be zero");
 
   // ensure blocks A and C are not both zero
-  if (isZeroA && isZeroC) 
+  if (isZeroA && isZeroC)
     globalData->locaErrorCheck->throwError(
-			    "LOCA::BorderedSolver::Bordering::setMatrixBlocks",
-			    "Blocks A and C cannot both be zero");
+                "LOCA::BorderedSolver::Bordering::setMatrixBlocks",
+                "Blocks A and C cannot both be zero");
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::initForSolve()
 {
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::initForTransposeSolve()
 {
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::apply(
-			  const NOX::Abstract::MultiVector& X,
-			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
-			  NOX::Abstract::MultiVector& U,
-			  NOX::Abstract::MultiVector::DenseMatrix& V) const
+              const NOX::Abstract::MultiVector& X,
+              const NOX::Abstract::MultiVector::DenseMatrix& Y,
+              NOX::Abstract::MultiVector& U,
+              NOX::Abstract::MultiVector::DenseMatrix& V) const
 {
   // Compute J*X
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     op->apply(X, U);
 
   // Compute J*X + A*Y
@@ -155,15 +155,15 @@ LOCA::BorderedSolver::Bordering::apply(
   return status;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::applyTranspose(
-			  const NOX::Abstract::MultiVector& X,
-			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
-			  NOX::Abstract::MultiVector& U,
-			  NOX::Abstract::MultiVector::DenseMatrix& V) const
+              const NOX::Abstract::MultiVector& X,
+              const NOX::Abstract::MultiVector::DenseMatrix& Y,
+              NOX::Abstract::MultiVector& U,
+              NOX::Abstract::MultiVector::DenseMatrix& V) const
 {
   // Compute J*X
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     op->applyTranspose(X, U);
 
   // Compute J*X + B*Y
@@ -188,15 +188,15 @@ LOCA::BorderedSolver::Bordering::applyTranspose(
   return status;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::applyInverse(
-			      Teuchos::ParameterList& params,
-			      const NOX::Abstract::MultiVector* F,
-			      const NOX::Abstract::MultiVector::DenseMatrix* G,
-			      NOX::Abstract::MultiVector& X,
-			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+                  Teuchos::ParameterList& params,
+                  const NOX::Abstract::MultiVector* F,
+                  const NOX::Abstract::MultiVector::DenseMatrix* G,
+                  NOX::Abstract::MultiVector& X,
+                  NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::applyInverse()";
   NOX::Abstract::Group::ReturnType status;
 
@@ -207,13 +207,13 @@ LOCA::BorderedSolver::Bordering::applyInverse(
      LOCA::BorderedSolver::LowerTriangularBlockElimination ltbe(globalData);
      status = ltbe.solve(params, *op, *B, *C, F, G, X, Y);
    }
-   
+
    else if (isZeroB) {
      LOCA::BorderedSolver::UpperTriangularBlockElimination utbe(globalData);
      status = utbe.solve(params, *op, A.get(), *C, F, G, X, Y);
 
    }
-   
+
    else if (isZeroF)
      status = solveFZero(params, A.get(), B.get(), C.get(), G, X, Y);
 
@@ -232,18 +232,18 @@ LOCA::BorderedSolver::Bordering::applyInverse(
      int numColsRHS = numColsF + numColsA;
 
      // copy F & A into 1 multivector
-     Teuchos::RCP<NOX::Abstract::MultiVector> RHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> RHS =
        F->clone(numColsRHS);
-     Teuchos::RCP<NOX::Abstract::MultiVector> LHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> LHS =
        X.clone(numColsRHS);
-     Teuchos::RCP<NOX::Abstract::MultiVector> X1 = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> X1 =
        LHS->subView(indexF);
      RHS->setBlock(*F, indexF);
      RHS->setBlock(*A, indexA);
-      
+
      // solve
-     status = solveContiguous(params, A.get(), B.get(), C.get(), 
-			      indexF, indexA, RHS.get(), G, *LHS, Y);
+     status = solveContiguous(params, A.get(), B.get(), C.get(),
+                  indexF, indexA, RHS.get(), G, *LHS, Y);
      X = *X1;
 
    }
@@ -251,15 +251,15 @@ LOCA::BorderedSolver::Bordering::applyInverse(
    return status;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::applyInverseTranspose(
-			      Teuchos::ParameterList& params,
-			      const NOX::Abstract::MultiVector* F,
-			      const NOX::Abstract::MultiVector::DenseMatrix* G,
-			      NOX::Abstract::MultiVector& X,
-			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+                  Teuchos::ParameterList& params,
+                  const NOX::Abstract::MultiVector* F,
+                  const NOX::Abstract::MultiVector::DenseMatrix* G,
+                  NOX::Abstract::MultiVector& X,
+                  NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::applyInverseTranspose()";
   NOX::Abstract::Group::ReturnType status;
 
@@ -274,8 +274,8 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
     B_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(B);
     if (B == Teuchos::null)
       globalData->locaErrorCheck->throwError(
-		 callingFunction,
-		 "Constraints object must be of type ConstraintInterfaceMVDX");
+         callingFunction,
+         "Constraints object must be of type ConstraintInterfaceMVDX");
     BB = B_mvdx->getDX();
   }
 
@@ -283,13 +283,13 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
      LOCA::BorderedSolver::UpperTriangularBlockElimination utbe(globalData);
      status = utbe.solveTranspose(params, *op, BB, *C, F, G, X, Y);
    }
-   
+
    else if (isZeroB) {
      LOCA::BorderedSolver::LowerTriangularBlockElimination ltbe(globalData);
      status = ltbe.solveTranspose(params, *op, *A, *C, F, G, X, Y);
 
    }
-   
+
    else if (isZeroF)
      status = solveFZeroTrans(params, A.get(), BB, C.get(), G, X, Y);
 
@@ -308,18 +308,18 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
      int numColsRHS = numColsF + numColsB;
 
      // copy F & A into 1 multivector
-     Teuchos::RCP<NOX::Abstract::MultiVector> RHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> RHS =
        F->clone(numColsRHS);
-     Teuchos::RCP<NOX::Abstract::MultiVector> LHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> LHS =
        X.clone(numColsRHS);
-     Teuchos::RCP<NOX::Abstract::MultiVector> X1 = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> X1 =
        LHS->subView(indexF);
      RHS->setBlock(*F, indexF);
      RHS->setBlock(*BB, indexB);
-      
+
      // solve
-     status = solveContiguousTrans(params, A.get(), BB, C.get(), 
-				   indexF, indexB, RHS.get(), G, *LHS, Y);
+     status = solveContiguousTrans(params, A.get(), BB, C.get(),
+                   indexF, indexB, RHS.get(), G, *LHS, Y);
      X = *X1;
 
    }
@@ -330,19 +330,19 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
 // This function solves
 //    | J   A ||X|   |0|
 //    | B^T C ||Y| = |G|
-// via:  Xt = J^-1*A, Y = (C-B^T*Xt)^-1*G, X = -Xt*Y, where special cases of 
+// via:  Xt = J^-1*A, Y = (C-B^T*Xt)^-1*G, X = -Xt*Y, where special cases of
 // C,G=0 are taken into account
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveFZero(
-		       Teuchos::ParameterList& params,
-		       const NOX::Abstract::MultiVector* AA,
-		       const LOCA::MultiContinuation::ConstraintInterface* BB,
-		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       const NOX::Abstract::MultiVector::DenseMatrix* G,
-		       NOX::Abstract::MultiVector& X,
-		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+               Teuchos::ParameterList& params,
+               const NOX::Abstract::MultiVector* AA,
+               const LOCA::MultiContinuation::ConstraintInterface* BB,
+               const NOX::Abstract::MultiVector::DenseMatrix* CC,
+               const NOX::Abstract::MultiVector::DenseMatrix* G,
+               NOX::Abstract::MultiVector& X,
+               NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::solveFZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -354,20 +354,20 @@ LOCA::BorderedSolver::Bordering::solveFZero(
     return finalStatus;
   }
 
-  Teuchos::RCP<NOX::Abstract::MultiVector> Xt = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> Xt =
     AA->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-1 A
   status = op->applyInverse(params, *AA, *Xt);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+                               callingFunction);
+
   // compute t2 = -B^T*Xt
   NOX::Abstract::MultiVector::DenseMatrix t(BB->numConstraints(),
-					    Xt->numVectors());
+                        Xt->numVectors());
   BB->multiplyDX(-1.0, *Xt, t);
-    
+
   // compute C - B^T*Xt
   if (!isZeroC)
     t += *CC;
@@ -377,15 +377,15 @@ LOCA::BorderedSolver::Bordering::solveFZero(
   Teuchos::LAPACK<int,double> L;
   int *ipiv = new int[t.numRows()];
   int info;
-  L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv, 
-	 Y.values(), Y.stride(), &info);
+  L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv,
+     Y.values(), Y.stride(), &info);
   delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute X = -Xt*Y
@@ -396,44 +396,44 @@ LOCA::BorderedSolver::Bordering::solveFZero(
 
 // This function assumes A, B, and F are nonzero.  C and/or G may be zero.
 // It also assumes F and A are in a contiguous multivec, stored in F
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveContiguous(
-		       Teuchos::ParameterList& params,
-		       const NOX::Abstract::MultiVector* AA,
-		       const LOCA::MultiContinuation::ConstraintInterface* BB,
-		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       std::vector<int>& indexF,
-		       std::vector<int>& indexA,
-		       const NOX::Abstract::MultiVector* F,
-		       const NOX::Abstract::MultiVector::DenseMatrix* G,
-		       NOX::Abstract::MultiVector& X,
-		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+               Teuchos::ParameterList& params,
+               const NOX::Abstract::MultiVector* AA,
+               const LOCA::MultiContinuation::ConstraintInterface* BB,
+               const NOX::Abstract::MultiVector::DenseMatrix* CC,
+               std::vector<int>& indexF,
+               std::vector<int>& indexA,
+               const NOX::Abstract::MultiVector* F,
+               const NOX::Abstract::MultiVector::DenseMatrix* G,
+               NOX::Abstract::MultiVector& X,
+               NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::solveContiguous()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   // compute [X1 X2] = J^-1 [F A]
   status = op->applyInverse(params, *F, X);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
   Teuchos::RCP<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
   Teuchos::RCP<NOX::Abstract::MultiVector> X2 = X.subView(indexA);
-  
+
   // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
   BB->multiplyDX(-1.0, *X1, Y);
-      
+
   // compute t2 = -B^T*X2
   NOX::Abstract::MultiVector::DenseMatrix t2(BB->numConstraints(),
-					     X2->numVectors());
+                         X2->numVectors());
   BB->multiplyDX(-1.0, *X2, t2);
 
   // compute G - B^T*X1
   if (!isZeroG)
     Y += *G;
-    
+
   // compute C - B^T*X2
   if (!isZeroC)
     t2 += *CC;
@@ -442,15 +442,15 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
   Teuchos::LAPACK<int,double> L;
   int *ipiv = new int[t2.numRows()];
   int info;
-  L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv, 
-	 Y.values(), Y.stride(), &info);
+  L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv,
+     Y.values(), Y.stride(), &info);
   delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute X = X1 - X2*Y
@@ -462,19 +462,19 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
 // This function solves
 //    | J^T B ||X|   |0|
 //    | A^T C ||Y| = |G|
-// via:  Xt = J^-T*B, Y = (C-A^T*Xt)^-1*G, X = -Xt*Y, where special cases of 
+// via:  Xt = J^-T*B, Y = (C-A^T*Xt)^-1*G, X = -Xt*Y, where special cases of
 // C,G=0 are taken into account
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveFZeroTrans(
-		       Teuchos::ParameterList& params,
-		       const NOX::Abstract::MultiVector* AA,
-		       const NOX::Abstract::MultiVector* BB,
-		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       const NOX::Abstract::MultiVector::DenseMatrix* G,
-		       NOX::Abstract::MultiVector& X,
-		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+               Teuchos::ParameterList& params,
+               const NOX::Abstract::MultiVector* AA,
+               const NOX::Abstract::MultiVector* BB,
+               const NOX::Abstract::MultiVector::DenseMatrix* CC,
+               const NOX::Abstract::MultiVector::DenseMatrix* G,
+               NOX::Abstract::MultiVector& X,
+               NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::solveFTransZero()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -486,40 +486,40 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
     return finalStatus;
   }
 
-  Teuchos::RCP<NOX::Abstract::MultiVector> Xt = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> Xt =
     BB->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-T B
   status = op->applyInverseTranspose(params, *BB, *Xt);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+                               callingFunction);
+
   // compute t2 = -A^T*Xt
   NOX::Abstract::MultiVector::DenseMatrix t(AA->numVectors(),
-					    Xt->numVectors());
+                        Xt->numVectors());
   Xt->multiply(-1.0, *AA, t);
-    
+
   // compute C^T - A^T*Xt
   if (!isZeroC)
     for (int i=0; i<t.numRows(); i++)
       for (int j=0; j<t.numCols(); j++)
-	t(i,j) += (*CC)(j,i);
+    t(i,j) += (*CC)(j,i);
 
   // compute Y = (C^T - A^T*Xt)^-1 * G
   Y.assign(*G);
   Teuchos::LAPACK<int,double> L;
   int *ipiv = new int[t.numRows()];
   int info;
-  L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv, 
-	 Y.values(), Y.stride(), &info);
+  L.GESV(t.numRows(), Y.numCols(), t.values(), t.stride(), ipiv,
+     Y.values(), Y.stride(), &info);
   delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute X = -Xt*Y
@@ -530,63 +530,63 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
 
 // This function assumes A, B, and F are nonzero.  C and/or G may be zero.
 // It also assumes F and B are in a contiguous multivec, stored in F
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveContiguousTrans(
-		       Teuchos::ParameterList& params,
-		       const NOX::Abstract::MultiVector* AA,
-		       const NOX::Abstract::MultiVector* BB,
-		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		       std::vector<int>& indexF,
-		       std::vector<int>& indexB,
-		       const NOX::Abstract::MultiVector* F,
-		       const NOX::Abstract::MultiVector::DenseMatrix* G,
-		       NOX::Abstract::MultiVector& X,
-		       NOX::Abstract::MultiVector::DenseMatrix& Y) const
+               Teuchos::ParameterList& params,
+               const NOX::Abstract::MultiVector* AA,
+               const NOX::Abstract::MultiVector* BB,
+               const NOX::Abstract::MultiVector::DenseMatrix* CC,
+               std::vector<int>& indexF,
+               std::vector<int>& indexB,
+               const NOX::Abstract::MultiVector* F,
+               const NOX::Abstract::MultiVector::DenseMatrix* G,
+               NOX::Abstract::MultiVector& X,
+               NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::BorderedSolver::Bordering::solveContiguousTrans()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   // compute [X1 X2] = J^-T [F B]
   status = op->applyInverseTranspose(params, *F, X);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
   Teuchos::RCP<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
   Teuchos::RCP<NOX::Abstract::MultiVector> X2 = X.subView(indexB);
-  
+
   // compute t1 = -A^T*X1, for efficiency t1 is stored in Y
   X1->multiply(-1.0, *AA, Y);
-      
+
   // compute t2 = -A^T*X2
   NOX::Abstract::MultiVector::DenseMatrix t2(AA->numVectors(),
-					     X2->numVectors());
+                         X2->numVectors());
   X2->multiply(-1.0, *AA, t2);
 
   // compute G - A^T*X1
   if (!isZeroG)
     Y += *G;
-    
+
   // compute C^ - A^T*X2
   if (!isZeroC)
     for (int i=0; i<t2.numRows(); i++)
       for (int j=0; j<t2.numCols(); j++)
-	t2(i,j) += (*CC)(j,i);
+    t2(i,j) += (*CC)(j,i);
 
   // compute Y = (C^T - A^T*X2)^-1 * (G - A^T*X1)
   Teuchos::LAPACK<int,double> L;
   int *ipiv = new int[t2.numRows()];
   int info;
-  L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv, 
-	 Y.values(), Y.stride(), &info);
+  L.GESV(t2.numRows(), Y.numCols(), t2.values(), t2.stride(), ipiv,
+     Y.values(), Y.stride(), &info);
   delete [] ipiv;
   if (info != 0) {
     status = NOX::Abstract::Group::Failed;
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // compute X = X1 - X2*Y

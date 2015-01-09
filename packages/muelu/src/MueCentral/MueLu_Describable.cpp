@@ -53,7 +53,7 @@ namespace MueLu {
     Describable::~Describable() { }
 
     void Describable::describe(Teuchos::FancyOStream &out_arg, const VerbLevel verbLevel) const {
-      RCP<Teuchos::FancyOStream> out = rcp(&out_arg,false); //JG: no idea why we have to do that, but it's how Teuchos::Describable::describe() is implemented
+      Teuchos::RCP<Teuchos::FancyOStream> out = rcp(&out_arg,false); //JG: no idea why we have to do that, but it's how Teuchos::Describable::describe() is implemented
       Teuchos::OSTab tab(out);
       *out << this->description() << std::endl;
     }

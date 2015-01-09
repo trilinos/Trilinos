@@ -71,7 +71,7 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
       tmpY->putScalar(0.0);
 
       // apply one V-cycle as preconditioner
-      Hierarchy_->Iterate(eX, 1, *tmpY, initialGuessZero);
+      Hierarchy_->Iterate(eX, *tmpY, 1, initialGuessZero);
 
       // deep copy solution from MueLu
       eY.update(1.0, *tmpY, 0.0);
@@ -84,7 +84,7 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
       bool initialGuessZero = true;
       eY.putScalar(0.0);
 
-      Hierarchy_->Iterate(eX, 1, eY, initialGuessZero);
+      Hierarchy_->Iterate(eX, eY, 1, initialGuessZero);
     }
 
   } catch (std::exception& e) {

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,7 +56,7 @@
 
 #include "Brusselator.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
                          OverlapType OType_) :
   xmin(0.0),
@@ -65,7 +65,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   overlapType(OType_),
   ColumnToOverlapImporter(0),
   Comm(&comm),
-  NumGlobalNodes(numGlobalNodes)
+  NumGlobalNodes(numGlobalNodes),
+  flag(F_ONLY),
+  rhs(NULL)
 {
 
   // Commonly used variables
@@ -78,8 +80,8 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   NumSpecies = 2;
   NumGlobalUnknowns = NumSpecies * NumGlobalNodes;
 
-  // Construct a Source Map that puts approximately the same 
-  // number of equations on each processor 
+  // Construct a Source Map that puts approximately the same
+  // number of equations on each processor
 
   // Begin by distributing nodes fairly equally
   StandardNodeMap = new Epetra_Map(NumGlobalNodes, 0, *Comm);
@@ -89,7 +91,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
 
   // Construct an overlap node map for the finite element fill
   // For single processor jobs, the overlap and standard maps are the same
-  if (NumProc == 1) 
+  if (NumProc == 1)
     OverlapNodeMap = new Epetra_Map(*StandardNodeMap);
   else {
 
@@ -112,7 +114,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
       for (i = 0; i < OverlapNumMyNodes; i ++)
         OverlapMyGlobalNodes[i] = OverlapMinMyNodeGID + i;
 
-      OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes, 
+      OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes,
                                 OverlapMyGlobalNodes, 0, *Comm);
 
       delete [] OverlapMyGlobalNodes;
@@ -120,24 +122,24 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
 
     else { // overlapType == NODES
 
-      // Here we distribute elements such that nodes are ghosted, i.e. no 
+      // Here we distribute elements such that nodes are ghosted, i.e. no
       // overlapping elements but instead overlapping nodes
       int OverlapNumMyNodes;
       int OverlapMinMyNodeGID;
-  
+
       OverlapNumMyNodes = NumMyNodes + 1;
-      if ( MyPID == NumProc - 1 ) 
+      if ( MyPID == NumProc - 1 )
         OverlapNumMyNodes --;
-      
+
       OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
-      
+
       int* OverlapMyGlobalNodes = new int[OverlapNumMyNodes];
-      
-        for (i = 0; i < OverlapNumMyNodes; i ++) 
+
+        for (i = 0; i < OverlapNumMyNodes; i ++)
         OverlapMyGlobalNodes[i] = OverlapMinMyNodeGID + i;
-      
-      OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes, 
-  			    OverlapMyGlobalNodes, 0, *Comm);
+
+      OverlapNodeMap = new Epetra_Map(-1, OverlapNumMyNodes,
+                  OverlapMyGlobalNodes, 0, *Comm);
 
       delete [] OverlapMyGlobalNodes;
     }
@@ -146,12 +148,12 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   // Now create the unknowns maps from the node maps
   NumMyUnknowns = NumSpecies * NumMyNodes;
   int* StandardMyGlobalUnknowns = new int[NumMyUnknowns];
-  for (int k=0; k<NumSpecies; k++) 
+  for (int k=0; k<NumSpecies; k++)
     for (i=0; i<NumMyNodes; i++)
 
       // For now, we employ an interleave of unknowns
 
-      StandardMyGlobalUnknowns[ NumSpecies * i + k ] = 
+      StandardMyGlobalUnknowns[ NumSpecies * i + k ] =
                NumSpecies * StandardNodeMap->GID(i) + k;
 
   StandardMap = new Epetra_Map(-1, NumMyUnknowns, StandardMyGlobalUnknowns,
@@ -162,17 +164,17 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
 
   if (NumProc == 1) {
     OverlapMap = new Epetra_Map(*StandardMap);
-  } 
+  }
   else {
     int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
     int OverlapNumMyUnknowns = NumSpecies * OverlapNumMyNodes;
     int* OverlapMyGlobalUnknowns = new int[OverlapNumMyUnknowns];
-    for (int k=0; k<NumSpecies; k++) 
+    for (int k=0; k<NumSpecies; k++)
       for (i=0; i<OverlapNumMyNodes; i++)
-        OverlapMyGlobalUnknowns[ NumSpecies * i + k ] = 
+        OverlapMyGlobalUnknowns[ NumSpecies * i + k ] =
                  NumSpecies * OverlapNodeMap->GID(i) + k;
 
-    OverlapMap = new Epetra_Map(-1, OverlapNumMyUnknowns, 
+    OverlapMap = new Epetra_Map(-1, OverlapNumMyUnknowns,
                                 OverlapMyGlobalUnknowns, 0, *Comm);
     delete [] OverlapMyGlobalUnknowns;
 
@@ -205,7 +207,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   Comm->Barrier();
 #endif
 
-  // Construct Linear Objects  
+  // Construct Linear Objects
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   nodeImporter = new Epetra_Import(*OverlapNodeMap, *StandardNodeMap);
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
@@ -279,18 +281,18 @@ void Brusselator::initializeSoln()
   }
   //soln.PutScalar(0.0);
   *oldSolution = soln;
-} 
+}
 
 // Matrix and Residual Fills
-bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType, 
-				    const Epetra_Vector* soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
+                    const Epetra_Vector* soln,
+                    Epetra_Vector* tmp_rhs,
+                    Epetra_RowMatrix* tmp_matrix)
 {
 
   if( fType == NOX::Epetra::Interface::Required::Jac ) {
     if( overlapType == NODES ) {
-      std::cout << "This problem only works for Finite-Difference Based Jacobians" 
+      std::cout << "This problem only works for Finite-Difference Based Jacobians"
            << std::endl << "when overlapping nodes." << std::endl
            << "No analytic Jacobian fill available !!" << std::endl;
       exit(1);
@@ -299,7 +301,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   }
   else {
     flag = F_ONLY;
-    if( overlapType == NODES ) 
+    if( overlapType == NODES )
       rhs = new Epetra_Vector(*OverlapMap);
     else
       rhs = tmp_rhs;
@@ -322,7 +324,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   xvec.Import(*xptr, *nodeImporter, Insert);
-  if( (overlapType == ELEMENTS) && 
+  if( (overlapType == ELEMENTS) &&
       (fType == NOX::Epetra::Interface::Required::FD_Res) )
     // Overlap vector for solution received from FD coloring, so simply reorder
     // on processor
@@ -346,21 +348,21 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   double beta = 2.0;
   double jac11, jac12, jac21, jac22;
   double xx[2];
-  double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds
-  double uuold[2*NUMSPECIES];
+  double uu[2*NUMSPECIES] = {0.0}; // Use of the anonymous enum is needed for SGI builds
+  double uuold[2*NUMSPECIES] = {0.0};
   Basis basis(NumSpecies);
 
-  
+
   // Zero out the objects that will be filled
   if ((flag == MATRIX_ONLY) || (flag == ALL)) A->PutScalar(0.0);
   if ((flag == F_ONLY)      || (flag == ALL)) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes - 1; ne++) {
-    
+
     // Loop Over Gauss Points
     for(int gp=0; gp < 2; gp++) {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
       for (int k=0; k<NumSpecies; k++) {
@@ -371,36 +373,36 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
       }
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold);
-	            
+
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
-	row1=OverlapMap->GID(NumSpecies * (ne+i));
-	row2=OverlapMap->GID(NumSpecies * (ne+i) + 1);
+    row1=OverlapMap->GID(NumSpecies * (ne+i));
+    row2=OverlapMap->GID(NumSpecies * (ne+i) + 1);
         term1 = basis.wt*basis.dx
-  	      *((basis.uu[0] - basis.uuold[0])/dt * basis.phi[i] 
+            *((basis.uu[0] - basis.uuold[0])/dt * basis.phi[i]
               +(1.0/(basis.dx*basis.dx))*Dcoeff1*basis.duu[0]*basis.dphide[i]
               + basis.phi[i] * ( -alpha + (beta+1.0)*basis.uu[0]
               - basis.uu[0]*basis.uu[0]*basis.uu[1]) );
         term2 = basis.wt*basis.dx
-              *((basis.uu[1] - basis.uuold[1])/dt * basis.phi[i] 
+              *((basis.uu[1] - basis.uuold[1])/dt * basis.phi[i]
               +(1.0/(basis.dx*basis.dx))*Dcoeff2*basis.duu[1]*basis.dphide[i]
               + basis.phi[i] * ( -beta*basis.uu[0]
               + basis.uu[0]*basis.uu[0]*basis.uu[1]) );
-	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	//     MyPID, row, ne+i,StandardMap.MyGID(row));
+    //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+    //     MyPID, row, ne+i,StandardMap.MyGID(row));
         if ((flag == F_ONLY)    || (flag == ALL)) {
           if( overlapType == NODES ) {
             (*rhs)[NumSpecies*(ne+i)]   += term1;
-	    (*rhs)[NumSpecies*(ne+i)+1] += term2;
+        (*rhs)[NumSpecies*(ne+i)+1] += term2;
           }
-	  else
-	    if (StandardMap->MyGID(row1)) {
+      else
+        if (StandardMap->MyGID(row1)) {
               (*rhs)[StandardMap->LID(OverlapMap->GID(NumSpecies*(ne+i)))]+=
                 term1;
               (*rhs)[StandardMap->LID(OverlapMap->GID(NumSpecies*(ne+i)+1))]+=
                 term2;
-	  }
-	}
+      }
+    }
         // Loop over Trial Functions
         if ((flag == MATRIX_ONLY) || (flag == ALL)) {
           for(j=0;j < 2; j++) {
@@ -492,7 +494,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   // Do an assemble for overlap nodes
   if( overlapType == NODES )
     tmp_rhs->Export(*rhs, *Importer, Add);
@@ -507,7 +509,7 @@ Teuchos::RCP<Epetra_Vector> Brusselator::getSolution()
 {
   return initialSolution;
 }
-  
+
 Teuchos::RCP<Epetra_CrsMatrix> Brusselator::getJacobian()
 {
   if( Teuchos::is_null(A) ) return A;
@@ -519,15 +521,15 @@ Teuchos::RCP<Epetra_CrsMatrix> Brusselator::getJacobian()
 }
 
 Teuchos::RCP<Epetra_Vector> Brusselator::getMesh()
-{ 
+{
   return xptr;
 }
 
 Epetra_Vector& Brusselator::getOldSoln()
 {
   return *oldSolution;
-} 
-  
+}
+
 double Brusselator::getdt()
 {
   return dt;
@@ -541,7 +543,7 @@ Teuchos::RCP<Epetra_CrsGraph> Brusselator::getGraph()
 
 Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
 {
-  
+
   int row, column;
 
   int myMinNodeGID = StandardNodeMap->MinMyGID();
@@ -553,10 +555,10 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
     leftNodeGID  = myNode - 1;
     rightNodeGID = myNode + 1;
 
-    if( leftNodeGID < StandardNodeMap->MinAllGID() ) 
+    if( leftNodeGID < StandardNodeMap->MinAllGID() )
       leftNodeGID = StandardNodeMap->MinAllGID();
 
-    if( rightNodeGID > StandardNodeMap->MaxAllGID() ) 
+    if( rightNodeGID > StandardNodeMap->MaxAllGID() )
       rightNodeGID = StandardNodeMap->MaxAllGID();
 
     for( int dependNode = leftNodeGID; dependNode <= rightNodeGID; dependNode++ ) {
@@ -572,7 +574,7 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
           AA.InsertGlobalIndices(row, 1, &column);
         }
       }
-    }  
+    }
   }
 
   AA.FillComplete();
@@ -594,20 +596,20 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingElements(Epetra_CrsGraph& AA)
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
-  
+
     // Loop over Nodes in Element
     for (i=0; i<2; i++) {
 
       // If this node is owned by current processor, add indices
       if (StandardNodeMap->MyGID(OverlapNodeMap->GID(ne+i))) {
-    
+
         // Loop over unknowns in Node
         for (int k=0; k<NumSpecies; k++) {
           row=OverlapMap->GID( NumSpecies*(ne+i) + k); // Interleave scheme
-  
+
           // Loop over supporting nodes
           for(j=0; j<2; j++) {
-    
+
             // Loop over unknowns at supporting nodes
             for (int m=0; m<NumSpecies; m++) {
               column=OverlapMap->GID( NumSpecies*(ne+j) + m);

@@ -1,0 +1,1 @@
+mpicxx -O3 -mavx -fopenmp $1.cpp -o $1.omp -I$2/include -I./ -L$2/lib -ltpetrainout -ltpetra -ltpetraclassicnodeapi -lteuchoscomm -lteuchosnumerics -lteuchosparameterlist -lteuchosremainder -lteuchoscore -lblas -ltpetrakernels -lteuchoskokkoscompat -lkokkoscore -lkokkoscontainers  -lhwloc -ltpi -lcuda -I$3/include -L$3/lib64/ -lcudart -lcusparse 

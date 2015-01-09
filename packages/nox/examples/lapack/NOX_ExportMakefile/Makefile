@@ -1,11 +1,11 @@
 #####################################################################
 ## Example Makefile for a user application that does not use autoconf
-## - Uses lapack concrete instations for group and vector 
+## - Uses lapack concrete instations for group and vector
 ## - Must use gnu-make (gmake) if the "shell" command is invoked
 #####################################################################
 
 ##
-## Set the Trilinos install directory 
+## Set the Trilinos install directory
 ##
 TRILINOS_INSTALL_DIR = /home/rppawlo/trilinos_local
 
@@ -34,10 +34,10 @@ LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(NO
 ##
 
 Rosenbrock.exe: Rosenbrock.o
-	$(NOX_CXXLD) $(NOX_CXXFLAGS) -o Rosenbrock.exe Rosenbrock.o $(LINK_FLAGS)
+    $(NOX_CXXLD) $(NOX_CXXFLAGS) -o Rosenbrock.exe Rosenbrock.o $(LINK_FLAGS)
 
 Rosenbrock.o:
-	$(NOX_CXX) $(COMPILE_FLAGS) -c Rosenbrock.C
+    $(NOX_CXX) $(COMPILE_FLAGS) -c Rosenbrock.C
 
 clean:
-	rm -f *.o Rosenbrock.exe *~
+    rm -f *.o Rosenbrock.exe *~

@@ -1,3 +1,37 @@
+
+Release notes for Trilinos v11.8.
+
+Simplified input Adapter classes for easier implementation by applications.
+(This change may break backward compatibility for some users.)
+
+Added ability to associate coordinates with matrix rows and graph vertices
+through the MatrixAdapter and GraphAdapter.
+
+Improved the performance and readability of Multijagged Partitioning.
+Some parameter names have changed or have been deleted:
+        pqParts --> mj_parts
+        parallel_part_calculation_count --> mj_concurrent_part_count
+        migration_check_option --> mj_migration_option
+        migration_imbalance_cut_off --> mj_minimum_migration_imbalance
+        keep_part_boxes --> mj_keep_part_boxes
+        recursion_depth --> mj_recursion_depth
+        migration_processor_assignment_type deleted.
+        migration_all_to_all_type deleted.
+        migration_doMigration_type deleted.
+
+
+Added weights to graph partitioning via Scotch.
+
+Changed weight specifications in input Adapters; users can no longer provide
+NULL weight arrays for uniform weights.
+
+Added more robuts testing.
+
+Fixed several bugs.
+
+----------------------------------
+
+
 Trilinos v11 is the initial release of Zoltan2.  Zoltan2 is a redesign of the
 Zoltan combinatorial scientific computing toolkit that uses templating and
 Trilinos classes for tighter integration with Trilinos.  Zoltan2 supports

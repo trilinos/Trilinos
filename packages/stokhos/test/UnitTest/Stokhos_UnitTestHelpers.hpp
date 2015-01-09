@@ -366,8 +366,6 @@ namespace Stokhos {
                                 Teuchos::FancyOStream& out) {
     bool success = true;
 
-    typedef typename operator_type1::ordinal_type ordinal_type;
-    typedef typename operator_type1::value_type value_type;
     typedef typename operator_type1::const_set_iterator point_iterator_type;
 
     // Check sizes

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -59,13 +59,15 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for EX_FATAL, ex_leavedef, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <stdlib.h>                     // for free, malloc
+#include <sys/types.h>                  // for int64_t
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_put_cmap_params_cc(int  exoid,
                           void_int *node_cmap_ids,
@@ -294,7 +296,7 @@ file ID %d",
     if ((status = nc_def_dim(exoid, DIM_NCNT_CMAP, ncnt_cmap, &n_dimid[0])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to add dimension for \"%s\" of size "ST_ZU" in file ID %d",
+	      "Error: failed to add dimension for \"%s\" of size %"ST_ZU" in file ID %d",
 	      DIM_NCNT_CMAP, ncnt_cmap, exoid);
       ex_err(func_name, errmsg, exerrval);
       /* Leave define mode before returning */

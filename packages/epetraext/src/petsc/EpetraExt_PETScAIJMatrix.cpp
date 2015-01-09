@@ -514,7 +514,7 @@ double Epetra_PETScAIJMatrix::NormOne() const {
 
 //=============================================================================
 
-void Epetra_PETScAIJMatrix::Print(ostream& os) const {
+void Epetra_PETScAIJMatrix::Print(std::ostream& os) const {
   return;
 }
 

@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -95,6 +95,16 @@ Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_init(
   return model->get_p_init(l);
 }
 
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_lower_bounds(int l) const
+{
+  return model->get_p_lower_bounds(l);
+}
+
+Teuchos::RCP<const Epetra_Vector> Piro::Epetra::MatrixFreeDecorator::get_p_upper_bounds(int l) const
+{
+  return model->get_p_upper_bounds(l);
+}
+
 Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_W() const
 {
   return Teuchos::rcp(new Piro::Epetra::MatrixFreeOperator(model, lambda));
@@ -135,18 +145,18 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
    const EME::EOutArgsMembers iarg = static_cast<EME::EOutArgsMembers>(i);
    if (modelOutArgs.supports(iarg)) outArgs.setSupports(iarg);
   }
-  
-  for (int i=0; i<np; i++) 
+
+  for (int i=0; i<np; i++)
    if (!modelOutArgs.supports(OUT_ARG_DfDp, i).none()) {
 
      outArgs.setSupports(OUT_ARG_DfDp, i, modelOutArgs.supports(OUT_ARG_DfDp, i));
    }
-    
-  for (int i=0; i<ng; i++) 
+
+  for (int i=0; i<ng; i++)
    if (!modelOutArgs.supports(OUT_ARG_DgDx, i).none()) {
      outArgs.setSupports(OUT_ARG_DgDx, i, modelOutArgs.supports(OUT_ARG_DgDx, i));
    }
-    
+
   for (int i=0; i<ng; i++) {
    if (!modelOutArgs.supports(OUT_ARG_DgDx_dot, i).none()) {
      outArgs.setSupports(OUT_ARG_DgDx_dot, i, modelOutArgs.supports(OUT_ARG_DgDx_dot, i));
@@ -156,23 +166,23 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
    }
   }
 
-  for (int i=0; i<np; i++) 
-    for (int j=0; j<ng; j++) 
+  for (int i=0; i<np; i++)
+    for (int j=0; j<ng; j++)
      if (!modelOutArgs.supports(OUT_ARG_DgDp, j, i).none()) {
        outArgs.setSupports(OUT_ARG_DgDp, j, i, modelOutArgs.supports(OUT_ARG_DgDp, j, i));
      }
-    
+
   for (int i=0; i<ng; i++) {
-    outArgs.setSupports(OUT_ARG_g_sg, i, 
+    outArgs.setSupports(OUT_ARG_g_sg, i,
 			modelOutArgs.supports(OUT_ARG_g_sg, i));
-    outArgs.setSupports(OUT_ARG_DgDx_sg, i, 
+    outArgs.setSupports(OUT_ARG_DgDx_sg, i,
 			modelOutArgs.supports(OUT_ARG_DgDx_sg, i));
-    outArgs.setSupports(OUT_ARG_DgDx_dot_sg, i, 
+    outArgs.setSupports(OUT_ARG_DgDx_dot_sg, i,
 			modelOutArgs.supports(OUT_ARG_DgDx_dot_sg, i));
-    outArgs.setSupports(OUT_ARG_DgDx_dotdot_sg, i, 
+    outArgs.setSupports(OUT_ARG_DgDx_dotdot_sg, i,
 			modelOutArgs.supports(OUT_ARG_DgDx_dotdot_sg, i));
-    for (int j=0; j<np; j++) 
-      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
+    for (int j=0; j<np; j++)
+      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j,
 			  modelOutArgs.supports(OUT_ARG_DgDp_sg, i, j));
   }
 
@@ -201,10 +211,10 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
     RCP<Piro::Epetra::MatrixFreeOperator> W_mfo =
       Teuchos::rcp_dynamic_cast<Piro::Epetra::MatrixFreeOperator>(W_out);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(W_mfo==Teuchos::null, std::logic_error, 
-      "Epetra_Operator sent as W to Piro::Epetra::MatrixFreeDecorator\n" 
+    TEUCHOS_TEST_FOR_EXCEPTION(W_mfo==Teuchos::null, std::logic_error,
+      "Epetra_Operator sent as W to Piro::Epetra::MatrixFreeDecorator\n"
       "be of type Piro::Epetra::MatrixFreeOperator");
-   
+
     // Do base case for MatrixFree: set f instead of W
     OutArgs modelOutArgs(outArgs);
     InArgs modelInArgs(inArgs);
@@ -265,10 +275,10 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 {
   using Teuchos::rcp;
 
-  // Save an RCP to a map, preventing it from going out of scope 
+  // Save an RCP to a map, preventing it from going out of scope
   // when references to the map anc comm are later pulled out
   map = model->get_x_map();
- 
+
 
   // Allocate space for perturbed solution and residuals
   xPert = rcp(new Epetra_Vector(*map));
@@ -278,7 +288,7 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
-             const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
+             const EpetraExt::ModelEvaluator::InArgs & modelInArgs_,
              Teuchos::RCP<Epetra_Vector> fBase_,
              const bool haveXdot_, const bool haveXdotdot_)
 {
@@ -296,7 +306,7 @@ void Piro::Epetra::MatrixFreeOperator::setBase(
 int  Piro::Epetra::MatrixFreeOperator::Apply
     (const Epetra_MultiVector& V, Epetra_MultiVector& Y) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!baseIsSet, std::logic_error, 
+  TEUCHOS_TEST_FOR_EXCEPTION(!baseIsSet, std::logic_error,
      " Piro::Epetra::MatrixFreeOperator must have Base values set before Apply");
 
   // Compute  Wv=y  by perturbing x
@@ -361,32 +371,32 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
   return 0;
 }
 
-Piro::Epetra::MatrixFreeOperator::~MatrixFreeOperator() { 
+Piro::Epetra::MatrixFreeOperator::~MatrixFreeOperator() {
    // relinquish pointers
-   modelInArgs.set_x(Teuchos::null); 
-   if (haveXdot) modelInArgs.set_x_dot(Teuchos::null); 
-   if (haveXdotdot) modelInArgs.set_x_dotdot(Teuchos::null); 
-   for (int l = 0; l < modelInArgs.Np(); ++l) 
+   modelInArgs.set_x(Teuchos::null);
+   if (haveXdot) modelInArgs.set_x_dot(Teuchos::null);
+   if (haveXdotdot) modelInArgs.set_x_dotdot(Teuchos::null);
+   for (int l = 0; l < modelInArgs.Np(); ++l)
      modelInArgs.set_p(l,Teuchos::null);
 }
 
 // The following are trivial implementations
 int  Piro::Epetra::MatrixFreeOperator::SetUseTranspose(bool UseTranspose)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(UseTranspose, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(UseTranspose, std::logic_error,
      " Piro::Epetra::MatrixFreeOperator cannot support Transpose operators");
    return 0;
 }
 int  Piro::Epetra::MatrixFreeOperator::ApplyInverse
     (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
      " Piro::Epetra::MatrixFreeOperator does not support applyInverse");
    return 0;
 }
 double  Piro::Epetra::MatrixFreeOperator::NormInf() const
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
      " Piro::Epetra::MatrixFreeOperator does not support NormInf");
    return 0.0;
 }

@@ -314,12 +314,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
 #endif
-  if(print_hierarchy) EdgePC->Print();
+  if(print_hierarchy == -1) EdgePC->Print();
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
     std::string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
-    if (List22.name() == "ANONYMOUS") List11.setName("refmaxwell: 11list");
+    if (List22.name() == "ANONYMOUS") List22.setName("refmaxwell: 22list");
     SetDefaults("SA",List22,0,0,false);
     if(solver22=="multilevel") NodePC=new MultiLevelPreconditioner(*TMT_Matrix_,List22);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (2,2) block preconditioner\n");return -1;}

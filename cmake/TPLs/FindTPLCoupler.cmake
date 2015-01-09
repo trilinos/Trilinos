@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( Coupler
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Coupler
   REQUIRED_HEADERS ne_couplerI.h
   REQUIRED_LIBS_NAMES couplerIc
   )

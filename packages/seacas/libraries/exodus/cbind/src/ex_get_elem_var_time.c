@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,8 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_var_time, etc
 
 /*!
 \deprecated Use ex_get_var_time()(exoid, EX_ELEM_BLOCK, elem_var_index, elem_number, beg_time_step, end_time_step, elem_var_vals)
@@ -101,7 +100,6 @@ var_index-th element variable for element number 2 from the first
 time step to the last time step:
 
 \code
-#include "exodusII.h"
 
 int error, exoid, num_time_steps, var_index, elem_num, 
     beg_time, end_time;

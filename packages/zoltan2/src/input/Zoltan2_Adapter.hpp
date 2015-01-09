@@ -54,6 +54,17 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
+//  Throw an error for input adapter functions that have been
+//  called by the model but not implemented in the adapter.
+#define Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER \
+  { \
+    std::ostringstream emsg; \
+    emsg << __FILE__ << "," << __LINE__ \
+         << " error:  " << __func__zoltan2__ << " not implemented in adapter "  \
+         << std::endl; \
+    throw std::runtime_error(emsg.str()); \
+  }
+
 namespace Zoltan2 {
 
 /*! \brief An enum to identify general types of adapters.
@@ -77,18 +88,16 @@ enum BaseAdapterType {
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
-    \todo Add add a MeshAdapter
  */
 
 template <typename User>
   class BaseAdapter {
 
-private:
-
-  typedef typename InputTraits<User>::gid_t    gid_t;
+public:
+  typedef typename InputTraits<User>::zgid_t zgid_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
 
-public:
+  typedef typename InputTraits<User>::part_t part_t;  
 
   /*! \brief Returns the type of adapter.
    */
@@ -110,7 +119,7 @@ public:
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gid_t *&Ids) const = 0;
+  virtual void getIDsView(const zgid_t *&Ids) const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
@@ -119,7 +128,7 @@ public:
   virtual int getNumWeightsPerID() const = 0;
 
   /*! \brief Provide pointer to a weight array with stride.
-   *    \param wgt on return a pointer to the weights for this dimension
+   *    \param wgt on return a pointer to the weights for this idx
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
    *    \param idx  the weight index, zero or greater
@@ -127,7 +136,23 @@ public:
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const = 0;
 
- /*! \brief Apply a PartitioningSolution to an input.
+  /*! \brief Provide pointer to an array containing the input part 
+   *         assignment for each ID.
+   *         The input part information may be used for re-partitioning
+   *         to reduce data movement, or for mapping parts to processes.
+   *         Adapters may return NULL for this pointer (the default
+   *         behavior); if NULL is returned, algorithms will assume
+   *         the rank 
+   *    \param inputPart on return a pointer to input part numbers
+   */ 
+  void getPartsView(const part_t *&inputPart) const
+  {
+    // Default behavior:  return NULL for inputPart array;
+    // assume input part == rank
+    inputPart = NULL;
+  }
+
+  /*! \brief Apply a PartitioningSolution to an input.
    *
    *  This is not a required part of the InputAdapter interface. However
    *  if the Caller calls a Problem method to redistribute data, it needs
@@ -149,7 +174,7 @@ public:
     void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
 };

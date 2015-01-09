@@ -47,12 +47,16 @@
 #define MUELU_HIERARCHYHELPERS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_HierarchyHelpers_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
 
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_HierarchyHelpers_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_SmootherPrototype_fwd.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_HierarchyManager.hpp"
 
 // Warning: on TopRAPFactory and TopSmootherFactory constructors, Teuchos::null doesn't mean "default factory" but "no build"
 
@@ -87,7 +91,7 @@ namespace MueLu {
     const RCP<const FactoryManagerBase> prevFactoryManager_;
   };
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TopRAPFactory : public TwoLevelFactoryBase {
 #include "MueLu_UseShortNames.hpp"
 
@@ -108,7 +112,7 @@ namespace MueLu {
     RCP<const FactoryBase> AcFact_;
   };
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TopSmootherFactory : public SingleLevelFactoryBase { //TODO: inherit from SmootherFactoryBase ?
 #include "MueLu_UseShortNames.hpp"
 
@@ -126,6 +130,24 @@ namespace MueLu {
     RCP<const FactoryBase> preSmootherFact_;
     RCP<const FactoryBase> postSmootherFact_;
   };
+
+
+  template <class Scalar,
+	    class LocalOrdinal  = int,
+	    class GlobalOrdinal = LocalOrdinal,
+	    class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+  class HierarchyUtils {
+#include "MueLu_UseShortNames.hpp"
+  public:
+    /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+     *  calling AddNewLevel as appropriate.
+     */
+
+    static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);
+  };
+
+
+
 
 } // namespace MueLu
 

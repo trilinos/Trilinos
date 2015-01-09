@@ -75,7 +75,7 @@ namespace MueLuTests {
     //Calculate result = (Op*Op)*X for Epetra
     int nx = 37*comm->getSize();
     int ny=nx;
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
+    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
     RCP<Matrix> OpOp = Utils::Multiply(*Op,false,*Op,false,out);
     RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
@@ -96,7 +96,7 @@ namespace MueLuTests {
     check1->norm2(normCheck1);
 
     //Calculate result = (Op*Op)*X for Tpetra
-    Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
+    Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
     OpOp = Utils::Multiply(*Op,false,*Op,false,out);
     result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
@@ -124,7 +124,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Utilities,DetectDirichletRows)
   {
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(100);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(100);
     Teuchos::ArrayView<const LO> indices;
     Teuchos::ArrayView<const SC>  values;
 

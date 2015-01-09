@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -74,7 +74,7 @@ LOCA::SingularJacobianSolve::Manager::Manager(const Teuchos::ParameterList& para
 }
 
 LOCA::SingularJacobianSolve::Manager::Manager(
-			  const LOCA::SingularJacobianSolve::Manager& source) 
+              const LOCA::SingularJacobianSolve::Manager& source)
   : method(source.method),
     singularSolverPtr(source.singularSolverPtr->clone())
 {
@@ -86,21 +86,21 @@ LOCA::SingularJacobianSolve::Manager::~Manager()
 }
 
 LOCA::SingularJacobianSolve::Generic*
-LOCA::SingularJacobianSolve::Manager::clone() const 
+LOCA::SingularJacobianSolve::Manager::clone() const
 {
   return new Manager(*this);
 }
 
 LOCA::SingularJacobianSolve::Generic&
 LOCA::SingularJacobianSolve::Manager::operator=(
-			  const LOCA::SingularJacobianSolve::Generic& source)
+              const LOCA::SingularJacobianSolve::Generic& source)
 {
   return operator=(dynamic_cast<const LOCA::SingularJacobianSolve::Manager&>(source));
 }
 
 LOCA::SingularJacobianSolve::Manager&
 LOCA::SingularJacobianSolve::Manager::operator=(
-			  const LOCA::SingularJacobianSolve::Manager& source)
+              const LOCA::SingularJacobianSolve::Manager& source)
 {
   // protect against A = A
   if (this != &source) {
@@ -113,8 +113,8 @@ LOCA::SingularJacobianSolve::Manager::operator=(
   return *this;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params) 
+NOX::Abstract::Group::ReturnType
+LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params)
 {
   std::string newmethod = params.get("Method", "Default");
 
@@ -133,8 +133,8 @@ LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params)
       singularSolverPtr = new LOCA::SingularJacobianSolve::ItRef(params);
     else {
       LOCA::ErrorCheck::throwError(
-			      "LOCA::SingularJacobianSolve::Manager::reset()",
-			      "Invalid choice for singular solve method.");
+                  "LOCA::SingularJacobianSolve::Manager::reset()",
+                  "Invalid choice for singular solve method.");
       return NOX::Abstract::Group::Failed;
     }
   }
@@ -142,19 +142,19 @@ LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params)
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::Manager::compute(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector& input,
-			        const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector& result) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector& input,
+                    const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector& result)
 {
   if (singularSolverPtr == NULL) {
     LOCA::ErrorCheck::throwError(
-			 "LOCA::SingularJacobianSolve::Manager::compute()", 
-			 "Null pointer error");
+             "LOCA::SingularJacobianSolve::Manager::compute()",
+             "Null pointer error");
     return NOX::Abstract::Group::Failed;
   }
 
@@ -162,35 +162,35 @@ LOCA::SingularJacobianSolve::Manager::compute(
     std::cout << "\n\tCalling singular solver with method: " << method << std::endl;
 
   return singularSolverPtr->compute(params, grp, input, approxNullVec,
-				    jacApproxNullVec, result);
+                    jacApproxNullVec, result);
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::Manager::computeMulti(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector*const* inputs,
-				const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector** results,
-				int nVecs) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector*const* inputs,
+                const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector** results,
+                int nVecs)
 {
   if (singularSolverPtr == NULL) {
     LOCA::ErrorCheck::throwError(
-		       "LOCA::SingularJacobianSolve::Manager::computeMulti()",
-		       "Null pointer error");
+               "LOCA::SingularJacobianSolve::Manager::computeMulti()",
+               "Null pointer error");
     return NOX::Abstract::Group::Failed;
   }
 
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
     std::cout << "\n\tCalling singular solver with method: " << method << std::endl;
-  
+
   return singularSolverPtr->computeMulti(params, grp, inputs, approxNullVec,
-					 jacApproxNullVec, results, nVecs);
+                     jacApproxNullVec, results, nVecs);
 }
 
 const std::string&
-LOCA::SingularJacobianSolve::Manager::getMethod() const 
+LOCA::SingularJacobianSolve::Manager::getMethod() const
 {
   return method;
 }

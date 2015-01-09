@@ -42,16 +42,16 @@ Overall Code Description
 
  This codes performs LU factorization and solves a dense matrix equation
 on parallel computers using MPI for message passing.  The code was originally
-ported to the INTEL Paragon which uses a mesh topology.  
+ported to the INTEL Paragon which uses a mesh topology.
 
  The matrix is torus-wrap mapped onto the processors(transparent to the user)
-and uses partial pivoting during the factorization of the matrix.  Each 
-processor contains a portion of the matrix and the right hand sides 
+and uses partial pivoting during the factorization of the matrix.  Each
+processor contains a portion of the matrix and the right hand sides
 determined by a distribution function to optimally load balance the
-computation and communication during the factorization of the matrix.  
+computation and communication during the factorization of the matrix.
 The general prescription is that no processor can have no more(or less)
 than one row or column of the matrix than any other processor.  Since
-the input matrix is not torus-wrapped permutation of the results is 
+the input matrix is not torus-wrapped permutation of the results is
 performed to "unwrap the results".
 
 Included in the code are fortran and c test routines that generate a
@@ -70,11 +70,11 @@ Make.inc    -- includes system dependent info
                libraries and locations, compiler switches etc.
 Make.typed  -- includes dependencies and rules for executables
 
-Before trying to produce any executable either edit Make.inc to put in 
+Before trying to produce any executable either edit Make.inc to put in
 the appropriate options for your machine or use the supplied defaults ie:
 
-copy Make.sol Make.inc    -- for a SOLARIS System 
-copy Make.tflops Make.inc -- for the Tflop system  
+copy Make.sol Make.inc    -- for a SOLARIS System
+copy Make.tflops Make.inc -- for the Tflop system
 
 
  1)To make a test code based on a c main code :
@@ -98,7 +98,7 @@ Some Code Options
 set in defines.h
 	interface to C versions of BLAS -- define CBLAS
 	timing info -- define TIMINGO  (timing in factorization)
- 
+
 BLAS Routines
 -------------
 Different routines needed are in BLAS_prototypes.h
@@ -117,7 +117,7 @@ Enhancing Solver Performance
 ----------------------------
 	The key to the solver's high computational rates is the use
  of the matrix-matrix multiply for the matrix updates.  To enhance this
- most vendors have fast dgemm(sgemm,cgemm,dgemm as well) availible. Use these 
+ most vendors have fast dgemm(sgemm,cgemm,dgemm as well) availible. Use these
  together with an appropriate block size parameter used in the solver.
 
   To set the block size
@@ -132,7 +132,7 @@ Interfacing to the Solver
 -------------------------
 
   There are two techniques to interface a user application to the solver that depend on the
-state of the user information.  In each case the a portion of the matrix will be built on 
+state of the user information.  In each case the a portion of the matrix will be built on
 each processor.
 
  Matrix Info on Each processor
@@ -170,7 +170,7 @@ each processor.
        ------ ------ ------
 
     For an 1000 x 1000 matrix
-      
+
       Processor number     0        1       2      3     4     5
       my_rows             334      333     333    334   333   333
       my_cols             500      500     500    500   500   500
@@ -202,7 +202,7 @@ ways based on the availibility of the right hand sides.  They are:
           ii)The right hand side is packed at the end of the one dimensional array
 
               do i = 1,my_rows
-               z1(my_rows*my_cols+i) = rhs(my_first_row -1 +i) 
+               z1(my_rows*my_cols+i) = rhs(my_first_row -1 +i)
               end do
 
           iii)Call the solver (in Fortran)
@@ -222,7 +222,7 @@ ways based on the availibility of the right hand sides.  They are:
          II)The matrix is to factored and later the right hand sides are generated and the equation
           is solved.
 
-           
+
            i)The matrix is packed in a one dimensional array, z(1,1) = z1(1), z(2,1)=z1(2) etc.
 
            ii)Factor the matrix by calling (in Fortran)
@@ -233,7 +233,7 @@ ways based on the availibility of the right hand sides.  They are:
                              ,permute(1)                ! Vector for permutations          -- OUTPUT
                              , secs (double precision)  ! Internal time in seconds         -- OUTPUT
                            )
-           
+
            iii)The pivoting information is porpagated throughout the processor mesh and the matrix is
 		permuted.
 
@@ -262,10 +262,10 @@ ways based on the availibility of the right hand sides.  They are:
 ----------------------------------------------------------------------------------------------------------
 
 
-Final Point -- Running on Tflop with the -p 2 option will use both processors in the 
+Final Point -- Running on Tflop with the -p 2 option will use both processors in the
 		matrix update( gemm operation).  Some stack space will be necessary i.e.
 
-			yod -sz 32 -stack 1M -p 2 executable 
+			yod -sz 32 -stack 1M -p 2 executable
 		
 
 Any questions can be directed to:

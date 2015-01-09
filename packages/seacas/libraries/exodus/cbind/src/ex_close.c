@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -47,8 +47,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_counter_list, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_close, etc
 
 extern char *ret_string;      /* cf ex_utils.c */
 
@@ -75,9 +77,27 @@ int ex_close (int exoid)
 {
    char errmsg[MAX_ERR_LENGTH];
    int status;
-   
-   exerrval = 0; /* clear error code */
+   int parent_id = 0;
 
+   exerrval = 0; /* clear error code */
+   /*
+    * NOTE: If using netcdf-4, exoid must refer to the root group.
+    * Need to determine whether there are any groups and if so,
+    * call ex_rm_file_item and ex_rm_stat_ptr on each group.
+    */
+
+#if !defined(NOT_NETCDF4)
+   /* nc_inq_grp_parent() will return NC_ENOGRP error if exoid
+    * refers to the root group (which is what we want)
+    */
+   if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
+     exerrval = EX_NOTROOTID;
+     sprintf(errmsg,"Error: file id %d does not refer to root group.",exoid);
+     ex_err("ex_close",errmsg,exerrval);
+     return(EX_FATAL);
+   }
+#endif
+   
    if ((status = nc_sync(exoid)) != NC_NOERR) {
      exerrval = status;
      sprintf(errmsg,"Error: failed to update file id %d",exoid);

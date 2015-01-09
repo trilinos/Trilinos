@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -20,12 +19,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tSquareQuadMeshDOFManager_FEI
-  SOURCES tSquareQuadMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM serial mpi
-  )
+IF(${PACKAGE_NAME}_ENABLE_FEI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tSquareQuadMeshDOFManager_FEI
+    SOURCES tSquareQuadMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tDOFManager2_Orientation
@@ -41,12 +42,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tSquareTriMeshDOFManager_FEI
-  SOURCES tSquareTriMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM serial mpi
-  )
+IF(${PACKAGE_NAME}_ENABLE_FEI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tSquareTriMeshDOFManager_FEI
+    SOURCES tSquareTriMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tEpetraLinObjFactory
@@ -62,12 +65,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tCubeHexMeshDOFManager_FEI
-  SOURCES tCubeHexMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM serial mpi
-  )
+IF(${PACKAGE_NAME}_ENABLE_FEI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tCubeHexMeshDOFManager_FEI
+    SOURCES tCubeHexMeshDOFManager_FEI.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareQuadMeshDOFManager_edgetests
@@ -76,12 +81,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tSquareQuadMeshDOFManager_edgetests_FEI
-  SOURCES tSquareQuadMeshDOFManager_edgetests_FEI.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  )
+IF(${PACKAGE_NAME}_ENABLE_FEI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tSquareQuadMeshDOFManager_edgetests_FEI
+    SOURCES tSquareQuadMeshDOFManager_edgetests_FEI.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tBlockedDOFManagerFactory
@@ -94,12 +101,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tDOFManager2_SimpleTests
   SOURCES tDOFManager2_SimpleTests.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 4
-  COMM mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SingleBlockDOFManagerTests
-  SOURCES SingleBlockDOFManagerTests.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 3
   COMM mpi
   )

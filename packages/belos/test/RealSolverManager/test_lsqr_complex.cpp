@@ -77,8 +77,8 @@ TEUCHOS_UNIT_TEST( LSQR, RealDoesNotThrow )
   typedef double ST;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
-  typedef Belos::MultiVecTraits<ST, MV> MVT;
-  typedef Belos::OperatorTraits<ST, MV, OP> OPT;
+  // typedef Belos::MultiVecTraits<ST, MV> MVT;
+  // typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::LSQRSolMgr<ST, MV, OP> sol_mgr_type;
 
   RCP<sol_mgr_type> solver;
@@ -92,8 +92,8 @@ TEUCHOS_UNIT_TEST( LSQR, ComplexThrows )
   typedef std::complex<double> ST;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
-  typedef Belos::MultiVecTraits<ST, MV> MVT;
-  typedef Belos::OperatorTraits<ST, MV, OP> OPT;
+  // typedef Belos::MultiVecTraits<ST, MV> MVT;
+  // typedef Belos::OperatorTraits<ST, MV, OP> OPT;
   typedef Belos::LSQRSolMgr<ST, MV, OP> sol_mgr_type;
 
   RCP<sol_mgr_type> solver;

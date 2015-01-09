@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -47,11 +47,11 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                     
+
 // 1D Finite Element Test Problem
 /* Solves continuation problem (Parameter c="Right BC")
  *
- * d2u 
+ * d2u
  * --- + a * u**3 = 0
  * dx2
  *
@@ -78,9 +78,9 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface_MP.H" // Interface file to NOX
-#include "Tcubed_FiniteElementProblem.H"              
+#include "Tcubed_FiniteElementProblem.H"
 #include "EpetraExt_MultiMpiComm.h"
 #include "LOCA_Epetra_Interface_MultiPoint.H"
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   int MyPID = 0;
 
   try {
-  
+
     // scale factor to test arc-length scaling
     double scale = 1.0;
 
@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
 
     // Check for verbose output
     bool verbose = false;
-    if (argc>1) 
-      if (argv[1][0]=='-' && argv[1][1]=='v') 
-	verbose = true;
+    if (argc>1)
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+    verbose = true;
 
     // Get the number of elements from the command line
     int NumGlobalElements = 0;
@@ -130,19 +130,19 @@ int main(int argc, char *argv[])
       NumGlobalElements = atoi(argv[2]) + 1;
     else if ((argc > 1) && (!verbose))
       NumGlobalElements = atoi(argv[1]) + 1;
-    else 
+    else
       NumGlobalElements = 101;
 
-    // The number of unknowns must be at least equal to the 
+    // The number of unknowns must be at least equal to the
     // number of processors.
     if (NumGlobalElements < NumProc) {
-      std::cout << "numGlobalBlocks = " << NumGlobalElements 
-	   << " cannot be < number of processors = " << NumProc << std::endl;
+      std::cout << "numGlobalBlocks = " << NumGlobalElements
+       << " cannot be < number of processors = " << NumProc << std::endl;
       exit(1);
     }
 
     // Create the FiniteElementProblem class.  This creates all required
-    // Epetra objects for the problem and allows calls to the 
+    // Epetra objects for the problem and allows calls to the
     // function (RHS) and Jacobian evaluation routines.
     Tcubed_FiniteElementProblem Problem(NumGlobalElements, Comm, scale);
 
@@ -157,14 +157,14 @@ int main(int argc, char *argv[])
     // Begin LOCA Solver ************************************
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
-  
+
     // Create LOCA sublist
     Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    Teuchos::ParameterList& locaStepperList = 
+    Teuchos::ParameterList& locaStepperList =
       locaParamsList.sublist("Stepper");
     locaStepperList.set("Continuation Method", "Natural");
     locaStepperList.set("Bordered Solver Method", "Householder");
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 #endif
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = 
+    Teuchos::ParameterList& predictorList =
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Tangent");
 
@@ -203,19 +203,19 @@ int main(int argc, char *argv[])
 
     // Create the NOX printing parameter list
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("MyPID", MyPID); 
+    nlPrintParams.set("MyPID", MyPID);
     if (verbose)
-      nlPrintParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			//NOX::Utils::Details + 
-			NOX::Utils::Warning +
-			NOX::Utils::TestDetails + 
-			NOX::Utils::Error + 
-			NOX::Utils::StepperIteration +
-			NOX::Utils::StepperDetails +
-			NOX::Utils::StepperParameters);
+      nlPrintParams.set("Output Information",
+            NOX::Utils::OuterIteration +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::InnerIteration +
+            //NOX::Utils::Details +
+            NOX::Utils::Warning +
+            NOX::Utils::TestDetails +
+            NOX::Utils::Error +
+            NOX::Utils::StepperIteration +
+            NOX::Utils::StepperDetails +
+            NOX::Utils::StepperParameters);
     else
       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
@@ -223,14 +223,14 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
     Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
     Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
-    lsParams.set("Aztec Solver", "GMRES");  
-    lsParams.set("Max Iterations", 100);  
+    lsParams.set("Aztec Solver", "GMRES");
+    lsParams.set("Max Iterations", 100);
     lsParams.set("Tolerance", 1e-4);
     if (verbose)
       lsParams.set("Output Frequency", 1);
     else
       lsParams.set("Output Frequency", 0);
-    lsParams.set("Scaling", "None");             
+    lsParams.set("Scaling", "None");
     lsParams.set("Preconditioner", "Ifpack");
 
     // Create and initialize the parameter vector
@@ -240,15 +240,15 @@ int main(int argc, char *argv[])
     pVector.addParameter("Right BC", 0.1);
 
     // Create the interface between the test problem and the nonlinear solver
-    // This is created by the user using inheritance of the abstract base 
+    // This is created by the user using inheritance of the abstract base
     // class:
-    Teuchos::RCP<Problem_Interface_MP> interface = 
+    Teuchos::RCP<Problem_Interface_MP> interface =
       Teuchos::rcp(new Problem_Interface_MP(Problem));
     Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    
+
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RCP<Epetra_RowMatrix> Amat = 
+    Teuchos::RCP<Epetra_RowMatrix> Amat =
       Teuchos::rcp(&Problem.getJacobian(),false);
 
 
@@ -259,18 +259,18 @@ int main(int argc, char *argv[])
                                                    globalComm));
 
     // Get Block matrix and vector from this interface
-    Teuchos::RCP<Epetra_RowMatrix> AMP = 
+    Teuchos::RCP<Epetra_RowMatrix> AMP =
       Teuchos::rcp(&(iMP->getJacobian()),false);
-    Teuchos::RCP<Epetra_Vector> solnMP = 
+    Teuchos::RCP<Epetra_Vector> solnMP =
       Teuchos::rcp(&(iMP->getSolution()),false);
     iReq = iMP;
-    iJac = iMP;    
+    iJac = iMP;
 
     // Create the linear system, now with MultiPoint system
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
-							lsParams, iReq, iJac,
-							AMP, solnMP));
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams,
+                            lsParams, iReq, iJac,
+                            AMP, solnMP));
 
     // Create the loca vector
     NOX::Epetra::Vector locaSoln(solnMP);
@@ -280,89 +280,89 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RCP<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
-    Teuchos::RCP<LOCA::Epetra::Group> grp = 
-      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
-					   iMP, locaSoln, 
-					   linsys, pVector));
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
+      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams,
+                       iMP, locaSoln,
+                       linsys, pVector));
     grp->computeF();
 
     // Create the Solver convergence test
-    Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
+    Teuchos::RCP<NOX::StatusTest::NormF> wrms =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(15));
-    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);
     combo->addStatusTest(maxiters);
 
-    // Create the stepper  
+    // Create the stepper
     LOCA::Stepper stepper(globalData, grp, combo, paramList);
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished) {
       // ierr = 1; //Not an error in this case
       if (globalData->locaUtils->isPrintType(NOX::Utils::Warning))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+    globalData->locaUtils->out()
+      << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
-    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup =
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
-    const NOX::Epetra::Vector& finalSolution = 
+    const NOX::Epetra::Vector& finalSolution =
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
 
     // Check some statistics on the solution
-    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
-				 *(globalData->locaUtils));
-  
+    NOX::TestCompare testCompare(globalData->locaUtils->out(),
+                 *(globalData->locaUtils));
+
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
-      globalData->locaUtils->out() 
-	<< std::endl 
-	<< "***** Checking solution statistics *****" 
-	<< std::endl;
+      globalData->locaUtils->out()
+    << std::endl
+    << "***** Checking solution statistics *****"
+    << std::endl;
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
     int numSteps_expected = 11;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
-				  "number of continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
-				  "number of failed continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of failed continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double right_bc_final = finalGroup->getParam("Right BC");
     double right_bc_expected = 1.1;
     ierr += testCompare.testValue(right_bc_final, right_bc_expected, 1.0e-14,
-				  "final value of continuation parameter", 
-				  NOX::TestCompare::Relative);
- 
+                  "final value of continuation parameter",
+                  NOX::TestCompare::Relative);
+
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 13.485934773212;
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
-				  "norm of final solution",
-				  NOX::TestCompare::Relative);
+                  "norm of final solution",
+                  NOX::TestCompare::Relative);
 
     LOCA::destroyGlobalData(globalData);
   }

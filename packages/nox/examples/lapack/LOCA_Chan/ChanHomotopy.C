@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,7 +67,7 @@ int main()
   int seed2 = 4; //Subsequent seeds keep incrementing by seed2-seed1
   double homScale = -1.0;
 
-  /* Uncomment for interactive mode 
+  /* Uncomment for interactive mode
   std::cout << "Input first seed" << std::endl;     std::cin >> seed1;
   std::cout << "Input second seed" << std::endl;    std::cin >> seed2;
   std::cout << "Input identity-scale" << std::endl; std::cin >> homScale;
@@ -76,7 +76,7 @@ int main()
   try {
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -89,19 +89,19 @@ int main()
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("Output Information", 
-		      NOX::Utils::Details +
-		      NOX::Utils::OuterIteration + 
-		      NOX::Utils::InnerIteration + 
-		      NOX::Utils::Warning +
-		      NOX::Utils::Error + 
-		      NOX::Utils::Parameters +
-		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails +
-		      NOX::Utils::StepperParameters);
+    nlPrintParams.set("Output Information",
+              NOX::Utils::Details +
+              NOX::Utils::OuterIteration +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Warning +
+              NOX::Utils::Error +
+              NOX::Utils::Parameters +
+              NOX::Utils::StepperIteration +
+              NOX::Utils::StepperDetails +
+              NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
-    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
@@ -114,31 +114,31 @@ int main()
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("scale",scale);
-  
+
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RCP<LOCA::LAPACK::Group> grp = 
+    Teuchos::RCP<LOCA::LAPACK::Group> grp =
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
       Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
-      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
-					       statusTestA, statusTestB));
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                           statusTestA, statusTestB));
 
     // Create the homotopy group
-//     Teuchos::RCP<LOCA::Homotopy::Group> hGrp = 
+//     Teuchos::RCP<LOCA::Homotopy::Group> hGrp =
 //       Teuchos::rcp(new LOCA::Homotopy::Group(locaParamsList, globalData, grp));
 
-    Teuchos::RCP<Teuchos::ParameterList> hParams = 
+    Teuchos::RCP<Teuchos::ParameterList> hParams =
       Teuchos::rcp(&locaParamsList.sublist("Homotopy"),false);
     hParams->set("Bordered Solver Method", "LAPACK Direct Solve");
-    Teuchos::RCP<NOX::Abstract::Vector> startVec = 
+    Teuchos::RCP<NOX::Abstract::Vector> startVec =
       grp->getX().clone(NOX::ShapeCopy);
     startVec->random(true, seed1); /* Always use same seed for testing */
     startVec->abs(*startVec);
@@ -156,9 +156,9 @@ int main()
       // ToDo:  Add deflateAndReset(vec) to Homotopy group,
       //        including option to perturb startVec
 
-      Teuchos::RCP<LOCA::Homotopy::DeflatedGroup> hGrp = 
+      Teuchos::RCP<LOCA::Homotopy::DeflatedGroup> hGrp =
         Teuchos::rcp(new LOCA::Homotopy::DeflatedGroup(globalData,
-                        paramList, hParams, grp, startVec, solns,homScale)); 
+                        paramList, hParams, grp, startVec, solns,homScale));
 
       // Override default parameters
       stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
@@ -168,31 +168,31 @@ int main()
       stepSizeList.set("Min Step Size", 1.0e-5);
 
 
-      // Create the stepper  
+      // Create the stepper
       LOCA::Stepper stepper(globalData, hGrp, combo, paramList);
 
       // Solve the nonlinear system
       status = stepper.run();
 
-      if (status != LOCA::Abstract::Iterator::Finished) 
-        globalData->locaUtils->out() << "Stepper failed to converge!" 
-				   << std::endl;
+      if (status != LOCA::Abstract::Iterator::Finished)
+        globalData->locaUtils->out() << "Stepper failed to converge!"
+                   << std::endl;
       else {
         // Deflate with soln vector just solved for
         solns.push_back(grp->getX().clone(NOX::DeepCopy));
- 
+
         // If seed1=seed2, then all seeds the same. Otherwise, keep incrementing seed
-        startVec->random(true, seed2 + deflationIter*(seed2-seed1)); 
+        startVec->random(true, seed2 + deflationIter*(seed2-seed1));
       }
 
       deflationIter++;
 
       // Output the parameter list
       if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-        globalData->locaUtils->out() 
-  	<< std::endl << "Final Parameters for deflation iter " 
+        globalData->locaUtils->out()
+      << std::endl << "Final Parameters for deflation iter "
         << deflationIter << std::endl
-  	<< "****************" << std::endl;
+      << "****************" << std::endl;
         stepper.getList()->print(globalData->locaUtils->out());
         globalData->locaUtils->out() << std::endl;
       }

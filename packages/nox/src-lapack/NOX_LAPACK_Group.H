@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,11 +51,11 @@
 #ifndef NOX_LAPACK_GROUP_H
 #define NOX_LAPACK_GROUP_H
 
-#include "NOX_Abstract_Group.H"	// base class
+#include "NOX_Abstract_Group.H"    // base class
 
 #include "NOX_Common.H"             // class data element (std::string)
-#include "NOX_LAPACK_Vector.H"	    // class data element
-#include "NOX_LAPACK_LinearSolver.H"	    // class data element
+#include "NOX_LAPACK_Vector.H"        // class data element
+#include "NOX_LAPACK_LinearSolver.H"        // class data element
 #include "NOX_LAPACK_Interface.H"   // class data element
 
 // Forward declares
@@ -114,36 +114,36 @@ namespace NOX {
        * matrix-free scenarios. */
 
       //@{
-  
-      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::LAPACK::Vector& input, 
-						     NOX::LAPACK::Vector& result) const;
+
+      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::LAPACK::Vector& input,
+                             NOX::LAPACK::Vector& result) const;
 
       //! See above
-      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::Abstract::Vector& input, 
-						     NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::Abstract::Vector& input,
+                             NOX::Abstract::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::LAPACK::Vector& input, 
-							      NOX::LAPACK::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::LAPACK::Vector& input,
+                                  NOX::LAPACK::Vector& result) const;
 
       //! See above
-      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-							      NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::Abstract::Vector& input,
+                                  NOX::Abstract::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params, 
-							    const NOX::LAPACK::Vector& input, 
-				Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params,
+                                const NOX::LAPACK::Vector& input,
+                Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params, 
-							    const NOX::Abstract::Vector& input, 
-							    NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params,
+                                const NOX::Abstract::Vector& input,
+                                NOX::Abstract::Vector& result) const;
 
       //! applyJacobianInverse for multiple right-hand sides
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMultiVector(
-				    Teuchos::ParameterList& params, 
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const;
-  
+                    Teuchos::ParameterList& params,
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const;
+
       //@}
 
       /** @name "Is" functions
@@ -161,7 +161,7 @@ namespace NOX {
 
       //@}
 
-      /** @name "Get" functions 
+      /** @name "Get" functions
        *
        * Note that these function do not check whether or not the vectors
        * are valid. Must use the "Is" functions for that purpose. */
@@ -170,7 +170,7 @@ namespace NOX {
       const NOX::Abstract::Vector& getX() const;
 
       const NOX::Abstract::Vector& getF() const;
-  
+
       double getNormF() const;
 
       const NOX::Abstract::Vector& getGradient() const;
@@ -180,14 +180,14 @@ namespace NOX {
       Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
       Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
-  
+
       Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
 
       Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
 
       //@}
 
-      virtual Teuchos::RCP<NOX::Abstract::Group> 
+      virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Print out the group
@@ -219,8 +219,8 @@ namespace NOX {
       //! Problem interface
       NOX::LAPACK::Interface& problemInterface;
 
-      /** @name IsValid flags 
-       *  
+      /** @name IsValid flags
+       *
        * True if the current solution is up-to-date with respect to the
        * currect xVector. */
       //@{

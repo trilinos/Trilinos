@@ -23,7 +23,7 @@ int main(int argCount, char **argValue)
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   const int rank = Comm.MyPID();
 
-  // Construct a Map 
+  // Construct a Map
   int nGlobalElements = 10000;//10,000 is deliberately small for nightly testing purposes.
                              // Set to 1 million for performance testing.
 

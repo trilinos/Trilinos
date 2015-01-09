@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -70,7 +70,7 @@ namespace LOCA {
   namespace Pitchfork {
 
     namespace MooreSpence {
- 
+
       /*!
        * \brief Moore-Spence pitchfork solver strategy based on
        * "Phipps" bordering which is the 7-solve modified pitchfork
@@ -90,7 +90,7 @@ namespace LOCA {
        *        Y \\
        *        w \\
        *        z
-       *     \end{bmatrix} = 
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *        F \\
        *        G \\
@@ -101,29 +101,29 @@ namespace LOCA {
        *  via the following modified block elimination scheme:
        *  \f[
        *    \begin{split}
-       *      \begin{bmatrix} 
+       *      \begin{bmatrix}
        *         J   & u \\
        *         v^T & 0
        *      \end{bmatrix}
        *      \begin{bmatrix}
        *         A & B & C \\
        *         a & b & c
-       *      \end{bmatrix} &= 
+       *      \end{bmatrix} &=
        *      \begin{bmatrix}
        *         F & f_p & \psi \\
        *         0 & 0   &  0
        *      \end{bmatrix} \\
-       *      \begin{bmatrix} 
+       *      \begin{bmatrix}
        *         J   & u \\
        *         v^T & 0
        *      \end{bmatrix}
        *      \begin{bmatrix}
        *         D & E & K & L \\
        *         d & e & k & l
-       *      \end{bmatrix} &= 
+       *      \end{bmatrix} &=
        *      \begin{bmatrix}
        *         G - (Jv)_x A & (Jv)_p - (Jv)_x B &  -(Jv)_x C & -(Jv)_x v \\
-       *                0     &          0        &       0    &      0 
+       *                0     &          0        &       0    &      0
        *      \end{bmatrix} \\
        *      \begin{bmatrix}
        *         \sigma & 0 & b & c \\
@@ -147,138 +147,138 @@ namespace LOCA {
        *       Y &= D - E z - K w + L \alpha + v \beta
        *    \end{split}
        *   \f]
-       * where \f$\sigma = \|J v\|\f$ and \f$u = J v/\sigma\f$.  Each bordered 
-       * solve is implemented by a LOCA::BorderedSolver::AbstractStrategy 
+       * where \f$\sigma = \|J v\|\f$ and \f$u = J v/\sigma\f$.  Each bordered
+       * solve is implemented by a LOCA::BorderedSolver::AbstractStrategy
        * strategy object.
        */
-      class PhippsBordering : 
-	public LOCA::Pitchfork::MooreSpence::SolverStrategy {
+      class PhippsBordering :
+    public LOCA::Pitchfork::MooreSpence::SolverStrategy {
 
       public:
 
-	//! Constructor. 
-	/*!
-	 * \param global_data [in] Global data object
-	 * \param topParams [in] Parsed top-level parameter list 
-	 * \param solverParams [in] Bordered solver parameters.  Instantiates 
-	 *        a bordered solver for solving the bordeded systems 
-	 *        described above.  See LOCA::BorderedSolver::Factory for a
-	 *        description of available solvers.
-	 */
-	PhippsBordering(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+    //! Constructor.
+    /*!
+     * \param global_data [in] Global data object
+     * \param topParams [in] Parsed top-level parameter list
+     * \param solverParams [in] Bordered solver parameters.  Instantiates
+     *        a bordered solver for solving the bordeded systems
+     *        described above.  See LOCA::BorderedSolver::Factory for a
+     *        description of available solvers.
+     */
+    PhippsBordering(
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
-	//! Destructor
-	virtual ~PhippsBordering();
+    //! Destructor
+    virtual ~PhippsBordering();
 
-	//! Set blocks in extended linear system
-	/*!
-	 * \param group [in] Underlying group representing J
-	 * \param pfGroup [in] Pitchfork group representing the pitchfork 
-	 *                     equations.  
-	 * \param asymMultiVector [in] Multivector representing the 
-	 *                             asymmetric vector
-	 * \param nullVector [in] Vector representing v
-	 * \param JnVector [in] Vector representing Jv
-	 * \param dfdp [in] Vector representing df/dp
-	 * \param dJndp [in] Vector representing d(Jv)/dp
-	 */
-	virtual void setBlocks(
-	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
-	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp);
+    //! Set blocks in extended linear system
+    /*!
+     * \param group [in] Underlying group representing J
+     * \param pfGroup [in] Pitchfork group representing the pitchfork
+     *                     equations.
+     * \param asymMultiVector [in] Multivector representing the
+     *                             asymmetric vector
+     * \param nullVector [in] Vector representing v
+     * \param JnVector [in] Vector representing Jv
+     * \param dfdp [in] Vector representing df/dp
+     * \param dJndp [in] Vector representing d(Jv)/dp
+     */
+    virtual void setBlocks(
+      const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
+      const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
+      const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp);
 
-	/*! 
-	 * \brief Solves the extended system as defined above
-	 */
-	/*!
-	 * The \em params argument is the linear solver parameters. 
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	solve(
-	     Teuchos::ParameterList& params,
+    /*!
+     * \brief Solves the extended system as defined above
+     */
+    /*!
+     * The \em params argument is the linear solver parameters.
+     */
+    virtual NOX::Abstract::Group::ReturnType
+    solve(
+         Teuchos::ParameterList& params,
              const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
              LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const;
 
       protected:
 
-	//! Solves equations with contiguous arguments
-	NOX::Abstract::Group::ReturnType 
-	solveContiguous(
-	          Teuchos::ParameterList& params,
-		  const NOX::Abstract::MultiVector& input_x,
-		  const NOX::Abstract::MultiVector& input_null,
-		  const NOX::Abstract::MultiVector::DenseMatrix& input_slack,
-	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
-		  NOX::Abstract::MultiVector& result_x,
-		  NOX::Abstract::MultiVector& result_null,
-		  NOX::Abstract::MultiVector::DenseMatrix& result_slack,
-	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const;
+    //! Solves equations with contiguous arguments
+    NOX::Abstract::Group::ReturnType
+    solveContiguous(
+              Teuchos::ParameterList& params,
+          const NOX::Abstract::MultiVector& input_x,
+          const NOX::Abstract::MultiVector& input_null,
+          const NOX::Abstract::MultiVector::DenseMatrix& input_slack,
+              const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+          NOX::Abstract::MultiVector& result_x,
+          NOX::Abstract::MultiVector& result_null,
+          NOX::Abstract::MultiVector::DenseMatrix& result_slack,
+              NOX::Abstract::MultiVector::DenseMatrix& result_param) const;
 
       private:
 
-	//! Private to prohibit copying
-	PhippsBordering(const PhippsBordering&);
-	
-	//! Private to prohibit copying
-	PhippsBordering& operator = (const PhippsBordering&);
+    //! Private to prohibit copying
+    PhippsBordering(const PhippsBordering&);
+
+    //! Private to prohibit copying
+    PhippsBordering& operator = (const PhippsBordering&);
 
       protected:
 
-	//! Global data object
-	Teuchos::RCP<LOCA::GlobalData> globalData;
-	
-	//! Solver parameters
-	Teuchos::RCP<Teuchos::ParameterList> solverParams;
+    //! Global data object
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
-	//! Underlying group
-	Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup> group;
+    //! Solver parameters
+    Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
-	//! Turning point group
-	Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup> pfGroup;
+    //! Underlying group
+    Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup> group;
 
-	//! Antisymmetric vector (psi)
-	Teuchos::RCP<const NOX::Abstract::MultiVector> asymMultiVector;
+    //! Turning point group
+    Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup> pfGroup;
 
-	//! Antisymmetric vector (psi)
-	Teuchos::RCP<const NOX::Abstract::Vector> asymVector;
+    //! Antisymmetric vector (psi)
+    Teuchos::RCP<const NOX::Abstract::MultiVector> asymMultiVector;
 
-	//! Null vector
-	Teuchos::RCP<const NOX::Abstract::Vector> nullVector;
+    //! Antisymmetric vector (psi)
+    Teuchos::RCP<const NOX::Abstract::Vector> asymVector;
 
-	//! Jacobian times null vector
-	Teuchos::RCP<const NOX::Abstract::Vector> JnVector;
+    //! Null vector
+    Teuchos::RCP<const NOX::Abstract::Vector> nullVector;
 
-	//! df/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
+    //! Jacobian times null vector
+    Teuchos::RCP<const NOX::Abstract::Vector> JnVector;
 
-	//! d(Jn)/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dJndp;
+    //! df/dp
+    Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
 
-	//! Bordered solver for solving (n+1)x(n+1) sets of equations
-	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+    //! d(Jn)/dp
+    Teuchos::RCP<const NOX::Abstract::Vector> dJndp;
 
-	//! Null vector as a multivector
-	Teuchos::RCP<NOX::Abstract::MultiVector> nullMultiVector;
+    //! Bordered solver for solving (n+1)x(n+1) sets of equations
+    Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
-	//! Jacobian times null vector as a multivector
-	Teuchos::RCP<NOX::Abstract::MultiVector> JnMultiVector;
+    //! Null vector as a multivector
+    Teuchos::RCP<NOX::Abstract::MultiVector> nullMultiVector;
 
-	//! Norm of JnVector
-	double sigma;
+    //! Jacobian times null vector as a multivector
+    Teuchos::RCP<NOX::Abstract::MultiVector> JnMultiVector;
+
+    //! Norm of JnVector
+    double sigma;
 
       }; // Class PhippsBordering
-      
+
     } // Namespace MooreSpence
 
   } // Namespace Pitchfork
-    
+
 } // Namespace LOCA
 
 #endif // LOCA_PITCHFORK_MOORESPENCE_PHIPPSBORDERING_H

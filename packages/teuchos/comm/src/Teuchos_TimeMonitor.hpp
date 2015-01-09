@@ -71,7 +71,10 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
-//! Defines a static non-member function that returns a time monitor.
+/// \brief Defines a static non-member function that returns a Teuchos timer.
+///
+/// \warning Please don't use this macro.  It is a bad idea to keep
+///   around static RCP objects past return from main().
 #define TEUCHOS_TIMER(funcName, strName) \
   static Teuchos::Time& funcName() \
   {static Teuchos::RCP<Time> rtn = \
@@ -82,6 +85,9 @@
  *
  * Same as TEUCHOS_FUNC_TIME_MONITOR(...) except required when used more than
  * once in the same function (like a block of code).
+ *
+ * \warning Please don't use this macro.  It is a bad idea to keep
+ *   around static RCP objects past return from main().
  */
 #define TEUCHOS_FUNC_TIME_MONITOR_DIFF( FUNCNAME, DIFF ) \
   static Teuchos::RCP<Teuchos::Time> DIFF ## blabla_localTimer; \
@@ -137,29 +143,29 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// \class TimeMonitor
 /// \brief A scope-safe timer wrapper class, that can compute global timer statistics.
 ///
-/// An instance of the \c TimeMonitor class wraps a nonconst reference
-/// to a \c Time timer object.  \c TimeMonitor's constructor starts
-/// the timer, and its destructor stops the timer.  This ensures scope
-/// safety of timers, so that no matter how a scope is exited (whether
-/// the normal way or when an exception is thrown), a timer started in
-/// the scope is stopped when the scope is left.
+/// An instance of the TimeMonitor class wraps a nonconst reference to
+/// a Time timer object.  TimeMonitor's constructor starts the timer,
+/// and its destructor stops the timer.  This ensures scope safety of
+/// timers, so that no matter how a scope is exited (whether the
+/// normal way or when an exception is thrown), a timer started in the
+/// scope is stopped when the scope is left.
 ///
-/// \c TimeMonitor also has class methods that create or destroy
-/// timers and compute global timer statistics.  If you create a timer
-/// using getNewCounter() (or the deprecated getNewTimer()), it will
-/// add that timer to the set of timers for which to compute global
+/// TimeMonitor also has class methods that create or destroy timers
+/// and compute global timer statistics.  If you create a timer using
+/// getNewCounter() (or the deprecated getNewTimer()), it will add
+/// that timer to the set of timers for which to compute global
 /// statistics.  The summarize() and report() methods will print
 /// global statistics for these timers, like the minimum, mean, and
 /// maximum time over all processes in the communicator, for each
 /// timer.  These methods work correctly even if some processes have
-/// different timers than other processes.  You may also use \c
+/// different timers than other processes.  You may also use
 /// computeGlobalTimerStatistics() to compute the same global
 /// statistics, if you wish to use them in your program or output them
 /// in a different format than that of these methods.
 ///
 /// \warning This class must only be used to time functions that are
-///   called only within the main program.  It may _not_ be used in
-///   pre-program setup or post-program teardown!
+///   called only within the main program.  It may <i>not</i> be used
+///   in pre-program setup or post-program teardown!
 class TEUCHOSCOMM_LIB_DLL_EXPORT TimeMonitor :
     public PerformanceMonitorBase<Time> {
 public:
@@ -439,6 +445,11 @@ public:
   ///   empty, this method will only print timers whose labels begin
   ///   with this string.
   ///
+  /// \param ignoreZeroTimers [in] Processes that either do not have
+  ///   a particular timer or have zero time for a timer are not used
+  ///   in calculating global statistics. This mode requires one
+  ///   additional all-reduce per invocation.
+  ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if
@@ -450,7 +461,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
@@ -474,7 +486,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Report timer statistics to the given output stream.
   ///

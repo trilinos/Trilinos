@@ -60,9 +60,10 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+  template <class Scalar = Tpetra::Operator<>::scalar_type,
+            class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraOperator : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
   public:
 
@@ -70,7 +71,7 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >& H) : Hierarchy_(H) { }
+    TpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H) : Hierarchy_(H) { }
 
     //! Destructor.
     virtual ~TpetraOperator() { }
@@ -97,14 +98,22 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-    template <class NewNode, class NewLocalMatOps>
-    Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps> >
+    template <class NewNode>
+    Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
     clone(const RCP<NewNode>& new_node) const {
-      return Teuchos::rcp(new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps>(Hierarchy_->template clone<NewNode,NewLocalMatOps>(new_node)));
+      return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node)));
     }
 
+    //! @name MueLu specific
+    //@{
+
+    //! Direct access to the underlying MueLu::Hierarchy.
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
+
+    //@}
+
   private:
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Hierarchy_;
 
   };
 

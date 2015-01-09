@@ -5,13 +5,13 @@
 //  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
 //  http://www.ann.jussieu.fr/~dicesare
 //
-//            CEMRACS 98 : C++ courses, 
-//         templates : new C++ techniques 
-//            for scientific computing 
-// 
+//            CEMRACS 98 : C++ courses,
+//         templates : new C++ techniques
+//            for scientific computing
+//
 //********************************************************
 //
-//  A short implementation ( not all operators and 
+//  A short implementation ( not all operators and
 //  functions are overloaded ) of 1st order Automatic
 //  Differentiation in forward mode (FAD) using
 //  EXPRESSION TEMPLATES.
@@ -30,8 +30,6 @@
 #include "utils/promote.h"
 
 namespace FAD {
-
-using namespace std;
 
 template <class L, class R> class NumericalTraits;
 
@@ -60,7 +58,7 @@ public:
   Fad() : val_( T(0.f)), dx_() {;}
   Fad(const T & x) : val_(x), dx_() {;}
   Fad(const int sz, const T & x) : val_(x), dx_(sz,T(0)) {;}
-  Fad(const int sz, const int i, const T & x) : val_(x), dx_(sz,T(0)) 
+  Fad(const int sz, const int i, const T & x) : val_(x), dx_(sz,T(0))
     {dx_[i]=1.;}
   Fad(const Fad<T> & x);
   template <class ExprT> Fad(const FadExpr<ExprT>& fadexpr);
@@ -85,8 +83,8 @@ public:
   int size() const { return dx_.size();}
 
   Fad<T> & operator=(const T& val);
-  Fad<T> & operator=(const Fad<T>& rhs); 
-  template <class ExprT> Fad<T> & operator=(const FadExpr<ExprT>& fadexpr); 
+  Fad<T> & operator=(const Fad<T>& rhs);
+  template <class ExprT> Fad<T> & operator=(const FadExpr<ExprT>& fadexpr);
 
   FadExpr< FadUnaryPlus< Fad<T> > > operator+ () const;
   FadExpr< FadUnaryMin< Fad<T> > > operator- () const;
@@ -95,18 +93,18 @@ public:
   Fad<T>& operator-= (const T& x);
   Fad<T>& operator*= (const T& x);
   Fad<T>& operator/= (const T& x);
-  
+
   Fad<T>& operator+= (const Fad<T>& x);
   Fad<T>& operator-= (const Fad<T>& x);
   Fad<T>& operator*= (const Fad<T>& x);
   Fad<T>& operator/= (const Fad<T>& x);
-  
+
   template <class ExprT> Fad<T>& operator*= (const FadExpr<ExprT>& fadexpr);
   template <class ExprT> Fad<T>& operator/= (const FadExpr<ExprT>& fadexpr);
   template <class ExprT> Fad<T>& operator+= (const FadExpr<ExprT>& fadexpr);
   template <class ExprT> Fad<T>& operator-= (const FadExpr<ExprT>& fadexpr);
 
-  
+
 };
 
 
@@ -126,14 +124,14 @@ template <class T> template <class ExprT> inline Fad<T>::Fad(const FadExpr<ExprT
   int sz = fadexpr.size();
 
   if ( sz ) {
-    for(int i=0; i<sz; ++i) 
+    for(int i=0; i<sz; ++i)
       dx_[i] = fadexpr.dx(i);
   }
 }
 
 
-template <class T> inline  void Fad<T>::diff(const int ith, const int n) 
-{ 
+template <class T> inline  void Fad<T>::diff(const int ith, const int n)
+{
   if ( dx_.empty() ) dx_.resize(n);
 
   dx_ = T(0.);
@@ -141,7 +139,7 @@ template <class T> inline  void Fad<T>::diff(const int ith, const int n)
 
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator=(const T& v) 
+template <class T> inline  Fad<T> & Fad<T>::operator=(const T& v)
 {
   val_ = v;
 
@@ -150,14 +148,14 @@ template <class T> inline  Fad<T> & Fad<T>::operator=(const T& v)
   return *this;
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator=(const Fad<T>& rhs) 
+template <class T> inline  Fad<T> & Fad<T>::operator=(const Fad<T>& rhs)
 {
   if ( this != &rhs ) copy(rhs);
-  
+
   return *this;
 }
 
-template <class T> template <class ExprT> inline Fad<T> & Fad<T>::operator=(const FadExpr<ExprT>& fadexpr) 
+template <class T> template <class ExprT> inline Fad<T> & Fad<T>::operator=(const FadExpr<ExprT>& fadexpr)
 {
   int sz = fadexpr.size();
 
@@ -172,9 +170,9 @@ template <class T> template <class ExprT> inline Fad<T> & Fad<T>::operator=(cons
       for(int i=0; i<sz; ++i)
 	dxp[i] = fadexpr.dx(i);
   }
-  
+
   val_ = fadexpr.val();
-  
+
   return *this;
 }
 
@@ -257,7 +255,7 @@ template <class T> inline  Fad<T> & Fad<T>::operator+= (const Fad<T>& x)
         dxp[i] = xdx[i];
     }
   }
-  
+
   val_ += x.val_;
 
   return *this;
@@ -340,7 +338,7 @@ template <class T> inline  Fad<T> & Fad<T>::operator/= (const Fad<T>& x)
 #endif
 
   if (xsz) {
-    T* RESTRICT xdx = x.dx_.begin(); 
+    T* RESTRICT xdx = x.dx_.begin();
     if (sz) {
       T* RESTRICT dxp = dx_.begin();
       for (int i=0; i<sz; ++i)
@@ -533,11 +531,11 @@ template <class T> template <class ExprT> inline  Fad<T> & Fad<T>::operator/= (c
 
 
 //------------------------------- Fad ostream operator ------------------------------------------
-template <class T> inline ostream& operator << (ostream& os, const Fad<T>& a)
+template <class T> inline std::ostream& operator << (std::ostream& os, const Fad<T>& a)
 {
   os << a.val() << "  [";
 
-  
+
   for (int i=0; i< a.dx().size(); i++) {
     os << " " << a.dx(i);
   }
@@ -594,7 +592,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  FadUnaryPlus() {}
 
   const T& expr_;
 
@@ -604,7 +601,7 @@ public:
   const value_type val()     const { return expr_.val();}
   const value_type dx(int i) const { return expr_.dx(i);}
   int size() const {return expr_.size();}
-  
+
   bool hasFastAccess() const { return expr_.hasFastAccess();}
   value_type fastAccessDx(int i) const { return expr_.fastAccessDx(i);}
 };
@@ -615,7 +612,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  FadUnaryMin() {}
 
   const T& expr_;
 
@@ -625,7 +621,7 @@ public:
   const value_type val()     const { return - expr_.val();}
   const value_type dx(int i) const { return - expr_.dx(i);}
   int size() const {return expr_.size();}
-  
+
   bool hasFastAccess() const { return expr_.hasFastAccess();}
   value_type fastAccessDx(int i) const { return - expr_.fastAccessDx(i);}
 };
@@ -648,7 +644,7 @@ operator - (const FadExpr<T>& expr)
   return FadExpr< expr_t >( expr_t(expr) );
 }
 
-template <class T> inline ostream& operator << (ostream& os, const FadExpr<T>& a)
+template <class T> inline std::ostream& operator << (std::ostream& os, const FadExpr<T>& a)
 {
   os << a.val();
   return os;

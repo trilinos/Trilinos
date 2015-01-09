@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,7 +68,7 @@ namespace LOCA {
 
   //! Predictor direction strategies
   namespace MultiPredictor {
-    
+
     //! Abstract interface class for predictor strategies
     /*!
      * AbstractStrategy defines an abstract interface for predictor strategies.
@@ -88,38 +88,38 @@ namespace LOCA {
      *   Derived(
      *   const Teuchos::RCP<LOCA::GlobalData>& global_data,
      *   const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
+     const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
      *   ...
      * };
      * \endcode
      *
      * where \c global_data is the LOCA global data object, \c topParams is
-     * the parsed top-level parameter list, and \c predictorParams 
+     * the parsed top-level parameter list, and \c predictorParams
      * is a parameter list of predictor parameters.
      *
      * This class and its children follow the Strategy pattern as defined
-     * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable 
+     * in Erich Gamma, et al. "Design Patterns:  Elements of Reusable
      * Object-Oriented Software." Addison Wesley, Boston, MA, 1995.
      */
     class AbstractStrategy {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       AbstractStrategy() {}
 
       //! Destructor
       virtual ~AbstractStrategy() {}
 
       //! Assignment operator
-      virtual LOCA::MultiPredictor::AbstractStrategy& 
+      virtual LOCA::MultiPredictor::AbstractStrategy&
       operator=(const LOCA::MultiPredictor::AbstractStrategy& source) = 0;
 
       //! Clone function
       virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
-      /*! 
+      /*!
        * \brief Compute the predictor given the current and
        * previous solution vectors.  Set \em baseOnSecant to \em false
        * if the predictor orientation should not be based on the
@@ -129,11 +129,11 @@ namespace LOCA {
        * As an example for a first-order predictor, this method should
        * compute the approximate tangent to the continuation curve.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       compute(bool baseOnSecant, const std::vector<double>& stepSize,
-	      LOCA::MultiContinuation::ExtendedGroup& grp,
-	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec) = 0;
+          LOCA::MultiContinuation::ExtendedGroup& grp,
+          const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+          const LOCA::MultiContinuation::ExtendedVector& xVec) = 0;
 
       //! Evaluate predictor with step size \c stepSize.
       /*!
@@ -141,16 +141,16 @@ namespace LOCA {
        * \c result[i] = \c xVec[i] + \c stepSize[i] * v[i]
        * for each i, where \c v[i] is the ith predictor direction.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       evaluate(const std::vector<double>& stepSize,
-	       const LOCA::MultiContinuation::ExtendedVector& xVec,
-	       LOCA::MultiContinuation::ExtendedMultiVector& result) const = 0;
+           const LOCA::MultiContinuation::ExtendedVector& xVec,
+           LOCA::MultiContinuation::ExtendedMultiVector& result) const = 0;
 
       //! Compute tangent to predictor and store in \c tangent.
       /*!
        * For a first-order predictor, this is the predictor direction itself.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computeTangent(LOCA::MultiContinuation::ExtendedMultiVector& tangent)= 0;
 
       //! Is the tangent vector for this predictor scalable
@@ -162,8 +162,8 @@ namespace LOCA {
 
     protected:
 
-      /*! 
-       * \brief Sets orientation of predictor based on parameter change 
+      /*!
+       * \brief Sets orientation of predictor based on parameter change
        * from previous steps
        */
       /*!
@@ -171,20 +171,20 @@ namespace LOCA {
        * between the secant vector and the predictor and changes the sign
        * of the predictor if this scaled dot product is a different sign
        * than the step size.  If \em baseOnSecant is \em false, then the
-       * sign is chosen so the parameter component of the predictor is 
+       * sign is chosen so the parameter component of the predictor is
        * positive for cases when a secant vector is not available (first
        * step in a continuation run) or may give incorrect information
        * (last step of a continuation run).
        */
       virtual void
       setPredictorOrientation(
-	             bool baseOnSecant, 
-		     const std::vector<double>& stepSize,
-		     const LOCA::MultiContinuation::ExtendedGroup& grp,
-	             const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-		     const LOCA::MultiContinuation::ExtendedVector& xVec,
-		     LOCA::MultiContinuation::ExtendedVector& secant,
-	             LOCA::MultiContinuation::ExtendedMultiVector& tangent);
+                 bool baseOnSecant,
+             const std::vector<double>& stepSize,
+             const LOCA::MultiContinuation::ExtendedGroup& grp,
+                 const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+             const LOCA::MultiContinuation::ExtendedVector& xVec,
+             LOCA::MultiContinuation::ExtendedVector& secant,
+                 LOCA::MultiContinuation::ExtendedMultiVector& tangent);
 
     }; // Class AbstractStrategy
 

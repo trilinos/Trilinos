@@ -1,5 +1,10 @@
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddOptionAndDefine)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Serial
+  KOKKOS_HAVE_SERIAL
+  "Whether to enable the Kokkos::Serial device.  This device executes \"parallel\" kernels sequentially on a single CPU thread.  It is enabled by default.  If you disable this device, please enable at least one other CPU device, such as Kokkos::OpenMP or Kokkos::Threads."
+  ON
+  )
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -8,7 +13,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 #-----------------------------------------------------------------------------
 
-SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
+SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
 
@@ -41,41 +46,32 @@ INSTALL(FILES ${HEADERS_THREADS} DESTINATION ${TRILINOS_INCDIR}/Threads/)
 
 #-----------------------------------------------------------------------------
 
-IF(Kokkos_ENABLE_OpenMP)
+FILE(GLOB HEADERS_OPENMP OpenMP/*.hpp)
+FILE(GLOB SOURCES_OPENMP OpenMP/*.cpp)
 
-  FILE(GLOB HEADERS_OPENMP OpenMP/*.hpp)
-  FILE(GLOB SOURCES_OPENMP OpenMP/*.cpp)
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_OPENMP} )
+LIST(APPEND SOURCES         ${SOURCES_OPENMP} )
 
-  LIST(APPEND HEADERS_PRIVATE ${HEADERS_OPENMP} )
-  LIST(APPEND SOURCES         ${SOURCES_OPENMP} )
-
-  INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
-
-ENDIF()
+INSTALL(FILES ${HEADERS_OPENMP} DESTINATION ${TRILINOS_INCDIR}/OpenMP/)
 
 #-----------------------------------------------------------------------------
 
-IF(Kokkos_ENABLE_Cuda)
+FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
+FILE(GLOB SOURCES_CUDA Cuda/*.cpp)
 
-  # set nvcc behavior
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_CUDA} )
+LIST(APPEND SOURCES         ${SOURCES_CUDA} )
 
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF CACHE BOOL "" FORCE )
-  SET(CUDA_PROPAGATE_HOST_FLAGS              OFF CACHE BOOL "" FORCE )
+INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
 
-  FILE(GLOB HEADERS_CUDA Cuda/*.hpp)
-  FILE(GLOB SOURCES_CUDA Cuda/*.cu)
+#-----------------------------------------------------------------------------
+FILE(GLOB HEADERS_QTHREAD Qthread/*.hpp)
+FILE(GLOB SOURCES_QTHREAD Qthread/*.cpp)
 
-  LIST(APPEND HEADERS_PRIVATE ${HEADERS_CUDA} )
+LIST(APPEND HEADERS_PRIVATE ${HEADERS_QTHREAD} )
+LIST(APPEND SOURCES         ${SOURCES_QTHREAD} )
 
-  # Add subpackage include path dependencies for CUDA_COMPILE().
-  CUDA_INCLUDE_DIRECTORIES( ${KokkosTPL_INCLUDE_DIRS} )
-  CUDA_COMPILE(OBJECTS_CUDA ${SOURCES_CUDA})
-
-  LIST(APPEND SOURCES ${OBJECTS_CUDA} )
-
-  INSTALL(FILES ${HEADERS_CUDA} DESTINATION ${TRILINOS_INCDIR}/Cuda/)
-
-ENDIF()
+INSTALL(FILES ${HEADERS_QTHREAD} DESTINATION ${TRILINOS_INCDIR}/Qthread/)
 
 #-----------------------------------------------------------------------------
 

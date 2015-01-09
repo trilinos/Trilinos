@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,14 +51,14 @@
 #ifndef LOCA_THYRA_SAVEDATASTRATEGY_H
 #define LOCA_THYRA_SAVEDATASTRATEGY_H
 
-#include "Teuchos_RCP.hpp" 
-#include "NOX_Abstract_Vector.H" 
+#include "Teuchos_RCP.hpp"
+#include "NOX_Abstract_Vector.H"
 #include "LOCA_Abstract_Iterator.H"
 
 namespace LOCA {
 
   namespace Thyra {
-    
+
     //! Abstract interface class strategies to save continuation data
     class SaveDataStrategy {
 
@@ -84,29 +84,29 @@ namespace LOCA {
        * The \c stepStatus argument indicates whether the previous step was
        * successful.  The default implementation to empty.
        */
-      virtual void 
+      virtual void
       preProcessContinuationStep(
-			    LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+                LOCA::Abstract::Iterator::StepStatus stepStatus) {}
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
        * The \c stepStatus argument indicates whether the step was
        * successful.  The default implementation to empty.
        */
-      virtual void 
+      virtual void
       postProcessContinuationStep(
-			    LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+                LOCA::Abstract::Iterator::StepStatus stepStatus) {}
 
       //! Projects solution to a few scalars for multiparameter continuation
-      /*! 
-       * This method is called every time a solution is saved by the 
+      /*!
+       * This method is called every time a solution is saved by the
        * multiparameter continuation code MF for later visualization
        * and should project the solution vector down to a few scalars.
        * The array \c px will be preallocated to the proper length
        * given by projectToDrawDimension().
        */
       virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				 double *px) const {}
+                 double *px) const {}
 
       //! Returns the dimension of the project to draw array
       virtual int projectToDrawDimension() const { return 0; }

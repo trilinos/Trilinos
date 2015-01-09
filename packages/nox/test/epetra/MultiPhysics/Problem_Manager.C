@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,13 +44,13 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "Problem_Manager.H"
 
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_DebugTools.H"
-#include "NOX_Epetra_SchurCoupler.H" 
+#include "NOX_Epetra_SchurCoupler.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -99,9 +99,9 @@
   #define DEBUG_BLOCKGRAPH(a) a
 #else
   #define DEBUG_BLOCKGRAPH(a)
-#endif 
+#endif
 
-Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
+Problem_Manager::Problem_Manager(Epetra_Comm& comm,
                                  bool doOffBlocks_,
                                  int numGlobalElements,
                                  bool useMatlab_ ) :
@@ -110,7 +110,7 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
   doOffBlocks(doOffBlocks_),
   useMatlab(useMatlab_)
 {
-  // Unset doOffBlocks flag if this build does not include the required 
+  // Unset doOffBlocks flag if this build does not include the required
   // EpetraExt library intreface
 #ifndef HAVE_NOX_EPETRAEXT
   doOffBlocks = false;
@@ -131,7 +131,7 @@ Problem_Manager::~Problem_Manager()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::addProblem(GenericEpetraProblem & problem)
 {
   Problems[++problemCount] = Teuchos::rcp( &problem, false );
@@ -139,7 +139,7 @@ Problem_Manager::addProblem(GenericEpetraProblem & problem)
   problem.setManager(this);
 
   // Give this problem a name if it doesn't already have one
-  if( problem.getName() == "" ) 
+  if( problem.getName() == "" )
   {
     std::string name = "Problem_";
     char id_str[4];
@@ -166,7 +166,7 @@ Problem_Manager::getProblem( int id_ )
   // Get a problem given its unique id
   Teuchos::RCP<GenericEpetraProblem> problem = Problems[id_];
 
-  if( Teuchos::is_null(problem) ) 
+  if( Teuchos::is_null(problem) )
   {
     std::cout << "ERROR: Problem with id --> " << id_ << " not registered with "
          << "Problem_Manager !!" << std::endl;
@@ -186,9 +186,9 @@ Problem_Manager::getProblem( std::string name )
   // Get a problem given its name
   map<string, int>::iterator iter = NameLookup.find(name);
 
-  if( iter == NameLookup.end() ) 
+  if( iter == NameLookup.end() )
   {
-    std::cout << "ERROR: Could not find lookup id for Problem --> " << name 
+    std::cout << "ERROR: Could not find lookup id for Problem --> " << name
          << std::endl;
     outputStatus(std::cout);
 
@@ -237,15 +237,15 @@ Problem_Manager::getSolutionVec(int id)
 
 //-----------------------------------------------------------------------------
 
-NOX::Epetra::Group & 
+NOX::Epetra::Group &
 Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id
   Teuchos::RCP<NOX::Epetra::Group> group = Groups[id_];
 
-  if( Teuchos::is_null(group) ) 
+  if( Teuchos::is_null(group) )
   {
-    std::cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
+    std::cout << "ERROR: Could not get Group for Problem with id --> " << id_
          << " !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
@@ -255,7 +255,7 @@ Problem_Manager::getGroup(int id_)
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RCP<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector>
 Problem_Manager::getCompositeSoln()
 {
   if( !compositeSoln.get() ) {
@@ -268,20 +268,20 @@ Problem_Manager::getCompositeSoln()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::createDependency( std::string nameA, std::string nameB, bool isInterfacial )
 {
   // Create a dependence of Problem A equations on Problem B variables
   int probId_A = (*(NameLookup.find(nameA))).second;
   int probId_B = (*(NameLookup.find(nameB))).second;
 
-  if( !probId_A || !probId_B ) 
+  if( !probId_A || !probId_B )
   {
     std::cout << "ERROR: Could not create dependency of \"" << nameA << "\" on \""
          << nameB << "\" !!" << std::endl;
     throw "Problem_Manager ERROR";
   }
- 
+
   GenericEpetraProblem &probA = *(*(Problems.find(probId_A))).second,
                        &probB = *(*(Problems.find(probId_B))).second;
 
@@ -293,7 +293,7 @@ Problem_Manager::createDependency( std::string nameA, std::string nameB, bool is
 //-----------------------------------------------------------------------------
 
 
-void 
+void
 Problem_Manager::createDependency( GenericEpetraProblem & problemA,
                                         GenericEpetraProblem & problemB,
                                         bool isInterfacial )
@@ -316,17 +316,17 @@ Problem_Manager::createDependency( GenericEpetraProblem & problemA,
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::registerParameters(const Teuchos::RCP<Teuchos::ParameterList>& List)
 {
   nlParams = List;
-   
+
   return;
 }
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::registerStatusTest(const Teuchos::RCP<NOX::StatusTest::Combo>& comboTest)
 {
   statusTest = comboTest;
@@ -336,7 +336,7 @@ Problem_Manager::registerStatusTest(const Teuchos::RCP<NOX::StatusTest::Combo>& 
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::registerComplete()
 {
   if(Problems.empty())
@@ -368,7 +368,7 @@ Problem_Manager::registerComplete()
   int runningProblemNodeCount = 0;
   int runningMaxGlobalId = 0; // Accruing max index used for establishing
                   // each problem's mapping into the composite problem
-  
+
   // Create an index array for use in constructing a composite Epetra_Map
   int* compositeGlobalNodes = new int[NumMyNodes];
 
@@ -390,7 +390,7 @@ Problem_Manager::registerComplete()
     ProblemToCompositeIndices[probId] = Teuchos::rcp( new Epetra_IntVector(*problem.StandardMap) );
     Epetra_IntVector &indices = *(ProblemToCompositeIndices[probId]);
 
-    for (int i=0; i<problem.NumMyNodes; i++) 
+    for (int i=0; i<problem.NumMyNodes; i++)
     {
       int compositeId = runningMaxGlobalId + problem.StandardMap->GID(i);
       compositeGlobalNodes[i + runningProblemNodeCount] = compositeId;
@@ -464,20 +464,20 @@ Problem_Manager::registerComplete()
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
     MatrixOperators[probId] = Teuchos::rcp( new NOX::Epetra::FiniteDifferenceColoring(
-        	nlParams->sublist("Printing"),
+            nlParams->sublist("Printing"),
                 Interfaces[probId],
-		nox_soln,
+        nox_soln,
                 problemGraph,
                 ColorMaps[probId],
                 ColumnsSets[probId],
-    		useParallel,
-        	distance1) );
+            useParallel,
+            distance1) );
     //MatrixOperators[probId] = Teuchos::rcp(new NOX::Epetra::FiniteDifference(
     //            nlParams->sublist("Printing"),
     //            Interfaces[probId],
     //            nox_soln,
     //            problemGraph ));
-    //NOX::Epetra::Interface::Jacobian& jacInt = 
+    //NOX::Epetra::Interface::Jacobian& jacInt =
     NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::FiniteDifference*>(MatrixOperators[probId].get());
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = Teuchos::rcp(p_jacInt, false);
       //dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators[probId]);
@@ -503,9 +503,9 @@ Problem_Manager::registerComplete()
 #endif
 
     // Needed to establish initial convergence state
-    Groups[probId]->computeF(); 
-   
-    Solvers[probId] = 
+    Groups[probId]->computeF();
+
+    Solvers[probId] =
       NOX::Solver::buildSolver(Groups[probId], statusTest, nlParams);
 
     ++iter;
@@ -565,21 +565,21 @@ Problem_Manager::registerComplete()
   // Or use this as the standard way of using finite differencing with coloring
   // where the application is responsible for creating the matrix graph
   // beforehand, ie as is done in Problem.
-  NOX::Epetra::FiniteDifferenceColoring* A = 
+  NOX::Epetra::FiniteDifferenceColoring* A =
     new NOX::Epetra::FiniteDifferenceColoring(interface, compositeSoln, *AA,
                                               *colorMap, *columns);
 // --------  End of Block for Coloring Preconditioner Operator ------ */
 
 
-  // Create a preconditioning matrix using the graph just created - this 
+  // Create a preconditioning matrix using the graph just created - this
   // creates a static graph so we can refill the new matirx after
-  // FillComplete()  is called.  
-  A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *AA) ); 
+  // FillComplete()  is called.
+  A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *AA) );
   A->FillComplete();
 
-  //NOX::Epetra::Interface::Required& reqInt = 
+  //NOX::Epetra::Interface::Required& reqInt =
   //  dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
-  Teuchos::RCP<NOX::Epetra::Vector> compositeNOXSoln = 
+  Teuchos::RCP<NOX::Epetra::Vector> compositeNOXSoln =
     Teuchos::rcp( new NOX::Epetra::Vector(*(compositeSoln.get())) );
 
   Teuchos::ParameterList & printParams = nlParams->sublist("Printing");
@@ -616,7 +616,7 @@ Problem_Manager::registerComplete()
     NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get());
     jacInterface = Teuchos::rcp(p_jacInt, false);
 
-    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp = 
+    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp =
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
     precOperator = broydenOp;
     precInterface = broydenOp;
@@ -632,14 +632,14 @@ Problem_Manager::registerComplete()
   if( 0 ) // Broyden Jacobian and preconditioner
   {
     // Turn on some debugging
-    Teuchos::ParameterList & broydenParams = 
+    Teuchos::ParameterList & broydenParams =
       nlParams->sublist("Direction").sublist("Newton").sublist("Broyden Op");
     broydenParams.set("Write Broyden Info", true);
 
     // Create some temp objects needed for construction
     Teuchos::RCP<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );
     blockAA->FillComplete();
-    Teuchos::RCP<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) ); 
+    Teuchos::RCP<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) );
     blockA->FillComplete();
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     copyProblemJacobiansToComposite( *blockA );
@@ -647,7 +647,7 @@ Problem_Manager::registerComplete()
     std::cout << blockA->Graph() << std::endl;
     std::cout << *blockA << std::endl;
 
-    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp = 
+    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp =
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, blockA, true) );
     jacOperator = broydenOp;
     jacInterface = broydenOp;
@@ -682,12 +682,12 @@ Problem_Manager::registerComplete()
 
   //lsParams.set("Preconditioning", "None");
   lsParams.set("Preconditioner", "AztecOO");
-  compositeGroup = Teuchos::rcp(new NOX::Epetra::Group(nlParams->sublist("Printing"), 
-					interface, *compositeNOXSoln, 
-					composite_linearSystem));
+  compositeGroup = Teuchos::rcp(new NOX::Epetra::Group(nlParams->sublist("Printing"),
+                    interface, *compositeNOXSoln,
+                    composite_linearSystem));
   compositeGroup->computeF();
 
-  compositeSolver = 
+  compositeSolver =
     NOX::Solver::buildSolver(compositeGroup, statusTest, nlParams);
 
 #ifdef HAVE_MATLAB
@@ -696,7 +696,7 @@ Problem_Manager::registerComplete()
   {
     //Matlab_Interface testMatlab(*compositeSolver);
     Coupling_Matlab_Interface testMatlab(*this);
-   
+
     testMatlab.interact();
   }
 #endif
@@ -706,16 +706,16 @@ Problem_Manager::registerComplete()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::syncAllProblems()
 {
-  if(Problems.empty()) 
+  if(Problems.empty())
   {
     std::cout << "ERROR: No problems registered with Problem_Manager !!"
          << std::endl;
     throw "Problem_Manager ERROR";
   }
-  
+
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter;
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemBegin = Problems.begin();
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast  = Problems.end();
@@ -737,7 +737,7 @@ Problem_Manager::syncAllProblems()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::setAlldt( double dt )
 {
   if(Problems.empty()) {
@@ -757,12 +757,12 @@ Problem_Manager::setAlldt( double dt )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::setGroupX(int probId)
 {
   Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
-  if( Teuchos::is_null(problem) ) 
+  if( Teuchos::is_null(problem) )
   {
     std::cout << "ERROR: Could not get requested Problem to use with group.setX "
          << std::endl;
@@ -778,18 +778,18 @@ Problem_Manager::setGroupX(int probId)
   }
 
   grp->setX(*problem->getSolution());
-   
+
   return;
 }
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 {
   Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
-  if( Teuchos::is_null(problem) ) 
+  if( Teuchos::is_null(problem) )
   {
     std::cout << "ERROR: Could not get requested Problem to use with group.setX " << std::endl;
     throw "Problem_Manager ERROR";
@@ -797,7 +797,7 @@ Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 
   Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId];
 
-  if( Teuchos::is_null(grp) ) 
+  if( Teuchos::is_null(grp) )
   {
     std::cout << "ERROR: Could not get appropriate group for use in setX !!" << std::endl;
     throw "Problem_Manager ERROR";
@@ -808,7 +808,7 @@ Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::setAllGroupX()
 {
   if(Problems.empty()) {
@@ -822,7 +822,7 @@ Problem_Manager::setAllGroupX()
 
   // Loop over each problem being managed and set the corresponding group
   // solution vector (used by NOX) with the problem's (used by application)
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     int probId = (*problemIter).first;
     setGroupX(probId);
@@ -834,7 +834,7 @@ Problem_Manager::setAllGroupX()
 //-----------------------------------------------------------------------------
 
 #ifdef HAVE_NOX_EPETRAEXT
-void 
+void
 Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 {
   map<int, std::vector<OffBlock_Manager*> >::iterator offBlockIter = OffBlock_Managers.begin();
@@ -842,7 +842,7 @@ Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 
   // Loop over each off-block manager and set the contained groups X-vector
   // with the incoming vector
-  for( ; offBlockIter != offBlockLast; ++offBlockIter) 
+  for( ; offBlockIter != offBlockLast; ++offBlockIter)
   {
     std::vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
 
@@ -851,7 +851,7 @@ Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
     {
       // Note that we assign the group soln to be from the problemVar
       int probVarId = managerVec[i]->getProblemVarId();
-      copyCompositeToVector(inVec, probVarId, *(managerVec[i]->getRowMapVec()) ); 
+      copyCompositeToVector(inVec, probVarId, *(managerVec[i]->getRowMapVec()) );
       managerVec[i]->getGroup()->setX(managerVec[i]->getRowMapVec());
     }
   }
@@ -863,15 +863,15 @@ Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::resetProblems()
-{ 
+{
 
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem and copy its solution into its old solution
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
     problem.reset( *problem.getSolution() );
@@ -882,7 +882,7 @@ Problem_Manager::resetProblems()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::computeAllF()
 {
   if(Problems.empty()) {
@@ -896,7 +896,7 @@ Problem_Manager::computeAllF()
 
   // Loop over each problem being managed and invoke the corresponding group's
   // residual evaluation
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     int probId = (*problemIter).first;
 
@@ -908,12 +908,12 @@ Problem_Manager::computeAllF()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::computeGroupF(int probId)
 {
   Teuchos::RCP<NOX::Epetra::Group> grp = Groups[ probId ];
 
-  if( Teuchos::is_null(grp) ) 
+  if( Teuchos::is_null(grp) )
   {
     std::cout << "ERROR: Could not get a group for problem with id --> "
          << probId << std::endl;
@@ -926,7 +926,7 @@ Problem_Manager::computeGroupF(int probId)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::computeAllJacobian()
 {
   map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
@@ -937,13 +937,13 @@ Problem_Manager::computeAllJacobian()
     computeBlockJacobian( (*problemIter).first );
 
   // Do off-diagoanl blocks if appropriate
-  if( doOffBlocks ) 
+  if( doOffBlocks )
   {
 #ifdef HAVE_NOX_EPETRAEXT
     problemIter = Problems.begin();
 
     for( ; problemLast != problemIter; ++problemIter )
-      for( unsigned int k = 0; k < (*problemIter).second->depProblems.size(); ++k) 
+      for( unsigned int k = 0; k < (*problemIter).second->depProblems.size(); ++k)
         computeBlockJacobian( (*problemIter).first, (*problemIter).second->depProblems[k] );
 #endif
   }
@@ -955,11 +955,11 @@ Problem_Manager::computeAllJacobian()
 
     // Loop over each problem being managed and invoke its computeJacobian
     // method
-    for( ; problemIter != problemLast; problemIter++) 
+    for( ; problemIter != problemLast; problemIter++)
     {
       int probId = (*problemIter).first;
-      Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId]; 
-      if( Teuchos::is_null(grp) ) 
+      Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId];
+      if( Teuchos::is_null(grp) )
       {
         std::cout << "ERROR: Could not find valid group for compouteJacobian !!"
              << std::endl;
@@ -975,15 +975,15 @@ Problem_Manager::computeAllJacobian()
                     probId, fillTime.ElapsedTime());
 
 
-      if( doOffBlocks ) 
+      if( doOffBlocks )
       {
   #ifdef HAVE_NOX_EPETRAEXT
 
         fillTime.ResetStartTime();
-    
+
         std::vector<OffBlock_Manager*> & offBlocksVec = OffBlock_Managers[probId];
 
-        for( unsigned int i = 0; i < offBlocksVec.size(); ++i ) 
+        for( unsigned int i = 0; i < offBlocksVec.size(); ++i )
         {
           // Refresh all problem vectors
           copyCompositeToProblems(*(compositeSoln.get()), SOLUTION);
@@ -991,10 +991,10 @@ Problem_Manager::computeAllJacobian()
     DEBUG_BLOCKGRAPH( std::cout << "Doing computeJacobian for : " << offBlocksVec[i]->getName() << std::endl;)
 
           offBlocksVec[i]->getGroup()->computeJacobian();
-    
+
     DEBUG_BLOCKGRAPH( std::cout << "For block : " << offBlocksVec[i]->getName() << std::endl;)
     DEBUG_BLOCKGRAPH( offBlocksVec[i]->getMatrix().Print(cout);)
-          
+
           if (MyPID == 0)
             printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
                         probId, i, fillTime.ElapsedTime());
@@ -1009,7 +1009,7 @@ Problem_Manager::computeAllJacobian()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::computeBlockJacobian(int probId, int depId)
 {
 
@@ -1032,15 +1032,15 @@ Problem_Manager::computeBlockJacobian(int probId, int depId)
 
     OffBlock_Manager::idToFind = depId;
 
-    std::vector<OffBlock_Manager *>::iterator iter = 
+    std::vector<OffBlock_Manager *>::iterator iter =
       find_if( managerVec.begin(), managerVec.end(), mem_fun( &OffBlock_Manager::isMember) );
 
     if( managerVec.end() == iter )
     {
-      std::string msg = 
-            "ERROR Problem_Manager::computeBlockJacobian : Problem \"" 
-             + Problems[probId]->getName() 
-             + "\" does not have a registered dependence on Problem \"" 
+      std::string msg =
+            "ERROR Problem_Manager::computeBlockJacobian : Problem \""
+             + Problems[probId]->getName()
+             + "\" does not have a registered dependence on Problem \""
              + Problems[depId]->getName() + "\"\n";
       throw msg;
     }
@@ -1051,7 +1051,7 @@ Problem_Manager::computeBlockJacobian(int probId, int depId)
     copyCompositeToProblems(*(compositeSoln.get()), SOLUTION);
 
     (*iter)->getGroup()->computeJacobian();
-    
+
     if (MyPID == 0)
       printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
                   probId, depId, fillTime.ElapsedTime());
@@ -1068,7 +1068,7 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
 
   Epetra_CrsMatrix * p_problemMatrix = NULL;
 
-  if( (probId == depId) || (-1 == depId) ) // diagonal block 
+  if( (probId == depId) || (-1 == depId) ) // diagonal block
   {
     // Get objects holding our desired matrix
     GenericEpetraProblem & problem = *(Problems[probId]);
@@ -1084,7 +1084,7 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be
       // the same matrix wrapped in the group.  A safer alternative would be
-      // to get this matrix from the group as above for a more general 
+      // to get this matrix from the group as above for a more general
       // operator.
       p_problemMatrix = problem.getJacobian().get();
 
@@ -1095,15 +1095,15 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
 
     OffBlock_Manager::idToFind = depId;
 
-    std::vector<OffBlock_Manager *>::iterator iter = 
+    std::vector<OffBlock_Manager *>::iterator iter =
       find_if( offVec.begin(), offVec.end(), mem_fun( &OffBlock_Manager::isMember) );
 
     if( offVec.end() == iter )
     {
-      std::string msg = 
-            "ERROR Problem_Manager::getBlockJacobianMatrix : Problem \"" 
-             + Problems[probId]->getName() 
-             + "\" does not have a registered dependence on Problem \"" 
+      std::string msg =
+            "ERROR Problem_Manager::getBlockJacobianMatrix : Problem \""
+             + Problems[probId]->getName()
+             + "\" does not have a registered dependence on Problem \""
              + Problems[depId]->getName() + "\"\n";
       throw msg;
     }
@@ -1124,7 +1124,7 @@ Problem_Manager::getBlockInverseOperator(int probId)
 
   if( BlockInverseOperators.end() == BlockInverseOperators.find(probId) )
   {
-    std::cout << "ERROR: No valid Block Inverse Operator exists for problem # " 
+    std::cout << "ERROR: No valid Block Inverse Operator exists for problem # "
          << probId << std::endl;
     throw "Problem_Manager ERROR";
   }
@@ -1148,14 +1148,14 @@ Problem_Manager::getResidualVec(int probId )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 {
   // Copy Current solution X from NOX solver group into the problem's solution vector
 
   Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
-  if( Teuchos::is_null(problem) ) 
+  if( Teuchos::is_null(problem) )
   {
     std::cout << "ERROR: Could not get requested Problem to update with final "
          << "solution" << std::endl;
@@ -1164,7 +1164,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 
   Teuchos::RCP<NOX::Solver::Generic> solver = Solvers[probId];
 
-  if( Teuchos::is_null(solver) ) 
+  if( Teuchos::is_null(solver) )
   {
     std::cout << "ERROR: Could not get appropriate Solver for use in update !!"
          << std::endl;
@@ -1176,7 +1176,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
   const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>
       (finalGroup.getX())).getEpetraVector();
-  
+
   *problem->getSolution() = finalSolution;
 
   return;
@@ -1184,7 +1184,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyAllGroupXtoProblems()
 {
   // Copy final solution from NOX solvers into each problem's solution vector
@@ -1203,14 +1203,14 @@ Problem_Manager::copyAllGroupXtoProblems()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::resetCurrentGroupX(int probId)
 {
   // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
 
   Teuchos::RCP<NOX::Solver::Generic> solver = Solvers[probId];
 
-  if( Teuchos::is_null(solver) ) 
+  if( Teuchos::is_null(solver) )
   {
     std::cout << "ERROR: Could not get appropriate Solver for use in update !!"
          << std::endl;
@@ -1226,7 +1226,7 @@ Problem_Manager::resetCurrentGroupX(int probId)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::resetAllCurrentGroupX()
 {
   // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
@@ -1245,7 +1245,7 @@ Problem_Manager::resetAllCurrentGroupX()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Problem_Manager::VectorType vecType )
 {
   // Copy a composite problem vector to each problem's vector
@@ -1256,23 +1256,23 @@ Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Pro
   Epetra_Vector* problemVec(0);
 
   // Loop over each problem being managed and copy into the correct problem vector
-  for( ; problemIter != problemLast; ++problemIter ) 
+  for( ; problemIter != problemLast; ++problemIter )
   {
     int probId = (*problemIter).first;
-    switch (vecType) 
+    switch (vecType)
     {
       case SOLUTION :
         problemVec = ((*problemIter).second->getSolution()).get();
-	break;
+    break;
 
       case GROUP_F :
       default :
-        std::cout << "ERROR: vecType not supported for copy FROM composite!!" 
+        std::cout << "ERROR: vecType not supported for copy FROM composite!!"
              << std::endl;
         throw "Problem_Manager ERROR";
     }
 
-    copyCompositeToVector(compositeVec, probId, *problemVec); 
+    copyCompositeToVector(compositeVec, probId, *problemVec);
   }
 
   return;
@@ -1280,7 +1280,7 @@ Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Pro
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_Manager::VectorType vecType )
 {
   // Copy vectors from each problem into a composite problem vector
@@ -1290,29 +1290,29 @@ Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_M
 
   const Epetra_Vector* problemVec(0);
 
-  // Loop over each problem being managed and copy from the correct 
+  // Loop over each problem being managed and copy from the correct
   // problem vector
-  for( ; problemIter != problemLast; ++problemIter ) 
+  for( ; problemIter != problemLast; ++problemIter )
   {
     int probId = (*problemIter).first;
     switch (vecType) {
 
       case SOLUTION :
         problemVec = ((*problemIter).second->getSolution()).get();
-	break;
+    break;
 
       case GROUP_F :
         problemVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-		       (Groups[probId]->getF()).getEpetraVector());
-	break;
+               (Groups[probId]->getF()).getEpetraVector());
+    break;
 
       default :
-        std::cout << "ERROR: vecType not supported for copy TO composite!!" 
+        std::cout << "ERROR: vecType not supported for copy TO composite!!"
              << std::endl;
         throw "Problem_Manager ERROR";
     }
 
-    copyVectorToComposite(compositeVec, probId, *problemVec); 
+    copyVectorToComposite(compositeVec, probId, *problemVec);
   }
 
   return;
@@ -1321,7 +1321,7 @@ Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_M
 //-----------------------------------------------------------------------------
 
 
-void 
+void
 Problem_Manager::copyCompositeToVector( const Epetra_Vector& compositeVec, int id, Epetra_Vector& problemVec )
 {
   // Copy part of a composite problem vector to a problem's vector
@@ -1337,7 +1337,7 @@ Problem_Manager::copyCompositeToVector( const Epetra_Vector& compositeVec, int i
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyVectorToComposite( Epetra_Vector& compositeVec, int id, const Epetra_Vector& problemVec)
 {
   // Copy a vector from a problem into part of a composite problem vector
@@ -1351,7 +1351,7 @@ Problem_Manager::copyVectorToComposite( Epetra_Vector& compositeVec, int id, con
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyProblemJacobiansToComposite()
 {
   copyProblemJacobiansToComposite(*A);
@@ -1361,10 +1361,10 @@ Problem_Manager::copyProblemJacobiansToComposite()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 {
-  // Copy problem Jacobians as block diagonal contributions to 
+  // Copy problem Jacobians as block diagonal contributions to
   // composite Jacobian
 
   Epetra_CrsMatrix & compositeMatrix = mat;
@@ -1374,9 +1374,9 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 
   int problemMaxNodes = compositeSoln.get()->GlobalLength();
 
-  // Loop over each problem being managed and copy its Jacobian into 
+  // Loop over each problem being managed and copy its Jacobian into
   // the composite diagonal blocks
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     int probId = (*problemIter).first;
 
@@ -1385,11 +1385,11 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     Epetra_CrsGraph & problemGraph = *problem.getGraph();
     NOX::Epetra::LinearSystemAztecOO & problemLinearSystem = *(LinearSystems[probId]);
 
-    // Get the indices map for copying data from this problem into 
+    // Get the indices map for copying data from this problem into
     // the composite problem
     Epetra_IntVector & indices = *(ProblemToCompositeIndices[probId]);
 
-    // Each problem's Jacobian will be determined by type 
+    // Each problem's Jacobian will be determined by type
     Epetra_CrsMatrix * p_problemMatrix(0);
 
     // Use each group's operator test to determine the type of Jacobian
@@ -1402,7 +1402,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
       // NOTE: We are getting the matrix from the problem.  This SHOULD be
       // the same matrix wrapped in the group.  A safer alternative would be
-      // to get this matrix from the group as above for a more general 
+      // to get this matrix from the group as above for a more general
       // operator.
       p_problemMatrix = problem.getJacobian().get();
     else
@@ -1418,10 +1418,10 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 
 
     // ROGER Block Norm
-    if (1) 
+    if (1)
     {
-      std::cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf() 
-	   << "  One Norm=" << problemMatrix.NormOne() << std::endl;
+      std::cout << "Block=" << probId << "  Inf Norm=" << problemMatrix.NormInf()
+       << "  One Norm=" << problemMatrix.NormOne() << std::endl;
     }
 
     // Temporary storage arrays for extracting/inserting matrix row data
@@ -1431,11 +1431,11 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     int problemRow, compositeRow, numCols, numValues;
 
     for (int i = 0; i<problemMatrix.NumMyRows(); i++)
-    { 
+    {
       problemRow = problemMatrix.Map().GID(i);
       problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, numCols, columnIndices);
       problemMatrix.ExtractGlobalRowCopy(problemRow, problemMaxNodes, numValues, values);
-      if( numCols != numValues ) 
+      if( numCols != numValues )
       {
         if (MyPID==0)
           std::cout << "ERROR: Num Columns != Num Values from problem Matrix !!"
@@ -1449,7 +1449,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
       for (int j = 0; j<numCols; j++)
         columnIndices[j] = indices[columnIndices[j]];
 
-      int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow, 
+      int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow,
                        numValues, values, columnIndices);
       if( ierr )
       {
@@ -1465,15 +1465,15 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
     Comm->Barrier();
 
     // Add off-diagonal FD block contributions if waranted
-    if( doOffBlocks ) 
+    if( doOffBlocks )
     {
 #ifdef HAVE_NOX_EPETRAEXT
       // Loop over each problem on which this one depends
-      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k)
       {
         Teuchos::RCP<GenericEpetraProblem> p_depProblem = Problems[problem.depProblems[k]];
 
-        // Copy the off-block jacobian matrices for this 
+        // Copy the off-block jacobian matrices for this
         // problem-problem coupling
         //  !!! --------  THESE COMMENTS ARE NO LONGER VALID --------------!!!
         //  *******************************************************************
@@ -1484,14 +1484,14 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
         //  *******************************************************************
         OffBlock_Manager * p_offBlockMgr = (OffBlock_Managers[probId])[k];
 
-	if( !p_offBlockMgr ) 
+    if( !p_offBlockMgr )
         {
-          std::cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem " 
-               << problem.getName() << " on problem " << p_depProblem->getName() 
+          std::cout << "ERROR: Unable to get OffBlock_Manager for dependence of problem "
+               << problem.getName() << " on problem " << p_depProblem->getName()
                << " !!" << std::endl;
           throw "Problem_Manager ERROR";
         }
-	Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
+    Epetra_CrsMatrix & offMatrix = p_offBlockMgr->getMatrix();
 
         int *        blockColIndices; //  = new int[problemMaxNodes];
         int          numCols = -1;
@@ -1500,7 +1500,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
         int          compositeRow;
 
         // Loop over each row and copy into composite matrix
-        for (int i = 0; i < offMatrix.NumMyRows(); ++i) 
+        for (int i = 0; i < offMatrix.NumMyRows(); ++i)
         {
           offMatrix.ExtractMyRowView(i, numCols, values, blockColIndices);
 
@@ -1527,7 +1527,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 
 //-----------------------------------------------------------------------------
 
-double 
+double
 Problem_Manager::getNormSum()
 {
   // Get each problem's residual norm and sum into a total
@@ -1542,7 +1542,7 @@ Problem_Manager::getNormSum()
     //Teuchos::RCP<NOX::Epetra::Group> grp = Groups[ probId ];
     NOX::Epetra::Group grp = const_cast<NOX::Epetra::Group&>(dynamic_cast<const NOX::Epetra::Group&>(Solvers[ probId ]->getSolutionGroup()));
 
-    //if( Teuchos::is_null(grp) ) 
+    //if( Teuchos::is_null(grp) )
     //{
     //  std::cout << "ERROR: Could not get appropriate group for use in NormSum !!"
     //       << std::endl;
@@ -1562,7 +1562,7 @@ Problem_Manager::getNormSum()
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Problem_Manager::solve()
 {
   if(Problems.empty())
@@ -1619,7 +1619,7 @@ Problem_Manager::solve()
     problemIter = Problems.begin();
 
     // Solve each problem in the order it was registered
-    for( ; problemIter != problemLast; problemIter++) 
+    for( ; problemIter != problemLast; problemIter++)
     {
       GenericEpetraProblem & problem = *(*problemIter).second;
 
@@ -1627,8 +1627,8 @@ Problem_Manager::solve()
 
       Teuchos::RCP<NOX::Epetra::Group> problemGroup = Groups[probId];
       NOX::Solver::Generic & problemSolver = *(Solvers[probId]);
-    
-      // Sync all dependent data with this problem 
+
+      // Sync all dependent data with this problem
       problem.doTransfer();
       // Sync the problem solution with its solver group
       setGroupX(probId);
@@ -1638,7 +1638,7 @@ Problem_Manager::solve()
       problemSolver.reset(problemGroup->getX(), combo);
       status = problemSolver.solve();
       if( status != NOX::StatusTest::Converged )
-      { 
+      {
         if (MyPID==0)
           std::cout << "\nRegistered Problem ## failed to converge !!"  << std::endl;
       }
@@ -1653,19 +1653,19 @@ Problem_Manager::solve()
     computeAllF();
 
     normSum = getNormSum();
-    std::cout << "iter #" << iter << ", 2-Norm of composite Problem --> " 
+    std::cout << "iter #" << iter << ", 2-Norm of composite Problem --> "
          << normSum << std::endl;
   }
 
-  if (normSum > 1.0e-8) 
+  if (normSum > 1.0e-8)
   {
     std::cout << "Warning: composite problem failed to converge after "
          << iter << " fixed-point iterations." << std::endl;
 
     return false;
   }
-  
-  std::cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
+
+  std::cout << "\nDecoupled solution required --> " << iter << " iterations.\n"
        << std::endl;
 
   return true;
@@ -1673,7 +1673,7 @@ Problem_Manager::solve()
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Problem_Manager::solveMF()
 {
   if(Problems.empty())
@@ -1700,7 +1700,7 @@ Problem_Manager::solveMF()
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Problem_Manager::solveSchurBased()
 {
   if( 2 != Problems.size() )
@@ -1790,7 +1790,7 @@ Problem_Manager::solveSchurBased()
 
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
-bool 
+bool
 Problem_Manager::evaluate(
               NOX::Epetra::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
@@ -1800,14 +1800,14 @@ Problem_Manager::evaluate(
   bool fillF      = false;
   bool fillMatrix = false;
 
-  if (rhsVector != 0) 
+  if (rhsVector != 0)
     fillF = true;
-  else 
+  else
     fillMatrix = true;
 
   // Copy incoming vector from NOX solver into our composite solution Vector
   *(compositeSoln.get()) = *solnVector;
-  
+
   copyCompositeToProblems(*solnVector, SOLUTION);
 
   // If used, give each off-block FDC manager a copy of the current total
@@ -1823,17 +1823,17 @@ Problem_Manager::evaluate(
   // Set each problem group Xvec with its problem solution vector
   setAllGroupX();
 
-  if (fillF) 
+  if (fillF)
   {
     computeAllF();
     copyProblemsToComposite(*rhsVector, GROUP_F);
 
   }
 
-  if (fillMatrix) 
+  if (fillMatrix)
   {
     A->PutScalar(0.0);
-    
+
     computeAllJacobian();
 
     copyProblemJacobiansToComposite();
@@ -1850,10 +1850,10 @@ Problem_Manager::evaluate(
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RCP<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph>
 Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool includeProblemOffContribs )
-{ 
-  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
+{
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr =
     Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // First construct a graph for each problem's self-dependence
@@ -1862,7 +1862,7 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
 
   // Loop over each problem being managed and ascertain its graph as well
   // as its graph from its dependencies
-  for( ; problemIter != problemLast; ++problemIter ) 
+  for( ; problemIter != problemLast; ++problemIter )
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
     int probId = problem.getId();
@@ -1872,7 +1872,7 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
     // Use max potential number of nonzero columns to dimension index array
     int problemMaxNodes = problemGraph.Map().MaxAllGID();
 
-    // Get the indices map for copying data from this problem into 
+    // Get the indices map for copying data from this problem into
     // the composite problem
     Epetra_IntVector& problemIndices = *(ProblemToCompositeIndices[probId]);
 
@@ -1883,9 +1883,9 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
     int* columnIndices = new int[problemMaxNodes];
 
     for (int i = 0; i < problemGraph.NumMyRows(); ++i)
-    { 
+    {
       problemRow = problemGraph.Map().GID(i);
-      problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
                            numCols, columnIndices);
 
       // Convert row/column indices to composite problem
@@ -1906,7 +1906,7 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
     // problems
     if( includeProblemOffContribs )
     {
-      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k)
       {
         // Get the needed objects for the depend problem
         GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
@@ -1942,10 +1942,10 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RCP<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph>
 Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
-{ 
-  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
+{
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr =
     Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // Two things are achieved here: 1) The composite Graph is augmented to
@@ -1961,14 +1961,14 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
   // Loop over each problem being managed and ascertain its graph as well
   // as its graph from its dependencies
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
     int probId = problem.getId();
 
     Epetra_CrsGraph & problemGraph = *problem.getGraph();
 
-    // Get the indices map for copying data from this problem into 
+    // Get the indices map for copying data from this problem into
     // the composite problem
     Epetra_IntVector& problemIndices = *(ProblemToCompositeIndices[probId]);
 
@@ -1980,9 +1980,9 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
     int problemRow, compositeRow, numCols, numDepCols;
 
     // Loop over each problem on which this one depends
-    for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+    for( unsigned int k = 0; k < problem.depProblems.size(); ++k)
     {
-      // Create the off-block graph to be constructed for this 
+      // Create the off-block graph to be constructed for this
       // problem-problem coupling
       // NOTE: the map used for the off-block graph is the composite Map
       // to allow valid global indexing
@@ -1997,7 +1997,7 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
       XferOp * xferOpPtr = problem.xferOperators[dependId];
 
-      if( !xferOpPtr ) 
+      if( !xferOpPtr )
       {
         std::cout << "ERROR: Unable to get Xfer_Operator for dependence of "
              << "problem \"" << problem.getName() << "\" on problem "
@@ -2007,7 +2007,7 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
       XferOp &xferOp = *xferOpPtr;
       multimap<int,int>& depNodesMap = xferOp.getDependentNodesMap();
 
-      // Get the indices map for copying data from the dependent problem into 
+      // Get the indices map for copying data from the dependent problem into
       // the composite problem
       Epetra_IntVector& dependIndices = *(ProblemToCompositeIndices[dependId]);
 
@@ -2018,22 +2018,22 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
       int maxDepNodes = 2 * problemGraph.Map().MaxAllGID();
       int* dependentColIndices = new int[maxDepNodes];
 
-      // We must loop over each dependent node of problem and then determine 
+      // We must loop over each dependent node of problem and then determine
       // the dependence of each on the nodes of dependProblem
 
       // Loop over each row in problem and ascertain all dependencies on
       // dependProblem as determined by the xferOp map
-      for (int i = 0; i<problemGraph.NumMyRows(); i++) 
+      for (int i = 0; i<problemGraph.NumMyRows(); i++)
       {
         problemRow = problemGraph.Map().GID(i);
 
-        problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
+        problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
                              numCols, columnIndices);
 
         // Convert row/column indices to composite problem
         compositeRow = problemIndices[problemRow];
         numDepCols = 0;
-        for (int j = 0; j<numCols; j++) 
+        for (int j = 0; j<numCols; j++)
         {
           pair< multimap<int, int>::iterator,
                 multimap<int, int>::iterator > rangeN
@@ -2052,7 +2052,7 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 #ifdef DEBUG_PROBLEM_MANAGER
       offGraph.Print(cout);
 #endif
-      // A new graph is created within the OffBlock_Manager; so we delete our temporary 
+      // A new graph is created within the OffBlock_Manager; so we delete our temporary
       OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
                                                       probId, dependId) );
       delete offGraphPtr;
@@ -2067,10 +2067,10 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RCP<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph>
 Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_CrsGraph & graph2 )
-{ 
-  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
+{
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr =
     Teuchos::rcp( new Epetra_CrsGraph(Copy, graph1.RowMap(), 0) );
 
   if( !graph1.Filled() || !graph2.Filled() )
@@ -2125,7 +2125,7 @@ Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_Crs
 
     graphPtr->InsertGlobalIndices( graph1.RowMap().GID(row), numNewInds, newIndices );
 
-    delete [] newIndices; 
+    delete [] newIndices;
   }
 
   return graphPtr;
@@ -2134,8 +2134,8 @@ Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_Crs
 //-----------------------------------------------------------------------------
 
 void
-Problem_Manager::generateGraph() 
-{ 
+Problem_Manager::generateGraph()
+{
 
   // First construct a graph for each problem's self-dependence
   Teuchos::RCP<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, false );
@@ -2143,7 +2143,7 @@ Problem_Manager::generateGraph()
 
   // Next create inter-problem block graph contributions if desired;
   //   default is false
-  if( doOffBlocks ) 
+  if( doOffBlocks )
   {
     Teuchos::RCP<Epetra_CrsGraph> offBlkGraph = generateOffDiagonalBlockGraph( *compositeMap );
     offBlkGraph->FillComplete();
@@ -2162,7 +2162,7 @@ Problem_Manager::generateGraph()
 
 //-----------------------------------------------------------------------------
 
-string 
+string
 Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
 {
 
@@ -2178,7 +2178,7 @@ Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Problem_Manager::outputSolutions( const std::string outputDir, int timeStep )
 {
 
@@ -2187,7 +2187,7 @@ Problem_Manager::outputSolutions( const std::string outputDir, int timeStep )
 
   // Loop over each problem being managed and write its solution vector
   // to a file.
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
 
@@ -2216,9 +2216,9 @@ Problem_Manager::outputSolutions( const std::string outputDir, int timeStep )
 
 //-----------------------------------------------------------------------------
 
-void 
-Problem_Manager::outputStatus( std::ostream & os ) 
-{ 
+void
+Problem_Manager::outputStatus( std::ostream & os )
+{
 
   map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemIter = Problems.begin();
   map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemLast = Problems.end();
@@ -2231,24 +2231,24 @@ Problem_Manager::outputStatus( std::ostream & os )
   os << std::endl << std::endl;
 
   // Loop over each problem being managed and output its dependencies
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; problemIter++)
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
 
     os << "\tProblem \"" << problem.getName() << "\" (" << (*problemIter).first
          << ")\t Depends on:" << std::endl;
-    
-    for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
+
+    for( unsigned int j = 0; j < problem.depProblems.size(); ++j )
     {
       GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
 
-      os << "\t\t-------------> \t\t\"" << depProblem.getName() 
+      os << "\t\t-------------> \t\t\"" << depProblem.getName()
            << "\" (" << depProblem.getId() << ")" << std::endl;
     }
     os << std::endl;
 
     // Allow problems to provide additional info if desired
-    for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
+    for( unsigned int j = 0; j < problem.depProblems.size(); ++j )
     {
       //GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
       problem.outputStatus(os);
@@ -2263,12 +2263,12 @@ Problem_Manager::outputStatus( std::ostream & os )
 
 bool
 Problem_Manager::exchangeAllData()
-{ 
+{
   std::cout << "Problem_Manager::exchangeAllData() .... called." << std::endl;
 
   // Preceding this call, the solution vector for each problem has been placed
   // in each solver's group X vector.  We need to copy this into each problem's
-  // corresponding solution vector and then fire off the appropriate transfers 
+  // corresponding solution vector and then fire off the appropriate transfers
   // into auxillary data vectors.
 
   copyAllGroupXtoProblems();
@@ -2276,13 +2276,13 @@ Problem_Manager::exchangeAllData()
   syncAllProblems();
 
   return true;
-} 
+}
 
 //-----------------------------------------------------------------------------
 
 bool
 Problem_Manager::exchangeDataTo(int solverId)
-{ 
+{
   std::cout << "Problem_Manager::exchangeDataTo( " << solverId << " ) .... called." << std::endl;
 
   // Note: the incoming solverId reflects the order in which this problem occurs
@@ -2294,7 +2294,7 @@ Problem_Manager::exchangeDataTo(int solverId)
 
   // Preceding this call, the solution vector for each problem has been placed
   // in each solver's group X vector.  We need to copy this into each problem's
-  // corresponding solution vector and then fire off the appropriate transfers 
+  // corresponding solution vector and then fire off the appropriate transfers
   // into auxillary data vectors.
 
   copyAllGroupXtoProblems();
@@ -2302,13 +2302,13 @@ Problem_Manager::exchangeDataTo(int solverId)
   Problems[solverId]->doTransfer();
 
   return false;
-} 
+}
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RCP<const Epetra_CrsMatrix> 
+Teuchos::RCP<const Epetra_CrsMatrix>
 Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE )
-{ 
+{
   std::cout << "Problem_Manager::getReplacementValuesMatrix(...) called." << std::endl;
 
   bool ok = evaluate( NOX::Epetra::Interface::Required::Jac, &x, NULL );
@@ -2320,9 +2320,9 @@ Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE 
 
     throw "Problem_Manager ERROR";
   }
- 
+
   return A;
-} 
+}
 
 //-----------------------------------------------------------------------------
 
@@ -2406,15 +2406,15 @@ Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList 
     throw "Problem_Manager ERROR";
   }
 
-  inverseOperator = Teuchos::rcp(Factory.Create( pList.get("Ifpack Preconditioner", "ILU"), 
-    &(*pMatrix), 
+  inverseOperator = Teuchos::rcp(Factory.Create( pList.get("Ifpack Preconditioner", "ILU"),
+    &(*pMatrix),
     pList.get("Overlap", 0) ));
   inverseOperator->SetParameters(teuchosParams);
   inverseOperator->Initialize();
   inverseOperator->Compute();
 
   BlockInverseOperators[probId] = inverseOperator;
-  
+
   return true;
 }
 

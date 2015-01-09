@@ -1,40 +1,66 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #ifndef STK_UTIL_DIAG_WRITEREXT_HPP
 #define STK_UTIL_DIAG_WRITEREXT_HPP
 
-#include <bitset>
-#include <iostream>
-#include <list>
-#include <map>
-#include <set>
-#include <memory>
-#include <stack>
-#include <string>
-#include <typeinfo>
-#include <vector>
 #include <stk_util/stk_config.h>
-#include <stk_util/util/VecMap.hpp>
-#include <stk_util/util/VecSet.hpp>
-
-#include <stk_util/diag/Writer.hpp>
-
-
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/util/Array.hpp>
-#include <stk_util/util/FArrayPrint.hpp>
+#include <stddef.h>                     // for size_t
+#include <bitset>                       // for bitset
+#include <iostream>                     // for ostream, endl
+#include <list>                         // for list
+#include <map>                          // for map, multimap
+#include <memory>                       // for auto_ptr
+#include <set>                          // for multiset, set
+#include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
+#include <stk_util/diag/String.hpp>     // for String, Identifier
+#include <stk_util/diag/StringUtil.hpp>  // for demangle
+#include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
+#include <stk_util/util/VecMap.hpp>     // for vecmap
+#include <stk_util/util/VecSet.hpp>     // for vecset
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/diag/Mapv.hpp>
-#include <stk_util/diag/Option.hpp>
+#if defined ( STK_HAS_MPI )
+namespace sierra { namespace MPI { struct TempLoc; } }
+#endif
+
+
+
 
 
 namespace stk {
@@ -650,7 +676,7 @@ Writer &operator<<(Writer &dout, const sierra::String &s);
  */
 Writer &operator<<(Writer &dout, const sierra::Identifier &s);
 
-#if defined( STK_HAS_MPI )
+#if defined ( STK_HAS_MPI )
 /**
  * @brief Function <b>operator<<</b> writes the MPI::Loc<int> type to the output stream.
  *
@@ -702,8 +728,7 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
  * @return		a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const sierra::MPI::TempLoc &loc);
-
-#endif // if defined( STK_HAS_MPI )
+#endif
 
 /**
  * @brief Template function <b>c_ptr_name</b> implements c_ptr_func with the function

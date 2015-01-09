@@ -42,7 +42,7 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
-#include "Kokkos_View.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_ProductBasis.hpp"
@@ -51,8 +51,6 @@
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
 #include "Stokhos_TinyVec.hpp"
-
-#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -85,23 +83,30 @@ public:
   typedef ValueType   value_type;
   typedef Memory      memory_type;
 
-  typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-  typedef CrsProductTensor<value_type, host_mirror_device_type> HostMirror;
+  typedef typename Kokkos::ViewTraits< size_type*, device_type,void,void >::host_mirror_space host_mirror_space ;
+  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
   static const size_type host_vectorsize = 32/sizeof(value_type);
   static const bool use_intrinsics = true;
+  static const size_type num_entry_align = 1;
 #elif defined(__MIC__)
   static const size_type host_vectorsize = 16;
   static const bool use_intrinsics = true;
+  static const size_type num_entry_align = 8; // avoid use of mask instructions
 #else
   static const size_type host_vectorsize = 2;
   static const bool use_intrinsics = false;
+  static const size_type num_entry_align = 1;
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
+#if defined( KOKKOS_HAVE_CUDA )
     Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+#else
+    false ;
+#endif
   static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
 
   // Alignment in terms of number of entries of CRS rows
@@ -111,13 +116,12 @@ private:
 
   template <class, class, class> friend class CrsProductTensor;
 
-  typedef Kokkos::View< value_type[], device_type, memory_type >  vec_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  //typedef Kokkos::View< size_type[][2], device_type, memory_type > coord2_array_type;
-  typedef Kokkos::View< value_type[], device_type, memory_type > value_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > entry_array_type;
-  typedef Kokkos::View< size_type[], device_type, memory_type > row_map_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
+  typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;
@@ -266,9 +270,15 @@ public:
           const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
-    bool sort_nnz = false;
-    if (params.isParameter("Sort Nonzeros"))
-      sort_nnz = params.get<bool>("Sort Nonzeros");
+
+    // Note (etp 01/08/15  Commenting out the sorting as it causes a really
+    // weird compiler error when compiling with NVCC.  It seems to think the
+    // < in CompareCijkRowCount() is part of a template parameter.  We don't
+    // seem to use this option, so I am just commenting it out.
+
+    // bool sort_nnz = false;
+    // if (params.isParameter("Sort Nonzeros"))
+    //   sort_nnz = params.get<bool>("Sort Nonzeros");
 
     // Compute number of non-zeros for each i
     const size_type dimension = basis.size();
@@ -310,8 +320,11 @@ public:
       row_count[i].count = coord_work[i];
       row_count[i].basis = i;
     }
-    if (sort_nnz)
-      std::sort( row_count.begin(), row_count.end(), CompareCijkRowCount() );
+
+    // Note (etp 01/08/15  See above.
+
+    // if (sort_nnz)
+    //   std::sort( row_count.begin(), row_count.end(), CompareCijkRowCount() );
     std::vector<size_type> sorted_row_map( dimension );
     for ( size_type i = 0; i < dimension; ++i ) {
       coord_work[i] = row_count[i].count;
@@ -327,9 +340,9 @@ public:
     CrsProductTensor tensor;
     tensor.m_coord = coord_array_type("tensor_coord", entry_count );
     tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
-    tensor.m_value = value_array_type( Kokkos::allocate_without_initializing, "tensor_value", entry_count );
-    tensor.m_num_entry = entry_array_type( Kokkos::allocate_without_initializing, "tensor_num_entry", dimension );
-    tensor.m_row_map = row_map_array_type( Kokkos::allocate_without_initializing, "tensor_row_map", dimension+1 );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
     tensor.m_dim = dimension;
     tensor.m_entry_max = 0;
     tensor.m_avg_entries_per_row = avg_entries_per_row;
@@ -359,6 +372,12 @@ public:
       coord_work[iCoord] = host_row_map[iCoord];
     }
 
+    // Initialize values and coordinates to zero since we will have extra
+    // ones for alignment
+    Kokkos::deep_copy( host_value, 0.0 );
+    Kokkos::deep_copy( host_coord, 0 );
+    Kokkos::deep_copy( host_coord2, 0 );
+
     for (typename Cijk_type::i_iterator i_it=Cijk.i_begin();
          i_it!=Cijk.i_end(); ++i_it) {
       OrdinalType i = index(i_it);
@@ -381,6 +400,9 @@ public:
           }
         }
       }
+      // Align num_entry
+      host_num_entry(row) =
+        (host_num_entry(row) + num_entry_align-1) & ~(num_entry_align-1);
     }
 
     // Copy data to device if necessary
@@ -395,6 +417,62 @@ public:
     }
 
     tensor.m_flops = 5*tensor.m_nnz + dimension;
+
+    return tensor;
+  }
+
+  static CrsProductTensor createMeanBased()
+  {
+    const size_type dimension = 1;
+    const size_type entry_count = 1;
+
+    // Allocate tensor data
+    // coord and coord2 are initialized to zero because otherwise we get
+    // seg faults in the MIC algorithm when processing the tail of each
+    // tensor row.  Not quite sure why as the coord loads are padded to
+    // length 16 and are masked for the remainder (unless it does load x[j]
+    // anyway and masks off the result, so j needs to be valid).
+    CrsProductTensor tensor;
+    tensor.m_coord = coord_array_type("tensor_coord", entry_count );
+    tensor.m_coord2 = coord2_array_type( "tensor_coord2", entry_count );
+    tensor.m_value = value_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_value"), entry_count );
+    tensor.m_num_entry = entry_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_num_entry"), dimension );
+    tensor.m_row_map = row_map_array_type( Kokkos::ViewAllocateWithoutInitializing("tensor_row_map"), dimension+1 );
+    tensor.m_dim = dimension;
+    tensor.m_entry_max = 1;
+    tensor.m_avg_entries_per_row = 1;
+    tensor.m_nnz = 1;
+    tensor.m_flops = 5*tensor.m_nnz + dimension;
+
+    // Create mirror, is a view if is host memory
+    typename coord_array_type::HostMirror
+      host_coord = Kokkos::create_mirror_view( tensor.m_coord );
+    typename coord2_array_type::HostMirror
+      host_coord2 = Kokkos::create_mirror_view( tensor.m_coord2 );
+    typename value_array_type::HostMirror
+      host_value = Kokkos::create_mirror_view( tensor.m_value );
+    typename entry_array_type::HostMirror
+      host_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
+    typename entry_array_type::HostMirror
+      host_row_map = Kokkos::create_mirror_view( tensor.m_row_map );
+
+    // Compute row map
+    host_row_map(0) = 0;
+    host_row_map(1) = 1;
+    host_num_entry(0) = 1;
+
+    // Compute tensor values
+    host_value(0) = 0.5;
+    host_coord2(0,0) = 0;
+    host_coord2(0,1) = 0;
+    host_coord(0) = 0;
+
+    // Copy data to device if necessary
+    Kokkos::deep_copy( tensor.m_coord, host_coord );
+    Kokkos::deep_copy( tensor.m_coord2, host_coord2 );
+    Kokkos::deep_copy( tensor.m_value, host_value );
+    Kokkos::deep_copy( tensor.m_num_entry, host_num_entry );
+    Kokkos::deep_copy( tensor.m_row_map, host_row_map );
 
     return tensor;
   }
@@ -453,6 +531,21 @@ create_product_tensor(
     basis, Cijk, params );
 }
 
+template< class Device, typename OrdinalType, typename ValueType>
+CrsProductTensor<ValueType, Device>
+create_mean_based_product_tensor()
+{
+  return CrsProductTensor<ValueType, Device>::createMeanBased();
+}
+
+template< class Device, typename OrdinalType, typename ValueType,
+          class Memory >
+CrsProductTensor<ValueType, Device, Memory>
+create_mean_based_product_tensor()
+{
+  return CrsProductTensor<ValueType, Device, Memory>::createMeanBased();
+}
+
 template < class ValueType, class Device, class Memory >
 inline
 typename CrsProductTensor<ValueType,Device,Memory>::HostMirror
@@ -495,7 +588,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     // The intel compiler doesn't seem to be able to vectorize through
     // the coord() calls, so extract pointers
@@ -518,7 +612,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -530,7 +624,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -563,38 +658,24 @@ public:
       }
       ytmp += vy.sum();
 
+      // The number of nonzeros is always constrained to be a multiple of 8
+
       const size_type rem = iEntryEnd-iEntry;
-      if (rem > 8) {
-        typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> TV2;
+      if (rem >= 8) {
+        typedef TinyVec<ValueType,8,tensor_type::use_intrinsics> TV2;
         const size_type *j = &tensor.coord(iEntry,0);
         const size_type *k = &tensor.coord(iEntry,1);
-        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
-          c(&(tensor.value(iEntry)), rem);
+        TV2 aj(a, j), ak(a, k), xj(x, j), xk(x, k),
+          c(&(tensor.value(iEntry)));
 
         // vy += c * ( aj * xk + ak * xj)
         aj.times_equal(xk);
         aj.multiply_add(ak, xj);
         aj.times_equal(c);
         ytmp += aj.sum();
-        iEntry += rem;
       }
 
-      else if (rem > 0) {
-        typedef TinyVec<ValueType,8,true,true> TV2;
-        const size_type *j = &tensor.coord(iEntry,0);
-        const size_type *k = &tensor.coord(iEntry,1);
-        TV2 aj(a, j, rem), ak(a, k, rem), xj(x, j, rem), xk(x, k, rem),
-          c(&(tensor.value(iEntry)), rem);
-
-        // vy += c * ( aj * xk + ak * xj)
-        aj.times_equal(xk);
-        aj.multiply_add(ak, xj);
-        aj.times_equal(c);
-        ytmp += aj.sum();
-        iEntry += rem;
-      }
-
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -606,7 +687,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -648,7 +730,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 #endif
@@ -753,7 +835,7 @@ public:
   // A MIC-specific version of the block-multiply algorithm, where block here
   // means processing multiple FEM columns at a time
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -833,46 +915,26 @@ public:
         }
         ytmp += vy.sum();
 
+        // The number of nonzeros is always constrained to be a multiple of 8
+
         const size_type rem = iEntryEnd-iEntry;
-        if (rem > 8) {
-          typedef TinyVec<ValueType,tensor_type::vectorsize,true,true> ValTV2;
-          typedef TinyVec<MatrixValue,tensor_type::vectorsize,true,true> MatTV2;
-          typedef TinyVec<VectorValue,tensor_type::vectorsize,true,true> VecTV2;
+        if (rem >= 8) {
+          typedef TinyVec<ValueType,8,tensor_type::use_intrinsics> ValTV2;
+          typedef TinyVec<MatrixValue,8,tensor_type::use_intrinsics> MatTV2;
+          typedef TinyVec<VectorValue,8,tensor_type::use_intrinsics> VecTV2;
           const size_type *j = &tensor.coord(iEntry,0);
           const size_type *k = &tensor.coord(iEntry,1);
-          ValTV2 c(&(tensor.value(iEntry)), rem);
+          ValTV2 c(&(tensor.value(iEntry)));
 
           for ( size_type col = 0; col < block_size; ++col ) {
-            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
-            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
+            MatTV2 aj(sh_A[col], j), ak(sh_A[col], k);
+            VecTV2 xj(sh_x[col], j), xk(sh_x[col], k);
 
             // vy += c * ( aj * xk + ak * xj)
             aj.times_equal(xk);
             aj.multiply_add(ak, xj);
             aj.times_equal(c);
             ytmp += aj.sum();
-            iEntry += rem;
-          }
-        }
-
-        else if (rem > 0) {
-          typedef TinyVec<ValueType,8,true,true> ValTV2;
-          typedef TinyVec<MatrixValue,8,true,true> MatTV2;
-          typedef TinyVec<VectorValue,8,true,true> VecTV2;
-          const size_type *j = &tensor.coord(iEntry,0);
-          const size_type *k = &tensor.coord(iEntry,1);
-          ValTV2 c(&(tensor.value(iEntry)), rem);
-
-          for ( size_type col = 0; col < block_size; ++col ) {
-            MatTV2 aj(sh_A[col], j, rem), ak(sh_A[col], k, rem);
-            VecTV2 xj(sh_x[col], j, rem), xk(sh_x[col], k, rem);
-
-            // vy += c * ( aj * xk + ak * xj)
-            aj.times_equal(xk);
-            aj.multiply_add(ak, xj);
-            aj.times_equal(c);
-            ytmp += aj.sum();
-            iEntry += rem;
           }
         }
 
@@ -893,7 +955,7 @@ public:
   // auto-vectorization of a block algorithm doesn't work, because the
   // stochastic loop is not the inner-most loop.
   KOKKOS_INLINE_FUNCTION
-  void operator()( device_type device ) const
+  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -1016,14 +1078,13 @@ public:
 
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     if (use_block_algorithm) {
-      typedef typename matrix_type::device_type device_type;
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC
 #else
       const size_t team_size = 2;  // 2 for everything else
 #endif
       const size_t league_size = row_count;
-      Kokkos::ParallelWorkRequest config(league_size, team_size);
+      Kokkos::TeamPolicy< device_type > config(league_size, team_size);
       Kokkos::parallel_for( config , MultiplyImpl(A,x,y) );
     }
     else {

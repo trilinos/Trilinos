@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
@@ -24,6 +22,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     ARGS
       "--verbose --left-prec"
       "--verbose --right-prec"
+    STANDARD_PASS_OUTPUT 
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    pseudo_ptfqmr_hb
+    SOURCES test_pseudo_ptfqmr_hb.cpp createEpetraProblem.cpp
+    COMM serial mpi
+    ARGS
+      "--verbose --left-prec --num-rhs=10"
+      "--verbose --right-prec --num-rhs=10"
     STANDARD_PASS_OUTPUT 
   )
 

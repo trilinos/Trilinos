@@ -1,0 +1,7 @@
+dim=3
+wdim=1
+distribution-1=NORMAL,120,-20,-20,-20,55,45,5
+distribution-1=NORMAL,120,0,0,0,55,45,5
+WeightDistribution-1-a1=1
+WeightDistribution-1-steps=0
+WeightDistribution-1-values=1,2

@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
   CoupledAggFact11->SetFactory("Graph", dropFact11);
   CoupledAggFact11->SetMinNodesPerAggregate(9);
   CoupledAggFact11->SetMaxNeighAlreadySelected(2);
-  CoupledAggFact11->SetOrdering(MueLu::AggOptions::NATURAL);
+  CoupledAggFact11->SetOrdering("natural");
   //CoupledAggFact11->SetPhase3AggCreation(0.5);
 
   ///////////////////////////////////////// define transfer ops for A11
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
 
   /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
   // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>());
+  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
   aggExpFact->SetParameter("Output filename","aggs_level%LEVELID_proc%PROCID.out");
   aggExpFact->SetFactory("Aggregates", CoupledAggFact11);
   aggExpFact->SetFactory("DofsPerNode", dropFact11);
@@ -438,24 +438,24 @@ int main(int argc, char *argv[]) {
   //Another factory manager for braes sarazin smoother
   //Schur Complement Factory, using the factory to generate AcFact
   SC omega = 1.3;
-    RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
-    SFact->SetParameter("omega", ParameterEntry(omega));
-    SFact->SetFactory("A", MueLu::NoFactory::getRCP());
+  RCP<SchurComplementFactory> SFact = rcp(new SchurComplementFactory());
+  SFact->SetParameter("omega", ParameterEntry(omega));
+  SFact->SetFactory("A", MueLu::NoFactory::getRCP());
 
-    //Smoother Factory, using SFact as a factory for A
-    std::string ifpackSCType;
-    ParameterList ifpackSCList;
-    ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
-    ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
-    ifpackSCType = "RELAXATION";
-    ifpackSCList.set("relaxation: type", "Gauss-Seidel");
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
-    smoProtoSC->SetFactory("A", SFact);
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
+  //Smoother Factory, using SFact as a factory for A
+  std::string ifpackSCType;
+  ParameterList ifpackSCList;
+  ifpackSCList.set("relaxation: sweeps", (LocalOrdinal) 3);
+  ifpackSCList.set("relaxation: damping factor", (Scalar) 1.0);
+  ifpackSCType = "RELAXATION";
+  ifpackSCList.set("relaxation: type", "Gauss-Seidel");
+  RCP<SmootherPrototype> smoProtoSC     = rcp( new TrilinosSmoother(ifpackSCType, ifpackSCList, 0) );
+  smoProtoSC->SetFactory("A", SFact);
+  RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
 
-    RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
-    smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
-    smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
+  RCP<BraessSarazinSmoother> smootherPrototype     = rcp( new BraessSarazinSmoother() );
+  smootherPrototype->SetParameter("Sweeps", Teuchos::ParameterEntry(3));
+  smootherPrototype->SetParameter("Damping factor", Teuchos::ParameterEntry(omega));
 
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
@@ -515,7 +515,7 @@ int main(int argc, char *argv[]) {
     *out << "||x_0|| = " << norms[0] << std::endl;
 
     // apply ten multigrid iterations
-    H->Iterate(*xRhs,100,*xLsg);
+    H->Iterate(*xRhs,*xLsg,100);
 
 
     // calculate and print residual
@@ -547,5 +547,5 @@ int main(int argc, char *argv[]) {
     aztecSolver.Iterate(maxIts, tol);
   }
 
-   return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

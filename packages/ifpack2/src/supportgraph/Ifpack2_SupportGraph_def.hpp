@@ -49,18 +49,16 @@
 #define IFPACK2_SUPPORTGRAPH_DEF_HPP
 
 // Ifpack2's CMake system should (and does) prevent Trilinos from
-// attempting to build or install this class, if Boost is not enabled.
+// attempting to build or install this class, if Lemon is not enabled.
 // We check for this case regardless, in order to catch any bugs that
 // future development might introduce in the CMake scripts.
 
-#ifdef HAVE_IFPACK2_BOOST
-#  include <boost/graph/adjacency_list.hpp>
-#  include <boost/graph/kruskal_min_spanning_tree.hpp>
-#  include <boost/graph/prim_minimum_spanning_tree.hpp>
-#  include <boost/config.hpp>
+#ifdef HAVE_IFPACK2_LEMON
+#include <lemon/list_graph.h>
+#include <lemon/kruskal.h>
 #else
-#  error "Ifpack2::SupportGraph requires that Trilinos be built with Boost support."
-#endif // HAVE_IFPACK2_BOOST
+#  error "Ifpack2::SupportGraph requires that Trilinos be built with Lemon support."
+#endif // HAVE_IFPACK2_LEMON
 
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Heap.hpp"
@@ -310,14 +308,7 @@ SupportGraph<MatrixType>::findSupport ()
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vec_type;
 
-typedef std::pair<int, int> E;
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
-                                boost::no_property,
-                                boost::property<boost::edge_weight_t,
-                                                magnitude_type> > graph_type;
-  typedef typename boost::graph_traits<graph_type>::edge_descriptor edge_type;
-  typedef typename boost::graph_traits<graph_type>::vertex_descriptor
-    vertex_type;
+
 
   const scalar_type zero = STS::zero();
   const scalar_type one = STS::one();
@@ -328,10 +319,14 @@ typedef std::pair<int, int> E;
   size_t num_edges
     = (A_local_->getNodeNumEntries() - A_local_->getNodeNumDiags())/2;
 
+
   // Create data structures for the BGL code
   // and temp data structures for extraction
-  E *edge_array = new E[num_edges];
-  magnitude_type *weights = new magnitude_type[num_edges];
+  lemon::ListGraph graph;
+  for (size_t row = 0; row < num_verts; ++row) {
+    graph.addNode();
+  }
+  lemon::ListGraph::EdgeMap<magnitude_type> edgeWeights(graph);
 
   size_t num_entries;
   size_t max_num_entries = A_local_->getNodeMaxNumRowEntries();
@@ -356,11 +351,15 @@ typedef std::pair<int, int> E;
 
       if((row < Teuchos::as<size_t>(indices[colIndex]))
          && (values[colIndex] < zero)) {
-        edge_array[offDiagCount] = E(row, indices[colIndex]);
-        weights[offDiagCount] = values[colIndex];
+        lemon::ListGraph::Edge edge
+          = graph.addEdge(graph.nodeFromId(row),
+                          graph.nodeFromId(Teuchos::as<size_t>
+                                           (indices[colIndex])));
+        edgeWeights[edge] = values[colIndex];
+
         if (Randomize_) {
           // Add small random pertubation.
-          weights[offDiagCount] *= one +
+          edgeWeights[edge] *= one +
             STS::magnitude(STS::rmin() * STS::random());
         }
 
@@ -369,31 +368,25 @@ typedef std::pair<int, int> E;
     }
   }
 
-  // Create BGL graph
-  graph_type g(edge_array, edge_array + num_edges, weights, num_verts);
-  typedef typename boost::property_map
-    <graph_type, boost::edge_weight_t>::type type;
-  type weight = get (boost::edge_weight, g);
-  std::vector<edge_type> spanning_tree;
 
   // Run Kruskal, actually maximal weight ST since edges are negative
-  boost::kruskal_minimum_spanning_tree(g, std::back_inserter (spanning_tree));
+  std::vector<lemon::ListGraph::Edge> spanningTree;
+  lemon::kruskal(graph, edgeWeights, std::back_inserter(spanningTree));
 
   // Create array to store the exact number of non-zeros per row
   Teuchos::ArrayRCP<size_t> NumNz (num_verts, 1);
 
-  typedef typename std::vector<edge_type>::iterator edge_iterator_type;
-
   // Find the degree of all the vertices
-  for (edge_iterator_type ei = spanning_tree.begin(); ei != spanning_tree.end();
-       ++ei) {
-    local_ordinal_type localsource = source(*ei,g);
-    local_ordinal_type localtarget = target(*ei,g);
+  for (size_t i = 0; i != spanningTree.size(); ++i) {
+    lemon::ListGraph::Edge e = spanningTree[i];
+
+    local_ordinal_type localsource = graph.id(graph.u(e));
+    local_ordinal_type localtarget = graph.id(graph.v(e));
 
     // We only want upper triangular entries, might need to swap
     if (localsource > localtarget) {
-      localsource = target(*ei, g);
-      localtarget = source(*ei, g);
+      localsource = localtarget;
+      localtarget = graph.id(graph.u(e));
     }
 
     NumNz[localsource] += 1;
@@ -425,13 +418,11 @@ typedef std::pair<int, int> E;
     // If a tree has already been added then we need to rerun Kruskall and
     // update the arrays containing size information
     if (i > 0) {
-      spanning_tree.clear();
-      boost::kruskal_minimum_spanning_tree
-        (g, std::back_inserter(spanning_tree));
+      spanningTree.clear();
+      lemon::kruskal(graph, edgeWeights, std::back_inserter(spanningTree));
 
-      for (edge_iterator_type ei = spanning_tree.begin();
-          ei != spanning_tree.end(); ++ei) {
-        NumNz[source(*ei,g)] += 1;
+      for (size_t i = 0; i != spanningTree.size(); ++i) {
+        NumNz[graph.id(graph.u(spanningTree[i]))] += 1;
       }
 
       // FIXME (mfh 14 Nov 2013) Are you sure that all this resizing
@@ -442,26 +433,27 @@ typedef std::pair<int, int> E;
       }
     }
 
-    for (edge_iterator_type ei = spanning_tree.begin();
-        ei != spanning_tree.end(); ++ei) {
-      local_ordinal_type localsource = source(*ei, g);
-      local_ordinal_type localtarget = target(*ei, g);
+    for (size_t i = 0; i != spanningTree.size(); ++i) {
+      lemon::ListGraph::Edge e = spanningTree[i];
+
+      local_ordinal_type localsource = graph.id(graph.u(e));
+      local_ordinal_type localtarget = graph.id(graph.v(e));
 
       if (localsource > localtarget) {
-        localsource = target(*ei,g);
-        localtarget = source(*ei,g);
+        localsource = localtarget;
+        localtarget = graph.id(graph.u(e));
       }
 
       // Assume standard Laplacian with constant row-sum.
       // Edge weights are negative, so subtract to make diagonal positive
-      Values[localtarget][0] -= weight[*ei];
-      Values[localsource][0] -= weight[*ei];
+      Values[localtarget][0] -= edgeWeights[e];
+      Values[localsource][0] -= edgeWeights[e];
 
       Indices[localsource][localnumnz[localsource]] = localtarget;
-      Values[localsource][localnumnz[localsource]] = weight[*ei];
+      Values[localsource][localnumnz[localsource]] = edgeWeights[e];
       localnumnz[localsource] += 1;
 
-      remove_edge(*ei,g);
+      graph.erase(e);
     }
   }
 
@@ -517,9 +509,6 @@ typedef std::pair<int, int> E;
 
   Support_->fillComplete();
 
-  // Clean up all the memory allocated
-  delete edge_array;
-  delete weights;
 }
 
 template<class MatrixType>
@@ -679,22 +668,21 @@ apply (const Tpetra::MultiVector<scalar_type,
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
-    if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-      Xcopy = rcp (new MV(X));
+    if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
+      Xcopy = rcp (new MV (X, Teuchos::Copy));
     }
     else {
-      Xcopy = rcpFromRef(X);
+      Xcopy = rcpFromRef (X);
     }
 
-    if (alpha != STS::one()) {
-      Y.scale(alpha);
+    if (alpha != STS::one ()) {
+      Y.scale (alpha);
     }
 
-    RCP<MV> Ycopy = rcpFromRef(Y);
+    RCP<MV> Ycopy = rcpFromRef (Y);
 
-    solver_->setB(Xcopy);
-    solver_->setX(Ycopy);
-
+    solver_->setB (Xcopy);
+    solver_->setX (Ycopy);
     solver_->solve ();
   } // Stop timing here.
 
@@ -778,7 +766,7 @@ describe (Teuchos::FancyOStream &out,
       const double popFrac =
         static_cast<double> (Support_->getGlobalNumEntries() -
                              Support_->getGlobalNumDiags()) /
-        ((A_->getGlobalNumEntries() - A_->getGlobalNumDiags()) / 2.0);
+        (A_local_->getGlobalNumEntries() - A_local_->getGlobalNumDiags());
 
       out << "Fraction of off diagonals of supportgraph/off diagonals of "
         "original: " << popFrac << endl;

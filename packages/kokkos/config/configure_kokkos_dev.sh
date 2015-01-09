@@ -32,7 +32,8 @@ CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D CMAKE_INSTALL_PREFIX=${HOME}/TrilinosInst
 
 CMAKE_VERBOSE_MAKEFILE=OFF
 CMAKE_BUILD_TYPE=RELEASE
-# CMAKE_BUILD_TYPE=DEBUG
+#CMAKE_BUILD_TYPE=DEBUG
+#CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Kokkos_ENABLE_BOUNDS_CHECK:BOOL=ON"
 
 #-----------------------------------------------------------------------------
 # Build for CUDA architecture:
@@ -45,22 +46,28 @@ CUDA_ARCH="35"
 # Build with OpenMP
 
 OPENMP=ON
+PTHREADS=ON
 
 # Build host code with Intel compiler:
 
-# INTEL=ON
+INTEL=OFF
 
 # Build for MIC architecture:
 
-# INTEL_XEON_PHI=ON
+INTEL_XEON_PHI=OFF
 
 # Build with HWLOC at location:
 
-HWLOC_BASE_DIR="/home/projects/hwloc/1.7.1/host/gnu/4.4.7"
+#HWLOC_BASE_DIR=""
+#HWLOC_BASE_DIR="/home/projects/hwloc/1.7.1/host/gnu/4.4.7"
+HWLOC_BASE_DIR="/home/projects/hwloc/1.7.1/host/gnu/4.7.3"
 
 # Location for MPI to use in examples:
 
-MPI_BASE_DIR="/home/projects/mvapich/2.0.0b/gnu/4.4.7"
+#MPI_BASE_DIR=""
+#MPI_BASE_DIR="/home/projects/mvapich/2.0.0b/gnu/4.4.7"
+MPI_BASE_DIR="/home/projects/mvapich/2.0.0b/gnu/4.7.3"
+#MPI_BASE_DIR="/home/projects/openmpi/1.7.3/llvm/2013-12-02/"
 
 #-----------------------------------------------------------------------------
 # MPI configuation only used for examples:
@@ -79,8 +86,12 @@ fi
 #-----------------------------------------------------------------------------
 # Pthread configuation:
 
-CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TPL_ENABLE_Pthread:BOOL=ON"
-# CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TPL_ENABLE_Pthread:BOOL=OFF"
+if [ "${PTHREADS}" = "ON" ] ;
+then
+  CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TPL_ENABLE_Pthread:BOOL=ON"
+else
+  CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TPL_ENABLE_Pthread:BOOL=OFF"
+fi
 
 #-----------------------------------------------------------------------------
 # OpenMP configuation:
@@ -101,6 +112,7 @@ CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_EXAMPLES:BOOL=ON"
 CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_TESTS:BOOL=ON"
 CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_KokkosCore:BOOL=ON"
 CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_KokkosContainers:BOOL=ON"
+CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_TpetraKernels:BOOL=ON"
 CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Trilinos_ENABLE_KokkosExample:BOOL=ON"
 
 #-----------------------------------------------------------------------------

@@ -788,6 +788,9 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
 	  throw;
 	}
       }
+
+      // Update the current solution with the update computed by the iteration object.
+      problem_->updateSolution( tfqmr_iter->getCurrentUpdate(), true );
       
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();

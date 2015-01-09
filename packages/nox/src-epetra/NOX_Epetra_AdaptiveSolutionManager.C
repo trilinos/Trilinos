@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2012) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact 
+// Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -80,17 +80,17 @@ void NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays(
 }
 
 //! Accessor function to Epetra_Import the solution from other PEs for output
-Epetra_Vector* 
+Epetra_Vector*
 NOX::Epetra::AdaptiveSolutionManager::
 getOverlapSolution(const Epetra_Vector& solution) {
-  
+
     tmp_ovlp_sol->Import(solution, *importer, Insert);
-  
+
     return tmp_ovlp_sol.get();
-  
+
 }
 
-void 
+void
 NOX::Epetra::AdaptiveSolutionManager::
 setInitialSolution(const Teuchos::RCP<Epetra_Vector>& soln_){
 

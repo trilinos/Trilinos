@@ -80,33 +80,33 @@ using Teuchos::Array;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-ArrayRCP<gno_t> roundRobinMap(
-    const RCP<const Xpetra::Map<lno_t, gno_t, node_t> > &m)
+ArrayRCP<zgno_t> roundRobinMap(
+    const RCP<const Xpetra::Map<zlno_t, zgno_t, znode_t> > &m)
 {
   const RCP<const Comm<int> > &comm = m->getComm();
   int proc = comm->getRank();
   int nprocs = comm->getSize();
-  gno_t base = m->getMinAllGlobalIndex();
-  gno_t max = m->getMaxAllGlobalIndex();
+  zgno_t base = m->getMinAllGlobalIndex();
+  zgno_t max = m->getMaxAllGlobalIndex();
   size_t globalrows = m->getGlobalNumElements();
   if (globalrows != size_t(max - base + 1)){
     TEST_FAIL_AND_EXIT(*comm, 0, 
       string("Map is invalid for test - fix test"), 1);
   }
-  RCP<Array<gno_t> > mygids = rcp(new Array<gno_t>);
-  gno_t firstgno_t = proc; 
-  if (firstgno_t < base){
-    gno_t n = base % proc;
+  RCP<Array<zgno_t> > mygids = rcp(new Array<zgno_t>);
+  zgno_t firstzgno_t = proc; 
+  if (firstzgno_t < base){
+    zgno_t n = base % proc;
     if (n>0)
-      firstgno_t = base - n + proc;
+      firstzgno_t = base - n + proc;
     else
-      firstgno_t = base;
+      firstzgno_t = base;
   }
-  for (gno_t gid=firstgno_t; gid <= max; gid+=nprocs){
+  for (zgno_t gid=firstzgno_t; gid <= max; gid+=nprocs){
     (*mygids).append(gid);
   }
 
-  ArrayRCP<gno_t> newIdArcp = Teuchos::arcp(mygids);
+  ArrayRCP<zgno_t> newIdArcp = Teuchos::arcp(mygids);
 
   return newIdArcp;
 }
@@ -122,15 +122,15 @@ int main(int argc, char *argv[])
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
   typedef UserInputForTests uinput_t;
-  typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
-  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> tgraph_t;
-  typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t> tvector_t;
-  typedef Tpetra::MultiVector<scalar_t,lno_t,gno_t,node_t> tmvector_t;
-  typedef Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
-  typedef Xpetra::CrsGraph<lno_t,gno_t,node_t> xgraph_t;
-  typedef Xpetra::Vector<scalar_t,lno_t,gno_t,node_t> xvector_t;
-  typedef Xpetra::MultiVector<scalar_t,lno_t,gno_t,node_t> xmvector_t;
-  typedef Xpetra::TpetraMap<lno_t,gno_t,node_t> xtmap_t;
+  typedef Tpetra::CrsMatrix<zscalar_t,zlno_t,zgno_t,znode_t> tmatrix_t;
+  typedef Tpetra::CrsGraph<zlno_t,zgno_t,znode_t> tgraph_t;
+  typedef Tpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> tvector_t;
+  typedef Tpetra::MultiVector<zscalar_t,zlno_t,zgno_t,znode_t> tmvector_t;
+  typedef Xpetra::CrsMatrix<zscalar_t,zlno_t,zgno_t,znode_t> xmatrix_t;
+  typedef Xpetra::CrsGraph<zlno_t,zgno_t,znode_t> xgraph_t;
+  typedef Xpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> xvector_t;
+  typedef Xpetra::MultiVector<zscalar_t,zlno_t,zgno_t,znode_t> xmvector_t;
+  typedef Xpetra::TpetraMap<zlno_t,zgno_t,znode_t> xtmap_t;
 
   // Create object that can give us test Tpetra and Xpetra input.
 
@@ -151,12 +151,12 @@ int main(int argc, char *argv[])
   //   Tpetra::MultiVector
   /////////////////////////////////////////////////////////////////
 
-  // XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > 
+  // XpetraTraits<Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> > 
   {
     RCP<tmatrix_t> M;
   
     try{
-      M = uinput->getTpetraCrsMatrix();
+      M = uinput->getUITpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -171,9 +171,9 @@ int main(int argc, char *argv[])
 
     RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
 
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const tmatrix_t> newM;
     try{
@@ -192,12 +192,12 @@ int main(int argc, char *argv[])
     newM->describe(*outStream,v);
   }
 
-  // XpetraTraits<Tpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
+  // XpetraTraits<Tpetra::CrsGraph<zscalar_t, zlno_t, zgno_t, znode_t> > 
   {
     RCP<tgraph_t> G;
   
     try{
-      G = uinput->getTpetraCrsGraph();
+      G = uinput->getUITpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -210,9 +210,9 @@ int main(int argc, char *argv[])
     G->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const tgraph_t> newG;
     try{
@@ -231,12 +231,12 @@ int main(int argc, char *argv[])
     newG->describe(*outStream,v);
   }
 
-  // XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t>> 
   {
     RCP<tvector_t> V;
   
     try{
-      V = uinput->getTpetraVector();
+      V = uinput->getUITpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -249,9 +249,9 @@ int main(int argc, char *argv[])
     V->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const tvector_t> newV;
     try{
@@ -270,12 +270,12 @@ int main(int argc, char *argv[])
     newV->describe(*outStream,v);
   }
 
-  // XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t>> 
   {
     RCP<tmvector_t> MV;
   
     try{
-      MV = uinput->getTpetraMultiVector(3);
+      MV = uinput->getUITpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -288,9 +288,9 @@ int main(int argc, char *argv[])
     MV->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const tmvector_t> newMV;
     try{
@@ -316,12 +316,12 @@ int main(int argc, char *argv[])
   //   Xpetra::MultiVector
   /////////////////////////////////////////////////////////////////
 
-  // XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> > 
+  // XpetraTraits<Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> > 
   {
     RCP<xmatrix_t> M;
   
     try{
-      M = uinput->getXpetraCrsMatrix();
+      M = uinput->getUIXpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -333,9 +333,9 @@ int main(int argc, char *argv[])
   
     M->describe(*outStream,v);
   
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(M->getRowMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(M->getRowMap());
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const xmatrix_t> newM;
     try{
@@ -354,12 +354,12 @@ int main(int argc, char *argv[])
     newM->describe(*outStream,v);
   }
 
-  // XpetraTraits<Xpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
+  // XpetraTraits<Xpetra::CrsGraph<zscalar_t, zlno_t, zgno_t, znode_t> > 
   {
     RCP<xgraph_t> G;
   
     try{
-      G = uinput->getXpetraCrsGraph();
+      G = uinput->getUIXpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -371,9 +371,9 @@ int main(int argc, char *argv[])
   
     G->describe(*outStream,v);
   
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(G->getRowMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(G->getRowMap());
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const xgraph_t> newG;
     try{
@@ -392,12 +392,12 @@ int main(int argc, char *argv[])
     newG->describe(*outStream,v);
   }
 
-  // XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t>> 
   {
     RCP<xvector_t> V;
   
     try{
-      V = uinput->getXpetraVector();
+      V = uinput->getUIXpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -409,9 +409,9 @@ int main(int argc, char *argv[])
   
     V->describe(*outStream,v);
   
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(V->getMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(V->getMap());
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const xvector_t> newV;
     try{
@@ -430,12 +430,12 @@ int main(int argc, char *argv[])
     newV->describe(*outStream,v);
   }
 
-  // XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
+  // XpetraTraits<Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t>> 
   {
     RCP<xmvector_t> MV;
   
     try{
-      MV = uinput->getXpetraMultiVector(3);
+      MV = uinput->getUIXpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -447,9 +447,9 @@ int main(int argc, char *argv[])
   
     MV->describe(*outStream,v);
   
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(MV->getMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(MV->getMap());
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const xmvector_t> newMV;
     try{
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
     RCP<ematrix_t> M;
   
     try{
-      M = euinput->getEpetraCrsMatrix();
+      M = euinput->getUIEpetraCrsMatrix();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -515,9 +515,9 @@ int main(int argc, char *argv[])
     RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
 
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const ematrix_t> newM;
     try{
@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
     RCP<egraph_t> G;
   
     try{
-      G = euinput->getEpetraCrsGraph();
+      G = euinput->getUIEpetraCrsGraph();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -555,9 +555,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const egraph_t> newG;
     try{
@@ -581,7 +581,7 @@ int main(int argc, char *argv[])
     RCP<evector_t> V;
   
     try{
-      V = euinput->getEpetraVector();
+      V = euinput->getUIEpetraVector();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -595,9 +595,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const evector_t> newV;
     try{
@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
     RCP<emvector_t> MV;
   
     try{
-      MV = euinput->getEpetraMultiVector(3);
+      MV = euinput->getUIEpetraMultiVector(3);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -635,9 +635,9 @@ int main(int argc, char *argv[])
   
     RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
     RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
   
-    gno_t localNumRows = newRowIds.size();
+    zgno_t localNumRows = newRowIds.size();
   
     RCP<const emvector_t> newMV;
     try{

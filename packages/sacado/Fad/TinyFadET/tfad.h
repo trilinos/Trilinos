@@ -5,13 +5,13 @@
 //  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
 //  http://www.ann.jussieu.fr/~dicesare
 //
-//            CEMRACS 98 : C++ courses, 
-//         templates : new C++ techniques 
-//            for scientific computing 
-// 
+//            CEMRACS 98 : C++ courses,
+//         templates : new C++ techniques
+//            for scientific computing
+//
 //********************************************************
 //
-//  A short implementation ( not all operators and 
+//  A short implementation ( not all operators and
 //  functions are overloaded ) of 1st-order Automatic
 //  Differentiation in forward mode (FAD) using
 //  EXPRESSION TEMPLATES.
@@ -32,8 +32,6 @@
 #include "utils/promote.h"
 
 namespace FAD {
-
-using namespace std;
 
 template <class L, class R> class NumericalTraits;
 
@@ -61,11 +59,11 @@ public:
 
   TFad() : val_( T(0.f)) {memset(dx_,0,Num*sizeof(T));}
   TFad(const T & x) : val_(x) {memset(dx_,0,Num*sizeof(T));}
-  TFad(const T & x, const int i) : val_(x) 
+  TFad(const T & x, const int i) : val_(x)
     {memset(dx_,0,Num*sizeof(T));dx_[i]=1.0;}
-  TFad(const int sz, const T & x) : val_(x) 
+  TFad(const int sz, const T & x) : val_(x)
     {memset(dx_,0,Num*sizeof(T));}
-  TFad(const int sz, const int i, const T & x) : val_(x) 
+  TFad(const int sz, const int i, const T & x) : val_(x)
     {memset(dx_,0,Num*sizeof(T));dx_[i]=1.0;}
   TFad(const TFad<Num,T> & x);
   template <class ExprT> TFad(const TFadExpr<ExprT>& fadexpr);
@@ -86,8 +84,8 @@ public:
   int size() const { return Num;}
 
   TFad<Num,T> & operator=(const T& val);
-  TFad<Num,T> & operator=(const TFad<Num,T>& rhs); 
-  template <class ExprT> TFad<Num,T> & operator=(const TFadExpr<ExprT>& fadexpr); 
+  TFad<Num,T> & operator=(const TFad<Num,T>& rhs);
+  template <class ExprT> TFad<Num,T> & operator=(const TFadExpr<ExprT>& fadexpr);
 
   TFadExpr< TFadUnaryPlus< TFad<Num,T> > > operator+ () const;
   TFadExpr< TFadUnaryMin< TFad<Num,T> > > operator- () const;
@@ -96,17 +94,17 @@ public:
   TFad<Num,T>& operator-= (const T& x);
   TFad<Num,T>& operator*= (const T& x);
   TFad<Num,T>& operator/= (const T& x);
-  
+
   TFad<Num,T>& operator+= (const TFad<Num,T>& x);
   TFad<Num,T>& operator-= (const TFad<Num,T>& x);
   TFad<Num,T>& operator*= (const TFad<Num,T>& x);
   TFad<Num,T>& operator/= (const TFad<Num,T>& x);
-  
+
   template <class ExprT> TFad<Num,T>& operator*= (const TFadExpr<ExprT>& fadexpr);
   template <class ExprT> TFad<Num,T>& operator/= (const TFadExpr<ExprT>& fadexpr);
   template <class ExprT> TFad<Num,T>& operator+= (const TFadExpr<ExprT>& fadexpr);
   template <class ExprT> TFad<Num,T>& operator-= (const TFadExpr<ExprT>& fadexpr);
- 
+
 };
 
 template <int Num,class T> inline  void TFad<Num,T>::copy(const TFad<Num,T>& rhs)
@@ -122,49 +120,49 @@ template <int Num,class T> inline  TFad<Num,T>::TFad(const TFad<Num,T> & rhs)
   copy(rhs);
 }
 
-template <int Num,class T> template <class ExprT> inline 
-TFad<Num,T>::TFad(const TFadExpr<ExprT>& fadexpr) 
+template <int Num,class T> template <class ExprT> inline
+TFad<Num,T>::TFad(const TFadExpr<ExprT>& fadexpr)
 : val_(fadexpr.val())
 {
 
-  for(int i=0; i<Num; ++i) 
+  for(int i=0; i<Num; ++i)
     dx_[i] = fadexpr.dx(i);
 
 }
 
-template <int Num,class T> inline  void TFad<Num,T>::diff(const int ith, const int n) 
-{ 
+template <int Num,class T> inline  void TFad<Num,T>::diff(const int ith, const int n)
+{
 
-  for(int i=0; i<Num; ++i) 
+  for(int i=0; i<Num; ++i)
     dx_[i] = T(0);
   dx_[ith] = T(1.);
 
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const T& v) 
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const T& v)
 {
   val_ = v;
 
-  for(int i=0; i<Num; ++i) 
+  for(int i=0; i<Num; ++i)
     dx_[i] = T(0);
 
   return *this;
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const TFad<Num,T>& rhs) 
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const TFad<Num,T>& rhs)
 {
   if ( this != &rhs ) copy(rhs);
-  
+
   return *this;
 }
 
-template <int Num,class T> template <class ExprT> inline TFad<Num,T> & TFad<Num,T>::operator=(const TFadExpr<ExprT>& fadexpr) 
+template <int Num,class T> template <class ExprT> inline TFad<Num,T> & TFad<Num,T>::operator=(const TFadExpr<ExprT>& fadexpr)
 {
   for(int i=0; i<Num; ++i)
     dx_[i] = fadexpr.dx(i);
-  
+
   val_ = fadexpr.val();
-  
+
   return *this;
 }
 
@@ -220,7 +218,7 @@ template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator+= (const 
 {
   for (int i=0; i<Num; ++i)
     dx_[i] += x.dx_[i];
-  
+
   val_ += x.val_;
 
   return *this;
@@ -306,7 +304,7 @@ template <int Num,class T> template <class ExprT> inline  TFad<Num,T> & TFad<Num
 //   os.width(12);
 //   os << a.val() << "  [";
 
-  
+
 //   for (int i=0; i< Num; i++) {
 //      os.width(12);
 //      os << a.dx(i);
@@ -316,7 +314,7 @@ template <int Num,class T> template <class ExprT> inline  TFad<Num,T> & TFad<Num
 //   return os;
 // }
 
-template <int Num,class T> inline ostream& operator << (ostream& os, const TFad<Num,T>& a)
+template <int Num,class T> inline std::ostream& operator << (std::ostream& os, const TFad<Num,T>& a)
 {
   os << a.val();
   return os;
@@ -370,7 +368,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  TFadUnaryPlus() {}
 
   const T& expr_;
 
@@ -380,7 +377,7 @@ public:
   const value_type val()     const { return expr_.val();}
   const value_type dx(int i) const { return expr_.dx(i);}
   int size() const {return expr_.size();}
-  
+
   bool hasFastAccess() const { return expr_.hasFastAccess();}
   value_type fastAccessDx(int i) const { return expr_.fastAccessDx(i);}
 };
@@ -391,7 +388,6 @@ public:
   typedef typename T::value_type value_type;
 
 protected:
-  TFadUnaryMin() {}
 
   const T& expr_;
 
@@ -401,7 +397,7 @@ public:
   const value_type val()     const { return - expr_.val();}
   const value_type dx(int i) const { return - expr_.dx(i);}
   int size() const {return expr_.size();}
-  
+
   bool hasFastAccess() const { return expr_.hasFastAccess();}
   value_type fastAccessDx(int i) const { return - expr_.fastAccessDx(i);}
 };
@@ -424,7 +420,7 @@ operator - (const TFadExpr<T>& expr)
   return TFadExpr< expr_t >( expr_t(expr) );
 }
 
-template <class T> inline ostream& operator << (ostream& os, const TFadExpr<T>& a)
+template <class T> inline std::ostream& operator << (std::ostream& os, const TFadExpr<T>& a)
 {
   os << a.val();
   return os;

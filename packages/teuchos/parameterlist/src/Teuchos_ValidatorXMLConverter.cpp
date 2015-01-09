@@ -53,18 +53,18 @@ ValidatorXMLConverter::fromXMLtoValidator(
   TEUCHOS_TEST_FOR_EXCEPTION(
     xmlObj.getRequired(getTypeAttributeName())
     !=
-    dummyValidator->getXMLTypeName(), 
-    BadValidatorXMLConverterException, 
-    "Cannot convert xmlObject " << 
+    dummyValidator->getXMLTypeName(),
+    BadValidatorXMLConverterException,
+    "Cannot convert xmlObject " <<
     ". Expected a " << dummyValidator->getXMLTypeName() <<
     " tag but got a " << xmlObj.getRequired(getTypeAttributeName()) << "type");
   #endif
-  RCP<ParameterEntryValidator> toReturn = 
+  RCP<ParameterEntryValidator> toReturn =
     convertXML(xmlObj, validatorIDsMap);
   return toReturn;
 }
 
-XMLObject 
+XMLObject
 ValidatorXMLConverter::fromValidatortoXML(
   const RCP<const ParameterEntryValidator> validator,
   const ValidatortoIDMap& validatorIDsMap,
@@ -73,11 +73,11 @@ ValidatorXMLConverter::fromValidatortoXML(
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    validator->getXMLTypeName() 
+    validator->getXMLTypeName()
     !=
-    dummyValidator->getXMLTypeName(), 
-    BadValidatorXMLConverterException, 
-    "Cannot convert Validator " << 
+    dummyValidator->getXMLTypeName(),
+    BadValidatorXMLConverterException,
+    "Cannot convert Validator " <<
     ". Expected a " << dummyValidator->getXMLTypeName() <<
     " validator but got a " << validator->getXMLTypeName() << "type");
   #endif

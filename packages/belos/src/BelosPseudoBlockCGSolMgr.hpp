@@ -80,10 +80,10 @@
  */
 
 namespace Belos {
-  
+
   //! @name PseudoBlockCGSolMgr Exceptions
   //@{
-  
+
   /** \brief PseudoBlockCGSolMgrLinearProblemFailure is thrown when the linear problem is
    * not setup (i.e. setProblem() was not called) when solve() is called.
    *
@@ -93,7 +93,7 @@ namespace Belos {
   class PseudoBlockCGSolMgrLinearProblemFailure : public BelosError {public:
     PseudoBlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   /** \brief PseudoBlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
    *
@@ -103,21 +103,21 @@ namespace Belos {
   class PseudoBlockCGSolMgrOrthoFailure : public BelosError {public:
     PseudoBlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   template<class ScalarType, class MV, class OP>
   class PseudoBlockCGSolMgr : public SolverManager<ScalarType,MV,OP> {
-    
+
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
-    
+
     //! @name Constructors/Destructor
-    //@{ 
+    //@{
 
     /*! \brief Empty constructor for BlockCGSolMgr.
      * This constructor takes no arguments and sets the default values for the solver.
@@ -125,39 +125,39 @@ namespace Belos {
      * The solver values can be changed using setParameters().
      */
     PseudoBlockCGSolMgr();
-    
+
     /*! \brief Basic constructor for PseudoBlockCGSolMgr.
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. 
+     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform.
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
     PseudoBlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-	                 const Teuchos::RCP<Teuchos::ParameterList> &pl );
-    
+                         const Teuchos::RCP<Teuchos::ParameterList> &pl );
+
     //! Destructor.
     virtual ~PseudoBlockCGSolMgr() {};
     //@}
-    
+
     //! @name Accessor methods
-    //@{ 
-    
+    //@{
+
     const LinearProblem<ScalarType,MV,OP>& getProblem() const {
       return *problem_;
     }
-    
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-   
+
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
- 
-    /*! \brief Return the timers for this object. 
+
+    /*! \brief Return the timers for this object.
      *
      * The timers are ordered as follows:
      *   - time spent in solve() routine
@@ -170,23 +170,23 @@ namespace Belos {
     int getNumIters() const {
       return numIters_;
     }
-  
+
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
         \note This flag will be reset the next time solve() is called.
      */
     bool isLOADetected() const { return false; }
-  
+
     //@}
-    
+
     //! @name Set methods
     //@{
-   
-    //! Set the linear problem that needs to be solved. 
+
+    //! Set the linear problem that needs to be solved.
     void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
-   
-    //! Set the parameters the solver manager should use to solve the linear problem. 
+
+    //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
-    
+
     //@}
 
     //! @name Reset methods
@@ -199,13 +199,13 @@ namespace Belos {
     //@}
 
     //! @name Solver application methods
-    //@{ 
-    
+    //@{
+
     /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
-     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
+     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to
      * quit.
      *
-     * This method calls PseudoBlockCGIter::iterate(), which will return either because a specially constructed status test evaluates to 
+     * This method calls PseudoBlockCGIter::iterate(), which will return either because a specially constructed status test evaluates to
      * ::Passed or an std::exception is thrown.
      *
      * A return from PseudoBlockCGIter::iterate() signifies one of the following scenarios:
@@ -219,22 +219,22 @@ namespace Belos {
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
     ReturnType solve();
-    
+
     //@}
-    
+
     /** \name Overridden from Teuchos::Describable */
     //@{
-    
+
     /** \brief Method to return description of the block CG solver manager */
     std::string description() const;
-    
+
     //@}
-    
+
   private:
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-    
+
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
@@ -246,7 +246,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -257,7 +257,7 @@ namespace Belos {
     /// requires that getValidParameters() be declared const, yet we
     /// want to create the valid parameter list only on demand.
     mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
-   
+
     // Default solver values.
     static const MagnitudeType convtol_default_;
     static const int maxIters_default_;
@@ -267,7 +267,7 @@ namespace Belos {
     static const int outputStyle_default_;
     static const int outputFreq_default_;
     static const int defQuorum_default_;
-    static const std::string resScale_default_; 
+    static const std::string resScale_default_;
     static const std::string label_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
@@ -276,8 +276,8 @@ namespace Belos {
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool assertPositiveDefiniteness_, showMaxResNormOnly_;
-    std::string resScale_;       
- 
+    std::string resScale_;
+
     // Timers.
     std::string label_;
     Teuchos::RCP<Teuchos::Time> timerSolve_;
@@ -285,8 +285,8 @@ namespace Belos {
     // Internal state variables.
     bool isSet_;
   };
-  
-  
+
+
 // Default solver values.
 template<class ScalarType, class MV, class OP>
 const typename PseudoBlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
@@ -328,6 +328,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -341,13 +342,14 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr( 
-							 const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-							 const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+PseudoBlockCGSolMgr<ScalarType,MV,OP>::
+PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -358,12 +360,15 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   label_(label_default_),
   isSet_(false)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    problem_.is_null (), std::invalid_argument,
+    "Belos::PseudoBlockCGSolMgr two-argument constructor: "
+    "'problem' is null.  You must supply a non-null Belos::LinearProblem "
+    "instance when calling this constructor.");
 
-  // If the parameter list pointer is null, then set the current parameters to the default parameter list.
-  if (!is_null(pl)) {
+  if (! pl.is_null ()) {
     // Set the parameters using the list that was passed in.
-    setParameters( pl );  
+    setParameters (pl);
   }
 }
 
@@ -472,7 +477,7 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
   }
-  
+
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
@@ -506,7 +511,7 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
     bool implicitResidualScalingName = false;
     if (params->isParameter ("Residual Scaling")) {
       tempResScale = params->get<std::string> ("Residual Scaling");
-    } 
+    }
     else if (params->isParameter ("Implicit Residual Scaling")) {
       tempResScale = params->get<std::string> ("Implicit Residual Scaling");
       implicitResidualScalingName = true;
@@ -520,10 +525,10 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
       // Update parameter in our list and residual tests, using the
       // given parameter name.
       if (implicitResidualScalingName) {
-	params_->set ("Implicit Residual Scaling", resScale_);
-      } 
+        params_->set ("Implicit Residual Scaling", resScale_);
+      }
       else {
-	params_->set ("Residual Scaling", resScale_); 
+        params_->set ("Residual Scaling", resScale_);
       }
 
       if (! convTest_.is_null()) {
@@ -531,11 +536,11 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
           convTest_->defineScaleForm( resScaleType, Belos::TwoNorm );
         }
         catch (std::exception& e) {
-	  // Make sure the convergence test gets constructed again.
-	  newResTest = true;
+          // Make sure the convergence test gets constructed again.
+          newResTest = true;
         }
       }
-    }      
+    }
   }
 
   // Get the deflation quorum, or number of converged systems before deflation is allowed
@@ -551,16 +556,16 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-  
+
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_ == Teuchos::null || newResTest) {
     convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_, showMaxResNormOnly_ ) );
     convTest_->defineScaleForm( convertStringToScaleType( resScale_ ), Belos::TwoNorm );
-  } 
+  }
 
   if (sTest_ == Teuchos::null || newResTest)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
+
   if (outputTest_ == Teuchos::null || newResTest) {
 
     // Create the status test output class.
@@ -586,7 +591,7 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
   isSet_ = true;
 }
 
-    
+
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
 PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
@@ -615,7 +620,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"
-      "to the output stream.");  
+      "to the output stream.");
     pl->set("Deflation Quorum", defQuorum_default_,
       "The number of linear systems that need to converge before\n"
       "they are deflated.  This number should be <= block size.");
@@ -633,8 +638,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     // Scaling").  The new name was added for compatibility with other
     // solvers, none of which use "Residual Scaling".
     pl->set("Residual Scaling", resScale_default_,
-	    "The type of scaling used in the residual convergence test.  This "
-	    "name is deprecated; the new name is \"Implicit Residual Scaling\".");
+            "The type of scaling used in the residual convergence test.  This "
+            "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  defaultParams_->set("Restart Timers", restartTimers_);
@@ -649,12 +654,12 @@ template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // Set the current parameters if they were not set before.
-  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
   if (!isSet_) { setParameters( params_ ); }
-  
+
   Teuchos::BLAS<int,ScalarType> blas;
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockCGSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
@@ -665,7 +670,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   std::vector<int> currIdx( numRHS2Solve ), currIdx2( numRHS2Solve );
   for (int i=0; i<numRHS2Solve; ++i) {
-    currIdx[i] = startPtr+i; 
+    currIdx[i] = startPtr+i;
     currIdx2[i]=i;
   }
 
@@ -678,17 +683,17 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   plist.set("Assert Positive Definiteness",assertPositiveDefiniteness_);
 
-  // Reset the status test.  
+  // Reset the status test.
   outputTest_->reset();
 
   // Assume convergence is achieved, then let any failed convergence set this to false.
-  bool isConverged = true;	
+  bool isConverged = true;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block CG solver
 
   Teuchos::RCP<PseudoBlockCGIter<ScalarType,MV,OP> > block_cg_iter
-    = Teuchos::rcp( new PseudoBlockCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );  
+    = Teuchos::rcp( new PseudoBlockCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations
   {
@@ -718,122 +723,122 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
       block_cg_iter->initializeCG(newState);
 
       while(1) {
-	
-	// tell block_gmres_iter to iterate
-	try {
-	  block_cg_iter->iterate();
-	  
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check convergence first
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convTest_->getStatus() == Passed ) {
-	    
-	    // Figure out which linear systems converged.
-	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
 
-	    // If the number of converged linear systems is equal to the
+        // tell block_gmres_iter to iterate
+        try {
+          block_cg_iter->iterate();
+
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check convergence first
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          if ( convTest_->getStatus() == Passed ) {
+
+            // Figure out which linear systems converged.
+            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+
+            // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
-	    if (convIdx.size() == currRHSIdx.size())
-	      break;  // break from while(1){block_cg_iter->iterate()}
+            if (convIdx.size() == currRHSIdx.size())
+              break;  // break from while(1){block_cg_iter->iterate()}
 
-	    // Inform the linear problem that we are finished with this current linear system.
-	    problem_->setCurrLS();
+            // Inform the linear problem that we are finished with this current linear system.
+            problem_->setCurrLS();
 
-	    // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
-	    int have = 0;
+            // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
+            int have = 0;
             std::vector<int> unconvIdx(currRHSIdx.size());
-	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      bool found = false;
-	      for (unsigned int j=0; j<convIdx.size(); ++j) {
-		if (currRHSIdx[i] == convIdx[j]) {
-		  found = true;
-		  break;
-		}
-	      }
-	      if (!found) {
+            for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+              bool found = false;
+              for (unsigned int j=0; j<convIdx.size(); ++j) {
+                if (currRHSIdx[i] == convIdx[j]) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
                 currIdx2[have] = currIdx2[i];
-		currRHSIdx[have++] = currRHSIdx[i];
-	      }
-	    }
-	    currRHSIdx.resize(have);
-	    currIdx2.resize(have);
-	    
-	    // Set the remaining indices after deflation.
-	    problem_->setLSIndex( currRHSIdx );
-	    
-	    // Get the current residual vector.
-	    std::vector<MagnitudeType> norms;
+                currRHSIdx[have++] = currRHSIdx[i];
+              }
+            }
+            currRHSIdx.resize(have);
+            currIdx2.resize(have);
+
+            // Set the remaining indices after deflation.
+            problem_->setLSIndex( currRHSIdx );
+
+            // Get the current residual vector.
+            std::vector<MagnitudeType> norms;
             R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
-	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }
+            for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
-	    // Set the new state and initialize the solver.
-	    CGIterationState<ScalarType,MV> defstate;
-	    defstate.R = R_0;
-	    block_cg_iter->initializeCG(defstate);
-	  }
+            // Set the new state and initialize the solver.
+            CGIterationState<ScalarType,MV> defstate;
+            defstate.R = R_0;
+            block_cg_iter->initializeCG(defstate);
+          }
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for maximum iterations
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxIterTest_->getStatus() == Passed ) {
-	    // we don't have convergence
-	    isConverged = false;
-	    break;  // break from while(1){block_cg_iter->iterate()}
-	  }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for maximum iterations
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( maxIterTest_->getStatus() == Passed ) {
+            // we don't have convergence
+            isConverged = false;
+            break;  // break from while(1){block_cg_iter->iterate()}
+          }
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // we returned from iterate(), but none of our status tests Passed.
-	  // something is wrong, and it is probably our fault.
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // something is wrong, and it is probably our fault.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
 
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
-	  }
-	}	
-	catch (const std::exception &e) {
-	  printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration " 
-				   << block_cg_iter->getNumIters() << std::endl 
-				   << e.what() << std::endl;
-	  throw;
-	}
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                               "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
+          }
+        }
+        catch (const std::exception &e) {
+          printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration "
+                                   << block_cg_iter->getNumIters() << std::endl
+                                   << e.what() << std::endl;
+          throw;
+        }
       }
-      
+
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
-      
+
       // Update indices for the linear systems to be solved.
       startPtr += numCurrRHS;
       numRHS2Solve -= numCurrRHS;
 
-      if ( numRHS2Solve > 0 ) {	
+      if ( numRHS2Solve > 0 ) {
 
-	numCurrRHS = numRHS2Solve;	
-	currIdx.resize( numCurrRHS );
-	currIdx2.resize( numCurrRHS );
-	for (int i=0; i<numCurrRHS; ++i) 
-	  { currIdx[i] = startPtr+i; currIdx2[i] = i; }
-	
-	// Set the next indices.
-	problem_->setLSIndex( currIdx );	
+        numCurrRHS = numRHS2Solve;
+        currIdx.resize( numCurrRHS );
+        currIdx2.resize( numCurrRHS );
+        for (int i=0; i<numCurrRHS; ++i)
+          { currIdx[i] = startPtr+i; currIdx2[i] = i; }
+
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
       }
       else {
-	currIdx.resize( numRHS2Solve );
+        currIdx.resize( numRHS2Solve );
       }
-      
+
     }// while ( numRHS2Solve > 0 )
-    
+
   }
-								     
+
   // print final summary
   sTest_->print( printer_->stream(FinalSummary) );
- 
+
   // print timing information
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
   // Calling summarize() can be expensive, so don't call unless the
@@ -842,14 +847,14 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   if (verbosity_ & TimingDetails)
     Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
 #endif
- 
+
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
- 
+
   if (!isConverged ) {
-    return Unconverged; // return from PseudoBlockCGSolMgr::solve() 
+    return Unconverged; // return from PseudoBlockCGSolMgr::solve()
   }
-  return Converged; // return from PseudoBlockCGSolMgr::solve() 
+  return Converged; // return from PseudoBlockCGSolMgr::solve()
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
@@ -862,7 +867,7 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
   oss << "}";
   return oss.str();
 }
-  
+
 } // end Belos namespace
 
 #endif /* BELOS_PSEUDO_BLOCK_CG_SOLMGR_HPP */

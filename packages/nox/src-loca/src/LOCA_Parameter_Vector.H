@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,7 +63,7 @@ namespace LOCA {
 
 namespace LOCA {
 
-/*! 
+/*!
   \brief %LOCA's container for holding a set of parameters that are
   used by the LOCA continuation routines.
 
@@ -73,7 +73,7 @@ namespace LOCA {
 class ParameterVector {
 
 public:
-  
+
   //! Constructor.
   ParameterVector();
 
@@ -101,7 +101,7 @@ public:
   //! Updates the parameter vector: this = alpha * alphaVector + b * this.  Returns true if successful.
   bool update(double alpha, const ParameterVector& alphaVector, double b);
 
-  //! Set a parameter vector equal to another. This will erase any old parameters in the object. 
+  //! Set a parameter vector equal to another. This will erase any old parameters in the object.
   ParameterVector& operator=(const ParameterVector& y);
 
   //! Return a reference to the i-th element.  Will throw an error if index is out of range.

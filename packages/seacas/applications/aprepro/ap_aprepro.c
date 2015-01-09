@@ -1,6 +1,6 @@
 /* 
  * Copyright 2007 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,19 +47,20 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2014/02/19",
-  "Revision: 3.03"
+  "Date: 2014/04/09",
+  "Revision: 3.04"
 };
 
-#include <stdlib.h>
-#include <ctype.h>
-#include "getopt.h"
-#include "my_aprepro.h"
-#include "y.tab.h"
-#include <sys/types.h>
-#include <time.h>
+#include <ctype.h>                      // for isdigit
+#include <stdio.h>                      // for fprintf, stderr, setbuf, etc
+#include <stdlib.h>                     // for NULL, exit, EXIT_SUCCESS, etc
+#include <string.h>                     // for strchr, strrchr, strlen
+#include <time.h>                       // for asctime, localtime, time, etc
+#include "add_to_log.h"                 // for add_to_log
+#include "getopt.h"                     // for getopt_long, option
+#include "my_aprepro.h"                 // for aprepro_options, True, etc
+#include "y.tab.h"                      // for VAR, yyparse, IMMSVAR, etc
 
-#include "add_to_log.h"
 
 aprepro_options ap_options;
 int state_immutable = False;
@@ -81,6 +82,7 @@ void initialize_options(aprepro_options *ap_options)
   ap_options->statistics = False;
   ap_options->interactive = False;
   ap_options->immutable = False;
+  ap_options->one_based_index = False;
 }
 
 extern void add_input_file(char *filename);
@@ -124,6 +126,7 @@ int main (int argc, char *argv[])
       {"messages",    NO_ARG, 0, 'M'},
       {"quiet",       NO_ARG, 0, 'q'},
       {"immutable",   NO_ARG, 0, 'X'},
+      {"one_based_index", NO_ARG, 0, '1'},
       {NULL,          NO_ARG, NULL, 0}
     };
 
@@ -141,7 +144,7 @@ int main (int argc, char *argv[])
   initialize_options(&ap_options);
   
   ap_options.end_on_exit = False;
-  while ((c = getopt_long (argc, argv, "c:dDsSvViI:eEwWmMhHCqX",
+  while ((c = getopt_long (argc, argv, "c:dDsSvViI:eEwWmMhHCqX1",
 			   long_options, &option_index)) != EOF)
     {
       switch (c)
@@ -209,6 +212,10 @@ int main (int argc, char *argv[])
 	  ap_options.immutable = True;
 	  break;
 
+	case '1':
+	  ap_options.one_based_index = True;
+	  break;
+	  
 	case 'h':
 	case 'H':
 	  usage();
@@ -235,27 +242,36 @@ int main (int argc, char *argv[])
 
     var = argv[optind++];
     val = strchr (var, '=');
-    *val++ = '\0';
-    if (!check_valid_var(var)) {
-      fprintf(stderr, "ERROR: '%s' is not a valid form for a variable; it will not be defined\n", var);
+    if (val == NULL) {
+      fprintf(stderr, "ERROR: '%s' is not a valid form for assiging a variable; it will not be defined\n", var);
     } else {
-      if (strchr(val, '"') != NULL) { /* Should be a string variable */
-	char *pt = strrchr(val, '"');
-	val++;
-	*pt = '\0';
-	if (var[0] == '_')
-	  s = putsym(var, SVAR, 0);
-	else
-	  s = putsym(var, IMMSVAR, 0);
-	NEWSTR(val, s->value.svar);
-      }
-      else {
-	sscanf (val, "%lf", &value);
-	if (var[0] == '_')
-	  s = putsym (var, VAR, 0);
-	else
-	  s = putsym (var, IMMVAR, 0);
-	s->value.var = value;
+      *val++ = '\0';
+      if (!check_valid_var(var)) {
+	fprintf(stderr, "ERROR: '%s' is not a valid form for a variable; it will not be defined\n", var);
+      } else {
+	if (strchr(val, '"') != NULL) { /* Should be a string variable */
+	  char *pt = strrchr(val, '"');
+	  if (pt != NULL) {
+	    val++;
+	    *pt = '\0';
+	    if (var[0] == '_')
+	      s = putsym(var, SVAR, 0);
+	    else
+	      s = putsym(var, IMMSVAR, 0);
+	    NEWSTR(val, s->value.svar);
+	  }
+	  else {
+	    fprintf(stderr, "ERROR: Missing trailing \" in definition of variable '%s'; it will not be defined\n", var);
+	  }
+	}
+	else {
+	  sscanf (val, "%lf", &value);
+	  if (var[0] == '_')
+	    s = putsym (var, VAR, 0);
+	  else
+	    s = putsym (var, IMMVAR, 0);
+	  s->value.var = value;
+	}
       }
     }
   }
@@ -328,20 +344,22 @@ usage (void)
   fprintf (stderr,
 	   "\nusage: %s [-dsviehMWCq] [-I path] [-c char] [var=val] filein fileout\n",
 	   myname);
-   ECHO("        --debug or -d: Dump all variables, debug loops/if/endif\n");
-   ECHO("   --statistics or -s: Print hash statistics at end of run     \n");
-   ECHO("      --version or -v: Print version number to stderr          \n");
-   ECHO("--comment or -c  char: Change comment character to 'char'      \n");
-   ECHO("    --immutable or -X: All variables are immutable--cannot be modified\n");
-   ECHO("  --interactive or -i: Interactive use, no buffering           \n");
-   ECHO("      --include or -I: Include file or include path            \n");
-   ECHO("      --exit_on or -e: End when 'Exit|EXIT|exit' entered       \n");
-   ECHO("         --help or -h: Print this list                         \n");
-   ECHO("      --message or -M: Print INFO messages                     \n");
-   ECHO("    --nowarning or -W: Do not print WARN messages	        \n");
-   ECHO("    --copyright or -C: Print copyright message                 \n");
-   ECHO("        --quiet or -q: Do not output version info to stdout    \n");
-   ECHO("              var=val: Assign value 'val' to variable 'var'  \n\n");
+   ECHO("          --debug or -d: Dump all variables, debug loops/if/endif\n");
+   ECHO("     --statistics or -s: Print hash statistics at end of run     \n");
+   ECHO("        --version or -v: Print version number to stderr          \n");
+   ECHO("  --comment or -c  char: Change comment character to 'char'      \n");
+   ECHO("      --immutable or -X: All variables are immutable--cannot be modified\n");
+   ECHO("    --interactive or -i: Interactive use, no buffering           \n");
+   ECHO("        --include or -I: Include file or include path            \n");
+   ECHO("        --exit_on or -e: End when 'Exit|EXIT|exit' entered       \n");
+   ECHO("           --help or -h: Print this list                         \n");
+   ECHO("        --message or -M: Print INFO messages                     \n");
+   ECHO("      --nowarning or -W: Do not print WARN messages	        \n");
+   ECHO("--one_based_index or -1: Array indexing is one-based (default = zero-based)\n");
+   ECHO("      --copyright or -C: Print copyright message                 \n");
+   ECHO("          --quiet or -q: Do not output version info to stdout    \n");
+   ECHO("                var=val: Assign value 'val' to variable 'var'    \n");
+   ECHO("                         Use var=\\\"sval\\\" for a string variable\n\n");
    ECHO("\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n");
    ECHO("\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n");
    ECHO("\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n");
@@ -353,7 +371,7 @@ copyright_output (void)
 {
   ECHOC("%s -------------------------------------------------------------------------\n");
   ECHOC("%s Copyright 2007 Sandia Corporation. Under the terms of Contract\n");
-  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement\n");
+  ECHOC("%s DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government\n");
   ECHOC("%s retains certain rights in this software.\n");
   ECHOC("%s\n");
   ECHOC("%s Redistribution and use in source and binary forms, with or without\n");

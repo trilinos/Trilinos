@@ -1,0 +1,14 @@
+This is a simple raw CMake project that is used to contrast with the TriBITS
+CMkae project in ../TribitsHelloWorld.
+
+To configure this, you just create a build dir as:
+
+$ cd $SOME_BASE_DIR
+$ mkdir BUILD
+$ cd BUILD
+
+and then configure, build, and test with:
+
+$ cmake $TRIBITS_DIR/doc/example/RawHelloWorld
+$ make
+$ ctest

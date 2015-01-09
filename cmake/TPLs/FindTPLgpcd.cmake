@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsTplDeclareLibraries)
 
-TRIBITS_TPL_DECLARE_LIBRARIES( gpcd
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( gpcd
 REQUIRED_HEADERS gpcd_lib.h
   REQUIRED_LIBS_NAMES "gpcd"
   )

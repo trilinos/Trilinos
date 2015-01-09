@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-/* Set Block size for matrix update -- for the matrix matrix multiply 
+/* Set Block size for matrix update -- for the matrix matrix multiply
  depends on the processor  */
 
 #ifndef __BLOCKH__

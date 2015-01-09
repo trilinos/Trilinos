@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,10 +53,9 @@
 *
 */
 
-#include <string.h>
-#include <stdio.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <string.h>                     // for strcpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_block, void_int, etc
 
 /*
  * reads the parameters used to describe an edge, face, or element block

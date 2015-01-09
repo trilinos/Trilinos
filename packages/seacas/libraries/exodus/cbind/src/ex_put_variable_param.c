@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.  
- * 
+ *       with the distribution.
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,51 +30,73 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_compress_variable, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-#include <ctype.h>
 
 /*! \cond INTERNAL */
-#define EX_PREPARE_RESULT_VAR(TNAME,DIMNAME,VARNAMEVAR) \
-  if ((status = nc_def_dim(exoid, DIMNAME, num_vars, &dimid)) != NC_NOERR) { \
-          if (status == NC_ENAMEINUSE) { \
-              exerrval = status; \
-              sprintf(errmsg, \
-                      "Error: " TNAME " variable name parameters are already defined in file id %d", \
-                      exoid); \
-              ex_err("ex_put_var_param",errmsg,exerrval); \
-            } else { \
-              exerrval = status; \
-              sprintf(errmsg, \
-                      "Error: failed to define number of " TNAME " variables in file id %d", \
-                      exoid); \
-              ex_err("ex_put_var_param",errmsg,exerrval); \
-            } \
-          goto error_ret;          /* exit define mode and return */ \
-        } \
-      /* Now define TNAME variable name variable */ \
-      dims[0] = dimid; \
-      dims[1] = dim_str_name; \
-  if ((status = nc_def_var (exoid, VARNAMEVAR, NC_CHAR, 2, dims, &varid)) != NC_NOERR) { \
-          if (status == NC_ENAMEINUSE) { \
-              exerrval = status; \
-              sprintf(errmsg, \
-                      "Error: " TNAME " variable names are already defined in file id %d", \
-                      exoid); \
-              ex_err("ex_put_variable_param",errmsg,exerrval); \
-            } else { \
-              exerrval = status; \
-              sprintf(errmsg, \
-                      "Error: failed to define " TNAME " variable names in file id %d", \
-                      exoid); \
-              ex_err("ex_put_variable_param",errmsg,exerrval); \
-            } \
-          goto error_ret;          /* exit define mode and return */ \
-        }
+int ex_prepare_result_var(int exoid, int num_vars,
+			  char *type_name, char *dim_name, char *variable_name)
+{
+  int status;
+  int dimid;
+  int varid;
+  int dims[2];
+  int dim_str_name;
+
+  char errmsg[MAX_ERR_LENGTH];
+
+  if ((status = nc_def_dim(exoid, dim_name, num_vars, &dimid)) != NC_NOERR) {
+    if (status == NC_ENAMEINUSE) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: %s variable name parameters are already defined in file id %d", type_name, exoid);
+      ex_err("ex_put_var_param",errmsg,exerrval);
+    } else {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define number of %s variables in file id %d",
+	      type_name, exoid);
+      ex_err("ex_put_var_param",errmsg,exerrval);
+    }
+    return 1;     /* exit define mode and return */
+  }
+
+  /* Now define type_name variable name variable */
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get string length in file id %d",exoid);
+    ex_err("ex_put_variable_param",errmsg,exerrval);
+    return (EX_FATAL);
+  }
+  
+  dims[0] = dimid;
+  dims[1] = dim_str_name;
+  if ((status = nc_def_var (exoid, variable_name,
+			    NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
+    if (status == NC_ENAMEINUSE) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: %s variable names are already defined in file id %d",
+	      type_name, exoid);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
+    } else {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define %s variable names in file id %d",
+	      type_name, exoid);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
+    }
+    return 1;   /* exit define mode and return */
+  }
+  return 0;
+}
 /*! \endcond */
 
 /*!
@@ -92,7 +114,7 @@ written to the database.
   -  data file not initialized properly with call to ex_put_init().
   -  this routine has already been called with the same variable
      type; redefining the number of variables is not allowed.
-  -  a warning value is returned if the number of variables 
+  -  a warning value is returned if the number of variables
      is specified as zero.
 
 \param[in] exoid     exodus file ID returned from a previous call to ex_create() or ex_open().
@@ -136,7 +158,7 @@ int ex_put_variable_param (int exoid,
   int dims[3];
   char errmsg[MAX_ERR_LENGTH];
   int status;
-  
+
   exerrval = 0; /* clear error code */
 
   /* if no variables are to be stored, return with warning */
@@ -149,7 +171,7 @@ int ex_put_variable_param (int exoid,
 
     return (EX_WARN);
   }
-  
+
   if ( obj_type != EX_NODAL      &&
        obj_type != EX_NODE_SET   &&
        obj_type != EX_EDGE_BLOCK &&
@@ -203,11 +225,20 @@ int ex_put_variable_param (int exoid,
 
   /* define dimensions and variables */
   if (obj_type == EX_GLOBAL) {
-    EX_PREPARE_RESULT_VAR("global",DIM_NUM_GLO_VAR,VAR_NAME_GLO_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "global",
+					DIM_NUM_GLO_VAR,VAR_NAME_GLO_VAR)) == 1)
+      goto error_ret;
 
+    if ((status = nc_inq_dimid (exoid, DIM_NUM_GLO_VAR, &dimid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to get global variable count in file id %d",exoid);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
+      return (EX_FATAL);
+    }
     dims[0] = time_dim;
     dims[1] = dimid;
-    if ((status = nc_def_var (exoid, VAR_GLO_VAR, 
+    if ((status = nc_def_var (exoid, VAR_GLO_VAR,
 			      nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR)
       {
 	exerrval = status;
@@ -305,33 +336,49 @@ int ex_put_variable_param (int exoid,
   }
 
   /* netCDF variables in which to store the EXODUS obj_type variable values will
-   * be defined in ex_put_*_var_tab or ex_put_*_var; at this point, we 
-   * don't know what obj_type variables are valid for which obj_type blocks 
+   * be defined in ex_put_*_var_tab or ex_put_*_var; at this point, we
+   * don't know what obj_type variables are valid for which obj_type blocks
    * (the info that is stored in the obj_type variable truth table)
    */
   else if (obj_type == EX_ELEM_BLOCK)  {
-    EX_PREPARE_RESULT_VAR("element",DIM_NUM_ELE_VAR,VAR_NAME_ELE_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "element",
+					DIM_NUM_ELE_VAR, VAR_NAME_ELE_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_NODE_SET) {
-    EX_PREPARE_RESULT_VAR("nodeset",DIM_NUM_NSET_VAR,VAR_NAME_NSET_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "nodeset",
+					DIM_NUM_NSET_VAR,VAR_NAME_NSET_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_SIDE_SET) {
-    EX_PREPARE_RESULT_VAR("sideset",DIM_NUM_SSET_VAR,VAR_NAME_SSET_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "sideset",
+					DIM_NUM_SSET_VAR,VAR_NAME_SSET_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_EDGE_BLOCK) {
-    EX_PREPARE_RESULT_VAR("edge",DIM_NUM_EDG_VAR,VAR_NAME_EDG_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "edge",
+					DIM_NUM_EDG_VAR,VAR_NAME_EDG_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_FACE_BLOCK) {
-    EX_PREPARE_RESULT_VAR("face",DIM_NUM_FAC_VAR,VAR_NAME_FAC_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "face",
+					DIM_NUM_FAC_VAR,VAR_NAME_FAC_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_EDGE_SET) {
-    EX_PREPARE_RESULT_VAR("edgeset",DIM_NUM_ESET_VAR,VAR_NAME_ESET_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "edgeset",
+					DIM_NUM_ESET_VAR,VAR_NAME_ESET_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_FACE_SET) {
-    EX_PREPARE_RESULT_VAR("faceset",DIM_NUM_FSET_VAR,VAR_NAME_FSET_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "faceset",
+					DIM_NUM_FSET_VAR,VAR_NAME_FSET_VAR)) == 1)
+      goto error_ret;
   }
   else if (obj_type == EX_ELEM_SET) {
-    EX_PREPARE_RESULT_VAR("elementset",DIM_NUM_ELSET_VAR,VAR_NAME_ELSET_VAR);
+    if ((status = ex_prepare_result_var(exoid, num_vars, "elementset",
+					DIM_NUM_ELSET_VAR,VAR_NAME_ELSET_VAR))==1)
+      goto error_ret;
   }
 
   /* leave define mode  */

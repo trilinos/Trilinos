@@ -76,7 +76,7 @@ operator()( OriginalTypeRef orig )
   OldRowMap_ = const_cast<Epetra_Map*>(&OldMatrix_->RowMap());
 
   int ierr = 0;
-
+  (void) ierr; // forestall "variable set but unused" warning
 
   if( !OldMatrix_ ) ierr = -2;
   if( !OldRHS_ )    ierr = -3;

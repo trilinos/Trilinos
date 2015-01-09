@@ -1,0 +1,5 @@
+# Allow full output to go to CDash
+SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 0)
+SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 0)
+# WARNING!  This could be a lot of output and could overwhelm CDash and the
+# MySQL DB so this might not be a good idea!

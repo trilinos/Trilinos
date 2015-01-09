@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,19 +35,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #ifndef EPETRA_COMBINEMODE_H
 #define EPETRA_COMBINEMODE_H
-/*! \file Epetra_CombineMode.h 
+/*! \file Epetra_CombineMode.h
     \brief Epetra_Combine Mode enumerable type
  */
 
-/*! \enum Epetra_CombineMode 
+/*! \enum Epetra_CombineMode
     If set to Add, components on the receiving processor will be added
     together.    If set to Zero, off-processor components will be ignored.
     If set to Insert, off-processor components will replace existing
@@ -72,20 +72,21 @@ enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
                                      be inserted into locations on
                                      receiving processor replacing existing values. (V,M) */
                         Average,/*!< Off-processor components will be
-                                     averaged with existing components 
+                                     averaged with existing components
                                      on the receiving processor. (V) */
                         Epetra_Max,    /*!< Off-processor components will be
-                                     maxed with existing components 
+                                     maxed with existing components
                                      on the receiving processor. (V) */
                         Epetra_Min,    /*!< Off-processor components will be
-                                     min'ed with existing components 
+                                     min'ed with existing components
                                      on the receiving processor. (V) */
                         AbsMax, /*!< Magnitudes of Off-processor components will be
-                                     maxed with magnitudes of existing components 
+                                     maxed with magnitudes of existing components
                                      on the receiving processor. (V) */
-                        AbsMin  /*!< Magnitudes of Off-processor components will be
-                                     min'ed with magnitudes of existing components 
+                        AbsMin, /*!< Magnitudes of Off-processor components will be
+                                     min'ed with magnitudes of existing components
                                      on the receiving processor. (V) */
+                        Epetra_AddLocalAlso    /*!< Like Add but local components are also added */
                         };
 
 #endif // EPETRA_COMBINEMODE_H

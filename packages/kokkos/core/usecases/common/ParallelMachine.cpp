@@ -41,14 +41,14 @@
 //@HEADER
 */
 
+#if 0
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <ParallelMachine.hpp>
 
-#include <Kokkos_Cuda.hpp>
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Core.hpp>
 
 #if ! defined( KOKKOS_HAVE_MPI )
 #define MPI_COMM_NULL 0
@@ -173,4 +173,6 @@ void Machine::print_configuration( std::ostream & msg ) const
 }
 
 }
+
+#endif /* #if 0 */
 

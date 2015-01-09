@@ -1,4 +1,3 @@
-INCLUDE(TribitsLibraryMacros)
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
@@ -193,6 +192,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_AnisoSparseGridQuadrature.hpp
   Stokhos_AnisoSparseGridQuadratureImp.hpp
+  Stokhos_SmolyakSparseGridQuadrature.hpp
+  Stokhos_SmolyakSparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
@@ -540,6 +541,7 @@ IF (Stokhos_ENABLE_Sacado)
     LIST(APPEND SACADO_HEADERS
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_MemoryTraits.hpp
       sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
@@ -550,7 +552,6 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
       sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Stokhos_ViewStorage.hpp
-      sacado/kokkos/Kokkos_AnalyzeSacadoShape.hpp
       sacado/kokkos/Kokkos_View_Utils.hpp
       sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
       sacado/kokkos/vector/Sacado_MP_Vector.hpp
@@ -562,6 +563,9 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
+      sacado/kokkos/vector/Kokkos_Parallel_MP_Vector.hpp
+      sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
+      sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
 
       sacado/kokkos/pce/Stokhos_Sacado_Kokkos_UQ_PCE.hpp
       sacado/kokkos/pce/Sacado_UQ_PCE.hpp
@@ -572,32 +576,47 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Contiguous.hpp
       sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
       sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
+      sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
       )
     LIST(APPEND SACADO_SOURCES
+      sacado/kokkos/Stokhos_MemoryTraits.cpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
       )
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
+        sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
+        sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         LIST(APPEND SACADO_HEADERS
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+          sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
           )
       ENDIF()
     ENDIF()
-     IF (Stokhos_ENABLE_KokkosMpiComm)
+    IF (Stokhos_ENABLE_TeuchosKokkosComm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
       LIST(APPEND SACADO_HEADERS
         sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
         sacado/kokkos/pce/mpicomm/Kokkos_TeuchosCommAdapters_UQ_PCE.hpp
+        )
+    ENDIF()
+    IF (Stokhos_ENABLE_KokkosAlgorithms)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
+      LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/algorithms/Kokkos_Random_MP_Vector.hpp
+        sacado/kokkos/pce/algorithms/Kokkos_Random_UQ_PCE.hpp
         )
     ENDIF()
 
@@ -620,7 +639,7 @@ IF (Stokhos_ENABLE_Sacado)
       SET(TPETRA_CU_SOURCES "")
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
-      IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+      IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
         APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
         SET(TPETRA_ETI_CLASSES
@@ -631,6 +650,9 @@ IF (Stokhos_ENABLE_Sacado)
           DistObject
           CrsMatrix
           CrsGraph
+          Experimental::BlockVector
+          Experimental::BlockMultiVector
+          Experimental::BlockCrsMatrix
           )
         SET(TPETRAEXT_ETI_CLASSES
           MatrixMatrix
@@ -786,39 +808,6 @@ IF (Stokhos_ENABLE_Sacado)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
-          SET(IFPACK2_ETI_CLASSES
-            Chebyshev
-            Diagonal
-            IdentitySolver
-            Relaxation
-            RILUK
-            Details::DenseSolver
-            DiagonalFilter
-            LocalFilter
-            ILUT
-            OverlappingRowMatrix
-            ReorderFilter
-            SingletonFilter
-            SparsityFilter
-            Details::OneLevelFactory
-            AdditiveSchwarz
-            BlockRelaxation
-            BorderedOperator
-            Details::Chebyshev
-            SparseContainer
-            Factory
-            Krylov
-            )
-          IF(Ifpack2_ENABLE_Amesos2)
-            LIST(APPEND IFPACK2_ETI_CLASSES
-              Details::Amesos2Wrapper
-              )
-          ENDIF()
-          SET(IFPACK2_ETI_LO_GO_CLASSES
-            LinearPartitioner
-            OverlappingPartitioner
-            Details::OverlappingRowGraph
-            )
           IF (Kokkos_ENABLE_Pthread)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
@@ -830,12 +819,6 @@ IF (Stokhos_ENABLE_Sacado)
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Threads.tmpl
               "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_Threads.tmpl
-              "Ifpack2_CLASS_FILE_NAME_Threads.cpp"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
@@ -852,12 +835,6 @@ IF (Stokhos_ENABLE_Sacado)
               "Ifpack2_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-             PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_OpenMP.tmpl
-              "Ifpack2_CLASS_FILE_NAME_OpenMP.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
           IF (Kokkos_ENABLE_Cuda)
             PROCESS_ETI_TEMPLATE(
@@ -870,12 +847,6 @@ IF (Stokhos_ENABLE_Sacado)
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Cuda.tmpl
               "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cu"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
-             PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_Cuda.cu"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
           ENDIF()
@@ -952,7 +923,7 @@ IF (Stokhos_ENABLE_Sacado)
   # ENDIF()
   # IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_Tpetra)
   #   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
-  #   IF(Tpetra_ENABLE_EXPLICIT_INSTANTIATION)
+  #   IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
   #     SET(SOURCES ${SOURCES}
   #       tpetra/tpetra_pce_instantiations.cpp
   #       )

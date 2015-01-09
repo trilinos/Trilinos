@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
   // Create the problem matrices
   //************************************
   //
-  printer.stream(Errors) << "Generating problem matrices..." << flush;
+  printer.stream(Errors) << "Generating problem matrices..." << std::flush;
   // Number of dimension of the domain
   const int space_dim = 2;
   // Size of each of the dimensions of the domain
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Ifpack_Preconditioner> prec;
   Teuchos::RCP<Epetra_Operator> PrecOp;
   if (usePrec) {
-    printer.stream(Errors) << "Constructing Incomplete Cholesky preconditioner..." << flush;
+    printer.stream(Errors) << "Constructing Incomplete Cholesky preconditioner..." << std::flush;
     Ifpack precFactory;
     // additive-Schwartz incomplete Cholesky with thresholding; see IFPACK documentation
     string precType = "IC stand-alone";

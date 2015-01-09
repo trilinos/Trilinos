@@ -32,11 +32,11 @@ class TwoLevelDDAdditive : public BaseOperator {
 public:
   // Constructor assumes that all operators and inverse operators are already
   // filled.
-  TwoLevelDDAdditive(const Operator FineMatrix,
-                     const InverseOperator FineSolver,
-                     const InverseOperator CoarseSolver,
-                     const Operator R,
-                     const Operator P) :
+  TwoLevelDDAdditive(const Operator & FineMatrix,
+                     const InverseOperator & FineSolver,
+                     const InverseOperator & CoarseSolver,
+                     const Operator & R,
+                     const Operator & P) :
     FineMatrix_(FineMatrix),
     R_(R),
     P_(P),

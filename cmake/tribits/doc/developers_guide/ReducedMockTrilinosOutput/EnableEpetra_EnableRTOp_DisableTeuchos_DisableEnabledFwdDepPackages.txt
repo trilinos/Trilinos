@@ -1,0 +1,14 @@
+Explicitly enabled packages on input (by user):  RTOp Epetra 2
+Explicitly disabled packages on input (by user or by default):  Teuchos 1
+
+Disabling forward required SE packages and optional intra-package support that \
+ have a dependancy on disabled SE packages Trilinos_ENABLE_<TRIBITS_PACKAGE>=OFF ...
+
+ ***
+ *** WARNING: Setting Trilinos_ENABLE_RTOp=OFF which was 'ON' because RTOp has \
+ a required library dependence on disabled package Teuchos but \
+ Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!
+ ***
+
+Final set of enabled packages:  Epetra 1
+Final set of non-enabled packages:  Teuchos RTOp Triutils EpetraExt Thyra 5

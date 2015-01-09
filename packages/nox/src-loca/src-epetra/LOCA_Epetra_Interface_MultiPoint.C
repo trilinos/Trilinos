@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -46,32 +46,33 @@
 //@HEADER
 
 #include "LOCA_Epetra_Interface_MultiPoint.H"
-  
+
 #ifdef HAVE_NOX_EPETRAEXT
 
 LOCA::Epetra::Interface::MultiPoint::
 MultiPoint(
        const Teuchos::RCP<LOCA::Epetra::Interface::Required> &iReq_,
        const Teuchos::RCP< NOX::Epetra::Interface::Jacobian> &iJac_,
-       const Epetra_MultiVector &splitMultiVec_, 
+       const Epetra_MultiVector &splitMultiVec_,
        const Teuchos::RCP<Epetra_RowMatrix> &splitJac_,
        const Teuchos::RCP<EpetraExt::MultiComm> &globalComm_) :
   iReq(iReq_),
   iJac(iJac_),
-  splitJac(splitJac_), 
+  splitJac(splitJac_),
   globalComm(globalComm_),
   splitVec(*(splitMultiVec_(0))),
-  splitRes(*(splitMultiVec_(0))), 
-  jacobian(0), 
+  splitRes(*(splitMultiVec_(0))),
+  jacobian(0),
   solution(0),
-  solutionOverlap(0), 
-  overlapImporter(0), 
-  timeStepsOnTimeDomain(splitMultiVec_.NumVectors()), 
+  solutionOverlap(0),
+  overlapImporter(0),
+  timeStepsOnTimeDomain(splitMultiVec_.NumVectors()),
   numTimeDomains(globalComm_->NumSubDomains()),
-  timeDomain(globalComm_->SubDomainRank()), 
+  timeDomain(globalComm_->SubDomainRank()),
   conStep(0),
   rowStencil(0),
-  rowIndex(0)
+  rowIndex(0),
+  splitJacCrs(NULL)
 {
 
    if (globalComm->MyPID()==0) {
@@ -95,21 +96,21 @@ MultiPoint(
      (*rowIndex).push_back(i + globalComm->FirstTimeStepOnDomain());
    }
 
-   jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil, 
-					    *rowIndex, *globalComm);
+   jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil,
+                        *rowIndex, *globalComm);
 
-   // Construct global solution vector, the overlap vector, 
+   // Construct global solution vector, the overlap vector,
    //and importer between them
-   solution = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), 
-					 jacobian->RowMap());
-   solutionOverlap = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), 
-						jacobian->ColMap());
-  
+   solution = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(),
+                     jacobian->RowMap());
+   solutionOverlap = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(),
+                        jacobian->ColMap());
+
    overlapImporter = new Epetra_Import(solutionOverlap->Map(), solution->Map());
 
 
    // Load initial guess into block solution vector
-   for (int i=0; i < timeStepsOnTimeDomain; i++) 
+   for (int i=0; i < timeStepsOnTimeDomain; i++)
            solution->LoadBlockValues(*(splitMultiVec_(i)), (*rowIndex)[i]);
 }
 
@@ -129,7 +130,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
   bool stat = true;
 
-  // Copy owned parts of vector from vector with global map 
+  // Copy owned parts of vector from vector with global map
   // to one with split map
   solution->Epetra_Vector::operator=(x);
   solutionOverlap->Import(*solution, *overlapImporter, Insert);
@@ -143,13 +144,13 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
     splitRes.PutScalar(0.0);
 
     // Pass step index so application can adjust parameters
-    iReq->setMultiPointParameter((*rowIndex)[i]); 
+    iReq->setMultiPointParameter((*rowIndex)[i]);
     stat = iReq->computeF(splitVec, splitRes, fillFlag);
 
     residual.LoadBlockValues(splitRes, (*rowIndex)[i]);
   }
 
-  // F does not know it is a clone of a block vector, 
+  // F does not know it is a clone of a block vector,
   // so must copy values from residual
   // -- can be fixed? Maybe make residual a view of F instad of copying.
   F = residual;
@@ -163,7 +164,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   bool stat = true;
   jacobian->PutScalar(0.0);
 
-  // Copy owned parts of vector from vector with global map 
+  // Copy owned parts of vector from vector with global map
   // to one with split map
   solution->Epetra_Vector::operator=(x);
 
@@ -172,7 +173,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
 
     // Pass step index so application can adjust parameters
-    iReq->setMultiPointParameter((*rowIndex)[i]); 
+    iReq->setMultiPointParameter((*rowIndex)[i]);
     stat =  iJac->computeJacobian(splitVec, *splitJac );
 
     jacobian->LoadBlock(*splitJac, i, 0);
@@ -196,10 +197,10 @@ printSolution(const Epetra_Vector& x, double conParam)
   for (int j=0; j<timeDomain; j++) globalComm->Barrier();
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    // Pass indexing data for possible application use in 
+    // Pass indexing data for possible application use in
     // output naming convention
-    iReq->dataForPrintSolution(conStep, (*rowIndex)[i], 
-	 		       globalComm->NumTimeSteps());
+    iReq->dataForPrintSolution(conStep, (*rowIndex)[i],
+                    globalComm->NumTimeSteps());
     iReq->printSolution(splitVec, conParam);
   }
   for (int j=timeDomain; j<numTimeDomains-1; j++) globalComm->Barrier();
@@ -210,20 +211,20 @@ printSolution(const Epetra_Vector& x, double conParam)
 EpetraExt::BlockVector& LOCA::Epetra::Interface::MultiPoint::
 getSolution()
 {
-  return  *solution; 
+  return  *solution;
 }
 
 EpetraExt::BlockCrsMatrix& LOCA::Epetra::Interface::MultiPoint::
 getJacobian()
 {
-  return  *jacobian; 
+  return  *jacobian;
 }
 
 void LOCA::Epetra::Interface::MultiPoint::
 throwError(const std::string& functionName, const std::string& errorMsg) const
 {
-  std::cout << "LOCA::Epetra::Interface::MultiPoint::" << functionName 
-	 << " - " << errorMsg << std::endl;
+  std::cout << "LOCA::Epetra::Interface::MultiPoint::" << functionName
+     << " - " << errorMsg << std::endl;
   throw "LOCA Error";
 }
 

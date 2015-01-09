@@ -36,7 +36,11 @@
 #ifndef _ELB_GRAPH_CONST_H_
 #define _ELB_GRAPH_CONST_H_
 
-#include "elb.h"
+struct Problem_Description;
+struct Sphere_Info;
+template <typename INT> struct Graph_Description;
+template <typename INT> struct Mesh_Description;
+template <typename INT> struct Weight_Description;
 
 template <typename INT>
 int generate_graph(

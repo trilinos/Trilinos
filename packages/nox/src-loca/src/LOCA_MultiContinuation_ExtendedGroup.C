@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,8 +61,8 @@
 #include "LOCA_MultiContinuation_CompositeConstraintMVDX.H"
 
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
-			 const LOCA::MultiContinuation::ExtendedGroup& source,
-			 NOX::CopyType type)
+             const LOCA::MultiContinuation::ExtendedGroup& source,
+             NOX::CopyType type)
   : globalData(source.globalData),
     parsedParams(source.parsedParams),
     continuationParams(source.continuationParams),
@@ -87,13 +87,13 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 }
 
 
-LOCA::MultiContinuation::ExtendedGroup::~ExtendedGroup() 
+LOCA::MultiContinuation::ExtendedGroup::~ExtendedGroup()
 {
 }
 
 NOX::Abstract::Group&
 LOCA::MultiContinuation::ExtendedGroup::operator=(
-					  const NOX::Abstract::Group& source)
+                      const NOX::Abstract::Group& source)
 {
   copy(source);
   return *this;
@@ -106,178 +106,178 @@ LOCA::MultiContinuation::ExtendedGroup::clone(NOX::CopyType type) const
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setX(const NOX::Abstract::Vector& y)  
+LOCA::MultiContinuation::ExtendedGroup::setX(const NOX::Abstract::Vector& y)
 {
   conGroup->setX(y);
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::computeX(
-					      const NOX::Abstract::Group& g, 
-					      const NOX::Abstract::Vector& d,
-					      double step) 
+                          const NOX::Abstract::Group& g,
+                          const NOX::Abstract::Vector& d,
+                          double step)
 {
-  const LOCA::MultiContinuation::ExtendedGroup& mg = 
+  const LOCA::MultiContinuation::ExtendedGroup& mg =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(g);
 
   conGroup->computeX(*(mg.conGroup), d, step);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ExtendedGroup::computeF() 
+LOCA::MultiContinuation::ExtendedGroup::computeF()
 {
   return conGroup->computeF();
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ExtendedGroup::computeJacobian() 
+LOCA::MultiContinuation::ExtendedGroup::computeJacobian()
 {
   return conGroup->computeJacobian();
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ExtendedGroup::computeGradient() 
+LOCA::MultiContinuation::ExtendedGroup::computeGradient()
 {
   return conGroup->computeGradient();
 }
-   
+
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::computeNewton(
-					       Teuchos::ParameterList& params) 
+                           Teuchos::ParameterList& params)
 {
   return conGroup->computeNewton(params);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobian(
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+                      const NOX::Abstract::Vector& input,
+                      NOX::Abstract::Vector& result) const
 {
   return conGroup->applyJacobian(input, result);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianTranspose(
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+                      const NOX::Abstract::Vector& input,
+                      NOX::Abstract::Vector& result) const
 {
   return conGroup->applyJacobianTranspose(input, result);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverse(
-					  Teuchos::ParameterList& params, 
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+                      Teuchos::ParameterList& params,
+                      const NOX::Abstract::Vector& input,
+                      NOX::Abstract::Vector& result) const
 {
   return conGroup->applyJacobianInverse(params, input, result);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianMultiVector(
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
   return conGroup->applyJacobianMultiVector(input, result);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianTransposeMultiVector(
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
   return conGroup->applyJacobianTransposeMultiVector(input, result);
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverseMultiVector(
-				     Teuchos::ParameterList& params,
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+                     Teuchos::ParameterList& params,
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
   return conGroup->applyJacobianInverseMultiVector(params, input, result);
 }
 
 bool
-LOCA::MultiContinuation::ExtendedGroup::isF() const 
+LOCA::MultiContinuation::ExtendedGroup::isF() const
 {
   return conGroup->isF();
 }
 
 bool
-LOCA::MultiContinuation::ExtendedGroup::isJacobian() const 
+LOCA::MultiContinuation::ExtendedGroup::isJacobian() const
 {
   return conGroup->isJacobian();
 }
 
 bool
-LOCA::MultiContinuation::ExtendedGroup::isGradient() const 
+LOCA::MultiContinuation::ExtendedGroup::isGradient() const
 {
   return conGroup->isGradient();
 }
 
 bool
-LOCA::MultiContinuation::ExtendedGroup::isNewton() const 
+LOCA::MultiContinuation::ExtendedGroup::isNewton() const
 {
   return conGroup->isNewton();
 }
-  
+
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ExtendedGroup::getX() const 
+LOCA::MultiContinuation::ExtendedGroup::getX() const
 {
   return conGroup->getX();
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ExtendedGroup::getF() const 
+LOCA::MultiContinuation::ExtendedGroup::getF() const
 {
   return conGroup->getF();
 }
 
 double
-LOCA::MultiContinuation::ExtendedGroup::getNormF() const 
+LOCA::MultiContinuation::ExtendedGroup::getNormF() const
 {
   return conGroup->getNormF();
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ExtendedGroup::getGradient() const 
+LOCA::MultiContinuation::ExtendedGroup::getGradient() const
 {
   return conGroup->getGradient();
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ExtendedGroup::getNewton() const 
+LOCA::MultiContinuation::ExtendedGroup::getNewton() const
 {
   return conGroup->getNewton();
 }
-  
+
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::MultiContinuation::ExtendedGroup::getXPtr() const 
+LOCA::MultiContinuation::ExtendedGroup::getXPtr() const
 {
   return conGroup->getXPtr();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::MultiContinuation::ExtendedGroup::getFPtr() const 
+LOCA::MultiContinuation::ExtendedGroup::getFPtr() const
 {
   return conGroup->getFPtr();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::MultiContinuation::ExtendedGroup::getGradientPtr() const 
+LOCA::MultiContinuation::ExtendedGroup::getGradientPtr() const
 {
   return conGroup->getGradientPtr();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
-LOCA::MultiContinuation::ExtendedGroup::getNewtonPtr() const 
+LOCA::MultiContinuation::ExtendedGroup::getNewtonPtr() const
 {
   return conGroup->getNewtonPtr();
 }
 
 double
-LOCA::MultiContinuation::ExtendedGroup::getNormNewtonSolveResidual() const 
+LOCA::MultiContinuation::ExtendedGroup::getNormNewtonSolveResidual() const
 {
   return conGroup->getNormNewtonSolveResidual();
 }
@@ -295,10 +295,10 @@ LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup()
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::copy(const NOX::Abstract::Group& src) 
+LOCA::MultiContinuation::ExtendedGroup::copy(const NOX::Abstract::Group& src)
 {
 
-  const LOCA::MultiContinuation::ExtendedGroup& source = 
+  const LOCA::MultiContinuation::ExtendedGroup& source =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(src);
 
   // Protect against A = A
@@ -329,14 +329,14 @@ LOCA::MultiContinuation::ExtendedGroup::getNumParams() const
 
 void
 LOCA::MultiContinuation::ExtendedGroup::preProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   conGroup->preProcessContinuationStep(stepStatus);
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::postProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   conGroup->postProcessContinuationStep(stepStatus);
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
@@ -345,31 +345,31 @@ LOCA::MultiContinuation::ExtendedGroup::postProcessContinuationStep(
   }
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::computePredictor()
 {
   if (isValidPredictor)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::ExtendedGroup::computePredictor()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // Compute predictor
-  status = predictor->compute(baseOnSecant, stepSize, *this, prevXVec, 
+  status = predictor->compute(baseOnSecant, stepSize, *this, prevXVec,
        dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(conGroup->
-								    getX()));
-  finalStatus = 
+                                    getX()));
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
+                               callingFunction);
 
   // Fill tangent vector
   status = predictor->computeTangent(tangentMultiVec);
-  finalStatus = 
+  finalStatus =
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-  
+                               callingFunction);
+
   scaleTangent();
 
   isValidPredictor = true;
@@ -385,18 +385,16 @@ LOCA::MultiContinuation::ExtendedGroup::isPredictor() const
 void
 LOCA::MultiContinuation::ExtendedGroup::scaleTangent()
 {
-  LOCA::MultiContinuation::ExtendedVector *v;
-
   scaledTangentMultiVec = tangentMultiVec;
 
   // Only scale the tangent if it is scalable
   if (predictor->isTangentScalable()) {
 
     for (int i=0; i<numParams; i++) {
-      v = 
-	dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledTangentMultiVec[i]);
-      grpPtr->scaleVector(*(v->getXVec()));
-      grpPtr->scaleVector(*(v->getXVec()));
+      LOCA::MultiContinuation::ExtendedVector & v =
+        dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(scaledTangentMultiVec[i]);
+      grpPtr->scaleVector(*(v.getXVec()));
+      grpPtr->scaleVector(*(v.getXVec()));
     }
 
   }
@@ -404,8 +402,8 @@ LOCA::MultiContinuation::ExtendedGroup::scaleTangent()
 
 void
 LOCA::MultiContinuation::ExtendedGroup::setPredictorTangentDirection(
-			 const LOCA::MultiContinuation::ExtendedVector& v,
-			 int i)
+             const LOCA::MultiContinuation::ExtendedVector& v,
+             int i)
 {
   tangentMultiVec[i] = v;
 }
@@ -425,38 +423,38 @@ LOCA::MultiContinuation::ExtendedGroup::getScaledPredictorTangent() const
 
 void
 LOCA::MultiContinuation::ExtendedGroup::setPrevX(
-					     const NOX::Abstract::Vector& y) 
+                         const NOX::Abstract::Vector& y)
 {
   prevXVec = y;
 }
 
 const LOCA::MultiContinuation::ExtendedVector&
-LOCA::MultiContinuation::ExtendedGroup::getPrevX() const 
+LOCA::MultiContinuation::ExtendedGroup::getPrevX() const
 {
   return prevXVec;
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setStepSize(double deltaS, int i) 
+LOCA::MultiContinuation::ExtendedGroup::setStepSize(double deltaS, int i)
 {
   stepSize[i] = deltaS;
 }
 
 double
-LOCA::MultiContinuation::ExtendedGroup::getStepSize(int i) const 
+LOCA::MultiContinuation::ExtendedGroup::getStepSize(int i) const
 {
   return stepSize[i];
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::setContinuationParameter(double val,
-								 int i) 
+                                 int i)
 {
   conGroup->setConstraintParameter(i, val);
 }
 
 double
-LOCA::MultiContinuation::ExtendedGroup::getContinuationParameter(int i) const 
+LOCA::MultiContinuation::ExtendedGroup::getContinuationParameter(int i) const
 {
   return conGroup->getConstraintParameter(i);
 }
@@ -475,14 +473,14 @@ LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterIDs() const
 
 std::string
 LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterName(
-								  int i) const
+                                  int i) const
 {
   const LOCA::ParameterVector& p = grpPtr->getParams();
   return p.getLabel(conParamIDs[i]);
 }
 
 double
-LOCA::MultiContinuation::ExtendedGroup::getStepSizeScaleFactor(int i) const 
+LOCA::MultiContinuation::ExtendedGroup::getStepSizeScaleFactor(int i) const
 {
   return stepSizeScaleFactor[i];
 }
@@ -496,12 +494,12 @@ LOCA::MultiContinuation::ExtendedGroup::printSolution() const
 
 double
 LOCA::MultiContinuation::ExtendedGroup::computeScaledDotProduct(
-			 const NOX::Abstract::Vector& x,
-			 const NOX::Abstract::Vector& y) const
+             const NOX::Abstract::Vector& x,
+             const NOX::Abstract::Vector& y) const
 {
-  const LOCA::MultiContinuation::ExtendedVector& mx = 
+  const LOCA::MultiContinuation::ExtendedVector& mx =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
-  const LOCA::MultiContinuation::ExtendedVector& my = 
+  const LOCA::MultiContinuation::ExtendedVector& my =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
   double val = grpPtr->computeScaledDotProduct(*mx.getXVec(), *my.getXVec());
@@ -519,8 +517,8 @@ LOCA::MultiContinuation::ExtendedGroup::projectToDrawDimension() const
 
 void
 LOCA::MultiContinuation::ExtendedGroup::projectToDraw(
-			    const LOCA::MultiContinuation::ExtendedVector& x, 
-			    double *px) const
+                const LOCA::MultiContinuation::ExtendedVector& x,
+                double *px) const
 {
   // first numParams components are the parameters
   for (int i=0; i<numParams; i++)
@@ -562,7 +560,7 @@ LOCA::MultiContinuation::ExtendedGroup::isCombinedCZero() const
 
 void
 LOCA::MultiContinuation::ExtendedGroup::extractSolutionComponent(
-			                const NOX::Abstract::MultiVector& v,
+                            const NOX::Abstract::MultiVector& v,
                                         NOX::Abstract::MultiVector& v_x) const
 {
   conGroup->extractSolutionComponent(v, v_x);
@@ -570,7 +568,7 @@ LOCA::MultiContinuation::ExtendedGroup::extractSolutionComponent(
 
 void
 LOCA::MultiContinuation::ExtendedGroup::extractParameterComponent(
-			   bool use_transpose,
+               bool use_transpose,
                            const NOX::Abstract::MultiVector& v,
                            NOX::Abstract::MultiVector::DenseMatrix& v_p) const
 {
@@ -579,30 +577,30 @@ LOCA::MultiContinuation::ExtendedGroup::extractParameterComponent(
 
 void
 LOCA::MultiContinuation::ExtendedGroup::loadNestedComponents(
-			   const NOX::Abstract::MultiVector& v_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-			   NOX::Abstract::MultiVector& v) const
+               const NOX::Abstract::MultiVector& v_x,
+               const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+               NOX::Abstract::MultiVector& v) const
 {
   conGroup->loadNestedComponents(v_x, v_p, v);
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::fillA(
-	                                 NOX::Abstract::MultiVector& A) const
+                                     NOX::Abstract::MultiVector& A) const
 {
   conGroup->fillA(A);
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::fillB(
-	                                 NOX::Abstract::MultiVector& B) const
+                                     NOX::Abstract::MultiVector& B) const
 {
   conGroup->fillB(B);
 }
 
 void
 LOCA::MultiContinuation::ExtendedGroup::fillC(
-	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
+                         NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
   conGroup->fillC(C);
 }
@@ -621,10 +619,10 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     predictor(pred),
     conGroup(),
     numParams(paramIDs.size()),
-    tangentMultiVec(globalData, grp->getX(), numParams, numParams, 
-		    NOX::ShapeCopy),
-    scaledTangentMultiVec(globalData, grp->getX(), numParams, numParams, 
-			  NOX::ShapeCopy),
+    tangentMultiVec(globalData, grp->getX(), numParams, numParams,
+            NOX::ShapeCopy),
+    scaledTangentMultiVec(globalData, grp->getX(), numParams, numParams,
+              NOX::ShapeCopy),
     prevXVec(globalData, grp->getX(), numParams),
     conParamIDs(paramIDs),
     stepSize(numParams, 0.0),
@@ -639,9 +637,9 @@ LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RCP<LOCA::
 {
   // Form constrained group using original group and continuation constraints
   conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
-					       continuationParams,
-					       grpPtr, constraints,
-					       conParamIDs,
-					       skip_dfdp));
+                           continuationParams,
+                           grpPtr, constraints,
+                           conParamIDs,
+                           skip_dfdp));
   grpPtr = conGroup->getGroup();
 }

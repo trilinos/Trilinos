@@ -43,12 +43,28 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
+
+#if defined( KOKKOS_HAVE_OPENMP )
+
+typedef Kokkos::OpenMP TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
+
+#elif defined( KOKKOS_HAVE_PTHREAD )
+
+typedef Kokkos::Threads TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Threads" ;
+
+#elif defined( KOKKOS_HAVE_SERIAL )
+
+typedef Kokkos::Serial TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Serial" ;
+
+#else
+#  error "You must enable at least one of the following execution spaces in order to build this test: Kokkos::Threads, Kokkos::OpenMP, or Kokkos::Serial."
+#endif
 
 #include <impl/Kokkos_Timer.hpp>
-
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
 
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestBlasKernels.hpp>
@@ -66,21 +82,21 @@ protected:
     const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
     const unsigned threads_per_team = 4 ;
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    TestHostDevice::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Threads::finalize();
+    TestHostDevice::finalize();
   }
 };
 
 TEST_F( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
+  EXPECT_NO_THROW(run_test_hexgrad< TestHostDevice>( 10, 20, TestHostDeviceName ));
 }
 
 TEST_F( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
+  EXPECT_NO_THROW(run_test_gramschmidt< TestHostDevice>( 10, 20, TestHostDeviceName ));
 }
 
 } // namespace Test

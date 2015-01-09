@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -52,8 +52,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_comp_ws, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /*!
  * reads the coordinates of the nodes.
@@ -114,7 +119,7 @@ int ex_get_partial_coord (int exoid,
   if (start_node_num + num_nodes -1 > num_nod) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: start index (%"PRId64") + node count (%"PRId64") is larger than total number of nodes ("ST_ZU") in file id %d",
+	    "Error: start index (%"PRId64") + node count (%"PRId64") is larger than total number of nodes (%"ST_ZU") in file id %d",
 	    start_node_num, num_nodes, num_nod, exoid);
     ex_err("ex_get_partial_coord",errmsg,exerrval);
     return (EX_FATAL);

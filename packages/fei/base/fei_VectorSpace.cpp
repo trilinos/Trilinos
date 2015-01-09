@@ -342,7 +342,9 @@ int fei::VectorSpace::addDOFs(int fieldID,
   if (numIDs <= 0) return(0);
 
   int idx = fei::binarySearch(idType, idTypes_);
-  if (idx < 0) ERReturn(-1);
+  if (idx < 0) {
+    ERReturn(-1);
+  }
 
   unsigned fieldSize = getFieldSize(fieldID);
   recordCollections_[idx]->initRecords(fieldID, fieldSize,

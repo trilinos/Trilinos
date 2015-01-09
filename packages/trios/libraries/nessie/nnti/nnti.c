@@ -113,110 +113,200 @@ NNTI_result_t NNTI_init (
 
 #if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
     if (trans_id == NNTI_TRANSPORT_PORTALS) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_ptl_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_ptl_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_ptl_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_ptl_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_ptl_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_ptl_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_ptl_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_ptl_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_ptl_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_ptl_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_ptl_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_ptl_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ptl_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_ptl_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_ptl_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_ptl_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_ptl_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_ptl_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_ptl_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_ptl_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_ptl_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_ptl_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_ptl_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_ptl_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_ptl_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_ptl_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_ptl_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_ptl_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_ptl_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_ptl_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_ptl_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_ptl_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_ptl_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_ptl_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_ptl_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_ptl_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_ptl_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_ptl_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_ptl_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_ptl_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_ptl_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_INFINIBAND)
     if (trans_id == NNTI_TRANSPORT_IB) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_ib_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_ib_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_ib_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_ib_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_ib_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_ib_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_ib_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_ib_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_ib_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_ib_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_ib_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_ib_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_ib_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_ib_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_ib_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_ib_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_ib_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_ib_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_ib_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_ib_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_ib_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_ib_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_ib_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_ib_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_ib_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_ib_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_ib_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_ib_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_ib_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_ib_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_ib_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_ib_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_ib_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_ib_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_ib_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_ib_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_ib_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_ib_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_ib_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_ib_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_ib_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_GEMINI)
     if (trans_id == NNTI_TRANSPORT_GEMINI) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_gni_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_gni_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_gni_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_gni_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_gni_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_gni_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_gni_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_gni_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_gni_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_gni_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_gni_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_gni_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_gni_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_gni_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_gni_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_gni_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_gni_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_gni_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_gni_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_gni_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_gni_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_gni_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_gni_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_gni_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_gni_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_gni_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_gni_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_gni_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_gni_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_gni_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_gni_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_gni_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_gni_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_gni_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_gni_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_gni_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_gni_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_gni_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_gni_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_gni_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_gni_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_BGPDCMF)
     if (trans_id == NNTI_TRANSPORT_DCMF) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_bgpdcmf_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_bgpdcmf_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_bgpdcmf_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_bgpdcmf_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_bgpdcmf_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_bgpdcmf_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_bgpdcmf_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_bgpdcmf_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_bgpdcmf_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_bgpdcmf_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_bgpdcmf_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_bgpdcmf_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_bgpdcmf_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_bgpdcmf_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_bgpdcmf_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_bgpdcmf_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_bgpdcmf_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_bgpdcmf_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_bgpdcmf_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_bgpdcmf_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_bgpdcmf_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_bgpdcmf_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_bgpdcmf_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_bgpdcmf_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_bgpdcmf_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_bgpdcmf_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_bgpdcmf_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_bgpdcmf_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_bgpdcmf_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_bgpdcmf_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_bgpdcmf_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_bgpdcmf_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_bgpdcmf_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_bgpdcmf_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_bgpdcmf_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_bgpdcmf_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_bgpdcmf_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_bgpdcmf_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_bgpdcmf_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_bgpdcmf_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_bgpdcmf_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_BGQPAMI)
     if (trans_id == NNTI_TRANSPORT_PAMI) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_bgqpami_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_bgqpami_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_bgqpami_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_bgqpami_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_bgqpami_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_bgqpami_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_bgqpami_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_bgqpami_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_bgqpami_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_bgqpami_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_bgqpami_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_bgqpami_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_bgqpami_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_bgqpami_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_bgqpami_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_bgqpami_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_bgqpami_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_bgqpami_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_bgqpami_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_bgqpami_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_bgqpami_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_bgqpami_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_bgqpami_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_bgqpami_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_bgqpami_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_bgqpami_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_bgqpami_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_bgqpami_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_bgqpami_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_bgqpami_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_bgqpami_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_bgqpami_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_bgqpami_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_bgqpami_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_bgqpami_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_bgqpami_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_bgqpami_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_bgqpami_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_bgqpami_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_bgqpami_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_bgqpami_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_MPI)
     if (trans_id == NNTI_TRANSPORT_MPI) {
-        available_transports[trans_id].initialized                   = 1;
-        available_transports[trans_id].ops.nnti_init_fn              = NNTI_mpi_init;
-        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_mpi_get_url;
-        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_mpi_connect;
-        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_mpi_disconnect;
-        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_mpi_register_memory;
-        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_mpi_unregister_memory;
-        available_transports[trans_id].ops.nnti_send_fn              = NNTI_mpi_send;
-        available_transports[trans_id].ops.nnti_put_fn               = NNTI_mpi_put;
-        available_transports[trans_id].ops.nnti_get_fn               = NNTI_mpi_get;
-        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_mpi_wait;
-        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_mpi_waitany;
-        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_mpi_waitall;
-        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_mpi_fini;
+        available_transports[trans_id].initialized                      = 1;
+        available_transports[trans_id].ops.nnti_init_fn                 = NNTI_mpi_init;
+        available_transports[trans_id].ops.nnti_get_url_fn              = NNTI_mpi_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn              = NNTI_mpi_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn           = NNTI_mpi_disconnect;
+        available_transports[trans_id].ops.nnti_alloc_fn                = NNTI_mpi_alloc;
+        available_transports[trans_id].ops.nnti_free_fn                 = NNTI_mpi_free;
+        available_transports[trans_id].ops.nnti_register_memory_fn      = NNTI_mpi_register_memory;
+        available_transports[trans_id].ops.nnti_register_segments_fn    = NNTI_mpi_register_segments;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn    = NNTI_mpi_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn                 = NNTI_mpi_send;
+        available_transports[trans_id].ops.nnti_put_fn                  = NNTI_mpi_put;
+        available_transports[trans_id].ops.nnti_get_fn                  = NNTI_mpi_get;
+        available_transports[trans_id].ops.nnti_scatter_fn              = NNTI_mpi_scatter;
+        available_transports[trans_id].ops.nnti_gather_fn               = NNTI_mpi_gather;
+        available_transports[trans_id].ops.nnti_atomic_set_callback_fn  = NNTI_mpi_atomic_set_callback;
+        available_transports[trans_id].ops.nnti_atomic_read_fn          = NNTI_mpi_atomic_read;
+        available_transports[trans_id].ops.nnti_atomic_fop_fn           = NNTI_mpi_atomic_fop;
+        available_transports[trans_id].ops.nnti_atomic_cswap_fn         = NNTI_mpi_atomic_cswap;
+        available_transports[trans_id].ops.nnti_create_work_request_fn  = NNTI_mpi_create_work_request;
+        available_transports[trans_id].ops.nnti_clear_work_request_fn   = NNTI_mpi_clear_work_request;
+        available_transports[trans_id].ops.nnti_destroy_work_request_fn = NNTI_mpi_destroy_work_request;
+        available_transports[trans_id].ops.nnti_cancel_fn               = NNTI_mpi_cancel;
+        available_transports[trans_id].ops.nnti_cancelall_fn            = NNTI_mpi_cancelall;
+        available_transports[trans_id].ops.nnti_interrupt_fn            = NNTI_mpi_interrupt;
+        available_transports[trans_id].ops.nnti_wait_fn                 = NNTI_mpi_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn              = NNTI_mpi_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn              = NNTI_mpi_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn                 = NNTI_mpi_fini;
     }
 #endif
 
@@ -326,6 +416,61 @@ NNTI_result_t NNTI_disconnect (
 
 
 /**
+ * @brief Allocate a block of memory and prepare it for network operations.
+ *
+ * Allocate a block of memory in a transport specific way and wrap it in an
+ * NNTI_buffer_t.  The transport may take additional actions to prepare the
+ * memory for network send/receive.
+ *
+ */
+NNTI_result_t NNTI_alloc (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_alloc_fn(
+                trans_hdl,
+                element_size,
+                num_elements,
+                ops,
+                reg_buf);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Cleanup after network operations are complete and release the block
+ * of memory.
+ *
+ * Destroy an NNTI_buffer_t that was previously created by NNTI_alloc().
+ *
+ */
+NNTI_result_t NNTI_free (
+        NNTI_buffer_t    *reg_buf)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[reg_buf->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[reg_buf->transport_id].ops.nnti_free_fn(
+                reg_buf);
+    }
+
+    return(rc);
+}
+
+
+/**
  * @brief Prepare a block of memory for network operations.
  *
  * Wrap a user allocated block of memory in an NNTI_buffer_t.  The transport
@@ -340,7 +485,6 @@ NNTI_result_t NNTI_register_memory (
         const uint64_t          element_size,
         const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
-        const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
 {
     NNTI_result_t rc=NNTI_OK;
@@ -348,14 +492,59 @@ NNTI_result_t NNTI_register_memory (
     if (available_transports[trans_hdl->id].initialized==0) {
         rc=NNTI_ENOTINIT;
     } else {
-        rc = available_transports[trans_hdl->id].ops.nnti_register_memory_fn(
-                trans_hdl,
-                buffer,
-                element_size,
-                num_elements,
-                ops,
-                peer,
-                reg_buf);
+        if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
+            log_error(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types require the use of NNTI_alloc().");
+            return(NNTI_EINVAL);
+        } else {
+            rc = available_transports[trans_hdl->id].ops.nnti_register_memory_fn(
+                    trans_hdl,
+                    buffer,
+                    element_size,
+                    num_elements,
+                    ops,
+                    reg_buf);
+        }
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Prepare a list of memory segments for network operations.
+ *
+ * Wrap a list of user allocated memory segments in an NNTI_buffer_t.  The
+ * transport may take additional actions to prepare the memory segments for
+ * network send/receive.  If the memory segments don't meet the transport's
+ * requirements for memory regions, then errors or poor performance may
+ * result.
+ *
+ */
+NNTI_result_t NNTI_register_segments (
+        const NNTI_transport_t *trans_hdl,
+        char                  **segments,
+        const uint64_t         *segment_lengths,
+        const uint64_t          num_segments,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
+            log_error(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types cannot be segmented.");
+            return(NNTI_EINVAL);
+        } else {
+            rc = available_transports[trans_hdl->id].ops.nnti_register_segments_fn(
+                    trans_hdl,
+                    segments,
+                    segment_lengths,
+                    num_segments,
+                    ops,
+                    reg_buf);
+        }
     }
 
     return(rc);
@@ -395,7 +584,8 @@ NNTI_result_t NNTI_unregister_memory (
 NNTI_result_t NNTI_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
-        const NNTI_buffer_t *dest_hdl)
+        const NNTI_buffer_t *dest_hdl,
+        NNTI_work_request_t *wr)
 {
     NNTI_result_t rc=NNTI_OK;
 
@@ -405,7 +595,8 @@ NNTI_result_t NNTI_send (
         rc = available_transports[msg_hdl->transport_id].ops.nnti_send_fn(
                 peer_hdl,
                 msg_hdl,
-                dest_hdl);
+                dest_hdl,
+                wr);
     }
 
     return(rc);
@@ -424,7 +615,8 @@ NNTI_result_t NNTI_put (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     NNTI_result_t rc=NNTI_OK;
 
@@ -436,7 +628,8 @@ NNTI_result_t NNTI_put (
                 src_offset,
                 src_length,
                 dest_buffer_hdl,
-                dest_offset);
+                dest_offset,
+                wr);
     }
 
     return(rc);
@@ -455,7 +648,8 @@ NNTI_result_t NNTI_get (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     NNTI_result_t rc=NNTI_OK;
 
@@ -467,7 +661,301 @@ NNTI_result_t NNTI_get (
                 src_offset,
                 src_length,
                 dest_buffer_hdl,
-                dest_offset);
+                dest_offset,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Transfer data to a peer.
+ *
+ *
+ */
+NNTI_result_t NNTI_scatter (
+        const NNTI_buffer_t  *src_buffer_hdl,
+        const uint64_t        src_length,
+        const NNTI_buffer_t **dest_buffer_list,
+        const uint64_t        dest_count,
+        NNTI_work_request_t  *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[src_buffer_hdl->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[src_buffer_hdl->transport_id].ops.nnti_scatter_fn(
+                src_buffer_hdl,
+                src_length,
+                dest_buffer_list,
+                dest_count,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Transfer data from a peer.
+ *
+ *
+ */
+NNTI_result_t NNTI_gather (
+        const NNTI_buffer_t **src_buffer_list,
+        const uint64_t        src_length,
+        const uint64_t        src_count,
+        const NNTI_buffer_t  *dest_buffer_hdl,
+        NNTI_work_request_t  *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[dest_buffer_hdl->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[dest_buffer_hdl->transport_id].ops.nnti_gather_fn(
+                src_buffer_list,
+                src_length,
+                src_count,
+                dest_buffer_hdl,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_set_callback_fn(
+                trans_hdl,
+                local_atomic,
+                cbfunc,
+                context);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_read_fn(
+                trans_hdl,
+                local_atomic,
+                value);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_fop_fn(
+                trans_hdl,
+                peer_hdl,
+                target_atomic,
+                result_atomic,
+                operand,
+                op,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+NNTI_result_t NNTI_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_atomic_cswap_fn(
+                trans_hdl,
+                peer_hdl,
+                target_atomic,
+                result_atomic,
+                compare_operand,
+                swap_operand,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Create a receive work request that can be used to wait for buffer
+ * operations to complete.
+ *
+ */
+NNTI_result_t NNTI_create_work_request (
+        NNTI_buffer_t        *reg_buf,
+        NNTI_work_request_t  *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[reg_buf->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[reg_buf->transport_id].ops.nnti_create_work_request_fn(
+                reg_buf,
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from a previous receive
+ * and prepares it for reuse.
+ *
+ */
+NNTI_result_t NNTI_clear_work_request (
+        NNTI_work_request_t  *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[wr->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[wr->transport_id].ops.nnti_clear_work_request_fn(
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from reg_buf.
+ *
+ */
+NNTI_result_t NNTI_destroy_work_request (
+        NNTI_work_request_t  *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[wr->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[wr->transport_id].ops.nnti_destroy_work_request_fn(
+                wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Attempts to cancel an NNTI opertion.
+ *
+ */
+NNTI_result_t NNTI_cancel (
+        NNTI_work_request_t *wr)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[wr->transport_id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[wr->transport_id].ops.nnti_cancel_fn(wr);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Attempts to cancel a list of NNTI opertions.
+ *
+ */
+NNTI_result_t NNTI_cancelall (
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
+{
+    NNTI_result_t rc=NNTI_OK;
+    NNTI_transport_id_t id=NNTI_TRANSPORT_NULL;
+    uint32_t i=0;
+
+    for (i=0;i<wr_count;i++) {
+        if (wr_list[i]) {
+            id=wr_list[i]->transport_id;
+        }
+    }
+
+    if (id == NNTI_TRANSPORT_NULL) {
+        rc=NNTI_EINVAL;
+    } else {
+        if (available_transports[id].initialized==0) {
+            rc=NNTI_ENOTINIT;
+        } else {
+            rc = available_transports[id].ops.nnti_cancelall_fn(
+                    wr_list,
+                    wr_count);
+        }
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Interrupts NNTI_wait*()
+ *
+ */
+NNTI_result_t NNTI_interrupt (
+        const NNTI_transport_t *trans_hdl)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        rc = available_transports[trans_hdl->id].ops.nnti_interrupt_fn(
+                trans_hdl);
     }
 
     return(rc);
@@ -484,19 +972,17 @@ NNTI_result_t NNTI_get (
  *
  */
 NNTI_result_t NNTI_wait (
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
-        const int             timeout,
-        NNTI_status_t        *status)
+        NNTI_work_request_t *wr,
+        const int            timeout,
+        NNTI_status_t       *status)
 {
     NNTI_result_t rc=NNTI_OK;
 
-    if (available_transports[reg_buf->transport_id].initialized==0) {
+    if (available_transports[wr->transport_id].initialized==0) {
         rc=NNTI_ENOTINIT;
     } else {
-        rc = available_transports[reg_buf->transport_id].ops.nnti_wait_fn(
-                reg_buf,
-                remote_op,
+        rc = available_transports[wr->transport_id].ops.nnti_wait_fn(
+                wr,
                 timeout,
                 status);
     }
@@ -518,9 +1004,8 @@ NNTI_result_t NNTI_wait (
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_waitany (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         uint32_t             *which,
         NNTI_status_t        *status)
@@ -529,9 +1014,9 @@ NNTI_result_t NNTI_waitany (
     NNTI_transport_id_t id=NNTI_TRANSPORT_NULL;
     uint32_t i=0;
 
-    for (i=0;i<buf_count;i++) {
-        if (buf_list[i]) {
-            id=buf_list[i]->transport_id;
+    for (i=0;i<wr_count;i++) {
+        if (wr_list[i]) {
+            id=wr_list[i]->transport_id;
         }
     }
 
@@ -542,9 +1027,8 @@ NNTI_result_t NNTI_waitany (
             rc=NNTI_ENOTINIT;
         } else {
             rc = available_transports[id].ops.nnti_waitany_fn(
-                    buf_list,
-                    buf_count,
-                    remote_op,
+                    wr_list,
+                    wr_count,
                     timeout,
                     which,
                     status);
@@ -568,9 +1052,8 @@ NNTI_result_t NNTI_waitany (
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_waitall (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         NNTI_status_t       **status)
 {
@@ -578,9 +1061,9 @@ NNTI_result_t NNTI_waitall (
     NNTI_transport_id_t id=NNTI_TRANSPORT_NULL;
     uint32_t i=0;
 
-    for (i=0;i<buf_count;i++) {
-        if (buf_list[i]) {
-            id=buf_list[i]->transport_id;
+    for (i=0;i<wr_count;i++) {
+        if (wr_list[i]) {
+            id=wr_list[i]->transport_id;
         }
     }
 
@@ -591,9 +1074,8 @@ NNTI_result_t NNTI_waitall (
             rc=NNTI_ENOTINIT;
         } else {
             rc = available_transports[id].ops.nnti_waitall_fn(
-                    buf_list,
-                    buf_count,
-                    remote_op,
+                    wr_list,
+                    wr_count,
                     timeout,
                     status);
         }

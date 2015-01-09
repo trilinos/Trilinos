@@ -50,10 +50,10 @@
 namespace Amesos2 {
 
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  template <class S, class LO, class GO, class D, class LMO>
+  template <class S, class LO, class GO, class D>
   Stokhos::CrsProductTensor<typename S::value_type,D>
   get_pce_cijk(
-    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, LMO> >& A = Teuchos::null,
+    const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
     const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
@@ -61,10 +61,10 @@ namespace Amesos2 {
       return A->getLocalValuesView().cijk();
     }
     else if (X != Teuchos::null) {
-      return X->getLocalView().d_view.cijk();
+      return X->template getLocalView<D>().cijk();
     }
     else if (B != Teuchos::null) {
-      return B->getLocalView().d_view.cijk();
+      return B->template getLocalView<D>().cijk();
     }
     return Stokhos::CrsProductTensor<typename S::value_type,D>();
   }
@@ -76,13 +76,12 @@ namespace Amesos2 {
   /// these matrices and vectors into ones with a standard (e.g., double)
   /// scalar type.
   template <class Storage, class LocalOrdinal, class GlobalOrdinal,
-            class Device, class LMO, template<class,class> class ConcreteSolver>
+            class Device, template<class,class> class ConcreteSolver>
   class PCESolverAdapter :
     public Solver< Tpetra::CrsMatrix<Sacado::UQ::PCE<Storage>,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device>,
-                                     LMO>,
+                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> >,
                    Tpetra::MultiVector<Sacado::UQ::PCE<Storage>,
                                        LocalOrdinal,
                                        GlobalOrdinal,
@@ -93,7 +92,7 @@ namespace Amesos2 {
 
     typedef Sacado::UQ::PCE<Storage> Scalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
     typedef typename Scalar::value_type BaseScalar;
@@ -115,11 +114,13 @@ namespace Amesos2 {
       const Teuchos::RCP<const Vector>& B_) :
       A(A_), X(X_), B(B_) {
       cijk = get_pce_cijk(A, X, B);
-      flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                  cijk,
-                                                  flat_X_map,
-                                                  flat_B_map,
-                                                  cijk_graph);
+      flat_graph =
+        Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                       cijk,
+                                       flat_X_map,
+                                       flat_B_map,
+                                       cijk_graph,
+                                       A->getLocalMatrix().values.sacado_size());
       if (A != Teuchos::null)
         flat_A = Stokhos::create_flat_matrix(*A, flat_graph, cijk_graph, cijk);
       if (X != Teuchos::null)
@@ -305,11 +306,13 @@ namespace Amesos2 {
         flat_X_map = Teuchos::null;
         flat_B_map = Teuchos::null;
         flat_graph = Teuchos::null;
-        flat_graph = Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
-                                                    cijk,
-                                                    flat_X_map,
-                                                    flat_B_map,
-                                                    cijk_graph);
+        flat_graph =
+          Stokhos::create_flat_pce_graph(*(A->getCrsGraph()),
+                                         cijk,
+                                         flat_X_map,
+                                         flat_B_map,
+                                         cijk_graph,
+                                         A->getLocalMatrix().values.sacado_size());
       }
       if (keep_phase <= SYMBFACT) // should this by NUMFACT???
         flat_A = Stokhos::create_flat_matrix(*a, flat_graph, cijk_graph, cijk);
@@ -505,14 +508,14 @@ namespace Amesos2 {
   // Sacado::UQ::PCE where we create PCESolverAdapter wrapping
   // each solver
   template < template <class,class> class ConcreteSolver,
-             class ST, class LO, class GO, class D, class LMO >
+             class ST, class LO, class GO, class D >
   struct create_solver_with_supported_type<
     ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D>,LMO>,
+    Tpetra::CrsMatrix<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >,
     Tpetra::MultiVector<Sacado::UQ::PCE<ST>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
     typedef Sacado::UQ::PCE<ST> SC;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> NO;
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> Matrix;
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
     apply(Teuchos::RCP<const Matrix> A,
@@ -528,7 +531,7 @@ namespace Amesos2 {
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
       // If our assertion did not fail, then create and return a new solver
-      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,D,LMO,ConcreteSolver>(A, X, B) );
+      return Teuchos::rcp( new PCESolverAdapter<ST,LO,GO,D,ConcreteSolver>(A, X, B) );
     }
   };
 

@@ -49,6 +49,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -73,8 +74,12 @@ GatherSolution_Tpetra(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<panzer::PureBasis> basis = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  // this is beging to fix the issues with incorrect use of const
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
+    basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  else
+    basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
@@ -121,7 +126,13 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_),true);
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+
+   if(tpetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+   }
 }
 
 // **********************************************************************
@@ -189,8 +200,12 @@ GatherSolution_Tpetra(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<panzer::PureBasis> basis = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  // this is beging to fix the issues with incorrect use of const
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
+    basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  else
+    basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
@@ -237,7 +252,13 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_),true);
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+
+   if(tpetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+   }
 }
 
 // **********************************************************************
@@ -299,18 +320,23 @@ GatherSolution_Tpetra(
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
   , globalDataKey_("Solution Gather Container")
+  , gatherSeedIndex_(-1)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  // this is beging to fix the issues with incorrect use of const
+  Teuchos::RCP<const panzer::PureBasis> basis;
+  if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
+    basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  else
+    basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],dl);
+    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
   }
@@ -320,6 +346,10 @@ GatherSolution_Tpetra(
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  if (p.isType<int>("Gather Seed Index")) {
+     gatherSeedIndex_ = p.get<int>("Gather Seed Index");
+  }
 
   this->setName("Gather Solution");
 }
@@ -354,7 +384,13 @@ preEvaluate(typename Traits::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_),true);
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.getDataObject(globalDataKey_));
+
+   if(tpetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+   }
 }
 
 // **********************************************************************
@@ -376,9 +412,16 @@ evaluateFields(typename Traits::EvalData workset)
      x = tpetraContainer_->get_dxdt();
      seed_value = workset.alpha;
    }
-   else {
+   else if (gatherSeedIndex_<0) {
      x = tpetraContainer_->get_x();
      seed_value = workset.beta;
+   }
+   else if(!useTimeDerivativeSolutionVector_) {
+     x = tpetraContainer_->get_x();
+     seed_value = workset.gather_seeds[gatherSeedIndex_];
+   }
+   else {
+     TEUCHOS_ASSERT(false);
    }
 
    Teuchos::ArrayRCP<const double> x_array = x->get1dView();

@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "Panzer_GlobalEvaluationData.hpp"
+
 namespace panzer {
 
 // *** Derive, do not modify this interface ***

@@ -1,6 +1,6 @@
 \section{Hybrid Parallel Performance}
 
-Runtime performance is investigated through the hybrid parallel implementation of a simple ``mini-application.'' 
+Runtime performance is investigated through the hybrid parallel implementation of a simple ``mini-application.''
 %
 This mini-application generates a parallel distributed sparse matrix and then applies conjugate gradient solution algorithm iterations to that system of equations.
 %
@@ -24,9 +24,9 @@ This mini-application is run in the following three modes.
 
 A simple conjugate gradient solver algorithm for a sparse linear system of equations is implemented using two-level parallelism: MPI for inter-process parallelism and ThreadPool for intra-process parallelism.
 %
-This parallel algorithm can be implemented with a small number of basic linear algebra subprogram (BLAS) kernels: 
+This parallel algorithm can be implemented with a small number of basic linear algebra subprogram (BLAS) kernels:
 $\mathbf{y}=\mathbf{x}$,
-$dot(\mathbf{x},\mathbf{y})$, 
+$dot(\mathbf{x},\mathbf{y})$,
 $\mathbf{y}=\alpha*\mathbf{x}+\beta*\mathbf{y}$, and
 $\mathbf{y}=\mathbf{A}*\mathbf{x}$.
 %
@@ -37,8 +37,8 @@ This overhead can be minimized by \emph{fusing} parallel kernels, as presented i
 
 \begin{algorithm}[h]
 \SetKwInOut{KwInOut}{InOut}
-\SetLine
-\dontprintsemicolon
+\SetAlgoLined
+\DontPrintSemicolon
 \Begin(parallel symmetric conjugate gradient algorithm){
 \KwIn{$\mathbf{A} \equiv$ sparse symmetric matrix}
 \KwIn{$\mathbf{b} \equiv$ right-hand-side vector}
@@ -50,8 +50,8 @@ $\mathbf{r} = \mathbf{b}$ \tcc*{parallel} \;
 $\mathbf{p} = \mathbf{x}$ \tcc*{parallel} \;
 $\mathbf{Ap} = \mathbf{A} * \mathbf{p}$ \tcc*{parallel} \;
 $\mathbf{r} = \mathbf{r} - \mathbf{Ap}$ ; $\delta = dot(\mathbf{r},\mathbf{r})$ \tcc*{fused parallel} \;
-$\beta = 0 $ \tcc*{serial} \; 
-\While(\tcc*[f]{serial}){$\mathit{tolerance} < \delta$ and within iteration limit }{ 
+$\beta = 0 $ \tcc*{serial} \;
+\While(\tcc*[f]{serial}){$\mathit{tolerance} < \delta$ and within iteration limit }{
   $\mathbf{p} = \mathbf{r} + \beta * \mathbf{p}$ \tcc*{parallel} \;
   $\mathbf{Ap} = \mathbf{A} * \mathbf{p}$ ; $\gamma = dot(\mathbf{Ap},\mathbf{p}) $ \tcc*{fused parallel} \;
   $\alpha = \delta / \gamma $ ; $\beta = \delta $ \tcc*{serial} \;
@@ -87,8 +87,8 @@ Internal to the thread work kernel, these two operations can be implemented sepa
 \SetKwBlock{Call}{Call}{end}
 \SetKwBlock{CallThread}{Each thread calls}{end}
 \SetKwInOut{KwInOut}{InOut}
-\SetLine
-\dontprintsemicolon
+\SetAlgoLined
+\DontPrintSemicolon
 \Begin( Fused parallel function: \mbox{$\gamma = dot( ( \mathbf{y} = \mathbf{A} * \mathbf{x} ) , \mathbf{x} )$}){
 \KwIn{$\mathbf{A}_\mathrm{P} \equiv$ this process' rows of matrix $\mathbf{A}$}
 \KwInOut{$\mathbf{x}_\mathrm{P} \equiv$ this process' portion of vector $\mathbf{x}$ spans columns of $\mathbf{A}_\mathrm{P}$}
@@ -105,8 +105,8 @@ Gather off-process columns into $\mathbf{x}_\mathrm{P}$ via MPI communication \;
 \KwOut{$\mathbf{y}_\mathrm{P,T} \equiv$ this thread's span of vector $\mathbf{y}_\mathrm{P}$}
 \KwOut{$\gamma_\mathrm{T} \equiv$ this thread's contribution to $\gamma$}
 \BlankLine
-$\mathbf{y}_\mathrm{P,T} = \mathbf{A}_\mathrm{P,T} * \mathbf{x}_\mathrm{P}$ \; 
-$\gamma_\mathrm{T} = dot( \mathbf{y}_\mathrm{P,T} , \mathbf{x}_\mathrm{P,T} )$ \; 
+$\mathbf{y}_\mathrm{P,T} = \mathbf{A}_\mathrm{P,T} * \mathbf{x}_\mathrm{P}$ \;
+$\gamma_\mathrm{T} = dot( \mathbf{y}_\mathrm{P,T} , \mathbf{x}_\mathrm{P,T} )$ \;
 }
 \CallThread( \textnormal{reduction\_kernel} ){
 \KwInOut{$\gamma_\mathrm{T} \equiv$ this thread's contribution to $\gamma$}
@@ -132,9 +132,9 @@ This cluster (called \emph{glory}) consists of 272 quad-socket compute nodes wit
 The mini-application was compiled at optimization level 3, using the Intel-11 compiler, OpenMPI, and standard pthreads.
 
 
-The mini-application is run on 4, 8, 16, and 32 compute nodes with 
+The mini-application is run on 4, 8, 16, and 32 compute nodes with
 \begin{blist}
-\item one MPI process on each available core, 
+\item one MPI process on each available core,
 \item one MPI process on each available socket and worker threads created on each remaining core, and
 \item one MPI process on each node and worker threads created on each remaining core.
 \end{blist}
@@ -198,28 +198,28 @@ If this data can be held in CPU cache for a relatively large number of computati
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np4.no-overlap.2.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np4-no-overlap-2}
 \caption{Comparison of hybrid parallel conjugate gradient iteration performance for 4 compute nodes with 64 threads: p4 x t16 = one MPI process per node, p16 x t4 = one MPI process per socket, and p64 x t1 = one MPI process per core.}
 \label{fig:CGPerf:np4}
 \end{figure}
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np8.no-overlap.2.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np8-no-overlap-2}
 \caption{Comparison of hybrid parallel conjugate gradient iteration performance for 8 compute nodes with 128 threads: p8 x t16 = one MPI process per node, p32 x t4 = one MPI process per socket, and p128 x t1 = one MPI process per core.}
 \label{fig:CGPerf:np8}
 \end{figure}
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np16.no-overlap.2.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np16-no-overlap-2}
 \caption{Comparison of hybrid parallel conjugate gradient iteration performance for 16 compute nodes with 256 threads: p16 x t16 = one MPI process per node, p64 x t4 = one MPI process per socket, and p256 x t1 = one MPI process per core.}
 \label{fig:CGPerf:np16}
 \end{figure}
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np32.no-overlap.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np32-no-overlap}
 \caption{Comparison of hybrid parallel conjugate gradient iteration performance for 32 compute nodes with 512 threads: p32 x t16 = one MPI process per node, p128 x t4 = one MPI process per socket, and p512 x t1 = one MPI process per core.}
 \label{fig:CGPerf:np32}
 \end{figure}
@@ -227,14 +227,14 @@ If this data can be held in CPU cache for a relatively large number of computati
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{StrongScaling1000k.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/StrongScaling1000k}
 \caption{Hybrid parallel conjugate gradient iteration strong scaling for 1M rows: one MPI process with 4 threads per CPU socket versus one MPI process per CPU core.}
 \label{fig:CGPerf:scaling1M}
 \end{figure}
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{StrongScaling1700k.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/StrongScaling1700k}
 \caption{Hybrid parallel conjugate gradient iteration strong scaling for 1.7M rows: one MPI process with 4 threads per CPU socket versus one MPI process per CPU core.}
 \label{fig:CGPerf:scaling1.7M}
 \end{figure}
@@ -242,7 +242,7 @@ If this data can be held in CPU cache for a relatively large number of computati
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.scaling.no-overlap.2.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 6.5in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-scaling-no-overlap-2}
 \caption{Hybrid parallel conjugate gradient iteration strong scaling with one MPI process and 4 threads per CPU socket.  Strong scaling over 64, 128, 256, and 512 threads is observed for a range of problem sizes by noting the associated problem-size point on each curve.}
 \label{fig:CGPerf:scaling}
 \end{figure}
@@ -252,7 +252,7 @@ If this data can be held in CPU cache for a relatively large number of computati
 
 \subsubsection{Fused Parallel Kernels}
 
-Thread-parallel performance is most significantly improved by fused parallel kernels, 
+Thread-parallel performance is most significantly improved by fused parallel kernels,
 as per Algorithms~\ref{alg:CG-fused}~and~\ref{alg:FusedMXV},
 when thread start/completion overhead is costly compare to kernel's computational costs.
 %
@@ -264,14 +264,14 @@ In these graphs the speed up is computed as the performance difference between t
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 7in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np4.no-overlap.fusing.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 7in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np4-no-overlap-fusing}
 \caption{Hybrid parallel conjugate gradient iteration relative performance improvement for parallel fused kernels with 4 compute nodes and 64 threads: p4 x t16 = one MPI process per node and p16 x t4 = one MPI process per socket.}
 \label{fig:CGPerf:np4:fusing}
 \end{figure}
 
 \begin{figure}[h]
 \center
-\includegraphics[viewport=1in 0.5in 8.5in 7in,angle=0,scale=0.5]{test-hhpccg-intel-11.1-mpi.exe.np32.no-overlap.fusing.eps}
+\includegraphics[viewport=1in 0.5in 8.5in 7in,angle=0,scale=0.5]{figures/test-hhpccg-intel-11-1-mpi-exe-np32-no-overlap-fusing}
 \caption{Hybrid parallel conjugate gradient iteration relative performance improvement for parallel fused kernels with 32 compute nodes and 512 threads: p32 x t16 = one MPI process per node and p128 x t4 = one MPI process per socket.}
 \label{fig:CGPerf:np32:fusing}
 \end{figure}

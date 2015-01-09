@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,20 +51,21 @@
 #include "NOX.H"
 #include "Teuchos_ParameterList.hpp"
 
-#include "NOX_Petsc_Group.H"	// class definition
+#include "NOX_Petsc_Group.H"    // class definition
 #include "NOX_Petsc_Interface.H"
 #include "NOX_Petsc_Vector.H"
 #include "NOX_Petsc_SharedJacobian.H"
 #include "Teuchos_ParameterList.hpp"
 
 // External include files - linking to Petsc
-#include "petscksp.h" 
+#include "petscversion.h"
+#include "petscksp.h"
 
 using namespace NOX;
 using namespace NOX::Petsc;
 
 Group::Group(Interface& i, Vec& x, Mat& J) :
-  xVector(x, "Solution"), // deep copy x     
+  xVector(x, "Solution"), // deep copy x
   RHSVector(x, "RHS", ShapeCopy), // new vector of same size
   gradVector(x, "Grad", ShapeCopy), // new vector of same size
   NewtonVector(x, "Newton", ShapeCopy), // new vector of same size
@@ -77,26 +78,26 @@ Group::Group(Interface& i, Vec& x, Mat& J) :
 }
 
 Group::Group(const Group& source, CopyType type) :
-  xVector(source.xVector, type), 
-  RHSVector(source.RHSVector, type), 
-  gradVector(source.gradVector, type), 
+  xVector(source.xVector, type),
+  RHSVector(source.RHSVector, type),
+  gradVector(source.gradVector, type),
   NewtonVector(source.NewtonVector, type),
   sharedJacobianPtr(NULL),
   sharedJacobian(source.sharedJacobian),
-  userInterface(source.userInterface),
-  jacType(source.jacType)
+  jacType(source.jacType),
+  userInterface(source.userInterface)
 {
   switch (type) {
-    
+
   case DeepCopy:
-    
+
     isValidRHS = source.isValidRHS;
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
     isValidPreconditioner = source.isValidPreconditioner;
     normRHS = source.normRHS;
-    
+
     // New copy takes ownership of the shared Jacobian
     if (isValidJacobian)
       sharedJacobian.getJacobian(this);
@@ -114,7 +115,7 @@ Group::Group(const Group& source, CopyType type) :
 
 }
 
-Group::~Group() 
+Group::~Group()
 {
   delete sharedJacobianPtr;
 }
@@ -128,21 +129,21 @@ void Group::resetIsValid() //private
   isValidPreconditioner = false;
 }
 
-Teuchos::RCP<NOX::Abstract::Group> 
-Group::clone(CopyType type) const 
+Teuchos::RCP<NOX::Abstract::Group>
+Group::clone(CopyType type) const
 {
-  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp =
     Teuchos::rcp(new NOX::Petsc::Group(*this, type));
   return newgrp;
 }
 
-Abstract::Group& 
+Abstract::Group&
 Group::operator=(const Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Abstract::Group& 
+Abstract::Group&
 Group::operator=(const Group& source)
 {
   // Copy the xVector
@@ -173,18 +174,18 @@ Group::operator=(const Group& source)
   // If valid, this takes ownership of the shared Jacobian
   if (isValidJacobian)
     sharedJacobian.getJacobian(this);
-    
+
   return *this;
 }
 
-void 
+void
 Group::setX(const Abstract::Vector& y)
 {
   setX(dynamic_cast<const Vector&> (y));
   return;
 }
 
-void 
+void
 Group::setX(const Vector& y)
 {
   resetIsValid();
@@ -192,26 +193,26 @@ Group::setX(const Vector& y)
   return;
 }
 
-void 
-Group::computeX(const Abstract::Group& grp, const Abstract::Vector& d, double step) 
+void
+Group::computeX(const Abstract::Group& grp, const Abstract::Vector& d, double step)
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& petscgrp = dynamic_cast<const Group&> (grp);
   const Vector& petscd = dynamic_cast<const Vector&> (d);
-  computeX(petscgrp, petscd, step); 
+  computeX(petscgrp, petscd, step);
   return;
 }
 
-void 
-Group::computeX(const Group& grp, const Vector& d, double step) 
+void
+Group::computeX(const Group& grp, const Vector& d, double step)
 {
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
   return;
 }
 
-Abstract::Group::ReturnType 
-Group::computeF() 
+Abstract::Group::ReturnType
+Group::computeF()
 {
   if (isF())
     return Abstract::Group::Ok;
@@ -233,8 +234,8 @@ Group::computeF()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType 
-Group::computeJacobian() 
+Abstract::Group::ReturnType
+Group::computeJacobian()
 {
   // Skip if the Jacobian is already valid
   if (isJacobian())
@@ -268,12 +269,12 @@ Group::computeJacobian()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType 
-Group::computeGradient() 
+Abstract::Group::ReturnType
+Group::computeGradient()
 {
   if (isGradient())
     return Abstract::Group::Ok;
-  
+
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - RHS is out of date wrt X!" << std::endl;
     throw "NOX Error";
@@ -283,13 +284,14 @@ Group::computeGradient()
     std::cerr << "ERROR: NOX::Petsc::Group::computeGradient() - Jacobian is out of date wrt X!" << std::endl;
     throw "NOX Error";
   }
-  
+
   // Get a reference to the Jacobian (it's validity was checked above)
   const Mat& Jacobian = sharedJacobian.getJacobian();
 
   // Compute grad = Jacobian^T * RHS.
   // Need to add a check on ierr
-  int ierr = MatMultTranspose(Jacobian, RHSVector.getPetscVector(), gradVector.getPetscVector());
+  PetscErrorCode ierr = MatMultTranspose(Jacobian, RHSVector.getPetscVector(), gradVector.getPetscVector());
+  TEUCHOS_ASSERT(ierr == 0);
 
   // Update state
   isValidGrad = true;
@@ -298,8 +300,8 @@ Group::computeGradient()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType 
-Group::computeNewton(Teuchos::ParameterList& p) 
+Abstract::Group::ReturnType
+Group::computeNewton(Teuchos::ParameterList& p)
 {
   if (isNewton())
     return Abstract::Group::Ok;
@@ -313,7 +315,7 @@ Group::computeNewton(Teuchos::ParameterList& p)
     std::cerr << "ERROR: NOX::Petsc::Group::computeNewton() - invalid Jacobian" << std::endl;
     throw "NOX Error";
   }
-  
+
   // Get the Jacobian
   Mat& Jacobian = sharedJacobian.getJacobian(this);
 
@@ -328,7 +330,11 @@ Group::computeNewton(Teuchos::ParameterList& p)
      Set operators. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = KSPSetOperators(ksp,Jacobian,Jacobian);
+#else
   ierr = KSPSetOperators(ksp,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
+#endif
 
   /*
      Set runtime options (e.g., -ksp_type <type> -pc_type <type>)
@@ -352,20 +358,22 @@ Group::computeNewton(Teuchos::ParameterList& p)
   // Ascertain convergence status
   ierr = KSPGetConvergedReason(ksp,&reason);
 
-  if( reason == KSP_DIVERGED_INDEFINITE_PC ) 
+  if( reason == KSP_DIVERGED_INDEFINITE_PC )
   {
     std::cout << "\nDivergence because of indefinite preconditioner;\n";
     std::cout << "Run the executable again but with -pc_ilu_shift option.\n";
-  } 
-  else if( reason < 0 ) 
+  }
+  else if( reason < 0 )
   {
     std::cout << "\nOther kind of divergence: this should not happen.\n";
-  } 
-  else 
+  }
+  else
   {
     ierr = KSPGetIterationNumber( ksp, &its );
     std::cout << "\nConvergence in " << its << " iterations.\n";
   }
+
+  TEUCHOS_ASSERT(ierr == 0);
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -376,7 +384,7 @@ Group::computeNewton(Teuchos::ParameterList& p)
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType 
+Abstract::Group::ReturnType
 Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
@@ -384,11 +392,11 @@ Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) co
   return applyJacobian(petscinput, petscresult);
 }
 
-Abstract::Group::ReturnType 
+Abstract::Group::ReturnType
 Group::applyJacobian(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
-  if (!isJacobian()) 
+  if (!isJacobian())
     return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was checked above)
@@ -401,9 +409,9 @@ Group::applyJacobian(const Vector& input, Vector& result) const
 }
 
 
-Abstract::Group::ReturnType 
-Group::applyRightPreconditioning(Teuchos::ParameterList& params, 
-                                 const Abstract::Vector& input, 
+Abstract::Group::ReturnType
+Group::applyRightPreconditioning(Teuchos::ParameterList& params,
+                                 const Abstract::Vector& input,
                                  Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
@@ -411,13 +419,13 @@ Group::applyRightPreconditioning(Teuchos::ParameterList& params,
   return applyRightPreconditioning(petscinput, petscresult);
 }
 
-Abstract::Group::ReturnType 
+Abstract::Group::ReturnType
 Group::applyRightPreconditioning(const Vector& input, Vector& result) const
 {
-  if (!isJacobian()) 
+  if (!isJacobian())
     return Abstract::Group::BadDependency;
 
-  // Get a reference to the Jacobian 
+  // Get a reference to the Jacobian
   const Mat& Jacobian = sharedJacobian.getJacobian();
 
   // Get petsc reference to the result vector
@@ -431,7 +439,7 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
   // Here a default to jacobi (jacobian-diagonal-inverse) is established
   // but can be overridden via specification of pc_type in .petscrc
 
-  // This allows more general preconditioning via specification of -pc_type 
+  // This allows more general preconditioning via specification of -pc_type
   // in .petscrc
   ierr = PCSetFromOptions(pc);
 
@@ -439,20 +447,30 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
      Set operators and vector. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = PCSetOperators(pc,Jacobian,Jacobian);
+#else
   ierr = PCSetOperators(pc,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
+#endif
   ierr = PCSetUp(pc);
 
   // Apply the preconditioner
   ierr = PCApply(pc,input.getPetscVector(),r);
 
   // Cleanup
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 5)
+  ierr = PCDestroy(&pc);
+#else
   ierr = PCDestroy(pc);
+#endif
+
+  TEUCHOS_ASSERT(ierr == 0);
 
   return Abstract::Group::Ok;
 }
 
 
-Abstract::Group::ReturnType 
+Abstract::Group::ReturnType
 Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
@@ -460,11 +478,11 @@ Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& r
   return applyJacobianTranspose(petscinput, petscresult);
 }
 
-Abstract::Group::ReturnType 
+Abstract::Group::ReturnType
 Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
-  if (!isJacobian()) 
+  if (!isJacobian())
     return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was check above)
@@ -473,126 +491,128 @@ Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   // Apply the Jacobian
   int ierr = MatMultTranspose(Jacobian, input.getPetscVector(), result.getPetscVector());
 
+  TEUCHOS_ASSERT(ierr == 0);
+
   return Abstract::Group::Ok;
 }
 
 
-bool 
-Group::isF() const 
-{   
+bool
+Group::isF() const
+{
   return isValidRHS;
 }
 
-bool 
-Group::isJacobian() const 
-{  
+bool
+Group::isJacobian() const
+{
   return ((sharedJacobian.isOwner(this)) && (isValidJacobian));
 }
 
-bool 
-Group::isGradient() const 
-{   
+bool
+Group::isGradient() const
+{
   return isValidGrad;
 }
 
-bool 
-Group::isNewton() const 
-{   
+bool
+Group::isNewton() const
+{
   return isValidNewton;
 }
 
-bool 
-Group::isPreconditioner() const 
-{   
+bool
+Group::isPreconditioner() const
+{
   return isValidPreconditioner;
 }
 
-const Abstract::Vector& 
-Group::getX() const 
+const Abstract::Vector&
+Group::getX() const
 {
   return xVector;
 }
 
-const Abstract::Vector& 
-Group::getF() const 
-{  
+const Abstract::Vector&
+Group::getF() const
+{
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
-    
+
   return RHSVector;
 }
 
-double 
+double
 Group::getNormF() const
 {
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNormF() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
-    
+
   return normRHS;
 }
 
-const Abstract::Vector& 
-Group::getGradient() const 
-{ 
+const Abstract::Vector&
+Group::getGradient() const
+{
   if (!isGradient()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getGradient() - invalid gradient" << std::endl;
     throw "NOX Error";
   }
-    
+
   return gradVector;
 }
 
-const Abstract::Vector& 
-Group::getNewton() const 
+const Abstract::Vector&
+Group::getNewton() const
 {
   if (!isNewton()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNewton() - invalid Newton vector" << std::endl;
     throw "NOX Error";
   }
-    
+
   return NewtonVector;
 }
 
 Teuchos::RCP< const Abstract::Vector >
-Group::getXPtr() const 
+Group::getXPtr() const
 {
   return Teuchos::rcp< const NOX::Abstract::Vector >(&xVector, false);
 }
 
 Teuchos::RCP< const Abstract::Vector >
-Group::getFPtr() const 
-{  
+Group::getFPtr() const
+{
   if (!isF()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getFPtr() - invalid RHS" << std::endl;
     throw "NOX Error";
   }
-    
+
   return Teuchos::rcp< const NOX::Abstract::Vector >(&RHSVector, false);
 }
 
 Teuchos::RCP< const Abstract::Vector >
-Group::getGradientPtr() const 
-{ 
+Group::getGradientPtr() const
+{
   if (!isGradient()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getGradientPtr() - invalid gradient" << std::endl;
     throw "NOX Error";
   }
-    
+
   return Teuchos::rcp< const NOX::Abstract::Vector >(&gradVector, false);
 }
 
 Teuchos::RCP< const Abstract::Vector >
-Group::getNewtonPtr() const 
+Group::getNewtonPtr() const
 {
   if (!isNewton()) {
     std::cerr << "ERROR: NOX::Petsc::Group::getNewtonPtr() - invalid Newton vector" << std::endl;
     throw "NOX Error";
   }
-    
+
   return Teuchos::rcp< const NOX::Abstract::Vector >(&NewtonVector, false);
 }
 

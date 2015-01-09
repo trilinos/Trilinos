@@ -47,15 +47,21 @@
 #define MUELU_FACTORY_HPP
 
 #include <string>
-#include <map>
-
+#include <deque>                        // for _Deque_iterator, operator!=
+#include <ostream>                      // for operator<<, etc
+#include "Teuchos_ENull.hpp"            // for ENull::null
+#include "Teuchos_FilteredIterator.hpp"  // for FilteredIterator, etc
+#include "Teuchos_ParameterEntry.hpp"   // for ParameterEntry
+#include "Teuchos_ParameterList.hpp"    // for ParameterList, etc
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_RCPNode.hpp"          // for operator<<
+#include "Teuchos_StringIndexedOrderedValueObjectContainer.hpp"
 #include "Teuchos_RCP.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_FactoryBase.hpp"
 #include "MueLu_FactoryAcceptor.hpp"
 #include "MueLu_ParameterListAcceptor.hpp"
-
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
@@ -109,7 +115,7 @@ namespace MueLu {
       //       it = paramList.erase(it);
       //     else
       //       it++;
-      ParameterList::ConstIterator it;
+      ParameterList::ConstIterator it = paramList->begin();
       while (it != paramList->end()) {
         it = paramList->begin();
 
@@ -126,7 +132,7 @@ namespace MueLu {
 
     //@}
 
-    virtual RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const {
+    virtual RCP<const ParameterList> GetValidParameterList() const {
       return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
     }
 
@@ -166,9 +172,30 @@ namespace MueLu {
     void EnableMultipleCallCheck() const       { multipleCallCheck_       = ENABLED;  }
     void DisableMultipleCallCheck() const      { multipleCallCheck_       = DISABLED; }
     void ResetDebugData() const {
+      if (multipleCallCheck_ == FIRSTCALL && lastLevelID_ == -1)
+        return;
+
       multipleCallCheck_ = FIRSTCALL;
       lastLevelID_       = -1;
+
+      const ParameterList& paramList = GetParameterList();
+
+      // We cannot use just FactoryManager to specify which factories call ResetDebugData().
+      // The problem is that some factories are not present in the manager, but
+      // instead are only accessible through a parameter list of some factory.
+      // For instance, FilteredAFactory is only accessible from SaPFactory but
+      // nowhere else. So we miss those, and do not reset the data, resulting
+      // in problems.
+      // Therefore, for each factory we need to go through its dependent
+      // factories, and call reset on them.
+      for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++)
+        if (paramList.isType<RCP<const FactoryBase> >(it->first)) {
+          RCP<const Factory> fact = rcp_dynamic_cast<const Factory >(paramList.get<RCP<const FactoryBase> >(it->first));
+          if (fact != Teuchos::null && fact != NoFactory::getRCP())
+            fact->ResetDebugData();
+        }
     }
+
     static void EnableMultipleCheckGlobally()  { multipleCallCheckGlobal_ = ENABLED;  }
     static void DisableMultipleCheckGlobally() { multipleCallCheckGlobal_ = DISABLED; }
 

@@ -60,5 +60,5 @@ void X_SOLVE_ (DATA_TYPE *,   /* Matrix   input*/
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

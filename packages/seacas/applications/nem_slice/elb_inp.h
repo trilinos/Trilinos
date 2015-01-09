@@ -36,7 +36,12 @@
 #ifndef _ELB_INP_CONST_H_
 #define _ELB_INP_CONST_H_
 
-#include "elb.h"
+#include <string>                       // for string
+struct Machine_Description;
+struct Problem_Description;
+struct Solver_Description;
+template <typename INT> struct LB_Description;
+template <typename INT> struct Weight_Description;
 
 /* Prototype for command-line parsing function */
 template <typename INT>

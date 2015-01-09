@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -55,9 +55,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <string.h>                     // for strcpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_init_params, void_int, etc
+#include "exodusII_int.h"               // for EX_NOERR
 
 /*!
 
@@ -84,7 +85,6 @@ The following code segment will read the initialization parameters
 from the open exodus file:
 
 \code
-#include "exodusII.h"
 int num_dim, num_nodes, num_elem, num_elem_blk,
     num_node_sets, num_side_sets, error, exoid;
 

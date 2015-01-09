@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -83,7 +83,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-        const Epetra_BlockMap& RowMap, 
+        const Epetra_BlockMap& RowMap,
         const Epetra_BlockMap& ColMap,
         int* NumIndicesPerRow,
         bool ignoreNonLocalEntries=false,
@@ -91,7 +91,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
-        const Epetra_BlockMap& RowMap, 
+        const Epetra_BlockMap& RowMap,
         const Epetra_BlockMap& ColMap,
         int NumIndicesPerRow,
         bool ignoreNonLocalEntries=false,
@@ -180,7 +180,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
   bool UseNonlocalGraph () const {return buildNonlocalGraph_; };
 
- private:     
+ private:
   void DeleteMemory();
   int InsertNonlocalRow(int row, int offset);
   int InputNonlocalIndices(int row,
@@ -215,7 +215,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   bool buildNonlocalGraph_;
 
   Epetra_FECrsGraph & operator=(const Epetra_FECrsGraph& Graph);
-     
+
   template<typename int_type>
   int InsertGlobalIndices(int numRows, const int_type* rows, int numCols, const int_type* cols);
 

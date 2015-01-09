@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   if (MyPID < 3) NumMyElements++;
   int IndexBase = 0;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
-  
+
   Epetra_Map* Map;
 
   // Test exceptions
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   // Test Epetra-defined uniform linear distribution constructor
   Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
-  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, 
+  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0,
 		  IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
-  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, 
+  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0,
 		  IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
@@ -181,10 +181,10 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (int i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
-  Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
+  Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,
 											 IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
-  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, 
+  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements,
 									IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
 
   // Back to testing copy constructor
   if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
-  ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, 
+  ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements,
 		  IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
@@ -289,7 +289,7 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
 	EPETRA_TEST_ERR(!(m1addr==m2addr),returnierr); // addresses should be same
-	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr 
+	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr
 									 << "\nm2= " << m2count << "  " << m2addr << endl;
 
 	delete m2;
@@ -306,7 +306,7 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 		const Epetra_BlockMapData* m3addr = m3.DataPtr();
 		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
 		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
-		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
+		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 		m3 = m1;
 		m3count = m3.ReferenceCount();
@@ -315,7 +315,7 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 		m1count = m1.ReferenceCount();
 		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
 		EPETRA_TEST_ERR(!(m1addr==m3addr),returnierr); // addresses should be same
-		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr 
+		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 	}
 	m1countold = m1count;
@@ -345,7 +345,7 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
 	EPETRA_TEST_ERR(!(m1addr==m2addr),returnierr); // addresses should be same
-	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr 
+	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr
 									 << "\nm2= " << m2count << "  " << m2addr << endl;
 
 	delete m2;
@@ -362,7 +362,7 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 		const Epetra_BlockMapData* m3addr = m3.DataPtr();
 		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
 		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
-		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
+		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 		m3 = m1;
 		m3count = m3.ReferenceCount();
@@ -371,7 +371,7 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 		m1count = m1.ReferenceCount();
 		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
 		EPETRA_TEST_ERR(!(m1addr==m3addr),returnierr); // addresses should be same
-		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr 
+		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 	}
 	m1countold = m1count;

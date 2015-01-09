@@ -20,9 +20,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
@@ -42,6 +42,8 @@
 #include <ctime>
 #include <iostream>
 #include "nlnml_coarselevelnoxinterface.H"
+
+using namespace std;
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                             m.gee 3/06|
@@ -63,7 +65,7 @@ fbar_(NULL),
 fxbar_(NULL)
 {
   this_bmap_ = rcp(new Epetra_BlockMap(this_bmap));
-  
+
   // create a series of working vectors to be used on prolongation/restriction
   wvec_.clear();
   if (Level())
@@ -73,9 +75,9 @@ fxbar_(NULL)
       wvec_[i] = rcp(new Epetra_Vector((*P)[i+1]->OperatorRangeMap(),false));
     wvec_[Level()] = rcp(new Epetra_Vector((*P)[Level()]->OperatorDomainMap(),false));
   }
-  
-  
-  
+
+
+
   return;
 }
 
@@ -103,8 +105,8 @@ NLNML::NLNML_CoarseLevelNoxInterface::~NLNML_CoarseLevelNoxInterface()
  |  evaluate nonlinear function (public, derived)             m.gee 3/06|
  *----------------------------------------------------------------------*/
 bool NLNML::NLNML_CoarseLevelNoxInterface::computeF(
-                                 const Epetra_Vector& x, Epetra_Vector& F, 
-			         const FillType fillFlag)
+                                 const Epetra_Vector& x, Epetra_Vector& F,
+               const FillType fillFlag)
 {
   bool err;
   if (!Level())
@@ -162,8 +164,8 @@ Epetra_Vector*  NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this(
     }
     const int mylength = xfine.MyLength();
     for (int i=0; i<mylength; i++)
-      (*xfineP)[i] = xfine[i];      
-    
+      (*xfineP)[i] = xfine[i];
+
     // loop from the finest level to this level and
     // apply series of restrictions (that is transposed prolongations)
     Epetra_Vector* fvec = xfineP;
@@ -173,9 +175,9 @@ Epetra_Vector*  NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this(
       (*P_)[i+1]->Multiply(true,*fvec,*cvec);
       fvec = cvec;
     }
-    Epetra_Vector* out = new Epetra_Vector((*P_)[Level()]->OperatorDomainMap(),false); 
+    Epetra_Vector* out = new Epetra_Vector((*P_)[Level()]->OperatorDomainMap(),false);
     (*P_)[Level()]->Multiply(true,*fvec,*out);
-    return out;   
+    return out;
   }
 }
 
@@ -221,7 +223,7 @@ Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::prolong_this_to_fine(
  |  restrict from this to next coarser level (public)         m.gee 3/06|
  *----------------------------------------------------------------------*/
 Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_level(
-                                                  Epetra_Vector* thisvec, 
+                                                  Epetra_Vector* thisvec,
                                                   int current, int next)
 {
   Epetra_Vector* xfineP = 0;
@@ -236,7 +238,7 @@ Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_le
     }
     const int mylength = thisvec->MyLength();
     for (int i=0; i<mylength; i++)
-      (*xfineP)[i] = (*thisvec)[i];      
+      (*xfineP)[i] = (*thisvec)[i];
   }
   else
   {
@@ -253,7 +255,7 @@ Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_le
  |  prolongate from next coarser level to this level (public) m.gee 3/06|
  *----------------------------------------------------------------------*/
 Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::prolong_to_this_level(
-                                                  Epetra_Vector* coarsevec, 
+                                                  Epetra_Vector* coarsevec,
                                                   int current, int next)
 {
   Epetra_Vector* fvec = new Epetra_Vector((*P_)[next]->OperatorRangeMap(),false);

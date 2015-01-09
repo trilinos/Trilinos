@@ -110,6 +110,7 @@ public:
   
 private:
 
+  typedef typename panzer::Traits::Residual EvalT;
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
@@ -158,6 +159,7 @@ public:
   
 private:
 
+  typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
@@ -204,6 +206,7 @@ public:
   
 private:
 
+  typedef typename panzer::Traits::Jacobian EvalT;
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
@@ -217,6 +220,9 @@ private:
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;
   std::string globalDataKey_; // what global data does this fill?
+  int gatherSeedIndex_; // what gather seed in the workset to use
+                        // if less than zero then use alpha or beta
+                        // as appropriate
 
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 

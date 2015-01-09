@@ -1,0 +1,68 @@
+This directory contains example codes that show how to use Tpetra.
+Trilinos' build system will automatically build and test these codes
+whenever testing examples is enabled.
+
+Lessons for new Tpetra users
+============================
+
+If you are learning how to use Tpetra, please begin with the
+subdirectories whose names start with "Lesson" (e.g., Lesson01-Init).
+The numbers that follow "Lesson" suggest an order in which to do the
+lessons, and the name that follows the number indicates the lesson's
+topic.
+
+Other examples
+==============
+
+The advanced/ subdirectory contains examples best suited for either
+advanced Tpetra users or Tpetra developers.  The old/ subdirectory
+contains old examples that we plan either to remove or to rewrite.
+Finally, the not-built/ subdirectory contains examples that were not
+being built or tested; we left them as they were.
+
+Note to Tpetra developers
+=========================
+
+How to add a new Lesson
+-----------------------
+
+1. Create a Lesson subdirectory of the appropriate name.
+
+The numbers that follow "Lesson" suggest an order in which to do the
+lessons, and the name that follows the number indicates the lesson's
+topic.  You are allowed to change the numbers of other lessons in
+order to put your lesson in the right place.
+
+2. In that subdirectory, add an index.doc file.  
+
+Imitate Lesson01-Init/index.doc.  This file uses Doxygen markup.  If
+you want to add example source codes (see Step 3 below), point to them
+by using the Doxygen \example command.  You may point to one or more
+examples in your index.doc file.
+
+3. Tell Tpetra's Doxygen system about the new index.doc file.
+
+Edit ../../doc/Doxyfile and add the path to the new index.doc file to
+the INPUT list.  Use existing Lessons as models.
+
+4. Add a link to the new Lesson to Epetra's main Doxygen page.
+
+Edit epetra/doc/Doxygen and add a link to the new Lesson.  Use
+existing Lessons as a model.
+
+5. In the Lesson subdirectory, add example source code(s), if any.
+
+Look at Lesson01-Init/lesson01_mpi_only_through_Tpetra.cpp as an
+example.  The top of the file has Doxygen markup which marks the file
+as an example, and points back to the Lesson which uses the example.
+
+6. To that subdirectory, add a CMakeLists.txt file to tell CMake how
+   to build the examples.
+
+Look at Lesson01-Init/CMakeLists.txt for an example.  This follows the
+pattern of other Tpetra tests.  Be sure that your test generates the
+right output string to stdout so that the test passes.  You may change
+this string in your CMakeLists.txt file, but the standard pass output
+is "End Result: TEST PASSED".
+
+

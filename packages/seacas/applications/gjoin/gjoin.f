@@ -725,7 +725,7 @@ C   --Write the QA records
 
   150 CONTINUE
       CALL WRAPUP (QAINFO(1))
-      call addlog (QAINFO(1))
+      call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       OPEN (UNIT=9, FILE='%gjoin', FORM='unformatted',
      &   STATUS='old', IOSTAT=IERR)
       IF (IERR .EQ. 0) THEN

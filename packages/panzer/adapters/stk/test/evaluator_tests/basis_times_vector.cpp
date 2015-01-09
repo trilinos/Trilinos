@@ -52,12 +52,12 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_DOFManagerFEI.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
-#include "Panzer_GatherOrientation.hpp"
+#include "Panzer_WorksetContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -65,6 +65,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -83,7 +84,7 @@ namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(const std::size_t& worksetSize,const std::string & basisName);
   void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb);
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY);
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
   Teuchos::RCP<panzer::IntegrationRule> buildIR(const std::size_t& worksetSize,const int& cubature_degree);
 
   class BilinearPointEvaluator : public PointEvaluation<panzer::Traits::Residual::ScalarT> {
@@ -112,10 +113,10 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_time_vector, residual)
   {
     const std::size_t workset_size = 1;
-    const std::string fieldName_q1 = "U";
-    const std::string fieldName_qedge1 = "V";
+    const std::string fieldName_q1 = "TEMPERATURE";
+    const std::string fieldName_qedge1 = "ION_TEMPERATURE";
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(1,1);
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(1,1);
 
     // build input physics block
     Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
@@ -132,39 +133,31 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock); 
-    TEST_EQUALITY(work_sets->size(),1);
-
     Teuchos::RCP<panzer::IntegrationRule> ir = buildIR(workset_size,4);
     Teuchos::RCP<panzer::BasisIRLayout> layout_qedge1 = Teuchos::rcp(new panzer::BasisIRLayout(basis_qedge1,*ir));
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
-    RCP<panzer::DOFManagerFEI<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManagerFEI<int,int>(conn_manager,MPI_COMM_WORLD));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+    RCP<panzer::DOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::DOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
     dofManager->addField(fieldName_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
     dofManager->addField(fieldName_qedge1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_qedge1->getIntrepidBasis())));
     dofManager->setOrientationsRequired(true);
     dofManager->buildGlobalUnknowns();
 
+    // build worksets
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    physicsBlocks.push_back(physicsBlock); // pushing back singular
+
+    panzer::WorksetContainer wkstContainer(Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)),physicsBlocks,workset_size);
+    wkstContainer.setGlobalIndexer(dofManager);
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer.getVolumeWorksets(physicsBlock->elementBlockID()); 
+    TEST_EQUALITY(work_sets->size(),1);
+
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
  
     PHX::FieldManager<panzer::Traits> fm;
-
-    {
-       Teuchos::RCP<std::vector<std::string> > dofNames = Teuchos::rcp(new std::vector<std::string>);
-       dofNames->push_back(fieldName_qedge1);
-
-       Teuchos::ParameterList pl;
-       pl.set("Indexer Names",dofNames);
-       pl.set("DOF Names",dofNames);
-       pl.set("Basis",basis_qedge1);
-
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
-
-       fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-    }
 
     {
        Teuchos::ParameterList pl;
@@ -257,10 +250,10 @@ namespace panzer {
      return Teuchos::rcp(new panzer::PureBasis(basisName,1,cellData)); 
   }
 
-  Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)
   {
-    typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
-    typedef panzer_stk::STK_Interface::VectorFieldType CoordinateField;
+    typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
+    typedef panzer_stk_classic::STK_Interface::VectorFieldType CoordinateField;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -268,9 +261,9 @@ namespace panzer {
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
     
-    panzer_stk::SquareQuadMeshFactory factory;
+    panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
-    RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
     return mesh;

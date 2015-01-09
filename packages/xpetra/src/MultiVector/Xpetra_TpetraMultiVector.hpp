@@ -83,7 +83,10 @@ namespace Xpetra {
   RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = MultiVector<>::scalar_type,
+            class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
+            class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraMultiVector
     : public virtual MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
@@ -112,7 +115,7 @@ namespace Xpetra {
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
 
-    
+
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~TpetraMultiVector() {  }
 
@@ -257,7 +260,7 @@ namespace Xpetra {
         XPETRA_MONITOR("TpetraMultiVector::randomize");
 
         if(bUseXpetraImplementation)
-            Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
+            MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
         else
             vec_->randomize();
     }
@@ -309,7 +312,7 @@ namespace Xpetra {
     template<class Node2>
     RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
       return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
-	//toXpetra(vec_->clone(node2));
+        //toXpetra(vec_->clone(node2));
     }
 
     //@}
@@ -328,8 +331,44 @@ namespace Xpetra {
 
     //@}
 
-  private:
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    virtual void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+    {
+      typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
+      const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=:"
+        " The left-hand side (LHS) of the assignment has a different type than "
+        "the right-hand side (RHS).  The LHS has type Xpetra::TpetraMultiVector"
+        " (which means it wraps a Tpetra::MultiVector), but the RHS has some "
+        "other type.  This probably means that the RHS wraps an "
+        "Epetra_MultiVector.  Xpetra::MultiVector does not currently implement "
+        "assignment from an Epetra object to a Tpetra object, though this could"
+        " be added with sufficient interest.");
 
+      typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMV;
+      RCP<const TMV> rhsImpl = rhsPtr->getTpetra_MultiVector ();
+      RCP<TMV> lhsImpl = this->getTpetra_MultiVector ();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+        "(in Xpetra::TpetraMultiVector::assign): *this (the right-hand side of "
+        "the assignment) has a null RCP<Tpetra::MultiVector> inside.  Please "
+        "report this bug to the Xpetra developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+        "(in Xpetra::TpetraMultiVector::assign): The left-hand side of the "
+        "assignment has a null RCP<Tpetra::MultiVector> inside.  Please report "
+        "this bug to the Xpetra developers.");
+
+      Tpetra::deep_copy (*lhsImpl, *rhsImpl);
+    }
+
+  private:
+    //! The Tpetra::MultiVector which this class wraps.
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
 
   }; // TpetraMultiVector class

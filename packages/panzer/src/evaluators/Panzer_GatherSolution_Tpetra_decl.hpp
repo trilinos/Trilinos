@@ -215,6 +215,9 @@ private:
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
+  int gatherSeedIndex_; // what gather seed in the workset to use
+                        // if less than zero then use alpha or beta
+                        // as appropriate
 
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 

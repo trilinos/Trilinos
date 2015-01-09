@@ -680,7 +680,8 @@ int EpetraExt_PointToBlockDiagPermute::CopyAndPermute(const Epetra_SrcDistObject
                    int NumPermuteIDs,
                    int * PermuteToLIDs,
                    int * PermuteFromLIDs,
-                   const Epetra_OffsetIndex * Indexor){
+                   const Epetra_OffsetIndex * Indexor,
+                   Epetra_CombineMode CombineMode){
   return -1;
 }
 

@@ -12,9 +12,9 @@ template<class Scalar> class ModelEvaluator1DFEM;
 template<class Scalar>
 Teuchos::RCP<ModelEvaluator1DFEM<Scalar> >
 modelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const int NumGlobalElements,
-		    const Scalar z_min,
-		    const Scalar z_max);
+            const int NumGlobalElements,
+            const Scalar z_min,
+            const Scalar z_max);
 
 
 /** \brief 1D Finite Element model for nonlinear heat conduction
@@ -23,7 +23,7 @@ modelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
 
  \verbatim
 
-   d2T 
+   d2T
    --- - K * T**2 = 0
    dz2
 
@@ -44,9 +44,9 @@ class ModelEvaluator1DFEM
 public:
 
   ModelEvaluator1DFEM(const Teuchos::RCP<const Epetra_Comm>& comm,
-		      const int num_global_elements,
-		      const Scalar z_min,
-		      const Scalar z_max);
+              const int num_global_elements,
+              const Scalar z_min,
+              const Scalar z_max);
 
   /** \name Initializers/Accessors */
   //@{
@@ -77,7 +77,7 @@ public:
   /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
-  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const; 
+  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const;
   //@}
 
 private:
@@ -114,7 +114,7 @@ private: // data members
   Teuchos::RCP<const Epetra_Map>   f_owned_map_;
 
   Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
-  
+
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
 
   Teuchos::RCP<Epetra_Vector> node_coordinates_;
@@ -151,7 +151,7 @@ class Basis {
 
  public:
   // Variables that are calculated at the gauss point
-  double *phi, *dphide; 
+  double *phi, *dphide;
   double uu, zz, duu, eta, wt;
   double dz;
   // These are only needed for transient

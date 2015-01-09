@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,7 +62,7 @@
 namespace NOX {
   namespace Epetra {
 
-class DebugTools 
+class DebugTools
 {
 
  public:
@@ -86,7 +86,7 @@ class DebugTools
   static Epetra_CrsMatrix * compute_matrix_using_operator( const Epetra_Operator * );
 
 #ifdef HAVE_NOX_EPETRAEXT
-  // I/O methods via EpetraExt 
+  // I/O methods via EpetraExt
   static int readVector    ( std::string, const Epetra_Comm &, Epetra_Vector*&                    );
   static void writeVector  ( std::string, const Epetra_Vector &    , FORMAT_TYPE outFormat= ASCII, bool writeMap = true );
   static void writeMatrix  ( std::string, const Epetra_RowMatrix & , FORMAT_TYPE outFormat= ASCII );
@@ -94,9 +94,9 @@ class DebugTools
   static void readMatrix   ( std::string,       Epetra_CrsMatrix*&                                );
 #endif
 
-}; 
+};
 
-class TestCompare : public NOX::TestCompare 
+class TestCompare : public NOX::TestCompare
 {
 
  public:
@@ -120,12 +120,12 @@ class TestCompare : public NOX::TestCompare
      * \f]
      * for each $i$, $i$, and 1 otherwise.
      */
-    virtual int testCrsMatrices(const Epetra_CrsMatrix & mat, 
-                                const Epetra_CrsMatrix & mat_expected, 
+    virtual int testCrsMatrices(const Epetra_CrsMatrix & mat,
+                                const Epetra_CrsMatrix & mat_expected,
                                 double rtol, double atol, const std::string& name,
                                 bool enforceStructure = true );
 
-}; 
+};
 
 } // Epetra namespace
 } // NOX namespace

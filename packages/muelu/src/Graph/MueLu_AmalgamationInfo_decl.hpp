@@ -75,7 +75,9 @@ namespace MueLu {
   current processor.  That mapping is used for unamalgamation.
 */
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AmalgamationInfo
     : public BaseClass {
 #undef MUELU_AMALGAMATIONINFO_SHORT
@@ -114,6 +116,7 @@ namespace MueLu {
        Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
     */
     void UnamalgamateAggregates(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
+    void UnamalgamateAggregatesLO(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const;
 
     /*! @brief ComputeUnamalgamatedImportDofMap
      * build overlapping dof row map from aggregates needed for overlapping null space
@@ -131,7 +134,8 @@ namespace MueLu {
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
 
     //! @brief DOF map (really column map of A)
-    const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
+    // keep an RCP on the column map to make sure that the map is still valid when it is used
+    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
 
     //@}
 

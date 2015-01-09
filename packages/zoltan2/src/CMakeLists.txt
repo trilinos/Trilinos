@@ -1,10 +1,18 @@
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-SET(HAVE_ZOLTAN2_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+IF(NOT ${PROJECT_NAME}_ENABLE_OpenMP)
+  SET(${PROJECT_NAME}_ENABLE_OpenMP OFF)
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE( Zoltan2_ENABLE_OpenMP
+  HAVE_ZOLTAN2_OMP
+  "Enable OpenMP support in Zoltan2."
+  ${${PROJECT_NAME}_ENABLE_OpenMP}
+)
+
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -44,11 +52,17 @@ SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
+APPEND_GLOB(HEADERS ${DIR}/algorithms/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/partition/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
+
+APPEND_GLOB(HEADERS ${DIR}/algorithms/color/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/color/*.cpp)
 
 APPEND_GLOB(HEADERS ${DIR}/algorithms/match/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/match/*.cpp)
@@ -81,8 +95,10 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 # for zoltan2 header files
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/order)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/color)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/match)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/environment)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)

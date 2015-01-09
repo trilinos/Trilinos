@@ -70,5 +70,34 @@ void computePatternEdgeIndices(const FieldPattern & pattern,std::vector<std::pai
    }
 }
 
+void computePatternFaceIndices(const FieldPattern & pattern,std::vector<std::vector<int> > & faceIndices)
+{
+   // this only works for 3D field patterns
+   TEUCHOS_ASSERT(pattern.getDimension()==3);
+
+   unsigned node_dim = 0; // by assumption
+   unsigned subcell_dim = 2;
+   shards::CellTopology cellTopo = pattern.getCellTopology();
+
+   faceIndices.resize(cellTopo.getSubcellCount(subcell_dim));
+
+   for(unsigned f=0;f<cellTopo.getSubcellCount(subcell_dim);f++) {
+      shards::CellTopology faceTopo(cellTopo.getBaseCellTopologyData(subcell_dim,f));
+
+      for(unsigned v=0;v<faceTopo.getNodeCount();v++) {
+         // get local vertex ids for a this edge
+         unsigned local_v = cellTopo.getNodeMap(subcell_dim,f,v);
+
+         // get sub cell indices for geometric pattern
+         const std::vector<int> & v_indices = pattern.getSubcellIndices(node_dim,local_v);
+   
+         TEUCHOS_ASSERT(v_indices.size()>0); // there must be a node
+   
+         // take the first index on each vertex and make a edge lookup
+         faceIndices[f].push_back(v_indices[0]);
+      }
+   }
+}
+
 } // end orientation_helpers
 } // end panzer

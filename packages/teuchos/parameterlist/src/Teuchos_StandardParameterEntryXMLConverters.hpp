@@ -73,7 +73,7 @@ public:
     RCP<const ParameterEntry> entry) const;
 
   /** \brief . */
-  any getAny(const XMLObject& xmlObj) const; 
+  any getAny(const XMLObject& xmlObj) const;
   //@}
 
 };
@@ -84,7 +84,7 @@ public:
  * This converter is appropriate for most data types.
  */
 template<class T>
-class StandardTemplatedParameterConverter : 
+class StandardTemplatedParameterConverter :
   public ParameterEntryXMLConverter
 {
 
@@ -108,7 +108,7 @@ public:
   any getAny(const XMLObject& xmlObj) const{
     return any(xmlObj.getRequired<T>(getValueAttributeName()));
   }
-  
+
   //@}
 
 };

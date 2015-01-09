@@ -70,7 +70,7 @@ namespace Details {
 /// @brief Wrapper class for direct solvers in Amesos2.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
-/// This class computes a sparse direct factorization of the input
+/// This class computes a sparse factorization of the input
 /// matrix A using Amesos2.  The apply() method solves linear
 /// system(s) using that factorization.  As with all Ifpack2
 /// preconditioners, initialize() computes the symbolic factorization,
@@ -85,14 +85,13 @@ namespace Details {
 ///   of Tpetra::RowMatrix.  This requirement comes from Amesos2's
 ///   Tpetra adapter.
 ///
-/// \note This class does <i>not</i> apply a LocalFilter to the input
-///   matrix A.  This is unnecessary for subdomain solvers in
-///   AdditiveSchwarz, because AdditiveSchwarz already applies a
-///   LocalFilter to the matrix it passes to its subdomain solver.
-///   Furthermore, some sparse factorizations wrapped by Amesos2, like
-///   SuperLU_DIST, do support MPI parallelism.  Thus, it is
-///   reasonable to leave this option open to users, rather than force
-///   a LocalFilter.
+/// \warning This class creates a local filter.  In particular, if the matrix
+///   is not a true Tpetra::CrsMatrix, this class will perform a deep copy to produce
+///   a CrsMatrix.  This will happen, for example, if you are doing additive Schwarz
+///   with nonzero overlap, and apply Amesos2 as the subdomain solve.  This deep copy
+///   is required by Amesos2, and is in addition to any data copying that Amesos2 may
+///   do internally to satisfy TPL storage formats.
+///
 template<class MatrixType>
 class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -129,7 +128,7 @@ public:
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -152,6 +151,12 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
+
+  //! Type of the Tpetra::CrsMatrix specialization that this class uses.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
   //@}
   //! \name Constructors and destructor
   //@{
@@ -353,14 +358,37 @@ private:
   Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
 
   //! Amesos2 solver; it contains the factorization of the matrix A_.
-  Teuchos::RCP<Amesos2::Solver<MatrixType, MV> > amesos2solver_;
+  Teuchos::RCP<Amesos2::Solver<crs_matrix_type, MV> > amesos2solver_;
 
-  //! The matrix to be preconditioned.
-  Teuchos::RCP<const MatrixType> A_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //! The (original) input matrix to be preconditioned.
+  //Teuchos::RCP<const MatrixType> A_;
+  Teuchos::RCP<const row_matrix_type> A_;
+
+  /// \brief The matrix used to compute the Amesos2 preconditioner.
+  ///
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current adapters in Amesos2
+  /// only accept a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //@}
   // \name Parameters (set by setParameters())
   //@{
+
+  //! Caches parameters passed into setParameters
+  //! if the concrete inner preconditioner doesn't exist yet.
+  Teuchos::RCP<const Teuchos::ParameterList> parameterList_;
 
   //@}
   // \name Other internal data
@@ -384,6 +412,9 @@ private:
   bool IsInitialized_;
   //! \c true if \c this object has been computed
   bool IsComputed_;
+  //! @brief The name of the solver in Amesos2 to use.
+  //! See the Amesos2 documentation for valid names.
+  std::string SolverName_;
   //@}
 }; // class Amesos2Wrapper
 

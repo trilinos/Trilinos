@@ -14,7 +14,7 @@ if (len(sys.argv) == 2 and sys.argv[1] == "-v"):
     verbose = True
 else:
    verbose = False
-   
+
 # run test
 import testLOCA_Chan
 result = testLOCA_Chan.runTests(verbose)

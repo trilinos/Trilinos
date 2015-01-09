@@ -82,7 +82,8 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
 					    const Teuchos::ParameterList& user_data,
-                                            const GenericEvaluatorFactory & gEvalFact)
+                                            const GenericEvaluatorFactory & gEvalFact,
+                                            bool closureModelByEBlock)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -113,11 +114,16 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-    pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
-    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,user_data);
+    if(!physicsBlockGatherDisabled())
+      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
+    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,Teuchos::ptrFromRef(lo_factory),user_data);
     if(!physicsBlockScatterDisabled())
       pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);
-    pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
+
+    if(closureModelByEBlock)
+      pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,pb->elementBlockID(),closure_models,user_data);
+    else
+      pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
  
     // register additional model evaluator from the generic evaluator factory
     gEvalFact.registerEvaluators(*fm,wd,*pb);
@@ -270,9 +276,18 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
     panzer::BC bc = blkItr->first;
     const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
 
+    BCType bc_type = bc.bcType();
+    std::string type;
+    if (bc_type == BCT_Dirichlet)
+	type = "_Dirichlet";
+    else if (bc_type == BCT_Neumann)
+        type = "_Neumann";
+    else
+        TEUCHOS_ASSERT(false);
+
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();
-    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId);
+    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId+type);
   }
 
 }

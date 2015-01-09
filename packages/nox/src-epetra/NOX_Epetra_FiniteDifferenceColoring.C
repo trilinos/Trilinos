@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,14 +67,14 @@ using namespace NOX::Epetra;
 // This constructor is needed for inheritance but is inadequate for using
 // coloring in parallel since the raw matrix graph is not known.
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-	 Teuchos::ParameterList& printingParams,
-	 const Teuchos::RCP<Interface::Required>& i,
-	 const NOX::Epetra::Vector& x,
-	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
-	 bool parallelColoring,
-	 bool distance1_,
-	 double beta_, double alpha_) :
+     Teuchos::ParameterList& printingParams,
+     const Teuchos::RCP<Interface::Required>& i,
+     const NOX::Epetra::Vector& x,
+     const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+     const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
+     bool parallelColoring,
+     bool distance1_,
+     double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, beta_, alpha_),
   coloringType(NOX_SERIAL),
   distance1(distance1_),
@@ -102,14 +102,14 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
          Teuchos::ParameterList& printingParams,
-	 const Teuchos::RCP<Interface::Required>& i,
-	 const NOX::Epetra::Vector& x,
-	 const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
-	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
-	 bool parallelColoring,
-	 bool distance1_,
-	 double beta_, double alpha_) :
+     const Teuchos::RCP<Interface::Required>& i,
+     const NOX::Epetra::Vector& x,
+     const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
+     const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+     const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
+     bool parallelColoring,
+     bool distance1_,
+     double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, rawGraph_, beta_, alpha_),
   coloringType(NOX_SERIAL),
   distance1(distance1_),
@@ -159,7 +159,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
          dynamic_cast<FiniteDifferenceColoring*>(&Jac);
   if (testMatrix == 0) {
     std::cout << "ERROR: NOX::Epetra::FiniteDifferenceColoring::computeJacobian() - "
-	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!"
+     << "Jacobian to evaluate is not a FiniteDifferenceColoring object!"
          << std::endl;
     throw "NOX Error";
   }
@@ -185,7 +185,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  int myMin = map.MinMyGID(); // Minimum locally owned GID 
+  int myMin = map.MinMyGID(); // Minimum locally owned GID
   int myMax = map.MaxMyGID(); // Maximum locally owned GID
 
   // We need to loop over the largest number of colors on a processor
@@ -303,7 +303,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
             Jc[map.LID(j)] /=
               (2.0 * (*mappedColorVect)[columnMap->LID(globalColumnID)]);
 
-  	int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
+      int err = jac.ReplaceGlobalValues(j,1,&Jc[map.LID(j)],&globalColumnID);
           if(err) {
             std::cout << "ERROR (" << map.Comm().MyPID() << ") : "
                  << "Inserting global value with indices (" << j << ","

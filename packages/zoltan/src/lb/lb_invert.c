@@ -173,10 +173,12 @@ int ierr, ret_ierr = ZOLTAN_OK;
       ret_ierr = ZOLTAN_MEMERR;
       goto End;
     }
-    if (!Zoltan_Special_Malloc(zz,(void **)out_local_ids,*num_out,
-                           ZOLTAN_SPECIAL_MALLOC_LID)) {
-      ret_ierr = ZOLTAN_MEMERR;
-      goto End;
+    if (num_lid_entries) {
+      if (!Zoltan_Special_Malloc(zz,(void **)out_local_ids,*num_out,
+                             ZOLTAN_SPECIAL_MALLOC_LID)) {
+        ret_ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
     }
     if (!Zoltan_Special_Malloc(zz,(void **)out_procs,*num_out,
                            ZOLTAN_SPECIAL_MALLOC_INT)) {

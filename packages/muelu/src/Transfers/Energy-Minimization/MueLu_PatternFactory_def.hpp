@@ -49,40 +49,44 @@
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_PatternFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
 
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("emin: pattern order");
+#undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for the matrix");
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory for the matrix providing nonzero graph");
-    validParamList->set<int>                     ("k",             1, "Polynomial degree: the resulting pattern is A^k*P [default = 1]");
 
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(coarseLevel, "P");
 
     const ParameterList& pL = GetParameterList();
-    if (pL.get<int>("k") > 0)
+    if (pL.get<int>("emin: pattern order") > 0)
       Input(fineLevel, "A");
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Ppattern", coarseLevel);
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
     const ParameterList& pL = GetParameterList();
-    int k = pL.get<int>("k");
+    int k = pL.get<int>("emin: pattern order");
 
     if (k > 0) {
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");

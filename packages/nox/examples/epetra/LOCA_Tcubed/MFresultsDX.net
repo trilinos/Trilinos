@@ -15,21 +15,21 @@ include "AutoScaleMacro.net"
 macro main(
 ) -> (
 ) {
-    // 
+    //
     // node AutoScale[1]: x = 252, y = 478, inputs = 2, label = AutoScale
     // input[2]: defaulting = 0, visible = 1, type = 67108863, value = [1 1 1]
     //
 main_AutoScale_1_out_1,
-main_AutoScale_1_out_2 = 
+main_AutoScale_1_out_2 =
     AutoScale(
     main_AutoScale_1_in_1,
     main_AutoScale_1_in_2
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node Import[1]: x = 187, y = 44, inputs = 6, label = Import
     // input[1]: defaulting = 0, visible = 1, type = 32, value = "MFresults.dx"
     //
-main_Import_1_out_1 = 
+main_Import_1_out_1 =
     Import(
     main_Import_1_in_1,
     main_Import_1_in_2,
@@ -38,19 +38,19 @@ main_Import_1_out_1 =
     main_Import_1_in_5,
     main_Import_1_in_6
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node Normals[1]: x = 101, y = 161, inputs = 2, label = Normals
     //
-main_Normals_1_out_1 = 
+main_Normals_1_out_1 =
     Normals(
     main_Import_1_out_1,
     main_Normals_1_in_2
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node Color[1]: x = 94, y = 245, inputs = 5, label = Color
     // input[2]: defaulting = 0, visible = 1, type = 32, value = "blue"
     //
-main_Color_1_out_1 = 
+main_Color_1_out_1 =
     Color(
     main_Normals_1_out_1,
     main_Color_1_in_2,
@@ -58,18 +58,18 @@ main_Color_1_out_1 =
     main_Color_1_in_4,
     main_Color_1_in_5
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node ShowConnections[1]: x = 245, y = 151, inputs = 1, label = ShowConnections
     //
-main_ShowConnections_1_out_1 = 
+main_ShowConnections_1_out_1 =
     ShowConnections(
     main_Import_1_out_1
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node Color[2]: x = 231, y = 239, inputs = 5, label = Color
     // input[2]: defaulting = 0, visible = 1, type = 32, value = "white"
     //
-main_Color_2_out_1 = 
+main_Color_2_out_1 =
     Color(
     main_ShowConnections_1_out_1,
     main_Color_2_in_2,
@@ -77,15 +77,15 @@ main_Color_2_out_1 =
     main_Color_2_in_4,
     main_Color_2_in_5
     ) [instance: 2, cache: 1];
-    // 
+    //
     // node Collect[1]: x = 163, y = 380, inputs = 2, label = Collect
     //
-main_Collect_1_out_1 = 
+main_Collect_1_out_1 =
     Collect(
     main_Color_1_out_1,
     main_Color_2_out_1
     ) [instance: 1, cache: 1];
-    // 
+    //
     // node Image[1]: x = 117, y = 495, inputs = 49, label = Image
     // input[1]: defaulting = 0, visible = 0, type = 67108863, value = "Image_1"
     // input[4]: defaulting = 0, visible = 0, type = 1, value = 1
@@ -115,7 +115,7 @@ main_Collect_1_out_1 =
     //
 main_Image_1_out_1,
 main_Image_1_out_2,
-main_Image_1_out_3 = 
+main_Image_1_out_3 =
     Image(
     main_Image_1_in_1,
     main_Collect_1_out_1,
@@ -303,8 +303,8 @@ macro Image(
             perspective,
             viewAngle,
             backgroundColor) [instance: 1, cache: 1];
-    coloredDefaultCamera = 
-	 UpdateCamera(defaultCamera,
+    coloredDefaultCamera =
+     UpdateCamera(defaultCamera,
             background=backgroundColor) [instance: 1, cache: 1];
     nullDefaultCamera =
         Inquire(defaultCamera,
@@ -314,7 +314,7 @@ macro Image(
             nullDefaultCamera,
             coloredDefaultCamera,
             autoCamera) [instance: 1, cache: 1];
-    resetNull = 
+    resetNull =
         Inquire(
             reset,
             "is null + 1") [instance: 2, cache: 1];
@@ -354,11 +354,11 @@ macro Image(
             AAyTickLabels,
             AAzTickLabels) [instance: 1, cache: 1];
     switchAAenable = Compute("$0+1",
-	     AAenable) [instance: 2, cache: 1];
+         AAenable) [instance: 2, cache: 1];
     object = Switch(
-	     switchAAenable,
-	     object,
-	     AAobject) [instance:4, cache: 1];
+         switchAAenable,
+         object,
+         AAobject) [instance:4, cache: 1];
     SWapproximation_options =
         Switch(
             buttonState,
@@ -380,14 +380,14 @@ macro Image(
             buttonDownDensity,
             buttonUpDensity) [instance: 2, cache: 1];
     switchRenderMode = Compute(
-	     "$0+1",
-	     renderMode) [instance: 3, cache: 1];
+         "$0+1",
+         renderMode) [instance: 3, cache: 1];
     approximation_options = Switch(
-	     switchRenderMode,
+         switchRenderMode,
             SWapproximation_options,
-	     HWapproximation_options) [instance: 7, cache: 1];
+         HWapproximation_options) [instance: 7, cache: 1];
     density_options = Switch(
-	     switchRenderMode,
+         switchRenderMode,
             SWdensity_options,
             HWdensity_options) [instance: 8, cache: 1];
     renderModeString = Switch(
@@ -449,7 +449,7 @@ macro Image(
             RECresolution,
             ImageResolution,
             RECaspect,
-	     ImageAspect) [instance: 4, cache: 1];
+         ImageAspect) [instance: 4, cache: 1];
     NoRECobject, RECNoRerenderObject, RECNoRerHW, RECRerenderObject = Route(switchRECenable, annoted_object);
     Display(
         NoRECobject,
@@ -481,21 +481,21 @@ macro Image(
         RECfile,
         RECformat) [instance: 1, cache: 1];
     RECupdateCamera =
-	UpdateCamera(
-	    camera,
-	    resolution=RECresolution,
-	    aspect=RECaspect) [instance: 2, cache: 1];
+    UpdateCamera(
+        camera,
+        resolution=RECresolution,
+        aspect=RECaspect) [instance: 2, cache: 1];
     Display(
         RECRerenderObject,
         camera,
         where,
         throttle) [instance: 1, cache: 1];
     RECRerenderObject =
-	ScaleScreen(
-	    RECRerenderObject,
-	    NULL,
-	    RECresolution,
-	    camera) [instance: 1, cache: 1];
+    ScaleScreen(
+        RECRerenderObject,
+        NULL,
+        RECresolution,
+        camera) [instance: 1, cache: 1];
     image =
         Render(
             RECRerenderObject,

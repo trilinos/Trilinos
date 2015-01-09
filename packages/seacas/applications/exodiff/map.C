@@ -49,8 +49,8 @@ namespace {
 
   template <typename INT>
   size_t Find(double x0, double y0, double z0,
-	   double* x, double* y, double* z,
-	   INT *id, size_t N, int dim, bool ignore_dups);
+	      double* x, double* y, double* z,
+	      INT *id, size_t N, int dim, size_t block_id, bool ignore_dups);
 
   template <typename INT>
   void Compute_Node_Map(INT*& node_map, ExoII_Read<INT>& file1, ExoII_Read<INT>& file2);
@@ -183,7 +183,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
       
 	  // Locate midpoint in sorted array.
 	  sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim,
-			  interface.ignore_dups);
+			  file1.Block_Id(b), interface.ignore_dups);
 
 	  if (sort_idx < 0) {
 	    std::cout << "\nexodiff: ERROR: Files are different (couldn't match element "
@@ -473,7 +473,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
       
       // Locate midpoint in sorted array.
       sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim,
-		      interface.ignore_dups);
+		      file1.Block_Id(b), interface.ignore_dups);
       if (sort_idx < 0) {
 	unmatched++;
 	if (first && interface.show_unmatched) {
@@ -882,7 +882,8 @@ namespace {
   template <typename INT>
   size_t Find(double x0, double y0, double z0,
 	      double* x, double* y, double* z,
-	      INT *id, size_t N, int dim, bool ignore_dups)
+	      INT *id, size_t N, int dim, size_t block_id,
+	      bool ignore_dups)
   {
     SMART_ASSERT(x != 0);
     SMART_ASSERT(N > 0);
@@ -930,14 +931,17 @@ namespace {
 	    double y2 = dim > 1 ? y[id[index]] : 0.0;
 	    double z2 = dim > 2 ? z[id[index]] : 0.0;
 	  
+	    INT loce1 = id[i];
+	    INT loce2 = id[index];
+	    
 	    std::cout << "\nexodiff: ERROR - Two elements in file 2 have the "
 		      << "same midpoint (within tolerance).\n"
-		      << "\tElement " << id[i]+1
+		      << "\tLocal element  " << id[i]+1 << " in block " << block_id
 		      << " at (" << x1 << ", " << y1 << ", " << z1 << ") and\n"
-		      << "\tElement " << id[index]+1
+		      << "\tLocal element " << id[index]+1 << " in block " << block_id
 		      << " at (" << x2 << ", " << y2 << ", " << z2 << ")\n"
 		      << "\tNo unique element mapping possible.\n" << std::endl;
-	    exit(1);
+	    return -1;
 	  }
 	}
 	else

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -57,22 +57,22 @@ class Epetra_Map;
 
 */
 class Epetra_Directory {
-    
+
   public:
 
     //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Epetra_Directory destructor.
   virtual ~Epetra_Directory(){}
   //@}
-  
+
   //! @name Query method
-  //@{ 
+  //@{
   //! GetDirectoryEntries : Returns proc and local id info for non-local map entries
   /*! Given a list of Global Entry IDs, this function returns the list of
       processor IDs and local IDs on the owning processor that correspond
-      to the list of entries.  If LocalEntries is 0, then local IDs are 
-      not returned.  If EntrySizes is nonzero, it will contain a list of corresponding 
+      to the list of entries.  If LocalEntries is 0, then local IDs are
+      not returned.  If EntrySizes is nonzero, it will contain a list of corresponding
       element sizes for the requested global entries.
     \param In
            NumEntries - Number of Global IDs being passed in.
@@ -87,12 +87,12 @@ class Epetra_Directory {
     \param InOut
            EntrySizes - User allocated array of length at least NumEntries.  On return contains the size of the
      object associated with this global ID. If LocalEntries is zero, no size information is returned.
-     
+
     \param In
            high_rank_sharing_procs Optional argument, defaults to true. If any GIDs appear on multiple
      processors (referred to as "sharing procs"), this specifies whether the lowest-rank proc or the
      highest-rank proc is chosen as the "owner".
-     
+
     \return Integer error code, set to 0 if successful.
   */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

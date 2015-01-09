@@ -51,6 +51,9 @@
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Krylov.hpp"
+#include "Ifpack2_BlockRelaxation.hpp"
+#include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_Details_OneLevelFactory.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -111,6 +114,17 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType> (matrix));
   }
+  else if (precTypeUpper == "BLOCK_RELAXATION" ||
+           precTypeUpper == "BLOCK RELAXATION" ||
+           precTypeUpper == "BLOCKRELAXATION" ) {
+    // FIXME (mfh 22 May 2014) We would prefer to have the choice of
+    // dense or sparse blocks (the "container type") be a run-time
+    // decision.  This will require refactoring BlockRelaxation so
+    // that the "container type" is not a template parameter.  For
+    // now, we default to use dense blocks.
+    typedef DenseContainer<MatrixType, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+  }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<MatrixType> (matrix));
   }
@@ -131,6 +145,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_ONELEVELFACTORY_INSTANT(S,LO,GO,N)              \
-  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Details::OneLevelFactory< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_ONELEVELFACTORY_DEF_HPP

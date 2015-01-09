@@ -21,11 +21,11 @@
 template<class Scalar>
 Teuchos::RCP<ModelEvaluator2DSim<Scalar> >
 modelEvaluator2DSim(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const Scalar d,
-		    const Scalar p0,
-		    const Scalar p1,
-		    const Scalar x0,
-		    const Scalar x1)
+            const Scalar d,
+            const Scalar p0,
+            const Scalar p1,
+            const Scalar x0,
+            const Scalar x1)
 {
   return Teuchos::rcp(new ModelEvaluator2DSim<Scalar>(comm,d,p0,p1,x0,x1));
 }
@@ -117,14 +117,14 @@ ModelEvaluator2DSim<Scalar>::create_W_prec() const
   Teuchos::RCP<Epetra_CrsMatrix> W_epetra =
     Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
 
-  const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op = 
+  const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op =
     Thyra::nonconstEpetraLinearOp(W_epetra);
 
-  Teuchos::RCP<Thyra::DefaultPreconditioner<Scalar> > prec = 
+  Teuchos::RCP<Thyra::DefaultPreconditioner<Scalar> > prec =
     Teuchos::rcp(new Thyra::DefaultPreconditioner<Scalar>);
 
   prec->initializeRight(W_op);
-  
+
   return prec;
 }
 
@@ -163,9 +163,9 @@ void ModelEvaluator2DSim<Scalar>::evalModelImpl(
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  
+
   TEUCHOS_ASSERT(nonnull(inArgs.get_x()));
-		 
+
   const Thyra::ConstDetachedVectorView<Scalar> x(inArgs.get_x());
 
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
@@ -237,11 +237,11 @@ void ModelEvaluator2DSim<Scalar>::evalModelImpl(
 
 template<class Scalar>
 ModelEvaluator2DSim<Scalar>::ModelEvaluator2DSim(const Teuchos::RCP<const Epetra_Comm>& comm,
-						 const Scalar d,
-						 const Scalar p0,
-						 const Scalar p1,
-						 const Scalar x0,
-						 const Scalar x1) :
+                         const Scalar d,
+                         const Scalar p0,
+                         const Scalar p1,
+                         const Scalar x0,
+                         const Scalar x1) :
   epetra_comm_(comm),
   d_(d),
   p_(2, Teuchos::ScalarTraits<Scalar>::zero()),
@@ -252,7 +252,7 @@ ModelEvaluator2DSim<Scalar>::ModelEvaluator2DSim(const Teuchos::RCP<const Epetra
   using ::Thyra::VectorBase;
   typedef ::Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  
+
   TEUCHOS_ASSERT(nonnull(epetra_comm_));
 
   const int nx = 2;
@@ -282,17 +282,17 @@ ModelEvaluator2DSim<Scalar>::ModelEvaluator2DSim(const Teuchos::RCP<const Epetra
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
   prototypeInArgs_ = inArgs;
-  
+
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
 //   outArgs.set_W_properties(DerivativeProperties(
-// 			     DERIV_LINEARITY_NONCONST
-// 			     ,DERIV_RANK_FULL
-// 			     ,true // supportsAdjoint
-// 			     ));
+//                  DERIV_LINEARITY_NONCONST
+//                  ,DERIV_RANK_FULL
+//                  ,true // supportsAdjoint
+//                  ));
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;

@@ -1,55 +1,55 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                Amesos: Direct Sparse Solver Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
 //
 //  Coding tasks:
-//  1)  Create the dense matrices in Solve()   DONE 
-//  2)  Make the call to dgsvx() in Factor() dONE 
+//  1)  Create the dense matrices in Solve()   DONE
+//  2)  Make the call to dgsvx() in Factor() dONE
 //  3)  Make the call to dgsvx() in Solve()  DONE
 //
 //  Later coding tasks:
 //  0)  Factor called twice
 //  1)  Refactor()
 //  2)  Parameter list
-//  3)  Transpose  - DONE 
+//  3)  Transpose  - DONE
 //  4)  Destructor - In particular, need to call the SuperLU_FREE routines.
 //  5)  Coments - especially in Amesos_Superlu.h
 //
-//  SymbolicFactorization() performs no action other than making sure that Factorization 
+//  SymbolicFactorization() performs no action other than making sure that Factorization
 //    s performed
 //  NumericFactorization() performs the factorization but no solve (right hand side is
-//    is set to 0 vectors) reuses factors only if ReuseFactorization_ is set. 
-//    If FactorizationOK_() && ReuseSymbolic_ 
+//    is set to 0 vectors) reuses factors only if ReuseFactorization_ is set.
+//    If FactorizationOK_() && ReuseSymbolic_
 //       ReFactor()
 //    else
-//       Factor() 
+//       Factor()
 //
-//  Solve() 
+//  Solve()
 //
 //  Factor() does everything from scratch:
 //    Redistributes the data if necessary
@@ -60,8 +60,8 @@
 //    Redistributes the data if necessary
 //      - Attempting to check to make sure that the non-zero structure is unchanged
 //    Copies the data into the format that SuperLU already has it
-//       FIRST PASS - assert( false ) 
-//    
+//       FIRST PASS - assert( false )
+//
 
 #ifndef AMESOS_SUPERLU_H
 #define AMESOS_SUPERLU_H
@@ -81,27 +81,27 @@ class Epetra_CrsMatrix;
 class Epetra_LinearProblem;
 
 //! Amesos_Superlu:  Amesos interface to Xioye Li's SuperLU 3.0 serial code.
-/*! 
+/*!
  * Class Amesos_Superlu solves the linear systems of equations <TT>A X = B</TT>,
- * where A is defined as an Epetra_RowMatrix, and X and B are two 
+ * where A is defined as an Epetra_RowMatrix, and X and B are two
  * Epetra_MultiVector's.
  *
  * \date Last updated on 28-Apr-05.
 */
 
-class Amesos_Superlu: public Amesos_BaseSolver, 
-                      private Amesos_Time, 
-                      private Amesos_NoCopiable, 
-                      private Amesos_Utils, 
-                      private Amesos_Control, 
-                      private Amesos_Status { 
+class Amesos_Superlu: public Amesos_BaseSolver,
+                      private Amesos_Time,
+                      private Amesos_NoCopiable,
+                      private Amesos_Utils,
+                      private Amesos_Control,
+                      private Amesos_Status {
 
-public: 
+public:
 
   //@{ \name Constructor methods
   //! Amesos_Superlu Constructor.
   /*! Creates an Amesos_Superlu instance, using an Epetra_LinearProblem,
-      passing in an already-defined Epetra_LinearProblem object. 
+      passing in an already-defined Epetra_LinearProblem object.
 
       Note: The operator in LinearProblem must be an
       Epetra_RowMatrix.
@@ -128,8 +128,8 @@ public:
 
   bool MatrixShapeOK() const ;
 
-  int SetUseTranspose(bool UseTranspose) {
-    UseTranspose_ = UseTranspose; return(0);
+  int SetUseTranspose (bool useTheTranspose) {
+    UseTranspose_ = useTheTranspose; return(0);
   }
 
   bool UseTranspose() const {return(UseTranspose_);};
@@ -156,7 +156,7 @@ public:
   //! Extracts timing information from the current solver and places it in the parameter list.
   void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
 
-private:  
+private:
 
   //@}
   //@{ Utility methods
@@ -185,7 +185,7 @@ private:
 
   //!  PerformNumericFactorization - Call Superlu to perform numeric factorization
   // Note:  All action is performed on process 0
-  int PerformNumericFactorization(); 
+  int PerformNumericFactorization();
 
   //@}
 
@@ -207,18 +207,18 @@ private:
   //!< stores the matrix in SuperLU format.
   std::vector <int> Ai_;
   //!< stores the matrix in SuperLU format.
-  std::vector <double> Aval_; 
+  std::vector <double> Aval_;
   //! Global size of the matrix.
-  long long NumGlobalRows_; 
+  long long NumGlobalRows_;
   //! Global number of nonzeros in the matrix.
-  long long NumGlobalNonzeros_; 
+  long long NumGlobalNonzeros_;
   //! If \c true, solve the linear system with the transpose of the matrix.
-  bool UseTranspose_;      
+  bool UseTranspose_;
   //! If \c true, the factorization has been successfully computed.
-  bool FactorizationOK_; 
-  bool FactorizationDone_; 
+  bool FactorizationOK_;
+  bool FactorizationDone_;
   bool ReuseSymbolic_;
-  //! Process number (i.e. Comm().MyPID() 
+  //! Process number (i.e. Comm().MyPID()
   int iam_;
   //! Quick access pointer to internal timing data.
   int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
@@ -236,5 +236,5 @@ private:
   //! Pointer to the linear system matrix.
   Epetra_RowMatrix* RowMatrixA_;
 
-};  // End of  class Amesos_Superlu  
+};  // End of  class Amesos_Superlu
 #endif /* AMESOS_SUPERLU_H */

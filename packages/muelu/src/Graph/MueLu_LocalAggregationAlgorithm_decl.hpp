@@ -55,11 +55,7 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-#include "MueLu_AggOptions.hpp" // includes Ordering enum
-
 namespace MueLu {
-
-  using namespace AggOptions; // necessary
 
   /* ************************************************************************* */
   /* definition of the structure from ML for holding aggregate information     */
@@ -73,17 +69,17 @@ namespace MueLu {
     struct MueLu_SuperNode_Struct *next;
   } MueLu_SuperNode;
 
-  /* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggregated. */
-  enum NodeState {
-    READY   = -11,   /* indicates that a node is available to be */
+  /* In the algorithm, aggStat[]=CA_READY/CA_NOTSEL/CA_SELECTED indicates whether a node has been aggregated. */
+  enum CANodeState {
+    CA_READY   = -11,   /* indicates that a node is available to be */
     /* selected as a root node of an aggregate  */
 
-    NOTSEL  = -12,   /* indicates that a node has been rejected  */
+    CA_NOTSEL  = -12,   /* indicates that a node has been rejected  */
     /* as a root node. This could perhaps be    */
     /* because if this node had been selected a */
     /* small aggregate would have resulted.     */
 
-    SELECTED = -13   /* indicates that a node has been assigned  */
+    CA_SELECTED = -13   /* indicates that a node has been assigned  */
     /* to an aggregate.                         */
   };
 
@@ -96,7 +92,7 @@ namespace MueLu {
 
   */
 
-  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class LocalAggregationAlgorithm : public BaseClass {
 #undef MUELU_LOCALAGGREGATIONALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
@@ -119,13 +115,13 @@ namespace MueLu {
     //! @name Set/get methods.
     //@{
 
-    void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
+    void SetOrdering(const std::string& ordering)                { ordering_                = ordering;                }
     void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
     void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
 
-    Ordering GetOrdering()                const { return ordering_;                }
-    int      GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
-    int      GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
+    const std::string& GetOrdering()                const { return ordering_;                }
+    int                GetMinNodesPerAggregate()    const { return minNodesPerAggregate_;    }
+    int                GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
 
     //@}
 
@@ -137,9 +133,9 @@ namespace MueLu {
 
   private:
     //! Aggregation options (TODO: Teuchos::ParameterList?)
-    Ordering ordering_;                /**<  natural, random, graph           */
-    int      minNodesPerAggregate_;    /**<  aggregate size control           */
-    int      maxNeighAlreadySelected_; /**<  complexity control               */
+    std::string ordering_;                /**<  natural, random, graph           */
+    int         minNodesPerAggregate_;    /**<  aggregate size control           */
+    int         maxNeighAlreadySelected_; /**<  complexity control               */
 
     //! @name Utilities
     //@{

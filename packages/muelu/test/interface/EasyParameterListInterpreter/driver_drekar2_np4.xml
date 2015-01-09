@@ -31,7 +31,7 @@
   </ParameterList>
   -->
 
-  <Parameter        name="aggregation: drop scheme"             type="string"   value="laplacian"/>
+  <Parameter        name="aggregation: drop scheme"             type="string"   value="distance laplacian"/>
   <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/>
 
   <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
@@ -39,7 +39,6 @@
   <Parameter        name="repartition: max imbalance"           type="double"   value="1.327"/>
   <Parameter        name="repartition: start level"             type="int"      value="1"/>
   <Parameter        name="repartition: remap parts"             type="bool"     value="true"/>
-  <Parameter        name="repartition: keep proc 0"             type="bool"     value="true"/>
   <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
   <ParameterList    name="repartition: params">
     <Parameter      name="algorithm"                            type="string"   value="multijagged"/>

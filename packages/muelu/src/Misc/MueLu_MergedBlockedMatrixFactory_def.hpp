@@ -46,6 +46,7 @@
 #ifndef MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_
 #define MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_
 
+#ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -64,12 +65,12 @@
 
 namespace MueLu {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MergedBlockedMatrixFactory()
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedBlockedMatrixFactory()
 { }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set< RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP()/*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");
@@ -78,13 +79,13 @@ RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, Global
 }
 
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
   Input(currentLevel, "A");
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const
 {
   FactoryMonitor  m(*this, "MergedBlockedMatrix", currentLevel);
   Teuchos::RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
@@ -105,5 +106,5 @@ void MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, Local
 
 } // namespace MueLu
 
-
+#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_MERGEDBLOCKEDMATRIXFACTORY_DEF_HPP_ */

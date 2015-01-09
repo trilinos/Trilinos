@@ -177,11 +177,11 @@ template<typename int_type>
 int Ifpack_ILUT::TCompute() 
 {
   int Length = A_.MaxNumEntries();
-  vector<double> RowValuesL(Length);
-  vector<int>    RowIndicesU(Length);
-  vector<int_type> RowIndicesU_LL;
+  std::vector<double> RowValuesL(Length);
+  std::vector<int>    RowIndicesU(Length);
+  std::vector<int_type> RowIndicesU_LL;
   RowIndicesU_LL.resize(Length);
-  vector<double> RowValuesU(Length);
+  std::vector<double> RowValuesU(Length);
   
   int RowNnzU;
 
@@ -237,9 +237,9 @@ int Ifpack_ILUT::TCompute()
   Ifpack_HashTable SingleRowL(max_keys , 1);
 
   int hash_size = SingleRowU.getRecommendedHashSize(max_keys) ;
-  vector<int> keys;      keys.reserve(hash_size * 10);
-  vector<double> values; values.reserve(hash_size * 10);
-  vector<double> AbsRow; AbsRow.reserve(hash_size * 10);
+  std::vector<int> keys;      keys.reserve(hash_size * 10);
+  std::vector<double> values; values.reserve(hash_size * 10);
+  std::vector<double> AbsRow; AbsRow.reserve(hash_size * 10);
 
   // =================== //
   // start factorization //
@@ -383,7 +383,7 @@ int Ifpack_ILUT::TCompute()
 
     if (count > FillL) {
       nth_element(AbsRow.begin(), AbsRow.begin() + FillL, AbsRow.begin() + count, 
-                  greater<double>());
+                  std::greater<double>());
       cutoff = AbsRow[FillL];
     }
 
@@ -419,7 +419,7 @@ int Ifpack_ILUT::TCompute()
 
     if (count > FillU) {
       nth_element(AbsRow.begin(), AbsRow.begin() + FillU, AbsRow.begin() + count, 
-                  greater<double>());
+                  std::greater<double>());
       cutoff = AbsRow[FillU];
     }
 

@@ -109,13 +109,13 @@ struct UserIdTraits<int>{
 template <typename IDMAP>
   void testIdMap( RCP<const Comm<int> > &comm,
     IDMAP *map, bool gnosAreGids, bool gnosAreConsecutive,
-    ArrayRCP<typename IDMAP::gid_t> &gids, 
-    ArrayRCP<typename IDMAP::gid_t> &remoteGids,
+    ArrayRCP<typename IDMAP::zgid_t> &gids, 
+    ArrayRCP<typename IDMAP::zgid_t> &remoteGids,
     bool verbose)
 {
   typedef typename IDMAP::lno_t LNO;
   typedef typename IDMAP::gno_t GNO;
-  typedef typename IDMAP::gid_t GID;
+  typedef typename IDMAP::zgid_t GID;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
-  lno_t numLocalObjects = 10;
+  zlno_t numLocalObjects = 10;
   long numRemoteObjects = 3;   // numRemoteObjects < numLocalObjects
   bool verbose = true;
   bool consecutiveGids=true;
@@ -279,23 +279,23 @@ int main(int argc, char *argv[])
   // 3. GIDs are consecutive ordinals
   // 4. GIDs are not Teuchos Ordinals
 
-  ArrayRCP<gno_t> gids(new gno_t [numLocalObjects], 0, numLocalObjects, true);
-  ArrayRCP<gno_t> remoteGids(new gno_t [numRemoteObjects], 0, 
+  ArrayRCP<zzgid_t> gids(new zzgid_t [numLocalObjects], 0, numLocalObjects, true);
+  ArrayRCP<zzgid_t> remoteGids(new zzgid_t [numRemoteObjects], 0, 
     numRemoteObjects, true);
 
   using Zoltan2::IdentifierMap;
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> UserTypes;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> UserTypes;
 
   //////////////////////////////////////////////////////////
   //  Ids are non-consecutive ordinals.
 
-  gno_t base1 = 10000 * rank;
-  gno_t base2 = base1 + 5000;
+  zgno_t base1 = 10000 * rank;
+  zgno_t base2 = base1 + 5000;
   int fail = 0;
-  gno_t base = base1;
+  zgno_t base = base1;
 
-  for (lno_t i=0; i < numLocalObjects; i++){
+  for (zlno_t i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
     if (i == numLocalObjects/2) base = base2;
   }
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
   // IDs, so Zoltan2 GNOs will be the User's GIDs, and
   // we will not have consecutive GNOs.
 
-  testIdMap(comm, idMap, gnosAreGids, !consecutiveGids, 
+  testIdMap<idmap_t>(comm, idMap, gnosAreGids, !consecutiveGids, 
     gids, remoteGids, verbose);
 
   delete idMap;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
   // And because we specifically asked for consecutive GNOs, we
   // will have consecutive global Ids.
 
-  testIdMap(comm, idMap, !gnosAreGids, consecutiveGids, 
+  testIdMap<idmap_t>(comm, idMap, !gnosAreGids, consecutiveGids, 
     gids, remoteGids, verbose);
 
   delete idMap;
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
   //  Ids are consecutive ordinals.  
 
   base = rank * numLocalObjects;
-  for (lno_t i=0; i < numLocalObjects; i++){
+  for (zlno_t i=0; i < numLocalObjects; i++){
     gids[i] = base + i;   
   }
 
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
   // the User GIDs. And since the User GIDs are already consecutive,
   // the Zoltan2 GNOs are consecutive.
 
-  testIdMap(comm, idMap, gnosAreGids, consecutiveGids, 
+  testIdMap<idmap_t>(comm, idMap, gnosAreGids, consecutiveGids, 
     gids, remoteGids, verbose);
 
   delete idMap;
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
   // the global Ids for the problem, it creates consecutive
   // Ids that begin at 0.
 
-  testIdMap(comm, idMap2, !gnosAreGids, consecutiveGids, 
+  testIdMap<idmap_t>(comm, idMap2, !gnosAreGids, consecutiveGids, 
     nonOrdinalGids, remoteGidPairs, verbose);
 
   delete idMap2;

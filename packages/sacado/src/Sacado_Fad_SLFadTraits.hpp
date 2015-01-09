@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -43,33 +43,7 @@ namespace Sacado {
 namespace Sacado {
 
   //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num>
-  struct Promote< Fad::SLFad<ValueT,Num>,
-                  Fad::SLFad<ValueT,Num> > {
-    typedef Fad::SLFad<ValueT,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename ValueT, int Num, typename R>
-  struct Promote< Fad::SLFad<ValueT,Num>, R > {
-    typedef typename ValueType< Fad::SLFad<ValueT,Num> >::type value_type_l;
-    typedef typename ValueType<R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::SLFad<value_type,Num> type;
-  };
-
-  //! Specialization of %Promote to SLFad types
-  template <typename L, typename ValueT, int Num>
-  struct Promote< L, Fad::SLFad<ValueT, Num> > {
-  public:
-
-    typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Fad::SLFad<ValueT,Num> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::SLFad<value_type,Num> type;
-  };
+  SACADO_SFAD_PROMOTE_SPEC( Fad, SLFad )
 
   //! Specialization of %ScalarType to SLFad types
   template <typename ValueT, int Num>

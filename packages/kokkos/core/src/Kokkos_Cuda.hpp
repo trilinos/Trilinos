@@ -46,23 +46,22 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
+#include <Kokkos_Core_fwd.hpp>
+
+// If CUDA execution space is enabled then use this header file.
+
+#if defined( KOKKOS_HAVE_CUDA )
+
 #include <iosfwd>
 #include <vector>
 
-#include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_HAVE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#else
-#ifdef KOKKOS_HAVE_PTHREAD
-#include <Kokkos_Threads.hpp>
-#else
-#include <Kokkos_Serial.hpp>
-#endif
-#endif
+#include <Kokkos_CudaSpace.hpp>
+
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
-#include <Kokkos_CudaSpace.hpp>
+#include <Kokkos_ScratchSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -77,39 +76,44 @@ class CudaExec ;
 namespace Kokkos {
 
 /// \class Cuda
-/// \brief Kokkos device that uses CUDA to run on GPUs.
+/// \brief Kokkos Execution Space that uses CUDA to run on GPUs.
 ///
-/// A "device" represents a parallel execution model.  It tells Kokkos
+/// An "execution space" represents a parallel execution model.  It tells Kokkos
 /// how to parallelize the execution of kernels in a parallel_for or
-/// parallel_reduce.  For example, the Threads device uses Pthreads or
-/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
-/// extensions, and the Serial device executes "parallel" kernels
-/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// parallel_reduce.  For example, the Threads execution space uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP execution space uses the OpenMP language
+/// extensions, and the Serial execution space executes "parallel" kernels
+/// sequentially.  The Cuda execution space uses NVIDIA's CUDA programming
 /// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
-  //! \name Type declarations that all Kokkos devices must provide.
+  //! \name Type declarations that all Kokkos execution spaces must provide.
   //@{
 
-  //! The device type (same as this class).
-  typedef Cuda                  device_type ;
-  //! This device's preferred memory space.
+  //! Tag this class as a kokkos execution space
+  typedef Cuda                  execution_space ;
+
+#if defined( KOKKOS_USE_CUDA_UVM )
+  //! This execution space's preferred memory space.
+  typedef CudaUVMSpace          memory_space ;
+#else
+  //! This execution space's preferred memory space.
   typedef CudaSpace             memory_space ;
-  //! The size_type typedef best suited for this device.
-  typedef CudaSpace::size_type  size_type ;
-  //! This device's preferred array layout.
+#endif
+
+  //! The size_type best suited for this execution space.
+  typedef memory_space::size_type  size_type ;
+
+  //! This execution space's preferred array layout.
   typedef LayoutLeft            array_layout ;
-  //! This device's host mirror type.
-#ifdef KOKKOS_HAVE_OPENMP
-  typedef Kokkos::OpenMP       host_mirror_device_type ;
-#else
-#ifdef KOKKOS_HAVE_PTHREAD
-  typedef Kokkos::Threads       host_mirror_device_type ;
-#else
-  typedef Kokkos::Serial       host_mirror_device_type ;
-#endif
-#endif
+
+  //! For backward compatibility
+  typedef Cuda                  device_type ;
+  //! 
+  typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
+
   //@}
+  //--------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
@@ -154,10 +158,28 @@ public:
   //! Free any resources being consumed by the device.
   static void finalize();
 
+  //! Has been initialized
+  static int is_initialized();
+
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
+  //--------------------------------------------------
+  //! \name  Cuda space instances
+
+  ~Cuda() {}
+  Cuda();
+  explicit Cuda( const int instance_id );
+
+#if defined( KOKKOS_HAVE_CXX11 )
+  Cuda & operator = ( const Cuda & ) = delete ;
+#else
+private:
+  Cuda & operator = ( const Cuda & );
+public:
+#endif
+
   //--------------------------------------------------------------------------
   //! \name Device-specific functions
   //@{
@@ -169,9 +191,8 @@ public:
   };
 
   //! Initialize, telling the CUDA run-time library which device to use.
-  static void initialize( const SelectDevice = SelectDevice() );
-
-  static int is_initialized();
+  static void initialize( const SelectDevice = SelectDevice()
+                        , const size_t num_instances = 1 );
 
   /// \brief Cuda device architecture of the selected device.
   ///
@@ -186,138 +207,57 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
-  static unsigned team_max();
-
-  //@}
-  //--------------------------------------------------------------------------
-#if defined( __CUDA_ARCH__ )
-  //! \name Functions for the functor device interface
-  //@{
-
-  __device__ inline int league_size() const { return gridDim.x ; }
-  __device__ inline int league_rank() const { return blockIdx.x ; }
-
-  __device__ inline int team_size() const { return blockDim.x ; }
-  __device__ inline int team_rank() const { return threadIdx.x ; }
-
-  __device__ inline void team_barrier() const { __syncthreads(); }
-  __device__ inline unsigned int team_barrier_count(bool value) const
-             { return __syncthreads_count(value); }
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
-   *
-   *  The highest rank thread can compute the reduction total as
-   *    reduction_total = dev.team_scan( value ) + value ;
-   */
-  template< typename Type >
-  __device__ inline Type team_scan( const Type & value );
-
-  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
-   *          with intra-team non-deterministic ordering accumulation.
-   *
-   *  The global inter-team accumulation value will, at the end of the
-   *  league's parallel execution, be the scan's total.
-   *  Parallel execution ordering of the league's teams is non-deterministic.
-   *  As such the base value for each team's scan operation is similarly
-   *  non-deterministic.
-   */
-  template< typename TypeLocal , typename TypeGlobal >
-  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-
-  //! Get a pointer to shared memory for this team.
-  __device__ inline void * get_shmem( const int size );
-
-  __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
-  __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
-
   //@}
   //--------------------------------------------------------------------------
 
-private:
-
-  Impl::CudaExec & m_exec ;
-
-  //--------------------------------------------------------------------------
-#else
-
-  int league_size() const ;
-  int league_rank() const ;
-
-  int team_size() const ;
-  int team_rank() const ;
-
-  void team_barrier() const ;
-  unsigned int team_barrier_count(bool) const ;
-
-  template< typename T >
-    inline T team_scan(const T& value);
-
-  template< typename TypeLocal , typename TypeGlobal >
-    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
-
-  void * get_shmem( const int size );
-
-  Cuda( Impl::CudaExec & );
-
-#endif
-
+  const cudaStream_t m_stream ;
+  const int          m_device ;
 };
 
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Impl {
 
-/** \brief Cuda-specific parallel work configuration */
-
-struct CudaWorkConfig {
-  Cuda::size_type  grid[3] ;   //< Grid dimensions
-  Cuda::size_type  block[3] ;  //< Block dimensions
-  Cuda::size_type  shared ;    //< Shared memory size
-
-  CudaWorkConfig()
-  {
-    enum { WarpSize = 32 };
-    grid[0] = grid[1] = grid[2] = 1 ;
-    block[1] = block[2] = 1 ;
-    block[0] = 8 * WarpSize ;
-    shared = 0 ;
-  }
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::CudaSpace
+  , Kokkos::Cuda::scratch_memory_space
+  >
+{
+  enum { value = true };
+  KOKKOS_INLINE_FUNCTION static void verify( void ) { }
+  KOKKOS_INLINE_FUNCTION static void verify( const void * ) { }
 };
 
-template< class FunctorType >
-inline
-void parallel_for( const CudaWorkConfig & work_config ,
-                   const FunctorType    & functor )
+template<>
+struct VerifyExecutionCanAccessMemorySpace
+  < Kokkos::HostSpace
+  , Kokkos::Cuda::scratch_memory_space
+  >
 {
-  Impl::ParallelFor< FunctorType , CudaWorkConfig , Cuda >
-    ( work_config , functor );
-}
+  enum { value = false };
+  inline static void verify( void ) { CudaSpace::access_error(); }
+  inline static void verify( const void * p ) { CudaSpace::access_error(p); }
+};
 
-template< class FunctorType , class FinalizeType >
-inline
-void parallel_reduce( const CudaWorkConfig & work_config ,
-                      const FunctorType    & functor ,
-                      const FinalizeType   & finalize );
-
-template< class FunctorType >
-inline
-typename FunctorType::value_type
-parallel_reduce( const CudaWorkConfig & work_config ,
-                 const FunctorType    & functor );
-
+} // namespace Impl
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
 #include <Cuda/Kokkos_CudaExec.hpp>
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
 
+//----------------------------------------------------------------------------
+
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 
-//----------------------------------------------------------------------------
 
 

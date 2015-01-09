@@ -33,10 +33,9 @@
 #ifndef IOSS_Ioss_ConcreteVariableType_h
 #define IOSS_Ioss_ConcreteVariableType_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+#include <Ioss_VariableType.h>          // for VariableType
+#include <string>                       // for string
 
-#include <Ioss_VariableType.h>
 
 namespace Ioss {
   class StorageInitializer

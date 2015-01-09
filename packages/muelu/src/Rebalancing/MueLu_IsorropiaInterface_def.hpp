@@ -46,8 +46,8 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
- RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
@@ -57,14 +57,14 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & currentLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& level) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix> A        = Get< RCP<Matrix> >(level, "A");
@@ -227,10 +227,10 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
 
-    RCP< Xpetra::TpetraCrsGraph<LO, GO, Node, LocalMatOps> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node, LocalMatOps> >(crsGraph);
+    RCP< Xpetra::TpetraCrsGraph<LO, GO, Node> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node> >(crsGraph);
     if(tpCrsGraph != Teuchos::null) {
 #ifdef HAVE_ISORROPIA_TPETRA
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpetraCrsGraph = tpCrsGraph->getTpetra_CrsGraph();
+      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > tpetraCrsGraph = tpCrsGraph->getTpetra_CrsGraph();
       RCP<Isorropia::Tpetra::Partitioner<Node> > isoPart = rcp(new Isorropia::Tpetra::Partitioner<Node>(tpetraCrsGraph, paramlist));
 
       int size = 0;

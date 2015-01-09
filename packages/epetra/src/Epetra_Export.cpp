@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -91,7 +91,7 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
 
   NumPermuteIDs_ = 0;
   NumExportIDs_ = 0;
-  for (i=NumSameIDs_; i< NumSourceIDs; i++) 
+  for (i=NumSameIDs_; i< NumSourceIDs; i++)
     if (targetMap.MyGID(SourceGIDs[i])) NumPermuteIDs_++; // Check if Source GID is a local Target GID
     else NumExportIDs_++; // If not, then it is remote
 
@@ -121,8 +121,8 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
       ExportLIDs_[NumExportIDs_++] = i;
     }
   }
-     
-  if ( NumExportIDs_>0 && !sourceMap.DistributedGlobal()) 
+
+  if ( NumExportIDs_>0 && !sourceMap.DistributedGlobal())
     ReportError("Warning in Epetra_Export: Serial Export has remote IDs. (Exporting from Subset of Source Map)", 1);
 
   // Test for distributed cases
@@ -168,7 +168,7 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
   ReportError("Warning in Epetra_Export: Source IDs not found in Target Map (Do you want to export from subset of Source Map?)", 1 );
       }
     }
-    
+
     //Make sure Export IDs are ordered by processor
     Epetra_Util util;
 
@@ -188,22 +188,22 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
     }
 
     Distor_ = sourceMap.Comm().CreateDistributor();
-    
+
     // Construct list of exports that calling processor needs to send as a result
     // of everyone asking for what it needs to receive.
-    
+
     ierr = Distor_->CreateFromSends( NumExportIDs_, ExportPIDs_, true, NumRemoteIDs_);
     if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromSends()", ierr);
-    
+
     // Use comm plan with ExportGIDs to find out who is sending to us and
-    // get proper ordering of GIDs for remote entries 
+    // get proper ordering of GIDs for remote entries
     // (that we will convert to LIDs when done).
-    
+
     if (NumRemoteIDs_>0) RemoteLIDs_ = new int[NumRemoteIDs_]; // Allocate space for LIDs in target that are
     // going to get something from off-processor.
     char * cRemoteGIDs = 0; //Do will alloc memory for this object
     int LenCRemoteGIDs = 0;
-    ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs), 
+    ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs),
     sizeof( int_type ),
     LenCRemoteGIDs,
     cRemoteGIDs);
@@ -222,13 +222,13 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
   if (NumExportIDs_>0) delete [] ExportGIDs;
   if (NumTargetIDs>0) delete [] TargetGIDs;
   if (NumSourceIDs>0) delete [] SourceGIDs;
-  
+
   return;
 }
 
 // Epetra_Export constructor for a Epetra_BlockMap object
 Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_BlockMap & targetMap)
-  : Epetra_Object("Epetra::Export"), 
+  : Epetra_Object("Epetra::Export"),
     TargetMap_(targetMap),
     SourceMap_(sourceMap),
     NumSameIDs_(0),
@@ -264,9 +264,9 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
 }
 
 //==============================================================================
-// Epetra_Export copy constructor 
+// Epetra_Export copy constructor
 Epetra_Export::Epetra_Export(const Epetra_Export & Exporter)
-  : Epetra_Object(Exporter), 
+  : Epetra_Object(Exporter),
      TargetMap_(Exporter.TargetMap_),
     SourceMap_(Exporter.SourceMap_),
     NumSameIDs_(Exporter.NumSameIDs_),
@@ -312,7 +312,7 @@ Epetra_Export::Epetra_Export(const Epetra_Export & Exporter)
 }
 
 //==============================================================================
-// Epetra_Export destructor 
+// Epetra_Export destructor
 Epetra_Export::~Epetra_Export()
 {
   if( Distor_ != 0 ) delete Distor_;
@@ -326,7 +326,7 @@ Epetra_Export::~Epetra_Export()
 }
 
 //==============================================================================
-// Epetra_Export pseudo-copy constructor. 
+// Epetra_Export pseudo-copy constructor.
 Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
   TargetMap_(Importer.SourceMap_), //reverse
   SourceMap_(Importer.TargetMap_),//reverse
@@ -365,19 +365,19 @@ Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
     ExportLIDs_ = new int[NumExportIDs_];
     ExportPIDs_ = new int[NumExportIDs_];
     for (i=0; i< NumExportIDs_; i++) ExportLIDs_[i] = Importer.RemoteLIDs_[i];
-    
-    
+
+
     // Extract the RemotePIDs from the Distributor
 #ifdef HAVE_MPI
     Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
     if(!D) throw ReportError("Epetra_Export: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-1);
     int i,j,k;
-    
+
     // Get the distributor's data
     int NumReceives        = D->NumReceives();
     const int *ProcsFrom   = D->ProcsFrom();
     const int *LengthsFrom = D->LengthsFrom();
-    
+
     // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
     // MpiDistributor so it ought to duplicate that effect.
     for(i=0,j=0;i<NumReceives;i++){
@@ -385,7 +385,7 @@ Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
       for(k=0;k<LengthsFrom[i];k++){
 	ExportPIDs_[j]=pid;
 	j++;
-      }    
+      }
     }
 #else
     throw ReportError("Epetra_Export: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-2);
@@ -408,7 +408,7 @@ void Epetra_Export::Print(std::ostream & os) const
   // Tpetra::Export.
 
   // If true, then copy the array data and sort it before printing.
-  // Otherwise, leave the data in its original order.  
+  // Otherwise, leave the data in its original order.
   //
   // NOTE: Do NOT sort the arrays in place!  Only sort in the copy.
   // Epetra depends on the order being preserved, and some arrays'
@@ -433,7 +433,7 @@ void Epetra_Export::Print(std::ostream & os) const
   os << " NULL";
       } else {
   std::vector<int> permuteFromLIDs (NumPermuteIDs_);
-  std::copy (PermuteFromLIDs_, PermuteFromLIDs_ + NumPermuteIDs_, 
+  std::copy (PermuteFromLIDs_, PermuteFromLIDs_ + NumPermuteIDs_,
        permuteFromLIDs.begin());
   if (sortIDs) {
     std::sort (permuteFromLIDs.begin(), permuteFromLIDs.end());
@@ -454,7 +454,7 @@ void Epetra_Export::Print(std::ostream & os) const
   os << " NULL";
       } else {
   std::vector<int> permuteToLIDs (NumPermuteIDs_);
-  std::copy (PermuteToLIDs_, PermuteToLIDs_ + NumPermuteIDs_, 
+  std::copy (PermuteToLIDs_, PermuteToLIDs_ + NumPermuteIDs_,
        permuteToLIDs.begin());
   if (sortIDs) {
     std::sort (permuteToLIDs.begin(), permuteToLIDs.end());
@@ -475,7 +475,7 @@ void Epetra_Export::Print(std::ostream & os) const
   os << " NULL";
       } else {
   std::vector<int> remoteLIDs (NumRemoteIDs_);
-  std::copy (RemoteLIDs_, RemoteLIDs_ + NumRemoteIDs_, 
+  std::copy (RemoteLIDs_, RemoteLIDs_ + NumRemoteIDs_,
        remoteLIDs.begin());
   if (sortIDs) {
     std::sort (remoteLIDs.begin(), remoteLIDs.end());
@@ -503,7 +503,7 @@ void Epetra_Export::Print(std::ostream & os) const
   if (sortIDs && NumExportIDs_ > 0) {
     int* intCompanions[1]; // Input for Epetra_Util::Sort().
     intCompanions[0] = &exportLIDs[0];
-    Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0], 
+    Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0],
            0, (double**) NULL, 1, intCompanions, 0, 0);
   }
       }
@@ -565,7 +565,7 @@ void Epetra_Export::Print(std::ostream & os) const
   comm.Barrier();
   SourceMap_.Print(os);
   comm.Barrier();
-  
+
   if (myRank == 0) {
     os << std::endl << std::endl << "Target Map:" << std::endl << std::flush;
   }

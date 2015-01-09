@@ -33,11 +33,13 @@
 #ifndef IOSS_Iotr_Scale3D_h
 #define IOSS_Iotr_Scale3D_h
 
-#include <Ioss_Transform.h>
-#include <string>
+#include <Ioss_Transform.h>             // for Transform, Factory
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_VariableType.h"          // for VariableType
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class Field;
 }
 
 namespace Iotr {

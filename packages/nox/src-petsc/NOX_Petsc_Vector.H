@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,14 +51,14 @@
 #ifndef NOX_PETSC_VECTOR_H
 #define NOX_PETSC_VECTOR_H
 
-#include "petscvec.h" 
+#include "petscvec.h"
 #include "NOX_Abstract_Vector.H" // base class
 
 namespace NOX {
 
 //! %NOX %Petsc support.
 /*!
-%NOX provides support for PETSc data structures through concrete 
+%NOX provides support for PETSc data structures through concrete
 implementations of the <b>%NOX::Abstract::Group</b> and
 <b>%NOX::Abstract::Vector</b>.  A <b>SharedJacobian</b> class
 exists which for now simply wraps a PETSc matrix used as the Jacobian.  Future
@@ -75,7 +75,7 @@ namespace Petsc {
 //! Implementation of NOX::Abstract::Vector for %Petsc vectors.
 class Vector : public Abstract::Vector {
 
- public:			
+ public:
 
   //! Construct by copying map and/or elements of a Petsc Vec.
   Vector(const Vec& source, CopyType type = DeepCopy);
@@ -95,7 +95,7 @@ class Vector : public Abstract::Vector {
   virtual Vec& getPetscVector();
   //! Get const reference to underlying Petsc vector.
   virtual const Vec& getPetscVector() const;
- 
+
   //@}
 
   //@{ \name Initialization methods.
@@ -108,7 +108,7 @@ class Vector : public Abstract::Vector {
   virtual Abstract::Vector& operator=(const Vector& source);
   //! See above.
   virtual Abstract::Vector& operator=(const Abstract::Vector& source);
-  
+
   virtual Abstract::Vector& abs(const Vector& source);
   //! See above.
   virtual Abstract::Vector& abs(const Abstract::Vector& source);
@@ -128,25 +128,25 @@ class Vector : public Abstract::Vector {
   //! See above
   virtual Abstract::Vector& scale(const Abstract::Vector& a);
 
-  virtual Abstract::Vector& update(double alpha, const Vector& a, 
-			     double gammaval = 0.0);
+  virtual Abstract::Vector& update(double alpha, const Vector& a,
+                 double gammaval = 0.0);
   //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
-			     double gammaval = 0.0);
+  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a,
+                 double gammaval = 0.0);
 
-  virtual Abstract::Vector& update(double alpha, const Vector& a, 
-			     double beta, const Vector& b,
-			     double gammaval = 0.0);
+  virtual Abstract::Vector& update(double alpha, const Vector& a,
+                 double beta, const Vector& b,
+                 double gammaval = 0.0);
   //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
-			     double beta, const Abstract::Vector& b,
-			     double gammaval = 0.0);
+  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a,
+                 double beta, const Abstract::Vector& b,
+                 double gammaval = 0.0);
 
   //@}
 
-  //@{ \name Creating new Vectors. 
+  //@{ \name Creating new Vectors.
 
-  virtual Teuchos::RCP<NOX::Abstract::Vector> 
+  virtual Teuchos::RCP<NOX::Abstract::Vector>
   clone(CopyType type = DeepCopy) const;
 
   //@}
@@ -169,21 +169,21 @@ class Vector : public Abstract::Vector {
 
   //@}
 
-  virtual int length() const;
- 
+  virtual NOX::size_type length() const;
+
   std::string Name() { return name;};
 
  protected:
 
   //@{ \name Protected initialization method used by constructors.
   virtual int allocate(const Vec& source, CopyType type = DeepCopy);
-  
+
   //! Pointer to Petsc vector owned by this object
   Vec petscVec;
 
   //! Flag to indicate if the vector has been allocated
   bool isAlloc;
-  
+
   std::string name;
 
 };

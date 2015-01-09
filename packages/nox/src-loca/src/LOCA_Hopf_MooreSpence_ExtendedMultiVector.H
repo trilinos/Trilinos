@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,186 +68,186 @@ namespace LOCA {
 
     namespace MooreSpence {
 
-      /*! 
-       * \brief Multi-vector class to hold solution vectors, %Newton vectors, 
+      /*!
+       * \brief Multi-vector class to hold solution vectors, %Newton vectors,
        * etc.for the Moore-Spence Hopf eqautions.
        */
-      /*! 
-       * This class uses the LOCA::Extended::MultiVector implementation to 
-       * store the solution, real and imaginary eigenvector, frequency and 
-       * parameter components of the Hopf multi vector and merely provides an 
-       * interface for naming which components of the multivector these 
+      /*!
+       * This class uses the LOCA::Extended::MultiVector implementation to
+       * store the solution, real and imaginary eigenvector, frequency and
+       * parameter components of the Hopf multi vector and merely provides an
+       * interface for naming which components of the multivector these
        * quantities correspond to.
       */
       class ExtendedMultiVector : public LOCA::Extended::MultiVector {
 
-	/*!
-	 * \brief Declare LOCA::Hopf::MooreSpence::ExtendedVector as 
-	 * a friend class so it can call protected methods.
-	 */
-	friend class ExtendedVector;
+    /*!
+     * \brief Declare LOCA::Hopf::MooreSpence::ExtendedVector as
+     * a friend class so it can call protected methods.
+     */
+    friend class ExtendedVector;
 
       public:
 
-	//! Constructor.  
-	/*!
-	 * Generates a multivector with \em nColumns columns from \em cloneVec
-	 */
-	ExtendedMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& cloneVec,
-		    int nColumns);
-  
-	//! Constructor.  
-	ExtendedMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::MultiVector& xVec,
-		    const NOX::Abstract::MultiVector& realEigenVec,
-		    const NOX::Abstract::MultiVector& imagEigenVec,
-		    const NOX::Abstract::MultiVector::DenseMatrix& freqs,
-		    const NOX::Abstract::MultiVector::DenseMatrix& bifParams);
+    //! Constructor.
+    /*!
+     * Generates a multivector with \em nColumns columns from \em cloneVec
+     */
+    ExtendedMultiVector(
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::Vector& cloneVec,
+            int nColumns);
 
-	//! Copy constructor.
-	ExtendedMultiVector(const ExtendedMultiVector& source, 
-			    NOX::CopyType type = NOX::DeepCopy);
+    //! Constructor.
+    ExtendedMultiVector(
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::MultiVector& xVec,
+            const NOX::Abstract::MultiVector& realEigenVec,
+            const NOX::Abstract::MultiVector& imagEigenVec,
+            const NOX::Abstract::MultiVector::DenseMatrix& freqs,
+            const NOX::Abstract::MultiVector::DenseMatrix& bifParams);
 
-	/*!
-	 * \brief Copy constructor that creates a new multivector with
-	 * \em nColumns columns.
-	 */
-	ExtendedMultiVector(const ExtendedMultiVector& source, int nColumns);
+    //! Copy constructor.
+    ExtendedMultiVector(const ExtendedMultiVector& source,
+                NOX::CopyType type = NOX::DeepCopy);
 
-	/*!
-	 * \brief Copy constructor that creates a sub copy or view of the 
-	 * given multivector
-	 */
-	ExtendedMultiVector(const ExtendedMultiVector& source, 
-			    const std::vector<int>& index, bool view);
+    /*!
+     * \brief Copy constructor that creates a new multivector with
+     * \em nColumns columns.
+     */
+    ExtendedMultiVector(const ExtendedMultiVector& source, int nColumns);
 
-	//! Destructor.
-	virtual ~ExtendedMultiVector();
+    /*!
+     * \brief Copy constructor that creates a sub copy or view of the
+     * given multivector
+     */
+    ExtendedMultiVector(const ExtendedMultiVector& source,
+                const std::vector<int>& index, bool view);
 
-	//! Assignment operator
-	virtual ExtendedMultiVector& 
-	operator=(const ExtendedMultiVector& y);
+    //! Destructor.
+    virtual ~ExtendedMultiVector();
 
-	//! Assignment operator
-	virtual LOCA::Extended::MultiVector& 
-	operator=(const LOCA::Extended::MultiVector& y);
+    //! Assignment operator
+    virtual ExtendedMultiVector&
+    operator=(const ExtendedMultiVector& y);
 
-	//! Assignment operator
-	virtual NOX::Abstract::MultiVector& 
-	operator=(const NOX::Abstract::MultiVector& y);
+    //! Assignment operator
+    virtual LOCA::Extended::MultiVector&
+    operator=(const LOCA::Extended::MultiVector& y);
 
-	/*! 
-	 * \brief Create a new multi-vector of the same underlying type by
-	 * cloning "this", and return a pointer to the new vector.  
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	clone(NOX::CopyType type = NOX::DeepCopy) const;
+    //! Assignment operator
+    virtual NOX::Abstract::MultiVector&
+    operator=(const NOX::Abstract::MultiVector& y);
 
-	//! Creates a new multi-vector with \c numvecs columns
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	clone(int numvecs) const;
+    /*!
+     * \brief Create a new multi-vector of the same underlying type by
+     * cloning "this", and return a pointer to the new vector.
+     */
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	/*! 
-	 * \brief Creates a new multi-vector with \c index.size() columns 
-	 * whose columns are copies of the columns of \c *this given by 
-	 * \c index.
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	subCopy(const std::vector<int>& index) const;
+    //! Creates a new multi-vector with \c numvecs columns
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    clone(int numvecs) const;
 
-	/*! 
-	 * \brief Creates a new multi-vector with \c index.size() columns that 
-	 * shares the columns of \c *this given by \c index.
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-	subView(const std::vector<int>& index) const;
+    /*!
+     * \brief Creates a new multi-vector with \c index.size() columns
+     * whose columns are copies of the columns of \c *this given by
+     * \c index.
+     */
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    subCopy(const std::vector<int>& index) const;
 
-	//! Returns the solution vector component of extended multivector
-	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
-	getXMultiVec() const;
+    /*!
+     * \brief Creates a new multi-vector with \c index.size() columns that
+     * shares the columns of \c *this given by \c index.
+     */
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    subView(const std::vector<int>& index) const;
 
-	//! Returns the solution vector component of extended multivector
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-	getXMultiVec();
+    //! Returns the solution vector component of extended multivector
+    virtual Teuchos::RCP<const NOX::Abstract::MultiVector>
+    getXMultiVec() const;
 
-	/*! 
-	 * \brief Returns the real part of the eigenvector component of 
-	 * extended multivector
-	 */
-	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
-	getRealEigenMultiVec() const;
+    //! Returns the solution vector component of extended multivector
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    getXMultiVec();
 
-	/*! 
-	 * \brief Returns the real part of the eigenvector component of 
-	 * extended multivector
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-	getRealEigenMultiVec();
+    /*!
+     * \brief Returns the real part of the eigenvector component of
+     * extended multivector
+     */
+    virtual Teuchos::RCP<const NOX::Abstract::MultiVector>
+    getRealEigenMultiVec() const;
 
-	/*! 
-	 * \brief Returns the imaginary part of the eigenvector component of 
-	 * extended multivector
-	 */
-	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
-	getImagEigenMultiVec() const;
+    /*!
+     * \brief Returns the real part of the eigenvector component of
+     * extended multivector
+     */
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    getRealEigenMultiVec();
 
-	/*! 
-	 * \brief Returns the imaginary part of the eigenvector component of 
-	 * extended multivector
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
-	getImagEigenMultiVec();
+    /*!
+     * \brief Returns the imaginary part of the eigenvector component of
+     * extended multivector
+     */
+    virtual Teuchos::RCP<const NOX::Abstract::MultiVector>
+    getImagEigenMultiVec() const;
 
-	//! Returns frequency component of extended multi vector
-	virtual 
-	Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
-	getFrequencies() const;
+    /*!
+     * \brief Returns the imaginary part of the eigenvector component of
+     * extended multivector
+     */
+    virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+    getImagEigenMultiVec();
 
-	//! Returns frequency component of extended multi vector
-	virtual 
-	Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
-	getFrequencies();
+    //! Returns frequency component of extended multi vector
+    virtual
+    Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
+    getFrequencies() const;
 
-	//! Returns bifurcation parameter component of extended multi vector
-	virtual 
-	Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
-	getBifParams() const;
+    //! Returns frequency component of extended multi vector
+    virtual
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
+    getFrequencies();
 
-	//! Returns bifurcation parameter component of extended multi vector
-	virtual 
-	Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
-	getBifParams();
+    //! Returns bifurcation parameter component of extended multi vector
+    virtual
+    Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
+    getBifParams() const;
 
-	//! Returns ith column as an extended vector
-	virtual 
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector>
-	getColumn(int i);
+    //! Returns bifurcation parameter component of extended multi vector
+    virtual
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
+    getBifParams();
 
-	//! Returns ith column as an extended vector
-	virtual 
-	Teuchos::RCP<const LOCA::Hopf::MooreSpence::ExtendedVector>
-	getColumn(int i) const;
+    //! Returns ith column as an extended vector
+    virtual
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector>
+    getColumn(int i);
+
+    //! Returns ith column as an extended vector
+    virtual
+    Teuchos::RCP<const LOCA::Hopf::MooreSpence::ExtendedVector>
+    getColumn(int i) const;
 
       protected:
 
-	//! Constructor.  
-	/*!
-	 * Creates an empty multivector with \em nColumns columns
-	 */
-	ExtendedMultiVector(
-		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		     int nColumns);
+    //! Constructor.
+    /*!
+     * Creates an empty multivector with \em nColumns columns
+     */
+    ExtendedMultiVector(
+             const Teuchos::RCP<LOCA::GlobalData>& global_data,
+             int nColumns);
 
-	//! Generate a derived extended vector
-	/*!
-	 * Returns a vector of type 
-	 * LOCA::Hopf::MooreSpence::ExtendedVector
-	 */
-	virtual Teuchos::RCP<LOCA::Extended::Vector>
-	generateVector(int nVecs, int nScalarRows) const;
+    //! Generate a derived extended vector
+    /*!
+     * Returns a vector of type
+     * LOCA::Hopf::MooreSpence::ExtendedVector
+     */
+    virtual Teuchos::RCP<LOCA::Extended::Vector>
+    generateVector(int nVecs, int nScalarRows) const;
 
       }; // class ExtendedVector
     } // namespace MooreSpence

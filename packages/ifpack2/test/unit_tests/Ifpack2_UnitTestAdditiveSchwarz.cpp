@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -82,6 +82,22 @@
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
+#endif
+
+// Xpetra / Galeri
+#ifdef HAVE_IFPACK2_XPETRA
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_Parameters.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_TpetraMap.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraMatrixTypes.hpp>
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 #endif
 
 #include <Ifpack2_UnitTestHelpers.hpp>
@@ -482,13 +498,155 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 
 }
 
+// ///////////////////////////////////////////////////////////////////// //
 
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
+// Test SuperLU sparse direct solver as subdomain solver for AdditiveSchwarz.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>       CrsType;
+  typedef Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XCrsType;
+  typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    XMapType;
+  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>     XMVectorType;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>          MultiVectorType;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                    MapType;
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal,GlobalOrdinal)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  // Generate the matrix using Galeri.
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::CommandLineProcessor clp;
+  GlobalOrdinal nx = 10, ny=10, nz=10;
+  Galeri::Xpetra::Parameters<GlobalOrdinal> GaleriParameters(clp, nx, ny, nz, "Laplace2D");
+  Xpetra::Parameters xpetraParameters(clp);
+  ParameterList GaleriList = GaleriParameters.GetParameterList();
+
+  RCP<XMapType > xmap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, GaleriList);
+  RCP<Galeri::Xpetra::Problem<XMapType,XCrsType,XMVectorType> > Pr = Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType,XMVectorType>
+      (string("Laplace2D"),xmap,GaleriList);
+
+  RCP<XCrsType> XA = Pr->BuildMatrix();
+  RCP<CrsType> A = XA->getTpetra_CrsMatrixNonConst();
+  TEST_INEQUALITY(A,Teuchos::null);
+  
+  RCP<const MapType > rowmap = A->getRowMap();
+
+  out << "Creating AdditiveSchwarz instance" << std::endl;
+
+  Ifpack2::AdditiveSchwarz<CrsType> prec (A,1);
+  ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << std::endl;
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+  //params.set ("inner preconditioner name", "AMESOS2");
+  params.set ("subdomain solver name", "AMESOS2");
+
+  /*
+    Here is how to set SuperLU options in the Amesos2 subdomain solve:
+
+    <Parameter name="subdomain solver name"  type="string"   value="AMESOS2"/>
+                  OR
+    <Parameter name="inner preconditioner name"  type="string"   value="AMESOS2"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="Amesos2 solver name"   type="string"   value="klu2"/>  //or superlu, superludist, etc.
+                                                                              //if omitted, defaults to superlu
+      <ParameterList name="Amesos2">
+        <ParameterList name="SuperLU">
+          <Parameter name="ILU_Flag"           type="bool"   value="false"/>  //set to true to use SuperLU's ILUTP
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+  */
+
+  ParameterList &subdomainList = params.sublist("subdomain solver parameters");
+  subdomainList.set("Amesos2 solver name","superlu");
+  ParameterList &amesos2List = subdomainList.sublist("Amesos2");
+  ParameterList &superluList = amesos2List.sublist("SuperLU");
+  superluList.set("ILU_Flag",false);
+
+  out << "Setting AdditiveSchwarz's parameters" << std::endl;
+
+  std::ostringstream ps;
+  int indent = 4;
+  params.print(ps, indent);
+  out << ps.str() << std::endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << std::endl;
+
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const MapType* mtx_dom_map_ptr = &*A->getDomainMap();
+  const MapType* mtx_rng_map_ptr = &*A->getRangeMap();
+  const MapType* prec_dom_map_ptr = &*prec.getDomainMap();
+  const MapType* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << std::endl << "solve using AdditiveSchwarz with sparse direct method as the subdomain solve" << std::endl;
+  out << "Calling AdditiveSchwarz::initialize()" << std::endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz::compute()" << std::endl;
+  prec.compute();
+
+  MultiVectorType x(rowmap,2), y(rowmap,2);
+  x.randomize();
+  out << "Calling AdditiveSchwarz::apply()" << std::endl;
+  prec.apply (x, y);
+
+  // Now switch to dense direct solves on the subdomains.
+  out << std::endl << "solve using AdditiveSchwarz with dense direct method as the subdomain solve" << std::endl;
+  params.set ("subdomain solver name", "DENSE");
+  prec.setParameters(params);
+  out << "Calling AdditiveSchwarz::initialize()" << std::endl;
+  prec.initialize();
+  out << "Calling AdditiveSchwarz::compute()" << std::endl;
+  prec.compute();
+  out << "Calling AdditiveSchwarz::apply()" << std::endl;
+  MultiVectorType z(rowmap,2);
+  prec.apply (x, z);
+
+  out << "Comparing results of two solves" << std::endl;
+  Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> ynorms(1),znorms(1);
+  y.norm2(ynorms());
+  z.norm2(znorms());
+  out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << std::endl;
+  out << "solution norm,  dense direct solve: " << std::setprecision(7) << znorms[0] << std::endl;
+  TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10*Teuchos::ScalarTraits<Scalar>::eps());
+
+}
+#endif
+
+#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and defined(HAVE_AMESOS2_SUPERLU)
+
+#  define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal,GlobalOrdinal)  \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SuperLU, Scalar, LocalOrdinal, GlobalOrdinal)
+
+#else
+
+#  define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal,GlobalOrdinal)  \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
+
+#endif
 
 //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, double, int, int)
 

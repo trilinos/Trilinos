@@ -185,7 +185,7 @@
     docString='  partitioning algorithm' \
     /> \
    <Parameter  \
-    id=\"28\" name=\"rectilinear_blocks\" type=\"string\" validatorId=\"26\" value=\"no\" \
+    id=\"28\" name=\"rectilinear\" type=\"string\" validatorId=\"26\" value=\"no\" \
     docString='  If true, then when a cut is made, all of the dots located on the cut \
     are moved to the same side of the cut. The resulting regions are then \
     rectilinear.  The resulting load balance may not be as good as when \
@@ -394,8 +394,9 @@
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
+        <String value=\"wolf\"/> \
       </Validator> \
-      <Validator defaultParameterName=\"rectilinear_blocks\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
+      <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
         <String integralValue=\"1\" stringValue=\"yes\"/> \
         <String integralValue=\"1\" stringValue=\"1\"/> \
@@ -449,5 +450,10 @@
       </Validator> \
     </Validators> \
   </ParameterList>"
+
+#ifdef _MSC_VER
+#undef ZOLTAN2_XML_PARAMETER_STRING
+#define ZOLTAN2_XML_PARAMETER_STRING "ZOLTAN2_XML_PARAMETER_STRING not available due to compiler error C2026: string too big, trailing characters truncated"
+#endif
 
 #endif  //ZOLTAN2_PARAMETER_DEFINITION_HEADER

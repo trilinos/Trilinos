@@ -52,7 +52,7 @@
 
 #include <stk_io/MeshReadWriteUtils.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 class STK_Interface;
 
@@ -81,17 +81,17 @@ public:
      * \returns Pointer to <code>STK_Interface</code> object with 
      *          <code>isModifiable()==false</code>.
      */ 
-   virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
 
    /** This builds all the meta data of the mesh. Does not call metaData->commit.
      * Allows user to add solution fields and other pieces. The mesh can be "completed"
      * by calling <code>completeMeshConstruction</code>.
      */
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
 
    /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
      */
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
@@ -105,12 +105,22 @@ public:
 
 protected:
 
-   void registerElementBlocks(STK_Interface & mesh,stk::io::MeshData & meshData) const;
-   void registerSidesets(STK_Interface & mesh,stk::io::MeshData & meshData) const;
-   void registerNodesets(STK_Interface & mesh,stk::io::MeshData & meshData) const;
+   void registerElementBlocks(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
+   void registerSidesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
+   void registerNodesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
 
    std::string fileName_;
    int restartIndex_;
+   bool useLowerCase_;
+
+private:
+
+  //! Did the user request mesh scaling
+  bool userMeshScaling_;
+
+  //! If requested, scale the input mesh by this factor
+  double meshScaleFactor_;
+
 };
 
 }

@@ -2,18 +2,18 @@ TRILINOS_DRIVER_SETUP()
 
 find_program(PYTHON_EXE python)
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV
-  ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 300
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV
+#  ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE release
+#  TIMEOUT_MINUTES 300
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_NOEI
   ctest_linux_nightly_mpi_development_opt_noei_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 300
+  TIMEOUT_MINUTES 330
 )
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -45,7 +45,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--no-dashboard"
   "--working-dir=${INSTALLATION_WORKING_DIR}"
   "--install-dir=${INSTALLATION_DIR}"
-  "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
+  "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.55.0"
   "--netcdf-dir=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2"
   "--verbose-errors"
   "-j ${CTEST_PARALLEL_LEVEL}"
@@ -67,13 +67,13 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 #  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
 #)
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.4
-  ctest_linux_nightly_mpi_development_opt_backwards_11_4_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE release
-  DEPENDS Install_Trilinos
-  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.4
+#  ctest_linux_nightly_mpi_development_opt_backwards_11_4_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE release
+#  DEPENDS Install_Trilinos
+#  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
+#)
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
 #  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.2

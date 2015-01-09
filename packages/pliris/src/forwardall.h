@@ -51,10 +51,10 @@
 extern "C" {
 #endif
 
-void	forwardall(DATA_TYPE *, int *, DATA_TYPE *, 
+void	forwardall(DATA_TYPE *, int *, DATA_TYPE *,
 	DATA_TYPE *);
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

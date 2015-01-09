@@ -207,7 +207,7 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
   /* Build the (2,2) Block Preconditioner */
   Teuchos::ParameterList & List22=List_.sublist("graddiv: 22list");
-  if (List22.name() == "ANONYMOUS") List11.setName("graddiv: 22list");
+  if (List22.name() == "ANONYMOUS") List22.setName("graddiv: 22list");
   EdgePC=new EdgeMatrixFreePreconditioner(K1_Matrix_,Teuchos::null,D0_Matrix_,rcp(D0_Clean_Matrix_,false),rcp(TMT_Matrix_,false),BCedges_,List22,true);
   if(print_hierarchy) EdgePC->Print();
 

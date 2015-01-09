@@ -65,20 +65,20 @@ namespace Zoltan2 {
     \li \c scalar_t weights and vector element values
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c gid_t    application global Ids 
+    \li \c zgid_t    application global Ids 
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
 
-    See IdentifierTraits to understand why the user's global ID type (\c gid_t)
+    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
     may differ from that used by Zoltan2 (\c gno_t).
  
     The Kokkos node type can be safely ignored.
  
     The template parameter \c User is a user-defined data type 
     which, through a traits mechanism, provides the actual data types 
-    with which the Zoltan2 library will be compiled.  
+    with which the Zoltan2 library will be compiled.
     \c User may be the actual class or structure used by application to 
     represent a vector, or it may be the helper class BasicUserTypes.
-    See InputTraits for more information.  
+    See InputTraits for more information.
 
     The \c scalar_t type, representing use data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and
@@ -108,7 +108,8 @@ public:
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::zgid_t    zgid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef User userCoord_t;
@@ -124,9 +125,10 @@ public:
 
   enum BaseAdapterType adapterType() const {return VectorAdapterType;}
 
-  ////////////////////////////////////////////////////
-  // My interface.
-  ////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////
+  // User's adapter interface:
+  // The user must implement these methods in his VectorAdapter
+  ///////////////////////////////////////////////////////////////
 
   /*! \brief Return the number of vectors (typically one).
    */
@@ -144,9 +146,21 @@ public:
   virtual void getEntriesView(const scalar_t *&elements, int &stride,
                               int idx = 0) const = 0;
 
+  ////////////////////////////////////////////////////////////////
+  // Handy pseudonyms, since vectors are often used as coordinates
+  // User should not implement these methods.
+  ////////////////////////////////////////////////////////////////
+
+  inline int getDimension() const {return getNumEntriesPerID();}
+
+  inline void getCoordinatesView(const scalar_t *&elements, int &stride,
+                                 int idx = 0) const
+  {
+    getEntriesView(elements, stride, idx);
+  }
 };
-  
-  
+
+
 }  //namespace Zoltan2
-  
+
 #endif

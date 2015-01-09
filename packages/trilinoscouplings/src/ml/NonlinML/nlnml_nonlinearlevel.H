@@ -19,9 +19,9 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
-# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro 
+# Questions? Contact Jonathan Hu (jhu@sandia.gov) or Ray Tuminaro
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
@@ -73,7 +73,7 @@
 
 // NOX-headers
 #include <NOX.H>
-#include <NOX_Epetra.H> 
+#include <NOX_Epetra.H>
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
@@ -101,7 +101,6 @@ namespace NLNML {
 class NLNML_FineLevelNoxInterface;
 }
 
-using namespace std;
 using namespace Teuchos;
 namespace NLNML
 {
@@ -114,56 +113,56 @@ public:
   explicit NLNML_NonlinearLevel(
                     int level, RefCountPtr<Teuchos::ParameterList> params,
                     ML* ml, ML_Aggregate* ag,
-                    RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P,
+                    RefCountPtr< std::vector< RefCountPtr<Epetra_CrsMatrix> > > P,
                     RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface,
                     const Epetra_Comm& comm,
                     RefCountPtr<Epetra_CrsMatrix> fineJac,
                     const Epetra_Vector& xfine,
                     bool isnlncg, int niterscg,
                     int numpde, int dimns);
-  
+
   virtual ~NLNML_NonlinearLevel();
-  
+
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
-  bool computePreconditioner(const Epetra_Vector& x, 
-			     Epetra_Operator& M,
-			     Teuchos::ParameterList* precParams = 0);
+  bool computePreconditioner(const Epetra_Vector& x,
+           Epetra_Operator& M,
+           Teuchos::ParameterList* precParams = 0);
 
   const Epetra_Comm & Comm() const {return(comm_);}
-  
-  inline int OutLevel() const { return params_->get("nlnML output",0); } 
-  
+
+  inline int OutLevel() const { return params_->get("nlnML output",0); }
+
   bool setModifiedSystem(bool flag, Epetra_Vector* fbar, Epetra_Vector* fxbar)
   { return coarseinterface_->setModifiedSystem(flag,fbar,fxbar);}
 
   // evaluate the nonlinear function on this level
-  bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& F,
                 NOX::Epetra::Interface::Required::FillType fillFlag)
   { return coarseinterface_->computeF(x,F,fillFlag);}
 
-  bool Iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter, double* norm); 
+  bool Iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter, double* norm);
 
   // restrict vector to next coarser level
-  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* finevec, int current, int next) 
-  { return coarseinterface_->restrict_to_next_coarser_level(finevec,current,next);}                                   
-  
+  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* finevec, int current, int next)
+  { return coarseinterface_->restrict_to_next_coarser_level(finevec,current,next);}
+
   // prolong vector from next coarser level to current level
-  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next) 
-  { return coarseinterface_->prolong_to_this_level(coarsevec,current,next);}                                   
+  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next)
+  { return coarseinterface_->prolong_to_this_level(coarsevec,current,next);}
 
 private:
-  
+
   // don't want copy-ctor and = operator
   NLNML_NonlinearLevel(NLNML::NLNML_NonlinearLevel& old);
   NLNML_NonlinearLevel operator = (const NLNML::NLNML_NonlinearLevel& old);
 
   inline int Level() const { return level_; }
-  
+
   bool Set_Smoother(ML* ml, ML_Aggregate* ag, int level, int nlevel,
-                    ML* thislevel_ml, ML_Aggregate* thislevel_ag, 
+                    ML* thislevel_ml, ML_Aggregate* thislevel_ag,
                     string smoothertype, int nsmooth);
-                    
+
   void create_Nox_Convergencetest(double normf, double norm_update, int maxiter);
 
   template<typename kind>
@@ -181,7 +180,7 @@ private:
   ML*                                                     thislevel_ml_;     // this level's 1-Level ML as a smoother to this level's nlnCG
   ML_Aggregate*                                           thislevel_ag_;     // this level's 1-Level ML as a smoother to this level's nlnCG
   RefCountPtr<Teuchos::ParameterList>                     params_;
-  RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > >  P_;
+  RefCountPtr< std::vector< RefCountPtr<Epetra_CrsMatrix> > >  P_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>         fineinterface_;
   const Epetra_Comm&                                      comm_;
   RefCountPtr<Epetra_CrsMatrix>                           fineJac_;

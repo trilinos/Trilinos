@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -45,9 +45,11 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_file_item, EX_FATAL, etc
+#include "netcdf.h"                     // for nc_inq_format, nc_type, etc
 
 
 /*! \file
@@ -69,9 +71,11 @@ static struct ex_file_item* file_list = NULL;
 
 struct ex_file_item* ex_find_file_item(int exoid)
 {
+  /* Find base filename in case exoid refers to a group */
+  int base_exoid = (unsigned)exoid & EX_FILE_ID_MASK;
   struct ex_file_item *ptr = file_list;
   while (ptr) {						\
-    if( ptr->file_id == exoid ) break;				\
+    if( ptr->file_id == base_exoid ) break;				\
     ptr = ptr->next;						\
   }								\
   return ptr;

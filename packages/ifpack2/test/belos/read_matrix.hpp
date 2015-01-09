@@ -62,8 +62,8 @@
 ///   and read only by Process 0 of the given communicator.
 /// \param comm [in] Communicator object, over which to distribute the
 ///   sparse matrix to return.
-/// \param node [in] Kokkos Node instance to be used by the returned
-///   sparse matrix.
+/// \param node [in] Node instance to be used by the returned sparse
+///   matrix.
 ///
 /// \return The sparse matrix, distributed over the given communicator.
 ///
@@ -72,8 +72,8 @@
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_hb (const std::string& hb_file,
-		const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-		Teuchos::RCP<Node> node)
+                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                Teuchos::RCP<Node> node)
 {
   using Teuchos::RCP;
   using std::cout;
@@ -87,8 +87,8 @@ read_matrix_hb (const std::string& hb_file,
   }
   if (comm->getRank () == 0) {
     cout << "Proc 0: Time in seconds to read the Harwell-Boeing - format "
-	 << "sparse matrix and finish fillComplete(): "
-	 << timer->totalElapsedTime () << endl;
+         << "sparse matrix and finish fillComplete(): "
+         << timer->totalElapsedTime () << endl;
   }
   return A;
 }

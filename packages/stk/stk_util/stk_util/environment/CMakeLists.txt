@@ -1,11 +1,41 @@
+# Copyright (c) 2013, Sandia Corporation.
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
 
 INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
-
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -18,55 +48,18 @@ INCLUDE(TribitsLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/..)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-
 #
 # Core headers
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-CPUTime.hpp
-Demangle.hpp
-LogControl.hpp
-OutputLog.hpp
-ProductRegistry.hpp
-ReportHandler.hpp
-RuntimeDoomed.hpp
-RuntimeMessage.hpp
-RuntimeWarning.hpp
-WallTime.hpp
-FormatTime.hpp
-FormatMemorySize.hpp
-  )
+FILE(GLOB HEADERS *.hpp *.h)
+FILE(GLOB SOURCES *.cpp)
 
-IF ( STK_ENABLE_BoostLib )
-  APPEND_SET(HEADERS ProgramOptions.hpp)
-ENDIF()
-
-APPEND_SET(SOURCES
-CPUTime.cpp
-Demangle.cpp
-LogControl.cpp
-OutputLog.cpp
-ProductRegistry.cpp
-ReportHandler.cpp
-RuntimeDoomed.cpp
-RuntimeMessage.cpp
-RuntimeWarning.cpp
-WallTime.cpp
-FormatTime.cpp
-FormatMemorySize.cpp
-  )
-
-IF ( STK_ENABLE_BoostLib )
-  APPEND_SET(SOURCES ProgramOptions.cpp)
-ENDIF()
-
-
-IF (STK_ENABLE_MPI)
+IF(NOT ${PACKAGE_NAME}_ENABLE_BoostLib)
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.hpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ProgramOptions.cpp")
 ENDIF()
 
 #
@@ -81,4 +74,4 @@ TRIBITS_ADD_LIBRARY(
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-        ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_util/environment/)
+        ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/environment/)

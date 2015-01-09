@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,64 +53,64 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "Teuchos_ParameterList.hpp"
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::computeJacobian()
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::computeGradient()
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::computeNewton(Teuchos::ParameterList& params)
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector& input, 
-				    NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector& input,
+                    NOX::Abstract::Vector& result) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-					     NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input,
+                         NOX::Abstract::Vector& result) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList& params, 
-					   const NOX::Abstract::Vector& input, 
-					   NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList& params,
+                       const NOX::Abstract::Vector& input,
+                       NOX::Abstract::Vector& result) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
-						Teuchos::ParameterList& params, 
-						const NOX::Abstract::Vector& input, 
-						NOX::Abstract::Vector& result
-						) const
+                        Teuchos::ParameterList& params,
+                        const NOX::Abstract::Vector& input,
+                        NOX::Abstract::Vector& result
+                        ) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyJacobianMultiVector(
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const
 {
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
-  
+
   for (int i=0; i<input.numVectors(); i++) {
     status = applyJacobian(input[i], result[i]);
 
@@ -127,12 +127,12 @@ NOX::Abstract::Group::applyJacobianMultiVector(
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyJacobianTransposeMultiVector(
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const
 {
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
-  
+
   for (int i=0; i<input.numVectors(); i++) {
     status = applyJacobianTranspose(input[i], result[i]);
 
@@ -149,16 +149,16 @@ NOX::Abstract::Group::applyJacobianTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyJacobianInverseMultiVector(
-                                    Teuchos::ParameterList& params, 
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const
+                                    Teuchos::ParameterList& params,
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const
 {
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
-  
+
   for (int i=0; i<input.numVectors(); i++) {
     status = applyJacobianInverse(params, input[i], result[i]);
-    
+
     if (status == NotDefined || status == BadDependency)
       return status;
     else if (status == Failed)
@@ -172,17 +172,17 @@ NOX::Abstract::Group::applyJacobianInverseMultiVector(
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyRightPreconditioningMultiVector(
-				   bool useTranspose,
-				   Teuchos::ParameterList& params,
-				   const NOX::Abstract::MultiVector& input, 
-				   NOX::Abstract::MultiVector& result) const
+                   bool useTranspose,
+                   Teuchos::ParameterList& params,
+                   const NOX::Abstract::MultiVector& input,
+                   NOX::Abstract::MultiVector& result) const
 {
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
-  
+
   for (int i=0; i<input.numVectors(); i++) {
     status = applyRightPreconditioning(useTranspose, params, input[i],
-				       result[i]);
+                       result[i]);
 
     if (status == NotDefined || status == BadDependency)
       return status;
@@ -210,7 +210,7 @@ bool NOX::Abstract::Group::isNewton() const
   return false;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::getNormLastLinearSolveResidual(double& residual) const
 {
   return NOX::Abstract::Group::NotDefined;

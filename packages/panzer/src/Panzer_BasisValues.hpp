@@ -50,14 +50,22 @@
 
 namespace panzer {
 
-  template<typename Scalar,typename Array>
+  /** Data structure that holds all evaluated fields associated
+    * with a basis fucntion and integration rule. This class will
+    * allocate the memory and evaluate the basis functions. The 
+    * orientations must be applied using the  
+    * <code>applyOrientations</code> method.
+    */
+  template<typename Scalar,typename Array,typename ArrayOrientation=Array>
   struct BasisValues { 
+
     static const Array dummyArray;    
  
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
-                     const ArrayFactory & af);
+                     const ArrayFactory & af,
+                     bool computeDerivatives=true);
 
     void evaluateValues(const Array& cub_points,
 			const Array& jac,
@@ -77,24 +85,30 @@ namespace panzer {
 			const Array& weighted_measure,
 			const Array& node_coordinates);
 
+    //! Method to apply orientaitons to a basis values container. 
+    void applyOrientations(const ArrayOrientation & orientations);
+
     PureBasis::EElementSpace getElementSpace() const; 
 
-    Array basis_ref;           // <BASIS,IP>
-    Array basis;               // <Cell,BASIS,IP>
+    Array basis_ref;           // <BASIS,IP> (basis dependent)
+    Array basis;               // <Cell,BASIS,IP> (basis dependent)
     Array grad_basis_ref;      // <BASIS,IP,Dim>
     Array grad_basis;          // <Cell,BASIS,IP,Dim>
     Array curl_basis_ref;      // <BASIS,IP,Dim> (dimension dependent)
     Array curl_basis;          // <Cell,BASIS,IP,Dim> (dimension dependent)
+    Array div_basis_ref;       // <BASIS,IP>
+    Array div_basis;           // <Cell,BASIS,IP>
     Array weighted_basis;      // <Cell,BASIS,IP>
     Array weighted_grad_basis; // <Cell,BASIS,IP,Dim>
     Array weighted_curl_basis; // <Cell,BASIS,IP,Dim> (dimension dependent)
+    Array weighted_div_basis;  // <Cell,BASIS,IP> 
 
     /** Carterisan coordinates for basis coefficients
 
         NOTE: This quantity is not always available.  Certain bases
         may not have a corresponding coordiante value
     */
-    Array basis_coordinates_ref;     // <Cell,BASIS>
+    Array basis_coordinates_ref;     // <Cell,BASIS,Dim>
 
     /** Carterisan coordinates for basis coefficients
 
@@ -106,10 +120,10 @@ namespace panzer {
     Teuchos::RCP<const panzer::BasisIRLayout> basis_layout;
     
     Teuchos::RCP<Intrepid::Basis<Scalar,Array> > intrepid_basis;
+
+    bool compute_derivatives;
   };
 
 } // namespace panzer
-
-// #include "Panzer_BasisValues_impl.hpp"
 
 #endif

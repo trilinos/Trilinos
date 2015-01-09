@@ -292,7 +292,7 @@ C ... get total attribute count...
       call exinq(ndbin, EXQA,   nqarec, rdum, cdum, ierr)
       call exinq(ndbin, EXINFO, ninfo,  rdum, cdum, ierr)
       call mcrsrv('QAREC', kqarec, (nqarec+1) * 4 * MXSTLN)
-      call mcrsrv('INFREC', kinfo, (ninfo+1) * MXLNLN)
+      call mcrsrv('INFREC', kinfo, (ninfo+2) * MXLNLN)
       CALL MCSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
       if (nqarec .gt. 0) then

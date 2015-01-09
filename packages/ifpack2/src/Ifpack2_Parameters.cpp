@@ -42,6 +42,8 @@
 
 #include "Ifpack2_Parameters.hpp"
 
+#include <Teuchos_ArrayRCP.hpp>
+
 namespace Ifpack2 {
 
 void getValidParameters(Teuchos::ParameterList& params)
@@ -139,6 +141,10 @@ void getValidParameters(Teuchos::ParameterList& params)
 
   // Ifpack2_METISPartitioner.hpp
   params.set("partitioner: use symmetric graph", true);
+
+  // Ifpack2_Details_UserPartitioner.hpp
+  Teuchos::ArrayRCP<int> tmp;
+  params.set("partitioner: map", tmp);
 }
 
 }//namespace Ifpack2

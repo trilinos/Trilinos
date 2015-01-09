@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -77,11 +77,11 @@ LOCA::StatusTest::Factory::~Factory()
 Teuchos::RCP<LOCA::StatusTest::Abstract> LOCA::StatusTest::Factory::
 buildStatusTests(const std::string& file_name ,
                  const Teuchos::RCP<const LOCA::GlobalData> & globalData,
-	         std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-		 tagged_tests) const
-{   
+             std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+         tagged_tests) const
+{
   Teuchos::RCP<LOCA::StatusTest::Abstract> status_tests;
-  
+
 #ifdef HAVE_TEUCHOS_EXTENDED
   Teuchos::ParameterList param_list;
   const Teuchos::Ptr<Teuchos::ParameterList> param_list_ptr(&param_list);
@@ -100,9 +100,9 @@ buildStatusTests(const std::string& file_name ,
 Teuchos::RCP<LOCA::StatusTest::Abstract> LOCA::StatusTest::Factory::
 buildStatusTests(Teuchos::ParameterList& p,
                  const Teuchos::RCP<const LOCA::GlobalData> & globalData,
-	      std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-		 tagged_tests) const
-{ 
+          std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+         tagged_tests) const
+{
   Teuchos::RCP<LOCA::StatusTest::Abstract> status_test;
 
   std::string test_type = "???";
@@ -134,12 +134,12 @@ buildStatusTests(Teuchos::ParameterList& p,
 Teuchos::RCP<LOCA::StatusTest::Abstract> LOCA::StatusTest::Factory::
 buildComboTest(Teuchos::ParameterList& p,
                const Teuchos::RCP<const LOCA::GlobalData> & globalData,
-	       std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-	       tagged_tests) const
-{ 
+           std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+           tagged_tests) const
+{
 
   int number_of_tests = get<int>(p, "Number of Tests");
-  
+
   std::string combo_type_string = get<std::string>(p, "Combo Type");
   LOCA::StatusTest::Combo::ComboType combo_type;
   if (combo_type_string == "AND")
@@ -147,25 +147,25 @@ buildComboTest(Teuchos::ParameterList& p,
   else if (combo_type_string == "OR")
     combo_type = LOCA::StatusTest::Combo::OR;
   else{
-    std::string msg = 
+    std::string msg =
       "Error - The \"Combo Type\" must be \"AND\" or \"OR\"!";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
-  
+
   RCP<LOCA::StatusTest::Combo> combo_test =
     rcp(new LOCA::StatusTest::Combo(combo_type, globalData));
-  
+
   for (int i=0; i < number_of_tests; ++i) {
     ostringstream subtest_name;
     subtest_name << "Test " << i;
     ParameterList& subtest_list = p.sublist(subtest_name.str(), true);
-    
+
     RCP<LOCA::StatusTest::Abstract> subtest =
       this->buildStatusTests(subtest_list, globalData, tagged_tests);
-    
+
     combo_test->addStatusTest(subtest);
   }
-  
+
   return combo_test;
 }
 // ************************************************************************
@@ -187,9 +187,9 @@ buildMaxItersTest(Teuchos::ParameterList& p,
 // ************************************************************************
 bool LOCA::StatusTest::Factory::
 checkAndTagTest(const Teuchos::ParameterList& p,
-		const Teuchos::RCP<LOCA::StatusTest::Abstract>& test,
-	    std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-		tagged_tests) const
+        const Teuchos::RCP<LOCA::StatusTest::Abstract>& test,
+        std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+        tagged_tests) const
 {
   if ( (isParameterType<std::string>(p, "Tag")) && (tagged_tests != NULL) ) {
     (*tagged_tests)[getParameter<std::string>(p, "Tag")] = test;
@@ -205,8 +205,8 @@ checkAndTagTest(const Teuchos::ParameterList& p,
 Teuchos::RCP<LOCA::StatusTest::Abstract> LOCA::StatusTest::
 buildStatusTests(const std::string& file_name,
                  const Teuchos::RCP<const LOCA::GlobalData> & globalData,
-	         std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-		 tagged_tests)
+             std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+         tagged_tests)
 {
   LOCA::StatusTest::Factory factory;
   return factory.buildStatusTests(file_name, globalData, tagged_tests);
@@ -218,8 +218,8 @@ buildStatusTests(const std::string& file_name,
 Teuchos::RCP<LOCA::StatusTest::Abstract> LOCA::StatusTest::
 buildStatusTests(Teuchos::ParameterList& p,
                  const Teuchos::RCP<const LOCA::GlobalData> & globalData,
-	     std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
-		 tagged_tests)
+         std::map<std::string, Teuchos::RCP<LOCA::StatusTest::Abstract> >*
+         tagged_tests)
 {
   LOCA::StatusTest::Factory factory;
   return factory.buildStatusTests(p, globalData, tagged_tests);

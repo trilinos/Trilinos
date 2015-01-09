@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -50,52 +50,48 @@
 #endif
 #include "Epetra_Map.h"
 
-typedef Teuchos::ScalarTraits<double> SCT;
 
-int main(int argc, char *argv[]) 
+
+int main(int argc, char *argv[])
 {
-  
-#ifdef EPETRA_MPI
-  
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
-#else
-
-  Epetra_SerialComm Comm;
-
-#endif
-  
-  int MyPID = Comm.MyPID();
-  
-  bool verbose = false;
-  if (argc>1) if (strncmp("-v",argv[1],2) == 0) verbose = true;
-  
-  if (verbose && MyPID == 0) {
-    std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
-  }
-  
-  int numberFailedTests = 0;
-
-  //  Create SolverUtils object
-  typedef Anasazi::SolverUtils<double, Epetra_MultiVector, Epetra_Operator> Utils;
-  
-  //  Dimension of the multivector
-  int NumGlobalElements = 99;
-  int NumColumns = 7;
-  
-  // Construct a Map that puts approximately the same number of
-  // equations on each processor.
-  Epetra_Map Map(NumGlobalElements, 0, Comm);
-  
-  int NumMyElements = Map.NumMyElements();
-  std::vector<int> MyGlobalElements(NumMyElements);
-  Map.MyGlobalElements(&MyGlobalElements[0]);
-  
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
   typedef Anasazi::MultiVecTraits<double,MV> MVT;
+  // Type of SolverUtils specialization that we will use
+  typedef Anasazi::SolverUtils<double, MV, OP> Utils;
+  typedef Teuchos::ScalarTraits<double> SCT;
+
+#ifdef EPETRA_MPI
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif // EPETRA_MPI
+
+  const int MyPID = Comm.MyPID ();
+
+  bool verbose = false;
+  if (argc>1) if (strncmp("-v",argv[1],2) == 0) verbose = true;
+
+  if (verbose && MyPID == 0) {
+    std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
+  }
+
+  int numberFailedTests = 0;
+
+
+  // Dimensions of the MultiVector
+  int NumGlobalElements = 99;
+  int NumColumns = 7;
+
+  // Construct a Map that puts approximately the same number of
+  // equations on each processor.
+  Epetra_Map Map (NumGlobalElements, 0, Comm);
+
+  int NumMyElements = Map.NumMyElements ();
+  std::vector<int> MyGlobalElements (NumMyElements);
+  Map.MyGlobalElements (&MyGlobalElements[0]);
 
   // declare an orthomanager for use below
   Anasazi::BasicOrthoManager<double,MV,OP> orthman;
@@ -202,7 +198,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<nev; ++i) {
       lambda1[i] = SCT::random();
     }
-    // this will order the eigenvalues and give us a random permutation 
+    // this will order the eigenvalues and give us a random permutation
     // to use below
     std::vector<int> rperm(nev);
     sorter.sort(lambda1,Teuchos::rcp(&rperm,false),nev);
@@ -235,7 +231,7 @@ int main(int argc, char *argv[])
             testfailed = true;
             numberFailedTests++;
             if (verbose && MyPID==0) {
-              std::cout << "ERROR: directSolve(diag(lambda)) produced wrong eigenvalues: " 
+              std::cout << "ERROR: directSolve(diag(lambda)) produced wrong eigenvalues: "
                    << "i: " << i << "   " << lambda1[i] << " vs. " << lambda2[i] << std::endl;
             }
             break;
@@ -278,7 +274,7 @@ int main(int argc, char *argv[])
             testfailed = true;
             numberFailedTests++;
             if (verbose && MyPID==0) {
-              std::cout << "ERROR: directSolve(diag(lambda),2I) produced wrong eigenvalues: " 
+              std::cout << "ERROR: directSolve(diag(lambda),2I) produced wrong eigenvalues: "
                    << "i: " << i << "   " << K(i,i)/M(i,i) << " vs. " << lambda2[i] << std::endl;
             }
             break;
@@ -323,7 +319,7 @@ int main(int argc, char *argv[])
             testfailed = true;
             numberFailedTests++;
             if (verbose && MyPID==0) {
-              std::cout << "ERROR: directSolve(diag(lambda),2I) produced wrong eigenvalues: " 
+              std::cout << "ERROR: directSolve(diag(lambda),2I) produced wrong eigenvalues: "
                    << "i: " << i << "   " << K(i,i)/M(i,i) << " vs. " << lambda2[i] << std::endl;
             }
             break;
@@ -342,7 +338,7 @@ int main(int argc, char *argv[])
     //            3) shows that Q'*K*Q gives permuted L
     // this tests the eigenvectors and the permutation routine
     {
-      Teuchos::SerialDenseMatrix<int,double> K(size,size), M(size,size), Q(nev,nev), 
+      Teuchos::SerialDenseMatrix<int,double> K(size,size), M(size,size), Q(nev,nev),
                                              T1(nev,nev), TK(nev,nev), TM(nev,nev);
       std::vector<double> lambda2(nev);
       for (int i=0; i<nev; i++) {
@@ -364,7 +360,7 @@ int main(int argc, char *argv[])
         }
       }
       else {
-        Teuchos::SerialDenseMatrix<int,double> KK(Teuchos::View,K,nev,nev), 
+        Teuchos::SerialDenseMatrix<int,double> KK(Teuchos::View,K,nev,nev),
                                                MM(Teuchos::View,M,nev,nev);
         // permute Q
         Utils::permuteVectors(rperm,Q);

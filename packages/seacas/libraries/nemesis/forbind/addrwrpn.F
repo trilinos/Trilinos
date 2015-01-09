@@ -1,5 +1,5 @@
 C Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 C retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without

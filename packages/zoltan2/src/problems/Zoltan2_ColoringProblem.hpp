@@ -50,20 +50,18 @@
 #ifndef _ZOLTAN2_COLORINGPROBLEM_HPP_
 #define _ZOLTAN2_COLORINGPROBLEM_HPP_
 
+#include <Zoltan2_Standards.hpp>
+
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_ColoringAlgorithms.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 
 #include <Zoltan2_GraphModel.hpp>
 #include <string>
-#ifdef HAVE_ZOLTAN2_OVIS
-#include <ovis.h>
-#endif
 
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
-using namespace std;
 
 namespace Zoltan2{
 
@@ -94,7 +92,7 @@ class ColoringProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -144,13 +142,13 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
   
-  void solve(bool updateInputData=true);
+  void solve(bool updateInputData=true); 
 
   //!  \brief Get the solution to the problem.
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  ColoringSolution<gid_t, lno_t> *getSolution() {
+  ColoringSolution<Adapter> *getSolution() {
     // Get the raw ptr from the rcp
     return solution_.getRawPtr();
   };
@@ -158,7 +156,7 @@ public:
 private:
   void createColoringProblem();
 
-  RCP<ColoringSolution<gid_t, lno_t> > solution_;
+  RCP<ColoringSolution<Adapter> > solution_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -168,6 +166,7 @@ private:
 #endif
 };
 
+
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void ColoringProblem<Adapter>::solve(bool newData)
@@ -176,36 +175,33 @@ void ColoringProblem<Adapter>::solve(bool newData)
 
   size_t nVtx = this->baseModel_->getLocalNumObjects();
 
-  // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new ColoringSolution<gid_t, lno_t>(nVtx));
+      this->solution_ = rcp(new ColoringSolution<Adapter>(nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Determine which algorithm to use based on defaults and parameters.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("color_method", "GM");
+  std::string method = this->params_->template get<std::string>("color_method", "SerialGreedy");
 
-  // TODO: Ignore case
   try
   {
-  if (method.compare("FF") == 0)
+  // TODO: Ignore case
+  if (method.compare("SerialGreedy") == 0)
   {
-      AlgFF<base_adapter_t> alg;
-      alg.order(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgSerialGreedy<Adapter> alg(this->graphModel_, this->params_,
+                                   this->env_, problemComm_);
+      alg.color(this->solution_);
   }
-  else if (method.compare("JP") == 0)
+#if 0 // TODO later
+  else if (method.compare("speculative") == 0) // Gebremedhin-Manne
   {
-      AlgJP<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgGM<base_adapter_t> alg(this->graphModel_, problemComm_);
+      alg.color(this->solution_, this->params_);
   }
-  else if (method.compare("GM") == 0)
-  {
-      AlgGM<base_adapter_t> alg;
-      alg.order(this->identifierModel_, this->solution_, this->params_, problemComm_);
-  }
+#endif
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -241,13 +237,9 @@ void ColoringProblem<Adapter>::createColoringProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__ << " input adapter type " 
+//  cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
 //       << this->inputAdapter_->inputAdapterName() << endl;
-
-#ifdef HAVE_ZOLTAN2_OVIS
-  ovis_enabled(this->comm_->getRank());
-#endif
 
   // Create a copy of the user's communicator.
 
@@ -271,20 +263,10 @@ void ColoringProblem<Adapter>::createColoringProblem()
 
 #endif
 
-  // TODO: Only graph model supported.
-  // Determine which parameters are relevant here.
-  // For now, assume parameters similar to Zoltan:
-  //   MODEL = graph, hypergraph, geometric, ids
-  //   ALGORITHM = FF, GM, JP
+  // Only graph model supported.
+  // TODO: Allow hypergraph later?
 
-  ModelType modelType = IdentifierModelType; //default, change later
-  string method = this->params_->template get<string>("order_method", "rcm");
-
-  if ((method == string("FF")) || 
-      (method == string("GM")) || 
-      (method == string("JP"))) {
-    modelType = GraphModelType;
-  }
+  ModelType modelType = GraphModelType; 
 
   // Select Model based on parameters and InputAdapter type
 
@@ -295,6 +277,7 @@ void ColoringProblem<Adapter>::createColoringProblem()
 
   case GraphModelType:
     graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
+    graphFlags.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 
@@ -307,14 +290,15 @@ void ColoringProblem<Adapter>::createColoringProblem()
   case IdentifierModelType:
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__ << " Model type " << modelType << " not yet supported." 
+    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;
 
   default:
-    cout << __func__ << " Invalid model" << modelType << endl;
+    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
     break;
   }
 }
 } //namespace Zoltan2
+
 #endif

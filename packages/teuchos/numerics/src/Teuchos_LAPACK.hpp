@@ -195,7 +195,10 @@ namespace Teuchos
     void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* C, ScalarType* D, ScalarType* X, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     //! Computes a QR factorization of a general \c m by \c n matrix \c A.
-    void GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GEQRF (const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    //! BLAS 2 version of GEQRF, with known workspace size.
+    void GEQR2 (const OrdinalType m, const OrdinalType n, ScalarType A[], const OrdinalType lda, ScalarType TAU[], ScalarType WORK[], OrdinalType* const info) const;
 
     //! Computes an LU factorization of a general \c m by \c n matrix \c A using partial pivoting with row interchanges.
     void GETRF(const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
@@ -353,8 +356,12 @@ namespace Teuchos
     */
     void GEES(const char JOBVS, const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;
 
-    //! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
-    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    /// \brief Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
+    ///
+    /// Real and imaginary parts of the eigenvalues are returned in
+    /// separate arrays, WR for real and WI for complex.  The RWORK
+    /// array is only referenced if ScalarType is complex.
+    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
 
     /*! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
         Optionally, it can compute a balancing transformation to improve the conditioning of the eigenvalues and eigenvectors.
@@ -408,22 +415,35 @@ namespace Teuchos
     ///
     /// Overwrite the general real \c m by \c n matrix \c C with the
     /// product of \c Q and \c C, whiere Q is the product of \c k
-    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    /// elementary (Householder) reflectors as returned by GEQRF.
     ///
     /// \note This method is not defined when ScalarType is complex.
-    /// Call \c UNMQR in that case.  ("OR" stands for "orthogonal";
+    /// Call UNMQR in that case.  ("OR" stands for "orthogonal";
     /// "UN" stands for "unitary.")
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief BLAS 2 version of ORMQR; known workspace size.
+    ///
+    /// \note This method is not defined when ScalarType is complex.
+    /// Call UNM2R in that case.  ("OR" stands for "orthogonal"; "UN"
+    /// stands for "unitary.")
+    void ORM2R(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType A[], const OrdinalType lda, const ScalarType TAU[], ScalarType C[], const OrdinalType ldc, ScalarType WORK[], OrdinalType* const info) const;
 
     /// \brief Apply Householder reflectors (complex case).
     ///
     /// Overwrite the general complex \c m by \c n matrix \c C with
     /// the product of \c Q and \c C, where Q is the product of \c k
-    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    /// elementary (Householder) reflectors as returned by GEQRF.
     ///
-    /// \note This method will call \c ORMQR when ScalarType is real.
+    /// \note This method will call ORMQR when ScalarType is real.
     /// (Unitary real matrices are orthogonal.)
     void UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief BLAS 2 version of UNMQR; known workspace size.
+    ///
+    /// \note This method will call ORM2R when ScalarType is real.
+    /// (Unitary real matrices are orthogonal.)
+    void UNM2R(const char SIDE, const char TRANS, const OrdinalType M, const OrdinalType N, const OrdinalType K, const ScalarType A[], const OrdinalType LDA, const ScalarType TAU[], ScalarType C[], const OrdinalType LDC, ScalarType WORK[], OrdinalType* const INFO) const;
 
     /// \brief Compute explicit Q factor from QR factorization (GEQRF) (real case).
     ///
@@ -673,6 +693,12 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GEQR2 (const OrdinalType m, const OrdinalType n, ScalarType A[], const OrdinalType lda, ScalarType TAU[], ScalarType WORK[], OrdinalType* const info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1170,7 +1196,7 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  void LAPACK<OrdinalType, ScalarType>::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* WR, MagnitudeType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* rwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1227,7 +1253,19 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::ORM2R(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType A[], const OrdinalType lda, const ScalarType TAU[], ScalarType C[], const OrdinalType ldc, ScalarType WORK[], OrdinalType* const info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::UNM2R(const char SIDE, const char TRANS, const OrdinalType M, const OrdinalType N, const OrdinalType K, const ScalarType A[], const OrdinalType LDA, const ScalarType TAU[], ScalarType C[], const OrdinalType LDC, ScalarType WORK[], OrdinalType* const INFO) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1368,7 +1406,9 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, float* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, float* A, const int lda, float* B, const int ldb, float* C, float* D, float* X, float* WORK, const int lwork, int* info) const;
-    void GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, float A[], const int lda, float TAU[], float WORK[], int* const info) const;
+
     void GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, float* A, const int lda, int* info) const;
@@ -1427,9 +1467,13 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, float* H, const int ldh, float* WR, float* WI, float* Z, const int ldz, float* WORK, const int lwork, int* info) const;
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(float*, float*), const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
+
     void GEEV(const char JOBVL, const char JOBVR, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, int* info) const;
+    void GEEV(const char JOBVL, const char JOBVR, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, float* rwork, int* info) const;
+
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, float* rwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *info) const;
     void TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, float *T, const int ldt, float *Q, const int ldq, float *WR, float *WI, int *M, float *S, float *SEP, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
     void TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *Q, const int ldq, float *Z, const int ldz, int *M, float *PL, float *PR, float *DIF, float *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
@@ -1440,8 +1484,9 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
+    void ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const float A[], const int lda, const float TAU[], float C[], const int ldc, float WORK[], int* const info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
-
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const float A[], const int LDA, const float TAU[], float C[], const int LDC, float WORK[], int* const INFO) const;
     void ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
@@ -1503,7 +1548,8 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, double* RWORK, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, int* info) const;
     void GGLSE(const int m, const int n, const int p, double* A, const int lda, double* B, const int ldb, double* C, double* D, double* X, double* WORK, const int lwork, int* info) const;
-    void GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, double A[], const int lda, double TAU[], double WORK[], int* const info) const;
     void GETRF(const int m, const int n, double* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, double* A, const int lda, int* info) const;
@@ -1560,9 +1606,13 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, double* H, const int ldh, double* WR, double* WI, double* Z, const int ldz, double* WORK, const int lwork, int* info) const;
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(double*, double*), const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
+
     void GEEV(const char JOBVL, const char JOBVR, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, int* info) const;
+    void GEEV(const char JOBVL, const char JOBVR, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, double* RWORK, int* info) const;
+
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, double* rwork, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *info) const;
     void TRSEN(const char JOB, const char COMPQ, const int *SELECT, const int n, double *T, const int ldt, double *Q, const int ldq, double *WR, double *WI, int *M, double *S, double *SEP, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
     void TGSEN(const int ijob, const int wantq, const int wantz, const int *SELECT, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *Q, const int ldq, double *Z, const int ldz, int *M, double *PL, double *PR, double *DIF, double *WORK, const int lwork, int *IWORK, const int liwork, int *info ) const;
@@ -1574,7 +1624,9 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const double A[], const int lda, const double TAU[], double C[], const int ldc, double WORK[], int* const info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const double A[], const int LDA, const double TAU[], double C[], const int LDC, double WORK[], int* const INFO) const;
     void ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
@@ -1636,9 +1688,11 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* WORK, const int lwork, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* S, const float rcond, int* rank, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
-    void GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, std::complex<float> A[], const int lda, std::complex<float> TAU[], std::complex<float> WORK[], int* const info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<float> A[], const int LDA, const std::complex<float> TAU[], std::complex<float> C[], const int LDC, std::complex<float> WORK[], int* const INFO) const;
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const;
@@ -1691,9 +1745,14 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<float>* H, const int ldh, std::complex<float>* W, std::complex<float>* Z, const int ldz, std::complex<float>* WORK, const int lwork, int* info) const;
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<float>*), const int n, std::complex<float>* A, const int lda, int* sdim, std::complex<float>* W, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, std::complex<float>* A, const int lda, int* sdim, float* WR, float* WI, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;
+
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+    void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<float>* A, const int lda, float* WR, float* WI, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* SCALE, float* abnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* ALPHA, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float * RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* lscale, float* rscale, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const int lwork, float * RWORK, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, std::complex<float> *A, const int lda, std::complex<float> *B, const int ldb, std::complex<float>* ALPHA, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float> *WORK, const int lwork, float* RWORK, int* info) const;
 
     // SVD routine
@@ -1748,9 +1807,12 @@ namespace Teuchos
     // General Linear System Routines
     void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* WORK, const int lwork, int* info) const;
     void GELSS(const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* S, const double rcond, int* rank, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
-    void GEQRF( const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEQRF(const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, std::complex<double> A[], const int lda, std::complex<double> TAU[], std::complex<double> WORK[], int* const info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* C, const int ldc, std::complex<double>* WORK, const int lwork, int* info) const;
+    void UNM2R(const char SIDE, const char TRANS, const int M, const int N, const int K, const std::complex<double> A[], const int LDA, const std::complex<double> TAU[], std::complex<double> C[], const int LDC, std::complex<double> WORK[], int* const INFO) const;
+
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, std::complex<double>* A, const int lda, int* info) const;
@@ -1803,9 +1865,13 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<double>* H, const int ldh, std::complex<double>* W, std::complex<double>* Z, const int ldz, std::complex<double>* WORK, const int lwork, int* info) const;
     void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<double>*), const int n, std::complex<double>* A, const int lda, int* sdim, std::complex<double>* W, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
     void GEES(const char JOBVS, const int n, std::complex<double>* A, const int lda, int* sdim, double* WR, double* WI, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;
+
     void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
+    void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<double>* A, const int lda, double* WR, double* WI, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
+
     void GEEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* SCALE, double* abnrm, double* RCONDE, double* RCONDV, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* ALPHA, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* lscale, double* rscale, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, double* RWORK, int* IWORK, int* BWORK, int* info) const;
     void GGEV(const char JOBVL, const char JOBVR, const int n, std::complex<double> *A, const int lda, std::complex<double> *B, const int ldb, std::complex<double>* ALPHA, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>*VR, const int ldvr, std::complex<double> *WORK, const int lwork, double* RWORK, int* info) const;
 
     // SVD routine

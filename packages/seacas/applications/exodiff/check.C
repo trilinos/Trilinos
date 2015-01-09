@@ -168,7 +168,7 @@ namespace {
 	INT n2 = node_map != 0 ? node_map[n] : n;
 	double dx = interface.coord_tol.Delta(x1[n], x2[n2]);
 	if (dx > interface.coord_tol.value) {
-	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	  sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		  interface.coord_tol.abrstr(),
 		  x1[n], x2[n2], dx, (size_t)id_map[n]);
 	  std::cout << buf << std::endl;
@@ -176,10 +176,10 @@ namespace {
 	}
 	norm = (x1[n] - x2[n2])*(x1[n] - x2[n2]);
 
-	if (file1.Dimension() > 1) {
+	if (file1.Dimension() > 1 && file2.Dimension() > 1) {
 	  double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
 	  if (dy > interface.coord_tol.value) {
-	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		    interface.coord_tol.abrstr(),
 		    y1[n], y2[n2], dy, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -188,10 +188,10 @@ namespace {
 	  norm += (y1[n] - y2[n2])*(y1[n] - y2[n2]);
 	}
 	
-	if (file1.Dimension() > 2) {
+	if (file1.Dimension() > 2 && file2.Dimension() > 2) {
 	  double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
 	  if (dz > interface.coord_tol.value) {
-	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
+	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
 		    interface.coord_tol.abrstr(),
 		    z1[n], z2[n2], dz, (size_t)id_map[n]);
 	    std::cout << buf << std::endl;
@@ -224,24 +224,26 @@ namespace {
       Exo_Block<INT>* block1 = file1.Get_Elmt_Block_by_Index(b);
       Exo_Block<INT>* block2 = file2.Get_Elmt_Block_by_Index(b);
       if (interface.map_flag != DISTANCE && interface.map_flag != PARTIAL) {
-	if (block1->Id() != block2->Id()) {
-	  block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
-	  if (block2 == NULL) {
-	    std::cout << "exodiff: ERROR .. Block id " << block1->Id()
-		      << " exists in first "
-		      << "file but not the second." << std::endl;
-	    is_same = false;
+	if (block1 != NULL) {
+	  if (block2 == NULL || block1->Id() != block2->Id()) {
+	    block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+	    if (block2 == NULL) {
+	      std::cout << "exodiff: ERROR .. Block id " << block1->Id()
+			<< " exists in first "
+			<< "file but not the second." << std::endl;
+	      is_same = false;
+	    }
 	  }
-	}
-	if (block1 != NULL && block2 != NULL) {
-	  if (!Check_Elmt_Block_Params(block1, block2)) {
-	    is_same = false;
-	  } else {
-	    // Only do this check if Check_Elmt_Block_Params does not fail.
-	    // TODO: Pass in node_map and node_id_map...
-	    if (!interface.map_flag) {
-	      if (!Check_Elmt_Block_Connectivity(block1, block2))
-		is_same = false;
+	  if (block2 != NULL) {
+	    if (!Check_Elmt_Block_Params(block1, block2)) {
+	      is_same = false;
+	    } else {
+	      // Only do this check if Check_Elmt_Block_Params does not fail.
+	      // TODO: Pass in node_map and node_id_map...
+	      if (!interface.map_flag) {
+		if (!Check_Elmt_Block_Connectivity(block1, block2))
+		  is_same = false;
+	      }
 	    }
 	  }
 	}
@@ -367,18 +369,20 @@ namespace {
       }
     }
 
+    // Check that can access all nodesets in file2.
+    // This should never fail if the above tests pass...
     for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set<INT>* set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Nodeset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Nodeset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
     }
 
 
-    // Do the following check(s) only if there are nodeset varibles...
+    // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
     if (!interface.ns_var_names.empty() || interface.pedantic) {
@@ -455,15 +459,15 @@ namespace {
     for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set<INT>* set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: ERROR .. Sideset id " << set2->Id()
-		  << " exists in second file but not the first.\n";
+	std::cout << "exodiff: ERROR .. Could not access the Sideset with index "
+		  << b << " in the second file.\n";
 	if (interface.pedantic)
 	  is_same = false;
       }
     }
 
 
-    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
+    // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
     if (!interface.ss_var_names.empty() || interface.pedantic) {

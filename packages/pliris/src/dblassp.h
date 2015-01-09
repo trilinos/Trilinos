@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#ifdef CBLAS 
+#ifdef CBLAS
 #define XCOPY dcopy
 #define XSCAL dscal
 #define XAXPY daxpy

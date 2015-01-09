@@ -60,6 +60,18 @@ PHX_EVALUATOR_CTOR(Sum,p)
     p.get<Teuchos::RCP<std::vector<std::string> > >("Values Names");
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+
+  // check if the user wants to scale each term independently
+  if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
+    scalars = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
+
+    // safety/sanity check
+    TEUCHOS_ASSERT(scalars.size()==value_names->size());
+  }
+  else {
+    // otherwise use all ones (a simple sum)
+    scalars = std::vector<double>(value_names->size(),1.0);
+  }
   
   sum = PHX::MDField<ScalarT>(sum_name, data_layout);
   
@@ -96,14 +108,14 @@ PHX_EVALUATE_FIELDS(Sum,workset)
 
   for (std::size_t j = 0; j < values.size(); ++j) {
     for (std::size_t i = 0; i < length; ++i)
-      sum[i] += (values[j])[i];
+      sum[i] += scalars[j]*(values[j][i]);
   }
 #else
 
   for (std::size_t i = 0; i < length; ++i) {
     sum[i] = 0.0;
     for (std::size_t j = 0; j < values.size(); ++j)
-      sum[i] += (values[j])[i];
+      sum[i] += scalars[j]*(values[j][i]);
   }
 #endif
 

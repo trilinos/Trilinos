@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -47,7 +47,7 @@
 
 
 //=============================================================================
-Epetra_LinearProblem::Epetra_LinearProblem(void) 
+Epetra_LinearProblem::Epetra_LinearProblem(void)
   : Operator_(0),
     A_(0),
     X_(0),
@@ -61,9 +61,9 @@ Epetra_LinearProblem::Epetra_LinearProblem(void)
 {
 }
 //=============================================================================
-Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A, 
+Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A,
 					       Epetra_MultiVector * X,
-					       Epetra_MultiVector * B) 
+					       Epetra_MultiVector * B)
   : Operator_(0),
     A_(A),
     X_(X),
@@ -78,9 +78,9 @@ Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A,
   Operator_ = dynamic_cast<Epetra_Operator *>(A_); // Try to make matrix an operator
 }
 //=============================================================================
-Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A, 
+Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A,
 					       Epetra_MultiVector * X,
-					       Epetra_MultiVector * B) 
+					       Epetra_MultiVector * B)
   : Operator_(A),
     A_(0),
     X_(X),
@@ -95,7 +95,7 @@ Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A,
   A_ = dynamic_cast<Epetra_RowMatrix *>(Operator_); // Try to make operator a matrix
 }
 //=============================================================================
-Epetra_LinearProblem::Epetra_LinearProblem(const Epetra_LinearProblem& Problem) 
+Epetra_LinearProblem::Epetra_LinearProblem(const Epetra_LinearProblem& Problem)
   : Operator_(Problem.Operator_),
     A_(Problem.A_),
     X_(Problem.X_),
@@ -109,7 +109,7 @@ Epetra_LinearProblem::Epetra_LinearProblem(const Epetra_LinearProblem& Problem)
 {
 }
 //=============================================================================
-Epetra_LinearProblem::~Epetra_LinearProblem(void)  
+Epetra_LinearProblem::~Epetra_LinearProblem(void)
 {
 }
 //=============================================================================

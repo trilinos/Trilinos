@@ -73,9 +73,17 @@ for imesh = gridsizes
   intrepid_getBasisValues(val_at_cub_points, cubPoints, 'OPERATOR_VALUE', usr_par.cellType, 1);
   transformed_val_at_cub_points = zeros(numCubPoints, usr_par.numFields, usr_par.numCells);
   intrepid_HGRADtransformVALUE(transformed_val_at_cub_points, val_at_cub_points);
-  weighted_transformed_val_at_cub_points = zeros(numCubPoints, usr_par.numFields, usr_par.numCells);
-  intrepid_multiplyMeasure(weighted_transformed_val_at_cub_points, ...
-    usr_par.weighted_measure, transformed_val_at_cub_points);
+  
+  cellMeasures = zeros(numCubPoints, usr_par.numCells);
+  cellJacobians = zeros(usr_par.spaceDim, usr_par.spaceDim, numCubPoints, usr_par.numCells);
+  cellJacobianInvs = zeros(usr_par.spaceDim, usr_par.spaceDim, numCubPoints, usr_par.numCells);
+  cellJacobianDets = zeros(numCubPoints, usr_par.numCells);
+
+  intrepid_setJacobian(cellJacobians, cubPoints, usr_par.cellNodes, usr_par.cellType);
+  intrepid_setJacobianInv(cellJacobianInvs, cellJacobians);
+  intrepid_setJacobianDet(cellJacobianDets, cellJacobians);  
+
+  intrepid_computeCellMeasure(cellMeasures, cellJacobianDets, cubWeights);
 
   % evaluate approximate solution at integration points
   approxSolnCoeffs = reshape(u(usr_par.iVecIdx), usr_par.numFields, usr_par.numCells);  % scatter to cells
@@ -94,11 +102,18 @@ for imesh = gridsizes
   trueSolnValues = zeros(numCubPoints, usr_par.numCells);
   trueSolnValues = soln_sine(cubPointsPhysCoords);
 
+  % evaluate difference
+  diffSolnValues = trueSolnValues-approxSolnValues;
+
+  % evaluate measure-weighted difference
+  diffSolnValuesWeighted = zeros(numCubPoints, usr_par.numCells);
+  intrepid_scalarMultiplyDataData(diffSolnValuesWeighted, cellMeasures, diffSolnValues);
+
   % compute L2 error
   err = zeros(1,usr_par.numCells);
-  intrepid_integrate(err, (trueSolnValues-approxSolnValues).^2, ...
-    weighted_transformed_val_at_cub_points, 'COMP_BLAS');
-  L2_err = [L2_err sum(err)];
+  intrepid_integrate(err, diffSolnValues, ...
+    diffSolnValuesWeighted, 'COMP_BLAS');
+  L2_err = [L2_err sqrt(sum(err))];
 
 end
 

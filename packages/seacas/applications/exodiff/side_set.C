@@ -31,14 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>
-#include <cstdlib>
-
-#include "smart_assert.h"
 #include "side_set.h"
-#include "iqsort.h"
-#include "exodusII.h"
-#include "ED_SystemInterface.h"
+#include <cstdlib>                      // for NULL, exit
+#include <iostream>                     // for operator<<, endl, ostream, etc
+#include <vector>                       // for vector
+#include "ED_SystemInterface.h"         // for SystemInterface, interface
+#include "exodusII.h"                   // for ex_set, etc
+#include "iqsort.h"                     // for index_qsort
+#include "smart_assert.h"               // for SMART_ASSERT
+
 
 using namespace std;
 
@@ -93,13 +94,23 @@ EXOTYPE Side_Set<INT>::exodus_type() const {return EX_SIDE_SET;}
 template <typename INT>
 void Side_Set<INT>::entity_load_params()
 {
-  int err = ex_get_set_param(fileId, EX_SIDE_SET, id_, &numEntity,&num_dist_factors);
+  std::vector<ex_set> sets(1);
+  sets[0].id = id_;
+  sets[0].type = EX_SIDE_SET;
+  sets[0].entry_list = NULL;
+  sets[0].extra_list = NULL;
+  sets[0].distribution_factor_list = NULL;
+
+  int err = ex_get_sets(fileId, 1, &sets[0]);
   
   if (err < 0) {
     std::cout << "ERROR: Failed to get sideset parameters for sideset " << id_
 	      << ". !  Aborting..." << std::endl;
     exit(1);
   }
+
+  numEntity = sets[0].num_entry;
+  num_dist_factors = sets[0].num_distribution_factor;
 }
 
 template <typename INT>

@@ -44,7 +44,9 @@
 #ifndef PARALLELCOMM_HPP
 #define PARALLELCOMM_HPP
 
-#include <KokkosCore_config.h>
+//------------------------------------------------------------------------
+
+#include <Kokkos_Macros.hpp>
 
 //------------------------------------------------------------------------
 

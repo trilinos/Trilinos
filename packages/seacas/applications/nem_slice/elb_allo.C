@@ -96,25 +96,31 @@ void *array_alloc (int numdim , ...)
    if (numdim <= 0) {
      fprintf(stderr,
              "array_alloc ERROR: number of dimensions, %d, is <=0\n", numdim);
-        return NULL;
+     va_end(va);
+     return NULL;
    } else if (numdim > 3) {
      fprintf(stderr,
              "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
+     va_end(va);
      return NULL;
    }
 
    dim[0].index = va_arg(va, size_t);
 
-   if (dim[0].index <= 0)
+   if (dim[0].index <= 0) {
+     va_end(va);
      return NULL;
+   }
 
    dim[0].total = dim[0].index;
    dim[0].size = sizeof(void *);
    dim[0].off = 0;
    for (int i=1; i<numdim; i++) {
       dim[i].index = va_arg(va, size_t);
-      if (dim[i].index <= 0)
+      if (dim[i].index <= 0) {
+	va_end(va);
 	return NULL;
+      }
 
       dim[i].total = dim[i-1].total * dim[i].index;
       dim[i].size = sizeof(void *);
@@ -158,7 +164,7 @@ static void *smalloc (size_t n)
 
 	if(pntr == NULL && n != 0) {
 	  fprintf(stderr, "smalloc: Out of space - number of bytes "
-		  "requested = "ST_ZU"\n", n);
+		  "requested = " ST_ZU "\n", n);
 	  exit(0);
 	}
    	return (pntr);

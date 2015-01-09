@@ -48,5 +48,14 @@
 /* Define if want trilinoscouplings examples use Isorropia+Zoltan */
 #cmakedefine TrilinosCouplings_ENABLE_Isorropia
 
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
+/* mfh 09 Apr 2014: Define if MueLu is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_MUELU
+
+/* mfh 10 Apr 2014: Define if ML is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_ML
+
+/* Define if Stokhos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_STOKHOS
+
+/* Define if Belos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_BELOS

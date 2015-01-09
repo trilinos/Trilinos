@@ -94,7 +94,6 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
                        const Epetra_CrsMatrix &M1,
                        const Epetra_CrsMatrix &M0inv,
                        const Epetra_CrsMatrix &D0,
-                       const Epetra_MultiVector &coords,
                        const Epetra_Vector &x_exact,
                        const Epetra_Vector &x0,
                        const Epetra_Vector &b,
@@ -185,12 +184,28 @@ void matrix_read(Epetra_ActiveComm &Comm){
   Epetra_CrsMatrix * M0inv=dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(M0inve,M0inv_CMT));
   M0inv->FillComplete();
 
-  /* Read in coordinates*/
+  /* Read in nodal coordinates */
   int N;
   double *coord_ptr;
   Epetra_MultiVector *coords=0;
   MatlabFileToMultiVector("coord_node.dat",NodeMap,dim,coords);
   coords->ExtractView(&coord_ptr,&N);
+
+  /* Build the edge coordinates */
+  Epetra_MultiVector n_coords_ghost(D0->ColMap(),dim);  
+  if(D0->Importer()) n_coords_ghost.Import(*coords,*D0->Importer(),Add);
+  else n_coords_ghost = *coords;
+
+  Epetra_MultiVector e_coords(D0->RowMap(),dim);
+  for(int i=0; i<D0->NumMyRows(); i++) { 
+    int NumEntries;
+    int * Indices;
+    double * Values;      
+    D0->ExtractMyRowView(i,NumEntries,Values,Indices);
+    for(int j=0; j<NumEntries; j++)
+      for (int k=0; k<dim; k++)
+	e_coords[k][i] += n_coords_ghost[k][Indices[j]] / NumEntries;
+  }     
 
   /* Build Lists */
   Teuchos::ParameterList List_2level = Build_Teuchos_List(N,coord_ptr,"coarse: type","Amesos-KLU","max levels",1);
@@ -203,18 +218,29 @@ void matrix_read(Epetra_ActiveComm &Comm){
   Teuchos::ParameterList List_Aux    = Build_Teuchos_List(N,coord_ptr,"smoother: type","Chebyshev",0,1,
 							  "aggregation: aux: threshold",0.01, "aggregation: aux: enable",true);
 
+  Teuchos::ParameterList List_LineSGS = Build_Teuchos_List(N,coord_ptr,"smoother: type","line Gauss-Seidel",
+							   "coarse: max size",10,"smoother: line detection threshold",0.1);
+  List_LineSGS.set("smoother: type","symmetric block Gauss-Seidel");
+  List_LineSGS.set("smoother: line detection threshold",0.1);
+  if(dim >= 1) List_LineSGS.set("x-coordinates",&e_coords[0][0]);
+  if(dim >= 2) List_LineSGS.set("y-coordinates",&e_coords[1][0]);
+  if(dim == 3) List_LineSGS.set("z-coordinates",&e_coords[2][0]);
+
+
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
-  rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
+  rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,true);
+  rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,*coords,x_exact,lhs,rhs,false);
-
+  rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  lhs.PutScalar(0.0);
+  rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  
 
 
   delete M0; delete M1e;

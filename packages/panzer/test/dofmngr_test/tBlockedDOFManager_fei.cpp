@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    fieldOrder[2].push_back("T");
    dofManager.setFieldOrder(fieldOrder);
 
-   dofManager.registerFields();
+   dofManager.registerFields(true);
    TEST_ASSERT(dofManager.fieldsRegistered());
    const std::vector<RCP<panzer::UniqueGlobalIndexer<int,int> > > & subManagers = 
          dofManager.getFieldDOFManagers();

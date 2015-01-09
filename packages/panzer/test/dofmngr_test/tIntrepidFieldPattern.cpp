@@ -63,6 +63,10 @@
 
 #include "Intrepid_HDIV_TRI_I1_FEM.hpp"
 
+#include "Panzer_Intrepid_ConstBasis.hpp"
+
+#include "Shards_BasicTopologies.hpp"
+
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
@@ -695,6 +699,159 @@ TEUCHOS_UNIT_TEST(tIntrepidFieldPattern, test2d_tri_hdivi1)
 
    TEST_EQUALITY(pattern->getDimension(),2);
    TEST_EQUALITY(pattern->numberIds(),3);
+}
+
+///////////////////////////////////////////
+// constant tests
+///////////////////////////////////////////
+
+TEUCHOS_UNIT_TEST(tIntrepidFieldPattern, constant_basis)
+{
+   out << note << std::endl;
+   typedef Intrepid::FieldContainer<double> FieldContainer;
+
+   shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+   shards::CellTopology hex(shards::getCellTopologyData<shards::Hexahedron<8> >());
+   shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+   shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); // i'm irritated there are 4 letters in quad!
+
+   {
+     RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(tet));
+     RCP<FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+
+     pattern->print(out);
+
+     TEST_EQUALITY(pattern->getDimension(),3);
+     TEST_EQUALITY(pattern->numberIds(),1);
+     TEST_EQUALITY(pattern->getSubcellCount(0),4);
+     TEST_EQUALITY(pattern->getSubcellCount(1),6);
+     TEST_EQUALITY(pattern->getSubcellCount(2),4);
+     TEST_EQUALITY(pattern->getSubcellCount(3),1);
+
+     // make sure unknowns are distributed correctly
+     TEST_EQUALITY(pattern->getSubcellIndices(0,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,3).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(1,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,3).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,4).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,5).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(2,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,3).size(),0);
+
+     const std::vector<int> & vec = pattern->getSubcellIndices(3,0);
+     TEST_EQUALITY(vec.size(),1);
+     TEST_EQUALITY(vec[0],0);
+   }
+
+   {
+     RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(hex));
+     RCP<FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+
+     pattern->print(out);
+
+     TEST_EQUALITY(pattern->getDimension(),3);
+     TEST_EQUALITY(pattern->numberIds(),1);
+     TEST_EQUALITY(pattern->getSubcellCount(0),8);
+     TEST_EQUALITY(pattern->getSubcellCount(1),12);
+     TEST_EQUALITY(pattern->getSubcellCount(2),6);
+     TEST_EQUALITY(pattern->getSubcellCount(3),1);
+
+     // make sure unknowns are distributed correctly
+     TEST_EQUALITY(pattern->getSubcellIndices(0,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,3).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,4).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,5).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,6).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,7).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(1,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,3).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,4).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,5).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,6).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,7).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,8).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,9).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,10).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,11).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(2,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,3).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,4).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(2,5).size(),0);
+
+     const std::vector<int> & vec = pattern->getSubcellIndices(3,0);
+     TEST_EQUALITY(vec.size(),1);
+     TEST_EQUALITY(vec[0],0);
+   }
+
+   {
+     RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(tri));
+     RCP<FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+
+     pattern->print(out);
+
+     TEST_EQUALITY(pattern->getDimension(),2);
+     TEST_EQUALITY(pattern->numberIds(),1);
+     TEST_EQUALITY(pattern->getSubcellCount(0),3);
+     TEST_EQUALITY(pattern->getSubcellCount(1),3);
+     TEST_EQUALITY(pattern->getSubcellCount(2),1);
+
+     // make sure unknowns are distributed correctly
+     TEST_EQUALITY(pattern->getSubcellIndices(0,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,2).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(1,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,2).size(),0);
+
+     const std::vector<int> & vec = pattern->getSubcellIndices(2,0);
+     TEST_EQUALITY(vec.size(),1);
+     TEST_EQUALITY(vec[0],0);
+   }
+
+   {
+     RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new panzer::Basis_Constant<double,FieldContainer>(quad));
+     RCP<FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+
+     pattern->print(out);
+
+     TEST_EQUALITY(pattern->getDimension(),2);
+     TEST_EQUALITY(pattern->numberIds(),1);
+     TEST_EQUALITY(pattern->getSubcellCount(0),4);
+     TEST_EQUALITY(pattern->getSubcellCount(1),4);
+     TEST_EQUALITY(pattern->getSubcellCount(2),1);
+
+     // make sure unknowns are distributed correctly
+     TEST_EQUALITY(pattern->getSubcellIndices(0,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(0,3).size(),0);
+
+     TEST_EQUALITY(pattern->getSubcellIndices(1,0).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,1).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,2).size(),0);
+     TEST_EQUALITY(pattern->getSubcellIndices(1,3).size(),0);
+
+     const std::vector<int> & vec = pattern->getSubcellIndices(2,0);
+     TEST_EQUALITY(vec.size(),1);
+     TEST_EQUALITY(vec[0],0);
+   }
 }
 
 }

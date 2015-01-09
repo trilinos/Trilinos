@@ -45,7 +45,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_Core.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -69,6 +69,7 @@ public:
   ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
+/*
   KOKKOS_INLINE_FUNCTION
   void init( value_type & dst ) const
   {
@@ -76,6 +77,7 @@ public:
     dst.value[1] = 0 ;
     dst.value[2] = 0 ;
   }
+*/
 
   KOKKOS_INLINE_FUNCTION
   void join( volatile value_type & dst ,
@@ -135,11 +137,13 @@ public:
     : value_count( arg_count )
     , nwork( arg_nwork ) {}
 
+/*
   KOKKOS_INLINE_FUNCTION
   void init( value_type dst ) const
   {
     for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] = 0 ;
   }
+*/
 
   KOKKOS_INLINE_FUNCTION
   void join( volatile ScalarType dst[] ,
@@ -167,7 +171,7 @@ public:
   typedef typename base_type::value_type value_type ;
   typedef long scalar_type ;
 
-  RuntimeReduceFunctorFinal( const size_t nwork , const size_t count ) : base_type(nwork,count) {}
+  RuntimeReduceFunctorFinal( const size_t theNwork , const size_t count ) : base_type(theNwork,count) {}
 
   KOKKOS_INLINE_FUNCTION
   void final( value_type dst ) const

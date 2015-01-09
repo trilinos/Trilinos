@@ -138,7 +138,7 @@ namespace fei {
     fei::FillableMat Kii_, Kid_, Kdi_, Kdd_;
     fei::CSRMat csrKii, csrKid, csrKdi, csrKdd;
     fei::CSVec fi_, fd_;
-    fei::CSVec csfi, csvec, csvec_i;
+    fei::CSVec csvec, csvec_i;
     fei::CSRMat tmpMat1_, tmpMat2_;
     fei::CSVec tmpVec1_, tmpVec2_;
 

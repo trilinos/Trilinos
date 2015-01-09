@@ -201,7 +201,13 @@ public:
    /** \brief which DOF Manager is used internally?
      */ 
    bool getUseDOFManagerFEI() const
-   { return useDOFManagerFEI_; }
+   { 
+     #ifdef PANZER_HAVE_FEI
+     return useDOFManagerFEI_; 
+     #else
+     return false;
+     #endif
+   }
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *
@@ -330,6 +336,15 @@ public:
      */
    virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern); // ?
 
+   /** This method simply builds the global unknowns by using the passed in global indexers.
+     * The internal connection manager must for the underlying connection manager for all
+     * the global indexers. Finally only global indexers of type
+     * <code>DOFManager</code> can be used at the moment.
+     *
+     * \note The type of global indexer, and agreement with the geometric field pattern are all checked.
+     */
+   virtual void buildGlobalUnknowns(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & fieldBlockManagers);
+
    /** Prints to an output stream the information about
      * the aggregated field.
      */
@@ -348,7 +363,7 @@ public:
    /** This builds all numbers for the fields as well as
      * constructing a default field orderand validating the user specified field order.
      */
-   void registerFields(); // ?
+   void registerFields(bool buildSubUGIs); 
 
    /** Has the method <code>registerFields</code> been called?
      */
@@ -436,6 +451,7 @@ protected:
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
   
+   #ifdef PANZER_HAVE_FEI
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.
      *
@@ -443,6 +459,7 @@ protected:
      */
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
+   #endif
 
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
      * the fields it is supposed to control, and then calls registerFields.

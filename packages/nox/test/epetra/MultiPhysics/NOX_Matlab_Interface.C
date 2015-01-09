@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Matlab_Interface.H"
 
 #ifdef HAVE_MATLAB
@@ -137,18 +137,18 @@ Matlab_Interface::~Matlab_Interface()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Matlab_Interface::interact()
 {
   char s [BUFSIZE] ;
 
   bool status;
 
-  while(1) 
+  while(1)
   {
     // Prompt the user and get a std::string
     printf(">> ");
-    if (fgets(s, BUFSIZE, stdin) == NULL) 
+    if (fgets(s, BUFSIZE, stdin) == NULL)
     {
       printf("Bye\n");
       break ;
@@ -167,7 +167,7 @@ Matlab_Interface::interact()
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::doCommand( std::string command )
 {
   char matlabBuffer [MATLABBUF];
@@ -189,24 +189,24 @@ Matlab_Interface::doCommand( std::string command )
     // Send the command to MATLAB - output goes to stdout
     char * c_comm = const_cast<char *>(command.c_str());
     int err = engine.EvalString(c_comm, matlabBuffer, MATLABBUF);
-    if (err != 0) 
+    if (err != 0)
     {
       printf("there was an error: %d", err);
       status = false;
     }
-    else 
+    else
     {
       printf("Matlab Output:\n%s", matlabBuffer);
       status = true;
     }
   }
-  
+
   return status;
 }
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::doNOXCommand( std::string & command )
 {
 
@@ -221,7 +221,7 @@ Matlab_Interface::doNOXCommand( std::string & command )
   if( mapHandler->getUserMaps().end() != mapHandler->getUserMaps().find(command) )
     command = mapHandler->getUserMaps()[command];
 
-  try 
+  try
   {
     // Convenience methods
 
@@ -247,7 +247,7 @@ Matlab_Interface::doNOXCommand( std::string & command )
       {
         std::cout << "\n\tUser Defined (Mapped) Command Summary:\n" << std::endl;
 
-        for( std::map<string, std::string>::const_iterator iter = 
+        for( std::map<string, std::string>::const_iterator iter =
             mapHandler->getUserMaps().begin(); iter != mapHandler->getUserMaps().end(); ++iter )
           std::cout << "\t\t" << (*iter).first << " --> " << (*iter).second << std::endl;
       }
@@ -278,7 +278,7 @@ Matlab_Interface::doNOXCommand( std::string & command )
 //----------------------  Commands for NOX solver -----------------------------
 //-----------------------------------------------------------------------------
 
-Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_, 
+Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_,
                           NOX::Solver::Manager & solver_ ) :
   engine(engine_),
   solver(solver_),
@@ -289,7 +289,7 @@ Matlab_Interface::CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & 
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Matlab_Interface::CommandBase::initialize()
 {
   // Verify we are using an Epetra concrete implemntation
@@ -321,10 +321,10 @@ Matlab_Interface::CommandBase::initialize()
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_map::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find("map "), 4, ""); 
+  commandLine.replace( commandLine.find("map "), 4, "");
   std::string::size_type loc = commandLine.find(" ");
   if( std::string::npos == loc )
   {
@@ -332,7 +332,7 @@ Matlab_Interface::CMD_map::doCommand( std::string commandLine )
     return false;
   }
   std::string arg1 = commandLine.substr(0, loc);
-  commandLine.replace( 0, loc+1, ""); 
+  commandLine.replace( 0, loc+1, "");
   std::string arg2 = commandLine;
   std::cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << std::endl;
   userMaps[ arg1 ] = arg2;
@@ -341,7 +341,7 @@ Matlab_Interface::CMD_map::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Matlab_Interface::CMD_map::writeMaps( std::ofstream & os )
 {
 
@@ -358,7 +358,7 @@ Matlab_Interface::CMD_map::writeMaps( std::ofstream & os )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_showStack::doCommand( std::string commandLine )
 {
 
@@ -381,7 +381,7 @@ Matlab_Interface::CMD_showStack::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_clearStack::doCommand( std::string commandLine )
 {
 
@@ -401,7 +401,7 @@ Matlab_Interface::CMD_clearStack::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isF::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isF() ? "True" : "False" );
@@ -411,7 +411,7 @@ Matlab_Interface::CMD_isF::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isJacobian::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
@@ -421,7 +421,7 @@ Matlab_Interface::CMD_isJacobian::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isGradient::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
@@ -431,7 +431,7 @@ Matlab_Interface::CMD_isGradient::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isNewton::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
@@ -441,7 +441,7 @@ Matlab_Interface::CMD_isNewton::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isNormNewtonSolveResidual::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
@@ -451,7 +451,7 @@ Matlab_Interface::CMD_isNormNewtonSolveResidual::doCommand( std::string commandL
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isPreconditioner::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
@@ -461,7 +461,7 @@ Matlab_Interface::CMD_isPreconditioner::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_isConditionNumber::doCommand( std::string commandLine )
 {
   std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
@@ -471,7 +471,7 @@ Matlab_Interface::CMD_isConditionNumber::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_showValid::doCommand( std::string commandLine )
 {
   return showValid( groupPtr );
@@ -479,7 +479,7 @@ Matlab_Interface::CMD_showValid::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_showValid::showValid( const NOX::Epetra::Group * p_Grp )
 {
   std::string isValid = (p_Grp->isF() ? "True" : "False" );
@@ -497,7 +497,7 @@ Matlab_Interface::CMD_showValid::showValid( const NOX::Epetra::Group * p_Grp )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getJacobianConditionNumber::doCommand( std::string commandLine )
 {
   std::cout << groupPtr->getJacobianConditionNumber() << std::endl;
@@ -506,7 +506,7 @@ Matlab_Interface::CMD_getJacobianConditionNumber::doCommand( std::string command
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getNormF::doCommand( std::string commandLine )
 {
   std::cout << groupPtr->getNormF() << std::endl;
@@ -515,10 +515,10 @@ Matlab_Interface::CMD_getNormF::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_setX::doCommand( std::string commandLine )
 {
-  commandLine.replace( commandLine.find("setX"), 5, ""); 
+  commandLine.replace( commandLine.find("setX"), 5, "");
   engine.GetMultiVector( commandLine.c_str(), *solnPtr );
   groupPtr->setX(*solnPtr);
   return true;
@@ -526,7 +526,7 @@ Matlab_Interface::CMD_setX::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_computeF::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeF();
@@ -536,7 +536,7 @@ Matlab_Interface::CMD_computeF::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_computeJacobian::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeJacobian();
@@ -546,7 +546,7 @@ Matlab_Interface::CMD_computeJacobian::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_computeGradient::doCommand( std::string commandLine )
 {
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeGradient();
@@ -556,7 +556,7 @@ Matlab_Interface::CMD_computeGradient::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_computeNewton::doCommand( std::string commandLine )
 {
   const Teuchos::ParameterList & const_lsParams = solver.getList().
@@ -571,7 +571,7 @@ Matlab_Interface::CMD_computeNewton::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getX::doCommand( std::string commandLine )
 {
   const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
@@ -582,7 +582,7 @@ Matlab_Interface::CMD_getX::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getF::doCommand( std::string commandLine )
 {
   const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
@@ -593,7 +593,7 @@ Matlab_Interface::CMD_getF::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getGradient::doCommand( std::string commandLine )
 {
   const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
@@ -604,7 +604,7 @@ Matlab_Interface::CMD_getGradient::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getNewton::doCommand( std::string commandLine )
 {
   const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
@@ -615,7 +615,7 @@ Matlab_Interface::CMD_getNewton::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_getJacobian::doCommand( std::string commandLine )
 {
   Epetra_Operator * jacOp = (groupPtr->getLinearSystem()->getJacobianOperator().get());
@@ -629,7 +629,7 @@ Matlab_Interface::CMD_getJacobian::doCommand( std::string commandLine )
   if( fdOp )
   {
     engine.PutRowMatrix( fdOp->getUnderlyingMatrix(), "Jacobian", false );
-    return true; 
+    return true;
   }
 
   std::cout << "Could not get a valid matrix." << std::endl;
@@ -638,7 +638,7 @@ Matlab_Interface::CMD_getJacobian::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_read::doCommand( std::string commandLine )
 {
 
@@ -648,7 +648,7 @@ Matlab_Interface::CMD_read::doCommand( std::string commandLine )
     return false;
   }
 
-  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+  commandLine.replace( commandLine.find(command), command.size()+1, "");
 
   ifstream inFile(commandLine.c_str());
   if( !inFile )
@@ -675,7 +675,7 @@ Matlab_Interface::CMD_read::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_write::doCommand( std::string commandLine )
 {
 
@@ -685,7 +685,7 @@ Matlab_Interface::CMD_write::doCommand( std::string commandLine )
     return false;
   }
 
-  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+  commandLine.replace( commandLine.find(command), command.size()+1, "");
 
   std::ofstream outFile(commandLine.c_str());
   if( !outFile )
@@ -731,7 +731,7 @@ Matlab_Interface::CMD_write::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
 {
   if( 0 == driver )
@@ -740,7 +740,7 @@ Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
     return false;
   }
 
-  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+  commandLine.replace( commandLine.find(command), command.size()+1, "");
 
   std::map< std::string, Matlab_Interface::CMD_macro * > & userMacros = driver->getUserMacros();
 
@@ -764,7 +764,7 @@ Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
   {
     getline( *is, sLine );
     macro.addLineCommand( sLine );
-  } 
+  }
   while( sLine != "##" );
 
   userMacros[commandLine] = p_macro;
@@ -775,7 +775,7 @@ Matlab_Interface::CMD_newMacro::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-bool 
+bool
 Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
 {
   if( 0 == driver )
@@ -786,7 +786,7 @@ Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
 
   // I may be the wrong macro.  Nevertheless, I get and invoke the correct one.
 
-  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+  commandLine.replace( commandLine.find(command), command.size()+1, "");
 
   Matlab_Interface::CMD_macro * p_macro = driver->getUserMacros()[commandLine];
 
@@ -797,7 +797,7 @@ Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
   }
 
   std::cout << "Doing macro \"" << commandLine << "\"" << std::endl;
-  
+
   std::list< std::string >::iterator iter = p_macro->macroCommands.begin() ,
                                  iter_end = p_macro->macroCommands.end()   ;
 
@@ -809,7 +809,7 @@ Matlab_Interface::CMD_macro::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Matlab_Interface::CMD_macro::writeMacro( std::ofstream & os )
 {
 
@@ -828,7 +828,7 @@ Matlab_Interface::CMD_macro::writeMacro( std::ofstream & os )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 Matlab_Interface::CMD_macro::describe()
 {
 

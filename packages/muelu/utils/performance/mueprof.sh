@@ -18,21 +18,26 @@ SCRIPTPATH=$(dirname $SCRIPT)
 USAGE="Usage: `basename $0` [-h] [ARGS] file1 file2"
 OPTDESCR="\n\t-h \thelp\n\t-n \twhich solver block to analyze [1]\n
           \t-s \twhich linear algebra lib to sort by: \"Epetra\",[\"Tpetra\"]\n
-          \t-d \thow to display delta in times: \"ratio\",[\"diff\"]\n
-          \t-a \tallows comparison of two Epetra or two Tpetra files\n"
+          \t-t \thow to display delta in times: \"ratio\",[\"diff\"]\n
+          \t-a \tallows comparison of two Epetra or two Tpetra files\n
+          \t-d \tdebug mode\n"
 
 numReqd=1;
 blockNumber=1;
 sortByLib="Tpetra"
 deltaDisplay="diff"
 agnostic=0
+debug=0
 # Parse command line options.
-while getopts hn:s:d:a OPT; do
+while getopts hn:s:t:ad OPT; do
     case "$OPT" in
+        d)
+            debug=1
+            ;;
         a)
             agnostic=1
             ;;
-        d)
+        t)
             deltaDisplay=$OPTARG
             ;;
         s)
@@ -80,4 +85,4 @@ export AWKPATH
 #ttt=`awk --version`
 #echo "awk info: $ttt"
 
-awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -v "etDelta=$deltaDisplay" -v "agnostic=$agnostic" -f $SCRIPTPATH/mueprof.awk $file1 $file2
+awk -v "blockNumber=$blockNumber" -v "sortByLib=$sortByLib" -v "etDelta=$deltaDisplay" -v "agnostic=$agnostic" -v "debug=$debug" -f $SCRIPTPATH/mueprof.awk $file1 $file2

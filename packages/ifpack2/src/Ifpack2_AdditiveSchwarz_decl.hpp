@@ -125,7 +125,17 @@ run-time control of the subdomain solver.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, the only available reordering
-algorithm is RCM (reverse Cuthill-Mckee).
+algorithm is RCM (reverse Cuthill-Mckee). Other orderings
+will be supported by the Zoltan2 package in the future.
+
+\section Additive Schwarz algorithms supported
+
+The default is Restricted Additive Schwarz
+(RAS), which uses CombineMode Zero, see discussion below. Note that RAS
+does not preserve symmetry, so is generally not suitable as
+a preconditioner for CG.
+Classical Additive Schwarz is supported by setting the
+CombineMode to Add.
 
 \section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
 
@@ -163,7 +173,7 @@ b =
 Suppose that we give the first two rows of A and b to Process 0, and
 the last two rows of A and b to Process 1.
 
-If we use additive Schwarz without overlap, and use the (default) Add
+If we use additive Schwarz without overlap, and use the Add
 combine mode, then each process must solve a linear system with the
 following 2 x 2 matrix:
 \f[
@@ -294,7 +304,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
@@ -885,23 +895,8 @@ private:
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<prec_type> Inverse_;
-  //! SerialMap for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> SerialMap_;
-  //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> LocalDistributedMap_;
-
-  /// \brief Import object used in apply().
-  ///
-  /// If the domain decomposition is <i>not</i> overlapping, then
-  /// apply() needs to redistribute the X input vector from the domain
-  /// Map of this operator to SerialMap_ (see above).  Computing the
-  /// Import is expensive, and the Import does not change as long as
-  /// the overlap level does not change, so it makes sense to keep the
-  /// Import object around.  apply() creates this on demand if
-  /// necessary, which explains why this is marked \c mutable.
-  mutable Teuchos::RCP<const import_type> SerialImporter_;
+  Teuchos::RCP<const map_type> localMap_;
 
   /// \brief Import object used in apply().
   ///

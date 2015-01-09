@@ -64,9 +64,9 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>  VectorField;
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 {
@@ -97,25 +97,25 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
    TEST_ASSERT(not mesh->isModifiable());
 
    // Build (domain) bounding boxes for all cells in mesh
-   RCP<stk::mesh::fem::FEMMetaData> meta_data = mesh->getMetaData();
-   RCP<stk::mesh::BulkData> bulk_data = mesh->getBulkData(); 
-   const stk::mesh::Field<double, stk::mesh::Cartesian>* domain_coord_field = &(mesh->getCoordinatesField());
-   stk::ParallelMachine comm = bulk_data->parallel();
+   RCP<stk_classic::mesh::fem::FEMMetaData> meta_data = mesh->getMetaData();
+   RCP<stk_classic::mesh::BulkData> bulk_data = mesh->getBulkData(); 
+   const stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>* domain_coord_field = &(mesh->getCoordinatesField());
+   stk_classic::ParallelMachine comm = bulk_data->parallel();
    // NOTE: the create bounding boxes call has specific typedefs on data.  We need to rewrite for general case.
    std::vector<AxisAlignedBoundingBox3D> domain_vector;
    
 
    Teuchos::FancyOStream os(Teuchos::rcpFromRef(std::cout));
    os.setShowProcRank(true);
-   os.setProcRankAndSize(stk::parallel_machine_rank(comm),stk::parallel_machine_size(comm));
+   os.setProcRankAndSize(stk_classic::parallel_machine_rank(comm),stk_classic::parallel_machine_size(comm));
 
 
 
      /*
 
-   std::vector<stk::mesh::Entity*> my_elements;
+   std::vector<stk_classic::mesh::Entity*> my_elements;
    mesh->getMyElements(my_elements);
-   for (std::vector<stk::mesh::Entity*>::const_iterator e=my_elements.begin(); e!=my_elements.end();++e) {
+   for (std::vector<stk_classic::mesh::Entity*>::const_iterator e=my_elements.begin(); e!=my_elements.end();++e) {
      os << "element id = " << (*e)->identifier() << std::endl;
    
 
@@ -134,9 +134,9 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
      */
 
 
-   stk::search_util::build_axis_aligned_bbox(*bulk_data,
+   stk_classic::search_util::build_axis_aligned_bbox(*bulk_data,
 					     mesh->getElementRank(),
-					     const_cast<stk::mesh::Field<double, stk::mesh::Cartesian>* >(domain_coord_field),
+					     const_cast<stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>* >(domain_coord_field),
 					     domain_vector);
    
 
@@ -159,21 +159,21 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
      PointBoundingBox3D p;
      double center[3] = {0.25,0.25,0.25};
      
-     stk::mesh::EntityKey pt_key(0,451);
-     IdentProc id(pt_key,stk::parallel_machine_rank(comm));
+     stk_classic::mesh::EntityKey pt_key(0,451);
+     IdentProc id(pt_key,stk_classic::parallel_machine_rank(comm));
      p.key = id;
      p.set_center(center);
      
      pts.push_back(p);
    }
 
-   stk::search::FactoryOrder order;
+   stk_classic::search::FactoryOrder order;
    order.m_communicator = comm;
-   order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
+   order.m_algorithm = stk_classic::search::FactoryOrder::BIHTREE;
    
    IdentProcRelation relation;
    
-   stk::search::coarse_search(relation, pts, domain_vector, order);
+   stk_classic::search::coarse_search(relation, pts, domain_vector, order);
    
    for (IdentProcRelation::const_iterator i=relation.begin(); i != relation.end(); ++i)
      os << "Relation Domain(" << i->first.ident.id() << "," << i->first.proc << ") " 

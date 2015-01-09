@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -113,15 +113,15 @@ Epetra_DistObject::~Epetra_DistObject(){
 }
 
 //=============================================================================
-int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, 
+int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
 			      const Epetra_Import& Importer,
 			      Epetra_CombineMode CombineMode,
-                              const Epetra_OffsetIndex * Indexor) 
+                              const Epetra_OffsetIndex * Indexor)
 {
 
   if (!Map_.SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-3);
-  
+
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
   int NumRemoteIDs = Importer.NumRemoteIDs();
@@ -132,22 +132,22 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int* PermuteFromLIDs = Importer.PermuteFromLIDs();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
-			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, 
-			    LenExports_, Exports_, LenImports_, Imports_, Importer.Distributor(), 
+			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
+			    LenExports_, Exports_, LenImports_, Imports_, Importer.Distributor(),
 			    false, Indexor));
   return(0);
 }
 
 //=============================================================================
-int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, 
+int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      const Epetra_Export& Exporter,
 			      Epetra_CombineMode CombineMode,
-                              const Epetra_OffsetIndex * Indexor) 
+                              const Epetra_OffsetIndex * Indexor)
 {
 
   if (!Map_.SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-3);
-  
+
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
   int NumRemoteIDs = Exporter.NumRemoteIDs();
@@ -159,21 +159,21 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
 			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
-			    LenExports_, Exports_,LenImports_, Imports_, Exporter.Distributor(), 
+			    LenExports_, Exports_,LenImports_, Imports_, Exporter.Distributor(),
 			    false, Indexor));
   return(0);
 }
 
 //=============================================================================
-int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, 
+int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
 			      const Epetra_Export& Exporter,
 			      Epetra_CombineMode CombineMode,
-                              const Epetra_OffsetIndex * Indexor) 
+                              const Epetra_OffsetIndex * Indexor)
 {
 
   if (!Map_.SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-3);
-  
+
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
   int NumRemoteIDs = Exporter.NumExportIDs();
@@ -183,23 +183,23 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int* PermuteToLIDs = Exporter.PermuteFromLIDs();
   int* PermuteFromLIDs = Exporter.PermuteToLIDs();
 
-  EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs, 
+  EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
 			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
-			    LenImports_, Imports_, LenExports_, Exports_, Exporter.Distributor(), 
+			    LenImports_, Imports_, LenExports_, Exports_, Exporter.Distributor(),
 			    true, Indexor));
   return(0);
 }
 
 //=============================================================================
-int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, 
+int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      const Epetra_Import& Importer,
 			      Epetra_CombineMode CombineMode,
-                              const Epetra_OffsetIndex * Indexor) 
+                              const Epetra_OffsetIndex * Indexor)
 {
 
   if (!Map_.SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-3);
-  
+
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
   int NumRemoteIDs = Importer.NumExportIDs();
@@ -209,29 +209,29 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int* PermuteToLIDs = Importer.PermuteFromLIDs();
   int* PermuteFromLIDs = Importer.PermuteToLIDs();
 
-  EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,  
+  EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
 			    PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs,
-			    LenImports_, Imports_, LenExports_, Exports_, 
+			    LenImports_, Imports_, LenExports_, Exports_,
 			    Importer.Distributor(), true, Indexor));
   return(0);
 }
 
 //=============================================================================
-int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A, 
-				  Epetra_CombineMode CombineMode, 
-				  int NumSameIDs, 
-				  int NumPermuteIDs, 
-				  int NumRemoteIDs, 
-				  int NumExportIDs, 
-				  int* PermuteToLIDs, 
-				  int* PermuteFromLIDs, 
-				  int* RemoteLIDs, 
+int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
+				  Epetra_CombineMode CombineMode,
+				  int NumSameIDs,
+				  int NumPermuteIDs,
+				  int NumRemoteIDs,
+				  int NumExportIDs,
+				  int* PermuteToLIDs,
+				  int* PermuteFromLIDs,
+				  int* RemoteLIDs,
 				  int* ExportLIDs,
-				  int& LenExports, 
+				  int& LenExports,
 				  char*& Exports,
-				  int& LenImports, 
-				  char*& Imports, 
-				  Epetra_Distributor& Distor, 
+				  int& LenImports,
+				  char*& Imports,
+				  Epetra_Distributor& Distor,
 				  bool DoReverse,
                                   const Epetra_OffsetIndex * Indexor)
 {
@@ -239,13 +239,18 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   EPETRA_CHK_ERR(CheckSizes(A));
 
   if (NumSameIDs + NumPermuteIDs > 0) {
-    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor));
+    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor, CombineMode));
   }
 
-  if (CombineMode==Zero) 
+  // Once CopyAndPermute is done, switch to Add so rest works as before.
+  if(CombineMode == Epetra_AddLocalAlso) {
+    CombineMode = Add;
+  }
+
+  if (CombineMode==Zero)
     return(0); // All done if CombineMode only involves copying and permuting
-  
-  int SizeOfPacket; 
+
+  int SizeOfPacket;
   bool VarSizes = false;
   if( NumExportIDs > 0) {
     delete [] Sizes_;
@@ -283,7 +288,7 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
 void Epetra_DistObject::Print(std::ostream& os) const {
   int MyPID = Comm().MyPID();
   int NumProc = Comm().NumProc();
-  
+
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       Comm().PrintInfo(os);

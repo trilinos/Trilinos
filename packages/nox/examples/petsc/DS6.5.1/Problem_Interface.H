@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,12 +44,12 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 //-----------------------------------------------------------------------------
 #ifndef Problem_Interface_H
 #define Problem_Interface_H
 
-// Interface to the NLS_PetraGroup to provide for 
+// Interface to the NLS_PetraGroup to provide for
 // residual and matrix fill routines.
 
 // ---------- Standard Includes ----------
@@ -79,11 +79,11 @@ public:
   bool preconditionVector(Vec& y);
 
   //! Application Operator: Object that points to the user's evaluation routines.
-  /*! This is used to point to the actual routines and to store 
+  /*! This is used to point to the actual routines and to store
    *  auxiliary data required by the user's application for function/Jacobian
-   *  evaluations that NOX does not need to know about.  This is type of 
+   *  evaluations that NOX does not need to know about.  This is type of
    *  passdown class design by the application code.
-   */ 
+   */
   DennisSchnabel& problem;
 };
 

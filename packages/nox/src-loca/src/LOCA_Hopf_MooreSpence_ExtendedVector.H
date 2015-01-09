@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,124 +68,124 @@ namespace LOCA {
 
     namespace MooreSpence {
 
-      /*! 
+      /*!
        * \brief %Vector class to hold solution vectors, %Newton vectors, etc.
        * for Moore-Spence Hopf equations.
        */
-      /*! 
+      /*!
        * This class uses the LOCA::Extended::Vector implementation to store the
-       * solution, real and imaginary eigenvector, frequency and parameter 
-       * components of the Hopf vector and merely provides an interface for 
-       * naming which components of the multivector these quantities 
+       * solution, real and imaginary eigenvector, frequency and parameter
+       * components of the Hopf vector and merely provides an interface for
+       * naming which components of the multivector these quantities
        * correspond to.
        */
       class ExtendedVector : public LOCA::Extended::Vector {
 
-	/*! 
-	 * \brief Declare LOCA::Hopf::MooreSpence::ExtendedMultiVector 
-	 * as a friend class so it can call protected methods.
-	 */
-	friend class ExtendedMultiVector;
+    /*!
+     * \brief Declare LOCA::Hopf::MooreSpence::ExtendedMultiVector
+     * as a friend class so it can call protected methods.
+     */
+    friend class ExtendedMultiVector;
 
       public:
-  
-	//! Constructor.
-	ExtendedVector(
-		   const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		   const NOX::Abstract::Vector& xVec,
-		   const NOX::Abstract::Vector& realEigenVec,
-		   const NOX::Abstract::Vector& imagEigenVec,
-		   double frequency, double bifParam);
 
-	//! Copy constructor.
-	ExtendedVector(const ExtendedVector& source, 
-		       NOX::CopyType type = NOX::DeepCopy);
+    //! Constructor.
+    ExtendedVector(
+           const Teuchos::RCP<LOCA::GlobalData>& global_data,
+           const NOX::Abstract::Vector& xVec,
+           const NOX::Abstract::Vector& realEigenVec,
+           const NOX::Abstract::Vector& imagEigenVec,
+           double frequency, double bifParam);
 
-	//! Destructor.
-	virtual ~ExtendedVector();
+    //! Copy constructor.
+    ExtendedVector(const ExtendedVector& source,
+               NOX::CopyType type = NOX::DeepCopy);
 
-	//! Assignment operator
-	virtual NOX::Abstract::Vector& 
-	operator=(const NOX::Abstract::Vector& y);
+    //! Destructor.
+    virtual ~ExtendedVector();
 
-	//! Assignment operator
-	virtual LOCA::Extended::Vector& 
-	operator=(const LOCA::Extended::Vector& y);
-  
-	//! Assignment operator
-	virtual ExtendedVector& 
-	operator=(const ExtendedVector& y);
+    //! Assignment operator
+    virtual NOX::Abstract::Vector&
+    operator=(const NOX::Abstract::Vector& y);
 
-	//! Cloning function
-	virtual Teuchos::RCP<NOX::Abstract::Vector> 
-	clone(NOX::CopyType type = NOX::DeepCopy) const;
+    //! Assignment operator
+    virtual LOCA::Extended::Vector&
+    operator=(const LOCA::Extended::Vector& y);
 
-	//! Sets the Hopf vector by setting its five components 
-	virtual void setVec(const NOX::Abstract::Vector& xVec,
-			    const NOX::Abstract::Vector& realEigenVec,
-			    const NOX::Abstract::Vector& imagEigenVec,
-			    double frequency,
-			    double bifPar);
+    //! Assignment operator
+    virtual ExtendedVector&
+    operator=(const ExtendedVector& y);
 
-	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
-	getXVec() const;
+    //! Cloning function
+    virtual Teuchos::RCP<NOX::Abstract::Vector>
+    clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	/*! 
-	 * \brief Returns the real part of the eigenvector component of 
-	 * extended vector
-	 */
-	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
-	getRealEigenVec() const;
+    //! Sets the Hopf vector by setting its five components
+    virtual void setVec(const NOX::Abstract::Vector& xVec,
+                const NOX::Abstract::Vector& realEigenVec,
+                const NOX::Abstract::Vector& imagEigenVec,
+                double frequency,
+                double bifPar);
 
-	/*! 
-	 * \brief Returns the imaginary part of the eigenvector component of 
-	 * extended vector
-	 */
-	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
-	getImagEigenVec() const;
+    //! Returns the solution vector component of extended vector
+    virtual Teuchos::RCP<const NOX::Abstract::Vector>
+    getXVec() const;
 
-	//! Returns the frequency component of the extended vector
-	virtual double getFrequency() const;
+    /*!
+     * \brief Returns the real part of the eigenvector component of
+     * extended vector
+     */
+    virtual Teuchos::RCP<const NOX::Abstract::Vector>
+    getRealEigenVec() const;
 
-	//! Get Bifurcation parameter
-	virtual double getBifParam() const;
+    /*!
+     * \brief Returns the imaginary part of the eigenvector component of
+     * extended vector
+     */
+    virtual Teuchos::RCP<const NOX::Abstract::Vector>
+    getImagEigenVec() const;
 
-	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RCP<NOX::Abstract::Vector> getXVec();
+    //! Returns the frequency component of the extended vector
+    virtual double getFrequency() const;
 
-	/*! 
-	 * \brief Returns the real part of the eigenvector component of 
-	 * extended vector
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::Vector> getRealEigenVec();
+    //! Get Bifurcation parameter
+    virtual double getBifParam() const;
 
-	/*! 
-	 * \brief Returns the imaginary part of the eigenvector component of 
-	 * extended vector
-	 */
-	virtual Teuchos::RCP<NOX::Abstract::Vector> getImagEigenVec();
+    //! Returns the solution vector component of extended vector
+    virtual Teuchos::RCP<NOX::Abstract::Vector> getXVec();
 
-	//! Returns the frequency component of the extended vector
-	virtual double& getFrequency();
+    /*!
+     * \brief Returns the real part of the eigenvector component of
+     * extended vector
+     */
+    virtual Teuchos::RCP<NOX::Abstract::Vector> getRealEigenVec();
 
-	//! Get Bifurcation parameter
-	virtual double& getBifParam();
+    /*!
+     * \brief Returns the imaginary part of the eigenvector component of
+     * extended vector
+     */
+    virtual Teuchos::RCP<NOX::Abstract::Vector> getImagEigenVec();
+
+    //! Returns the frequency component of the extended vector
+    virtual double& getFrequency();
+
+    //! Get Bifurcation parameter
+    virtual double& getBifParam();
 
       protected:
 
-	//! Default Constructor
-	ExtendedVector(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data);
+    //! Default Constructor
+    ExtendedVector(
+          const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
-	//! generate an extended multi-vector
-	/*!
-	 * Returns an empty multivector of type 
-	 * LOCA::Hopf::MooreSpence::ExtendedMultiVector
-	 */
-	virtual Teuchos::RCP<LOCA::Extended::MultiVector>
-	generateMultiVector(int nColumns, int nVectorRows, 
-			    int nScalarRows) const;
+    //! generate an extended multi-vector
+    /*!
+     * Returns an empty multivector of type
+     * LOCA::Hopf::MooreSpence::ExtendedMultiVector
+     */
+    virtual Teuchos::RCP<LOCA::Extended::MultiVector>
+    generateMultiVector(int nColumns, int nVectorRows,
+                int nScalarRows) const;
 
       }; // class ExtendedVector
     } // namespace MooreSpence

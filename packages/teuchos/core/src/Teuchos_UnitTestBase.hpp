@@ -58,7 +58,7 @@ namespace Teuchos {
 /** \brief Unit test base class. */
 class TEUCHOSCORE_LIB_DLL_EXPORT UnitTestBase : public Describable {
 public:
-  
+
   /** \brief . */
   UnitTestBase(const std::string groupName, std::string testName);
 
@@ -70,7 +70,7 @@ public:
 
   /** \brief . */
   virtual long int unitTestFileLineNumber() const = 0;
-  
+
 protected:
 
   /** \brief . */

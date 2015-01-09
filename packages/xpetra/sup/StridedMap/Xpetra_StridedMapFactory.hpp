@@ -50,7 +50,6 @@
 #define XPETRA_STRIDEDMAPFACTORY_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -61,10 +60,12 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = StridedMap<>::local_ordinal_type,
+            class GlobalOrdinal =
+              typename StridedMap<LocalOrdinal>::global_ordinal_type,
+            class Node =
+              typename StridedMap<LocalOrdinal, GlobalOrdinal>::node_type>
   class StridedMapFactory {
-    typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps LocalMatOps;
-
 #undef XPETRA_STRIDEDMAPFACTORY_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"
 
@@ -74,11 +75,20 @@ namespace Xpetra {
 
   public:
 
+    static Teuchos::RCP<Node> defaultArgNode() {
+        // Workaround function for a deferred visual studio bug
+        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
+        // Use this function for default arguments rather than calling
+        // what is the return value below.  Also helps in reducing
+        // duplication in various constructors.
+        return KokkosClassic::Details::getNode<Node>();
+    }
+
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, LocalGlobal lg = Xpetra::GloballyDistributed,
-        const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
+        const Teuchos::RCP<Node> &node = defaultArgNode()) {
 
       return rcp(new StridedMap(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg, node));
     }
@@ -87,13 +97,13 @@ namespace Xpetra {
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0,
-        const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
+        const Teuchos::RCP<Node> &node = defaultArgNode()) {
 
       return rcp(new StridedMap(lib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, node));
     }
 
     static RCP<StridedMap> Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
-      return rcp(new StridedMap(map, stridingInfo, stridedBlockId, offset));
+      return rcp(new StridedMap(map, stridingInfo, map->getIndexBase(), stridedBlockId, offset));
     }
 
     // special constructor for generating a given subblock of a strided map
@@ -122,7 +132,7 @@ namespace Xpetra {
         if (map->GID2StridingBlockId(*it) == Teuchos::as<size_t>(stridedBlockId))
           subBlockDofGids[ind++] = *it;
 
-      const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
+      const Teuchos::ArrayView<const GlobalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
 
       return rcp(new StridedMap(map->lib(), Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()));
     }
@@ -144,13 +154,21 @@ namespace Xpetra {
     }
 
     //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)
-    static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase,
-                                 std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                                 LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node> ()) {
-
-      return rcp(new StridedMap(lib, numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId, node));
+    static RCP<StridedMap>
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+           GlobalOrdinal indexBase,
+           std::vector<size_t>& stridingInfo,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           LocalOrdinal stridedBlockId = -1, // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
+           GlobalOrdinal offset = 0,
+           const Teuchos::RCP<Node> &node = defaultArgNode())
+    {
+      return rcp (new StridedMap (lib, numGlobalElements, elementList,
+                                  indexBase, stridingInfo, comm,
+                                  stridedBlockId, node));
     }
-
   };
 }
 

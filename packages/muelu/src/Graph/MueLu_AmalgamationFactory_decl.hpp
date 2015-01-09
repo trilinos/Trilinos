@@ -71,7 +71,7 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AmalgamationFactory : public SingleLevelFactoryBase {
 #undef MUELU_AMALGAMATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -87,7 +87,7 @@ namespace MueLu {
     //! Destructor
     virtual ~AmalgamationFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
 

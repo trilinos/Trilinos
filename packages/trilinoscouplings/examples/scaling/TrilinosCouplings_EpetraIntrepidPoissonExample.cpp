@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -48,8 +48,8 @@
 
 // Pamgen includes
 #include <create_inline_mesh.h>
-#include <im_exodusII_l.h>
-#include <im_ne_nemesisI_l.h>
+#include <pamgen_im_exodusII_l.h>
+#include <pamgen_im_ne_nemesisI_l.h>
 #include <pamgen_extras.h>
 
 // Sacado includes
@@ -57,6 +57,7 @@
 
 // My includes
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"
@@ -219,7 +220,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcpFromRef;
   using Teuchos::TimeMonitor;
   using std::endl;
-  typedef Teuchos::ArrayView<LO>::size_type size_type;
   typedef Teuchos::ScalarTraits<ST> STS;
 
   (void) verbose;
@@ -227,13 +227,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   typedef Epetra_Map      map_type;
   typedef Epetra_Export   export_type;
-  typedef Epetra_Import   import_type;
   typedef Epetra_CrsGraph sparse_graph_type;
 
   // Number of independent variables fixed at 3
-  typedef Sacado::Fad::SFad<ST, 3>     Fad3;
+  //typedef Sacado::Fad::SFad<ST, 3>     Fad3; // unused
   typedef Intrepid::FunctionSpaceTools IntrepidFSTools;
-  typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools;
+  //typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools; // unused
   typedef Intrepid::CellTools<ST>      IntrepidCTools;
 
   const int myRank = comm->MyPID ();
@@ -262,7 +261,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   /******************************* GENERATE MESH ************************************/
   /**********************************************************************************/
 
-  *out << "Generating mesh" << endl;
+  *out << "Generating mesh (epetra)" << endl;
 
   int error = 0; // Number of errors in generating the mesh
 
@@ -273,8 +272,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   long long ** comm_node_proc_ids   = NULL;
 
   // Generate mesh with Pamgen
-  long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  long long maxInt = 9223372036854775807LL;  
+  long long cr_result = Create_Pamgen_Mesh (meshInput.c_str (), dim, myRank, numProcs, maxInt);
+  TrilinosCouplings::pamgen_error_check(*out,cr_result);
 
   std::string msg ("Poisson: ");
 
@@ -631,8 +631,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
-	TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	  "Build matrix graph: 1-Insert global indices", graph_insert);
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Build matrix graph: 1-Insert global indices", graph_insert);
 
         // Compute cell ordinal relative to the current workset
         //int worksetCellOrdinal = cell - worksetBegin;
@@ -672,8 +672,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Fill-complete overlapping distribution Graph.
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 2-Overlapped fill complete", 
-	overlapped_fill_complete);
+        "Build matrix graph: 2-Overlapped fill complete",
+        overlapped_fill_complete);
       errCode = overlappedGraph->FillComplete ();
     }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
@@ -683,7 +683,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Export to owned distribution Graph, and fill-complete the latter.
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 3-Owned graph export", graph_export);
+        "Build matrix graph: 3-Owned graph export", graph_export);
       errCode = ownedGraph->Export (*overlappedGraph, *exporter, Insert);
     }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
@@ -691,7 +691,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       << myRank << " failed with error code " << errCode << ".");
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 4-Owned fill complete", owned_fill_complete);
+        "Build matrix graph: 4-Owned fill complete", owned_fill_complete);
       errCode = ownedGraph->FillComplete ();
     }
     TEUCHOS_TEST_FOR_EXCEPTION(errCode < 0, std::runtime_error,
@@ -952,7 +952,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
+        "Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
 
       // "WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
@@ -966,38 +966,38 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           int localRow  = elemToNode (cell, cellRow);
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
 
-	  {
-	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	    //   "Matrix/RHS fill:  2a-RHS sum into local values", 
-	    //   elem_rhs);
+          {
+            // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+            //   "Matrix/RHS fill:  2a-RHS sum into local values",
+            //   elem_rhs);
 
-	    errCode = rhsVector->SumIntoMyValues (
-	      1, &sourceTermContribution, &localRow);
-	    TEUCHOS_TEST_FOR_EXCEPTION(
-	      errCode != 0, std::runtime_error,
-	      "Epetra_Vector::SumIntoGlobalValues on local row " << localRow
-	      << " on process " << myRank << " failed with error code "
-	      << errCode << ".");
-	  }
-          
+            errCode = rhsVector->SumIntoMyValues (
+              1, &sourceTermContribution, &localRow);
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              errCode != 0, std::runtime_error,
+              "Epetra_Vector::SumIntoGlobalValues on local row " << localRow
+              << " on process " << myRank << " failed with error code "
+              << errCode << ".");
+          }
+
           // "CELL VARIABLE" loop for the workset cell: sum entire element
-	  // stiff matrix contribution in one function call
-	  {
-	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	    //   "Matrix/RHS fill:  2b-Matrix sum into local values", 
-	    //   elem_matrix);
-	    errCode = StiffMatrix->SumIntoMyValues (
-	      localRow,
-	      numFieldsG,
-	      &worksetStiffMatrix(worksetCellOrdinal,cellRow,0),
-	      &elemToNode(cell,0));
-	    TEUCHOS_TEST_FOR_EXCEPTION(
-	      errCode != 0, std::runtime_error,
-	      "Epetra_CrsMatrix::SumIntoGlobalValues on local row "
-	      << localRow << " on process " << myRank << " failed with "
-	      "error code " << errCode << ".");
-	  }
-	  
+          // stiff matrix contribution in one function call
+          {
+            // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+            //   "Matrix/RHS fill:  2b-Matrix sum into local values",
+            //   elem_matrix);
+            errCode = StiffMatrix->SumIntoMyValues (
+              localRow,
+              numFieldsG,
+              &worksetStiffMatrix(worksetCellOrdinal,cellRow,0),
+              &elemToNode(cell,0));
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              errCode != 0, std::runtime_error,
+              "Epetra_CrsMatrix::SumIntoGlobalValues on local row "
+              << localRow << " on process " << myRank << " failed with "
+              "error code " << errCode << ".");
+          }
+
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
@@ -1157,8 +1157,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // (multi)vector's local data.  Wrap it in a nonowning ArrayRCP.
     ArrayRCP<const int> myColsToZeroArrayRCP =
       arcp_const_cast<const int> (arcp<int> (myColsToZeroT->Values (), 0,
-                                             myColsToZeroT->MyLength (), 
-					     false));
+                                             myColsToZeroT->MyLength (),
+                                             false));
     //size_t NumEntries = 0;
     int NumEntries = 0;
 

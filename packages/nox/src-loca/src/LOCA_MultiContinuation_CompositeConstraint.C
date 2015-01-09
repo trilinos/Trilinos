@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -81,8 +81,8 @@ LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
 }
 
 LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
-		  const LOCA::MultiContinuation::CompositeConstraint& source, 
-		  NOX::CopyType type) : 
+          const LOCA::MultiContinuation::CompositeConstraint& source,
+          NOX::CopyType type) :
   globalData(source.globalData),
   numConstraintObjects(source.numConstraintObjects),
   constraintPtrs(source.constraintPtrs),
@@ -100,9 +100,9 @@ LOCA::MultiContinuation::CompositeConstraint::~CompositeConstraint()
 
 void
 LOCA::MultiContinuation::CompositeConstraint::copy(
-		   const LOCA::MultiContinuation::ConstraintInterface& src)
+           const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::MultiContinuation::CompositeConstraint& source = 
+  const LOCA::MultiContinuation::CompositeConstraint& source =
     dynamic_cast<const LOCA::MultiContinuation::CompositeConstraint&>(src);
 
 
@@ -133,7 +133,7 @@ LOCA::MultiContinuation::CompositeConstraint::numConstraints() const
 
 void
 LOCA::MultiContinuation::CompositeConstraint::setX(
-					      const NOX::Abstract::Vector& y)
+                          const NOX::Abstract::Vector& y)
 {
   for (int i=0; i<numConstraintObjects; i++)
     constraintPtrs[i]->setX(y);
@@ -152,8 +152,8 @@ LOCA::MultiContinuation::CompositeConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::CompositeConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (int i=0; i<numConstraintObjects; i++)
     constraintPtrs[i]->setParams(paramIDs, vals);
@@ -167,7 +167,7 @@ LOCA::MultiContinuation::CompositeConstraint::computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -176,10 +176,10 @@ LOCA::MultiContinuation::CompositeConstraint::computeConstraints()
 
   for (int i=0; i<numConstraintObjects; i++) {
     status = constraintPtrs[i]->computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     g = &(constraintPtrs[i]->getConstraints());
     for (int j=0; j<constraintPtrs[i]->numConstraints(); j++)
       constraints(indices[i][j],0) = (*g)(j,0);
@@ -196,17 +196,17 @@ LOCA::MultiContinuation::CompositeConstraint::computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   for (int i=0; i<numConstraintObjects; i++) {
     status = constraintPtrs[i]->computeDX();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   return finalStatus;
@@ -214,11 +214,11 @@ LOCA::MultiContinuation::CompositeConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraint::computeDP(
-		                const std::vector<int>& paramIDs, 
-		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-				bool isValidG)
+                        const std::vector<int>& paramIDs,
+                        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+                bool isValidG)
 {
-   std::string callingFunction = 
+   std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -229,21 +229,21 @@ LOCA::MultiContinuation::CompositeConstraint::computeDP(
   for (int i=0; i<numConstraintObjects; i++) {
 
     // Create a sub view of rows indices[i][0] -- indices[i][end] of dgdp
-    num_rows = indices[i][constraintPtrs[i]->numConstraints()-1] - 
+    num_rows = indices[i][constraintPtrs[i]->numConstraints()-1] -
       indices[i][0] + 1;
-    dgdp_sub = 
+    dgdp_sub =
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-							       dgdp,
-							       num_rows,
-							       num_cols,
-							       indices[i][0],
-							       0));
+                                   dgdp,
+                                   num_rows,
+                                   num_cols,
+                                   indices[i][0],
+                                   0));
 
     status = constraintPtrs[i]->computeDP(paramIDs, *dgdp_sub, isValidG);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   return finalStatus;
@@ -269,11 +269,11 @@ LOCA::MultiContinuation::CompositeConstraint::getConstraints() const
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraint::multiplyDX(
-		      double alpha, 
-		      const NOX::Abstract::MultiVector& input_x,
-	              NOX::Abstract::MultiVector::DenseMatrix& result_p) const
+              double alpha,
+              const NOX::Abstract::MultiVector& input_x,
+                  NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraint::multiplyDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -295,28 +295,28 @@ LOCA::MultiContinuation::CompositeConstraint::multiplyDX(
     // result_p to zero
     if (constraintPtrs[i]->isDXZero()) {
       for (int j=0; j<num_rows; j++)
-	for (int k=0; k<num_cols; k++)
-	  result_p(indices[i][j],k) = 0.0;
+    for (int k=0; k<num_cols; k++)
+      result_p(indices[i][j],k) = 0.0;
     }
     else {
 
-      // Create a sub view of rows indices[i][0] -- indices[i][end] 
-      // of result_p 
-      result_p_sub = 
-	Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-								 result_p,
-								 num_rows,
-								 num_cols,
-								 indices[i][0],
-								 0));
+      // Create a sub view of rows indices[i][0] -- indices[i][end]
+      // of result_p
+      result_p_sub =
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+                                 result_p,
+                                 num_rows,
+                                 num_cols,
+                                 indices[i][0],
+                                 0));
 
-      status = constraintPtrs[i]->multiplyDX(alpha, input_x, 
-					     *result_p_sub);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      status = constraintPtrs[i]->multiplyDX(alpha, input_x,
+                         *result_p_sub);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
     }
 
   }
@@ -326,13 +326,13 @@ LOCA::MultiContinuation::CompositeConstraint::multiplyDX(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::CompositeConstraint::addDX(
-		              Teuchos::ETransp transb,
-			      double alpha, 
-	                      const NOX::Abstract::MultiVector::DenseMatrix& b,
-			      double beta,
-			      NOX::Abstract::MultiVector& result_x) const
+                      Teuchos::ETransp transb,
+                  double alpha,
+                          const NOX::Abstract::MultiVector::DenseMatrix& b,
+                  double beta,
+                  NOX::Abstract::MultiVector& result_x) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::CompositeConstraint::addDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -349,41 +349,41 @@ LOCA::MultiContinuation::CompositeConstraint::addDX(
   int num_rows;
   int num_cols = result_x.numVectors();
   for (int j=0; j<numConstraintObjects; j++) {
-      
+
     if (!constraintPtrs[j]->isDXZero()) {
 
       // Create a sub view of rows indices[j][0] -- indices[j][end],
       // of b or b^T
       num_rows = constraintPtrs[j]->numConstraints();
       if (transb == Teuchos::NO_TRANS) {
-	b_sub = 
-	  Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							       Teuchos::View,
-							       b,
-							       num_rows,
-							       num_cols,
-							       indices[j][0],
-							       0));
+    b_sub =
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
+                                   Teuchos::View,
+                                   b,
+                                   num_rows,
+                                   num_cols,
+                                   indices[j][0],
+                                   0));
       }
       else {
-	b_sub = 
-	  Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
-							       Teuchos::View,
-							       b,
-							       num_cols,
-							       num_rows,
-							       0,
-							       indices[j][0]));
+    b_sub =
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
+                                   Teuchos::View,
+                                   b,
+                                   num_cols,
+                                   num_rows,
+                                   0,
+                                   indices[j][0]));
       }
-	
+
       // Compute result_x = result_x + alpha*(dg/dx)_j*op(b)_j
-      status = constraintPtrs[j]->addDX(transb, alpha, *b_sub, 1.0, 
-					result_x);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      status = constraintPtrs[j]->addDX(transb, alpha, *b_sub, 1.0,
+                    result_x);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
     }
 
   }
@@ -403,7 +403,7 @@ LOCA::MultiContinuation::CompositeConstraint::isDXZero() const
 
 void
 LOCA::MultiContinuation::CompositeConstraint::preProcessContinuationStep(
-			   LOCA::Abstract::Iterator::StepStatus stepStatus)
+               LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   for (int i=0; i<numConstraintObjects; i++)
     constraintPtrs[i]->preProcessContinuationStep(stepStatus);
@@ -411,7 +411,7 @@ LOCA::MultiContinuation::CompositeConstraint::preProcessContinuationStep(
 
 void
 LOCA::MultiContinuation::CompositeConstraint::postProcessContinuationStep(
-			   LOCA::Abstract::Iterator::StepStatus stepStatus)
+               LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   for (int i=0; i<numConstraintObjects; i++)
     constraintPtrs[i]->postProcessContinuationStep(stepStatus);

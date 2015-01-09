@@ -31,8 +31,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <xdmf/Ioxf_IOFactory.h>
-#include <xdmf/Ioxf_DatabaseIO.h>
-#include <string>
+#include <stddef.h>                     // for NULL
+#include <xdmf/Ioxf_DatabaseIO.h>       // for DatabaseIO
+#include <string>                       // for string
+#include "Ioss_DBUsage.h"               // for DatabaseUsage
+#include "Ioss_IOFactory.h"             // for IOFactory
+namespace Ioss { class PropertyManager; }
 
 namespace Ioxf {
 

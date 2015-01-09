@@ -97,9 +97,9 @@ C
     internal_prompt[PromptLength]   = '\0';
 
     p = getline_int(internal_prompt);
-    gl_histadd(p);
 
     if (p) {
+      gl_histadd(p);
       int i = 0;
       /* Strip the trailing \n */
       p[strlen(p)-1] = '\0';

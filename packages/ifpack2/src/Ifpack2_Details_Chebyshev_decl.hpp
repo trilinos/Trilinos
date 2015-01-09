@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -643,8 +643,30 @@ private:
                    const ST eigRatio,
                    const V& D_inv);
 
-  /// \brief Use numIters power method iterations to estimate the
-  ///   maximum eigenvalue of A*D_inv.
+  /// \brief Use the power method to estimate the maximum eigenvalue
+  ///   of A*D_inv, given an initial guess vector x.
+  ///
+  /// \param A [in] The Operator to use.
+  /// \param D_inv [in] Vector to use as implicit right scaling of A.
+  /// \param numIters [in] Maximum number of iterations of the power
+  ///   method.
+  /// \param x [in/out] On input: Initial guess Vector for the power
+  ///   method.  Its Map must be the same as that of the domain Map of
+  ///   A.  This method may use this Vector as scratch space.
+  ///
+  /// \return Estimate of the maximum eigenvalue of A*D_inv.
+  static ST
+  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
+
+  /// \brief Use the power method to estimate the maximum eigenvalue
+  ///   of A*D_inv.
+  ///
+  /// \param A [in] The Operator to use.
+  /// \param D_inv [in] Vector to use as implicit right scaling of A.
+  /// \param numIters [in] Maximum number of iterations of the power
+  ///   method.
+  ///
+  /// \return Estimate of the maximum eigenvalue of A*D_inv.
   static ST
   powerMethod (const op_type& A, const V& D_inv, const int numIters);
 

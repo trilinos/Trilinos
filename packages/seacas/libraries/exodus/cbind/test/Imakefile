@@ -1,5 +1,5 @@
 ### Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-### DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+### DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 ### retains certain rights in this software.
 ### 
 ### Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@ PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt-one-attrib create_mesh rd_wt_mesh \
 	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
 	testrd-nfaced testwt-long-name testrd-long-name \
+	testwt-groups testrd-groups \
 	oned twod MakeTestData test_nemesis $(PARTEST)
 #if 0
 	CreateEdgeFace ReadEdgeFace
@@ -98,6 +99,9 @@ NormalProgramTarget(testwt-nsided, testwt-nsided.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd-nsided, testrd-nsided.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-nfaced, testwt-nfaced.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd-nfaced, testrd-nfaced.o, $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(testwt-groups, testwt-groups.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd-groups, testrd-groups.o, $(LOCALEXO), /**/, $(LIBS))
 
 NormalProgramTarget(create_mesh, create_mesh.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(rd_wt_mesh,  rd_wt_mesh.o, $(LOCALEXO), /**/, $(LIBS))

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   errCode=EpetraExt::MatrixMarketFileToCrsMatrix(datafile, Comm, Amat);
   if (errCode) ML_Exit(mypid,"error reading matrix", EXIT_FAILURE);
   Amat->OptimizeStorage();
-    
+
   Epetra_Vector LHS(Amat->RowMap()); LHS.Random();
   Epetra_Vector RHS(Amat->RowMap()); RHS.PutScalar(0.0);
   Epetra_LinearProblem Problem(Amat, &LHS, &RHS);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 #endif
 
   // =========================== build preconditioner ===========================
-  
+
 #ifdef ML_SCALING
   timeVec[precBuild].value = MPI_Wtime();
 #endif
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
   // compute the real residual
   double residual;
   LHS.Norm2(&residual);
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }

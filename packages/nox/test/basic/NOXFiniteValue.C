@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-// Tests NOX's finite number test. 
+// Tests NOX's finite number test.
 
 #include "NOX.H"
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
-  
+
   NOX::StatusTest::FiniteValue fv_test;
 
   double finite = 1.0e-100;
@@ -85,17 +85,17 @@ int main(int argc, char *argv[])
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
   int result = fv_test.finiteNumberTest(finite);
-  
+
   if (result != 0)
     status = 1;  // Nonzero is failure
 
   if ( verbose && (myPID == 0) ) {
     if (result == 0)
-      std::cout << "\nFinite value = " << finite 
-	   << ", test correctly identified value as finite!" << std::endl;
+      std::cout << "\nFinite value = " << finite
+       << ", test correctly identified value as finite!" << std::endl;
     else
-      std::cout << "Finite value = " << finite 
-	   << ", test failed to identify value as finite!" << std::endl;
+      std::cout << "Finite value = " << finite
+       << ", test failed to identify value as finite!" << std::endl;
   }
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
@@ -103,14 +103,14 @@ int main(int argc, char *argv[])
 
   if (result != -1)
     status = 1;  // Nonzero is failure
-  
+
   if ( verbose && (myPID == 0) ) {
     if (result == -1)
-      std::cout << "NaN value = " << nan 
-	   << ", test correctly identified value as nan!" << std::endl;
+      std::cout << "NaN value = " << nan
+       << ", test correctly identified value as nan!" << std::endl;
     else
-      std::cout << "NaN value = " << nan 
-	   << ", test failed to identify value as nan!" << std::endl;
+      std::cout << "NaN value = " << nan
+       << ", test failed to identify value as nan!" << std::endl;
   }
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
@@ -122,10 +122,10 @@ int main(int argc, char *argv[])
   if ( verbose && (myPID == 0) ) {
     if (result == -2)
       std::cout << "Inf value = " << infinity
-	   << ", test correctly identified value as inf!" << std::endl;
+       << ", test correctly identified value as inf!" << std::endl;
     else
-      std::cout << "Inf value = " << infinity 
-	   << ", test failed to identify value as inf!" << std::endl;
+      std::cout << "Inf value = " << infinity
+       << ", test failed to identify value as inf!" << std::endl;
   }
 
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == 0) {
-    if (status == 0) 
+    if (status == 0)
       std::cout << "\nTest passed!" << std::endl;
     else
       std::cout << "\nTest Failed!" << std::endl;

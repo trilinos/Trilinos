@@ -72,11 +72,11 @@ void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha,
 #ifdef SCPLX
 	void ccopy_(int *n, scomplex *cx, int *incx, scomplex *cy, int *incy);
 	void cscal_(int *n, scomplex *ca, scomplex *cx, int *incx);
-	void caxpy_(int *n, scomplex *ca, scomplex *cx, int *incx, scomplex *cy, 
+	void caxpy_(int *n, scomplex *ca, scomplex *cx, int *incx, scomplex *cy,
    	   int *incy);
 	int icamax_(int *n, scomplex *cx, int *incx);
 	void scasumbb_(float *scasumb, int *n, scomplex *cx, int *incx);
-	void cdotubb_(scomplex *cdotub, int *n, scomplex *cx, int *incx, 
+	void cdotubb_(scomplex *cdotub, int *n, scomplex *cx, int *incx,
    	   scomplex *cy, int *incy);
 	void cgemmu_(char *transa, char *transb, int *m, int *n, int *k,
    	   scomplex *alpha, scomplex *a, int *lda, scomplex *b, int *ldb,
@@ -124,7 +124,7 @@ double ddot(int n, double *dx, int incx, double *dy, int incy);
 #ifdef SCPLX
     	void cscal(int n, scomplex sa, scomplex *sx, int incx);
 	void ccopy(int n, scomplex *sx, int incx, scomplex *sy, int incy);
-	void caxpy(int n, scomplex sa, scomplex *sx, int incx, scomplex *sy, 
+	void caxpy(int n, scomplex sa, scomplex *sx, int incx, scomplex *sy,
 		int incy);
 	int icamax(int n, scomplex *sx, int incx);
 	float scasum(int n, scomplex *sx, int incx);
@@ -135,7 +135,7 @@ double ddot(int n, double *dx, int incx, double *dy, int incy);
 #ifdef ZCPLX
 	void zscal(int n, dcomplex sa, dcomplex *sx, int incx);
 	void zcopy(int n, dcomplex *sx, int incx, dcomplex *sy, int incy);
-	void zaxpy(int n, dcomplex sa, dcomplex *sx, int incx, dcomplex *sy, 
+	void zaxpy(int n, dcomplex sa, dcomplex *sx, int incx, dcomplex *sy,
 		int incy);
 	int izamax(int n, dcomplex *sx, int incx);
 	double dzasum(int n, dcomplex *sx, int incx);

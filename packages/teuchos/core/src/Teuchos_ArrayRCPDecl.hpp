@@ -109,7 +109,7 @@ namespace Teuchos {
  * already <tt>const T'</tt> for some type <tt>T'</tt>, and the
  * assign() and deepCopy() methods do not make sense if the right-hand
  * side of the assignment is const.
- * 
+ *
  * Partial specialization results in duplicated code, so Teuchos
  * developers should be careful to make modifications in both the
  * fully generic implementation and in the partial specialization.
@@ -786,13 +786,13 @@ public:
 
 private:
   //! Raw pointer to the array; NULL if this array is null.
-  T *ptr_; 
+  T *ptr_;
   //! Reference-counting machinery.
   RCPNodeHandle node_;
   //! Lower offset to the data; 0 if this array is null.
   size_type lowerOffset_;
   //! Upper offset to the data; -1 if this array is null.
-  size_type upperOffset_; 
+  size_type upperOffset_;
 
   inline void debug_assert_not_null () const {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
@@ -800,11 +800,11 @@ private:
 #endif
   }
 
-  inline void 
+  inline void
   debug_assert_in_range (size_type lowerOffset_in,
-			 size_type size_in) const
+                         size_type size_in) const
   {
-    (void) lowerOffset_in; 
+    (void) lowerOffset_in;
     (void) size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     assert_in_range (lowerOffset_in, size_in);
@@ -865,12 +865,12 @@ public:
 #endif
 
   inline ArrayRCP (ENull null_arg = null);
-  inline ArrayRCP (const T* p, size_type lowerOffset, 
-		   size_type size, bool has_ownership,
-		   const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
+  inline ArrayRCP (const T* p, size_type lowerOffset,
+                   size_type size, bool has_ownership,
+                   const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
   template<class Dealloc_T>
-  inline ArrayRCP (const T* p, size_type lowerOffset, size_type size, 
-		   Dealloc_T dealloc, bool has_ownership);
+  inline ArrayRCP (const T* p, size_type lowerOffset, size_type size,
+                   Dealloc_T dealloc, bool has_ownership);
   inline explicit ArrayRCP (size_type size, const T& val = T ());
   inline ArrayRCP (const ArrayRCP<const T>& r_ptr);
   inline ~ArrayRCP();
@@ -946,9 +946,9 @@ private:
 #endif
   }
 
-  inline void 
+  inline void
   debug_assert_in_range (size_type lowerOffset_in,
-			 size_type size_in) const
+                         size_type size_in) const
   {
     (void) lowerOffset_in; (void) size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -969,8 +969,8 @@ public:
   // this portable (i.e. using friendship etc.) in the past
   // This is a very bad breach of encapsulation that is needed since MS VC++
   // 5.0 will not allow me to declare template functions as friends.
-  ArrayRCP (const T* p, size_type lowerOffset, 
-	    size_type size, const RCPNodeHandle& node);
+  ArrayRCP (const T* p, size_type lowerOffset,
+            size_type size, const RCPNodeHandle& node);
   const T* access_private_ptr() const;
   RCPNodeHandle& nonconst_access_private_node();
   const RCPNodeHandle& access_private_node() const;
@@ -1199,7 +1199,7 @@ ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
 
 /** \brief Get an ArrayRCP object out of an ArrayView object.
  *
- * This conversion is required an proper in certain types of situations.  In a
+ * This conversion is required and proper in certain types of situations.  In a
  * debug build, a dangling reference will be detected with an exception being
  * thrown.
  *
@@ -1211,7 +1211,8 @@ ArrayRCP<T> arcpFromArrayView(const ArrayView<T> &av);
 
 /** \brief Get an <tt>std::vector<T></tt> object out of an
  * <tt>ArrayRCP<T></tt> object that was created using the
- * <tt>arcp()</tt> above to wrap the std::vector in the first place..
+ * <tt>arcp()</tt> function above to wrap the std::vector in the first
+ * place..
  *
  * \relates ArrayRCP
  */
@@ -1261,7 +1262,7 @@ template<class T>
 bool operator!=( const ArrayRCP<T> &p, ENull );
 
 
-/** \brief .
+/** \brief Compare two ArrayRCP objects for equality (by pointers).
  *
  * \relates ArrayRCP
  */
@@ -1269,7 +1270,7 @@ template<class T1, class T2>
 bool operator==( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief .
+/** \brief Compare two ArrayRCP objects for inequality (by pointers).
  *
  * \relates ArrayRCP
  */
@@ -1277,7 +1278,7 @@ template<class T1, class T2>
 bool operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief .
+/** \brief Compare the two ArrayRCP objects' pointers using <.
  *
  * \relates ArrayRCP
  */
@@ -1285,7 +1286,7 @@ template<class T1, class T2>
 bool operator<( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief .
+/** \brief Compare the two ArrayRCP objects' pointers using <=.
  *
  * \relates ArrayRCP
  */
@@ -1293,7 +1294,7 @@ template<class T1, class T2>
 bool operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief .
+/** \brief Compare the two ArrayRCP objects' pointers using >.
  *
  * \relates ArrayRCP
  */
@@ -1301,7 +1302,7 @@ template<class T1, class T2>
 bool operator>( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief .
+/** \brief Compare the two ArrayRCP objects' pointers using >=.
  *
  * \relates ArrayRCP
  */
@@ -1309,7 +1310,10 @@ template<class T1, class T2>
 bool operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 
-/** \brief Returns difference of two ArrayRCP objects.
+/** \brief Return the difference of two ArrayRCP objects.
+ *
+ * The difference of two ArrayRCP objects is the difference of their
+ * two pointers.
  *
  * \relates ArrayRCP
  */

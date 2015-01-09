@@ -74,7 +74,7 @@ namespace Ifpack2 {
 /// represented as a Tpetra::RowMatrix.
 ///
 /// \warning Do not attempt to use this class unless Trilinos was
-///   built with support for the Boost and Cholmod third-party
+///   built with support for the Lemon and Cholmod third-party
 ///   libraries.
 ///
 /// \warning This class will not be installed unless the CMake option
@@ -115,7 +115,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.

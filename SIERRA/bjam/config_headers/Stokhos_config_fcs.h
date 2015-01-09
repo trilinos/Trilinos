@@ -72,8 +72,14 @@
 /* Define if KokkosCore is enabled */
 /* #undef HAVE_STOKHOS_KOKKOSCORE */
 
-/* Define if KokkosCore is enabled */
+/* Define if KokkosLinAlg is enabled */
 /* #undef HAVE_STOKHOS_KOKKOSLINALG */
+
+/* Define if KokkosMpiCom is enabled */
+/* #undef HAVE_STOKHOS_KOKKOSMPICOMM */
+
+/* Define if KokkosAlgorithms is enabled */
+/* #undef HAVE_STOKHOS_KOKKOSALGORITHMS */
 
 /* Define if MueLu is enabled */
 #define HAVE_STOKHOS_MUELU
@@ -95,3 +101,9 @@
 
 /* Define if OpenMP is enabled */
 /* #undef HAVE_STOKHOS_OPENMP */
+
+/* Define if intrinsics are enabled */
+#define HAVE_STOKHOS_INTRINSICS
+
+/* Define if C++11 is enabled */
+/* #undef HAVE_STOKHOS_CXX11 */

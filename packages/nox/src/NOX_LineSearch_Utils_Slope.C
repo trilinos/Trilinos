@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -72,26 +72,26 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd)
 }
 
 double NOX::LineSearch::Utils::Slope::
-computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp) 
+computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp)
 {
-   if (grp.isGradient()) 
+   if (grp.isGradient())
      return(dir.innerProduct(grp.getGradient()));
 
   // Allocate space for vecPtr if necessary
-   if (Teuchos::is_null(vecPtr)) 
+   if (Teuchos::is_null(vecPtr))
      vecPtr = dir.clone(ShapeCopy);
 
   // v = J * dir
   NOX::Abstract::Group::ReturnType status = grp.applyJacobian(dir,*vecPtr);
-  
-  if (status != NOX::Abstract::Group::Ok) 
+
+  if (status != NOX::Abstract::Group::Ok)
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope -  Unable to apply Jacobian!" << std::endl;
     throw "NOX Error";
   }
 
   // Check that F exists
-  if (!grp.isF()) 
+  if (!grp.isF())
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << std::endl;
     throw "NOX Error";
@@ -102,17 +102,17 @@ computeSlope(const Abstract::Vector& dir, const Abstract::Group& grp)
 }
 
 double NOX::LineSearch::Utils::Slope::
-computeSlopeWithOutJac(const Abstract::Vector& dir, 
-		       const Abstract::Group& grp) 
+computeSlopeWithOutJac(const Abstract::Vector& dir,
+               const Abstract::Group& grp)
 {
   // Allocate space for vecPtr and grpPtr if necessary
-  if (Teuchos::is_null(vecPtr)) 
+  if (Teuchos::is_null(vecPtr))
     vecPtr = dir.clone(ShapeCopy);
   if (Teuchos::is_null(grpPtr))
     grpPtr = grp.clone(ShapeCopy);
 
   // Check that F exists
-  if (!grp.isF()) 
+  if (!grp.isF())
   {
     utils.out() << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << std::endl;
     throw "NOX Error";
@@ -136,11 +136,11 @@ computeSlopeWithOutJac(const Abstract::Vector& dir,
   vecPtr->update(eta, dir, 1.0, grp.getX(), 0.0);
 
   // Compute the new F --> F(x + eta * dir)
-  grpPtr->setX(*vecPtr);  
+  grpPtr->setX(*vecPtr);
   grpPtr->computeF();
 
   // Compute Js = (F(x + eta * dir) - F(x))/eta
   vecPtr->update(-1.0/eta, grp.getF(), 1.0/eta, grpPtr->getF(), 0.0);
-  
+
   return(vecPtr->innerProduct(grp.getF()));
 }

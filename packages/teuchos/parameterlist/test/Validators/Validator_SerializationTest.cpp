@@ -50,12 +50,14 @@
 
 #include "Teuchos_XMLParameterListTestHelpers.hpp"
 
+using Teuchos::writeThenReadPL;
+
 
 namespace Teuchos {
 
 class UNDEFINED_PARAMETERENTRY_VALIDATOR : public ParameterEntryValidator
 {
-  
+
   public:
 
   void printDoc(const std::string& docString, std::ostream& out) const {}
@@ -63,7 +65,7 @@ class UNDEFINED_PARAMETERENTRY_VALIDATOR : public ParameterEntryValidator
   ValidStringsList validStringValues() const{
     return rcp(new Array<std::string>(1,""));
   }
-  
+
   void validate(
     ParameterEntry  const& entry,
     std::string const& paramName,
@@ -87,10 +89,10 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
   TEST_THROW(RCP<ParameterList>
     missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"),
     MissingValidatorDefinitionException);
- 
+
   TEST_THROW(RCP<ParameterList>
     missingPrototypeList = getParametersFromXmlFile("MissingPrototypeValidator.xml"),
-	MissingValidatorDefinitionException);
+        MissingValidatorDefinitionException);
 
   TEST_THROW(RCP<ParameterList>
     conflicitingValiIdsList = getParametersFromXmlFile("ConflictingValidatorIDs.xml"),
@@ -110,16 +112,16 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
   AnyNumberValidatorXMLConverter anyNumberConverter;
   ValidatortoIDMap writerDummyMap;
   IDtoValidatorMap readerDummyMap;
-  RCP<AnyNumberParameterEntryValidator> anyNumberValidator = 
+  RCP<AnyNumberParameterEntryValidator> anyNumberValidator =
     anyNumberParameterEntryValidator();
   writerDummyMap.insert(anyNumberValidator);
   TEST_THROW(
-    stringConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap), 
+    stringConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap),
     BadValidatorXMLConverterException);
-  XMLObject anyNumberXML = 
+  XMLObject anyNumberXML =
     anyNumberConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap);
   TEST_THROW(
-    stringConverter.fromXMLtoValidator(anyNumberXML, readerDummyMap), 
+    stringConverter.fromXMLtoValidator(anyNumberXML, readerDummyMap),
     BadValidatorXMLConverterException);
 
   #endif
@@ -196,12 +198,12 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, anynumberValidatorConverter)
   ParameterList myList("AnyNumberValidatorList");
   myList.set(defaultParameterName, 10.0,
     "A parameter with the default AnyNumberValidator on it", defaultValidator);
-  myList.set(nonDefaultParameterName, 1, 
+  myList.set(nonDefaultParameterName, 1,
     "A prameter with an AnyNumberValidator on it that has the preferred and accepted types differnet from the default",
     nonDefaultValidator);
 
   RCP<ParameterList> readInPL = writeThenReadPL(myList);
-  
+
   RCP<const AnyNumberParameterEntryValidator> readinDefaultValidator =
     rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
       readInPL->getEntry(defaultParameterName).validator(), true);
@@ -465,7 +467,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, StringToIntegralConverterTe
       tuple<std::string>("value1", "value2", "value3"), stringToIntegralParameterName));
   RCP<StringToIntegralParameterEntryValidator< T > > stiValidator = rcp(
     new StringToIntegralParameterEntryValidator< T >(
-      tuple<std::string>("value3", "value4", "value5"), 
+      tuple<std::string>("value3", "value4", "value5"),
       tuple<std::string>("the third value", "the fourth value", "the fifth value"),
       tuple< T >(3,4,5),
       stringToIntegralParameterName));
@@ -477,12 +479,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, StringToIntegralConverterTe
   RCP<ParameterList> readInPL = writeThenReadPL(myList);
 
 
-  RCP<const StringToIntegralParameterEntryValidator< T > > 
+  RCP<const StringToIntegralParameterEntryValidator< T > >
   readInDefaultStiValidator =
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator< T > >(
       readInPL->getEntry(
         defaultStringToIntegralParameterName).validator(), true);
-  RCP<const StringToIntegralParameterEntryValidator< T > > 
+  RCP<const StringToIntegralParameterEntryValidator< T > >
   readInStiValidator =
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator< T > >(
       readInPL->getEntry(
@@ -520,18 +522,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, StringToIntegralConverterTe
 TEUCHOS_UNIT_TEST(Teuchos_Validator, existingPrototypeTest){
   ParameterList pl("ExsitingPrototypeList");
   RCP<StringValidator> stringVali = rcp(new StringValidator());
-  RCP<ArrayValidator<StringValidator, std::string> > arrayStringVali 
+  RCP<ArrayValidator<StringValidator, std::string> > arrayStringVali
     = rcp(new ArrayValidator<StringValidator, std::string>(stringVali));
   Array<std::string> strArray = tuple<std::string>("blah", "blah", "blah");
   pl.set("string param", "hi", "a string param", stringVali);
-  pl.set("string array param", strArray, 
+  pl.set("string array param", strArray,
     "a string array parameter", arrayStringVali);
   RCP<ParameterList> readInPL = writeThenReadPL(pl);
-  RCP<const ArrayValidator<StringValidator, std::string> > 
-    inArrayValidator = 
+  RCP<const ArrayValidator<StringValidator, std::string> >
+    inArrayValidator =
     rcp_dynamic_cast<const ArrayValidator<StringValidator, std::string> >(
       readInPL->getEntry("string array param").validator(), true);
-  TEST_ASSERT(readInPL->getEntry("string param").validator() 
+  TEST_ASSERT(readInPL->getEntry("string param").validator()
     == inArrayValidator->getPrototype());
 }
 
@@ -539,11 +541,11 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, existingPrototypeTest){
 #define FULL_NUMBER_TYPE_TEST( T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, EnhancedNumberValidatorConverter, T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, NumberArrayValidatorConverterTest, T ) \
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, StringToIntegralConverterTest, T ) 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, StringToIntegralConverterTest, T )
 
 #define NONINTEGRAL_NUMBER_TYPE_TEST( T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, EnhancedNumberValidatorConverter, T ) \
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, NumberArrayValidatorConverterTest, T ) 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Validator, NumberArrayValidatorConverterTest, T )
 
 typedef unsigned int uint;
 typedef unsigned short ushort;

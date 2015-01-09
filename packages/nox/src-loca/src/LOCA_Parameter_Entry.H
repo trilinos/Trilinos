@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #define LOCA_PARAMETER_ENTRY_H
 
 namespace LOCA {
-  
+
   namespace Parameter {
 
     //! Abstract interface for all entries in LOCA::Parameter::Library
@@ -63,7 +63,7 @@ namespace LOCA {
      */
     class AbstractEntry {
     public:
-  
+
       //! Default contructor
       AbstractEntry() {}
 
@@ -80,7 +80,7 @@ namespace LOCA {
     template <class ValueType>
     class Entry : public AbstractEntry {
     public:
-  
+
       //! Default constructor
       Entry() {}
 
@@ -107,25 +107,25 @@ namespace LOCA {
      * to actually set/retrieve parameter values.  The nice thing about using
      * a function object is it allows one to set parameters that don't actually
      * exist in the code, for example, setting a dimensionless group value
-     * by modifiying a number of physical parameters.  By supplying an 
+     * by modifiying a number of physical parameters.  By supplying an
      * appropriate
      * function object, this class should suffice for setting/retrieving
-     * parameter values in nearly all cases.  
+     * parameter values in nearly all cases.
      *
      * The constructor takes a pointer to the supplied function object.  It is
      * assumed that this class then owns that pointer, and in particular, calls
-     * delete in the destructor if the entry is successfully added to the 
+     * delete in the destructor if the entry is successfully added to the
      * library.  It does not delete the function object otherwise.
      */
     template <class FunctorType, class ValueType>
-    class StandardEntry : 
+    class StandardEntry :
       public Entry<ValueType> {
 
     public:
-  
+
       //! Constructor
       StandardEntry(FunctorType* fctr) : deleteFctr(false), func(fctr) {}
-  
+
       //! Destructor
       virtual ~StandardEntry() { if (deleteFctr) delete func; }
 
@@ -160,32 +160,32 @@ namespace LOCA {
     };
 
     /*!
-     * \brief Default function object for setting a single parameter in a 
+     * \brief Default function object for setting a single parameter in a
      * single object using a data member pointer
      */
     /*!
      * The constructor takes a reference to an object \em object of type\
-     * \em ObjectType and a pointer \em object_val_ptr to a data member of 
+     * \em ObjectType and a pointer \em object_val_ptr to a data member of
      * class of \em ObjectType of type \em ValueType.  The parameter is set to
      * \em value via
      * \code
      *    object.*object_val_ptr = value
      * \endcode
      */
-    template <class ObjectType, class ValueType> 
+    template <class ObjectType, class ValueType>
     class DefaultFunctor {
     public:
 
       //! Constructor
       /*!
        * \em object is a reference to the object to set the parameter in, and
-       * \em object_val_ptr is a pointer to a data member of type 
+       * \em object_val_ptr is a pointer to a data member of type
        * \em ValueType of that class.
        */
-      DefaultFunctor(ObjectType& object, 
-		     ValueType ObjectType::* object_val_ptr) :
-	obj(object), obj_val_ptr(object_val_ptr) {}
-  
+      DefaultFunctor(ObjectType& object,
+             ValueType ObjectType::* object_val_ptr) :
+    obj(object), obj_val_ptr(object_val_ptr) {}
+
       //! Destructor
       virtual ~DefaultFunctor() {}
 

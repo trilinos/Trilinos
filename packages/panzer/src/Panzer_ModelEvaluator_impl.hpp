@@ -58,9 +58,13 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_DefaultSpmdVector.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -81,7 +85,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                double t_init)
   : t_init_(t_init)
   , fmb_(fmb)
-  , p_names_(p_names)
+  , require_in_args_refresh_(true)
+  , require_out_args_refresh_(true)
   , responseLibrary_(rLibrary)
   , global_data_(global_data)
   , build_transient_support_(build_transient_support)
@@ -107,33 +112,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   //
   // Setup parameters
   //
-  // this->initializeParameterVector(p_names_,global_data->pl);
-
-  //
-  // Setup responses
-  //
-
-  //
-  // Create the structure for the problem
-  //
-
-  MEB::InArgsSetup<Scalar> inArgs;
-  inArgs.setModelEvalDescription(this->description());
-  inArgs.setSupports(MEB::IN_ARG_x);
-  if(build_transient_support_) {
-    inArgs.setSupports(MEB::IN_ARG_x_dot,true);
-    inArgs.setSupports(MEB::IN_ARG_t,true);
-    inArgs.setSupports(MEB::IN_ARG_alpha,true);
-    inArgs.setSupports(MEB::IN_ARG_beta,true);
-  }
-  prototypeInArgs_ = inArgs;
-  
-  MEB::OutArgsSetup<Scalar> outArgs;
-  outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
-  outArgs.setSupports(MEB::OUT_ARG_f);
-  outArgs.setSupports(MEB::OUT_ARG_W_op);
-  prototypeOutArgs_ = outArgs;
+  for(std::size_t i=0;i<p_names.size();i++)
+     addParameter(*(p_names[i]));
 
   //
   // Build x, f spaces
@@ -145,31 +125,9 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
 
-  //
-  // Setup nominal values
-  //
-
-  MEB::InArgsSetup<Scalar> nomInArgs;
-  nomInArgs.setModelEvalDescription(this->description());
-  nomInArgs.setSupports(MEB::IN_ARG_x);
-  Teuchos::RCP<Thyra::VectorBase<double> > x_nom = Thyra::createMember(x_space_);
-  Thyra::assign(x_nom.ptr(),0.0);
-  nomInArgs.set_x(x_nom);
-  if(build_transient_support_) {
-    nomInArgs.setSupports(MEB::IN_ARG_x_dot,true);
-    nomInArgs.setSupports(MEB::IN_ARG_t,true);
-    nomInArgs.setSupports(MEB::IN_ARG_alpha,true);
-    nomInArgs.setSupports(MEB::IN_ARG_beta,true);
-
-    Teuchos::RCP<Thyra::VectorBase<double> > x_dot_nom = Thyra::createMember(x_space_);
-    Thyra::assign(x_dot_nom.ptr(),0.0);
-    nomInArgs.set_x_dot(x_dot_nom);
-    nomInArgs.set_t(t_init_);
-    nomInArgs.set_alpha(0.0); // these have no meaning initially!
-    nomInArgs.set_beta(0.0);
-  }
-  nominalValues_ = nomInArgs;
-  
+  // now that the vector spaces are setup we can allocate the nominal values
+  // (i.e. initial conditions)
+  initializeNominalValues();
 }
 
 template<typename Scalar>
@@ -197,6 +155,26 @@ panzer::ModelEvaluator<Scalar>::get_f_space() const
 }
 
 template<typename Scalar>
+Teuchos::RCP<const Teuchos::Array<std::string> > 
+panzer::ModelEvaluator<Scalar>::get_p_names(int i) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!(i>=0 && i<Teuchos::as<int>(parameters_.names.size())),std::runtime_error,
+                             "panzer::ModelEvaluator::get_p_names: Requested parameter index out of range.");
+
+  return parameters_.names[i];
+}
+
+template<typename Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
+panzer::ModelEvaluator<Scalar>::get_p_space(int i) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!(i>=0 && i<Teuchos::as<int>(parameters_.spaces.size())),std::runtime_error,
+                             "panzer::ModelEvaluator::get_p_space: Requested parameter index out of range.");
+
+  return parameters_.spaces[i];
+}
+
+template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 panzer::ModelEvaluator<Scalar>::get_g_space(int i) const
 {
@@ -210,14 +188,75 @@ template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 panzer::ModelEvaluator<Scalar>::createInArgs() const
 {
-  return prototypeInArgs_;
+  return getNominalValues();
 }
 
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 panzer::ModelEvaluator<Scalar>::getNominalValues() const
 {
+  if(require_in_args_refresh_) {
+    typedef Thyra::ModelEvaluatorBase MEB;
+
+    //
+    // Refresh nominal values, this is primarily adding
+    // new parameters.
+    //
+  
+    MEB::InArgsSetup<Scalar> nomInArgs;
+    nomInArgs = nominalValues_;
+    nomInArgs.setSupports(nominalValues_);
+
+    // setup parameter support
+    nomInArgs.set_Np(parameters_.names.size());
+    for(std::size_t p=0;p<parameters_.names.size();p++) 
+      nomInArgs.set_p(p,parameters_.initial_values[p]);
+
+    nominalValues_ = nomInArgs;
+  }
+
+  // refresh no longer required
+  require_in_args_refresh_ = false;
+
   return nominalValues_;
+}
+
+template<typename Scalar>
+void
+panzer::ModelEvaluator<Scalar>::initializeNominalValues() 
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  //
+  // Setup nominal values
+  //
+  
+  MEB::InArgsSetup<Scalar> nomInArgs;
+  nomInArgs.setModelEvalDescription(this->description());
+  nomInArgs.setSupports(MEB::IN_ARG_x);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_nom = Thyra::createMember(x_space_);
+  Thyra::assign(x_nom.ptr(),0.0);
+  nomInArgs.set_x(x_nom);
+  if(build_transient_support_) {
+    nomInArgs.setSupports(MEB::IN_ARG_x_dot,true);
+    nomInArgs.setSupports(MEB::IN_ARG_t,true);
+    nomInArgs.setSupports(MEB::IN_ARG_alpha,true);
+    nomInArgs.setSupports(MEB::IN_ARG_beta,true);
+
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_nom = Thyra::createMember(x_space_);
+    Thyra::assign(x_dot_nom.ptr(),0.0);
+    nomInArgs.set_x_dot(x_dot_nom);
+    nomInArgs.set_t(t_init_);
+    nomInArgs.set_alpha(0.0); // these have no meaning initially!
+    nomInArgs.set_beta(0.0);
+  }
+
+  // setup parameter support
+  nomInArgs.set_Np(parameters_.names.size());
+  for(std::size_t p=0;p<parameters_.names.size();p++) 
+    nomInArgs.set_p(p,parameters_.initial_values[p]);
+
+  nominalValues_ = nomInArgs;
 }
 
 // Private functions overridden from ModelEvaulatorDefaultBase
@@ -227,6 +266,42 @@ template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 {
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  if(require_out_args_refresh_) {
+    MEB::OutArgsSetup<Scalar> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.set_Np_Ng(parameters_.names.size(), g_space_.size());
+    outArgs.setSupports(MEB::OUT_ARG_f);
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+  
+    // add in dg/dx (if appropriate)
+    for(std::size_t i=0;i<g_names_.size();i++) {
+      typedef panzer::Traits::Jacobian RespEvalT;
+  
+      // check dg/dx and add it in if appropriate
+      Teuchos::RCP<panzer::ResponseBase> respJacBase = responseLibrary_->getResponse<RespEvalT>(g_names_[i]);
+      if(respJacBase!=Teuchos::null) {
+        // cast is guranteed to succeed because of check in addResponse
+        Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp 
+           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+   
+        // class must supppot a derivative 
+        if(resp->supportsDerivative())
+          outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+      }
+    }
+
+    // setup parameter support
+    for(std::size_t p=0;p<parameters_.names.size();p++) 
+      outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_MV_BY_COL));
+  
+    prototypeOutArgs_ = outArgs;
+  }
+
+  // we don't need to build it anymore
+  require_out_args_refresh_ = false;
+
   return prototypeOutArgs_;
 }
 
@@ -250,12 +325,101 @@ get_W_factory() const
 }
 
 template <typename Scalar>
+int panzer::ModelEvaluator<Scalar>::
+addParameter(const std::string & name)
+{
+  Teuchos::Array<std::string> tmp_names;
+  tmp_names.push_back(name);
+
+  return addParameter(tmp_names);
+}
+
+template <typename Scalar>
+int panzer::ModelEvaluator<Scalar>::
+addParameter(const Teuchos::Array<std::string> & names)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ptrFromRef;
+
+  int parameter_index = parameters_.names.size();
+
+  {
+    // push back all the parameter information
+    Teuchos::RCP<Teuchos::Array<std::string> > tmp_names = 
+      Teuchos::rcp(new Teuchos::Array<std::string>(names));
+
+    parameters_.names.push_back(tmp_names);
+  }
+  parameters_.are_distributed.push_back(false);
+
+  // associate vector with the ParamLib
+  std::size_t p = parameters_.scalar_values.size();
+  parameters_.scalar_values.push_back(panzer::ParamVec());
+  parameters_.scalar_index.push_back(p);
+  global_data_->pl->fillVector<panzer::Traits::Residual>(names, parameters_.scalar_values[p]);
+
+  panzer::ParamVec & scalar_values = parameters_.scalar_values[p];
+
+  // build initial condition vector
+  RCP<const Thyra::VectorSpaceBase<Scalar> > vs = 
+    Thyra::locallyReplicatedDefaultSpmdVectorSpace<Scalar>(rcp(new Teuchos::MpiComm<long int>(lof_->getComm().getRawMpiComm())),
+                                                                                              scalar_values.size());
+  RCP<Thyra::SpmdVectorBase<Scalar> > vec = 
+    rcp_dynamic_cast<Thyra::SpmdVectorBase<Scalar> >(Thyra::createMember(vs));
+  
+
+  // fill vector with parameter values
+  Teuchos::ArrayRCP<Scalar> data;
+  vec->getNonconstLocalData(ptrFromRef(data));
+  for (unsigned int i=0; i < scalar_values.size(); i++)
+    data[i] = scalar_values[i].baseValue;
+  
+  parameters_.spaces.push_back(vs);
+  parameters_.initial_values.push_back(vec);
+
+  require_in_args_refresh_ = true;
+  require_out_args_refresh_ = true;
+
+  return parameter_index;
+}
+
+template <typename Scalar>
+int panzer::ModelEvaluator<Scalar>::
+addDistributedParameter(const std::string & key,
+                        const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
+                        const Teuchos::RCP<GlobalEvaluationData> & ged,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial)
+{
+  int parameter_index = parameters_.names.size();
+
+  distrParamGlobalEvaluationData_.addDataObject(key,ged);
+
+  // push back all the parameter information
+  Teuchos::RCP<Teuchos::Array<std::string> > tmp_names = 
+    Teuchos::rcp(new Teuchos::Array<std::string>);
+  tmp_names->push_back(key);
+
+  parameters_.names.push_back(tmp_names);
+  parameters_.spaces.push_back(vs);
+  parameters_.initial_values.push_back(initial);
+  parameters_.are_distributed.push_back(true);
+
+  require_in_args_refresh_ = true;
+  require_out_args_refresh_ = true;
+
+  return parameter_index;
+}
+
+template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
 addNonParameterGlobalEvaluationData(const std::string & key,
                                     const Teuchos::RCP<GlobalEvaluationData> & ged)
 {
    nonParamGlobalEvaluationData_.addDataObject(key,ged);
 }
+
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
@@ -282,6 +446,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   ae_inargs.beta = 1.0;
   ae_inargs.evaluate_transient_terms = false;
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // this is the tempory target
   lof_->initializeContainer(panzer::LinearObjContainer::F,*ae_inargs.container_); 
@@ -315,10 +480,10 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   RCP<panzer::LinearObjContainer> result = lof_->buildLinearObjContainer(); // we use a new global container
 
   // stuff the evaluate boundary conditions into the f spot of the counter ... the x is already filled
-  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(counter)->set_f_th(thGlobalContainer->get_f_th());
+  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(counter)->set_f_th(thGlobalContainer->get_f_th());
   
   // stuff the vector that needs applied dirichlet conditions in the the f spot of the result LOC
-  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(result)->set_f_th(f);
+  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(result)->set_f_th(f);
   
   // use the linear object factory to apply the result
   lof_->applyDirichletBCs(*counter,*result);
@@ -362,9 +527,11 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
   bool requiredResponses = required_basic_g(outArgs);
+  bool requiredSensitivities = required_basic_dfdp(outArgs);
 
   // see if the user wants us to do anything
-  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && !requiredResponses) {
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && 
+     !requiredResponses && !requiredSensitivities) {
      return;
   }
 
@@ -383,22 +550,26 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   //
   // Get the input arguments
   //
-  RCP<const Thyra::VectorBase<Scalar> > x_dot; // possibly empty, but otherwise uses x_dot
   const RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+  RCP<const Thyra::VectorBase<Scalar> > x_dot; // possibly empty, but otherwise uses x_dot
+
   panzer::AssemblyEngineInArgs ae_inargs;
   ae_inargs.container_ = lof_->buildLinearObjContainer(); // we use a new global container
   ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
   ae_inargs.alpha = 0.0;
   ae_inargs.beta = 1.0;
   ae_inargs.evaluate_transient_terms = false;
-  if (is_transient) {
+  // if (is_transient) {
+  if (build_transient_support_) {
     x_dot = inArgs.get_x_dot();
     ae_inargs.alpha = inArgs.get_alpha();
     ae_inargs.beta = inArgs.get_beta();
     ae_inargs.time = inArgs.get_t();
     ae_inargs.evaluate_transient_terms = true;
   }
+
   ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // handle application of the one time dirichlet beta in the
   // assembly engine. Note that this has to be set explicitly
@@ -411,18 +582,45 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     oneTimeDirichletBeta_on_ = false;
   }
+
+  // Set input parameters
+  for (int i=0; i<inArgs.Np(); i++) {
+    RCP<const Thyra::VectorBase<Scalar> > p = inArgs.get_p(i);
+    if ( p!=Teuchos::null && !parameters_.are_distributed[i]) {
+      Teuchos::ArrayRCP<const Scalar> p_data;
+      rcp_dynamic_cast<const Thyra::SpmdVectorBase<Scalar> >(p,true)->getLocalData(Teuchos::ptrFromRef(p_data));
+
+      for (unsigned int j=0; j < parameters_.scalar_values[i].size(); j++) {
+	parameters_.scalar_values[i][j].baseValue = p_data[j];
+        parameters_.scalar_values[i][j].family->setRealValueForAllTypes(parameters_.scalar_values[i][j].baseValue);
+      }
+    }
+    else if ( p!=Teuchos::null && parameters_.are_distributed[i]) {
+      std::string key = (*parameters_.names[i])[0];
+      RCP<GlobalEvaluationData> ged = distrParamGlobalEvaluationData_.getDataObject(key);
+
+      TEUCHOS_ASSERT(ged!=Teuchos::null);
+
+      // cast to a LOCPair throwing an exception if the cast doesn't work.
+      RCP<LOCPair_GlobalEvaluationData> loc_pair_ged = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged,true);
+
+      // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
+      RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
+      th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
+    }
+  }
   
   // here we are building a container, this operation is fast, simply allocating a struct
-  const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
-    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_);
+  const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.container_);
 
   TEUCHOS_ASSERT(!Teuchos::is_null(thGlobalContainer));
 
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient than
   // zeroing out all objects in the container here.
-  const RCP<panzer::ThyraObjContainer<double> > thGhostedContainer = 
-    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.ghostedContainer_);
+  const RCP<panzer::ThyraObjContainer<Scalar> > thGhostedContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
   
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.
@@ -475,9 +673,22 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
 
+  // HACK: set A to null before calling responses to avoid touching the
+  // the Jacobian after it has been properly assembled.  Should be fixed
+  // by using a modified version of ae_inargs instead.
+  thGlobalContainer->set_A_th(Teuchos::null);
+
   // evaluate responses...uses the stored assembly arguments and containers
-  if(requiredResponses)
+  if(requiredResponses) {
      evalModelImpl_basic_g(ae_inargs,inArgs,outArgs);
+
+     // evaluate response derivatives 
+     if(required_basic_dgdx(outArgs))
+       evalModelImpl_basic_dgdx(ae_inargs,inArgs,outArgs);
+  }
+
+  if(required_basic_dfdp(outArgs))
+     evalModelImpl_basic_dfdp(ae_inargs,inArgs,outArgs);
 
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
@@ -495,7 +706,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
-evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
+evalModelImpl_basic_g(panzer::AssemblyEngineInArgs ae_inargs,
                       const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -503,7 +714,7 @@ evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
    // TEUCHOS_ASSERT(required_basic_g(outArgs));
 
    for(std::size_t i=0;i<g_names_.size();i++) {
-      Teuchos::RCP<Thyra::VectorBase<double> > vec = outArgs.get_g(i);
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = outArgs.get_g(i);
       if(vec!=Teuchos::null) {
         std::string responseName = g_names_[i];
         Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
@@ -518,6 +729,127 @@ evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
 }
 
 template <typename Scalar>
+void 
+panzer::ModelEvaluator<Scalar>::
+evalModelImpl_basic_dgdx(AssemblyEngineInArgs ae_inargs,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                         const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   // optional sanity check
+   TEUCHOS_ASSERT(required_basic_dgdx(outArgs));
+
+   for(std::size_t i=0;i<g_names_.size();i++) {
+      // get "Vector" out of derivative, if its something else, throw an exception
+      MEB::Derivative<Scalar> deriv = outArgs.get_DgDx(i);
+      if(deriv.isEmpty())
+        continue;
+
+      Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > vec = deriv.getMultiVector();
+
+      if(vec!=Teuchos::null) {
+
+        std::string responseName = g_names_[i];
+        Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp 
+            = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
+        resp->setDerivative(vec);
+      }
+   }
+
+   // evaluator responses
+   responseLibrary_->addResponsesToInArgs<panzer::Traits::Jacobian>(ae_inargs);
+   responseLibrary_->evaluate<panzer::Traits::Jacobian>(ae_inargs);
+}
+
+template <typename Scalar>
+void 
+panzer::ModelEvaluator<Scalar>::
+evalModelImpl_basic_dfdp(AssemblyEngineInArgs ae_inargs,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                         const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   TEUCHOS_ASSERT(required_basic_dfdp(outArgs));
+
+   RCP<const Thyra::VectorSpaceBase<Scalar> > glblVS = rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof_,true)->getThyraRangeSpace();;
+
+   std::vector<std::string> activeParameters;
+
+   // fill parameter vector containers
+   int totalParameterCount = 0;
+   for(std::size_t i=0; i < parameters_.scalar_values.size(); i++) {
+     // have derivatives been requested?
+     MEB::Derivative<Scalar> deriv = outArgs.get_DfDp(i);
+     if(deriv.isEmpty())
+       continue;
+
+     // grab multivector, make sure its the right dimension
+     Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > mVec = deriv.getMultiVector();
+     TEUCHOS_ASSERT(mVec->domain()->dim()==Teuchos::as<int>(parameters_.scalar_values[i].size()));
+
+     for (std::size_t j=0; j < parameters_.scalar_values[i].size(); j++) {
+
+       // build containers for each vector
+       RCP<LOCPair_GlobalEvaluationData> loc_pair = Teuchos::rcp(new LOCPair_GlobalEvaluationData(lof_,LinearObjContainer::F));
+       RCP<LinearObjContainer> globalContainer = loc_pair->getGlobalLOC();
+
+       // stuff target vector into global container
+       RCP<Thyra::VectorBase<Scalar> > vec = mVec->col(j);
+       RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer = 
+         Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(globalContainer);
+       thGlobalContainer->set_f_th(vec);
+
+       // add container into in args object
+       std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_.names[i])[j];
+       ae_inargs.addGlobalEvaluationData(name,loc_pair->getGhostedLOC());
+       ae_inargs.addGlobalEvaluationData(name+"_pair",loc_pair);
+
+       activeParameters.push_back(name);
+       totalParameterCount++;
+     }
+   }
+
+   // this communicates to the scatter evaluators so that the appropriate parameters are scattered
+   RCP<GlobalEvaluationData> ged_activeParameters = Teuchos::rcp(new ParameterList_GlobalEvaluationData(activeParameters));
+   ae_inargs.addGlobalEvaluationData("PARAMETER_NAMES",ged_activeParameters);
+
+   int paramIndex = 0;
+   for (std::size_t i=0; i < parameters_.scalar_values.size(); i++) {
+     // don't modify the parameter if its not needed
+     MEB::Derivative<Scalar> deriv = outArgs.get_DfDp(i);
+     if(deriv.isEmpty()) {
+       // reinitialize values that should not have sensitivities computed (this is a precaution)
+       for (unsigned int j=0; j < parameters_.scalar_values[i].size(); j++) {
+         Traits::FadType p = Traits::FadType(totalParameterCount, parameters_.scalar_values[i][j].baseValue);
+         parameters_.scalar_values[i][j].family->template setValue<panzer::Traits::Tangent>(p);
+       }
+       continue;
+     }
+     else {
+       // loop over each parameter in the vector, initializing the AD type
+       for (unsigned int j=0; j < parameters_.scalar_values[i].size(); j++) {
+         Traits::FadType p = Traits::FadType(totalParameterCount, parameters_.scalar_values[i][j].baseValue);
+         p.fastAccessDx(paramIndex) = 1.0;
+         parameters_.scalar_values[i][j].family->template setValue<panzer::Traits::Tangent>(p);
+         paramIndex++;
+       }
+     }
+   }
+
+   // make sure that the total parameter count and the total parameter index match up
+   TEUCHOS_ASSERT(paramIndex==totalParameterCount);
+
+   if(totalParameterCount>0) {
+     ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
+   }
+}
+
+template <typename Scalar>
 bool panzer::ModelEvaluator<Scalar>::
 required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -526,7 +858,47 @@ required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) cons
    for(int i=0;i<outArgs.Ng();i++) 
       activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
 
+   return activeGArgs | required_basic_dgdx(outArgs);
+}
+
+template <typename Scalar>
+bool panzer::ModelEvaluator<Scalar>::
+required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(MEB::OUT_ARG_DgDx,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeGArgs |= (!outArgs.get_DgDx(i).isEmpty());
+   }
+
    return activeGArgs;
+}
+
+template <typename Scalar>
+bool panzer::ModelEvaluator<Scalar>::
+required_basic_dfdp(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   // determine if any of the outArgs are not null!
+   bool activeFPArgs = false;
+   for(int i=0;i<outArgs.Np();i++) {
+     // no derivatives are supported
+     if(outArgs.supports(MEB::OUT_ARG_DfDp,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeFPArgs |= (!outArgs.get_DfDp(i).isEmpty());
+   }
+
+   return activeFPArgs;
 }
 
 template <typename Scalar>

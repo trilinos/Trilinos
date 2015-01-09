@@ -47,8 +47,6 @@
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
-#include <Teuchos_DefaultMpiComm.hpp>
-#include <Teuchos_CommHelpers.hpp>
 
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
@@ -68,16 +66,14 @@
 
 namespace MueLu {
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double,
+            class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class BrickAggregationFactory : public SingleLevelFactoryBase {
 #undef MUELU_BRICKAGGREGATIONFACTORY_SHORT
-#include "MueLu_UseShortNamesScalar.hpp"
+#include "MueLu_UseShortNames.hpp"
   private:
-    // As we don't include ShortNamesScalar, some typedefs are not available
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                   Map;
-    typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node>                Import;
-    typedef Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>         ImportFactory;
-    typedef MueLu::Aggregates<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Aggregates;
     typedef Teuchos::ScalarTraits<Scalar>                                  STS;
 
     // Comparator for doubles
@@ -101,17 +97,14 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    BrickAggregationFactory() { };
+    BrickAggregationFactory() : nDim_(-1), nx_(-1), ny_(-1), nz_(-1), bx_(-1), by_(-1), bz_(-1) { };
 
     //! Destructor.
     virtual ~BrickAggregationFactory() { }
 
-    RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
     //@}
-
-    //! @name Set/get methods.
-    //@{
 
     // Options shared by all aggregation algorithms
 
@@ -152,8 +145,7 @@ namespace MueLu {
      std::map<GlobalOrdinal,GlobalOrdinal> revMap_;
   }; // class BrickAggregationFactory
 
-  }
+}
 
 #define MUELU_BRICKAGGREGATIONFACTORY_SHORT
-
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */

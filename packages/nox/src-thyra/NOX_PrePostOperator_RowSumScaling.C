@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@
 
 NOX::RowSumScaling::
 RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
-	      ENOX_WhenToUpdateScaling s) :
+          ENOX_WhenToUpdateScaling s) :
   inv_row_sum_vec_(inv_row_sum_vec),
   when_to_update(s)
 {
@@ -67,19 +67,19 @@ RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec
 
 void NOX::RowSumScaling::
 runPreIterate(const NOX::Solver::Generic& solver)
-{  
+{
   if (when_to_update == UpdateInvRowSumVectorAtBeginningOfIteration)
     computeScaling(solver);
 }
 
 void NOX::RowSumScaling::
 runPreSolve(const NOX::Solver::Generic& solver)
-{  
+{
   if (when_to_update == UpdateInvRowSumVectorAtBeginningOfSolve)
     computeScaling(solver);
 }
 
-Teuchos::RCP<const ::Thyra::VectorBase<double> > 
+Teuchos::RCP<const ::Thyra::VectorBase<double> >
 NOX::RowSumScaling::getInvRowSumScalingVector() const
 {
   return inv_row_sum_vec_;
@@ -88,26 +88,26 @@ NOX::RowSumScaling::getInvRowSumScalingVector() const
 
 void NOX::RowSumScaling::
 computeScaling(const NOX::Solver::Generic& solver)
-{  
+{
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
   RCP<const NOX::Abstract::Group> group = solver.getSolutionGroupPtr();
-  
-  RCP<const NOX::Thyra::Group> thyra_group = 
+
+  RCP<const NOX::Thyra::Group> thyra_group =
     rcp_dynamic_cast<const NOX::Thyra::Group>(group);
-  
+
   if (!thyra_group->isJacobian()) {
-    RCP<NOX::Thyra::Group> tmp_nox_thyra_group = 
+    RCP<NOX::Thyra::Group> tmp_nox_thyra_group =
       Teuchos::rcp_const_cast<NOX::Thyra::Group>(thyra_group);
     TEUCHOS_ASSERT( !tmp_nox_thyra_group.is_null() );
     tmp_nox_thyra_group->computeJacobian();
   }
-  
-  RCP< const ::Thyra::LinearOpBase< double > > jac = 
-    thyra_group->getJacobianOperator(); 	
 
-  RCP< const ::Thyra::RowStatLinearOpBase< double > > row_stat_jac = 
+  RCP< const ::Thyra::LinearOpBase< double > > jac =
+    thyra_group->getJacobianOperator();
+
+  RCP< const ::Thyra::RowStatLinearOpBase< double > > row_stat_jac =
     Teuchos::rcp_dynamic_cast< const ::Thyra::RowStatLinearOpBase< double > >(jac);
 
   TEUCHOS_ASSERT( !row_stat_jac.is_null() );
@@ -116,6 +116,6 @@ computeScaling(const NOX::Solver::Generic& solver)
     inv_row_sum_vec_ = ::Thyra::createMember(jac->range());
 
   row_stat_jac->getRowStat( ::Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
-			    inv_row_sum_vec_.ptr());
+                inv_row_sum_vec_.ptr());
 
 }

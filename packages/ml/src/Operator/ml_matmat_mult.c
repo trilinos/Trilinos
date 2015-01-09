@@ -57,7 +57,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   double *Bvalues;
   int save_ints[6];
   struct ML_vbrdata *A_VBR, *B_VBR;
-  int NrowsPerBlock, NcolsPerBlock, Nghost = 0, InnerDim,iii,jjj,kkk;
+  int NrowsPerBlock, NcolsPerBlock = 0, Nghost = 0, InnerDim,iii,jjj,kkk;
   int LargestRowsPerBlock = 1, NnzPerBlock, RowOffset, RowOffsetBlocks, next_value;
   double sum, *Cvalues;
   double *tmp_val_ptr;

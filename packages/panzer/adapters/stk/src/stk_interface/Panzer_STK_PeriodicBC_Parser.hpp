@@ -52,7 +52,7 @@
 #include <vector>
 #include <string>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** Read a parameter list to describe the periodic
   * boundary conditions. This object then provides

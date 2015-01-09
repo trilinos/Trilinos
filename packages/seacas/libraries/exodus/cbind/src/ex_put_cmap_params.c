@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -59,13 +59,14 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdint.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for EX_FATAL, ex_leavedef, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <stdio.h>                      // for sprintf
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_put_cmap_params(int  exoid,
                        void_int *node_cmap_ids,

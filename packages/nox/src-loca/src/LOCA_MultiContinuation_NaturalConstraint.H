@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,11 +62,11 @@ namespace LOCA {
   }
 }
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
-    /*! 
+    /*!
      * \brief Implementation of LOCA::MultiContinuation::ConstraintInterface
      * for natural continuation.
      */
@@ -77,10 +77,10 @@ namespace LOCA {
      *     g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=
      *         p-p_0-v_p \Delta s
      * \f]
-     * where \f$v_p\f$ is the parameter component of the predictor direction 
+     * where \f$v_p\f$ is the parameter component of the predictor direction
      * \f$v\f$.
      */
-    class NaturalConstraint : 
+    class NaturalConstraint :
       public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
 
     public:
@@ -91,8 +91,8 @@ namespace LOCA {
      const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp);
 
       //! Copy constructor
-      NaturalConstraint(const NaturalConstraint& source, 
-			NOX::CopyType type = NOX::DeepCopy);
+      NaturalConstraint(const NaturalConstraint& source,
+            NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor
       ~NaturalConstraint();
@@ -100,9 +100,9 @@ namespace LOCA {
       //! Set pointer to natural group
       virtual void setNaturalGroup(const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp);
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::ConstraintInterface
+       * virtual methods
        */
       //@{
 
@@ -110,7 +110,7 @@ namespace LOCA {
       virtual void copy(const ConstraintInterface& source);
 
       //! Cloning function
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -125,8 +125,8 @@ namespace LOCA {
 
       //! Sets parameters indexed by paramIDs
       virtual void setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //! Compute continuation constraint equations
       virtual NOX::Abstract::Group::ReturnType
@@ -143,9 +143,9 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const std::vector<int>& paramIDs, 
-		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-		bool isValidG);
+      computeDP(const std::vector<int>& paramIDs,
+        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+        bool isValidG);
 
       //! Return \c true if constraint residuals are valid
       virtual bool isConstraints() const;
@@ -165,8 +165,8 @@ namespace LOCA {
       virtual const NOX::Abstract::MultiVector*
       getDX() const;
 
-      /*! 
-       * \brief Return \c true if solution component of constraint 
+      /*!
+       * \brief Return \c true if solution component of constraint
        * derivatives is zero
        */
       virtual bool isDXZero() const;
@@ -185,7 +185,7 @@ namespace LOCA {
 
       //! Pointer to arc-length group
       Teuchos::RCP<
-	LOCA::MultiContinuation::NaturalGroup> naturalGroup;
+    LOCA::MultiContinuation::NaturalGroup> naturalGroup;
 
       //! Constraint values
       NOX::Abstract::MultiVector::DenseMatrix constraints;

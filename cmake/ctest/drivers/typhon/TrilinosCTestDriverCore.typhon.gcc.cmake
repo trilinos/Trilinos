@@ -78,6 +78,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DBUILD_SHARED_LIBS:BOOL=ON"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
@@ -99,13 +100,21 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
+    #SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    #     ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+    #     "-DTPL_ENABLE_MPI:BOOL=ON"
+    #     "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
+    #   )
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
          "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
        )
 
-    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+    #TODO -- JJH 25Mar2014: need to create new suppression file for OpenMPI
+    #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
   ENDIF()
 

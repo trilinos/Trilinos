@@ -30,7 +30,7 @@
 %                        streamfunction at nodes [optional]
 % 
 %
-%  AUTHOR:  Matthias Heinkenschloss
+%  AUTHOR:  Denis Ridzal and Matthias Heinkenschloss
 %           Department of Computational and Applied Mathematics
 %           Rice University
 %           Novemer 15, 2005

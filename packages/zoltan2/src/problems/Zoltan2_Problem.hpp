@@ -54,6 +54,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
+#include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_TimerManager.hpp>
 
 using std::cout;
@@ -72,16 +73,51 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
-  Problem(Adapter *, ParameterList *params, MPI_Comm comm);
+  Problem(Adapter *input, ParameterList *params, MPI_Comm comm):
+        inputAdapter_(input),
+        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
+                                           Teuchos::opaqueWrapper(comm);
+    comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+    setupProblemEnvironment(params);
+  }
 #endif
+
 
   /*! \brief Constructor where communicator is Teuchos default.
    */
-  Problem(Adapter *, ParameterList *params);
+  Problem(Adapter *input, ParameterList *params):
+        inputAdapter_(input), 
+        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(), env_(), envConst_(), timer_()
+  {
+    comm_ = DefaultComm<int>::getComm();
+    setupProblemEnvironment(params);
+  }
+
+
+  /*! \brief Constructor where Teuchos communicator is specified
+   */
+  Problem(Adapter *input, ParameterList *params, RCP<const Comm<int> > &comm):
+        inputAdapter_(input),
+        baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
+        graphModel_(), identifierModel_(), baseModel_(), algorithm_(),
+        params_(), comm_(comm), env_(), envConst_(), timer_()
+  {
+    setupProblemEnvironment(params);
+  }
 
   /*! \brief Destructor
    */
   virtual ~Problem() {};
+
+  /*! \brief Return the communicator used by the problem
+   */
+  RCP<const Comm<int> > getComm() { return comm_; }
 
   /*! \brief Reset the list of parameters
    */
@@ -90,6 +126,9 @@ public:
   /*! \brief Method that creates a solution.
    */
   virtual void solve(bool updateInputData) = 0;
+
+  /*! \brief Return the communicator passed to the problem
+   */
 
   /*! \brief If timer data was collected, print out global data.
    *
@@ -138,6 +177,9 @@ protected:
 
   RCP<const Model<base_adapter_t> > baseModel_;  
 
+  // Every problem needs an algorithm, right?
+  RCP<Algorithm<Adapter> > algorithm_;
+
   RCP<ParameterList> params_;
   RCP<const Comm<int> > comm_;
 
@@ -161,39 +203,9 @@ private:
 
 };
 
-#ifdef HAVE_ZOLTAN2_MPI
-
-template <typename Adapter>
-  Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
-    MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
-      graphModel_(), identifierModel_(), baseModel_(),
-      params_(), comm_(), env_(), envConst_(), timer_()
-{
-  HELLO;
-  RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
-    Teuchos::opaqueWrapper(comm);
-  comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
-  setupProblemEnvironment(params);
-}
-#endif
-
-template <typename Adapter>
-  Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
-    inputAdapter_(input), 
-    baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
-    graphModel_(), identifierModel_(), baseModel_(),
-    params_(), comm_(), env_(), envConst_(), timer_()
-{
-  HELLO;
-  comm_ = DefaultComm<int>::getComm();
-  setupProblemEnvironment(params);
-}
-
 template <typename Adapter>
   void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  baseInputAdapter_ = dynamic_cast<base_adapter_t *>(inputAdapter_);
-
   try{
     env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   }
@@ -220,11 +232,11 @@ template <typename Adapter>
 
   TimerType tt = static_cast<TimerType>(choice);
 
-  string fname;
+  std::string fname;
   pe = pl.getEntryPtr("timer_output_file");
   if (pe){
     haveFile = true;
-    fname = pe->getValue<string>(&fname);
+    fname = pe->getValue<std::string>(&fname);
     std::ofstream *dbgFile = new std::ofstream;
     if (comm_->getRank()==0){
       // Using Teuchos::TimeMonitor, node 0 prints global timing info.
@@ -249,9 +261,9 @@ template <typename Adapter>
 
     if (haveStream || haveType){
       if (outputStream == COUT_STREAM)
-        timer_ = rcp(new TimerManager(comm_, &cout, tt));
+        timer_ = rcp(new TimerManager(comm_, &std::cout, tt));
       else if (outputStream == CERR_STREAM)
-        timer_ = rcp(new TimerManager(comm_, &cerr, tt));
+        timer_ = rcp(new TimerManager(comm_, &std::cerr, tt));
       else if (outputStream == NULL_STREAM){
         std::ofstream *of = NULL;
         timer_ = rcp(new TimerManager(comm_, of, tt));

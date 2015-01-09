@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -12,6 +11,10 @@ ENDIF()
 SET(Epetra_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 # This is the preferred macro to key on, but am keeping the old one for backward compatibility
 SET(EPETRA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
+
+SET(HAVE_BLAS ON)
+SET(HAVE_LAPACK ON)
+SET(HAVE_MPI ${Epetra_ENABLE_MPI})
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -211,7 +214,7 @@ IF(${PACKAGE_NAME}_ENABLE_Fortran)
     )	
 ENDIF()
 
-# Set addition headers and source based on package-specific 
+# Set addition headers and source based on package-specific
 # configuration options
 
 IF(TPL_ENABLE_MPI)

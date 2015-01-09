@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -52,7 +52,7 @@
 #include <limits.h>
 
 //==============================================================================
-Epetra_FastCrsMatrix::Epetra_FastCrsMatrix(const Epetra_CrsMatrix & Matrix, bool UseFloats) 
+Epetra_FastCrsMatrix::Epetra_FastCrsMatrix(const Epetra_CrsMatrix & Matrix, bool UseFloats)
   : CrsMatrix_(Matrix),
     Values_(0),
     NumMyRows_(Matrix.NumMyRows()),
@@ -87,7 +87,7 @@ int Epetra_FastCrsMatrix::UpdateValues(const Epetra_CrsMatrix & Matrix) {
 int Epetra_FastCrsMatrix::Allocate(bool UseFloats) {
 
   int i, j;
-  
+
   // First determine how to handle values.  Three possibilities:
   // 1) Values are contiguously stored in user matrix, UseFloats is false so we point to the values in
   //    the user matrix.
@@ -221,7 +221,7 @@ int Epetra_FastCrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_V
     // Do actual computation
 
     for (i=0; i < NumMyCols_; i++) yp[i] = 0.0; // Initialize y for transpose multiply
-        
+
     for (i=0; i < NumMyRows_; i++) {
       int      NumEntries = *NumEntriesPerRow++;
       int *    RowIndices = *Indices++;
@@ -328,9 +328,9 @@ int Epetra_FastCrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epe
 
 
 
-    for (k=0; k<NumVectors; k++) 
+    for (k=0; k<NumVectors; k++)
       for (i=0; i < NumMyCols_; i++) Yp[k][i] = 0.0; // Initialize y for transpose multiply
-    
+
     for (i=0; i < NumMyRows_; i++) {
       int      NumEntries = *NumEntriesPerRow++;
       int *    RowIndices = *Indices++;
@@ -358,7 +358,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
   if ((!Upper) && (!LowerTriangular())) EPETRA_CHK_ERR(-3);
   if ((!UnitDiagonal) && (NoDiagonal())) EPETRA_CHK_ERR(-4); // If matrix has no diagonal, we must use UnitDiagonal
   if ((!UnitDiagonal) && (NumMyDiagonals()<NumMyRows_)) EPETRA_CHK_ERR(-5); // Need each row to have a diagonal
-      
+
 
   int i, j, j0;
   int * NumEntriesPerRow = NumEntriesPerRow_;
@@ -372,7 +372,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
     Indices += NumMyRows_-1;
     Values += NumMyRows_-1;
   }
-    
+
   double *xp = (double*)x.Values();
   double *yp = (double*)y.Values();
 
@@ -416,12 +416,12 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
   else {
 
     if (xp!=yp) for (i=0; i < NumMyCols_; i++) yp[i] = xp[i]; // Initialize y for transpose solve
-    
+
     if (Upper) {
 
       j0 = 1;
       if (NoDiagonal()) j0--; // Include first term if no diagonal
-    
+
       for (i=0; i < NumMyRows_; i++) {
 	int      NumEntries = *NumEntriesPerRow++;
 	int *    RowIndices = *Indices++;
@@ -434,7 +434,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
 
       j0 = 1;
       if (NoDiagonal()) j0--; // Include first term if no diagonal
-    
+
       for (i=NumMyRows_-1; i >= 0; i--) {
 	int      NumEntries = *NumEntriesPerRow-- - j0;
 	int *    RowIndices = *Indices--;
@@ -487,10 +487,10 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
   int NumVectors = X.NumVectors();
 
   if (!Trans) {
-    
+
 
     if (Upper) {
-      
+
       j0 = 1;
       if (NoDiagonal()) j0--; // Include first term if no diagonal
       for (i=NumMyRows_-1; i >=0; i--) {
@@ -501,7 +501,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
 	for (k=0; k<NumVectors; k++) {
 	  double sum = 0.0;
 	  for (j=j0; j < NumEntries; j++) sum += RowValues[j] * Yp[k][RowIndices[j]];
-	  
+	
 	  if (UnitDiagonal) Yp[k][i] = Xp[k][i] - sum;
 	  else Yp[k][i] = (Xp[k][i] - sum)*diag;
 	}
@@ -518,7 +518,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
 	for (k=0; k<NumVectors; k++) {
 	  double sum = 0.0;
 	  for (j=0; j < NumEntries; j++) sum += RowValues[j] * Yp[k][RowIndices[j]];
-	  
+	
 	  if (UnitDiagonal) Yp[k][i] = Xp[k][i] - sum;
 	  else Yp[k][i] = (Xp[k][i] - sum)*diag;
 	}
@@ -529,14 +529,14 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
 
   else {
 
-    for (k=0; k<NumVectors; k++) 
+    for (k=0; k<NumVectors; k++)
       if (Yp[k]!=Xp[k]) for (i=0; i < NumMyRows_; i++) Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
-    
+
     if (Upper) {
-      
+
       j0 = 1;
       if (NoDiagonal()) j0--; // Include first term if no diagonal
-      
+
       for (i=0; i < NumMyRows_; i++) {
 	int      NumEntries = *NumEntriesPerRow++;
 	int *    RowIndices = *Indices++;
@@ -549,10 +549,10 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
       }
     }
     else {
-      
+
       j0 = 1;
       if (NoDiagonal()) j0--; // Include first term if no diagonal
-      
+
       for (i=NumMyRows_-1; i>=0; i--) {
 	int      NumEntries = *NumEntriesPerRow-- - j0;
 	int *    RowIndices = *Indices--;
@@ -564,7 +564,7 @@ int Epetra_FastCrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const
       }
     }
   }
-  
+
   UpdateFlops(2*NumVectors*NumGlobalNonzeros64());
   return(0);
 }

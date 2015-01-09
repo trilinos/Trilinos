@@ -50,8 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_View.hpp>
-#include <Kokkos_Serial.hpp>
+#include <Kokkos_Core.hpp>
 #include <ParallelComm.hpp>
 
 namespace Kokkos {
@@ -70,9 +69,9 @@ namespace Kokkos {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  typedef View< unsigned*[2], Serial >  host_recv_type ;
-  typedef View< unsigned*[2], Serial >  host_send_type ;
-  typedef View< unsigned* ,   Serial >  host_send_item_type ;
+  typedef View< unsigned*[2], HostSpace >  host_recv_type ;
+  typedef View< unsigned*[2], HostSpace >  host_send_type ;
+  typedef View< unsigned* ,   HostSpace >  host_send_item_type ;
 
   comm::Machine        machine ;
   host_recv_type       host_recv ;
@@ -347,11 +346,11 @@ public:
 
     // Total send subview of the device buffer
     dev_send_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
+      Kokkos::subview( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
 
     // Total receive subview of the device buffer
     dev_recv_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
+      Kokkos::subview( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
 
     // Total receive message buffer on the host:
     host_recv_buffer = buffer_host_type(

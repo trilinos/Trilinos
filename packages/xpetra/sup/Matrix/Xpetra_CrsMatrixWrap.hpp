@@ -50,7 +50,6 @@
 #define XPETRA_CRSMATRIXWRAP_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
 
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
@@ -77,48 +76,47 @@ namespace Xpetra {
   @class CrsMatrixWrap
   @brief Concrete implementation of Xpetra::Matrix.
 */
-template <class Scalar,
-          class LocalOrdinal  = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
-          class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
-class CrsMatrixWrap : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-
+template <class Scalar = Matrix<>::scalar_type,
+          class LocalOrdinal = typename Matrix<Scalar>::local_ordinal_type,
+          class GlobalOrdinal =
+            typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node =
+            typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class CrsMatrixWrap :
+  public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+{
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
-  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
+  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
 #ifdef HAVE_XPETRA_TPETRA
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrix;
 #endif
-  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
 
 public:
-
   //! @name Constructor/Destructor Methods
   //@{
 
   //! Constructor specifying fixed number of entries for each row.
-  CrsMatrixWrap(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
+  CrsMatrixWrap (const RCP<const Map>& rowMap,
+                 size_t maxNumEntriesPerRow,
+                 Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_ (false)
   {
-    // Set matrix data
-    matrixData_ = CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype);
-
-    // Default view
-    CreateDefaultView();
+    matrixData_ = CrsMatrixFactory::Build (rowMap, maxNumEntriesPerRow, pftype);
+    CreateDefaultView ();
   }
 
   //! Constructor specifying (possibly different) number of entries in each row.
-  CrsMatrixWrap(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
-    : finalDefaultView_(false)
+  CrsMatrixWrap (const RCP<const Map>& rowMap,
+                 const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+                 ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_ (false)
   {
-    // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
-
-    // Default view
-    CreateDefaultView();
+    CreateDefaultView ();
   }
 
   //! Constructor specifying fixed number of entries for each row and column map
@@ -472,13 +470,13 @@ public:
 
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
     return matrixData_->getDomainMap();
   }
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+  RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
     return matrixData_->getRangeMap();
   }
 

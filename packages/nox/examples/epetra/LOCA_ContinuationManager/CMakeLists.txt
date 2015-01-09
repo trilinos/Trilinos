@@ -1,15 +1,13 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # This example relies on the Amesos solver
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA AND NOX_ENABLE_Amesos)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     LOCA_ContinuationManager_Example
-    SOURCES 
+    SOURCES
     LinearSystem.H
     LinearSystem.C
     main.C

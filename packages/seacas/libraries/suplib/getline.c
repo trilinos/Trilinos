@@ -29,11 +29,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for NULL, FILE, feof, fgetc, etc
+#include <stdlib.h>                     // for malloc, realloc
+#include <unistd.h>                     // for ssize_t
 
 ssize_t
 getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)

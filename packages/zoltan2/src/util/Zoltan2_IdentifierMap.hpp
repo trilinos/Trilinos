@@ -78,7 +78,7 @@ enum TranslationType {
     Data types:
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c gid_t    application global Ids
+    \li \c zgid_t    application global Ids
 
     The template parameter \c User is a user-defined data type
     which, through a traits mechanism, provides the actual data types
@@ -89,7 +89,7 @@ enum TranslationType {
 
       \todo test for global IDs that are std::pair<T1, T2>
 
-  \todo we require that user's gid_ts have base zero if we are to
+  \todo we require that user's zgid_ts have base zero if we are to
      use them as consecutive gno_ts.  This can be fixed if needed.
      We are not getting the efficiency
      advantage of using the user's gids simply because
@@ -103,7 +103,7 @@ enum TranslationType {
 ////////////////////////////////////////////////////////////////////
 
 template<typename User>
-    class IdentifierMap{
+class IdentifierMap{
 
 public:
 
@@ -120,11 +120,11 @@ public:
 
   typedef typename InputTraits<User>::lno_t lno_t;
   typedef typename InputTraits<User>::gno_t gno_t;
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef typename InputTraits<User>::zgid_t zgid_t;
 
   explicit IdentifierMap( const RCP<const Environment > &env,
                           const RCP<const Comm<int> > &comm,
-                          const ArrayRCP<const gid_t> &gids,
+                          const ArrayRCP<const zgid_t> &gids,
                           bool gidsMustBeConsecutive=false);
 
   /*! \brief Destructor */
@@ -188,7 +188,7 @@ public:
       see if the gnos are in their original order.  If so, we can
       save memory by returning an arrayview of the gids.
    */
-  void gidTranslate(ArrayView<gid_t> gid,
+  void gidTranslate(ArrayView<zgid_t> gid,
                     ArrayView<gno_t> gno,
                     TranslationType tt) const;
 
@@ -236,7 +236,7 @@ public:
       All processes must call this.  The global IDs
       supplied may belong to another process.
    */
-  void gidGlobalTranslate( ArrayView<const gid_t> in_gid,
+  void gidGlobalTranslate( ArrayView<const zgid_t> in_gid,
                            ArrayView<gno_t> out_gno,
                            ArrayView<int> out_proc) const;
 
@@ -259,7 +259,7 @@ public:
       supplied may belong to another process.
    */
   void gnoGlobalTranslate( ArrayView<const gno_t> in_gno,
-                           ArrayView<gid_t> out_gid,
+                           ArrayView<zgid_t> out_gid,
                            ArrayView<int> out_proc) const;
 private:
 
@@ -273,10 +273,10 @@ private:
 
   // Application global IDs
 
-  const ArrayRCP<const gid_t> myGids_;
+  const ArrayRCP<const zgid_t> myGids_;
 
-  // Zoltan2 gno_ts will be consecutive if the application gid_ts
-  // were mapped to gno_ts, or if the application gid_ts happen
+  // Zoltan2 gno_ts will be consecutive if the application zgid_ts
+  // were mapped to gno_ts, or if the application zgid_ts happen
   // to be consecutive ordinals.  In either case, gnoDist_[p]
   // is the first gno_t on process p.  gnoDist_[numProcs_] is the
   // global total of gno_ts.
@@ -284,9 +284,9 @@ private:
   ArrayRCP<gno_t> gnoDist_;
 
   // If application gids are not consecutive ordinals, the gidLookup_
-  // object allows lookup of the location of the gid_t in the myGids_ list.
+  // object allows lookup of the location of the zgid_t in the myGids_ list.
 
-  RCP<GidLookupHelper<gid_t, lno_t > > gidLookup_;
+  RCP<GidLookupHelper<zgid_t, lno_t > > gidLookup_;
 
   global_size_t globalNumberOfIds_;
   size_t localNumberOfIds_;
@@ -316,7 +316,7 @@ private:
 template<typename User>
   IdentifierMap<User>::IdentifierMap( const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
-    const ArrayRCP<const gid_t> &gids, bool idsMustBeConsecutive) :
+    const ArrayRCP<const zgid_t> &gids, bool idsMustBeConsecutive) :
       env_(env), comm_(comm), myGids_(gids), gnoDist_(), gidLookup_(),
       globalNumberOfIds_(0), localNumberOfIds_(0),
       myRank_(comm_->getRank()), numProcs_(comm_->getSize()),
@@ -373,11 +373,11 @@ template< typename User>
 
 template< typename User>
   void IdentifierMap<User>::gidTranslate(
-    ArrayView<gid_t> gid,
+    ArrayView<zgid_t> gid,
     ArrayView<gno_t> gno,
     TranslationType tt) const
 {
-  typename ArrayView<gid_t>::size_type inLen=gid.size();
+  typename ArrayView<zgid_t>::size_type inLen=gid.size();
 
   if (inLen == 0){
     return;
@@ -395,10 +395,10 @@ template< typename User>
 
   if (userGidsAreZoltan2Gnos_){   // our gnos are the app gids
     if (tt == TRANSLATE_LIB_TO_APP)
-      for (typename ArrayView<gid_t>::size_type i=0; i < inLen; i++)
-        gid[i] = static_cast<gid_t>(gno[i]);
+      for (typename ArrayView<zgid_t>::size_type i=0; i < inLen; i++)
+        gid[i] = static_cast<zgid_t>(gno[i]);
     else
-      for (typename ArrayView<gid_t>::size_type i=0; i < inLen; i++)
+      for (typename ArrayView<zgid_t>::size_type i=0; i < inLen; i++)
         gno[i] = static_cast<gno_t>(gid[i]);
   }
   else{              // we mapped gids to consecutive gnos
@@ -406,7 +406,7 @@ template< typename User>
     gno_t endGno = gnoDist_[myRank_ + 1];
 
     if (tt == TRANSLATE_LIB_TO_APP){
-      for (typename ArrayView<gid_t>::size_type i=0; i < inLen; i++){
+      for (typename ArrayView<zgid_t>::size_type i=0; i < inLen; i++){
 
         env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
         (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
@@ -417,15 +417,15 @@ template< typename User>
     else{
       lno_t idx=0;
       if (userGidsAreConsecutive_){
-        for (typename ArrayView<gid_t>::size_type i=0; i < inLen; i++){
-          gno[i] = firstGno + IdentifierTraits<gid_t>::difference(
+        for (typename ArrayView<zgid_t>::size_type i=0; i < inLen; i++){
+          gno[i] = firstGno + IdentifierTraits<zgid_t>::difference(
             myGids_[0], gid[i]);
           env_->localInputAssertion(__FILE__, __LINE__, "invalid global id",
             (gno[i] >= firstGno) && (gno[i] < endGno), BASIC_ASSERTION);
         }
       }
       else{
-        for (typename ArrayView<gid_t>::size_type i=0; i < inLen; i++){
+        for (typename ArrayView<zgid_t>::size_type i=0; i < inLen; i++){
           try{
             idx = gidLookup_->lookup(gid[i]);
           }
@@ -480,8 +480,8 @@ template< typename User>
     else {                    // gnos must be the app gids
       if (userGidsAreConsecutive_){
         for (typename ArrayView<lno_t>::size_type i=0; i < inLen; i++){
-          gid_t tmp = static_cast<gid_t>(gno[i]);
-          lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
+          zgid_t tmp = static_cast<zgid_t>(gno[i]);
+          lno[i] = IdentifierTraits<zgid_t>::difference(myGids_[0], tmp);
           env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
             (lno[i] >= 0) && (lno[i] < lno_t(localNumberOfIds_)),
             BASIC_ASSERTION);
@@ -490,7 +490,7 @@ template< typename User>
       else{
         for (typename ArrayView<lno_t>::size_type i=0; i < inLen; i++){
           try{
-            gid_t keyArg = static_cast<gid_t>(gno[i]);
+            zgid_t keyArg = static_cast<zgid_t>(gno[i]);
             lno[i] = gidLookup_->lookup(keyArg);
           }
           catch (const std::exception &e) {
@@ -515,14 +515,14 @@ template< typename User>
 
 template< typename User>
   void IdentifierMap<User>::gidGlobalTranslate(
-    ArrayView<const gid_t> in_gid,
+    ArrayView<const zgid_t> in_gid,
     ArrayView<gno_t> out_gno,
     ArrayView<int> out_proc) const
 {
-  typename ArrayView<const gid_t>::size_type inLen = in_gid.size();
+  typename ArrayView<const zgid_t>::size_type inLen = in_gid.size();
 
   // It's faster in loops to user raw pointers.
-  const gid_t *gids = in_gid.getRawPtr();
+  const zgid_t *gids = in_gid.getRawPtr();
   gno_t *gnos = out_gno.getRawPtr();
   int *pids = out_proc.getRawPtr();
 
@@ -535,7 +535,7 @@ template< typename User>
 
     if (userGidsAreZoltan2Gnos_){
       // Global numbers are the application global IDs
-      for (typename ArrayView<const gid_t>::size_type i=0; i < inLen; i++)
+      for (typename ArrayView<const zgid_t>::size_type i=0; i < inLen; i++)
         gnos[i] = static_cast<gno_t>(gids[i]);
     }
     else
@@ -557,7 +557,7 @@ template< typename User>
       gno_t *gnoDist = gnoDist_.getRawPtr();
       gno_t *gnoEnd = gnoDist + numProcs_ + 1;
 
-      for (typename ArrayView<const gid_t>::size_type i=0; i < inLen; i++){
+      for (typename ArrayView<const zgid_t>::size_type i=0; i < inLen; i++){
         gno_t gno = static_cast<gno_t>(gids[i]);
         // pointer to first entry greater than gno
         gno_t *ub = std::upper_bound(gnoDist, gnoEnd, gno);
@@ -589,11 +589,11 @@ template< typename User>
   // with the process owning them (and their Gnos if they are different).
   ///////////////////////////////////////////////////////////////////////
 
-  Array<gid_t> gidOutBuf;
+  Array<zgid_t> gidOutBuf;
   Array<gno_t> gnoOutBuf;
   Array<int> countOutBuf(numProcs_, 0);
 
-  ArrayRCP<gid_t> gidInBuf;
+  ArrayRCP<zgid_t> gidInBuf;
   ArrayRCP<gno_t> gnoInBuf;
   Array<int> countInBuf(numProcs_, 0);
 
@@ -609,7 +609,7 @@ template< typename User>
     }
 
     for (size_t i=0; i < localNumberOfIds_; i++){
-      int hashProc = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
+      int hashProc = IdentifierTraits<zgid_t>::hashCode(myGids_[i]) % numProcs_;
       countOutBuf[hashProc]++;
     }
 
@@ -624,7 +624,7 @@ template< typename User>
     }
 
     for (size_t i=0; i < localNumberOfIds_; i++){
-      int hashProc = IdentifierTraits<gid_t>::hashCode(myGids_[i]) % numProcs_;
+      int hashProc = IdentifierTraits<zgid_t>::hashCode(myGids_[i]) % numProcs_;
       gno_t offset = offsetBuf[hashProc];
       gidOutBuf[offset] = myGids_[i];
       if (needGnos)
@@ -635,10 +635,10 @@ template< typename User>
 
   // Z2::AlltoAllv comment: Buffers are in process rank contiguous order.
 
-  ArrayView<const gid_t> gidView = gidOutBuf();
+  ArrayView<const zgid_t> gidView = gidOutBuf();
   ArrayView<const int> countView = countOutBuf();
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf());
+    AlltoAllv<zgid_t>(*comm_, *env_, gidView, countView, gidInBuf, countInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -660,9 +660,9 @@ template< typename User>
   // This is a lookup from gid to its position in gidInBuf.
   // (The list of gids hashed to me is unique.)
 
-  typedef GidLookupHelper<gid_t, lno_t> lookup_t;
+  typedef GidLookupHelper<zgid_t, lno_t> lookup_t;
 
-  RCP<lookup_t> lookupMine = rcp(new lookup_t(env_, gidInBuf));
+  lookup_t *lookupMine = new lookup_t(env_, gidInBuf);
 
   // Use a vector to find process that sent gid.
 
@@ -694,16 +694,16 @@ template< typename User>
   // (This happens in graph subsetting.)
   ///////////////////////////////////////////////////////////////////////
 
-  ArrayRCP<const gid_t> in_gidArray =
-    arcp(in_gid.getRawPtr(), 0, inLen, false);
-  RCP<lookup_t> lookupRequested = rcp(new lookup_t(env_, in_gidArray));
+  lookup_t *lookupRequested = 
+            new lookup_t(env_, arcp(in_gid.getRawPtr(),0,inLen,false));
 
   size_t numberOfUniqueGids = lookupRequested->size();
 
-  std::map<gid_t, lno_t> answerMap;// map from gid to position of answer
+  std::map<zgid_t, lno_t> answerMap;// map from gid to position of answer
 
   ArrayRCP<lno_t> uniqueIndices;
   lookupRequested->getIndices(uniqueIndices);
+  delete lookupRequested;
 
   countOutBuf.resize(numProcs_, 0);
 
@@ -717,8 +717,8 @@ template< typename User>
     }
 
     for (size_t i=0; i < numberOfUniqueGids; i++){
-      gid_t gid = in_gid[uniqueIndices[i]];
-      int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
+      zgid_t gid = in_gid[uniqueIndices[i]];
+      int hashProc = IdentifierTraits<zgid_t>::hashCode(gid) % numProcs_;
       countOutBuf[hashProc]++;
     }
 
@@ -729,8 +729,8 @@ template< typename User>
     }
 
     for (size_t i=0; i < numberOfUniqueGids; i++){
-      gid_t gid = in_gid[uniqueIndices[i]];
-      int hashProc = IdentifierTraits<gid_t>::hashCode(gid) % numProcs_;
+      zgid_t gid = in_gid[uniqueIndices[i]];
+      int hashProc = IdentifierTraits<zgid_t>::hashCode(gid) % numProcs_;
       gno_t loc = offsetBuf[hashProc];
 
       answerMap[gid] = loc;
@@ -741,7 +741,7 @@ template< typename User>
   }
 
   try{
-    AlltoAllv<gid_t>(*comm_, *env_, gidOutBuf(), countOutBuf(),
+    AlltoAllv<zgid_t>(*comm_, *env_, gidOutBuf(), countOutBuf(),
                      gidInBuf, countInBuf());
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -796,7 +796,7 @@ template< typename User>
         }
 
         env_->localBugAssertion(__FILE__, __LINE__, "gidToIndex table",
-          badGid || ((index >= 0)&&(index<=indexTotal)), BASIC_ASSERTION);
+          badGid||((index >= 0)&&(gno_t(index)<=indexTotal)), BASIC_ASSERTION);
 
         if (!badGid){
 
@@ -821,7 +821,7 @@ template< typename User>
 
   gidInBuf.clear();
   gnoInBuf.clear();
-  lookupMine.~RCP<lookup_t>();
+  delete lookupMine;
 
   if (needProcs){
     try{
@@ -849,7 +849,7 @@ template< typename User>
   // Done.  Process the replies to my queries
   ///////////////////////////////////////////////////////////////////////
 
-  for (typename ArrayView<const gid_t>::size_type i=0; i < inLen; i++){
+  for (typename ArrayView<const zgid_t>::size_type i=0; i < inLen; i++){
     lno_t loc = answerMap[in_gid[i]];
     if (needProcs)
       out_proc[i] = procInBuf[loc];
@@ -861,7 +861,7 @@ template< typename User>
 template< typename User>
   void IdentifierMap<User>::gnoGlobalTranslate(
     ArrayView<const gno_t> in_gno,
-    ArrayView<gid_t> out_gid,
+    ArrayView<zgid_t> out_gid,
     ArrayView<int> out_proc) const
 {
   typename ArrayView<const gno_t>::size_type inLen = in_gno.size();
@@ -871,7 +871,7 @@ template< typename User>
     // Easy case - use gidGlobalTranslate.
 
     const gno_t *gnos = in_gno.getRawPtr();
-    ArrayView<const gid_t> gids(static_cast<const gid_t *>(gnos), inLen);
+    ArrayView<const zgid_t> gids(reinterpret_cast<const zgid_t *>(gnos), inLen);
     ArrayView<gno_t> noGnos;
 
     try{
@@ -880,7 +880,7 @@ template< typename User>
     Z2_FORWARD_EXCEPTIONS;
 
     if (out_gid.size() ==
-                static_cast<typename ArrayView<gid_t>::size_type>(inLen))
+                static_cast<typename ArrayView<zgid_t>::size_type>(inLen))
       for (typename ArrayView<const gno_t>::size_type i=0; i < inLen; i++)
         out_gid[i] = gids[i];
 
@@ -904,7 +904,7 @@ template< typename User>
       out_proc.size()>=static_cast<typename ArrayView<int>::size_type>(inLen))
     &&
     (!needGids ||
-      out_gid.size()>=static_cast<typename ArrayView<gid_t>::size_type>(inLen)),
+      out_gid.size()>=static_cast<typename ArrayView<zgid_t>::size_type>(inLen)),
      BASIC_ASSERTION);
 
   // Get process owning each gno.  We need it to get the gid.
@@ -1021,10 +1021,10 @@ template< typename User>
   for (int i=0; i < numProcs_; i++)
     numRequests += countInBuf[i];
 
-  ArrayRCP<gid_t> gidQueryBuf;
+  ArrayRCP<zgid_t> gidQueryBuf;
 
   if (numRequests){
-    gid_t *tmpGid = new gid_t [numRequests];
+    zgid_t *tmpGid = new zgid_t [numRequests];
     env_->localMemoryAssertion(__FILE__, __LINE__, numRequests, tmpGid);
     gidQueryBuf = arcp(tmpGid, 0, numRequests);
   }
@@ -1036,11 +1036,11 @@ template< typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  ArrayRCP<gid_t> gidInBuf;
-  Array<lno_t> newCountInBuf(numProcs_, 0);
+  ArrayRCP<zgid_t> gidInBuf;
+  Array<int> newCountInBuf(numProcs_, 0);
 
   try{
-    AlltoAllv<gid_t>(*comm_, *env_,
+    AlltoAllv<zgid_t>(*comm_, *env_,
       gidQueryBuf.view(0, numRequests), countInBuf(),
       gidInBuf, newCountInBuf());
   }
@@ -1050,7 +1050,7 @@ template< typename User>
 
   // copy the replies into the output gid list
 
-  gid_t *gidInfo = gidInBuf.getRawPtr();  // faster in a loop
+  zgid_t *gidInfo = gidInBuf.getRawPtr();  // faster in a loop
 
   for (typename ArrayView<const gno_t>::size_type i=0; i < inLen; i++){
     int p = pids[i];
@@ -1065,18 +1065,18 @@ template< typename User>
 {
   env_->globalInputAssertion(__FILE__, __LINE__,
        "application global ID type is not supported yet",
-       IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
+       IdentifierTraits<zgid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
        comm_);
 
-  if (IdentifierTraits<gid_t>::isGlobalOrdinal())
+  if (IdentifierTraits<zgid_t>::isGlobalOrdinal())
     userGidsAreTeuchosOrdinal_ = true;
 
   localNumberOfIds_ = myGids_.size();
-  const gid_t *gidPtr = myGids_.get();
-  ArrayRCP<gid_t> tmpDist;
-  gid_t mingid=0, maxgid=0;
+  const zgid_t *gidPtr = myGids_.get();
+  ArrayRCP<zgid_t> tmpDist;
+  zgid_t mingid=0, maxgid=0;
 
-  userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
+  userGidsAreConsecutive_ = globallyConsecutiveOrdinals<zgid_t>(
     *comm_, *env_, gidPtr, localNumberOfIds_,      // input
     tmpDist, globalNumberOfIds_);                  // output
 
@@ -1088,13 +1088,13 @@ template< typename User>
       maxgid = tmpDist[1];
     }
     else{
-      // A gno_t is large enough to hold gid_ts, but may be a different type.
-      if (sizeof(gid_t) == sizeof(gno_t)) {
+      // A gno_t is large enough to hold a zgid_t, but may be a different type.
+      if (sizeof(zgid_t) == sizeof(gno_t)) {
         gnoDist_ = arcp_reinterpret_cast<gno_t>(tmpDist);
       }
       else{
         gnoDist_.resize(numProcs_ + 1);
-        for (lno_t i=0; i <= numProcs_; i++){
+        for (int i=0; i <= numProcs_; i++){
           gnoDist_[i] = static_cast<gno_t>(tmpDist[i]);
         }
       }
@@ -1107,7 +1107,7 @@ template< typename User>
   // If user global IDs are not consecutive ordinals, create a lookup table
   // mapping the global IDs to their location in myGids_.
 
-  typedef GidLookupHelper<gid_t, lno_t> lookup_t;
+  typedef GidLookupHelper<zgid_t, lno_t> lookup_t;
 
   if (!userGidsAreConsecutive_){
     try{
@@ -1159,6 +1159,7 @@ template< typename User>
     for (int i=2; i <= numProcs_; i++){
       gnoDist_[i] += gnoDist_[i-1];
     }
+    gnoDist_[0] = 0;
 
     minGlobalGno_ = gnoDist_[0];
     maxGlobalGno_ = gnoDist_[numProcs_]-1;

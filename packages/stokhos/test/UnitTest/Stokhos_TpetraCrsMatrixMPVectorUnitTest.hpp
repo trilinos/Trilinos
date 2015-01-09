@@ -120,7 +120,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 #if defined(__CUDACC__)
 const int VectorSize = 16;
 #else
-const int VectorSize = 8;
+const int VectorSize = 16;
 #endif
 
 //
@@ -144,9 +144,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -182,11 +181,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Add
-  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (LocalOrdinal i=0; i<VectorSize; ++i) {
-    alpha.fastAccessCoeff(i) = 1.0 + i;
-    beta.fastAccessCoeff(i) = 2.0 * i;
-  }
+  Scalar alpha = 2.1;
+  Scalar beta = 3.7;
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
 
@@ -232,9 +228,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_Vector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -317,9 +312,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -361,11 +355,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Add
-  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (LocalOrdinal i=0; i<VectorSize; ++i) {
-    alpha.fastAccessCoeff(i) = 1.678 + i;
-    beta.fastAccessCoeff(i)  = 2.234 * i;
-  }
+  Scalar alpha = 2.1;
+  Scalar beta = 3.7;
   RCP<Tpetra_MultiVector> y = Tpetra::createMultiVector<Scalar>(map, ncol);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
 
@@ -414,9 +405,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -511,9 +501,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef typename Tpetra_MultiVector::dot_type dot_type;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -617,9 +606,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -739,15 +727,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Tpetra_Map;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_MultiVector;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsMatrix;
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -888,9 +874,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> Flat_Tpetra_CrsMatrix;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1014,9 +999,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1162,9 +1146,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1323,9 +1306,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1389,8 +1371,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1479,9 +1459,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1552,8 +1531,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1644,9 +1621,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 
@@ -1740,8 +1716,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1830,9 +1804,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Tpetra_CrsGraph;
 
   // Ensure device is initialized
-  typedef typename Device::host_mirror_device_type HostDevice;
-  if (!HostDevice::is_initialized())
-    HostDevice::initialize();
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
   if (!Device::is_initialized())
     Device::initialize();
 

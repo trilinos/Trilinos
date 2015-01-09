@@ -81,7 +81,7 @@ private:
   ArrayRCP<const T> gidList_;
   bool useHashTable_;
 
-  map<T, lno_t> indexMap_;
+  std::map<T, lno_t> indexMap_;
 
   RCP<Teuchos::Hashtable<double, lno_t> > indexHash_;
 
@@ -146,7 +146,7 @@ template<typename T, typename lno_t>
   if (!useHashTable_){
     try{
       for (lno_t i=0; i < gidList.size(); i++){
-        typename map<T, lno_t>::iterator rec = indexMap_.find(*ids);
+        typename std::map<T, lno_t>::iterator rec = indexMap_.find(*ids);
         if (rec == indexMap_.end())
           indexMap_[*ids] = i;
         ids++;
@@ -195,7 +195,7 @@ template<typename T, typename lno_t>
     }
   }
   else{
-    typename map<T, lno_t>::const_iterator next = indexMap_.find(gid);
+    typename std::map<T, lno_t>::const_iterator next = indexMap_.find(gid);
     if (next == indexMap_.end())
       badId = true;
     else
@@ -223,10 +223,10 @@ template<typename T, typename lno_t>
   }
   else{
     const T *ids = gidList_.getRawPtr();
-    set<T> allGids;
+    std::set<T> allGids;
 
     for (lno_t i=0; i < gidList_.size(); i++){
-      typename set<T>::iterator rec = allGids.find(ids[i]);
+      typename std::set<T>::iterator rec = allGids.find(ids[i]);
       if (rec == allGids.end()){
         allGids.insert(ids[i]);
         *idx++ = i;

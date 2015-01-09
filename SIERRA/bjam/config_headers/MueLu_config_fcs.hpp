@@ -53,3 +53,5 @@
 /* Optional TPL */
 
 /* #undef HAVE_MUELU_BOOST */
+
+/* #undef HAVE_MUELU_TIMER_SYNCHRONIZATION */

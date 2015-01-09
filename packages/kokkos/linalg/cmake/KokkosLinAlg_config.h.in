@@ -1,6 +1,0 @@
-#ifndef KOKKOS_LINALG_CONFIG_H
-#define KOKKOS_LINALG_CONFIG_H
-
-/* Put configure options here */
-
-#endif

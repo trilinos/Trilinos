@@ -77,7 +77,7 @@ OBJSmet = $(OBJSmetf) $(OBJSmetc)
 OBJSpst = $(OBJSpstf) $(OBJSpstc)
 
 XCOMM Wrapper for 64-bit build
-SRCSwrap = addrwrap.f
+SRCSwrap = svdi_addrwrap.f
 OBJSwrap = ${SRCSwrap:.f=.o}
 
 NormalLibraryTarget(cgi,$(OBJScgi) $(OBJSx11) $(OBJSmet) $(OBJSpst) $(OBJSwrap))
@@ -91,4 +91,4 @@ InstallNamedTarget(install,$(OBJS1),$(INSTLIBFLAGS),$(LIBDIR),cgisx11.o)
 InstallNamedTarget(install,$(OBJS2),$(INSTLIBFLAGS),$(LIBDIR),cgismet.o)
 InstallNamedTarget(install,$(OBJS3),$(INSTLIBFLAGS),$(LIBDIR),cgispst.o)
 
-CleanupCapF(addrwrap.f)
+CleanupCapF(svdi_addrwrap.f)

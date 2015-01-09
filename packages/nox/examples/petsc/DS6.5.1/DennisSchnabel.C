@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,13 +44,13 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "petscksp.h"
 
 #include "DennisSchnabel.H"
 
-// Constructor - creates the Petsc objects (maps and vectors) 
+// Constructor - creates the Petsc objects (maps and vectors)
 DennisSchnabel::DennisSchnabel(int numGlobalElements) :
   NumGlobalElements(numGlobalElements)
 {
@@ -60,7 +60,7 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
   ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);
 
-  // Construct a Source Map that puts approximately the same 
+  // Construct a Source Map that puts approximately the same
   // Number of equations on each processor in uniform global ordering
   //StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);
 
@@ -68,31 +68,31 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
   //NumMyElements = StandardMap->NumMyElements();
 
   // Construct an overlaped map for the fill calls **********************
-  /* The overlap map is needed for multiprocessor jobs.  The unknowns 
-   * are stored in a distributed vector where each node owns one unknown.  
-   * During a function or Jacobian evaluation, each processor needs to have 
-   * both of the unknown values.  The overlapped vector can get this data 
-   * by importing the owned values from the other node to this overlapped map. 
-   * Actual solves must be done using the Standard map where everything is 
+  /* The overlap map is needed for multiprocessor jobs.  The unknowns
+   * are stored in a distributed vector where each node owns one unknown.
+   * During a function or Jacobian evaluation, each processor needs to have
+   * both of the unknown values.  The overlapped vector can get this data
+   * by importing the owned values from the other node to this overlapped map.
+   * Actual solves must be done using the Standard map where everything is
    * distributed.
    */
   // For single processor jobs, the overlap and standard map are the same
   if (NumProc == 1) {
     //OverlapMap = new Epetra_Map(*StandardMap);
-  } 
+  }
   else {
 
     //int OverlapNumMyElements = 2;
     //int OverlapMyGlobalElements[2];
-    
-    //for (i = 0; i < OverlapNumMyElements; i ++) 
+
+    //for (i = 0; i < OverlapNumMyElements; i ++)
     //  OverlapMyGlobalElements[i] = i;
-    
-    //OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-    //				OverlapMyGlobalElements, 0, *Comm);
+
+    //OverlapMap = new Epetra_Map(-1, OverlapNumMyElements,
+    //                OverlapMyGlobalElements, 0, *Comm);
   } // End Overlap map construction *************************************
 
-  // Construct Linear Objects  
+  // Construct Linear Objects
   initialSolution = new Vec;
   ierr = VecCreate(PETSC_COMM_WORLD, initialSolution);
   ierr = VecSetSizes(*initialSolution, PETSC_DECIDE, 2);
@@ -102,17 +102,18 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
   ierr = MatCreate(PETSC_COMM_SELF,A);
   ierr = MatSetSizes(*A,PETSC_DECIDE,PETSC_DECIDE,2,2);
   ierr = MatSetFromOptions(*A);
+  ierr = MatSetUp(*A);
 
   // Create Mapping for overlap solution vector using Petsc IS
   overlapSolution = new Vec;
   VecCreateSeq(PETSC_COMM_SELF,2,overlapSolution);
   int indexMap[] = {0, 1};
   IS from, to;
-  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,&from);
-  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,&to);
+  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,PETSC_COPY_VALUES,&from);
+  ISCreateGeneral(PETSC_COMM_WORLD,2,indexMap,PETSC_COPY_VALUES,&to);
   petscMap = new VecScatter;
   VecScatterCreate(*initialSolution, from, *overlapSolution, to, petscMap);
-  
+
 }
 
 // Destructor
@@ -123,27 +124,27 @@ DennisSchnabel::~DennisSchnabel()
 }
 
 // Matrix and Residual Fills
-bool DennisSchnabel::evaluate(FillType f, 
-			      const Vec* soln, 
-			      Vec* tmp_rhs, 
-			      Mat* tmp_matrix)
+bool DennisSchnabel::evaluate(FillType f,
+                  const Vec* soln,
+                  Vec* tmp_rhs,
+                  Mat* tmp_matrix)
 {
   flag = f;
 
   // Set the incoming linear objects
   if (flag == RHS_ONLY) {
     rhs = tmp_rhs;
-  } 
+  }
   else if (flag == MATRIX_ONLY) {
     A = tmp_matrix;
-  } 
-  else if (flag == ALL) { 
+  }
+  else if (flag == ALL) {
     rhs = tmp_rhs;
     A = tmp_matrix;
-  } 
+  }
   else {
-    std::cout << "ERROR: DennisSchnabel::fillMatrix() - No such flag as " 
-	 << flag << std::endl;
+    std::cout << "ERROR: DennisSchnabel::fillMatrix() - No such flag as "
+     << flag << std::endl;
     throw;
   }
 
@@ -163,7 +164,7 @@ bool DennisSchnabel::evaluate(FillType f,
   int ierr;
   double resid[2];
   int* column = new int[2];
-  column[0] = 0; 
+  column[0] = 0;
   column[1] = 1;
 
   // Begin RHS fill
@@ -182,7 +183,7 @@ bool DennisSchnabel::evaluate(FillType f,
     }
     else {  // NumProc==2
       double value;
-      if (MyPID==0) { 
+      if (MyPID==0) {
         value = u[0]*u[0] + u[1]*u[1] - 2.;
       }
       else {
@@ -209,7 +210,7 @@ bool DennisSchnabel::evaluate(FillType f,
 //  ierr = VecSetValues(mask,2,column,dmask, INSERT_VALUES);CHKERRQ(ierr);
 //  ierr = VecAssemblyBegin(*rhs);CHKERRQ(ierr);
 //  ierr = VecAssemblyEnd(*rhs);CHKERRQ(ierr);
-//  
+//
 //  std::cout << "Checking residuals .... " << std::endl;
 //  double val1, val2;
 //  VecDot(*rhs, mask, &val1);
@@ -225,10 +226,10 @@ bool DennisSchnabel::evaluate(FillType f,
   }
 
   // Here we fill a Jacobian double array on all active procs and
-  // insert values  
+  // insert values
   double* jac = new double[4];
 
-  // The matrix is 2 x 2 and will always be 0 and 1 regardless of 
+  // The matrix is 2 x 2 and will always be 0 and 1 regardless of
   // the coordinates being local or global.
 
   // Begin Jacobian fill
@@ -242,7 +243,7 @@ bool DennisSchnabel::evaluate(FillType f,
     jac[2] = exp(u[0]-1.);
     jac[3] = 3.*u[1]*u[1];
     ierr = MatSetValues(*A,2,column,2,column,jac,INSERT_VALUES);CHKERRQ(ierr);
-    /* 
+    /*
        Assemble matrix, using the 2-step process:
        MatAssemblyBegin(), MatAssemblyEnd()
        Computations can be done while messages are in transition
@@ -250,10 +251,10 @@ bool DennisSchnabel::evaluate(FillType f,
     */
     ierr = MatAssemblyBegin(*A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(*A,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    
+
     delete [] column;
     delete [] jac;
-  } 
+  }
 
   VecRestoreArray(*overlapSolution, &u);
 
@@ -264,7 +265,7 @@ Vec& DennisSchnabel::getSolution()
 {
   return *initialSolution;
 }
-  
+
 Mat& DennisSchnabel::getJacobian()
 {
   return *A;

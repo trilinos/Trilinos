@@ -32,11 +32,12 @@
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
-#include <Ioss_ElementVariableType.h>
 #include <Ioss_Shell8.h>
-#include <assert.h>
+#include <Ioss_ElementVariableType.h>   // for ElementVariableType
+#include <assert.h>                     // for assert
+#include "Ioss_CodeTypes.h"             // for IntVector
+#include "Ioss_ElementTopology.h"       // for ElementTopology
 
-#include "Ioss_ElementTopology.h"
 
 namespace Ioss {
   class St_Shell8 : public ElementVariableType

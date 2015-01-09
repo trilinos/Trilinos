@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -57,7 +57,7 @@ class Epetra_OskiMatrix;
 
 //! Epetra_OskiPermutation: A class for storing the permutation performed on a Epetra_OskiMatrix.
 /*! The Epetra_OskiPermutation is one of the possible transformations that OSKI can perform
-    on a matrix.  The permutation is stored with the matrix in OSKI.  Using this class a 
+    on a matrix.  The permutation is stored with the matrix in OSKI.  Using this class a
     Epetra_OskiPermutation can be applied to an Epetra_OskiMultiVector.
 */
 
@@ -68,15 +68,15 @@ class Epetra_OskiPermutation{
 
    //! @name Constructor/Destructor
    //@{
-   
+
    //!Default Constructor
    Epetra_OskiPermutation();
-   
+
    //!Copy Constructor
    Epetra_OskiPermutation (const Epetra_OskiPermutation& Source);
    //! Constructor creates an Epetra_OskiPermutation from an Epetra_OskiMatrix.
    /*! Acquires the permutation from the passed in matrix and stores it within the object.
-       If RowPerm is true this is a row permutation and if RowPerm is false this is a 
+       If RowPerm is true this is a row permutation and if RowPerm is false this is a
        column permutation.
    */
    Epetra_OskiPermutation(bool RowPerm, const Epetra_OskiMatrix& Source);
@@ -84,7 +84,7 @@ class Epetra_OskiPermutation{
    //! Destructor
    virtual ~Epetra_OskiPermutation();
    //@}
-   
+
    //! @name Replace Method
    //@{
    //! Stores a permutation in the data structure.

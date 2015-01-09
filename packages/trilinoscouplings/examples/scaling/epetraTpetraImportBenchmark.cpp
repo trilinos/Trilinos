@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -57,10 +57,10 @@ using Teuchos::rcp;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
 
-typedef double ST;
-typedef int LO;
+typedef Tpetra::Vector<>::scalar_type ST;
+typedef Tpetra::Vector<>::local_ordinal_type LO;
 typedef int GO; // So that Epetra and Tpetra can use the same GID lists
-typedef KokkosClassic::SerialNode NT;
+typedef Tpetra::Vector<>::node_type NT;
 
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.

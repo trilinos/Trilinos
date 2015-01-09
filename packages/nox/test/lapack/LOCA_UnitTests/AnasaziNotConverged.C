@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -79,11 +79,11 @@ int main(int argc, char *argv[])
     bool verbose = false;
     // Check for verbose output
     if (argc>1)
-      if (argv[1][0]=='-' && argv[1][1]=='v') 
-	verbose = true;
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+    verbose = true;
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -105,9 +105,9 @@ int main(int argc, char *argv[])
     aList.set("Sorting Order","LM");
     if (verbose)
       aList.set("Debug Level",
-		Anasazi::Errors + 
-		Anasazi::Warnings +
-		Anasazi::FinalSummary);
+        Anasazi::Errors +
+        Anasazi::Warnings +
+        Anasazi::FinalSummary);
     else
       aList.set("Debug Level", Anasazi::Errors);
 
@@ -116,15 +116,15 @@ int main(int argc, char *argv[])
 
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
-       nlPrintParams.set("Output Information", 
-				  NOX::Utils::Error +
-				  NOX::Utils::Details +
-				  NOX::Utils::OuterIteration + 
-				  NOX::Utils::InnerIteration + 
-				  NOX::Utils::Warning +
-				  NOX::Utils::TestDetails + 
-				  NOX::Utils::StepperIteration +
-				  NOX::Utils::StepperDetails);
+       nlPrintParams.set("Output Information",
+                  NOX::Utils::Error +
+                  NOX::Utils::Details +
+                  NOX::Utils::OuterIteration +
+                  NOX::Utils::InnerIteration +
+                  NOX::Utils::Warning +
+                  NOX::Utils::TestDetails +
+                  NOX::Utils::StepperIteration +
+                  NOX::Utils::StepperDetails);
      else
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Create parsed parameter list
-    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams = 
+    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams =
       Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
     parsedParams->parseSublists(paramList);
 
@@ -147,12 +147,12 @@ int main(int argc, char *argv[])
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("scale",scale);
-  
+
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
     LOCA::LAPACK::Group grp(globalData, chan);
-    
+
     grp.setParams(p);
 
     grp.computeF();
@@ -161,19 +161,19 @@ int main(int argc, char *argv[])
     // Create Anasazi eigensolver
     Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
       = globalData->locaFactory->createEigensolverStrategy(
-				     parsedParams, 
-				     parsedParams->getSublist("Eigensolver"));
+                     parsedParams,
+                     parsedParams->getSublist("Eigensolver"));
 
     Teuchos::RCP< std::vector<double> > anasazi_evals_r;
     Teuchos::RCP< std::vector<double> > anasazi_evals_i;
     Teuchos::RCP< NOX::Abstract::MultiVector > anasazi_evecs_r;
     Teuchos::RCP< NOX::Abstract::MultiVector > anasazi_evecs_i;
-    NOX::Abstract::Group::ReturnType anasaziStatus = 
-      anasaziStrategy->computeEigenvalues(grp, 
-					  anasazi_evals_r, 
-					  anasazi_evals_i,
-					  anasazi_evecs_r,
-					  anasazi_evecs_i);
+    NOX::Abstract::Group::ReturnType anasaziStatus =
+      anasaziStrategy->computeEigenvalues(grp,
+                      anasazi_evals_r,
+                      anasazi_evals_i,
+                      anasazi_evecs_r,
+                      anasazi_evecs_i);
 
     if (anasaziStatus != NOX::Abstract::Group::NotConverged)
       ++ierr;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
  catch (std::exception& e) {
     std::cout << e.what() << std::endl;
     ierr = 1;
-  } 
+  }
   catch (const char *s) {
     std::cout << s << std::endl;
     ierr = 1;

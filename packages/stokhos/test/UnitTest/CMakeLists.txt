@@ -1,6 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
-
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -227,15 +224,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(Stokhos_ENABLE_TriKota)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SparseGridQuadratureUnitTest
+  SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SparseGridQuadratureUnitTest
-    SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
+IF(Stokhos_ENABLE_TriKota)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SmolyakPseudoSpectralOperatorUnitTest
@@ -316,7 +313,7 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
-  INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
+  TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
 
   SET(UTILS_SOURCES
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
@@ -393,6 +390,17 @@ IF(Stokhos_ENABLE_Sacado)
     STANDARD_PASS_OUTPUT
   )
 
+  IF (Stokhos_ENABLE_CXX11)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      SacadoPromoteUnitTest
+      SOURCES Stokhos_SacadoPromoteUnitTest.cpp
+      ARGS
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+  ENDIF()
+
   IF (Stokhos_ENABLE_KokkosCore)
 
     IF (Kokkos_ENABLE_Pthread)
@@ -429,7 +437,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -439,7 +446,6 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -449,8 +455,29 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
-        DEPLIBS stokhos kokkoscore
         )
+    ENDIF()
+
+    IF (Kokkos_ENABLE_OpenMP)
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewMPVectorUnitTest_OpenMP
+        SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
+                Stokhos_KokkosViewMPVectorUnitTest_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewUQPCEUnitTest_OpenMP
+        SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
+                Stokhos_KokkosViewUQPCEUnitTest_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
     ENDIF()
 
     IF (Kokkos_ENABLE_Cuda)
@@ -468,7 +495,6 @@ IF(Stokhos_ENABLE_Sacado)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         RUN_SERIAL
-        DEPLIBS stokhos kokkoscore
         )
 
       SET(CUDA_SOURCES "")
@@ -481,11 +507,10 @@ IF(Stokhos_ENABLE_Sacado)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         RUN_SERIAL
-        DEPLIBS stokhos kokkoscore
         )
     ENDIF()
 
-    IF (Stokhos_ENABLE_KokkosLinAlg)
+    IF (Stokhos_ENABLE_TpetraKernels)
 
       IF (Kokkos_ENABLE_Pthread)
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -495,7 +520,6 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoslinalg
           )
 
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -505,7 +529,26 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoslinalg
+          )
+      ENDIF()
+
+      IF (Kokkos_ENABLE_OpenMP)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosCrsMatrixMPVectorUnitTest_OpenMP
+          SOURCES Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp
+                  Stokhos_KokkosCrsMatrixMPVectorUnitTest_OpenMP.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          )
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosCrsMatrixUQPCEUnitTest_OpenMP
+          SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest.hpp
+                  Stokhos_KokkosCrsMatrixUQPCEUnitTest_OpenMP.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
           )
       ENDIF()
 
@@ -522,7 +565,6 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoslinalg
           )
 
         CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -534,13 +576,12 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoslinalg
           )
       ENDIF()
 
       IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 
-        IF (Kokkos_ENABLE_Pthread AND KokkosClassic_ENABLE_KokkosCompat)
+        IF (Kokkos_ENABLE_Pthread AND TpetraCore_ENABLE_TeuchosKokkosCompat)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_Threads
             SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
@@ -548,7 +589,6 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoslinalg
             )
 
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -558,11 +598,30 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoslinalg
             )
         ENDIF()
 
-        IF (Kokkos_ENABLE_Cuda AND KokkosClassic_ENABLE_KokkosCompat)
+        IF (Kokkos_ENABLE_OpenMP AND TpetraCore_ENABLE_TeuchosKokkosCompat)
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixMPVectorUnitTest_OpenMP
+            SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_OpenMP.cpp
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            NUM_MPI_PROCS 4
+            )
+
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixUQPCEUnitTest_OpenMP
+            SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp
+                    Stokhos_TpetraCrsMatrixUQPCEUnitTest_OpenMP.cpp
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            NUM_MPI_PROCS 4
+            )
+        ENDIF()
+
+        IF (Kokkos_ENABLE_Cuda AND TpetraCore_ENABLE_TeuchosKokkosCompat)
           CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda.cu)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_Cuda
@@ -572,7 +631,6 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoslinalg
             )
 
           CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -584,7 +642,6 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoslinalg
             )
         ENDIF()
 
@@ -603,17 +660,16 @@ ENDIF()
 # Need to fix these tests so they don't require Epetra
 IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    KokkosArrayKernelsUnitTest_Serial
-    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    DEPLIBS stokhos kokkoscore
-    )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    KokkosArrayKernelsUnitTest_Serial
+#    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+#            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
+#    COMM serial mpi
+#    STANDARD_PASS_OUTPUT
+#    NUM_MPI_PROCS 1
+##    )
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -625,7 +681,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 
@@ -639,7 +694,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 
@@ -657,7 +711,6 @@ IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
       RUN_SERIAL
-      DEPLIBS stokhos kokkoscore
       )
   ENDIF()
 

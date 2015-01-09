@@ -67,7 +67,7 @@
 
 /* 
  * Copyright 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -2615,12 +2615,18 @@ yyreduce:
   case 121:
 /* Line 1787 of yacc.c  */
 #line 326 "aprepro.y"
-    { array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
+    { (yyval.val) = (yyvsp[(8) - (8)].val);
+				    array *arr = (yyvsp[(1) - (8)].tptr)->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-				    (yyval.val) = (yyvsp[(8) - (8)].val);
-				    if ((yyvsp[(3) - (8)].val) < rows && (yyvsp[(5) - (8)].val) < cols) {
-                                      int offset = (yyvsp[(3) - (8)].val)*cols+(yyvsp[(5) - (8)].val);
+				    int row = (yyvsp[(3) - (8)].val);
+				    int col = (yyvsp[(5) - (8)].val);
+				    if (ap_options.one_based_index == True) {
+				      row--;
+				      col--;
+				    }
+				    if (row < rows && col < cols) {
+                                      int offset = row*cols+col;
                                       (yyvsp[(1) - (8)].tptr)->value.avar->data[offset] = (yyvsp[(8) - (8)].val);
                                     }
                                     else {
@@ -2632,7 +2638,7 @@ yyreduce:
 
 
 /* Line 1787 of yacc.c  */
-#line 2636 "y.tab.c"
+#line 2642 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2864,7 +2870,7 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 342 "aprepro.y"
+#line 348 "aprepro.y"
 
 # include "lex.yy.c"
 

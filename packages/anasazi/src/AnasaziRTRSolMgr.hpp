@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -30,7 +30,7 @@
 #define ANASAZI_RTR_SOLMGR_HPP
 
 /*! \file AnasaziRTRSolMgr.hpp
-  \brief The Anasazi::RTRSolMgr provides a simple solver manager over the IRTR 
+  \brief The Anasazi::RTRSolMgr provides a simple solver manager over the IRTR
   eigensolvers.
 */
 
@@ -75,11 +75,11 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
 
   //! @name Constructors/Destructor
-  //@{ 
+  //@{
 
   /*! \brief Basic constructor for RTRSolMgr.
    *
@@ -90,11 +90,11 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    *      - \c "Which" - a \c string specifying the desired eigenvalues: SR or LR, i.e., smallest or largest algebraic eigenvalues.
    *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying RTR solver. Default: problem->getNEV()
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
-   *   - Convergence parameters 
+   *   - Convergence parameters
    *      - \c "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
-   *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M" 
+   *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M"
    */
   RTRSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
              Teuchos::ParameterList &pl );
@@ -102,16 +102,16 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! Destructor.
   virtual ~RTRSolMgr() {};
   //@}
-  
+
   //! @name Accessor methods
-  //@{ 
+  //@{
 
   //! Return the eigenvalue problem.
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *problem_;
   }
 
-  /*! \brief Return the timers for this object. 
+  /*! \brief Return the timers for this object.
    *
    * The timers are ordered as follows:
    *   - time spent in solve() routine
@@ -129,10 +129,10 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   //! @name Solver application methods
-  //@{ 
-    
+  //@{
+
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
-   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
+   * until the problem has been solved (as decided by the solver manager) or the solver manager decides to
    * quit.
    *
    * \returns ::ReturnType specifying:
@@ -144,14 +144,14 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
-  std::string whch_; 
+  std::string whch_;
   std::string ortho_;
 
   bool skinny_;
   MagnitudeType convtol_;
   int maxIters_;
   bool relconvtol_;
-  enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_;
+  enum ResType convNorm_;
   int numIters_;
   int numICGS_;
 
@@ -163,9 +163,9 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
-RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr( 
+RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
-        Teuchos::ParameterList &pl ) : 
+        Teuchos::ParameterList &pl ) :
   problem_(problem),
   whch_("SR"),
   skinny_(true),
@@ -194,16 +194,16 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   relconvtol_ = pl_.get("Relative Convergence Tolerance",relconvtol_);
   strtmp = pl_.get("Convergence Norm",std::string("2"));
   if (strtmp == "2") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_2NORM;
+    convNorm_ = RES_2NORM;
   }
   else if (strtmp == "M") {
-    convNorm_ = StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH;
+    convNorm_ = RES_ORTH;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         "Anasazi::RTRSolMgr: Invalid Convergence Norm.");
   }
-  
+
 
   // maximum number of (outer) iterations
   maxIters_ = pl_.get("Maximum Iterations",maxIters_);
@@ -232,7 +232,7 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
     MPI_Initialized(&mpiStarted);
     if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
     else MyPID=0;
-# else 
+# else
     MyPID = 0;
 # endif
   if (fntemplate != "") {
@@ -278,12 +278,12 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType 
+ReturnType
 RTRSolMgr<ScalarType,MV,OP>::solve() {
 
   using std::endl;
 
-  typedef SolverUtils<ScalarType,MV,OP> msutils;
+  // typedef SolverUtils<ScalarType,MV,OP> msutils; // unused
 
   const int nev = problem_->getNEV();
 
@@ -320,7 +320,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
   convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(convtol_,nev,convNorm_,relconvtol_) );
   ordertest = Teuchos::rcp( new StatusTestWithOrdering<ScalarType,MV,OP>(convtest,sorter,nev) );
   //
-  // combo 
+  // combo
   Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
   alltests.push_back(ordertest);
   if (maxtest != Teuchos::null) alltests.push_back(maxtest);
@@ -337,7 +337,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RCP<ICGSOrthoManager<ScalarType,MV,OP> > ortho 
+  Teuchos::RCP<ICGSOrthoManager<ScalarType,MV,OP> > ortho
     = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>(problem_->getM(),numICGS_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -388,7 +388,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
   }
 
   // check the status tests
-  if (convtest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed)) 
+  if (convtest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed))
   {
     int num = convtest->howMany();
     if (num > 0) {

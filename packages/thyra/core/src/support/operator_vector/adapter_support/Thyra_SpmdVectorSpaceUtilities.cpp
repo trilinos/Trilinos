@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -50,17 +50,19 @@ Ordinal SpmdVectorSpaceUtilities::computeMapCode(
   const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
   //
   // Here we will make a map code out of just the local sub-dimension on each
   // processor.  If each processor has the same number of local elements, then
   // the map codes will be the same and this is all you need for RTOp
   // compatibility.
   //
-  const int procRank = size(comm);
+  const int procRank = comm.getSize ();
   Ordinal mapCode = -1;
   Ordinal localCode = localSubDim % (procRank+1) + localSubDim;
-  reduceAll(comm, Teuchos::REDUCE_SUM, localCode,
-    Teuchos::outArg(mapCode));
+  reduceAll<Ordinal, Ordinal> (comm, REDUCE_SUM, localCode, outArg (mapCode));
   return mapCode;
 }
 
@@ -69,10 +71,13 @@ Ordinal SpmdVectorSpaceUtilities::computeLocalOffset(
   const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::scan;
+
   Ordinal localOffset;
   const Ordinal _localOffset = localSubDim;
-  scan(comm, Teuchos::REDUCE_SUM, _localOffset, 
-    Teuchos::outArg(localOffset));
+  scan<Ordinal, Ordinal> (comm, REDUCE_SUM, _localOffset, outArg (localOffset));
   localOffset -= localSubDim;
   return localOffset;
 }
@@ -82,9 +87,12 @@ Ordinal SpmdVectorSpaceUtilities::computeGlobalDim(
   const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+
   Ordinal globalDim = -1;
-  reduceAll(comm, Teuchos::REDUCE_SUM, localSubDim,
-    Teuchos::outArg(globalDim));
+  reduceAll<Ordinal, Ordinal> (comm, REDUCE_SUM, localSubDim, outArg (globalDim));
   return globalDim;
 }
 

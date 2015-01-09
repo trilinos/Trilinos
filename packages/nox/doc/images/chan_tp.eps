@@ -90,7 +90,7 @@
    PDlw -1 eq not {PDlw w /PDlw -1 def} if} def
 /FA {newpath tMatrix currentmatrix pop translate scale
   0 0 1 5 -2 roll arc tMatrix setmatrix stroke} bdef
-/PA {newpath tMatrix currentmatrix pop	translate 0 0 moveto scale
+/PA {newpath tMatrix currentmatrix pop    translate 0 0 moveto scale
   0 0 1 5 -2 roll arc closepath tMatrix setmatrix fill} bdef
 /FAn {newpath tMatrix currentmatrix pop translate scale
   0 0 1 5 -2 roll arcn tMatrix setmatrix stroke} bdef
@@ -100,7 +100,7 @@
 /lrx 0 def /uly 0 def /ulx 0 def /rad 0 def
 /MRR {/vradius xdef /hradius xdef /lry xdef /lrx xdef /uly xdef
   /ulx xdef newpath tMatrix currentmatrix pop ulx hradius add uly
-  vradius add translate hradius vradius scale 0 0 1 180 270 arc 
+  vradius add translate hradius vradius scale 0 0 1 180 270 arc
   tMatrix setmatrix lrx hradius sub uly vradius add translate
   hradius vradius scale 0 0 1 270 360 arc tMatrix setmatrix
   lrx hradius sub lry vradius sub translate hradius vradius scale
@@ -132,7 +132,7 @@
   2 0 asub 3 1 asub 4 0 asub 5 1 asub
   dup 0 get exch 1 get 7 -1 roll astore } bdef
 /compute_transform {
-  dmat dtri tri_to_matrix tmat1 invertmatrix 
+  dmat dtri tri_to_matrix tmat1 invertmatrix
   smat stri tri_to_matrix tmat2 concatmatrix } bdef
 /ds {stri astore pop} bdef
 /dt {dtri astore pop} bdef
@@ -142,7 +142,7 @@
   dup 2 index dup getinterval /gbmap xdef
   1 index dup 2 mul exch getinterval /bbmap xdef pop pop}bdef
 /it {gs np dtri aload pop moveto lineto lineto cp c
-  cols rows 8 compute_transform 
+  cols rows 8 compute_transform
   rbmap gbmap bbmap true 3 colorimage gr}bdef
 /il {newpath moveto lineto stroke}bdef
 currentdict end def
@@ -203,71 +203,71 @@ SO
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
- 746 4760 mt 
+ 746 4760 mt
 (-0.4) s
 1664 4615 mt 1664 4561 L
 1664  389 mt 1664  442 L
-1511 4760 mt 
+1511 4760 mt
 (-0.2) s
 2429 4615 mt 2429 4561 L
 2429  389 mt 2429  442 L
-2396 4760 mt 
+2396 4760 mt
 (0) s
 3194 4615 mt 3194 4561 L
 3194  389 mt 3194  442 L
-3111 4760 mt 
+3111 4760 mt
 (0.2) s
 3959 4615 mt 3959 4561 L
 3959  389 mt 3959  442 L
-3876 4760 mt 
+3876 4760 mt
 (0.4) s
 4724 4615 mt 4724 4561 L
 4724  389 mt 4724  442 L
-4641 4760 mt 
+4641 4760 mt
 (0.6) s
 5489 4615 mt 5489 4561 L
 5489  389 mt 5489  442 L
-5406 4760 mt 
+5406 4760 mt
 (0.8) s
 6255 4615 mt 6255 4561 L
 6255  389 mt 6255  442 L
-6222 4760 mt 
+6222 4760 mt
 (1) s
  899 4615 mt  952 4615 L
 6255 4615 mt 6201 4615 L
- 698 4659 mt 
+ 698 4659 mt
 (2.6) s
  899 4086 mt  952 4086 L
 6255 4086 mt 6201 4086 L
- 698 4130 mt 
+ 698 4130 mt
 (2.8) s
  899 3558 mt  952 3558 L
 6255 3558 mt 6201 3558 L
- 798 3602 mt 
+ 798 3602 mt
 (3) s
  899 3030 mt  952 3030 L
 6255 3030 mt 6201 3030 L
- 698 3074 mt 
+ 698 3074 mt
 (3.2) s
  899 2501 mt  952 2501 L
 6255 2501 mt 6201 2501 L
- 698 2545 mt 
+ 698 2545 mt
 (3.4) s
  899 1973 mt  952 1973 L
 6255 1973 mt 6201 1973 L
- 698 2017 mt 
+ 698 2017 mt
 (3.6) s
  899 1445 mt  952 1445 L
 6255 1445 mt 6201 1445 L
- 698 1489 mt 
+ 698 1489 mt
 (3.8) s
  899  917 mt  952  917 L
 6255  917 mt 6201  917 L
- 798  961 mt 
+ 798  961 mt
 (4) s
  899  389 mt  952  389 L
 6255  389 mt 6201  389 L
- 698  433 mt 
+ 698  433 mt
 (4.2) s
  899 4615 mt 6255 4615 L
  899  389 mt 6255  389 L
@@ -276,7 +276,7 @@ SO
 gs 899 389 5357 4227 MR c np
 /c8 { 0.000000 0.000000 1.000000 sr} bdef
 c8
-925 285 -2123 -673 -1650 -600 -336 -147 270 159 507 364 565 501 544 585 
+925 285 -2123 -673 -1650 -600 -336 -147 270 159 507 364 565 501 544 585
 490 627 426 638 382 658 2429 738 12 MP stroke
 gs 1431 665 4256 3679 MR c np
   36   36 2429  738 FO
@@ -300,16 +300,16 @@ c8
 %%IncludeResource: font Symbol
 /Symbol /ISOLatin1Encoding 120 FMSR
 
-3543 4897 mt 
+3543 4897 mt
 (b) s
- 539 2468 mt 
+ 539 2468 mt
 (a) s
 %%IncludeResource: font Helvetica
 /Helvetica /ISOLatin1Encoding 120 FMSR
 
- 614 2468 mt 
+ 614 2468 mt
 (    ) s
-2951  294 mt 
+2951  294 mt
 (Locus of Turning Points) s
 
 end %%Color Dict

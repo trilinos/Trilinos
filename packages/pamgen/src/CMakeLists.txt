@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -31,6 +30,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/mesh_spec_lt)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/extra_functions)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/rtcompiler)
 
 #
 # Core Files
@@ -75,23 +75,11 @@ APPEND_SET(SOURCES
 #
 
 APPEND_SET(HEADERS
-  ../mesh_spec_lt/im_exodusII.h
-  ../mesh_spec_lt/im_exodusII_l.h
-  ../mesh_spec_lt/im_exodusII_ext.h
-  ../mesh_spec_lt/im_ne_nemesisI.h
-  ../mesh_spec_lt/im_ne_nemesisI_l.h
-  ../mesh_spec_lt/pamgen_mesh_specification.h
-  ../mesh_spec_lt/pamgen_fudges.h
-  ../mesh_spec_lt/pamgen_element_dictionary.h
-  ../mesh_spec_lt/pamgen_code_types.h
-  )
-
-APPEND_SET(PE_HEADERS
-  ../mesh_spec_lt/im_exodusII.h
-  ../mesh_spec_lt/im_exodusII_l.h
-  ../mesh_spec_lt/im_exodusII_ext.h
-  ../mesh_spec_lt/im_ne_nemesisI.h
-  ../mesh_spec_lt/im_ne_nemesisI_l.h
+  ../mesh_spec_lt/pamgen_im_exodusII.h
+  ../mesh_spec_lt/pamgen_im_exodusII_l.h
+  ../mesh_spec_lt/pamgen_im_exodusII_ext.h
+  ../mesh_spec_lt/pamgen_im_ne_nemesisI.h
+  ../mesh_spec_lt/pamgen_im_ne_nemesisI_l.h
   ../mesh_spec_lt/pamgen_mesh_specification.h
   ../mesh_spec_lt/pamgen_fudges.h
   ../mesh_spec_lt/pamgen_element_dictionary.h
@@ -113,28 +101,28 @@ APPEND_SET(SOURCES
 #
 
 APPEND_SET(HEADERS
-  ../rtcompiler/ArrayIndexRTC.hh
-  ../rtcompiler/ArrayNumberRTC.hh
-  ../rtcompiler/ArrayVarRTC.hh
-  ../rtcompiler/Bessel_I.hh
-  ../rtcompiler/BlockRTC.hh
-  ../rtcompiler/ConditionalBlockRTC.hh
-  ../rtcompiler/ExecutableRTC.hh
-  ../rtcompiler/ForBlockRTC.hh
-  ../rtcompiler/FunctionRTC.hh
-  ../rtcompiler/IfElseifElseBlockRTC.hh
-  ../rtcompiler/LineRTC.hh
-  ../rtcompiler/NormalBlockRTC.hh
-  ../rtcompiler/ObjectRTC.hh
-  ../rtcompiler/OperatorRTC.hh
-  ../rtcompiler/RegistrarRTC.hh
-  ../rtcompiler/ScalarNumberRTC.hh
-  ../rtcompiler/ScalarVarRTC.hh
-  ../rtcompiler/TokenizerRTC.hh
-  ../rtcompiler/ValueRTC.hh
-  ../rtcompiler/VariableRTC.hh
-  ../rtcompiler/WhileBlockRTC.hh
-  ../rtcompiler/commonRTC.hh
+  ../rtcompiler/RTC_ArrayIndexRTC.hh
+  ../rtcompiler/RTC_ArrayNumberRTC.hh
+  ../rtcompiler/RTC_ArrayVarRTC.hh
+  ../rtcompiler/RTC_Bessel_I_RTC.hh
+  ../rtcompiler/RTC_BlockRTC.hh
+  ../rtcompiler/RTC_ConditionalBlockRTC.hh
+  ../rtcompiler/RTC_ExecutableRTC.hh
+  ../rtcompiler/RTC_ForBlockRTC.hh
+  ../rtcompiler/RTC_FunctionRTC.hh
+  ../rtcompiler/RTC_IfElseifElseBlockRTC.hh
+  ../rtcompiler/RTC_LineRTC.hh
+  ../rtcompiler/RTC_NormalBlockRTC.hh
+  ../rtcompiler/RTC_ObjectRTC.hh
+  ../rtcompiler/RTC_OperatorRTC.hh
+  ../rtcompiler/RTC_RegistrarRTC.hh
+  ../rtcompiler/RTC_ScalarNumberRTC.hh
+  ../rtcompiler/RTC_ScalarVarRTC.hh
+  ../rtcompiler/RTC_TokenizerRTC.hh
+  ../rtcompiler/RTC_ValueRTC.hh
+  ../rtcompiler/RTC_VariableRTC.hh
+  ../rtcompiler/RTC_WhileBlockRTC.hh
+  ../rtcompiler/RTC_commonRTC.hh
   )
 
 APPEND_SET(SOURCES

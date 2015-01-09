@@ -33,24 +33,18 @@
  * 
  */
 #include "info_interface.h"
+#include <stddef.h>                     // for NULL
+#include <cstdlib>                      // for exit, EXIT_SUCCESS, getenv
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for char_traits, string
+#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
 
-#include "Ioss_GetLongOpt.h"                 // for GetLongOption, etc
 
-#include <ctype.h>                      // for tolower
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair, make_pair
-#include <iostream>
-#include <algorithm>
-#include <vector>
 
-#include <limits.h>
-#include <cstdlib>
-#include <cstring>
 
 Info::Interface::Interface()
   : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false),ints64Bit_(false),
-    computeBBox_(false), useGenericNames_(false), fieldSuffixSeparator_('_'), summary_(0),
+    computeBBox_(false), useGenericNames_(false), listGroups_(false), fieldSuffixSeparator_('_'), summary_(0),
     surfaceSplitScheme_(1), minimumTime_(0.0), maximumTime_(0.0),
     cwd_(""), filetype_("exodus")
 {
@@ -84,12 +78,21 @@ void Info::Interface::enroll_options()
   options_.enroll("compute_bbox", Ioss::GetLongOption::NoValue,
 		  "Compute the bounding box of all element blocks in the mesh.",
 		  NULL);
+
+  options_.enroll("list_groups", Ioss::GetLongOption::NoValue,
+		  "Print a list of the names of all groups in this file and then exit.",
+		  NULL);
+
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
 		  "Character used to separate a field suffix from the field basename\n"
 		  "\t\t when recognizing vector, tensor fields. Enter '0' for no separaor", "_");
 
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
 		  "Database Type: exodus, generated","exodusii");
+
+  options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
+                 "List information only for the specified group. Use 'ALL' to see info for all groups",
+                 NULL);
 
   options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
 		  "True to use generic names (type_id) instead of names in database",
@@ -159,6 +162,10 @@ bool Info::Interface::parse_options(int argc, char **argv)
     computeBBox_ = true;
   }
 
+  if (options_.retrieve("list_groups")) {
+    listGroups_ = true;
+  }
+
   if (options_.retrieve("use_generic_names")) {
     useGenericNames_ = true;
   }
@@ -171,6 +178,13 @@ bool Info::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("db_type");
     if (temp != NULL) {
       filetype_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("group_name");
+    if (temp != NULL) {
+      groupname_ = temp;
     }
   }
 

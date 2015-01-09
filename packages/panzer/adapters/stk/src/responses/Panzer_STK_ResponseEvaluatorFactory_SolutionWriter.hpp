@@ -17,7 +17,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 /** This class defines a response based solution writer.
   */
@@ -26,7 +26,7 @@ class ResponseEvaluatorFactory_SolutionWriter : public panzer::ResponseEvaluator
 public:
 
    ResponseEvaluatorFactory_SolutionWriter(const Teuchos::RCP<STK_Interface> & mesh)
-     : mesh_(mesh) {}
+     : mesh_(mesh), addSolutionFields_(true), addCoordinateFields_(true) {}
 
    virtual ~ResponseEvaluatorFactory_SolutionWriter() {}
  
@@ -87,31 +87,89 @@ public:
      */
    void scaleField(const std::string & fieldName,double fieldScalar);
 
+   /** Add an additional (solution) field to write out that is not in the physics blocks.
+     */
+   void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis);
+
+   /** Enable/disable addition of solution fields. Note that this "true" by default.
+     */
+   void setAddSolutionFields(bool asf) 
+   { addSolutionFields_ = asf; }
+
+   /** Enable/disable addition of coordinate fields. Note that this "true" by default.
+     */
+   void setAddCoordinateFields(bool acf) 
+   { addCoordinateFields_ = acf; }
+
+   /** Remove a field (even a solution field) from the response. Note that even if a field has not
+     * been added, it will be removed by any previous or following call to removeField. This implies
+     * that removeField takes precedence.
+     */
+   void removeField(const std::string & fieldName)
+   { removedFields_.push_back(fieldName); }
+
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
                                  int baseDimension,
                                  Intrepid::FieldContainer<double> & centroid) const;
 
+   //! Delete from the argument all the fields that are in the removedFields array
+   void deleteRemovedFields(const std::vector<std::string> & removedFields,
+                            std::vector<panzer::StrPureBasisPair> & fields) const;
+
+   struct RemovedFieldsSearchUnaryFunctor : public std::unary_function<panzer::StrPureBasisPair,bool> {
+     std::vector<std::string> removedFields_;
+     bool operator() (const panzer::StrPureBasisPair & field) 
+     { return std::find(removedFields_.begin(),removedFields_.end(),field.first)!=removedFields_.end(); }
+   };
+
    Teuchos::RCP<STK_Interface> mesh_;
 
    boost::unordered_map<std::string,double> fieldToScalar_;
    boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
+
+   std::vector<panzer::StrPureBasisPair> additionalFields_;
+   std::vector<std::string> removedFields_;
+   bool addSolutionFields_;
+   bool addCoordinateFields_;
 };
 
 /** A simple builder for this the SolutionWriter response factory, simply set the mesh 
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
-  Teuchos::RCP<panzer_stk::STK_Interface> mesh;
+  RespFactorySolnWriter_Builder() : addSolutionFields_(true), addCoordinateFields_(true) {}
+
+  Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh;
 
   void scaleField(const std::string & fieldName,double fieldScalar)
   { fieldToScalar_[fieldName] = fieldScalar; }
+
+  void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
+  { additionalFields_.push_back(std::make_pair(fieldName,basis)); }
+
+  /** Remove a field (even a solution field) from the response. Note that even if a field has not
+    * been added, it will be removed by any previous or following call to removeField. This implies
+    * that removeField takes precedence.
+    */
+  void removeField(const std::string & fieldName)
+  { removedFields_.push_back(fieldName); }
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
   { 
     Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
-        Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+        Teuchos::rcp(new panzer_stk_classic::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+ 
+    // disable/enable the solution fields
+    ref->setAddSolutionFields(addSolutionFields_);
+
+    // add all additional fields
+    for(std::size_t i=0;i<additionalFields_.size();i++)
+      ref->addAdditionalField(additionalFields_[i].first,additionalFields_[i].second);
+
+    for(std::size_t i=0;i<removedFields_.size();i++)
+      ref->removeField(removedFields_[i]);
 
     // set all scaled field values
     for(boost::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
@@ -121,12 +179,24 @@ struct RespFactorySolnWriter_Builder {
     return ref;
   }
 
+   /** Enable/disable addition of solution fields. Note that this "true" by default.
+     */
+   void setAddSolutionFields(bool asf) 
+   { addSolutionFields_ = asf; }
+
+   /** Enable/disable addition of coordinate fields. Note that this "true" by default.
+     */
+   void setAddCoordinateFields(bool acf) 
+   { addCoordinateFields_ = acf; }
+
 private:
   boost::unordered_map<std::string,double> fieldToScalar_;
+  std::vector<panzer::StrPureBasisPair> additionalFields_;
+  std::vector<std::string> removedFields_;
+  bool addSolutionFields_;
+  bool addCoordinateFields_;
 };
 
 }
-
-#include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter_impl.hpp"
 
 #endif

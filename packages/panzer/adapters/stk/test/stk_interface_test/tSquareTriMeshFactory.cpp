@@ -62,7 +62,7 @@
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
 {
@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    SquareTriMeshFactory factory; 
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("square-tri.exo");
 
    // minimal requirements
@@ -86,8 +86,8 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshFactory, defaults)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),25+60);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),36);
 
-   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
 
    int mpi_numprocs = -1;
    MPI_Comm_size(MPI_COMM_WORLD, &mpi_numprocs);

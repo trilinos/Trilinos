@@ -1,25 +1,51 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
-#include <stdexcept>
-#include <sstream>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Trace.hpp>
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
+#include <stddef.h>                     // for NULL, size_t
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Part.hpp>       // for Part, contain, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <vector>                       // for vector, etc
+#include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <stdlib.h>
 
-#include <iostream>
+
+
+
 
 namespace stk {
 namespace mesh {
@@ -48,16 +74,6 @@ void assert_same_universe( const Part & superset ,
                    universal_part_name() );
 }
 
-void assert_same( const Part & part1 ,
-                  const Part & part2,
-                  const char * method )
-{
-  ThrowErrorMsgIf( & part1 != & part2,
-                   method << "(...) FAILED Requirement that " <<
-                   "Part[" << part1.name() << "] and " <<
-                   "Part[" << part2.name() << "] are the same" );
-}
-
 void assert_not_same( const Part & part1 ,
                       const Part & part2 ,
                       const char * method )
@@ -66,17 +82,6 @@ void assert_not_same( const Part & part1 ,
                    method << "(...) FAILED Requirement that " <<
                    "Part[" << part1.name() << "] and " <<
                    "Part[" << part2.name() << "] are not the same" );
-}
-
-void assert_superset( Part & superset ,
-                      Part & subset ,
-                      const char * method )
-{
-  ThrowErrorMsgIf( ! contain( subset.supersets() , superset ),
-                   method << "(...) FAILED Requirement that " <<
-                   "Part[" << superset.name() << "] " <<
-                   "is a superset of " <<
-                   "Part[" << subset.name() << "]" );
 }
 
 void assert_not_superset( const Part & superset ,
@@ -105,7 +110,6 @@ void assert_rank_ordering( const Part & superset ,
 
 } // namespace
 
-
 Part * PartRepository::universal_part() const
 {
   return m_universal_part;
@@ -116,111 +120,43 @@ const PartVector & PartRepository::get_all_parts() const
   return m_all_parts;
 }
 
-Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
+const PartVector PartRepository::get_mesh_parts() const
 {
-  Trace_("stk::mesh::impl::PartRepository::declare_part");
+  PartVector non_internal_parts;
+  for (size_t i=0 ; i<m_all_parts.size() ; ++i) {
+    if (!is_internal_part(*m_all_parts[i])) {
+      non_internal_parts.push_back(m_all_parts[i]);
+    }
+  }
+  return non_internal_parts;
+}
+
+Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce )
+{
+  TraceIf("stk::mesh::impl::PartRepository::declare_part", LOG_PART);
 
   const PartVector & all_parts = get_all_parts();
   Part * p = find( all_parts, arg_name );
 
   if ( p == NULL ) {
-    p = declare_part_impl( arg_name, arg_rank );
+    p = declare_part_impl( arg_name, arg_rank, force_no_induce );
   }
   else {
     p->m_partImpl.set_primary_entity_rank(arg_rank);
+    p->m_partImpl.set_force_no_induce(force_no_induce);
   }
 
   return p;
 }
 
-Part * PartRepository::declare_part( const PartVector & part_intersect )
-{
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part" ;
-  Trace_(method);
-
-  PartVector pset_clean ;
-
-  for ( PartVector::const_iterator
-        i = part_intersect.begin() ; i != part_intersect.end() ; ++i ) {
-    Part * const p = *i ;
-    assert_superset( *m_universal_part, *p , method );
-
-    // If 'p' is a superset of another member
-    // then it is redundant in this intersection.
-    // Only keep non-redundant intersections.
-
-    PartVector::const_iterator j = part_intersect.begin();
-    for ( ; j != part_intersect.end() &&
-            ! contain( (*j)->supersets() , *p ) ; ++j );
-    if ( j == part_intersect.end() ) {
-      pset_clean.push_back( p );
-    }
-  }
-
-  // Sort and unique the intersection
-  order( pset_clean );
-
-  Part * p = NULL ;
-  if ( 1 == pset_clean.size() ) {
-    // Only one remaining part, it is the subset.
-    p = pset_clean[0] ;
-  }
-  else {
-    const char separator[] = "^" ;
-    // Generate a name and rank reflecting the intersection.
-    // Rank is the minimum rank of the intersection members.
-
-    std::string p_name ;
-    EntityRank p_rank = InvalidEntityRank;
-
-    p_name.assign("{");
-    for ( PartVector::iterator
-          i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
-      if ( i != pset_clean.begin() ) { p_name.append( separator ); }
-      p_name.append( (*i)->name() );
-      if ( (*i)->primary_entity_rank() < p_rank ) {
-        p_rank = (*i)->primary_entity_rank();
-      }
-    }
-    p_name.append("}");
-
-    const PartVector & all_parts = get_all_parts();
-    p = find( all_parts, p_name );
-    if ( p == NULL ) {
-      // Create the part:
-
-      p = declare_part_impl( p_name , p_rank );
-
-      // Define the part to be an intersection of the given parts:
-
-      p->m_partImpl.set_intersection_of( pset_clean );
-
-      for ( PartVector::iterator
-            i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
-        declare_subset( **i, *p );
-      }
-    }
-    else {
-      // This error is "inconceivable" and is
-      // only possible by heroic malicious abuse.
-      ThrowInvalidArgMsgIf( pset_clean != p->intersection_of(),
-                            p_name << " FAILED FROM MALICIOUS ABUSE" );
-    }
-  }
-
-  return p ;
-}
-
-
-Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
+Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank, bool force_no_induce )
 {
   size_t ordinal = get_all_parts().size();
-  Part * part = new Part(m_meta_data,name,rank,ordinal);
+  Part * part = new Part(m_meta_data, name, rank, ordinal, force_no_induce);
   declare_subset_impl(*m_universal_part, *part);
   m_all_parts.push_back(part);
   return part;
 }
-
 
 void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_part )
 {
@@ -228,11 +164,10 @@ void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_pa
   subset_part.m_partImpl.add_part_to_superset( superset_part );
 }
 
-
 void PartRepository::declare_subset( Part & superset, Part & subset )
 {
   static const char method[] = "stk::mesh::impl::PartRepository::declare_subset" ;
-  Trace_(method);
+  TraceIf(method, LOG_PART);
 
   if ( ! contain( subset.supersets() , superset ) ) {
 
@@ -260,49 +195,15 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
       declare_subset( **i, subset );
     }
 
-    // Induced intersection-part membership:
-
-    const PartVector & superset_subsets = superset.subsets();
-    for ( PartVector::const_iterator
-          i =  superset_subsets.begin() ;
-          i != superset_subsets.end() ; ++i ) {
-
-      Part & pint = **i ;
-
-      if ( ! pint.intersection_of().empty() && ( & pint != & subset ) ) {
-
-        // If 'subset' is a subset of every member of 'pint.intersection_of()'
-        // then it is by definition a subset of 'pint.
-        if ( contain( subset.supersets() , pint.intersection_of() ) ) {
-          declare_subset( pint, subset );
-        }
-      }
-    }
   }
 }
-
-
-void PartRepository::declare_part_relation( Part & root_part, PartRelation relation, Part & target_part )
-{
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part_relation" ;
-  Trace_(method);
-
-  assert_not_same(      root_part   , target_part        , method );
-  assert_same_universe( root_part   , target_part        , method );
-  assert_same(          root_part   , *relation.m_root   , method );
-  assert_same(          target_part , *relation.m_target , method );
-
-  root_part.m_partImpl.add_relation( relation );
-  target_part.m_partImpl.add_relation( relation );
-}
-
 
 PartRepository::PartRepository(MetaData * meta)
   : m_meta_data(meta),
     m_universal_part(NULL),
     m_all_parts()
 {
-  m_universal_part = new Part( m_meta_data, universal_part_name(), ~0u, 0 );
+  m_universal_part = new Part( m_meta_data, universal_part_name(), stk::topology::INVALID_RANK, 0 /*ordinal*/);
   m_all_parts.push_back(m_universal_part);
 }
 
@@ -315,6 +216,20 @@ PartRepository::~PartRepository()
       try { delete part ; } catch(...) {}
     }
   } catch(...){}
+}
+
+static const char INTERNAL_PART_PREFIX  = '{';
+static const char INTERNAL_PART_POSTFIX = '}';
+bool is_internal_part(const Part& part)
+{
+    return part.name().size() > 2 && *part.name().begin() == INTERNAL_PART_PREFIX && *part.name().rbegin() == INTERNAL_PART_POSTFIX;
+}
+std::string convert_to_internal_name(const std::string& part_name)
+{
+  std::ostringstream out;
+  out << INTERNAL_PART_PREFIX << part_name << INTERNAL_PART_POSTFIX;
+  std::string out_str = out.str();
+  return out_str;
 }
 
 } // namespace impl

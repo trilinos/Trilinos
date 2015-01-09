@@ -1,0 +1,32 @@
+Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON ...
+
+-- Setting Trilinos_ENABLE_Teuchos=ON
+-- Setting Trilinos_ENABLE_RTOp=ON
+-- Setting Trilinos_ENABLE_Epetra=ON
+-- Setting Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting Trilinos_ENABLE_ThyraEpetra=ON
+-- Setting Trilinos_ENABLE_Thyra=ON
+
+Enabling all remaining required TPLs for current set of enabled packages ...
+
+-- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
+-- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
+
+Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4
+Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6
+Final set of non-enabled packages:  Triutils EpetraExt 2
+Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5
+Final set of enabled TPLs:  BLAS LAPACK 2
+Final set of non-enabled TPLs:  MPI Boost UMFPACK AMD PETSC 5
+
+Getting information for all enabled TPLs ...
+
+Processing enabled TPL: BLAS
+Processing enabled TPL: LAPACK
+
+Configuring individual enabled Trilinos packages ...
+
+Processing enabled package: Teuchos (Libs)
+Processing enabled package: RTOp (Libs)
+Processing enabled package: Epetra (Libs)
+Processing enabled package: Thyra (CoreLibs, Epetra)

@@ -46,11 +46,6 @@
 #ifndef MUELU_GENERICRFACTORY_DEF_HPP
 #define MUELU_GENERICRFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_GenericRFactory_decl.hpp"
@@ -63,15 +58,15 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory of the matrix P");
     return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     RCP<const FactoryBase> PFact1 = GetFactory("P");
     if (PFact1 == Teuchos::null) { PFact1 = coarseLevel.GetFactoryManager()->GetFactory("P"); }
     RCP<PFactory> PFact = Teuchos::rcp_const_cast<PFactory>(rcp_dynamic_cast<const PFactory>(PFact1));;
@@ -93,8 +88,8 @@ namespace MueLu {
     PFact->setRestrictionMode(rmode);            // reset restriciton mode flag
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
     FactoryMonitor m(*this, "Call prolongator factory for calculating restrictor", coarseLevel);
 
     RCP<const FactoryBase> PFact1 = GetFactory("P");

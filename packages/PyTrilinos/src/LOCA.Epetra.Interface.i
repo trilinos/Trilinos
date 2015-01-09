@@ -3,40 +3,71 @@
 // @HEADER
 // ***********************************************************************
 //
-//              PyTrilinos: Python Interface to Trilinos
-//                 Copyright (2005) Sandia Corporation
+//          PyTrilinos: Python Interfaces to Trilinos Packages
+//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia
+// Corporation, the U.S. Government retains certain rights in this
+// software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
 %define %loca_epetra_interface_docstring
 "
-PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace Epetra::Interface for
-the Trilinos package LOCA:
+PyTrilinos.LOCA.Epetra.Interface is the python interface to namespace
+Epetra::Interface of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
+The purpose of LOCA.Epetra.Interface is to provide a concrete Epetra
+implementation of LOCA interfaces.  The python version of
+LOCA.Epetra.Interface supports the following classes:
+
+    * Required                 - Provides a set of interfaces for users to
+                                 provide information about the nonlinear
+                                 problem to LOCA
+    * MassMatrix               - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for the coefficients of
+                                 time dependent terms
+    * TimeDependent            - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for computing the shifted
+                                 matrix
+    * TimeDependentMatrixFree  - Used by LOCA.Epetra.Group to provide a link
+                                 to the external code for applying the shifted
+                                 matrix in a matrix-free setting
 "
 %enddef
+
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
 	autodoc      = "1",
@@ -46,13 +77,55 @@ the Trilinos package LOCA:
 %{
 // NumPy includes
 #define NO_IMPORT_ARRAY
-#include "numpy_include.h"
+#include "numpy_include.hpp"
+
+// PyTrilinos includes
+#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // Teuchos includes
-#include "PyTrilinos_Teuchos_Util.h"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 
 // Local Epetra includes
-#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
+
+// Epetra includes
+#include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // NOX include
 #include "NOX_Epetra_Interface_Required.H"
@@ -75,6 +148,10 @@ the Trilinos package LOCA:
 
 // Exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
 
 // Director exception handling
 %feature("director:except")
@@ -119,13 +196,6 @@ the Trilinos package LOCA:
 %teuchos_rcp(LOCA::Epetra::Interface::TimeDependent)
 %teuchos_rcp(LOCA::Epetra::Interface::TimeDependentMatrixFree)
 
-// Epetra_Vector directorin typemap
-// %typemap(directorin) Epetra_Vector &
-// %{
-//   PyTrilinos::Epetra_NumPyVector *npa$argnum = new PyTrilinos::Epetra_NumPyVector(View,$1_name);
-//   $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(PyTrilinos::Epetra_NumPyVector*), 0);
-// %}
-
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
@@ -155,10 +225,7 @@ the Trilinos package LOCA:
 ")
 LOCA::Epetra::Interface::Required::computeF;
 
-//%import "NOX.Epetra.Interface.i"
-%feature("director") NOX::Epetra::Interface::Required;
-%rename(NOX_Epetra_Interface_Required) NOX::Epetra::Interface::Required;
-%include "NOX_Epetra_Interface_Required.H"
+%import "NOX.Epetra.Interface.i"
 
 %feature("director") LOCA::Epetra::Interface::Required;
 %include "LOCA_Epetra_Interface_Required.H"
@@ -172,6 +239,6 @@ LOCA::Epetra::Interface::Required::computeF;
 %feature("director") LOCA::Epetra::Interface::TimeDependentMatrixFree;
 // The following #define is to change the name of LOCA method
 // arguments that conflict with a SWIG director method argument
-#define result nox_result
+#define result loca_result
 %include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
-
+#undef result

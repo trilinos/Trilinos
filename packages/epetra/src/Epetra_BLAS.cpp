@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -175,7 +175,7 @@ void Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA, cons
 	    const float ALPHA, const float * A, const int LDA, float * B,
 	    const int LDB) const {
 
-  STRMM_F77(CHAR_MACRO(SIDE), CHAR_MACRO(UPLO), CHAR_MACRO(TRANSA), CHAR_MACRO(DIAG), 
+  STRMM_F77(CHAR_MACRO(SIDE), CHAR_MACRO(UPLO), CHAR_MACRO(TRANSA), CHAR_MACRO(DIAG),
 	  &M, &N, &ALPHA, A, &LDA, B, &LDB);
 }
 //=============================================================================
@@ -183,7 +183,7 @@ void Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA, cons
 	    const double ALPHA, const double * A, const int LDA, double * B,
 	    const int LDB) const {
 
-  DTRMM_F77(CHAR_MACRO(SIDE), CHAR_MACRO(UPLO), CHAR_MACRO(TRANSA), CHAR_MACRO(DIAG), 
+  DTRMM_F77(CHAR_MACRO(SIDE), CHAR_MACRO(UPLO), CHAR_MACRO(TRANSA), CHAR_MACRO(DIAG),
 	    &M, &N, &ALPHA, A, &LDA, B, &LDB);
 }
 //=============================================================================

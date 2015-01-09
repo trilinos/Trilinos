@@ -1,5 +1,5 @@
 /*
-//@HEADER
+HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -86,6 +86,8 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Relaxation.hpp>
+
+#include <Tpetra_Experimental_BlockMultiVector.hpp>
 
 namespace {
 using Tpetra::global_size_t;
@@ -327,8 +329,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
     return;
   }
 
-  // Create the Kokkos Node instance.  This ensures that the test will
-  // work even if Node is not the default Kokkos Node type.
+  // Create the Node instance.  This ensures that the test will work
+  // even if Node is not the default Node type.
   RCP<Node> node;
   { // All Node constructors demand a ParameterList input.
     ParameterList junk;
@@ -405,8 +407,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
     return;
   }
 
-  // Create the Kokkos Node instance.  This ensures that the test will
-  // work even if Node is not the default Kokkos Node type.
+  // Create the Node instance.  This ensures that the test will
+  // work even if Node is not the default Node type.
   RCP<Node> node;
   { // All Node constructors demand a ParameterList input.
     ParameterList junk;
@@ -460,6 +462,220 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
 }
 
 
+// Test apply() on a NotCrsMatirx with a partially "null" x and y. In parallel, it is possible that some nodes do not have any local elements.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 0;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  if(!comm->getRank()) num_rows_per_proc=5;
+
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<crs_matrix_type> crsmatrix = Teuchos::rcp_const_cast<crs_matrix_type,const crs_matrix_type>(tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap));
+
+  Teuchos::RCP<tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > notcrsmatrix = Teuchos::rcp(new tif_utest::NotCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsmatrix));
+
+  Ifpack2::Relaxation<crs_matrix_type > prec(notcrsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Jacobi");
+  prec.setParameters(params);
+
+  prec.initialize();
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), num_rows_per_proc);
+
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  const int num_rows_per_proc = 5;
+  const int blockSize = 3;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
+      Teuchos::rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type>(tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph, blockSize));
+  bcrsmatrix->computeDiagonalGraph();
+
+  Ifpack2::Relaxation<block_crs_matrix_type > prec(bcrsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Jacobi");
+  prec.setParameters(params);
+
+  prec.initialize();
+  TEST_NOTHROW(prec.compute());
+
+  BMV xBlock(*crsgraph->getRowMap(),blockSize,1), yBlock(*crsgraph->getRowMap(),blockSize,1);
+  MV x = xBlock.getMultiVectorView();
+  MV y = yBlock.getMultiVectorView();
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+
+  const Scalar exactSol = 0.2;
+
+  for (int k = 0; k < num_rows_per_proc; ++k)
+  {
+    typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
+    Scalar* yb = ylcl.getRawPtr();
+    for (int j = 0; j < blockSize; ++j)
+    {
+      TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  const int num_rows_per_proc = 3;
+  const int blockSize = 5;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
+      Teuchos::rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type>(tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>(crsgraph, blockSize));
+  bcrsmatrix->computeDiagonalGraph();
+
+  Ifpack2::Relaxation<block_crs_matrix_type > prec(bcrsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Gauss-Seidel");
+  prec.setParameters(params);
+
+  prec.initialize();
+  TEST_NOTHROW(prec.compute());
+
+  BMV xBlock(*crsgraph->getRowMap(),blockSize,1), yBlock(*crsgraph->getRowMap(),blockSize,1);
+  MV x = xBlock.getMultiVectorView();
+  MV y = yBlock.getMultiVectorView();
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+
+  Teuchos::Array<Scalar> exactSol(num_rows_per_proc);
+  exactSol[0] = 0.5;
+  exactSol[1] = -0.25;
+  exactSol[2] = 0.625;
+
+  for (int k = 0; k < num_rows_per_proc; ++k)
+  {
+    typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
+    Scalar* yb = ylcl.getRawPtr();
+    for (int j = 0; j < blockSize; ++j)
+    {
+      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+    }
+  }
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
+  typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  const int num_rows_per_proc = 3;
+  const int blockSize = 5;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
+      Teuchos::rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type>(tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false>(crsgraph, blockSize));
+  bcrsmatrix->computeDiagonalGraph();
+
+  Ifpack2::Relaxation<block_crs_matrix_type > prec(bcrsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Symmetric Gauss-Seidel");
+  prec.setParameters(params);
+
+  prec.initialize();
+  TEST_NOTHROW(prec.compute());
+
+  BMV xBlock(*crsgraph->getRowMap(),blockSize,1), yBlock(*crsgraph->getRowMap(),blockSize,1);
+  MV x = xBlock.getMultiVectorView();
+  MV y = yBlock.getMultiVectorView();
+  x.putScalar(1);
+
+  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+
+  TEST_NOTHROW(x.getLocalMV().getValues());
+  TEST_NOTHROW(y.getLocalMV().getValues());
+
+  TEST_NOTHROW(prec.apply(x, y));
+
+  Teuchos::Array<Scalar> exactSol(num_rows_per_proc);
+  exactSol[0] = 0.625;
+  exactSol[1] = -0.25;
+  exactSol[2] = 0.5;
+
+  for (int k = 0; k < num_rows_per_proc; ++k)
+  {
+    typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
+    Scalar* yb = ylcl.getRawPtr();
+    for (int j = 0; j < blockSize; ++j)
+    {
+      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+    }
+  }
+
+}
+
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
@@ -467,9 +683,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+
+# define UNIT_TEST_GROUP_LGN( Scalar, LocalOrdinal, GlobalOrdinal ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal,GlobalOrdinal) \
+    UNIT_TEST_GROUP_LGN(double, int, int)
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)

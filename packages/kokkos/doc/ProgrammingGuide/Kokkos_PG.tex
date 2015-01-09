@@ -1,0 +1,80 @@
+\documentclass[a4paper,11pt]{book}
+\usepackage[utf8x]{inputenc}
+
+\usepackage{graphicx}
+
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+%% \usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers after \end{frontmatter}.
+%% \usepackage{lineno}
+
+%% \usepackage{placeins}
+
+\usepackage{listings}
+\usepackage{subfigure}
+\usepackage{courier}
+\usepackage{color}
+\definecolor{lightlightgray}{gray}{0.97}
+\definecolor{lightlightgreen}{rgb}{0.8,1,0.8}
+\definecolor{darkblue}{rgb}{0,0,0.8}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\lstset{language=C++,
+           %%frame=single,
+           basicstyle=\ttfamily\small,
+           %%basicstyle=\ttfamily,
+           %%basicstyle=\sffamily\normalsize,
+           keywordstyle=\color{darkblue},
+           %%backgroundcolor=\color{lightlightgray},
+           commentstyle=\color{darkgreen}
+           }
+
+\title{Kokkos: the Programming Guide}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{<author name>}
+%% \address[label1]{<address>}
+%% \address[label2]{<address>}
+
+\author{H. Carter Edwards, Mark Hoemmen, and Christian R. Trott}
+%\ead{hcedwar@sandia.gov}
+
+%\author{Christian R. Trott}
+%\ead{crtrott@sandia.gov}
+
+%\author{Mark Hoemmen}
+%\ead{mhoemme@sandia.gov}
+
+%\cortext[authorcor]{Corresponding author}
+%\address{Sandia National Laboratories, PO Box 5800 / MS 1318, Albuquerque NM, 87185}
+
+%\addtolength{\oddsidemargin}{-.4in}
+%\addtolength{\evensidemargin}{-.4in}
+%\addtolength{\textwidth}{0.8in}
+
+%\addtolength{\topmargin}{-.875in}
+%\addtolength{\textheight}{1.75in}
+
+\begin{document}
+\maketitle
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+\input{Kokkos_PG_Introduction.tex}
+\input{Kokkos_PG_MachineModel.tex}
+\input{Kokkos_PG_ProgrammingModel.tex}
+\input{Kokkos_PG_Compilation.tex}
+\input{Kokkos_PG_Initialization.tex}
+\input{Kokkos_PG_Views.tex}
+\input{Kokkos_PG_ParallelDispatch.tex}
+\input{Kokkos_PG_HierarchicalParallelism.tex}
+\input{Kokkos_PG_Subviews.tex}
+
+\end{document}

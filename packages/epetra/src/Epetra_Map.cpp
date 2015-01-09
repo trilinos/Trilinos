@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -176,13 +176,13 @@ Epetra_Map & Epetra_Map::operator= (const Epetra_Map& map)
 }
 
 //=============================================================================
-Epetra_Map * Epetra_Map::RemoveEmptyProcesses() const 
-{  
+Epetra_Map * Epetra_Map::RemoveEmptyProcesses() const
+{
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
 
   // If the Comm isn't MPI, just treat this as a copy constructor
-  if(!MpiComm) return new Epetra_Map(*this);      
+  if(!MpiComm) return new Epetra_Map(*this);
 
   MPI_Comm NewComm,MyMPIComm = MpiComm->Comm();
 
@@ -210,7 +210,7 @@ Epetra_Map * Epetra_Map::RemoveEmptyProcesses() const
 
     // Get rid of the old BlockMapData, now make a new one from scratch...
     NewMap->CleanupData();
-    if(GlobalIndicesInt()) { 
+    if(GlobalIndicesInt()) {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       NewMap->BlockMapData_ = new Epetra_BlockMapData(NumGlobalElements(),0,IndexBase(),*NewEpetraComm,false);
 #endif
@@ -271,7 +271,7 @@ Epetra_Map * Epetra_Map::RemoveEmptyProcesses() const
   }
 #else
     // MPI isn't compiled, so just treat this as a copy constructor
-    return new Epetra_Map(*this);      
+    return new Epetra_Map(*this);
 #endif
 }
 
@@ -284,7 +284,7 @@ Epetra_Map* Epetra_Map::ReplaceCommWithSubset(const Epetra_Comm * Comm) const
   // the new communicator, which in the common case only includes a
   // small number of processes.
   Epetra_Map * NewMap=0;
-  
+
   // Create the Map to return (unless Comm is zero, in which case we return zero).
   if(Comm) {
     // Map requires that the index base equal the global min GID.

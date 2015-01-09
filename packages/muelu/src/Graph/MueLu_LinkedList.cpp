@@ -43,6 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <stddef.h>                     // for NULL
 #include "MueLu_LinkedList.hpp"
 
 namespace MueLu {

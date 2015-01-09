@@ -99,7 +99,10 @@ namespace MueLu {
     array. These matrices are dense, but have small size (NSDim x NSDim).
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  template<class Scalar = double,
+           class LocalOrdinal = int,
+           class GlobalOrdinal = LocalOrdinal,
+           class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class Constraint : public BaseClass {
 #undef MUELU_CONSTRAINT_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -135,7 +138,7 @@ namespace MueLu {
     }
 
   private:
-    RCP<MultiVector> X_;                                        //!< Overlapped coarse nullspace
+    RCP<MultiVector>    X_;                                     //!< Overlapped coarse nullspace
     RCP<const CrsGraph> Ppattern_;                              //!< Nonzero sparsity pattern
     ArrayRCP<Teuchos::SerialDenseMatrix<LO,SC> > XXtInv_;       //!< Array storing \f$(Q_i Q_i^H)^{-1}\f$
   };

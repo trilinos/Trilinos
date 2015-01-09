@@ -59,6 +59,11 @@
 
 namespace Sacado {
 
+  // Forward declaration
+  template <typename Storage>
+  KOKKOS_INLINE_FUNCTION
+  bool is_constant(const Sacado::UQ::PCE<Storage>& x);
+
   //! Namespace for UQ classes classes
   namespace UQ {
 
@@ -150,12 +155,19 @@ namespace Sacado {
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      PCE(const PCE& x) : cijk_(x.cijk_), s_(x.s_) {}
+      PCE(const PCE& x) : cijk_(x.cijk_), s_(1,x.fastAccessCoeff(0)) {
+        if (x.size() > 1 && !is_constant(x))
+          s_ = x.s_;
+      }
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       PCE(const volatile PCE& x) :
-        cijk_(const_cast<const my_cijk_type&>(x.cijk_)), s_(x.s_) {}
+        cijk_(const_cast<const my_cijk_type&>(x.cijk_)),
+        s_(1,x.fastAccessCoeff(0)) {
+        if (x.size() > 1 && !is_constant(x))
+          s_ = x.s_;
+      }
 
       //! Destructor
       KOKKOS_INLINE_FUNCTION
@@ -702,6 +714,8 @@ namespace Sacado {
         return tmp;
       }
 
+
+
       //@}
 
     protected:
@@ -713,7 +727,18 @@ namespace Sacado {
 
       Storage s_;
 
+    private:
+  
+      //PCE division using CG with diagonal preconditioning
+//      KOKKOS_INLINE_FUNCTION
+//      void CG_divide(const PCE& a, const PCE& b, PCE& c);
+
+
     }; // class PCE
+
+    template <typename Storage>
+    KOKKOS_INLINE_FUNCTION
+    void CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c);
 
     // Operations
     template <typename Storage>
@@ -1086,8 +1111,102 @@ namespace Sacado {
       PCEPartition( const iType0 & i0 , const iType1 & i1 ) :
         begin(i0), end(i1) {}
     };
+   
+/*   template <typename Storage>
+   KOKKOS_INLINE_FUNCTION
+   void
+   PCE<Storage>::
+   CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c) {
+//     typedef typename PCE<Storage>::ordinal_type ordinal_type;
+//     typedef typename PCE<Storage>::value_type value_type;
+
+     const ordinal_type size = c.size();
+     //Needed scalars
+     value_type alpha, beta, rTz, rTz_old, resid;
+     
+     //Needed temporary PCEs 
+     PCE<Storage> r(a.cijk(),size);
+     PCE<Storage> p(a.cijk(),size);
+     PCE<Storage> bp(a.cijk(),size);
+     PCE<Storage> z(a.cijk(),size);
+ 
+     //compute residual = a - b*c 
+     r =  a - b*c;
+     z = r/b.coeff(0);
+     p = z;
+     resid = r.two_norm();
+     //Compute <r,z>=rTz (L2 inner product)
+     rTz = r.inner_product(z);
+     ordinal_type k = 0;
+     value_type tol = 1e-6;
+     while ( resid > tol && k < 100){
+       //Compute b*p 
+       bp = b*p;
+
+       //Compute alpha = <r,z>/<p,b*p>
+       alpha = rTz/p.inner_product(bp);
+
+       //Check alpha is positive!
+       //Update the solution c = c + alpha*p
+       c = c + alpha*p;
+       rTz_old = rTz;
+
+       //Compute the new residual r = r - alpha*b*p
+       r = r - alpha*bp;
+       resid = r.two_norm();
+
+       //Compute beta = rTz_new/ rTz_old and new p
+       z = r/b.coeff(0);
+       rTz = r.inner_product(z);
+       beta = rTz/rTz_old;
+       p = z + beta*p;
+       k++;
+      }
+//  return c;
+   }
+*/
 
   } // namespace PCE
+
+  //! Trait class to determine if a scalar type is a PCE
+  template <typename T> struct is_uq_pce {
+    static const bool value = false;
+  };
+  template <typename S> struct is_uq_pce< UQ::PCE<S> > {
+    static const bool value = true;
+  };
+  template <typename T> struct is_uq_pce< const T > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T> struct is_uq_pce< T* > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T> struct is_uq_pce< T[] > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T, unsigned N> struct is_uq_pce< T[N] > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+
+  // Utility function to see if a PCE is really a constant
+  template <typename Storage>
+  KOKKOS_INLINE_FUNCTION
+  bool is_constant(const Sacado::UQ::PCE<Storage>& x)
+  {
+    typedef typename Storage::ordinal_type ordinal_type;
+    typedef typename Storage::value_type value_type;
+
+    // All size-1 expansions are constants
+    const ordinal_type sz = x.size();
+    if (sz == 1) return true;
+
+    // Maybe use a tolerance????
+    const value_type zero = 0;
+    for (ordinal_type i=1; i<sz; ++i)
+      if (x.fastAccessCoeff(i) != zero) return false;
+
+    return true;
+  }
 
 } // namespace Sacado
 

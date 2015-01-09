@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -47,11 +47,11 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // 1D Finite Element Test Problem
 /* Solves continuation problem (Parameter c="Right BC")
  *
- * d2u 
+ * d2u
  * --- + a * u**3 = 0
  * dx2
  *
@@ -78,25 +78,25 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
-#include "Tcubed_FiniteElementProblem.H"              
+#include "Tcubed_FiniteElementProblem.H"
 
 using namespace std;
 
 int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
-		bool includeUV, bool useP, const std::string& prec,
-		const std::string& prec_method)
+        bool includeUV, bool useP, const std::string& prec,
+        const std::string& prec_method)
 {
   int ierr = 0;
   int MyPID = Comm.MyPID();
 
   if (MyPID == 0) {
-    std::cout << "********** " 
-	 << "Testing includeUV = " << includeUV << " useP = " << useP
-	 << " Preconditioner = " << prec 
-	 << " Preconditioner method = " << prec_method
-	 << " **********" << std::endl;
+    std::cout << "********** "
+     << "Testing includeUV = " << includeUV << " useP = " << useP
+     << " Preconditioner = " << prec
+     << " Preconditioner method = " << prec_method
+     << " **********" << std::endl;
   }
 
   try {
@@ -106,7 +106,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     double right_bc = 2.07;
 
     // Create the FiniteElementProblem class.  This creates all required
-    // Epetra objects for the problem and allows calls to the 
+    // Epetra objects for the problem and allows calls to the
     // function (RHS) and Jacobian evaluation routines.
     Tcubed_FiniteElementProblem Problem(NumGlobalElements, Comm);
 
@@ -118,21 +118,21 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
 
     // Create initial guess for the null vector of jacobian
     // Only needed for Moore-Spence
-    Teuchos::RCP<NOX::Abstract::Vector> nullVec = 
-      Teuchos::rcp(new NOX::Epetra::Vector(soln));  
+    Teuchos::RCP<NOX::Abstract::Vector> nullVec =
+      Teuchos::rcp(new NOX::Epetra::Vector(soln));
     nullVec->init(1.0);             // initial value 1.0
-  
+
     // Begin LOCA Solver ************************************
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
     Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    Teuchos::ParameterList& locaStepperList = 
+    Teuchos::ParameterList& locaStepperList =
       locaParamsList.sublist("Stepper");
     locaStepperList.set("Continuation Method", "Arc Length");
     locaStepperList.set("Continuation Parameter", "Nonlinear Factor");
@@ -143,23 +143,23 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     locaStepperList.set("Max Nonlinear Iterations", 15);
 
     locaStepperList.set("Bordered Solver Method", "Nested");
-    Teuchos::ParameterList& nestedList = 
+    Teuchos::ParameterList& nestedList =
       locaStepperList.sublist("Nested Bordered Solver");
     nestedList.set("Bordered Solver Method", "Householder");
     nestedList.set("Include UV In Preconditioner", includeUV);
     nestedList.set("Use P For Preconditioner", useP);
 
     // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList =
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Turning Point");
     bifurcationList.set("Bifurcation Parameter", "Right BC");
 
     bifurcationList.set("Formulation", "Minimally Augmented");
-    bifurcationList.set("Symmetric Jacobian", false); 
+    bifurcationList.set("Symmetric Jacobian", false);
     bifurcationList.set("Update Null Vectors Every Continuation Step", true);
-    bifurcationList.set("Update Null Vectors Every Nonlinear Iteration", 
-			false);
+    bifurcationList.set("Update Null Vectors Every Nonlinear Iteration",
+            false);
     bifurcationList.set("Transpose Solver Method",prec);
     bifurcationList.set("Multiply Null Vectors by Mass Matrix", true);
 
@@ -183,7 +183,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     //bifurcationList.set("Length Normalization Vector", nullVec);
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = 
+    Teuchos::ParameterList& predictorList =
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Secant");
 
@@ -200,21 +200,21 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
 
     // Create the NOX printing parameter list
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("MyPID", MyPID); 
-    nlPrintParams.set("Output Precision", 4); 
+    nlPrintParams.set("MyPID", MyPID);
+    nlPrintParams.set("Output Precision", 4);
     if (verbose)
-      nlPrintParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Details + 
-			NOX::Utils::LinearSolverDetails +
-			NOX::Utils::Warning + 
-			NOX::Utils::TestDetails + 
-			NOX::Utils::Error +
-			NOX::Utils::StepperIteration +
-			NOX::Utils::StepperDetails +
-			NOX::Utils::StepperParameters);
+      nlPrintParams.set("Output Information",
+            NOX::Utils::OuterIteration +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::InnerIteration +
+            NOX::Utils::Details +
+            NOX::Utils::LinearSolverDetails +
+            NOX::Utils::Warning +
+            NOX::Utils::TestDetails +
+            NOX::Utils::Error +
+            NOX::Utils::StepperIteration +
+            NOX::Utils::StepperDetails +
+            NOX::Utils::StepperParameters);
     else
       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
@@ -222,12 +222,12 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
     Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
     Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
-    lsParams.set("Aztec Solver", "GMRES");  
-    lsParams.set("Max Iterations", 200);  
+    lsParams.set("Aztec Solver", "GMRES");
+    lsParams.set("Max Iterations", 200);
     lsParams.set("Tolerance", 1e-6);
-    lsParams.set("Output Frequency", 50);    
-    //lsParams.set("Scaling", "None");             
-    //lsParams.set("Scaling", "Row Sum");  
+    lsParams.set("Output Frequency", 50);
+    //lsParams.set("Scaling", "None");
+    //lsParams.set("Scaling", "Row Sum");
     lsParams.set("Compute Scaling Manually", false);
     //lsParams.set("Preconditioner", "Ifpack");
     lsParams.set("Preconditioner", "New Ifpack");
@@ -241,40 +241,40 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
 
     // Create the interface between the test problem and the nonlinear solver
     // This is created by the user using inheritance of the abstract base class
-    Teuchos::RCP<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface =
       Teuchos::rcp(new Problem_Interface(Problem));
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iReq = interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    
+
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RCP<Epetra_RowMatrix> Amat = 
+    Teuchos::RCP<Epetra_RowMatrix> Amat =
       Teuchos::rcp(&Problem.getJacobian(),false);
 
     // Create scaling object
     Teuchos::RCP<NOX::Epetra::Scaling> scaling = Teuchos::null;
 //       scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//       Teuchos::RCP<Epetra_Vector> scalingVector = 
-// 	Teuchos::rcp(new Epetra_Vector(soln.Map()));
+//       Teuchos::RCP<Epetra_Vector> scalingVector =
+//     Teuchos::rcp(new Epetra_Vector(soln.Map()));
 //       //scaling->addRowSumScaling(NOX::Epetra::Scaling::Left, scalingVector);
 //       scaling->addColSumScaling(NOX::Epetra::Scaling::Right, scalingVector);
 
     // Create transpose scaling object
 //     Teuchos::RCP<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
 //     trans_scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//     Teuchos::RCP<Epetra_Vector> transScalingVector = 
+//     Teuchos::RCP<Epetra_Vector> transScalingVector =
 //       Teuchos::rcp(new Epetra_Vector(soln.Map()));
-//     trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right, 
-// 				    transScalingVector);
-//     trans_scaling->addColSumScaling(NOX::Epetra::Scaling::Left, 
-// 				    transScalingVector);
+//     trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right,
+//                     transScalingVector);
+//     trans_scaling->addColSumScaling(NOX::Epetra::Scaling::Left,
+//                     transScalingVector);
 //     //bifurcationList.set("Transpose Scaling", trans_scaling);
 
     // Create the linear systems
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
-							lsParams,
-							iReq, iJac, Amat, soln,
-							scaling));
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams,
+                            lsParams,
+                            iReq, iJac, Amat, soln,
+                            scaling));
 
     // Create the loca vector
     NOX::Epetra::Vector locaSoln(soln);
@@ -284,97 +284,97 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RCP<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
-    Teuchos::RCP<LOCA::Epetra::Group> grp = 
-      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq, 
-					   locaSoln, linsys, linsys,
-					   pVector));
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
+      Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq,
+                       locaSoln, linsys, linsys,
+                       pVector));
     grp->computeF();
-  
+
     // Create the Solver convergence test
     //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-    Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
+    Teuchos::RCP<NOX::StatusTest::NormF> wrms =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(locaStepperList.get("Max Nonlinear Iterations", 10)));
-    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);
     combo->addStatusTest(maxiters);
-  
-    // Create the stepper  
+
+    // Create the stepper
     LOCA::Stepper stepper(globalData, grp, combo, paramList);
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
-  
+
     if (status != LOCA::Abstract::Iterator::Finished) {
       ierr = 1;
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+    globalData->locaUtils->out()
+      << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
-    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup =
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
-    const NOX::Epetra::Vector& finalSolution = 
+    const NOX::Epetra::Vector& finalSolution =
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
 
     // Check some statistics on the solution
-    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
-				 *(globalData->locaUtils));
-  
+    NOX::TestCompare testCompare(globalData->locaUtils->out(),
+                 *(globalData->locaUtils));
+
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
-      globalData->locaUtils->out() 
-	<< std::endl 
-	<< "***** Checking solution statistics *****" 
-	<< std::endl;
+      globalData->locaUtils->out()
+    << std::endl
+    << "***** Checking solution statistics *****"
+    << std::endl;
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
     int numSteps_expected = 7;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
-				  "number of continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
-				  "number of failed continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of failed continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double factor_final = finalGroup->getParam("Nonlinear Factor");
     double factor_expected = 2.0;
     ierr += testCompare.testValue(factor_final, factor_expected, 1.0e-14,
-				  "final value of continuation parameter", 
-				  NOX::TestCompare::Relative);
+                  "final value of continuation parameter",
+                  NOX::TestCompare::Relative);
 
     // Check final value of bifurcation parameter
     double right_bc_final = finalGroup->getParam("Right BC");
     double right_bc_expected = 1.47241293;
     ierr += testCompare.testValue(right_bc_final, right_bc_expected, 1.0e-7,
-				  "final value of bifurcation parameter", 
-				  NOX::TestCompare::Relative);
+                  "final value of bifurcation parameter",
+                  NOX::TestCompare::Relative);
 
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 12.038464;
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
-				  "norm of final solution",
-				  NOX::TestCompare::Relative);
+                  "norm of final solution",
+                  NOX::TestCompare::Relative);
 
     LOCA::destroyGlobalData(globalData);
 
@@ -415,11 +415,11 @@ int main(int argc, char *argv[])
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  
+
   // Check for verbose output
   bool verbose = false;
-  if (argc>1) 
-    if (argv[1][0]=='-' && argv[1][1]=='v') 
+  if (argc>1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
   // Get the number of elements from the command line
@@ -428,143 +428,143 @@ int main(int argc, char *argv[])
     NumGlobalElements = atoi(argv[2]) + 1;
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
-  else 
+  else
     NumGlobalElements = 101;
-  
-  // The number of unknowns must be at least equal to the 
+
+  // The number of unknowns must be at least equal to the
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements
+     << " cannot be < number of processors = " << NumProc << std::endl;
     exit(1);
   }
 
   // Test includeUV = true, useP = true, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Transpose Preconditioner",
-		      "Jacobian");
+              true, true, "Transpose Preconditioner",
+              "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Transpose Preconditioner",
-		      "Jacobian");
+              true, false, "Transpose Preconditioner",
+              "Jacobian");
 
   // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-   		      true, true, "Transpose Preconditioner",
-   		      "SMW");
+                 true, true, "Transpose Preconditioner",
+                 "SMW");
 
   // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-   		      true, false, "Transpose Preconditioner",
-  		      "SMW");
+                 true, false, "Transpose Preconditioner",
+                "SMW");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Transpose Preconditioner",
-			"Jacobian");
+            false, true, "Transpose Preconditioner",
+            "Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Transpose Preconditioner",
-			"Jacobian");
+            false, false, "Transpose Preconditioner",
+            "Jacobian");
 
     // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Transpose Preconditioner",
-			"SMW");
+            false, true, "Transpose Preconditioner",
+            "SMW");
 
     // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Transpose Preconditioner",
-			"SMW");
+            false, false, "Transpose Preconditioner",
+            "SMW");
   }
 
   // Test includeUV = true, useP = true, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Left Preconditioning",
-		      "Jacobian");
+              true, true, "Left Preconditioning",
+              "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Left Preconditioning",
-		      "Jacobian");
+              true, false, "Left Preconditioning",
+              "Jacobian");
 
   // Test includeUV = true, useP = true, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Left Preconditioning",
-		      "SMW");
+              true, true, "Left Preconditioning",
+              "SMW");
 
   // Test includeUV = true, useP = false, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Left Preconditioning",
-		      "SMW");
+              true, false, "Left Preconditioning",
+              "SMW");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Left Preconditioning",
-			"Jacobian");
+            false, true, "Left Preconditioning",
+            "Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Left Preconditioning",
-			"Jacobian");
+            false, false, "Left Preconditioning",
+            "Jacobian");
 
     // Test includeUV = false, useP = true, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Left Preconditioning",
-			"SMW");
+            false, true, "Left Preconditioning",
+            "SMW");
 
     // Test includeUV = false, useP = false, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Left Preconditioning",
-			"SMW");
+            false, false, "Left Preconditioning",
+            "SMW");
   }
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Test includeUV = true, useP = true, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Explicit Transpose",
-		      "Jacobian");
+              true, true, "Explicit Transpose",
+              "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Explicit Transpose",
-		      "Jacobian");
+              true, false, "Explicit Transpose",
+              "Jacobian");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Explicit Transpose",
-			"Jacobian");
+            false, true, "Explicit Transpose",
+            "Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Explicit Transpose",
-			"Jacobian");
+            false, false, "Explicit Transpose",
+            "Jacobian");
 
     // Test includeUV = false, useP = true, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Explicit Transpose",
-			"SMW");
+            false, true, "Explicit Transpose",
+            "SMW");
 
     // Test includeUV = false, useP = false, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Explicit Transpose",
-			"SMW");
+            false, false, "Explicit Transpose",
+            "SMW");
   }
 
   // Test includeUV = false, useP = false, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Explicit Transpose",
-		      "SMW");
+              true, true, "Explicit Transpose",
+              "SMW");
 
   // Test includeUV = false, useP = false, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Explicit Transpose",
-		      "SMW");
+              true, false, "Explicit Transpose",
+              "SMW");
 #endif
 
   if (MyPID == 0) {

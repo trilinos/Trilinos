@@ -143,7 +143,7 @@ namespace Ifpack2 {
     TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
-    //! The type of the Kokkos Node used by the input MatrixType.
+    //! The Node type used by the input MatrixType.
     typedef typename MatrixType::node_type node_type;
 
     //! Preserved only for backwards compatibility.  Please use "node_type".

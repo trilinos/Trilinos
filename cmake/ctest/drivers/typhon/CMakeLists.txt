@@ -9,7 +9,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_DEBUG_MueLu
+  MPICH2_1.4.1p1_DEBUG_MueLu
   ctest_linux_nightly_mpi_debug_muelu_typhon.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
@@ -65,7 +65,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_MueLu
+  MPICH2_1.4.1p1_RELEASE_MueLu
   ctest_linux_nightly_mpi_release_muelu_typhon.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL

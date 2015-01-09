@@ -151,11 +151,12 @@ double *array_alloc (const char *file, int lineno, int numdim, ...)
 
    if (dim[0].index == 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, %s (%s: %d) called with first "
-            "dimension == 0; will return NULL\n",
-            yo, file, lineno);
+     fprintf(stderr, "WARNING, %s (%s: %d) called with first "
+	     "dimension == 0; will return NULL\n",
+	     yo, file, lineno);
 #endif
-      return((double *) NULL);
+     va_end(va);
+     return((double *) NULL);
    }
 
    dim[0].total = dim[0].index;
@@ -167,6 +168,7 @@ double *array_alloc (const char *file, int lineno, int numdim, ...)
          fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d == 0, "
                  " will return NULL\n",
                  yo, file, lineno, i+1);
+	 va_end(va);
 	 return((double *) NULL);
       }
       dim[i].total = dim[i-1].total * dim[i].index;
@@ -217,7 +219,7 @@ static double *smalloc (size_t n, char *filename, int lineno)
 
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = "ST_ZU"\n", yo, filename, lineno, (unsigned long)n);
+            "requested = " ST_ZU "\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 

@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -50,7 +50,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#include <iohb.h>
+#include <Trilinos_Util_iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -71,9 +71,10 @@ int main(int argc, char *argv[])
   typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
-
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
+
+  bool success = false;
+  ST ONE  = SCT::one();
 
   int info = 0;
   int MyPID = 0;
@@ -83,7 +84,6 @@ int main(int argc, char *argv[])
 
   MyPID = rank(*comm);
 
-  bool testFailed;
   bool verbose = false;
   bool debug = false;
   bool skinny = true;
@@ -222,10 +222,7 @@ int main(int argc, char *argv[])
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
-  testFailed = false;
-  if (returnCode != Anasazi::Converged) {
-    testFailed = true;
-  }
+  success = (returnCode == Anasazi::Converged);
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
@@ -258,27 +255,19 @@ int main(int argc, char *argv[])
         normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
       }
       os << std::setw(20) << sol.Evals[i].realpart << std::setw(20) << normV[i] << endl;
-      if ( normV[i] > tol ) {
-        testFailed = true;
-      }
+      success = ( normV[i] < tol );
     }
     if (MyPID==0) {
       cout << endl << os.str() << endl;
     }
   }
 
-  if (testFailed) {
-    if (MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
-    }
-    return -1;
-  }
-  //
-  // Default return value
-  //
   if (MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;
+    if (success)
+      cout << "End Result: TEST PASSED" << endl;
+    else
+      cout << "End Result: TEST FAILED" << endl;
   }
-  return 0;
 
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

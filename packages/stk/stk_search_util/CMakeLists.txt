@@ -1,3 +1,10 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsSubPackageMacros)
+
+TRIBITS_SUBPACKAGE(SearchUtil)
 
 ADD_SUBDIRECTORY(stk_search_util)
 
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()

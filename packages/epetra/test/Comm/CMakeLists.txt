@@ -1,7 +1,6 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Comm_test 
+  Comm_test
   SOURCES cxx_main.cpp
   ARGS -v
   COMM mpi serial

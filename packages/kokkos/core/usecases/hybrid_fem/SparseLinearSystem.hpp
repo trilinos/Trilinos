@@ -47,7 +47,7 @@
 #include <cmath>
 #include <impl/Kokkos_Timer.hpp>
 
-#include <Kokkos_View.hpp>
+#include <Kokkos_Core.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <LinAlgBLAS.hpp>
@@ -75,9 +75,6 @@ struct Multiply ;
 
 }
 }
-
-/* Device-specific specializations */
-#include <SparseLinearSystem_Cuda.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -110,7 +107,7 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iRow ) const
   {
     const size_type iEntryBegin = m_A.graph.row_map[iRow];
@@ -230,7 +227,7 @@ void cgsolve(
   // Need input vector to matvec to be owned + received
   vector_type pAll ( "cg::p" , count_total );
 
-  vector_type p = Kokkos::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_owned) );
   vector_type r ( "cg::r" , count_owned );
   vector_type Ap( "cg::Ap", count_owned );
 
@@ -275,6 +272,126 @@ void cgsolve(
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_HAVE_CUDA )
+
+#if ( CUDA_VERSION < 6000 )
+#pragma message "cusparse_v2.h"
+#include <cusparse_v2.h>
+#else
+#pragma message "cusparse.h"
+#include <cusparse.h>
+#endif
+
+namespace Kokkos {
+namespace Impl {
+
+struct CudaSparseSingleton {
+  cusparseHandle_t   handle;
+  cusparseMatDescr_t descra;
+
+  CudaSparseSingleton()
+  {
+    cusparseCreate( & handle );
+    cusparseCreateMatDescr( & descra );
+    cusparseSetMatType(       descra , CUSPARSE_MATRIX_TYPE_GENERAL );
+    cusparseSetMatIndexBase(  descra , CUSPARSE_INDEX_BASE_ZERO );
+  }
+
+  static CudaSparseSingleton & singleton();
+
+};
+
+template<>
+struct Multiply< CrsMatrix<double,Cuda> ,
+                 View<double*,Cuda > ,
+                 View<double*,Cuda > >
+{
+  typedef Cuda                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef double                                    scalar_type ;
+  typedef View< scalar_type* , device_type >        vector_type ;
+  typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
+
+public:
+
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type ncol ,
+            const vector_type & x ,
+            const vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const scalar_type alpha = 1 , beta = 0 ;
+
+    cusparseStatus_t status =
+      cusparseDcsrmv( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      nrow , ncol , A.coefficients.dimension_0() ,
+                      &alpha ,
+                      s.descra ,
+                      A.coefficients.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      &beta ,
+                      y.ptr_on_device() );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
+};
+
+
+template<>
+struct Multiply< CrsMatrix<float,Cuda> ,
+                 View<float*,Cuda > ,
+                 View<float*,Cuda > >
+{
+  typedef Cuda                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef float                                     scalar_type ;
+  typedef View< scalar_type* , device_type >        vector_type ;
+  typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
+
+public:
+
+  Multiply( const matrix_type & A ,
+            const size_type nrow ,
+            const size_type ncol ,
+            const vector_type & x ,
+            const vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const scalar_type alpha = 1 , beta = 0 ;
+
+    cusparseStatus_t status =
+      cusparseScsrmv( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      nrow , ncol , A.coefficients.dimension_0() ,
+                      &alpha ,
+                      s.descra ,
+                      A.coefficients.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      &beta ,
+                      y.ptr_on_device() );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
+};
+
+} /* namespace Impl */
+} /* namespace Kokkos */
+
+#endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

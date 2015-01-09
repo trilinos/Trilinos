@@ -56,11 +56,11 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~RigidBodyModeFactory() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RigidBodyModeFactory() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     if (currentLevel.IsAvailable(nspName_, NoFactory::get()) == false && currentLevel.GetLevelID() == 0) {
       Input(currentLevel, "A");
       //Input(currentLevel,"Coordinates");
@@ -70,8 +70,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RigidBodyModeFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Rigid body mode factory", currentLevel);
     RCP<MultiVector> nullspace;
     if (currentLevel.GetLevelID() == 0) {
@@ -82,70 +82,70 @@ namespace MueLu {
       else {
         RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
         GetOStream(Runtime1) << "Generating rigid body modes: dimension = " << numPDEs_ << std::endl;
-	RCP<const Map> xmap=A->getDomainMap();
-	if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(xmap, 1); }
-	else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(xmap, 3); }
-	else if(numPDEs_==3) { nullspace = MultiVectorFactory::Build(xmap, 6); }
-	Scalar zero(0.0);
-	nullspace -> putScalar(zero);
-	RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel,"Coordinates");
-	ArrayRCP<Scalar> xnodes, ynodes, znodes;
-	Scalar cx, cy, cz;
-	ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
-	int nDOFs=xmap->getNodeNumElements();
-	if(numPDEs_==1) {
-	  nsValues0 = nullspace->getDataNonConst(0);
-	  for(int j=0; j<nDOFs; j++) {
-	    // constant null space for scalar PDE
-	    nsValues0[j]=1.0;
-	  }
-	}
-	else if(numPDEs_==2) {
-	  xnodes = Coords->getDataNonConst(0);
-	  ynodes = Coords->getDataNonConst(1);
-	  cx = Coords->getVector(0)->meanValue();
-	  cy = Coords->getVector(1)->meanValue();
-	  nsValues0 = nullspace->getDataNonConst(0);
-	  nsValues1 = nullspace->getDataNonConst(1);
-	  nsValues2 = nullspace->getDataNonConst(2);
-	  for (int j=0; j<nDOFs; j+=numPDEs_) {
-	    // translation
-	    nsValues0[j+0] = 1.0;
-	    nsValues1[j+1] = 1.0;
-	    // rotate around z-axis (x-y plane)
-	    nsValues2[j+0] = -(ynodes[j]-cy);
-	    nsValues2[j+1] =  (xnodes[j]-cx);
-	  }
-	}
-	else if(numPDEs_==3) {
-	  xnodes = Coords->getDataNonConst(0);
-	  ynodes = Coords->getDataNonConst(1);
-	  znodes = Coords->getDataNonConst(2);
-	  cx = Coords->getVector(0)->meanValue();
-	  cy = Coords->getVector(1)->meanValue();
-	  cz = Coords->getVector(2)->meanValue();
-	  nsValues0 = nullspace->getDataNonConst(0);
-	  nsValues1 = nullspace->getDataNonConst(1);
-	  nsValues2 = nullspace->getDataNonConst(2);
-	  nsValues3 = nullspace->getDataNonConst(3);
-	  nsValues4 = nullspace->getDataNonConst(4);
-	  nsValues5 = nullspace->getDataNonConst(5);
-	  for (int j=0; j<nDOFs; j+=numPDEs_) {
-	    // translation
-	    nsValues0[j+0] = 1.0;
-	    nsValues1[j+1] = 1.0;
-	    nsValues2[j+2] = 1.0;
-	    // rotate around z-axis (x-y plane)
-	    nsValues3[j+0] = -(ynodes[j]-cy);
-	    nsValues3[j+1] =  (xnodes[j]-cx);
-	    // rotate around x-axis (y-z plane)
-	    nsValues4[j+1] = -(znodes[j]-cz);
-	    nsValues4[j+2] =  (ynodes[j]-cy);
-	    // rotate around y-axis (x-z plane)
-	    nsValues5[j+0] =  (znodes[j]-cz);
-	    nsValues5[j+2] = -(xnodes[j]-cx);
-	  }
-	}
+        RCP<const Map> xmap=A->getDomainMap();
+        if(numPDEs_==1)      { nullspace = MultiVectorFactory::Build(xmap, 1); }
+        else if(numPDEs_==2) { nullspace = MultiVectorFactory::Build(xmap, 3); }
+        else if(numPDEs_==3) { nullspace = MultiVectorFactory::Build(xmap, 6); }
+        Scalar zero(0.0);
+        nullspace -> putScalar(zero);
+        RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel,"Coordinates");
+        ArrayRCP<Scalar> xnodes, ynodes, znodes;
+        Scalar cx, cy, cz;
+        ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
+        int nDOFs=xmap->getNodeNumElements();
+        if(numPDEs_==1) {
+          nsValues0 = nullspace->getDataNonConst(0);
+          for(int j=0; j<nDOFs; j++) {
+            // constant null space for scalar PDE
+            nsValues0[j]=1.0;
+          }
+        }
+        else if(numPDEs_==2) {
+          xnodes = Coords->getDataNonConst(0);
+          ynodes = Coords->getDataNonConst(1);
+          cx = Coords->getVector(0)->meanValue();
+          cy = Coords->getVector(1)->meanValue();
+          nsValues0 = nullspace->getDataNonConst(0);
+          nsValues1 = nullspace->getDataNonConst(1);
+          nsValues2 = nullspace->getDataNonConst(2);
+          for (int j=0; j<nDOFs; j+=numPDEs_) {
+            // translation
+            nsValues0[j+0] = 1.0;
+            nsValues1[j+1] = 1.0;
+            // rotate around z-axis (x-y plane)
+            nsValues2[j+0] = -(ynodes[j]-cy);
+            nsValues2[j+1] =  (xnodes[j]-cx);
+          }
+        }
+        else if(numPDEs_==3) {
+          xnodes = Coords->getDataNonConst(0);
+          ynodes = Coords->getDataNonConst(1);
+          znodes = Coords->getDataNonConst(2);
+          cx = Coords->getVector(0)->meanValue();
+          cy = Coords->getVector(1)->meanValue();
+          cz = Coords->getVector(2)->meanValue();
+          nsValues0 = nullspace->getDataNonConst(0);
+          nsValues1 = nullspace->getDataNonConst(1);
+          nsValues2 = nullspace->getDataNonConst(2);
+          nsValues3 = nullspace->getDataNonConst(3);
+          nsValues4 = nullspace->getDataNonConst(4);
+          nsValues5 = nullspace->getDataNonConst(5);
+          for (int j=0; j<nDOFs; j+=numPDEs_) {
+            // translation
+            nsValues0[j+0] = 1.0;
+            nsValues1[j+1] = 1.0;
+            nsValues2[j+2] = 1.0;
+            // rotate around z-axis (x-y plane)
+            nsValues3[j+0] = -(ynodes[j]-cy);
+            nsValues3[j+1] =  (xnodes[j]-cx);
+            // rotate around x-axis (y-z plane)
+            nsValues4[j+1] = -(znodes[j]-cz);
+            nsValues4[j+2] =  (ynodes[j]-cy);
+            // rotate around y-axis (x-z plane)
+            nsValues5[j+0] =  (znodes[j]-cz);
+            nsValues5[j+2] = -(xnodes[j]-cx);
+          }
+        }
       } // end if "Nullspace" not available
     }
     else {

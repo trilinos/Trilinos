@@ -1,0 +1,96 @@
+<ParameterList name="MueLu">
+
+  <ParameterList name="Factories">
+
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                                     type="string"   value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                            type="bool"     value="true"/>
+    </ParameterList>
+
+    <ParameterList name="myFilteredFact">
+      <Parameter name="factory"                                     type="string"   value="FilteredAFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                                     type="string"   value="TentativePFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                                     type="string"   value="SaPFactory"/>
+      <Parameter name="A"                                           type="string"   value="myFilteredFact"/>
+      <Parameter name="P"                                           type="string"   value="myTentativePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                                     type="string"   value="TransPFactory"/>
+      <Parameter name="P"                                           type="string"   value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory"                                     type="string"   value="CoordinatesTransferFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                                     type="string"   value="RAPFactory"/>
+      <Parameter name="P"                                           type="string"   value="myProlongatorFact"/>
+      <Parameter name="R"                                           type="string"   value="myRestrictorFact"/>
+
+      <ParameterList name="TransferFactories">
+        <Parameter name="For Coordinates"                           type="string"   value="myTransferCoordinatesFact"/>
+      </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="myRepartitionFact">
+      <Parameter name="factory"                                     type="string"   value="RepartitionFactory"/>
+      <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceProlongatorFact">
+      <Parameter name="factory"                                     type="string"   value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                        type="string"   value="Interpolation"/>
+      <Parameter name="repartition: rebalance P and R"              type="bool"     value="false"/>
+      <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
+      <Parameter name="Nullspace"                                   type="string"   value="myTentativePFact"/>
+      <Parameter name="P"                                           type="string"   value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceRestrictionFact">
+      <Parameter name="factory"                                     type="string"   value="RebalanceTransferFactory"/>
+      <Parameter name="type"                                        type="string"   value="Restriction"/>
+      <Parameter name="repartition: rebalance P and R"              type="bool"     value="false"/>
+      <Parameter name="R"                                           type="string"   value="myRestrictorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceAFact">
+      <Parameter name="factory"                                     type="string"   value="RebalanceAcFactory"/>
+      <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myNullFact">
+      <Parameter name="factory"                                     type="string"   value="NullspaceFactory"/>
+      <Parameter name="Nullspace"                                   type="string"   value="myRebalanceProlongatorFact"/>
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="repartition: rebalance P and R"                type="bool"     value="false"/>
+
+    <ParameterList name="AllButCoarsestLevel">
+      <Parameter name="startLevel"                                  type="int"      value="0"/>
+
+      <Parameter name="A"                                           type="string"   value="myRebalanceAFact"/>
+      <Parameter name="Coordinates"                                 type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="DofsPerNode"                                 type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="Graph"                                       type="string"   value="myCoalesceDropFact"/>
+      <Parameter name="Importer"                                    type="string"   value="myRepartitionFact"/>
+      <Parameter name="Nullspace"                                   type="string"   value="myNullFact"/>
+      <Parameter name="P"                                           type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="R"                                           type="string"   value="myRebalanceRestrictionFact"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>

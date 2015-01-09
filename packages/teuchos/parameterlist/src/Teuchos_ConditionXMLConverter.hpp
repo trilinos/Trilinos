@@ -66,12 +66,12 @@ public:
 
   /** \name Converter Functions */
   //@{
-  
+
   /** \brief Converts a given XMLObject to a Condition.
    *
    * @param xmlObj The XMLObject to convert to a Condition.
    * @param entryIDsMap A map containing ParameterEntrys and their assocaited
-   * 
+   *
    * @return The converted Condition.
    */
   RCP<Condition>
@@ -102,7 +102,7 @@ public:
   XMLObject fromConditiontoXML(
     const RCP<const Condition> condition,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
-  
+
   /** \brief Preforms any and all special condition conversion that is
    * specific to a particlar Condition.
    *
@@ -114,10 +114,10 @@ public:
    * @return An XML representation of the given Condition.
    */
   virtual void convertCondition(
-    const RCP<const Condition> condition, 
+    const RCP<const Condition> condition,
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const = 0;
-  
+
   //@}
 
   //! \name Attribute/Query Functions
@@ -128,7 +128,7 @@ public:
     static const std::string typeAttributeName = "type";
     return typeAttributeName;
   }
- 
+
   //@}
 
 };

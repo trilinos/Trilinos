@@ -49,6 +49,7 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Partitioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
 #include <Teuchos_Time.hpp>
 #include <string>
 #include <iostream>
@@ -85,7 +86,11 @@ class BlockRelaxation :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
 {
 public:
   //! @name Typedefs
@@ -111,8 +116,7 @@ public:
   //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
-
-  //! The type of the Kokkos Node used by the input MatrixType.
+  //! Node type of the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! Preserved only for backwards compatibility.  Please use "node_type".
@@ -205,6 +209,35 @@ public:
   inline bool isComputed() const {
     return(IsComputed_);
   }
+
+  //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
+
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method with a matrix different than the current
+  /// matrix resets the preconditioner's state.  After calling this
+  /// method with a nonnull input, you must first call initialize()
+  /// and compute() (in that order) before you may call apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! @name Methods implementing the Tpetra::Operator interface.
@@ -371,6 +404,14 @@ private:
   //! Contains the (block) diagonal elements of \c Matrix.
   mutable std::vector<Teuchos::RCP<ContainerType> > Containers_;
 
+  //  mutable Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Diagonal_;
+
+  // FIXME (mfh 06 Oct 2014) This doesn't comply with the naming
+  // convention for instance members of a class.  Furthermore, the
+  // class should keep the Vector, not the ArrayRCP to the data _in_
+  // the Vector.
+  Teuchos::ArrayRCP< const scalar_type > DiagRCP;
+
   //! Contains information about non-overlapping partitions.
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > Partitioner_;
 
@@ -387,9 +428,6 @@ private:
 
   //! Which type of point relaxation approach to use
   Details::RelaxationType PrecType_;
-
-  //! Minimum diagonal value
-  scalar_type MinDiagonalValue_;
 
   //! Damping factor.
   scalar_type DampingFactor_;

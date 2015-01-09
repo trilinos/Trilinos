@@ -56,7 +56,6 @@
 
 namespace Teuchos {
 
-
 ValueTolerance::ValueTolerance() {
   value = 0;
   lower = 0;
@@ -90,7 +89,7 @@ bool ValueTolerance::operator ==(ValueTolerance& rhs) {
          (tolerance == rhs.tolerance) &&
          (lower == rhs.lower) &&
          (upper == rhs.upper) &&
-         (use_tolerance == use_tolerance);
+         (use_tolerance == rhs.use_tolerance);
 }
 
 std::string ValueTolerance::as_string(){
@@ -236,92 +235,101 @@ XMLTestNode PerfTest_MachineConfig() {
   return machine_config;
 }
 
-PerfTestResult PerfTest_CheckOrAdd_Test(XMLTestNode machine_config, XMLTestNode new_test,
-                                        const std::string filename,
-                                        const std::string ext_hostname) {
+PerfTestResult
+PerfTest_CheckOrAdd_Test (XMLTestNode machine_config,
+                          XMLTestNode new_test,
+                          const std::string filename,
+                          const std::string ext_hostname)
+{
   XMLTestNode database;
-
-
   PerfTestResult return_value = PerfTestPassed;
   bool is_new_config = true;
 
   // Open Database File
-  if(std::ifstream(filename.c_str()))
-    database = FileInputSource(filename).getObject();
+  //
+  // FIXME (mfh 09 Apr 2014) This actually opens the file twice.
+  if (std::ifstream (filename.c_str ())) {
+    database = FileInputSource (filename).getObject ();
+  }
 
   // Get Current Hostname
   char hostname[256];
-  memset(hostname,0,256);
-  if(ext_hostname.empty())
-    gethostname(hostname, 255);
-  else
-    strncat(hostname,ext_hostname.c_str(),255);
+  memset (hostname, 0, 256);
+  if (ext_hostname.empty ()) {
+    gethostname (hostname, 255);
+  } else {
+    strncat (hostname, ext_hostname.c_str (), 255);
+  }
 
+  XMLTestNode new_test_entry = new_test.getChild ("TestEntry");
 
-
-  XMLTestNode new_test_entry = new_test.getChild("TestEntry");
-
-  if(database.isEmpty()) {
-    database = XMLTestNode("PerfTests");
+  if (database.isEmpty ()) {
+    database = XMLTestNode ("PerfTests");
   }
   // Does hostname exist?
-  if(database.hasChild(hostname)) {
-    XMLTestNode machine = database.getChild(hostname);
+  if (database.hasChild (hostname)) {
+    XMLTestNode machine = database.getChild (hostname);
 
     // Find matching machine configuration
-    for(int i=0; i<machine.numChildren();i++) {
+    for (int i = 0; i < machine.numChildren (); ++i) {
+      XMLTestNode configuration = machine.getChild (i);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        configuration.getTag ().compare ("Configuration") != 0,
+        std::runtime_error, "Unexpected Tag \"" << configuration.getTag ()
+        << "\"; only children with Tag = \"Configuration\" are allowed in a "
+        "MachineEntry.");
 
-      XMLTestNode configuration = machine.getChild(i);
-      if(configuration.getTag().compare("Configuration")!=0) {
-        std::cout << "Error: unexpected Tag: " << configuration.getTag()
-                  << " ; Only Children with Tag=\"Configuration\" are allowed in a MachineEntry. " << std::endl;
-        exit(1);
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! configuration.hasChild ("MachineConfiguration") ||
+        ! configuration.hasChild ("Tests"),
+        std::runtime_error,
+        "A Configuration needs to have a child \"MachineConfiguration\" and a "
+        "child \"Tests\".");
 
-      if(!configuration.hasChild("MachineConfiguration") || !configuration.hasChild("Tests")) {
-        std::cout << "Error: a Configuration needs to have a child \"MachineConfiguration\" and a child \"Tests\"." << std::endl;
-        exit(1);
-      }
-      XMLTestNode machine_configuration = configuration.getChild("MachineConfiguration");
-      XMLTestNode old_tests = configuration.getChild("Tests");
+      XMLTestNode machine_configuration = configuration.getChild ("MachineConfiguration");
+      XMLTestNode old_tests = configuration.getChild ("Tests");
 
-      if (machine_configuration.hasSameElements(machine_config) ) {
+      if (machine_configuration.hasSameElements (machine_config)) {
         is_new_config = false;
 
         // Find existing test with same tag as the new test
-        if(old_tests.hasChild(new_test.getTag())) {
+        if (old_tests.hasChild (new_test.getTag ())) {
 
-          XMLTestNode old_test = old_tests.getChild(new_test.getTag());
+          XMLTestNode old_test = old_tests.getChild (new_test.getTag ());
 
           int new_test_config = -1;
-          for(int k = 0; k<old_test.numChildren(); k++) {
-            XMLTestNode old_test_entry = old_test.getChild(k);
-            if(!old_test_entry.hasChild("TestConfiguration") || !new_test_entry.hasChild("TestResults")) {
-              std::cout << "Error: a TestEntry needs to have a child \"TestConfiguration\" and a child \"TestResults\"." << std::endl;
-              exit(1);
-            }
-            if(old_test_entry.getChild("TestConfiguration").hasSameElements(new_test_entry.getChild("TestConfiguration")))
+          for (int k = 0; k < old_test.numChildren (); ++k) {
+            XMLTestNode old_test_entry = old_test.getChild (k);
+
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              ! old_test_entry.hasChild ("TestConfiguration") ||
+              ! new_test_entry.hasChild ("TestResults"),
+              std::runtime_error, "A TestEntry needs to have a child "
+              "\"TestConfiguration\" and a child \"TestResults\".");
+
+            if (old_test_entry.getChild ("TestConfiguration").hasSameElements (new_test_entry.getChild ("TestConfiguration"))) {
               new_test_config = k;
+            }
           }
 
-          if(new_test_config<0) {
-            old_test.addChild(new_test_entry);
+          if (new_test_config < 0) {
+            old_test.addChild (new_test_entry);
             return_value = PerfTestNewTestConfiguration;
           } else {
             bool deviation = false;
-            XMLTestNode old_test_entry = old_test.getChild(new_test_config);
-            XMLTestNode old_results = old_test_entry.getChild("TestResults");
-            XMLTestNode new_results = new_test_entry.getChild("TestResults");
+            XMLTestNode old_test_entry = old_test.getChild (new_test_config);
+            XMLTestNode old_results = old_test_entry.getChild ("TestResults");
+            XMLTestNode new_results = new_test_entry.getChild ("TestResults");
 
             // Compare all entries
-            for(int old_r = 0; old_r < old_results.numChildren() ; old_r++) {
-              XMLTestNode result_entry = old_results.getChild(old_r);
+            for (int old_r = 0; old_r < old_results.numChildren (); ++old_r) {
+              XMLTestNode result_entry = old_results.getChild (old_r);
 
               // Finding entry with same name
-              bool exists = new_results.hasChild(result_entry.getTag());
+              bool exists = new_results.hasChild (result_entry.getTag ());
 
-              if(exists) {
-                std::string oldv_str = result_entry.getContentLine(0);
+              if (exists) {
+                std::string oldv_str = result_entry.getContentLine (0);
 
                 // If it is a time or result compare numeric values with tolerance
                 if((result_entry.getTag().find("Time")==0) || (result_entry.getTag().find("Result")==0)) {

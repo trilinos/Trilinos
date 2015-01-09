@@ -53,5 +53,5 @@ void showtime(char *, double *);
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

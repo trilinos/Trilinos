@@ -52,11 +52,12 @@
 #define _ZOLTAN2_COORDINATEMODEL_HPP_
 
 // disable clang warnings
-#ifdef __clang__
+#if defined (__clang__) && !defined (__INTEL_COMPILER)
 #pragma clang system_header
 #endif
 
 #include <Zoltan2_Model.hpp>
+#include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_GraphAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
@@ -79,7 +80,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::gno_t       gno_t;
-  typedef typename Adapter::gid_t       gid_t;
+  typedef typename Adapter::zgid_t       zgid_t;
   typedef typename Adapter::lno_t       lno_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -100,7 +101,8 @@ public:
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(),
       gnos_(), gnosConst_()
   {
-    sharedConstructor(ia, env, comm, flags);
+    typedef VectorAdapter<user_t> adapterWithCoords_t;
+    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
   }
 
   // MatrixAdapter
@@ -115,11 +117,11 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info provided to MatrixAdapter.");
     else {
-      typedef VectorAdapter<userCoord_t> vectorAdapter_t;
-      vectorAdapter_t *va = ia->getCoordinateInput();
-      sharedConstructor(va, env, comm, flags);
+      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+      adapterWithCoords_t *va = ia->getCoordinateInput();
+      sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
   }
 
@@ -135,12 +137,25 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info provided to GraphAdapter.");
     else {
-      typedef VectorAdapter<userCoord_t> vectorAdapter_t;
-      vectorAdapter_t *va = ia->getCoordinateInput();
-      sharedConstructor(va, env, comm, flags);
+      typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
+      adapterWithCoords_t *va = ia->getCoordinateInput();
+      sharedConstructor<adapterWithCoords_t>(va, env, comm, flags);
     }
+  }
+
+  // MeshAdapter
+  CoordinateModel(const MeshAdapter<user_t> *ia,
+		  const RCP<const Environment> &env,
+		  const RCP<const Comm<int> > &comm,
+		  modelFlag_t &flags) :
+    gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
+    coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(),
+    gnos_(), gnosConst_()
+  {
+    typedef MeshAdapter<user_t> adapterWithCoords_t;
+    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
   }
 
   // IdentifierAdapter
@@ -149,7 +164,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags)
   {
-    throw logic_error(
+    throw std::logic_error(
       "A coordinate model can not be build from an IdentifierAdapter");
   }
 
@@ -169,9 +184,9 @@ public:
    */
   global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
 
-  /*! \brief Returns the dimension (0 or greater) of coordinate weights.
+  /*! \brief Returns the number (0 or greater) of weights per coordinate
    */
-  int getCoordinateWeightDim() const { return userNumWeights_;}
+  int getNumWeightsPerCoordinate() const { return userNumWeights_;}
 
   /*! \brief Returns the coordinate ids, values and optional weights.
 
@@ -184,9 +199,9 @@ public:
           the coordinates for <tt>Ids[k]</tt> are
           <tt>xyz[0][k], xyz[1][k], xyz[2][k]</tt>.
 
-      \param wgts on return is a list of getCoordinateWeightDim()
+      \param wgts on return is a list of getNumWeightsPerCoordinate()
           StridedData objects, each containing the weights for
-          one weight dimension.  For the dimension \d,
+          one weight index.  For the index \d,
           the weight for <tt>Ids[k]</tt> is <tt>wgts[d][k]</tt>.
 
        \return The number of ids in the Ids list.
@@ -236,25 +251,29 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   int coordinateDim_;
-  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<const zgid_t> gids_;
   ArrayRCP<input_t> xyz_;
   int userNumWeights_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 
-  void sharedConstructor(const VectorAdapter<userCoord_t> *ia,
+  template <typename AdapterWithCoords>
+  void sharedConstructor(const AdapterWithCoords *ia,
                          const RCP<const Environment> &env,
                          const RCP<const Comm<int> > &comm,
                          modelFlag_t &flags);
+
 };
 
 
 ////////////////////////////////////////////////////////////////////////////
 
+// sharedConstructor
 template <typename Adapter>
+template <typename AdapterWithCoords>
 void CoordinateModel<Adapter>::sharedConstructor(
-    const VectorAdapter<typename Adapter::userCoord_t> *ia,
+    const AdapterWithCoords *ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
@@ -266,7 +285,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
   // Get coordinates and weights (if any)
 
   int tmp[2], gtmp[2];
-  tmp[0] = ia->getNumEntriesPerID();
+  tmp[0] = ia->getDimension();
   tmp[1] = ia->getNumWeightsPerID();
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 2, tmp, gtmp);
   coordinateDim_ = gtmp[0];
@@ -283,10 +302,9 @@ void CoordinateModel<Adapter>::sharedConstructor(
   env_->localMemoryAssertion(__FILE__, __LINE__, userNumWeights_+coordinateDim_,
     coordArray && (!userNumWeights_|| weightArray));
 
-  Array<lno_t> arrayLengths(userNumWeights_, 0);
 
   if (nLocalIds){
-    const gid_t *gids=NULL;
+    const zgid_t *gids=NULL;
     ia->getIDsView(gids);
     gids_ = arcp(gids, 0, nLocalIds, false);
 
@@ -294,7 +312,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getEntriesView(coords, stride, dim);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -310,11 +328,8 @@ void CoordinateModel<Adapter>::sharedConstructor(
       }
       Z2_FORWARD_EXCEPTIONS;
 
-      if (weights){
-        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[idx] = input_t(wArray, stride);
-        arrayLengths[idx] = nLocalIds;
-      }
+      ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
+      weightArray[idx] = input_t(wArray, stride);
     }
   }
 
@@ -322,9 +337,6 @@ void CoordinateModel<Adapter>::sharedConstructor(
 
   if (userNumWeights_)
     weights_ = arcp(weightArray, 0, userNumWeights_);
-
-  // Sets this->weightDim_ and this->uniform_
-  this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
   // TODO:  Why do coordinate models need an IdentifierMap?
@@ -347,7 +359,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
     gnos_ = arcp(tmpGno, 0, nLocalIds);
 
     try{
-      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
       idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
         TRANSLATE_APP_TO_LIB);
     }
@@ -358,6 +370,109 @@ void CoordinateModel<Adapter>::sharedConstructor(
 
   env_->memory("After construction of coordinate model");
 }
+
+#ifdef KDDKDD_NO_LONGER_NEED_DUPLICATE_CODE
+// meshConstructor
+template <typename Adapter>
+void CoordinateModel<Adapter>::meshConstructor(
+    const MeshAdapter<typename Adapter::userCoord_t> *ia,
+    const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &comm,
+    modelFlag_t &flags)
+{
+  bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+
+  size_t nLocalIds = ia->getLocalNumIDs();
+
+  // Get coordinates and weights (if any)
+
+  int tmp[2], gtmp[2];
+  tmp[0] = ia->getDimension();
+  tmp[1] = ia->getNumWeightsPerID();
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 2, tmp, gtmp);
+  coordinateDim_ = gtmp[0];
+  userNumWeights_ = gtmp[1];
+
+  env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
+    coordinateDim_ > 0, COMPLEX_ASSERTION);
+
+  input_t *coordArray = new input_t [coordinateDim_];
+  input_t *weightArray = NULL;
+  if (userNumWeights_)
+    weightArray = new input_t [userNumWeights_];
+
+  env_->localMemoryAssertion(__FILE__, __LINE__, userNumWeights_+coordinateDim_,
+    coordArray && (!userNumWeights_|| weightArray));
+
+
+  if (nLocalIds){
+    const zgid_t *gids=NULL;
+    ia->getIDsView(gids);
+    gids_ = arcp(gids, 0, nLocalIds, false);
+
+    for (int dim=0; dim < coordinateDim_; dim++){
+      int stride;
+      const scalar_t *coords=NULL;
+      try{
+	ia->getCoordinatesViewOf(ia->getPrimaryEntityType(), coords, stride, dim);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
+      coordArray[dim] = input_t(cArray, stride);
+    }
+
+    for (int idx=0; idx < userNumWeights_; idx++){
+      int stride;
+      const scalar_t *weights;
+      try{
+        ia->getWeightsView(weights, stride, idx);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
+      weightArray[idx] = input_t(wArray, stride);
+    }
+  }
+
+  xyz_ = arcp(coordArray, 0, coordinateDim_);
+
+  if (userNumWeights_)
+    weights_ = arcp(weightArray, 0, userNumWeights_);
+
+  // Create identifier map.
+  // TODO:  Why do coordinate models need an IdentifierMap?
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  numGlobalCoordinates_ = idMap->getGlobalNumberOfIds();
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, nLocalIds);
+
+    try{
+      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
+      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
+        TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+
+  env_->memory("After construction of coordinate model");
+}
+#endif
 
 }   // namespace Zoltan2
 

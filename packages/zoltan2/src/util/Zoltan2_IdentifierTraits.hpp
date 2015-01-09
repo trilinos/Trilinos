@@ -81,8 +81,8 @@ extern int getHashCode(const unsigned char *a, size_t len);
 template <typename T>
   std::pair<T, T> z2LocalMinMax(const T *val, size_t n)
 {
-  T max = numeric_limits<T>::min();
-  T min = numeric_limits<T>::max();
+  T max = std::numeric_limits<T>::min();
+  T min = std::numeric_limits<T>::max();
 
   for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
@@ -101,7 +101,7 @@ template <typename T> class Zoltan2_MinMaxOperation :
   public Teuchos::ValueTypeReductionOp<int, char>
 {
 public:
-  void reduce( 
+  void reduce(
     const int count, const char inBuffer[], char inoutBuffer[]) const
   {
     const T *in = reinterpret_cast<const T*>(inBuffer);
@@ -119,8 +119,8 @@ template <typename T>
     T localMin, T localMax, T &globalMin, T &globalMax)
 {
   if (noLocalValues){
-    localMin = numeric_limits<T>::max();
-    localMax = numeric_limits<T>::min();
+    localMin = std::numeric_limits<T>::max();
+    localMax = std::numeric_limits<T>::min();
   }
 
   if (comm.getSize() == 1){
@@ -153,7 +153,7 @@ template <typename T>
     return false;
 
   T nextval = val[0]+1;
-  for (size_t i=1; i < n-1; i++){
+  for (size_t i=1; i < n; i++){
     if (val[i] != nextval)
       return false;
     nextval++;
@@ -176,11 +176,11 @@ template <typename T>
 template<typename T>
 struct UndefIdTraits
 {
-static inline void noop() { 
-  T::UsingInvalidGlobalIdentifierDataType(); 
+static inline void noop() {
+  T::UsingInvalidGlobalIdentifierDataType();
 }
-static inline T invalid() { 
-  return T::UsingInvalidGlobalIdentifierDataType(); 
+static inline T invalid() {
+  return T::UsingInvalidGlobalIdentifierDataType();
 }
 };
 
@@ -189,12 +189,12 @@ static inline T invalid() {
 
   The template parameter is the user's global ID data type.
 
-  The data types permitted for global identifiers for Zoltan2 callers 
-  may include those that are not represented in Teuchos::OrdinalTraits.  
+  The data types permitted for global identifiers for Zoltan2 callers
+  may include those that are not represented in Teuchos::OrdinalTraits.
   A common case is when a matrix nonzero is represented as an (i,j) pair.
 
-  In such a case, Zoltan2 will map them to a list of new IDs that 
-  \em are Teuchos Ordinals.  All computation will be in the space of 
+  In such a case, Zoltan2 will map them to a list of new IDs that
+  \em are Teuchos Ordinals.  All computation will be in the space of
   the new global numbers.  When the Solution object
   is written, the internal global numbers are mapped back to the user's
   global IDs.
@@ -217,7 +217,7 @@ static inline T invalid() {
     \li std::pair<T1, T2>
     \li string
 
-  The <tt> long long </tt>  and <tt> unsigned long long </tt> traits are only 
+  The <tt> long long </tt>  and <tt> unsigned long long </tt> traits are only
   defined if Trilinos was configured with the TEUCHOS_ENABLE_LONG_LONG_INT
   option.
 
@@ -228,8 +228,8 @@ static inline T invalid() {
   \todo write an example where user's global ID is a C-struct containing
         \c i and \c j indices.
 
-  \todo fix this note regarding gid_t
-  Developer note: By convention we use \c gid_t as the users global ID
+  \todo fix this note regarding zgid_t
+  Developer note: By convention we use \c zgid_t as the users global ID
   data type and \c gno_t as the data type used internally by Zoltan2.
 
   Each data type which is not defined in Teuchos::DirectSerializationTraits
@@ -271,7 +271,7 @@ struct IdentifierTraits {
   static inline std::string name() {
     return UndefIdTraits<std::string>::invalid();
   }
-		
+
   /*! \brief A string displaying the value.
 
       \param  val  the value to represent as a string
@@ -295,7 +295,7 @@ struct IdentifierTraits {
 
       \param a  The \em a of b-a
       \param b  The \em b of b-a
-      \result the value b-a 
+      \result the value b-a
 
        A \c std::logic_error is throw at runtime if the operation
                  is not valid for T.
@@ -304,7 +304,7 @@ struct IdentifierTraits {
     return UndefIdTraits<bool>::invalid();
   }
 
-  /*! \brief Determine if the data type is one for which IdentifierTraits are 
+  /*! \brief Determine if the data type is one for which IdentifierTraits are
                    defined
 
       \result true if data type has definition
@@ -343,7 +343,7 @@ struct IdentifierTraits {
   }
 
   /*! \brief Determine if the values are locally increasing consecutive
-      
+
       \param val  a pointer to \c n values
       \param n  the number of values in the list
       \result true if the values are increasing consecutive,
@@ -359,6 +359,14 @@ struct IdentifierTraits {
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+/* The specializations of the hashCode is not a true hash.
+ * For types that can fit in an int it is just a typecast to int. 
+ * This can be used with a modulo capacity of table/array to find the basic
+ * hash. For types larger than that can fit in an int, it tries to be a
+ * little smarter by adding all the bytes into an int. It also ensures it is
+ * positive so you can use it as an index.
+ * */
 
 template<>
 struct IdentifierTraits<char> {
@@ -380,7 +388,7 @@ struct IdentifierTraits<char> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
    return z2AreConsecutive(val, n); }
 };
 
@@ -404,7 +412,7 @@ struct IdentifierTraits<unsigned char> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
    return z2AreConsecutive(val, n); }
 };
 
@@ -428,7 +436,7 @@ struct IdentifierTraits<short> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
   return z2AreConsecutive(val, n); }
 };
 
@@ -452,7 +460,7 @@ struct IdentifierTraits<unsigned short> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
   return z2AreConsecutive(val, n); }
 };
 
@@ -476,14 +484,16 @@ struct IdentifierTraits<int> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
   return z2AreConsecutive(val, n); }
 };
 
 template<>
 struct IdentifierTraits<unsigned int> {
   typedef unsigned int T;
-  static inline int hashCode(const T  a) {return static_cast<int>(a);}
+  static inline int hashCode(const T  a) {
+    return getHashCode(
+      reinterpret_cast<const unsigned char *>(&a), sizeof(T));}
   static inline bool hasUniqueKey() { return true;}
   static inline double key(const T a){return static_cast<double>(a); }
   static inline std::string name()   {return("unsigned int");}
@@ -500,7 +510,7 @@ struct IdentifierTraits<unsigned int> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
   return z2AreConsecutive(val, n); }
 };
 
@@ -533,7 +543,7 @@ struct IdentifierTraits<long> {
 template<>
 struct IdentifierTraits<unsigned long> {
   typedef unsigned long T;
-  static inline int hashCode(const T a) { 
+  static inline int hashCode(const T a) {
     return getHashCode(
       reinterpret_cast<const unsigned char *>(&a), sizeof(T));}
   static inline bool hasUniqueKey() { return true;}
@@ -578,7 +588,7 @@ struct IdentifierTraits<long long> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
     return z2AreConsecutive(val, n); }
 };
 
@@ -603,15 +613,15 @@ struct IdentifierTraits<unsigned long long> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     z2GlobalMinMax(comm, flag, localMin, localMax, globalMin, globalMax);}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
     return z2AreConsecutive(val, n); }
 };
 
 #endif
 
 template<>
-struct IdentifierTraits<string> {
-  typedef string T;
+struct IdentifierTraits<std::string> {
+  typedef std::string T;
   static inline int hashCode(const T a) {
     return getHashCode(
       reinterpret_cast<const unsigned char *>(a.c_str()), a.size());}
@@ -620,7 +630,7 @@ struct IdentifierTraits<string> {
   static inline std::string name()   {return("string");}
   static std::string stringify(T val) {return val;}
   static inline bool isGlobalOrdinal() {return false; }
-  static inline T difference(const T a, const T b) { 
+  static inline T difference(const T a, const T b) {
     throw std::logic_error("invalid call");}
   static inline bool is_valid_id_type() {return true; }
   static void minMax(const T *values, size_t n, T &min, T &max) {
@@ -628,7 +638,7 @@ struct IdentifierTraits<string> {
   static void globalMinMax(const Comm<int> &comm, bool flag,
       T localMin, T localMax, T &globalMin, T &globalMax){
     throw std::logic_error("invalid call");}
-  static bool areConsecutive(const T *val, size_t n){ 
+  static bool areConsecutive(const T *val, size_t n){
     throw std::logic_error("invalid call");}
 };
 
@@ -638,11 +648,21 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   typedef typename std::pair<pair_t, pair_t> pairPair_t;
 
   static inline int hashCode(const pair_t p)  {
-    return IdentifierTraits<T1>::hashCode(p.first) +
-      IdentifierTraits<T2>::hashCode(p.second);
+    int total = IdentifierTraits<T1>::hashCode(p.first) +
+                IdentifierTraits<T2>::hashCode(p.second);
+    if (total < 0)
+    {
+        /* Convert the largest -ve int to zero and -1 to
+         * std::numeric_limits<int>::max()
+         * */
+        size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+        maxIntBeforeWrap ++;
+        total += maxIntBeforeWrap;
+    }
+    return total;
   }
 
-  static inline bool hasUniqueKey() { 
+  static inline bool hasUniqueKey() {
     if ((sizeof(T1)*2 <= sizeof(double))&&(sizeof(T2)*2 <= sizeof(double)))
       return true;
     else
@@ -659,8 +679,12 @@ struct IdentifierTraits<std::pair<T1, T2> > {
       char *cy = cx + nbytes;
       T1 *xpos = reinterpret_cast<T1 *>(cx + nbytes-sizeof(T1));
       T2 *ypos = reinterpret_cast<T2 *>(cy + nbytes-sizeof(T2));
-      *xpos = p.first;
-      *ypos = p.second;
+      // mfh 17 Apr 2014: Must do a memcpy here rather than an
+      // assignment, in order to avoid breaking strict ANSI aliasing
+      // rules (which compilers expect in order to optimize
+      // correctly).
+      memcpy (xpos, &(p.first), sizeof (T1)); // *xpos = p.first;
+      memcpy (ypos, &(p.second), sizeof (T2)); // *ypos = p.second;
       return keyVal;
     }
   }
@@ -695,11 +719,11 @@ struct IdentifierTraits<std::pair<T1, T2> > {
       throw std::logic_error("invalid call");}
 
   static void globalMinMax(const Comm<int> &comm, bool flag,
-      pair_t localMin, pair_t localMax, 
+      pair_t localMin, pair_t localMax,
       pair_t &globalMin, pair_t &globalMax){
       throw std::logic_error("invalid call");}
 
-  static bool areConsecutive(const pair_t *val, size_t n){ 
+  static bool areConsecutive(const pair_t *val, size_t n){
       throw std::logic_error("invalid call");
       return false; }
 };
@@ -711,10 +735,10 @@ struct IdentifierTraits<std::pair<T1, T2> > {
 //
 //  On return, globalLen is set to the sum of the local lengths.
 //
-//  If T is an ordinal, but the list is not globally consecutive, 
+//  If T is an ordinal, but the list is not globally consecutive,
 //    on return dist[0] is set to the global minimum of
 //    the values and dist[1] to the global maximum.
-//    
+//
 //  If T is an ordinal and the list is globally consecutive,
 //    on return dist[p] is set to val[0] on process p.  dist[nprocs]
 //    is set to one past the global maximum value.
@@ -722,7 +746,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
 
 template <typename T>
   bool globallyConsecutiveOrdinals(
-    const Comm<int> &comm, const Environment &env, 
+    const Comm<int> &comm, const Environment &env,
     const T* val, size_t len,
     ArrayRCP<T> &dist, size_t &globalLen)
 {
@@ -770,61 +794,61 @@ template <typename T>
       reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
-  
+
     T v0, v1, gMin, gMax;
-  
+
     if (len > 0){
       v0 = val[0];
       v1 = val[len-1];
     }
     else {
-      v0 = numeric_limits<T>::max();
-      v1 = numeric_limits<T>::min();
+      v0 = std::numeric_limits<T>::max();
+      v1 = std::numeric_limits<T>::min();
     }
-  
+
     try{
       IdentifierTraits<T>::globalMinMax(comm, len==0, v0, v1, gMin, gMax);
     }
-    Z2_FORWARD_EXCEPTIONS; 
-  
+    Z2_FORWARD_EXCEPTIONS;
+
     int lFlag = (locallyConsecutive ? 1 : 0);
     int gFlag = 0;
-  
+
     try{
       reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
-  
+
     if (gFlag == 1){  // all processes have consecutive values
-  
+
       size_t g0 = static_cast<size_t>(gMin);
       size_t g1 = static_cast<size_t>(gMax);
-    
+
       if (g1 - g0 + 1 == globalLen){
         size_t sentinel = g1 + 1;   // invalid id
         size_t sendVal = sentinel;
         if (len > 0)
           sendVal = static_cast<size_t>(v0);
-    
+
         size_t *recvBuf = new size_t[nprocs];
-    
+
         try {
           Teuchos::gatherAll<int, size_t>(comm, 1, &sendVal, nprocs, recvBuf);
         }
         Z2_THROW_OUTSIDE_ERROR(env);
-    
+
         int numNoIds = 0;  // number of procs with no ids
         for (int i=0; i < nprocs; i++)
           if (recvBuf[i] == sentinel)
             numNoIds++;
-    
+
         globallyConsecutive = true;
-    
+
         if (numNoIds == 0){
           for (int i=1; globallyConsecutive && i < nprocs; i++)
             if (recvBuf[i] < recvBuf[i-1])
               globallyConsecutive = false;
-    
+
           if (globallyConsecutive){
             distBuf = new T [nprocs+1];
             for (int i=0; i < nprocs; i++)
@@ -837,20 +861,20 @@ template <typename T>
           for (int i=0; i < nprocs; i++)
             if (recvBuf[i] != sentinel)
               index.push_back(i);
-    
+
           for (int i=1; i < index.size(); i++){
             if (recvBuf[index[i]] < recvBuf[index[i-1]])
               globallyConsecutive = false;
           }
-    
+
           if (globallyConsecutive){
             distBuf = new T [nprocs+1];
             for (int i=0; i < nprocs+1; i++)
               distBuf[i] = static_cast<T>(sentinel);
-    
+
             for (int i=0; i < index.size(); i++)
               distBuf[index[i]] = static_cast<T>(recvBuf[index[i]]);
-    
+
             T useValue = static_cast<T>(sentinel);
             for (int i = nprocs-1; i >= 0; i--){
               if (distBuf[i] == static_cast<T>(sentinel))

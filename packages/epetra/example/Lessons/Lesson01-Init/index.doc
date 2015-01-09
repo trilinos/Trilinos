@@ -1,0 +1,90 @@
+/**
+\page Epetra_Lesson01 Epetra Lesson 01: Initialization
+\brief "Hello world!" initialization.
+
+\section Epetra_Lesson01_Topics Lesson topics
+
+The Epetra package provides distributed sparse linear algebra.  It
+includes sparse matrices, vectors, and other linear algebra objects,
+along with computational kernels. This lesson shows the MPI (or
+non-MPI) initialization you need to do in order to start using Epetra.
+The initialization procedure differs slightly, depending on whether
+you are writing a code from scratch, or introducing Epetra into an
+existing code base.  We will give example codes and discussion for the
+following three use cases:
+<ol>
+<li> A code which only uses MPI through Trilinos </li>
+<li> A code which uses MPI on its own as well as through Trilinos </li>
+<li> A code which does not use MPI </li>
+</ol>
+
+\section Epetra_Lesson01_MpiOnlyThroughTrilinos Initialization for a code that only uses MPI through Trilinos
+
+This section explains how to set up the distributed-memory parallel
+environment for using Epetra, in a code which only uses MPI through
+Trilinos.  If you want to introduce Epetra into an existing MPI
+application, please see the next section.  This example works whether
+or not Trilinos was built with MPI support.
+
+Epetra was written for distributed-memory parallel programming.  It
+uses <a
+href="http://en.wikipedia.org/wiki/Message_Passing_Interface">MPI</a>
+(the Message Passing Interface) for this.  However, Epetra will work
+correctly whether or not you have built Trilinos with MPI support.  It
+does so by interacting with MPI through an interface called
+Epetra_Comm.  If MPI is enabled, then this wraps an MPI_Comm.
+Otherwise, this is a "serial communicator" with one process, analogous
+to MPI_COMM_SELF.
+
+Epetra expects that the user call MPI_Init before using MPI, and call
+MPI_Finalize after using MPI (usually at the end of the program).  You
+may either do this manually, or use Teuchos::GlobalMPISession.  The
+latter calls MPI_Init and MPI_Finalize for you in an MPI build, and
+does not call them if you did not build Trilinos with MPI support.
+However, you may only use Teuchos::GlobalMPISession if Trilinos was
+built with the Teuchos package enabled.  Epetra does not require the
+Teuchos package, so the the following example illustrates the standard
+idiom for initializing MPI (if available) and getting an Epetra_Comm
+corresponding to MPI_COMM_WORLD.  The example works whether or not
+Trilinos was build with MPI support.
+
+\include ./lesson01_mpi_only_through_Epetra.cpp
+
+\section Epetra_Lesson01_ExistingMpiCode Initialization for an existing MPI code
+
+Epetra also works fine in an existing MPI code.  For this example, we
+assume that your code initializes MPI on its own by calling MPI_Init,
+and calls MPI_Finalize at the end.  It also must get an MPI_Comm (an
+MPI communicator) somewhere, either by using a predefined communicator
+such as MPI_COMM_WORLD, or by creating a new one.
+
+\include ./lesson01_mpi_on_its_own.cpp
+
+\section Epetra_Lesson01_ExistingNonMpiCode Initialization for an existing non-MPI code
+
+If are using a build of Trilinos that has MPI enabled, but you don't
+want to use MPI in your application, you may either imitate the first
+example above, or create an Epetra_SerialComm directly as the
+"communicator."  The following example shows how to create an
+Epetra_SerialComm.
+
+\include ./lesson01_no_mpi.cpp
+
+\section Epetra_Lesson01_Other Things we didn't explain above
+
+\subsection Epetra_Lesson01_Other_Comm Epetra_Comm, Epetra_MpiComm, and Epetra_SerialComm
+
+Epetra_Comm is Epetra's interface to distributed-memory parallel
+communication.  It is an abstract base class.  The Epetra_MpiComm and
+Epetra_SerialComm classes implement this interface.  As the name
+indicates, Epetra_MpiComm implements Epetra_Comm by using MPI calls.
+Epetra_SerialComm implements Epetra_Comm without MPI, as a
+"communicator" with only one process, whose rank is always zero.
+(This is more or less equivalent to MPI_COMM_SELF, except without
+actually using MPI.)
+
+Since Epetra_Comm is an abstract base class, you cannot create it
+directly.  You must handle it by pointer or reference.  However, you
+may create an instance of a subclass of Epetra_Comm.  The above
+examples show how to do this.
+*/

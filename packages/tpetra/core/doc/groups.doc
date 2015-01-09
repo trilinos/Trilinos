@@ -1,0 +1,4 @@
+/*! \namespace Tpetra
+ *  \brief Namespace %Tpetra contains the class and methods constituting the %Tpetra library.
+ */
+

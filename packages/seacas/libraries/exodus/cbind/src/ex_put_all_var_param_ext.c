@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -45,12 +45,15 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_dimension, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-#include <ctype.h>
-static void *safe_free(void *array);
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label, int *dimid);
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
                                          const char *label);
@@ -196,7 +199,7 @@ int ex_put_all_var_param_ext ( int   exoid,
       goto error_ret;
   }
 
-  if (vp->num_node > 0 && num_nod_dim > 0) {
+  if (vp->num_node > 0) {
     /*
      * There are two ways to store the nodal variables. The old way *
      * was a blob (#times,#vars,#nodes), but that was exceeding the
@@ -213,33 +216,35 @@ int ex_put_all_var_param_ext ( int   exoid,
     if (define_dimension(exoid, DIM_NUM_NOD_VAR, vp->num_node, "nodal", &dimid) != NC_NOERR)
       goto error_ret;
 
-    if (ex_large_model(exoid) == 0) { /* Old way */
-      dims[0] = time_dim;
-      dims[1] = dimid;
-      dims[2] = num_nod_dim;
-      if ((status = nc_def_var(exoid, VAR_NOD_VAR,
-			       nc_flt_code(exoid), 3, dims, &varid)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to define nodal variables in file id %d",
-		exoid);
-	ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
-	goto error_ret;          /* exit define mode and return */
-      }
-    } else { /* Store new way */
-      for (i = 1; i <= vp->num_node; i++) {
+    if (num_nod_dim > 0) {
+      if (ex_large_model(exoid) == 0) { /* Old way */
 	dims[0] = time_dim;
-	dims[1] = num_nod_dim;
-	if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
-				 nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+	dims[1] = dimid;
+	dims[2] = num_nod_dim;
+	if ((status = nc_def_var(exoid, VAR_NOD_VAR,
+				 nc_flt_code(exoid), 3, dims, &varid)) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
-		  "Error: failed to define nodal variable %d in file id %d",
-		  i, exoid);
-	  ex_err("ex_put_var_param",errmsg,exerrval);
+		  "Error: failed to define nodal variables in file id %d",
+		  exoid);
+	  ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */
 	}
-	ex_compress_variable(exoid, varid, 2);
+      } else { /* Store new way */
+	for (i = 1; i <= vp->num_node; i++) {
+	  dims[0] = time_dim;
+	  dims[1] = num_nod_dim;
+	  if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
+				   nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+	    exerrval = status;
+	    sprintf(errmsg,
+		    "Error: failed to define nodal variable %d in file id %d",
+		    i, exoid);
+	    ex_err("ex_put_var_param",errmsg,exerrval);
+	    goto error_ret;          /* exit define mode and return */
+	  }
+	  ex_compress_variable(exoid, varid, 2);
+	}
       }
     }
 
@@ -260,8 +265,8 @@ int ex_put_all_var_param_ext ( int   exoid,
     if (define_truth_table(TID, exoid, DVAL, NUMVAR, VTABVAL, VSTATVAL, VIDS, TNAME) != NC_NOERR) \
       goto error_ret;							\
 									\
-    VSTATVAL = safe_free (VSTATVAL);					\
-    VIDS  = safe_free (VIDS);						\
+    VSTATVAL = ex_safe_free (VSTATVAL);					\
+    VIDS  = ex_safe_free (VIDS);					\
 									\
     /* create a variable array in which to store the STNAME variable truth \
      * table								\
@@ -355,23 +360,23 @@ int ex_put_all_var_param_ext ( int   exoid,
         ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
       }
   }
-  safe_free(eblk_ids);
-  safe_free(edblk_ids);
-  safe_free(fablk_ids);
-  safe_free(nset_ids);
-  safe_free(eset_ids);
-  safe_free(fset_ids);
-  safe_free(sset_ids);
-  safe_free(elset_ids);
+  ex_safe_free(eblk_ids);
+  ex_safe_free(edblk_ids);
+  ex_safe_free(fablk_ids);
+  ex_safe_free(nset_ids);
+  ex_safe_free(eset_ids);
+  ex_safe_free(fset_ids);
+  ex_safe_free(sset_ids);
+  ex_safe_free(elset_ids);
 
-  safe_free(eblk_stat);
-  safe_free(edblk_stat);
-  safe_free(fablk_stat);
-  safe_free(nset_stat);
-  safe_free(eset_stat);
-  safe_free(fset_stat);
-  safe_free(sset_stat);
-  safe_free(elset_stat);
+  ex_safe_free(eblk_stat);
+  ex_safe_free(edblk_stat);
+  ex_safe_free(fablk_stat);
+  ex_safe_free(nset_stat);
+  ex_safe_free(eset_stat);
+  ex_safe_free(fset_stat);
+  ex_safe_free(sset_stat);
+  ex_safe_free(elset_stat);
   return(EX_FATAL);
 }
 
@@ -404,7 +409,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
   int status;
   
   dims[0] = dimension;
-  nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
+  (void)nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
   if ((status=nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
@@ -448,7 +453,7 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
      
     if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
       exerrval = status;
-      safe_free(stat_vals);
+      ex_safe_free(stat_vals);
       sprintf(errmsg,
               "Error: failed to get %s status array from file id %d",
               label, exoid);
@@ -462,12 +467,6 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
       stat_vals[i] = 1;
   }
  return stat_vals;
-}
-
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
 }
 
 static int put_truth_table(int exoid, int varid, int *table, const char *label)
@@ -498,7 +497,13 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   int varid;
   int status;
 
-  nc_inq_dimid(exoid, DIM_TIME, &time_dim);
+  if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to locate time dimension in file id %d", exoid);
+    ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
+    return -1;
+  }
 
   if (var_tab == NULL) {
     exerrval = EX_BADPARAM;

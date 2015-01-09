@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -69,41 +69,41 @@
 
 // prototypes
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff, int nrhs,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly);
- 
-void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
 			int nsizes, int * sizes,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_BlockMap *& map, 
-			Epetra_VbrMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_BlockMap *& map,
+			Epetra_VbrMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
-void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
-			int * xoff, int * yoff, 
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
+			int * xoff, int * yoff,
 			int nsizes, int * sizes, int nrhs,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_BlockMap *& map, 
-			Epetra_VbrMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_BlockMap *& map,
+			Epetra_VbrMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
@@ -116,8 +116,8 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
 void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
 #endif
-void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
-		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
+void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL,
+		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU,
 		      bool StaticProfile, bool verbose, bool summary);
 int main(int argc, char *argv[])
 {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
   double elapsed_time;
   double total_flops;
   double MFLOPs;
-    
+
 
 #ifdef EPETRA_MPI
 
@@ -235,47 +235,47 @@ int main(int argc, char *argv[])
      // Generate a 5-point 2D Finite Difference matrix
     Xoff.Size(5);
     Yoff.Size(5);
-    Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
-    Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
+    Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0;
+    Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1;
 
      // Generate a 2-point 2D Lower triangular Finite Difference matrix
     XLoff.Size(2);
     YLoff.Size(2);
-    XLoff[0] = -1; XLoff[1] =  0; 
+    XLoff[0] = -1; XLoff[1] =  0;
     YLoff[0] =  0; YLoff[1] = -1;
 
      // Generate a 3-point 2D upper triangular Finite Difference matrix
     XUoff.Size(3);
     YUoff.Size(3);
-    XUoff[0] =  0; XUoff[1] =  1; XUoff[2] = 0; 
+    XUoff[0] =  0; XUoff[1] =  1; XUoff[2] = 0;
     YUoff[0] =  0; YUoff[1] =  0; YUoff[2] = 1;
   }
   else if (numPoints==9) {
     // Generate a 9-point 2D Finite Difference matrix
     Xoff.Size(9);
     Yoff.Size(9);
-    Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1; 
-    Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1; 
-    Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1; 
-    Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
-    Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
-    Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
+    Xoff[0] = -1;  Xoff[1] =  0; Xoff[2] =  1;
+    Yoff[0] = -1;  Yoff[1] = -1; Yoff[2] = -1;
+    Xoff[3] = -1;  Xoff[4] =  0; Xoff[5] =  1;
+    Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0;
+    Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1;
+    Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1;
 
     // Generate a 5-point lower triangular 2D Finite Difference matrix
     XLoff.Size(5);
     YLoff.Size(5);
-    XLoff[0] = -1;  XLoff[1] =  0; Xoff[2] =  1; 
-    YLoff[0] = -1;  YLoff[1] = -1; Yoff[2] = -1; 
-    XLoff[3] = -1;  XLoff[4] =  0; 
+    XLoff[0] = -1;  XLoff[1] =  0; Xoff[2] =  1;
+    YLoff[0] = -1;  YLoff[1] = -1; Yoff[2] = -1;
+    XLoff[3] = -1;  XLoff[4] =  0;
     YLoff[3] =  0;  YLoff[4] =  0;
 
     // Generate a 4-point upper triangular 2D Finite Difference matrix
     XUoff.Size(4);
     YUoff.Size(4);
-    XUoff[0] =  1; 
-    YUoff[0] =  0; 
-    XUoff[1] = -1;  XUoff[2] =  0; XUoff[3] =  1; 
-    YUoff[1] =  1;  YUoff[2] =  1; YUoff[3] =  1; 
+    XUoff[0] =  1;
+    YUoff[0] =  0;
+    XUoff[1] = -1;  XUoff[2] =  0; XUoff[3] =  1;
+    YUoff[1] =  1;  YUoff[2] =  1; YUoff[3] =  1;
 
   }
   else {
@@ -285,19 +285,19 @@ int main(int argc, char *argv[])
     int xi = 0, yi = 0;
     int xo = -2, yo = -2;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
     xo = -2, yo++;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
-    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ;
 
     // Generate a 13-point lower triangular 2D Finite Difference matrix
     XLoff.Size(13);
@@ -305,10 +305,10 @@ int main(int argc, char *argv[])
     xi = 0, yi = 0;
     xo = -2, yo = -2;
     XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++;
-    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; 
+    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ;
     xo = -2, yo++;
     XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++;
-    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; 
+    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ;
     xo = -2, yo++;
     XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++;
     YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ;
@@ -319,13 +319,13 @@ int main(int argc, char *argv[])
     xi = 0, yi = 0;
     xo = 0, yo = 0;
     XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++;
-    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ;
     xo = -2, yo++;
     XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++;
-    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ;
     xo = -2, yo++;
     XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++;
-    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ;
 
   }
 
@@ -378,9 +378,9 @@ int main(int argc, char *argv[])
 			 Xoff.Values(), Yoff.Values(), nrhs, comm, verbose, summary,
 			 map, A, b, bt, xexact, StaticProfile, false);
 
-      
+
 #ifdef EPETRA_HAVE_JADMATRIX
-      
+
       timer.ResetStartTime();
       Epetra_JadMatrix JA(*A);
       elapsed_time = timer.ElapsedTime();
@@ -396,45 +396,45 @@ int main(int argc, char *argv[])
 
       delete A;
       delete b;
-      delete bt; 
+      delete bt;
       delete xexact;
 
       GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, XLoff.Length(),
 			 XLoff.Values(), YLoff.Values(), nrhs, comm, verbose, summary,
 			 mapL, L, bL, btL, xexactL, StaticProfile, true);
-      
+
 
       GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, XUoff.Length(),
 			 XUoff.Values(), YUoff.Values(), nrhs, comm, verbose, summary,
 			 mapU, U, bU, btU, xexactU, StaticProfile, true);
-      
+
 
       runLUMatrixTests(L, bL, btL, xexactL, U, bU, btU, xexactU, StaticProfile, verbose, summary);
 
       delete L;
       delete bL;
-      delete btL; 
+      delete btL;
       delete xexactL;
       delete mapL;
 
       delete U;
       delete bU;
-      delete btU; 
+      delete btU;
       delete xexactU;
       delete mapU;
 
       Epetra_MultiVector q(*map, nrhs);
       Epetra_MultiVector z(q);
       Epetra_MultiVector r(q);
-      
+
       delete map;
       q.SetFlopCounter(flopcounter);
       z.SetFlopCounter(q);
       r.SetFlopCounter(q);
 
       resvec.Resize(nrhs);
-      
-    
+
+
       flopcounter.ResetFlops();
       timer.ResetStartTime();
 
@@ -446,41 +446,41 @@ int main(int argc, char *argv[])
       total_flops = q.Flops();
       MFLOPs = total_flops/elapsed_time/1000000.0;
       if (verbose) cout << "\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl;
-      
+
       if (summary) {
 	if (comm.NumProc()==1) cout << "Norm2" << '\t';
 	cout << MFLOPs << endl;
       }
-      
+
       flopcounter.ResetFlops();
       timer.ResetStartTime();
-      
+
       //10 dot's
       for( int i = 0; i < 10; ++i )
 	q.Dot(z, resvec.Values());
-      
+
       elapsed_time = timer.ElapsedTime();
       total_flops = q.Flops();
       MFLOPs = total_flops/elapsed_time/1000000.0;
       if (verbose) cout << "Total MFLOPs for 10 Dot's  = " << MFLOPs << endl;
-      
+
       if (summary) {
 	if (comm.NumProc()==1) cout << "DotProd" << '\t';
 	cout << MFLOPs << endl;
       }
-      
+
       flopcounter.ResetFlops();
       timer.ResetStartTime();
-      
+
       //10 dot's
       for( int i = 0; i < 10; ++i )
 	q.Update(1.0, z, 1.0, r, 0.0);
-      
+
       elapsed_time = timer.ElapsedTime();
       total_flops = q.Flops();
       MFLOPs = total_flops/elapsed_time/1000000.0;
       if (verbose) cout << "Total MFLOPs for 10 Updates= " << MFLOPs << endl;
-      
+
       if (summary) {
 	if (comm.NumProc()==1) cout << "Update" << '\t';
 	cout << MFLOPs << endl;
@@ -496,11 +496,11 @@ return ierr ;
 }
 
 // Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
-// 
+//
 // nx      (In) - number of grid points in x direction
 // ny      (In) - number of grid points in y direction
 //   The total number of equations will be nx*ny ordered such that the x direction changes
-//   most rapidly: 
+//   most rapidly:
 //      First equation is at point (0,0)
 //      Second at                  (1,0)
 //       ...
@@ -528,19 +528,19 @@ return ierr ;
 
 // Note: Caller of this function is responsible for deleting all output objects.
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
-  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
-		     xoff, yoff, 1, comm, verbose, summary, 
+  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+		     xoff, yoff, 1, comm, verbose, summary,
 		     map, A, b1, bt1, xexact1, StaticProfile, MakeLocalOnly);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
@@ -550,22 +550,22 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   return;
 }
 
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff, int nrhs,
 			const Epetra_Comm  &comm, bool verbose, bool summary,
-			Epetra_Map *& map, 
-			Epetra_CrsMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			Epetra_Map *& map,
+			Epetra_CrsMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
-  
+
   Epetra_Time timer(comm);
   // Determine my global IDs
   long long * myGlobalElements;
   GenerateMyGlobalElements(numNodesX, numNodesY, numProcsX, numProcsY, comm.MyPID(), myGlobalElements);
 
   int numMyEquations = numNodesX*numNodesY;
-  
+
   map = new Epetra_Map((long long)-1, numMyEquations, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
@@ -575,14 +575,14 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 #ifdef EPETRA_HAVE_STATICPROFILE
 
-  if (MakeLocalOnly) 
+  if (MakeLocalOnly)
     A = new Epetra_CrsMatrix(Copy, *map, *map, profile, StaticProfile); // Construct matrix with rowmap=colmap
   else
     A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
 
 #else
 
-  if (MakeLocalOnly) 
+  if (MakeLocalOnly)
     A = new Epetra_CrsMatrix(Copy, *map, *map, profile); // Construct matrix with rowmap=colmap
   else
     A = new Epetra_CrsMatrix(Copy, *map, profile); // Construct matrix
@@ -632,7 +632,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
     cout << fillCompleteTime << endl;
   }
 
-  if (nrhs<=1) {  
+  if (nrhs<=1) {
     b = new Epetra_Vector(*map);
     bt = new Epetra_Vector(*map);
     xexact = new Epetra_Vector(*map);
@@ -653,11 +653,11 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 
 // Constructs a 2D PDE finite difference matrix using the list of x and y offsets.
-// 
+//
 // nx      (In) - number of grid points in x direction
 // ny      (In) - number of grid points in y direction
 //   The total number of equations will be nx*ny ordered such that the x direction changes
-//   most rapidly: 
+//   most rapidly:
 //      First equation is at point (0,0)
 //      Second at                  (1,0)
 //       ...
@@ -691,13 +691,13 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 // Note: Caller of this function is responsible for deleting all output objects.
 
-void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
 			int * xoff, int * yoff,
 			int nsizes, int * sizes,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_BlockMap *& map, 
-			Epetra_VbrMatrix *& A, 
-			Epetra_Vector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_BlockMap *& map,
+			Epetra_VbrMatrix *& A,
+			Epetra_Vector *& b,
 			Epetra_Vector *& bt,
 			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 	
@@ -714,13 +714,13 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   return;
 }
 
-void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
-			int * xoff, int * yoff, 
+void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints,
+			int * xoff, int * yoff,
 			int nsizes, int * sizes, int nrhs,
-			const Epetra_Comm  &comm, bool verbose, bool summary, 
-			Epetra_BlockMap *& map, 
-			Epetra_VbrMatrix *& A, 
-			Epetra_MultiVector *& b, 
+			const Epetra_Comm  &comm, bool verbose, bool summary,
+			Epetra_BlockMap *& map,
+			Epetra_VbrMatrix *& A,
+			Epetra_MultiVector *& b,
 			Epetra_MultiVector *& bt,
 			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
@@ -731,25 +731,25 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   GenerateMyGlobalElements(numNodesX, numNodesY, numProcsX, numProcsY, comm.MyPID(), myGlobalElements);
 
   int numMyElements = numNodesX*numNodesY;
-  
+
   Epetra_Map ptMap((long long)-1, numMyElements, myGlobalElements, 0, comm); // Create map with 2D block partitioning.
   delete [] myGlobalElements;
 
   Epetra_IntVector elementSizes(ptMap); // This vector will have the list of element sizes
-  for (i=0; i<numMyElements; i++) 
+  for (i=0; i<numMyElements; i++)
     elementSizes[i] = sizes[ptMap.GID64(i)%nsizes]; // cycle through sizes array
 
   map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements64(), elementSizes.Values(),
 			    ptMap.IndexBase64(), ptMap.Comm());
 
   int profile = 0; if (StaticProfile) profile = numPoints;
-  
+
 // FIXME: Won't compile until Epetra_VbrMatrix is modified.
 #if 0
   int j;
   long long numGlobalEquations = ptMap.NumGlobalElements64();
 
-  if (MakeLocalOnly) 
+  if (MakeLocalOnly)
     A = new Epetra_VbrMatrix(Copy, *map, *map, profile); // Construct matrix rowmap=colmap
   else
     A = new Epetra_VbrMatrix(Copy, *map, profile); // Construct matrix
@@ -811,7 +811,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
     for (j=0; j<rowDim; j++) diagVals[j+j*diagLDA] = rowSums[diagoffsets[i]+j];
   }
 
-  if (nrhs<=1) {  
+  if (nrhs<=1) {
     b = new Epetra_Vector(*map);
     bt = new Epetra_Vector(*map);
     xexact = new Epetra_Vector(*map);
@@ -846,7 +846,7 @@ void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int n
     curGID+=numNodesX*numProcsX;
   }
   //for (int i=0; i<numNodesX*numNodesY; i++) cout << "MYPID " << myPID <<" GID "<< myGlobalElements[i] << endl;
-  
+
   return;
 }
 
@@ -865,18 +865,18 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
   if (StaticProfile) statdyn = "static ";
 
   for (int j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
-    
+
     bool TransA = (j==1 || j==3);
     std::string contig = "without";
     if (j>1) contig =    "with   ";
-    
+
 #ifdef EPETRA_SHORT_PERFTEST
     int kstart = 1;
 #else
     int kstart = 0;
 #endif
     for (int k=kstart; k<2; k++) { // Loop over old multiply vs. new multiply
-      
+
       std::string oldnew = "old";
       if (k>0) oldnew =    "new";
 
@@ -897,7 +897,7 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
 	for( int i = 0; i < 10; ++i )
 	  A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
       }
-      
+
       double elapsed_time = timer.ElapsedTime();
       double total_flops = A->Flops();
 
@@ -908,7 +908,7 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
 	r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
 
       r.Norm2(resvec.Values());
-      
+
       if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
       double MFLOPs = total_flops/elapsed_time/1000000.0;
       if (verbose) cout << "Total MFLOPs for 10 " << oldnew << " MatVec's with " << statdyn << " Profile (Trans = " << TransA
@@ -938,7 +938,7 @@ void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_Mul
   Epetra_Time timer(A->Comm());
 
   for (int j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
-    
+
     bool TransA = (j==1);
     A->SetUseTranspose(TransA);
     flopcounter.ResetFlops();
@@ -947,18 +947,18 @@ void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_Mul
     //10 matvecs
     for( int i = 0; i < 10; ++i )
       A->Apply(*xexact, z); // Compute z = A*xexact or z = A'*xexact
-    
+
     double elapsed_time = timer.ElapsedTime();
     double total_flops = A->Flops();
-    
+
     // Compute residual
     if (TransA)
       r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
     else
       r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
-    
+
     r.Norm2(resvec.Values());
-    
+
     if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
     double MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "Total MFLOPs for 10 " << " Jagged Diagonal MatVec's with (Trans = " << TransA
@@ -975,8 +975,8 @@ void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_Mul
 }
 #endif
 //=========================================================================================
-void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
-		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
+void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL,
+		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU,
 		      bool StaticProfile, bool verbose, bool summary) {
 
   if (L->NoDiagonal()) {
@@ -1001,11 +1001,11 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
   if (StaticProfile) statdyn = "static ";
 
   for (int j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
-    
+
     bool TransA = (j==1 || j==3);
     std::string contig = "without";
     if (j>1) contig =    "with   ";
-    
+
     if (j==2) {
       L->OptimizeStorage();
       U->OptimizeStorage();
@@ -1013,14 +1013,14 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
 
     flopcounter.ResetFlops();
     timer.ResetStartTime();
-    
+
     //10 lower solves
     bool Upper = false;
     bool UnitDiagonal = L->NoDiagonal();  // If no diagonal, then unit must be used
     Epetra_MultiVector * b = TransA ? btL : bL;  // solve with the appropriate b vector
     for( int i = 0; i < 10; ++i )
       L->Solve(Upper, TransA, UnitDiagonal, *b, z); // Solve Lz = bL or L'z = bLt
-      
+
     double elapsed_time = timer.ElapsedTime();
     double total_flops = L->Flops();
 
@@ -1034,7 +1034,7 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
       cout << "xexactL = " << *xexactL << endl;
       cout << "r = " << r << endl;
     }
-      
+
     if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
     double MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "Total MFLOPs for 10 " << " Lower solves " << statdyn << " Profile (Trans = " << TransA
@@ -1048,14 +1048,14 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
     }
     flopcounter.ResetFlops();
     timer.ResetStartTime();
-    
+
     //10 upper solves
     Upper = true;
     UnitDiagonal = U->NoDiagonal();  // If no diagonal, then unit must be used
     b = TransA ? btU : bU;  // solve with the appropriate b vector
     for( int i = 0; i < 10; ++i )
       U->Solve(Upper, TransA, UnitDiagonal, *b, z); // Solve Lz = bL or L'z = bLt
-      
+
     elapsed_time = timer.ElapsedTime();
     total_flops = U->Flops();
 
@@ -1072,7 +1072,7 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
       cout << "b = " << *b << endl;
     }
 
-      
+
     if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
     MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "Total MFLOPs for 10 " << " Upper solves " << statdyn << " Profile (Trans = " << TransA

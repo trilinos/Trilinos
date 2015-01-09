@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -46,7 +46,7 @@
 #include <vector>
 
 //==============================================================================
-Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm): 
+Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   Epetra_Object("Epetra::MpiDistributor"),
   lengths_to_(0),
   procs_to_(0),
@@ -138,7 +138,7 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
     for (i=0; i<size_indices_to_; i++) {
       indices_to_[i] = Distributor.indices_to_[i];
     }
-    indices_to_ptr_ = new int[nexports_]; 
+    indices_to_ptr_ = new int[nexports_];
     for (i=0; i<nexports_; i++) {
       indices_to_ptr_[i] = Distributor.indices_to_ptr_[i];
     }
@@ -493,7 +493,7 @@ int Epetra_MpiDistributor::CreateSendStructures_(int my_proc,
         j++;
       }
   }
-    
+
   delete [] starts;
 
   nsends_ -= self_msg_;
@@ -511,15 +511,15 @@ int Epetra_MpiDistributor::CreateRecvStructures_(const int & NumRemoteIDs,
   // use nsends as an initial guess for space.
   std::vector<int> recv_list;
   recv_list.reserve(nsends_);
-  
+
   int last_pid=-2;
-  for(i=0; i<NumRemoteIDs; i++) { 
+  for(i=0; i<NumRemoteIDs; i++) {
     if(RemotePIDs[i]>last_pid) {
       recv_list.push_back(RemotePIDs[i]);
       last_pid = RemotePIDs[i];
     }
     else if (RemotePIDs[i]<last_pid)
-      throw std::runtime_error("Epetra_MpiDistributor::CreateRecvStructures_ expected RemotePIDs to be in sorted order");    
+      throw std::runtime_error("Epetra_MpiDistributor::CreateRecvStructures_ expected RemotePIDs to be in sorted order");
   }
   nrecvs_=recv_list.size();
 
@@ -550,7 +550,7 @@ int Epetra_MpiDistributor::CreateRecvStructures_(const int & NumRemoteIDs,
 //---------------------------------------------------------------------------
 //ComputeRecvs Method
 //---------------------------------------------------------------------------
-int Epetra_MpiDistributor::ComputeRecvs_( int my_proc, 
+int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
 			        int nprocs )
 {
   int * msg_count = new int[ nprocs ];
@@ -667,7 +667,7 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
   nrecvs_ -= self_msg_;
 
   MPI_Barrier( comm_ );
-  
+
   return false;
 }
 
@@ -683,7 +683,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 				id_type *& export_ids,
 				int *& export_procs,
 				int my_proc ) {
- 
+
   Epetra_MpiDistributor tmp_plan(*epComm_);
   int i;
 
@@ -722,7 +722,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 
   int len_c_export_objs = 0;
   EPETRA_CHK_ERR( tmp_plan.Do(reinterpret_cast<char *> (import_objs),
-			      pack_size * (int)sizeof( int ), 
+			      pack_size * (int)sizeof( int ),
 			      len_c_export_objs,
 			      c_export_objs) );
   int * export_objs = reinterpret_cast<int *>(c_export_objs);
@@ -817,14 +817,14 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
   MPI_Barrier( comm_ );
 #endif // EPETRA_NO_READY_SEND_IN_DO_POSTS
 
-  //setup scan through procs_to list starting w/ higher numbered procs 
+  //setup scan through procs_to list starting w/ higher numbered procs
   //Should help balance msg traffic
-  int nblocks = nsends_ + self_msg_; 
-  int proc_index = 0; 
+  int nblocks = nsends_ + self_msg_;
+  int proc_index = 0;
   while( proc_index < nblocks && procs_to_[proc_index] < my_proc )
-    ++proc_index;                    
+    ++proc_index;
   if( proc_index == nblocks ) proc_index = 0;
-   
+
   int self_num = 0, self_index = 0;
   int p;
 
@@ -883,7 +883,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
         j = starts_to_[p];
         for( k = 0; k < lengths_to_[p]; k++ )
         {
-          memcpy( &(send_array_[offset]), 
+          memcpy( &(send_array_[offset]),
                   &(export_objs[indices_to_[j]*obj_size]),
                   obj_size );
           ++j;
@@ -961,24 +961,24 @@ int Epetra_MpiDistributor::DoReverseWaits()
 
 //==============================================================================
 //---------------------------------------------------------------------------
-//Resize Method                      (Heaphy) 
+//Resize Method                      (Heaphy)
 //---------------------------------------------------------------------------
 int Epetra_MpiDistributor::Resize_( int * sizes )
-{ 
+{
   int  i, j, k;         // loop counters
-  int sum; 
- 
-  //if (sizes == 0) return 0; 
-     
-  int my_proc; 
-  MPI_Comm_rank (comm_, &my_proc);  
+  int sum;
+
+  //if (sizes == 0) return 0;
+
+  int my_proc;
+  MPI_Comm_rank (comm_, &my_proc);
   int nprocs;
   MPI_Comm_size( comm_, &nprocs );
-     
+
   if( resized_ )
-  {  
+  {
     //test and see if we are already setup for these sizes
-    bool match = true; 
+    bool match = true;
     for( i = 0; i < nexports_; ++i )
       match = match && (sizes_[i]==sizes[i]);
     int matched = match?1:0;
@@ -988,21 +988,21 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
       return 0;
     else //reset existing sizing arrays
       max_send_length_ = 0;
-  } 
- 
-  if( !sizes_ && nexports_ ) sizes_ = new int[nexports_]; 
+  }
+
+  if( !sizes_ && nexports_ ) sizes_ = new int[nexports_];
   for (i = 0; i < nexports_; i++)
-    sizes_[i] = sizes[i]; 
- 
+    sizes_[i] = sizes[i];
+
   if( !sizes_to_ && (nsends_+self_msg_) ) sizes_to_ = new int[nsends_+self_msg_];
-  for (i = 0; i < (nsends_+self_msg_); ++i) 
-    sizes_to_[i] = 0;                       
- 
+  for (i = 0; i < (nsends_+self_msg_); ++i)
+    sizes_to_[i] = 0;
+
   if( !starts_to_ptr_ && (nsends_+self_msg_) ) starts_to_ptr_ = new int[nsends_+self_msg_];
 
   if( !indices_to_ ) //blocked sends
   {
-    
+
     int * index = 0;
     int * sort_val = 0;
     if (nsends_+self_msg_>0) {
@@ -1039,18 +1039,18 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
   }
   else //Sends not blocked, so have to do more work
   {
-    if( !indices_to_ptr_ && nexports_ ) indices_to_ptr_ = new int[nexports_]; 
+    if( !indices_to_ptr_ && nexports_ ) indices_to_ptr_ = new int[nexports_];
     int * offset = 0;
     if( nexports_ ) offset = new int[nexports_];
-   
+
     //Compute address for every item in send array
-    sum = 0; 
+    sum = 0;
     for( i = 0; i < nexports_; ++i )
-    {  
-      offset[i] = sum; 
+    {
+      offset[i] = sum;
       sum += sizes_[i];
     }
-   
+
     sum = 0;
     max_send_length_ = 0;
     for( i = 0; i < (nsends_+self_msg_); ++i )
@@ -1065,10 +1065,10 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
         max_send_length_ = sizes_to_[i];
       sum += sizes_to_[i];
     }
- 
+
     if (offset!=0) {delete [] offset; offset = 0;}
   }
- 
+
   //  Exchange sizes routine inserted here:
   int self_index_to = -1;
   total_recv_length_ = 0;
@@ -1134,9 +1134,9 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
   }
 #endif
   // end of exchanges sizes insert
- 
+
   sum = 0;
-  if( !starts_from_ptr_ ) starts_from_ptr_  = new int[nrecvs_+self_msg_]; 
+  if( !starts_from_ptr_ ) starts_from_ptr_  = new int[nrecvs_+self_msg_];
   for (i = 0; i < (nrecvs_+self_msg_); ++i)
   {
      starts_from_ptr_[i] = sum;
@@ -1221,14 +1221,14 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
 
   MPI_Barrier( comm_ );
 
-  //setup scan through procs_to list starting w/ higher numbered procs 
+  //setup scan through procs_to list starting w/ higher numbered procs
   //Should help balance msg traffic
-  int nblocks = nsends_ + self_msg_; 
-  int proc_index = 0; 
+  int nblocks = nsends_ + self_msg_;
+  int proc_index = 0;
   while( proc_index < nblocks && procs_to_[proc_index] < my_proc )
-    ++proc_index;                    
+    ++proc_index;
   if( proc_index == nblocks ) proc_index = 0;
-   
+
   int self_num = 0;
   int p;
 
@@ -1445,7 +1445,7 @@ void Epetra_MpiDistributor::Print(std::ostream & os) const
 	}
       */
 
-      // Last output is a flush; it leaves a space and also 
+      // Last output is a flush; it leaves a space and also
       // helps synchronize output.
       os << std::flush;
     } // if it's my process' turn to print
@@ -1460,56 +1460,56 @@ void Epetra_MpiDistributor::Print(std::ostream & os) const
 
 //---------------------------------------------------------------------------
 int Epetra_MpiDistributor::Sort_ints_(
- int *vals_sort,     //  values to be sorted  
+ int *vals_sort,     //  values to be sorted
  int *vals_other,    // other array to be reordered with sort
  int  nvals)         // length of these two arrays
 {
-// It is primarily used to sort messages to improve communication flow. 
+// It is primarily used to sort messages to improve communication flow.
 // This routine will also insure that the ordering produced by the invert_map
 // routines is deterministic.  This should make bugs more reproducible.  This
 // is accomplished by sorting the message lists by processor ID.
 // This is a distribution count sort algorithm (see Knuth)
-//  This version assumes non negative integers. 
-   
+//  This version assumes non negative integers.
+
     if (nvals <= 1) return 0;
-        
-    int i;                        // loop counter        
-     
+
+    int i;                        // loop counter
+
     // find largest int, n, to size sorting array, then allocate and clear it
-    int n = 0;  
-    for (i = 0; i < nvals; i++)  
-       if (n < vals_sort[i]) n = vals_sort[i]; 
-    int *pos = new int [n+2];  
-    for (i = 0; i < n+2; i++) pos[i] = 0;
- 
-    // copy input arrays into temporary copies to allow sorting original arrays
-    int *copy_sort  = new int [nvals]; 
-    int *copy_other = new int [nvals]; 
+    int n = 0;
     for (i = 0; i < nvals; i++)
-    { 
-      copy_sort[i]  = vals_sort[i]; 
-      copy_other[i] = vals_other[i];  
-    }                           
- 
+       if (n < vals_sort[i]) n = vals_sort[i];
+    int *pos = new int [n+2];
+    for (i = 0; i < n+2; i++) pos[i] = 0;
+
+    // copy input arrays into temporary copies to allow sorting original arrays
+    int *copy_sort  = new int [nvals];
+    int *copy_other = new int [nvals];
+    for (i = 0; i < nvals; i++)
+    {
+      copy_sort[i]  = vals_sort[i];
+      copy_other[i] = vals_other[i];
+    }
+
     // count the occurances of integers ("distribution count")
     int *p = pos+1;
     for (i = 0; i < nvals; i++) p[copy_sort[i]]++;
- 
-    // create the partial sum of distribution counts 
-    for (i = 1; i < n; i++) p[i] += p[i-1]; 
- 
+
+    // create the partial sum of distribution counts
+    for (i = 1; i < n; i++) p[i] += p[i-1];
+
     // the shifted partitial sum is the index to store the data  in sort order
-    p = pos; 
-    for (i = 0; i < nvals; i++)         
-    {                                   
+    p = pos;
+    for (i = 0; i < nvals; i++)
+    {
       vals_sort  [p[copy_sort [i]]]   = copy_sort[i];
-      vals_other [p[copy_sort [i]]++] = copy_other[i]; 
-    } 
- 
+      vals_other [p[copy_sort [i]]++] = copy_other[i];
+    }
+
     delete [] copy_sort;
-    delete [] copy_other; 
-    delete [] pos; 
- 
+    delete [] copy_other;
+    delete [] pos;
+
     return 0;
 }
 
@@ -1568,7 +1568,7 @@ void Epetra_MpiDistributor::CreateReverseDistributor() {
 
     comm_plan_reverse_->no_delete_ = true;
   }
-  
+
 }
 
 //-------------------------------------------------------------------------

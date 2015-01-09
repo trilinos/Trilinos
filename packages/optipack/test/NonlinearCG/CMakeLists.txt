@@ -1,14 +1,13 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_BINARY_DIR}/../thyra/core/test/nonlinear/models)
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../thyra/core/test/nonlinear/models)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_BINARY_DIR}/../thyra/core/test/nonlinear/models)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../thyra/core/test/nonlinear/models)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NonlinearCGUnitTests
   SOURCES
     NonlinearCG_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  DEPLIBS thyra_nonlinear_test_models
+  TESTONLYLIBS thyra_nonlinear_test_models
   COMM serial mpi
   ARGS
     " "   # Make sure default works

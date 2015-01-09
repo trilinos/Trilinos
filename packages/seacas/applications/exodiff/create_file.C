@@ -31,23 +31,20 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "Tolerance.h"
-#include "smart_assert.h"
-#include "exoII_read.h"
-#include "exo_block.h"
-#include "node_set.h"
-#include "side_set.h"
+#include <stddef.h>                     // for size_t
+#include <cstdio>                       // for sprintf, NULL
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <vector>                       // for vector
+#include "ED_SystemInterface.h"         // for SystemInterface, interface
+#include "Tolerance.h"                  // for Tolerance, etc
+#include "exo_entity.h"                 // for Exo_Entity, EXOTYPE
 #include "exodusII.h"
-#include "stringx.h"
-#include "ED_SystemInterface.h"
-#include "util.h"
+#include "smart_assert.h"               // for SMART_ASSERT
+#include "stringx.h"                    // for find_string, etc
+#include "util.h"                       // for TOPTR
+template <typename INT> class ExoII_Read;
 
-#include <cstdlib>
-#include <cstdio>
-#include <math.h>
-#include <ctype.h>
-#include <vector>
-#include <string>
 
 using namespace std;
 

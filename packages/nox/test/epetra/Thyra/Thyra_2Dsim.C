@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-          
+
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Thyra.H"
@@ -66,6 +66,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -75,123 +76,123 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- 
-  int status = 0;
-  
-  // Parse the command line
-  using Teuchos::CommandLineProcessor;
-  CommandLineProcessor  clp;
-  clp.throwExceptions(false);
-  clp.addOutputSetupOptions(true);
+
+  bool success = false;
   bool verbose = false;
-  clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
-  
-  CommandLineProcessor::EParseCommandLineReturn
-    parse_return = clp.parse(argc,argv,&std::cerr);
-  
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
-    return parse_return;
+  try {
+    // Parse the command line
+    using Teuchos::CommandLineProcessor;
+    CommandLineProcessor clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
+    clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
 
-  if (verbose) 
-    std::cout << "Verbosity Activated" << std::endl;
-  else
-    std::cout << "Verbosity Disabled" << std::endl;
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = clp.parse(argc,argv,&std::cerr);
 
-  // Create a communicator for Epetra objects
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
+      return parse_return;
+
+    if (verbose)
+      std::cout << "Verbosity Activated" << std::endl;
+    else
+      std::cout << "Verbosity Disabled" << std::endl;
+
+    // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+    Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
-  // Check we have only one processor since this problem doesn't work
-  // for more than one proc
-  if (Comm.NumProc() > 1) {
-    std::cerr << "Error!  Problem can only be run with at most 1 processor!"
-	      << std::endl;
-    return -1;
+    int status = 0;
+
+    // Check we have only one processor since this problem doesn't work
+    // for more than one proc
+    if (Comm.NumProc() > 1)
+      throw "Error!  Problem can only be run with at most 1 processor!";
+
+    // Create the model evaluator object
+    double d = 10.0;
+    double p0 = 2.0;
+    double p1 = 0.0;
+    double x00 = 0.0;
+    double x01 = 1.0;
+    Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel =
+      Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
+            d,p0,p1,x00,x01));
+
+    // Create the linear solver type with Stratimikos
+    //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+
+    ::Stratimikos::DefaultLinearSolverBuilder builder;
+
+    Teuchos::RCP<Teuchos::ParameterList> p =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    p->set("Linear Solver Type", "AztecOO");
+    p->set("Preconditioner Type", "Ifpack");
+    //p->set("Enable Delayed Solver Construction", true);
+    builder.setParameterList(p);
+
+    Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = builder.createLinearSolveStrategy("");
+
+    thyraModel->set_W_factory(lowsFactory);
+
+    // Create the initial guess
+    Teuchos::RCP< ::Thyra::VectorBase<double> >
+      initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
+
+    // Create the NOX::Thyra::Group
+    Teuchos::RCP<NOX::Thyra::Group> nox_group =
+      Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
+
+    //   nox_group->computeF();
+    //   std::cout << "ComputedF!" << std::endl;
+    //   const NOX::Thyra::Vector& t_vec =
+    //     dynamic_cast<const NOX::Thyra::Vector&>(nox_group->getF());
+
+    //   t_vec.print(std::cout);
+    //   exit(0);
+
+    // Create the NOX status tests and the solver
+    // Create the convergence tests
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
+      Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+    Teuchos::RCP<NOX::StatusTest::Combo> converged =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+    converged->addStatusTest(absresid);
+    converged->addStatusTest(wrms);
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
+      Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(fv);
+    combo->addStatusTest(converged);
+    combo->addStatusTest(maxiters);
+
+    // Create nox parameter list
+    Teuchos::RCP<Teuchos::ParameterList> nl_params =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    nl_params->set("Nonlinear Solver", "Line Search Based");
+
+    // Create the solver
+    Teuchos::RCP<NOX::Solver::Generic> solver =
+      NOX::Solver::buildSolver(nox_group, combo, nl_params);
+    NOX::StatusTest::StatusType solvStatus = solver->solve();
+
+    success = status==0;
+
+    if (solvStatus == NOX::StatusTest::Converged)
+      std::cout << "Test passed!" << std::endl;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // Create the model evaluator object
-  double d = 10.0;
-  double p0 = 2.0;
-  double p1 = 0.0;
-  double x00 = 0.0;
-  double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
-    Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
-						 d,p0,p1,x00,x01));
-
-  // Create the linear solver type with Stratimikos
-  //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-  //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
-
-  ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
-    Teuchos::rcp(new Teuchos::ParameterList);
-  p->set("Linear Solver Type", "AztecOO");
-  p->set("Preconditioner Type", "Ifpack");
-  //p->set("Enable Delayed Solver Construction", true);
-  builder.setParameterList(p);
-
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
-    lowsFactory = builder.createLinearSolveStrategy("");
-
-  thyraModel->set_W_factory(lowsFactory);
-
-  // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<double> >
-    initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
-
-  // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
-
-//   nox_group->computeF();
-//   std::cout << "ComputedF!" << std::endl;
-//   const NOX::Thyra::Vector& t_vec = 
-//     dynamic_cast<const NOX::Thyra::Vector&>(nox_group->getF());
-  
-//   t_vec.print(std::cout);
-//   exit(0);
-
-
-  // Create the NOX status tests and the solver
-  // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
-    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
-  converged->addStatusTest(absresid);
-  converged->addStatusTest(wrms);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
-    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  combo->addStatusTest(fv);
-  combo->addStatusTest(converged);
-  combo->addStatusTest(maxiters);
-
-  // Create nox parameter list
-  Teuchos::RCP<Teuchos::ParameterList> nl_params =
-    Teuchos::rcp(new Teuchos::ParameterList);
-  nl_params->set("Nonlinear Solver", "Line Search Based");
-
-  // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
-    NOX::Solver::buildSolver(nox_group, combo, nl_params);
-  NOX::StatusTest::StatusType solvStatus = solver->solve();
-
-  if (solvStatus == NOX::StatusTest::Converged)
-    std::cout << "Test passed!" << std::endl;
-
-  // Final return value (0 = successfull, non-zero = failure)
-  return status;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

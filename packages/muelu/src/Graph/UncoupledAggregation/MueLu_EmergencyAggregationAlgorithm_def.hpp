@@ -67,8 +67,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
     // vertex ids for output
@@ -84,31 +84,32 @@ namespace MueLu {
 
     LO nLocalAggregates = aggregates.GetNumAggregates();
     for (LO iNode = 0; iNode < nRows; iNode++) {
-      if (aggStat[iNode] != NodeStats::AGGREGATED) {
-        aggSize = 0;
-        aggregates.SetIsRoot(iNode);
+      if (aggStat[iNode] != READY)
+        continue;
 
-        aggList[aggSize++] = iNode;
-        aggIndex = nLocalAggregates++;
+      aggSize = 0;
+      aggregates.SetIsRoot(iNode);
 
-        ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
+      aggList[aggSize++] = iNode;
+      aggIndex = nLocalAggregates++;
 
-        for (LO j = 0; j < neighOfINode.size(); j++) {
-          LO neigh = neighOfINode[j];
+      ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode);
 
-          if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != NodeStats::AGGREGATED)
-            aggList[aggSize++] = neigh;
-        }
+      for (LO j = 0; j < neighOfINode.size(); j++) {
+        LO neigh = neighOfINode[j];
 
-        // finalize aggregate
-        for (size_t k = 0; k < aggSize; k++) {
-          aggStat     [aggList[k]] = NodeStats::AGGREGATED;
-          vertex2AggId[aggList[k]] = aggIndex;
-          procWinner  [aggList[k]] = myRank;
-        }
-
-        numNonAggregatedNodes -= aggSize;
+        if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)
+          aggList[aggSize++] = neigh;
       }
+
+      // finalize aggregate
+      for (size_t k = 0; k < aggSize; k++) {
+        aggStat     [aggList[k]] = AGGREGATED;
+        vertex2AggId[aggList[k]] = aggIndex;
+        procWinner  [aggList[k]] = myRank;
+      }
+
+      numNonAggregatedNodes -= aggSize;
     }
 
     aggregates.SetNumAggregates(nLocalAggregates);

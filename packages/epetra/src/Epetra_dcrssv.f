@@ -1,9 +1,9 @@
 C @HEADER
 C ************************************************************************
-C 
-C               Epetra: Linear Algebra Services Package 
+C
+C               Epetra: Linear Algebra Services Package
 C                 Copyright 2011 Sandia Corporation
-C 
+C
 C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 C the U.S. Government retains certain rights in this software.
 C
@@ -34,8 +34,8 @@ C LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 C NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 C SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C
-C Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-C 
+C Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+C
 C ************************************************************************
 C @HEADER
 
@@ -82,7 +82,7 @@ C @HEADER
 *    udiag  Integer (input)
 *           On entry, udiag specifies whether or not the matrix should
 *           be assumed to have a unit diagonal.
-*           If udiag <> 0, add x to the result as though unit 
+*           If udiag <> 0, add x to the result as though unit
 *           diagonal were present.
 *           If udiag is any other value, then no unit diagonal is assumed.
 *           The udiag argument is unchanged on exit.
@@ -169,7 +169,7 @@ C @HEADER
 *
 *\Enddoc
 
-      subroutine epetra_dcrssv( iupper, itrans, udiag, nodiag, m, n, 
+      subroutine epetra_dcrssv( iupper, itrans, udiag, nodiag, m, n,
      &                          val, indx, pntr, x, y, xysame)
 *
 *     ----------------------------
@@ -234,10 +234,10 @@ c.....do sequence of SPDOTs (sparse sdots)
                endif
             endif
  10      continue
-*     
+*
 *     itrans <> 0
-*     
-      else 
+*
+      else
 
          if (xysame.eq.0) then
             do 110 i = 0, min(n-1,m-1)
@@ -268,7 +268,7 @@ c.....do sequence of SPDOTs (sparse sdots)
                iendoff = 1
             endif
          endif
-c     
+c
 c.....do a series of SPAXPYs (sparse daxpys)
          do 120 j = jstrt, jstop, jinc
             ibgn = pntr(j) + ibgnoff

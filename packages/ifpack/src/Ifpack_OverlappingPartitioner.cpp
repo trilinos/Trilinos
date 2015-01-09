@@ -150,7 +150,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
   // FIXME: the first part of this function should be elsewhere
   // start defining the subgraphs for no overlap
 
-  vector<int> sizes;
+  std::vector<int> sizes;
   sizes.resize(NumLocalParts_);
 
   // 1.- compute how many rows are in each subgraph
@@ -194,7 +194,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
   // wider overlap requires further computations
   for (int level = 1 ; level <= OverlappingLevel_ ; ++level) {
 
-    vector<vector<int> > tmp;
+    std::vector<std::vector<int> > tmp;
     tmp.resize(NumLocalParts_);
 
     // cycle over all rows in the local graph (that is the overlapping
@@ -202,7 +202,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     // row `i'.
 
     int MaxNumEntries_tmp = Graph_->MaxMyNumEntries();
-    vector<int> Indices;
+    std::vector<int> Indices;
     Indices.resize(MaxNumEntries_tmp);
 
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
@@ -223,7 +223,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
             continue;
 
 	  // has this column already been inserted?
-	  vector<int>::iterator
+	  std::vector<int>::iterator
 	    where = find(tmp[part].begin(), tmp[part].end(), col);
 
 	  if (where == tmp[part].end()) {

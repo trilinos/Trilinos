@@ -56,6 +56,20 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_mpl_range_c.hpp"
 #include "Stokhos_mpl_for_each.hpp"
+#include "Stokhos_MemoryTraits.hpp"
+
+#include "Kokkos_View_Utils.hpp"
+
+// ivdep is necessary to get the intel compiler to vectorize through
+// expresion template assignent operators
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#define STOKHOS_HAVE_PRAGMA_IVDEP
+#endif
+
+// unrolling appears to slow everything down
+#if 0 && ( defined(__INTEL_COMPILER) || defined(__CUDA_ARCH__) )
+#define STOKHOS_HAVE_PRAGMA_UNROLL
+#endif
 
 namespace Sacado {
 
@@ -129,8 +143,13 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
+      typedef typename device_type::memory_space memory_space;
+      typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
+
       //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
+
+      typedef Vector base_expr_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
       template < class NewStorageType >
@@ -140,6 +159,41 @@ namespace Sacado {
 
       //! Number of arguments
       static const int num_args = 1;
+
+#if STOKHOS_ALIGN_MEMORY
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new(std::size_t sz) {
+        return MemTraits::alloc(sz);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new[](std::size_t sz) {
+        return MemTraits::alloc(sz);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new(std::size_t sz, void* ptr) {
+        return ptr;
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void* operator new[](std::size_t sz, void* ptr) {
+        return ptr;
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete(void* ptr) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete[](void* ptr) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete(void* ptr, void*) {
+        MemTraits::free(ptr);
+      }
+      KOKKOS_INLINE_FUNCTION
+      static void operator delete[](void* ptr, void*) {
+        MemTraits::free(ptr);
+      }
+#endif
 
       //! Default constructor
       /*!
@@ -190,7 +244,18 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -412,7 +477,19 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -431,7 +508,19 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -753,128 +842,528 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator += (const Expr<S>& x) {
-        *this = *this + x;
+      Vector& operator += (const Expr<S>& xx) {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator += (const volatile Expr<S>& x) {
-        *this = *this + x;
+      Vector& operator += (const volatile Expr<S>& xx) {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator += (const Expr<S>& x) volatile {
-        *this = *this + x;
+      /*volatile*/ Vector& operator += (const Expr<S>& xx) volatile {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator += (const volatile Expr<S>& x) volatile {
-        *this = *this + x;
+      /*volatile*/ Vector& operator += (const volatile Expr<S>& xx) volatile {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator -= (const Expr<S>& x) {
-        *this = *this - x;
+      Vector& operator -= (const Expr<S>& xx) {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator -= (const volatile Expr<S>& x) {
-        *this = *this - x;
+      Vector& operator -= (const volatile Expr<S>& xx) {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator -= (const Expr<S>& x) volatile {
-        *this = *this - x;
+      /*volatile*/ Vector& operator -= (const Expr<S>& xx) volatile {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator -= (const volatile Expr<S>& x) volatile {
-        *this = *this - x;
+      /*volatile*/ Vector& operator -= (const volatile Expr<S>& xx) volatile {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator *= (const Expr<S>& x) {
-        *this = *this * x;
+      Vector& operator *= (const Expr<S>& xx) {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator *= (const volatile Expr<S>& x) {
-        *this = *this * x;
+      Vector& operator *= (const volatile Expr<S>& xx) {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator *= (const Expr<S>& x) volatile {
-        *this = *this * x;
+      /*volatile*/ Vector& operator *= (const Expr<S>& xx) volatile {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator *= (const volatile Expr<S>& x) volatile {
-        *this = *this * x;
+      /*volatile*/ Vector& operator *= (const volatile Expr<S>& xx) volatile {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator /= (const Expr<S>& x) {
-        *this = *this / x;
+      Vector& operator /= (const Expr<S>& xx) {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator /= (const volatile Expr<S>& x) {
-        *this = *this / x;
+      Vector& operator /= (const volatile Expr<S>& xx) {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator /= (const Expr<S>& x) volatile {
-        *this = *this / x;
+      /*volatile*/ Vector& operator /= (const Expr<S>& xx) volatile {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator /= (const volatile Expr<S>& x) volatile {
-        *this = *this / x;
+      /*volatile*/ Vector& operator /= (const volatile Expr<S>& xx) volatile {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const volatile expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() < x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
@@ -1082,6 +1571,27 @@ namespace Sacado {
 
   } // namespace MP
 
+  template <typename T>
+  struct IsExpr< MP::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< MP::Expr<T> > {
+    typedef typename MP::Expr<T>::derived_type derived_type;
+    typedef typename derived_type::base_expr_type type;
+  };
+
+  template <typename S>
+  struct IsExpr< MP::Vector<S> > {
+    static const bool value = true;
+  };
+
+  template <typename S>
+  struct BaseExprType< MP::Vector<S> > {
+    typedef MP::Vector<S> type;
+  };
+
   //! Trait class to determine if a scalar type is a Vector
   template <typename T> struct is_mp_vector {
     static const bool value = false;
@@ -1102,10 +1612,79 @@ namespace Sacado {
     static const bool value = is_mp_vector<T>::value;
   };
 
+  // Utility function to see if a MP::Vector is really a constant
+  template <typename Storage>
+  bool is_constant(const Sacado::MP::Vector<Storage>& x)
+  {
+    typedef typename Storage::ordinal_type ordinal_type;
+    typedef typename Storage::value_type value_type;
+
+    // All size-1 vectors are constants
+    const ordinal_type sz = x.size();
+    if (sz == 1) return true;
+
+    // Maybe use a tolerance????
+    const value_type val = x.fastAccessCoeff(0);
+    for (ordinal_type i=1; i<sz; ++i)
+      if (x.fastAccessCoeff(i) != val) return false;
+
+    return true;
+  }
+
 } // namespace Sacado
 
 #include "Sacado_MP_Vector_ops.hpp"
 
+#if STOKHOS_ALIGN_MEMORY
+
+#include <memory>
+
+namespace std {
+
+template <typename Storage>
+class allocator< Sacado::MP::Vector< Storage > >
+  : public Stokhos::aligned_allocator< Sacado::MP::Vector< Storage > > {
+public:
+  typedef Sacado::MP::Vector<Storage>    T;
+  typedef Stokhos::aligned_allocator<T>  Base;
+  typedef typename Base::value_type      value_type;
+  typedef typename Base::pointer         pointer;
+  typedef typename Base::const_pointer   const_pointer;
+  typedef typename Base::reference       reference;
+  typedef typename Base::const_reference const_reference;
+  typedef typename Base::size_type       size_type;
+  typedef typename Base::difference_type difference_type;
+
+  template <class U> struct rebind { typedef allocator<U> other; };
+  allocator() {}
+  template <class U> allocator(const allocator<U>&) {}
+};
+
+template <typename Storage>
+class allocator< const Sacado::MP::Vector< Storage > >
+  : public Stokhos::aligned_allocator< const Sacado::MP::Vector< Storage > > {
+public:
+  typedef Sacado::MP::Vector<Storage>    T;
+  typedef Stokhos::aligned_allocator<const T> Base;
+  typedef typename Base::value_type      value_type;
+  typedef typename Base::pointer         pointer;
+  typedef typename Base::const_pointer   const_pointer;
+  typedef typename Base::reference       reference;
+  typedef typename Base::const_reference const_reference;
+  typedef typename Base::size_type       size_type;
+  typedef typename Base::difference_type difference_type;
+
+  template <class U> struct rebind { typedef allocator<U> other; };
+  allocator() {}
+  template <class U> allocator(const allocator<U>&) {}
+};
+
+}
+
+#endif
+
 #endif // HAVE_STOKHOS_SACADO
+
+//#include "Sacado_MP_Vector_SFS.hpp"
 
 #endif // SACADO_MP_VECTOR_HPP

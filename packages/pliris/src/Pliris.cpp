@@ -55,7 +55,7 @@
 
 //=============================================================================
 
-Pliris::Pliris(Epetra_Vector * A, 
+Pliris::Pliris(Epetra_Vector * A,
 		Epetra_MultiVector * X,
 	        Epetra_MultiVector * B)  {
 
@@ -79,12 +79,12 @@ Pliris::Pliris( ) {
 
 //=============================================================================
 Pliris::~Pliris(void) {
- 
+
 
 }
 
 //=============================================================================
- int Pliris::GetDistribution( int*  nprocs_row, 
+ int Pliris::GetDistribution( int*  nprocs_row,
                                int* number_of_unknowns,
 			       int* nrhs,
                                int* my_rows,
@@ -95,10 +95,10 @@ Pliris::~Pliris(void) {
                                int* my_row,
                                int* my_col ) {
 
- 
+
 
   // This function echoes the multiprocessor distribution of the matrix
- 
+
   distmat_ ( nprocs_row,
              number_of_unknowns,
              nrhs,
@@ -113,8 +113,8 @@ Pliris::~Pliris(void) {
 
   return(0);
 
-} 
- 
+}
+
 //=============================================================================
 int Pliris::FactorSolve( Epetra_Vector* A,
                          int my_rows,
@@ -124,14 +124,14 @@ int Pliris::FactorSolve( Epetra_Vector* A,
                          int* num_rhs,
                          double* secs){
 
-    
+
 
       SetMatrix(A);
-    
 
-      dlusolve_(a_, 
-                matrix_size, 
-                num_procsr, 
+
+      dlusolve_(a_,
+                matrix_size,
+                num_procsr,
                 (a_ + my_rows*my_cols),
                 num_rhs,
                 secs);
@@ -152,12 +152,12 @@ int Pliris::FactorSolve( Epetra_SerialDenseVector* A,
      // Associate the matrix with a_
 
      SetMatrix(A);
-    
+
      //  Factor and solve the matrix equation
 
-     dlusolve_  (a_, 
-                 matrix_size, 
-                 num_procsr, 
+     dlusolve_  (a_,
+                 matrix_size,
+                 num_procsr,
                  (a_ + my_rows*my_cols),
                  num_rhs,
                  secs);
@@ -187,13 +187,13 @@ int Pliris::Factor( Epetra_Vector* A,
               permute,
               secs);
 
-      
+
      // Permute the lower triangular matrix
 
-     dpermute_(a_, permute); 
+     dpermute_(a_, permute);
 
      return(0);
-} 
+}
 
 // Solve the Matrix after previously factoring
 
@@ -249,4 +249,4 @@ int Pliris::SetMatrix(Epetra_SerialDenseVector * AA_) {
 
  return(0);
 
-}  
+}

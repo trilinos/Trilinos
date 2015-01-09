@@ -1,15 +1,15 @@
-// $Id: LOCA_Epetra_Interface_FreeEnergy.H,v 1.8 2007/04/13 19:28:25 agsalin Exp $ 
-// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Interface_FreeEnergy.H,v $ 
+// $Id: LOCA_Epetra_Interface_FreeEnergy.H,v 1.8 2007/04/13 19:28:25 agsalin Exp $
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Interface_FreeEnergy.H,v $
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #define LOCA_EPETRA_INTERFACE_FREEENERGY_H
 
 #include "NOX_Common.H"
-  
+
 // Forward declarations
 class Epetra_Vector;
 
@@ -68,19 +68,19 @@ namespace LOCA {
       class FreeEnergy {
 
       public:
- 
-	//! Constructor
-	FreeEnergy() {};
 
-	//! Destructor
-	virtual ~FreeEnergy() {};
+    //! Constructor
+    FreeEnergy() {};
 
-	/*! 
-	 * \brief Call user routine for computing the FreeEnergy
+    //! Destructor
+    virtual ~FreeEnergy() {};
+
+    /*!
+     * \brief Call user routine for computing the FreeEnergy
          * of a system, for use in Phase Transition Tracking alg
-	 */
+     */
 
-	virtual double
+    virtual double
         computeFreeEnergy(const Epetra_Vector& x) = 0;
 
       };

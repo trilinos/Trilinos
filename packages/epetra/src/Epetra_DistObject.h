@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -63,12 +63,12 @@ class Epetra_OffsetIndex;
 
 <ul>
   <li> Distributed Global objects - In most instances, a distributed object will be partitioned
-       across multiple memory images associated with multiple processors.  In this case, there is 
-       a unique copy of each element and elements are spread across all processors specified by 
+       across multiple memory images associated with multiple processors.  In this case, there is
+       a unique copy of each element and elements are spread across all processors specified by
        the Epetra_Comm communicator.
   <li> Replicated Local Objects - Some algorithms use objects that are too small to
        be distributed across all processors, the Hessenberg matrix in a GMRES
-       computation.  In other cases, such as with block iterative methods,  block dot product 
+       computation.  In other cases, such as with block iterative methods,  block dot product
        functions produce small
        dense matrices that are required by all processors.  Replicated local objectss handle
        these types of situation.
@@ -81,11 +81,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
 
   public:
     //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Basic Epetra_DistObject constuctor.
-  /*! Creates a Epetra_DistObject object.  
+  /*! Creates a Epetra_DistObject object.
 
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
 	   \warning Note that, because Epetra_LocalMap
@@ -97,15 +97,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   */
   Epetra_DistObject(const Epetra_BlockMap& Map);
 
-  /*! Creates a Epetra_DistObject object.  
+  /*! Creates a Epetra_DistObject object.
 
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
 
 	   \warning Note that, because Epetra_LocalMap
 	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
 	   for all three types of Epetra map classes.
-    \param In 
+    \param In
            Label - An identifier for this object.  By default, set to the name of the object class.
 
     \return Pointer to a Epetra_DistObject.
@@ -114,16 +114,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   Epetra_DistObject(const Epetra_BlockMap& Map, const char* const Label);
 
   //! Epetra_DistObject copy constructor.
-  
+
   Epetra_DistObject(const Epetra_DistObject& Source);
-  
-  
-  //! Epetra_DistObject destructor.  
+
+
+  //! Epetra_DistObject destructor.
   virtual ~Epetra_DistObject();
   //@}
 
   //! @name Import/Export Methods
-  //@{ 
+  //@{
 
   //! Imports an Epetra_DistObject using the Epetra_Import object.
   /*!
@@ -133,7 +133,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
            Importer - A Epetra_Import object specifying the communication required.
 
     \param In
-           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the 
+           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the
 	   receiving processor.
 
     \return Integer error code, set to 0 if successful.
@@ -148,7 +148,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
            Exporter - A Epetra_Export object specifying the communication required.
 
     \param In
-           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the 
+           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the
 	   receiving processor.
 
     \return Integer error code, set to 0 if successful.
@@ -163,7 +163,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
            Importer - A Epetra_Import object specifying the communication required.
 
     \param In
-           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the 
+           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the
 	   receiving processor.
 
     \return Integer error code, set to 0 if successful.
@@ -178,16 +178,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
            Exporter - A Epetra_Export object specifying the communication required.
 
     \param In
-           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the 
+           CombineMode - A Epetra_CombineMode enumerated type specifying how results should be combined on the
 	   receiving processor.
 
     \return Integer error code, set to 0 if successful.
   */
   int Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
   //@}
-  
+
   //! @name Attribute accessor methods
-  //@{ 
+  //@{
   //! Returns the address of the Epetra_BlockMap for this multi-vector.
   const Epetra_BlockMap& Map() const {return(Map_);};
 
@@ -199,7 +199,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   //@}
 
   //! @name Miscellaneous
-  //@{ 
+  //@{
   //! Print method
   virtual void Print(std::ostream& os) const;
   //@}
@@ -207,22 +207,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
  protected:
 
 
-  //! @name Internal utilities  
-  //@{ 
+  //! @name Internal utilities
+  //@{
   //! Perform actual transfer (redistribution) of data across memory images, using Epetra_Distributor object.
   virtual int DoTransfer(const Epetra_SrcDistObject& A,
                          Epetra_CombineMode CombineMode,
                          int NumSameIDs,
                          int NumPermuteIDs,
                          int NumRemoteIDs,
-                         int NumExportIDs, 
+                         int NumExportIDs,
                          int* PermuteToLIDs,
                          int* PermuteFromLIDs,
                          int* RemoteLIDs,
                          int* ExportLIDs,
                          int& LenExports,
                          char*& Exports,
-                         int& LenImports, 
+                         int& LenImports,
                          char*& Imports,
                          Epetra_Distributor& Distor,
                          bool DoReverse,
@@ -232,16 +232,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
   // These methods must be implemented by derived class
 
   //! @name Virtual methods to be implemented by derived class
-  //@{ 
+  //@{
   //! Allows the source and target (\e this) objects to be compared for compatibility, return nonzero if not.
   virtual int CheckSizes(const Epetra_SrcDistObject& Source) = 0;
   //! Perform ID copies and permutations that are on processor.
   virtual int CopyAndPermute(const Epetra_SrcDistObject& Source,
-                             int NumSameIDs, 
+                             int NumSameIDs,
                              int NumPermuteIDs,
                              int * PermuteToLIDs,
                              int * PermuteFromLIDs,
-                             const Epetra_OffsetIndex * Indexor) = 0;
+                             const Epetra_OffsetIndex * Indexor,
+                             Epetra_CombineMode CombineMode = Zero) = 0;
 
   //! Perform any packing or preparation required for call to DoTransfer().
   virtual int PackAndPrepare(const Epetra_SrcDistObject& Source,
@@ -253,14 +254,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virt
                              int* Sizes,
                              bool & VarSizes,
                              Epetra_Distributor& Distor) = 0;
-  
+
   //! Perform any unpacking and combining after call to DoTransfer().
-  virtual int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
+  virtual int UnpackAndCombine(const Epetra_SrcDistObject& Source,
                                int NumImportIDs,
-                               int* ImportLIDs, 
+                               int* ImportLIDs,
                                int LenImports,
                                char* Imports,
-                               int& SizeOfPacket, 
+                               int& SizeOfPacket,
                                Epetra_Distributor& Distor,
                                Epetra_CombineMode CombineMode,
                                const Epetra_OffsetIndex * Indexor) = 0;

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,14 +56,20 @@ template<typename Scalar>
 MatrixFreeJacobianOperator<Scalar>::
 MatrixFreeJacobianOperator(Teuchos::ParameterList& printParams) :
   setup_called_(false),
-  utils_(printParams)
+  utils_(printParams),
+  difference_type_(Forward),
+  perturbation_type_(SalingerLOCA),
+  base_evaluation_type_(RawThyra),
+  lambda_(0.0),
+  delta_(0.0),
+  user_defined_delta_(0.0)
 { }
 
 template<typename Scalar>
 void MatrixFreeJacobianOperator<Scalar>::
 setBaseEvaluationToRawThyra(const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& x_base,
-			    const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& f_base,
-			    const Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > model)
+                const Teuchos::RCP<const ::Thyra::VectorBase<Scalar> >& f_base,
+                const Teuchos::RCP< ::Thyra::ModelEvaluator<Scalar> > model)
 {
   TEUCHOS_ASSERT(setup_called_);
   TEUCHOS_ASSERT(nonnull(x_base));
@@ -76,7 +82,7 @@ setBaseEvaluationToRawThyra(const Teuchos::RCP<const ::Thyra::VectorBase<Scalar>
 
   if (difference_type_ == Centered)
     f2_perturb_ = f_base_->space()->createMember();
-    
+
   model_ = model;
   base_evaluation_type_ = RawThyra;
 }
@@ -95,7 +101,7 @@ setBaseEvaluationToNOXGroup(const Teuchos::RCP<const NOX::Abstract::Group>& base
 
   if (difference_type_ == Centered)
     f2_perturb_ = ::Thyra::createMember(f_base_->space());
-    
+
   model_ = base_group_->getModel();
   base_evaluation_type_ = NoxGroup;
 }
@@ -117,16 +123,16 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
   difference_type_ = Teuchos::getIntegralValue<E_DifferenceType>(*p,"Difference Type");
 
   perturbation_type_ = Teuchos::getIntegralValue<E_PerturbationType>(*p,"Perturbation Algorithm");
-  
+
   lambda_ = Teuchos::as<double>(p->get<double>("lambda"));
-  
+
   user_defined_delta_ = Teuchos::as<double>(p->get<double>("User Defined delta Value"));
 
   setup_called_ = true;
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Teuchos::ParameterList> 
+Teuchos::RCP<const Teuchos::ParameterList>
 MatrixFreeJacobianOperator<Scalar>::getValidParameters() const
 {
   if (is_null(valid_params_)) {
@@ -147,7 +153,7 @@ MatrixFreeJacobianOperator<Scalar>::getValidParameters() const
       Teuchos::tuple<std::string>("Salinger LOCA v1.0","KSP NOX 2001", "Knoll Keyes JCP 2004","User Defined"),
       valid_params_.get()
       );
-    
+
     valid_params_->set<double>("lambda",1.0e-6);
 
     valid_params_->set<double>("User Defined delta Value",1.0e-6);
@@ -158,21 +164,21 @@ MatrixFreeJacobianOperator<Scalar>::getValidParameters() const
 }
 
 template<typename Scalar>
-Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > 
+Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> >
 MatrixFreeJacobianOperator<Scalar>::range() const
 {
   return model_->get_f_space();
 }
 
 template<typename Scalar>
-Teuchos::RCP<const ::Thyra::VectorSpaceBase< Scalar > > 
+Teuchos::RCP<const ::Thyra::VectorSpaceBase< Scalar > >
 MatrixFreeJacobianOperator<Scalar>::domain() const
 {
   return model_->get_x_space();
 }
 
 template<typename Scalar>
-Teuchos::RCP<const ::Thyra::LinearOpBase< Scalar > > 
+Teuchos::RCP<const ::Thyra::LinearOpBase< Scalar > >
 MatrixFreeJacobianOperator<Scalar>::clone() const
 {
   TEUCHOS_ASSERT(true);
@@ -180,7 +186,7 @@ MatrixFreeJacobianOperator<Scalar>::clone() const
 }
 
 template<typename Scalar>
-bool 
+bool
 MatrixFreeJacobianOperator<Scalar>::opSupportedImpl (::Thyra::EOpTransp M_trans) const
 {
   if ( (M_trans == ::Thyra::TRANS) || (M_trans == ::Thyra::CONJTRANS) )
@@ -190,17 +196,17 @@ MatrixFreeJacobianOperator<Scalar>::opSupportedImpl (::Thyra::EOpTransp M_trans)
 }
 
 template<typename Scalar>
-void 
+void
 MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
-					      const ::Thyra::MultiVectorBase< Scalar > &thyra_mv_y,
-					      const Teuchos::Ptr< ::Thyra::MultiVectorBase< Scalar > > &thyra_mv_u,
-					      const Scalar alpha,
-					      const Scalar beta) const
+                          const ::Thyra::MultiVectorBase< Scalar > &thyra_mv_y,
+                          const Teuchos::Ptr< ::Thyra::MultiVectorBase< Scalar > > &thyra_mv_u,
+                          const Scalar alpha,
+                          const Scalar beta) const
 {
   TEUCHOS_ASSERT(setup_called_);
 
   // Use a directional derivative to approximate u = Jy
-  
+
   /*
    * delta = scalar perturbation
    * x     = solution vector used to evaluate f
@@ -226,16 +232,16 @@ MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
     ::Thyra::assign(Teuchos::ptrFromRef(u),0.0);
     return;
   }
- 
+
   if (perturbation_type_ == SalingerLOCA) {
     delta_ = lambda_ * (lambda_ + norm_2_x / norm_2_y);
   }
   else if (perturbation_type_ == KelleySalingerPawlowski) {
-    Scalar inner_prod_x_y = ::Thyra::inner(*x_base_,y); 
-    
-    if (inner_prod_x_y==Teuchos::ScalarTraits<Scalar>::zero()) 
+    Scalar inner_prod_x_y = ::Thyra::inner(*x_base_,y);
+
+    if (inner_prod_x_y==Teuchos::ScalarTraits<Scalar>::zero())
       inner_prod_x_y = 1.0e-12;
-    
+
     delta_ = lambda_ * (1.0e-12 / lambda_ + std::fabs(inner_prod_x_y) / (norm_2_y * norm_2_y) ) * inner_prod_x_y / std::fabs(inner_prod_x_y);
   }
   else if (perturbation_type_ == KnollKeyes) {
@@ -254,7 +260,7 @@ MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
   }
 
   in_args_->set_x(x_perturb_);
-  
+
   if (is_null(out_args_))
     out_args_ = Teuchos::rcp(new ::Thyra::ModelEvaluatorBase::OutArgs<Scalar>(model_->createOutArgs()));
 
@@ -268,7 +274,7 @@ MatrixFreeJacobianOperator<Scalar>::applyImpl(const ::Thyra::EOpTransp M_trans,
   out_args_->set_f(Teuchos::null);
 
   Scalar inv_delta = Teuchos::ScalarTraits<Scalar>::one() / delta_;
-  
+
   if ( difference_type_ == Centered ) {
     // perturbed solution: x_p = -delta * y + x_0
     ::Thyra::V_StVpV(x_perturb_.ptr(),-delta_,y,*x_base_);

@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,9 +64,9 @@
 
 
 LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& tpParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigParams) :
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& tpParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigParams) :
   globalData(global_data),
   topParams(tpParams),
   eigenParams(eigParams),
@@ -77,46 +77,46 @@ LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
   which = eigenParams->get("Sorting Order","LM");
 }
 
-LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy() 
+LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy()
 {
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
-		 NOX::Abstract::Group& group,
-		 Teuchos::RCP< std::vector<double> >& evals_r,
-		 Teuchos::RCP< std::vector<double> >& evals_i,
-		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
-		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
+         NOX::Abstract::Group& group,
+         Teuchos::RCP< std::vector<double> >& evals_r,
+         Teuchos::RCP< std::vector<double> >& evals_i,
+         Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+         Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
 {
 
   // Get LAPACK group
-  LOCA::LAPACK::Group* grp = 
-    dynamic_cast<LOCA::LAPACK::Group*>(&group);
+  LOCA::LAPACK::Group & grp =
+    dynamic_cast<LOCA::LAPACK::Group&>(group);
 
-  bool hasMassMatrix = true;
- 
+  const bool hasMassMatrix = true;
+
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-    globalData->locaUtils->out() 
+    globalData->locaUtils->out()
       << std::endl << globalData->locaUtils->fill(64,'=') << std::endl
       << "LAPACK ";
-    if (hasMassMatrix) 
+    if (hasMassMatrix)
       globalData->locaUtils->out() << "DGGEV ";
     else
       globalData->locaUtils->out() << "DGEEV ";
-    globalData->locaUtils->out() << "Eigensolver starting." 
-				 << std::endl << std::endl;;
+    globalData->locaUtils->out() << "Eigensolver starting."
+                 << std::endl << std::endl;;
   }
 
   // Make sure Jacobian & mass matrices are fresh
-  grp->computeJacobian();
-  if (hasMassMatrix) 
-    grp->computeShiftedMatrix(0.0, 1.0);
+  grp.computeJacobian();
+  if (hasMassMatrix)
+    grp.computeShiftedMatrix(0.0, 1.0);
 
   // Get data out of group
-  NOX::LAPACK::Matrix<double>& jacobianMatrix = grp->getJacobianMatrix();
-  NOX::LAPACK::Matrix<double>& massMatrix = grp->getShiftedMatrix();
-  
+  NOX::LAPACK::Matrix<double>& jacobianMatrix = grp.getJacobianMatrix();
+  NOX::LAPACK::Matrix<double>& massMatrix = grp.getShiftedMatrix();
+
   // Size of matrix
   int n = jacobianMatrix.numRows();
   int lda = jacobianMatrix.numRows();
@@ -154,11 +154,11 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     M = massMatrix;
 
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
-	      vr, &n, vr, &n, &work0, &lwork, &info);
+          vr, &n, vr, &n, &work0, &lwork, &info);
   }
   else {
-    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
-	      vr, &n, vr, &n, &work0, &lwork, &info);
+    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai,
+          vr, &n, vr, &n, &work0, &lwork, &info);
   }
 
   // Allocate work array
@@ -168,11 +168,11 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // Calculate eigenvalues, eigenvectors
   if (hasMassMatrix) {
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
-	      vr, &n, vr, &n, work, &lwork, &info);
+          vr, &n, vr, &n, work, &lwork, &info);
   }
   else {
-    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
-	      vr, &n, vr, &n, work, &lwork, &info);
+    DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai,
+          vr, &n, vr, &n, work, &lwork, &info);
   }
 
   // Check for success
@@ -182,18 +182,16 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // Compute all of the eigenvalues and eigenvectors before sorting
   std::vector<double> evals_r_tmp(n);
   std::vector<double> evals_i_tmp(n);
-  Teuchos::RCP<NOX::Abstract::MultiVector> evecs_r_tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> evecs_r_tmp =
     group.getX().createMultiVector(n, NOX::ShapeCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector>evecs_i_tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector>evecs_i_tmp =
     group.getX().createMultiVector(n, NOX::ShapeCopy);
-  NOX::LAPACK::Vector* tmpr;
-  NOX::LAPACK::Vector* tmpi;
   double rnext;
   double inext;
   bool isComplexEval = false;
   bool isPrevComplexEval = false;
   for (int j=0; j<n; j++) {
-    
+
     // Compute eigenvalues
     if (hasMassMatrix) {
       evals_r_tmp[j] = alphar[j]/beta[j];
@@ -207,43 +205,43 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     // Compute next eigenvalue
     if (!isPrevComplexEval && j < n-1) {
       if (hasMassMatrix) {
-	rnext = alphar[j+1]/beta[j+1];
-	inext = alphai[j+1]/beta[j+1];
+    rnext = alphar[j+1]/beta[j+1];
+    inext = alphai[j+1]/beta[j+1];
       }
       else {
-	rnext = alphar[j+1];
-	inext = alphai[j+1];
+    rnext = alphar[j+1];
+    inext = alphai[j+1];
       }
-      
+
       // Determine if this eigenvalue is a complex conjugate pair
       if (fabs(evals_r_tmp[j] - rnext) < 1.0e-14*fabs(1.0+evals_r_tmp[j]) &&
-	  fabs(evals_i_tmp[j] + inext) < 1.0e-14*fabs(1.0+evals_i_tmp[j]))
-	isComplexEval = true;
+      fabs(evals_i_tmp[j] + inext) < 1.0e-14*fabs(1.0+evals_i_tmp[j]))
+    isComplexEval = true;
       else
-	isComplexEval = false;
+    isComplexEval = false;
     }
     else if (!isPrevComplexEval && j == n-1)
       isComplexEval = false;
 
-    tmpr = dynamic_cast<NOX::LAPACK::Vector*>(&((*evecs_r_tmp)[j]));
-    tmpi = dynamic_cast<NOX::LAPACK::Vector*>(&((*evecs_i_tmp)[j]));
+    NOX::LAPACK::Vector & tmpr = dynamic_cast<NOX::LAPACK::Vector&>((*evecs_r_tmp)[j]);
+    NOX::LAPACK::Vector & tmpi = dynamic_cast<NOX::LAPACK::Vector&>((*evecs_i_tmp)[j]);
 
-    if (isComplexEval) 
+    if (isComplexEval)
       for (int i=0; i<n; i++) {
-	(*tmpr)(i) =  vr[i+j*n];
-	(*tmpi)(i) =  vr[i+(j+1)*n];
+        tmpr(i) =  vr[i+j*n];
+        tmpi(i) =  vr[i+(j+1)*n];
       }
     else if (isPrevComplexEval)
       for (int i=0; i<n; i++) {
-	(*tmpr)(i) =  vr[i+(j-1)*n];
-	(*tmpi)(i) = -vr[i+j*n];
+        tmpr(i) =  vr[i+(j-1)*n];
+        tmpi(i) = -vr[i+j*n];
       }
     else
       for (int i=0; i<n; i++) {
-	(*tmpr)(i) = vr[i+j*n];
-	(*tmpi)(i) = 0.0;;
+        tmpr(i) = vr[i+j*n];
+        tmpi(i) = 0.0;;
       }
-	
+
     if (isPrevComplexEval) {
       isPrevComplexEval = false;
       isComplexEval = false;
@@ -256,9 +254,9 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   }
 
   // Instantiate a sorting strategy
-  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> evalSort = 
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> evalSort =
     globalData->locaFactory->createEigenvalueSortStrategy(topParams,
-							  eigenParams);
+                              eigenParams);
 
   // Create permutation array
   std::vector<int> perm(n);
@@ -271,25 +269,25 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
   // Get sorted eigenvalues and eigenvectors
   evals_r = Teuchos::rcp(new std::vector<double>(evals_r_tmp.begin(),
-						 evals_r_tmp.begin()+nev));
+                         evals_r_tmp.begin()+nev));
   evals_i = Teuchos::rcp(new std::vector<double>(evals_i_tmp.begin(),
-						 evals_i_tmp.begin()+nev));
+                         evals_i_tmp.begin()+nev));
   evecs_r = evecs_r_tmp->subCopy(perm_short);
   evecs_i = evecs_i_tmp->subCopy(perm_short);
 
   // Print out eigenvalues
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     for (int i=0; i<nev; i++)
-      globalData->locaUtils->out() 
-	<< "Eigenvalue " << i << " : " 
-	<< globalData->locaUtils->sciformat((*evals_r)[i]) << " " 
-	<< globalData->locaUtils->sciformat((*evals_i)[i]) << " i" 
-	<< std::endl;
+      globalData->locaUtils->out()
+    << "Eigenvalue " << i << " : "
+    << globalData->locaUtils->sciformat((*evals_r)[i]) << " "
+    << globalData->locaUtils->sciformat((*evals_i)[i]) << " i"
+    << std::endl;
   }
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration))
-    globalData->locaUtils->out() 
-      << "\nLAPACK Eigensolver finished.\n" 
+    globalData->locaUtils->out()
+      << "\nLAPACK Eigensolver finished.\n"
       << globalData->locaUtils->fill(64,'=') << "\n" << std::endl;
 
   delete [] alphar;

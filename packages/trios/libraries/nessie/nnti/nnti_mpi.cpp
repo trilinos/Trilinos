@@ -63,6 +63,7 @@
 
 #include <map>
 #include <deque>
+#include <algorithm>
 
 #include "nnti_mpi.h"
 #include "nnti_utils.h"
@@ -85,7 +86,16 @@
 #undef USE_RDMA_TARGET_ACK
 
 
-#define NNTI_MPI_REQUEST_TAG  0x01
+typedef struct {
+
+	uint32_t min_atomics_vars;
+
+} nnti_mpi_config;
+
+
+#define NNTI_MPI_REQUEST_TAG          0x01
+#define NNTI_MPI_ATOMICS_REQUEST_TAG  0x02
+#define NNTI_MPI_ATOMICS_RESULT_TAG   0x03
 
 
 #define MPI_OP_PUT_INITIATOR  1
@@ -96,6 +106,9 @@
 #define MPI_OP_SEND_BUFFER    6
 #define MPI_OP_NEW_REQUEST    7
 #define MPI_OP_RECEIVE        8
+#define MPI_OP_FETCH_ADD      9
+#define MPI_OP_COMPARE_SWAP  10
+
 
 typedef enum {
     REQUEST_BUFFER,
@@ -131,26 +144,65 @@ typedef struct {
     uint64_t length;
 } mpi_ready_msg;
 
-#define RTR_REQ_INDEX  0
-#define RTS_REQ_INDEX  1
-#define SEND_INDEX     2
-#define GET_RECV_INDEX 3
-#define GET_SEND_INDEX 4
-#define PUT_RECV_INDEX 5
-#define PUT_SEND_INDEX 6
+typedef enum {
+	MPI_ATOMIC_FETCH_ADD  =1,
+	MPI_ATOMIC_CMP_AND_SWP=2
+} mpi_atomic_op_t;
+
+typedef struct {
+	uint8_t  op;
+    uint32_t index;
+    int64_t  compare_add;
+    int64_t  swap;
+} mpi_atomic_request_msg;
+
+typedef struct {
+    int64_t result;
+} mpi_atomic_result_msg;
+
+#define RTR_REQ_INDEX       0
+#define RTS_REQ_INDEX       1
+#define SEND_INDEX          2
+#define GET_RECV_INDEX      3
+#define GET_SEND_INDEX      4
+#define PUT_RECV_INDEX      5
+#define PUT_SEND_INDEX      6
+#define RECV_INDEX          7
+#define ATOMICS_SEND_INDEX  8
+#define ATOMICS_RECV_INDEX  9
+
+#define MAX_INDEX           10
+
+#define RTR_REQUEST_ACTIVE           0x001
+#define RTS_REQUEST_ACTIVE           0x002
+#define SEND_REQUEST_ACTIVE          0x004
+#define GET_RECV_REQUEST_ACTIVE      0x008
+#define GET_SEND_REQUEST_ACTIVE      0x010
+#define PUT_RECV_REQUEST_ACTIVE      0x020
+#define PUT_SEND_REQUEST_ACTIVE      0x040
+#define RECV_REQUEST_ACTIVE          0x080
+#define ATOMICS_SEND_REQUEST_ACTIVE  0x100
+#define ATOMICS_RECV_REQUEST_ACTIVE  0x200
+
 typedef struct mpi_work_request {
+    NNTI_work_request_t *nnti_wr;
+
     NNTI_buffer_t  *reg_buf;
     NNTI_peer_t     peer;
     uint64_t        src_offset;
     uint64_t        dst_offset;
     uint64_t        length;
     int32_t         tag;
-    MPI_Request     request[7];
+    MPI_Request     request[MAX_INDEX];
     MPI_Request    *request_ptr;
     uint32_t        request_count;
+    int             request_index;
+    uint8_t         active_requests;
 
     mpi_ready_msg   rtr_msg;
     mpi_ready_msg   rts_msg;
+
+    int             atomics_result_index;
 
     mpi_op_state_t  op_state;
 
@@ -165,11 +217,12 @@ typedef std::deque<mpi_work_request *>::iterator wr_queue_iter_t;
 typedef struct mpi_memory_handle {
     mpi_buffer_type type;
 
-    int32_t rtr_tag;
-    int32_t rts_tag;
-    int32_t data_tag;
+    int64_t rtr_tag;
+    int64_t rts_tag;
+    int64_t data_tag;
 
-    wr_queue_t wr_queue;
+    wr_queue_t     wr_queue;
+    nthread_lock_t wr_queue_lock;
 } mpi_memory_handle;
 
 
@@ -177,18 +230,24 @@ typedef struct mpi_memory_handle {
 typedef struct mpi_request_queue_handle {
     NNTI_buffer_t *reg_buf;
 
-    /* incoming queues */
+    /* incoming queue */
     char *req_queue;
 
     /* each message is no larger than req_size */
     int req_size;
 
-    /* each md can recv reqs_per_queue messages */
+    /* number of requests slots in the queue */
     int req_count;
 
-    MPI_Request *requests;
+    MPI_Request *mpi_request_list;
+    uint64_t     last_request_index;
 
 } mpi_request_queue_handle;
+
+typedef struct {
+	nthread_lock_t lock;
+	int64_t        value;
+} mpi_atomic_t;
 
 typedef struct mpi_transport_global {
 
@@ -198,7 +257,17 @@ typedef struct mpi_transport_global {
 
     MPI_Comm nnti_comm;
 
+    nthread_counter_t mbits;
+
     mpi_request_queue_handle req_queue;
+
+    mpi_atomic_t           *atomics;
+    mpi_atomic_request_msg  atomics_request_msg;
+    mpi_atomic_result_msg   atomics_result_msg;
+    MPI_Request             atomics_recv_request;
+    MPI_Request             atomics_send_request;
+
+    bool init_called_mpi_init;
 
 } mpi_transport_global;
 
@@ -207,19 +276,23 @@ typedef struct mpi_transport_global {
 static nthread_lock_t nnti_mpi_lock;
 
 
-//static const NNTI_buffer_t *decode_event_buffer(
-//        const NNTI_buffer_t *wait_buf,
-//        const MPI_Status    *event);
 static int process_event(
-        const NNTI_buffer_t *reg_buf,
-        const MPI_Status    *event);
+        mpi_work_request *mpi_wr,
+        const MPI_Status *event);
+static NNTI_result_t setup_atomics(void);
+static int check_atomic_operation(void);
 static int check_target_buffer_progress(void);
-static NNTI_result_t post_recv_work_request(
+static NNTI_result_t post_atomics_recv_request(void);
+static NNTI_result_t post_recv_dst_work_request(
         NNTI_buffer_t  *reg_buf,
         int64_t         tag,
-        uint64_t        offset,
-        uint64_t        length,
-        MPI_Request    *request);
+        uint64_t        length);
+static NNTI_result_t post_recv_queue_work_request(
+        NNTI_buffer_t    *reg_buf,
+        int64_t           tag,
+        uint64_t          length,
+        uint64_t          count,
+        MPI_Request      *request_list);
 static NNTI_result_t post_RTR_recv_work_request(
         NNTI_buffer_t  *reg_buf);
 static NNTI_result_t post_RTS_recv_work_request(
@@ -227,58 +300,53 @@ static NNTI_result_t post_RTS_recv_work_request(
 static NNTI_result_t post_RTR_RTS_recv_work_request(
         NNTI_buffer_t  *reg_buf);
 static NNTI_result_t repost_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr);
+        mpi_work_request *mpi_wr);
 static NNTI_result_t repost_RTR_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr);
+        mpi_work_request *mpi_wr);
 static NNTI_result_t repost_RTS_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr);
+        mpi_work_request *mpi_wr);
 static NNTI_result_t repost_RTR_RTS_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr);
+        mpi_work_request *mpi_wr);
 static int is_wr_complete(
-        mpi_work_request *wr);
-static mpi_work_request *first_incomplete_wr(
-        mpi_memory_handle *mpi_mem_hdl);
-static int8_t is_wr_queue_empty(
-        const NNTI_buffer_t *reg_buf);
-static int is_buf_op_complete(
-        const NNTI_buffer_t *reg_buf);
-static int8_t is_any_buf_op_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
+        mpi_work_request *mpi_wr);
+static int8_t is_any_wr_complete(
+        mpi_work_request **wr_list,
+        const uint32_t     wr_count,
+        uint32_t          *which);
+static int8_t is_all_wr_complete(
+        mpi_work_request **wr_list,
+        const uint32_t     wr_count);
+static int8_t is_wr_complete(
+        NNTI_work_request_t *wr);
+static int8_t is_any_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         uint32_t             *which);
-static int8_t is_all_buf_ops_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count);
-
-//static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf);
-//static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash);
-//static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf);
-//static void print_bufhash_map(void);
-
-static NNTI_result_t insert_wr_wrhash(mpi_work_request *);
-//static mpi_work_request *get_wr_wrhash(const uint32_t bufhash);
-static mpi_work_request *del_wr_wrhash(mpi_work_request *);
-//static void print_wrhash_map(void);
+static int8_t is_all_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count);
 
 static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf);
 static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf);
 //static void print_target_buffer_deque();
 
 static void create_status(
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
-        int                   nnti_rc,
-        NNTI_status_t        *status);
+        NNTI_work_request_t *wr,
+        mpi_work_request    *mpi_wr,
+        int                  nnti_rc,
+        NNTI_status_t       *status);
 static void create_peer(
         NNTI_peer_t *peer,
         int          rank);
-//static void copy_peer(
-//        NNTI_peer_t *src,
-//        NNTI_peer_t *dest);
+
+static void config_init(
+        nnti_mpi_config *c);
+static void config_get_from_env(
+        nnti_mpi_config *c);
+
+
+#define MPI_MEM_HDL(b) ((mpi_memory_handle *)((b)->transport_private))
+#define MPI_WORK_REQUEST(wr) ((mpi_work_request *)((wr)->transport_private))
 
 
 /* Thomas Wang's 64 bit to 32 bit Hash Function (http://www.concentric.net/~ttwang/tech/inthash.htm) */
@@ -310,8 +378,11 @@ static nthread_lock_t                        nnti_target_buffer_queue_lock;
 target_buffer_queue_t target_buffers;
 
 
+static nnti_mpi_config config;
+
+
 static mpi_transport_global transport_global_data;
-//static const int MIN_TIMEOUT = 0;  /* in milliseconds */
+static const int MAX_SLEEP = 10;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -350,12 +421,14 @@ NNTI_result_t NNTI_mpi_init (
         nthread_lock_init(&nnti_wr_wrhash_lock);
         nthread_lock_init(&nnti_target_buffer_queue_lock);
 
+        config_init(&config);
+        config_get_from_env(&config);
+
         if (my_url != NULL) {
             log_error(nnti_debug_level,"The MPI transport does not accept a URL at init.  Ignoring URL.");
         }
 
-
-        log_debug(nnti_debug_level, "initializing MPI");
+        log_debug(nnti_debug_level, "initializing MPI transport");
 
         memset(&transport_global_data, 0, sizeof(mpi_transport_global));
 
@@ -368,15 +441,20 @@ NNTI_result_t NNTI_mpi_init (
         if (mpi_initialized==FALSE) {
             int argc=0;
             char **argv=NULL;
+            int provided=-1;
 
             log_debug(nnti_debug_level, "initializing MPI library");
-            rc=MPI_Init(&argc, &argv);
+
+            rc=MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &provided);
             if (rc) {
-                log_fatal(nnti_debug_level,"MPI_Init() failed, %d", rc);
+                log_fatal(nnti_debug_level,"MPI_Init_thread() failed, %d", rc);
                 abort();
             }
+
+            transport_global_data.init_called_mpi_init=true;
         }
 
+//        MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
         MPI_Comm_size(MPI_COMM_WORLD, &transport_global_data.size);
         MPI_Comm_rank(MPI_COMM_WORLD, &transport_global_data.rank);
         MPI_Get_processor_name(transport_global_data.proc_name, &name_len);
@@ -387,6 +465,14 @@ NNTI_result_t NNTI_mpi_init (
                     (unsigned long long)transport_global_data.size,
                     transport_global_data.proc_name);
         }
+
+        nthread_counter_init(&transport_global_data.mbits);
+        for (int i=0;i<0x111;i++) {
+        	// mbits 0x000-0x110 are reserved.  increment mbits to 0x111.
+        	uint64_t v=nthread_counter_increment(&transport_global_data.mbits);
+        }
+
+        setup_atomics();
 
         create_peer(&trans_hdl->me, transport_global_data.rank);
 
@@ -521,19 +607,91 @@ NNTI_result_t NNTI_mpi_disconnect (
  * If the memory block doesn't meet the transport's requirements for memory
  * regions, then errors or poor performance may result.
  */
+NNTI_result_t NNTI_mpi_alloc (
+        const NNTI_transport_t *trans_hdl,
+        const uint64_t          element_size,
+        const uint64_t          num_elements,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(trans_hdl);
+    assert(element_size>0);
+    assert(num_elements>0);
+    assert(ops>0);
+    assert(reg_buf);
+
+    char *buf=(char *)malloc(element_size*num_elements);
+    assert(buf);
+
+    nnti_rc=NNTI_mpi_register_memory(
+            trans_hdl,
+            buf,
+            element_size,
+            num_elements,
+            ops,
+            reg_buf);
+
+    if (logging_debug(nnti_debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "reg_buf",
+                "end of NNTI_mpi_alloc", reg_buf);
+    }
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+/**
+ * @brief Cleanup after network operations are complete.
+ *
+ * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
+ * It is the user's responsibility to release the the memory region.
+ */
+NNTI_result_t NNTI_mpi_free (
+        NNTI_buffer_t    *reg_buf)
+{
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(reg_buf);
+
+    char *buf=NNTI_BUFFER_C_POINTER(reg_buf);
+    assert(buf);
+
+    nnti_rc=NNTI_mpi_unregister_memory(reg_buf);
+
+    free(buf);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+/**
+ * @brief Prepare a block of memory for network operations.
+ *
+ * Wrap a user allocated block of memory in an NNTI_buffer_t.  The transport
+ * may take additional actions to prepare the memory for network send/receive.
+ * If the memory block doesn't meet the transport's requirements for memory
+ * regions, then errors or poor performance may result.
+ */
 NNTI_result_t NNTI_mpi_register_memory (
         const NNTI_transport_t *trans_hdl,
         char                   *buffer,
         const uint64_t          element_size,
         const uint64_t          num_elements,
         const NNTI_buf_ops_t    ops,
-        const NNTI_peer_t      *peer,
         NNTI_buffer_t          *reg_buf)
 {
 //    int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
-
-    static uint64_t mbits=0x111;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
@@ -548,6 +706,7 @@ NNTI_result_t NNTI_mpi_register_memory (
 
     mpi_mem_hdl=new mpi_memory_handle();
     assert(mpi_mem_hdl);
+    nthread_lock_init(&mpi_mem_hdl->wr_queue_lock);
 
     reg_buf->transport_id      = trans_hdl->id;
     reg_buf->buffer_owner      = trans_hdl->me;
@@ -561,19 +720,21 @@ NNTI_result_t NNTI_mpi_register_memory (
 
     if (ops == NNTI_RECV_QUEUE) {
         mpi_mem_hdl->type=REQUEST_BUFFER;
+        mpi_mem_hdl->rtr_tag  = 0;
+        mpi_mem_hdl->rts_tag  = 0;
         mpi_mem_hdl->data_tag = NNTI_MPI_REQUEST_TAG;
 
     } else if (ops == NNTI_RECV_DST) {
         mpi_mem_hdl->type=RECEIVE_BUFFER;
         mpi_mem_hdl->rtr_tag  = 0;
         mpi_mem_hdl->rts_tag  = 0;
-        mpi_mem_hdl->data_tag = mbits++;
+        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
 
     } else if (ops == NNTI_SEND_SRC) {
         mpi_mem_hdl->type=SEND_BUFFER;
         mpi_mem_hdl->rtr_tag  = 0;
         mpi_mem_hdl->rts_tag  = 0;
-        mpi_mem_hdl->data_tag = mbits++;
+        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
     } else {
         if (ops == NNTI_GET_DST) {
             mpi_mem_hdl->type=GET_DST_BUFFER;
@@ -588,47 +749,46 @@ NNTI_result_t NNTI_mpi_register_memory (
         } else {
             mpi_mem_hdl->type=UNKNOWN_BUFFER;
         }
-        mpi_mem_hdl->rtr_tag  = mbits++;
-        mpi_mem_hdl->rts_tag  = mbits++;
-        mpi_mem_hdl->data_tag = mbits++;
+        mpi_mem_hdl->rtr_tag  = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->rts_tag  = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
     }
 
-    reg_buf->buffer_addr.transport_id                  = NNTI_TRANSPORT_MPI;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.mpi.size = element_size;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag  = mpi_mem_hdl->rtr_tag;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.mpi.rts_tag  = mpi_mem_hdl->rts_tag;
-    reg_buf->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag = mpi_mem_hdl->data_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val=(NNTI_remote_addr_t *)calloc(1, sizeof(NNTI_remote_addr_t));
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_len=1;
+
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id                      = NNTI_TRANSPORT_MPI;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.size     = element_size;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag  = mpi_mem_hdl->rtr_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag  = mpi_mem_hdl->rts_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag = mpi_mem_hdl->data_tag;
 
     if (ops == NNTI_RECV_QUEUE) {
-        int32_t index=0;
         mpi_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
         q_hdl->reg_buf=reg_buf;
 
-        q_hdl->req_queue=buffer;
-        q_hdl->req_size =element_size;
-        q_hdl->req_count=num_elements;
-        q_hdl->requests =(MPI_Request*)calloc(q_hdl->req_count, sizeof(MPI_Request));
+        q_hdl->req_queue         =buffer;
+        q_hdl->req_size          =element_size;
+        q_hdl->req_count         =num_elements;
+        q_hdl->last_request_index=0;
+        q_hdl->mpi_request_list  =(MPI_Request*)calloc(q_hdl->req_count, sizeof(MPI_Request));
 
         /* initialize the buffer */
         memset(q_hdl->req_queue, 0, q_hdl->req_count*q_hdl->req_size);
 
-        for (index=0; index<q_hdl->req_count; index++) {
-            post_recv_work_request(
-                    reg_buf,
-                    NNTI_MPI_REQUEST_TAG,
-                    (index*q_hdl->req_size),
-                    q_hdl->req_size,
-                    &q_hdl->requests[index]);
-        }
+        post_recv_queue_work_request(
+                reg_buf,
+                NNTI_MPI_REQUEST_TAG,
+                q_hdl->req_size,
+                q_hdl->req_count,
+                q_hdl->mpi_request_list);
 
     } else if (ops == NNTI_RECV_DST) {
-        post_recv_work_request(
+        post_recv_dst_work_request(
                 reg_buf,
                 mpi_mem_hdl->data_tag,
-                0,
-                element_size,
-                NULL);
+                element_size);
 
     } else if (ops == NNTI_PUT_DST) {
         post_RTS_recv_work_request(reg_buf);
@@ -656,6 +816,28 @@ NNTI_result_t NNTI_mpi_register_memory (
 
 
 /**
+ * @brief Prepare a list of memory segments for network operations.
+ *
+ * Wrap a list of user allocated memory segments in an NNTI_buffer_t.  The
+ * transport may take additional actions to prepare the memory segments for
+ * network send/receive.  If the memory segments don't meet the transport's
+ * requirements for memory regions, then errors or poor performance may
+ * result.
+ *
+ */
+NNTI_result_t NNTI_mpi_register_segments (
+        const NNTI_transport_t *trans_hdl,
+        char                  **segments,
+        const uint64_t         *segment_lengths,
+        const uint64_t          num_segments,
+        const NNTI_buf_ops_t    ops,
+        NNTI_buffer_t          *reg_buf)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+/**
  * @brief Cleanup after network operations are complete.
  *
  * Destroy an NNTI_buffer_t that was previously created by NNTI_regsiter_buffer().
@@ -673,32 +855,45 @@ NNTI_result_t NNTI_mpi_unregister_memory (
 
     assert(reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
     log_debug(nnti_debug_level, "unregistering reg_buf(%p) buf(%p)", reg_buf, reg_buf->payload);
 
-    while (!mpi_mem_hdl->wr_queue.empty()) {
-        mpi_work_request *wr=NULL;
-
-        wr=mpi_mem_hdl->wr_queue.front();
-        mpi_mem_hdl->wr_queue.pop_front();
-
-        log_debug(nnti_debug_level, "removing pending wr=%p", wr);
-
-        if (wr->request_ptr) {
-            log_debug(nnti_debug_level, "canceling wr->request_ptr=%p", wr->request_ptr);
-//            MPI_Cancel(wr->request_ptr);
-        }
-
-        del_wr_wrhash(wr);
-        free(wr);
-    }
-
     del_target_buffer(reg_buf);
 
-    if (mpi_mem_hdl) delete mpi_mem_hdl;
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    while (!mpi_mem_hdl->wr_queue.empty()) {
+        mpi_work_request *mpi_wr=NULL;
+
+        mpi_wr=mpi_mem_hdl->wr_queue.front();
+        mpi_mem_hdl->wr_queue.pop_front();
+
+        log_debug(nnti_debug_level, "removing pending mpi_wr=%p mpi_wr->active_requests=%X", mpi_wr, (uint32_t)mpi_wr->active_requests);
+
+//        for (int i=0;i<MAX_INDEX;i++) {
+//        	if (mpi_wr->active_requests & (1<<i)) {
+//        		// this request is active.  cancel it.
+//        		log_debug(nnti_debug_level, "canceling mpi_wr->request[%d]=%p", i, &mpi_wr->request[i]);
+//        		nthread_lock(&nnti_mpi_lock);
+//        		MPI_Cancel(&mpi_wr->request[i]);
+//        		nthread_unlock(&nnti_mpi_lock);
+//        	}
+//        }
+
+//        del_wr_wrhash(mpi_wr);
+//        if ((mpi_mem_hdl->type!=REQUEST_BUFFER) &&
+//            (mpi_mem_hdl->type!=RECEIVE_BUFFER)) {
+//            free(mpi_wr);
+//        }
+    }
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+
+    if (mpi_mem_hdl)
+        nthread_lock_fini(&mpi_mem_hdl->wr_queue_lock);
+        delete mpi_mem_hdl;
+    if (reg_buf->buffer_segments.NNTI_remote_addr_array_t_val)
+        free(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val);
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     MPI_SET_MATCH_ANY(&reg_buf->buffer_owner);
@@ -724,13 +919,14 @@ NNTI_result_t NNTI_mpi_unregister_memory (
 NNTI_result_t NNTI_mpi_send (
         const NNTI_peer_t   *peer_hdl,
         const NNTI_buffer_t *msg_hdl,
-        const NNTI_buffer_t *dest_hdl)
+        const NNTI_buffer_t *dest_hdl,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
     int                dest_rank;
     uint32_t           tag;
 
@@ -748,37 +944,35 @@ NNTI_result_t NNTI_mpi_send (
                 "NNTI_mpi_send", dest_hdl);
     }
 
-    mpi_mem_hdl=(mpi_memory_handle *)msg_hdl->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(msg_hdl);
     assert(mpi_mem_hdl);
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
 
-    wr->reg_buf=(NNTI_buffer_t *)msg_hdl;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr->nnti_wr   =wr;
+    mpi_wr->reg_buf   =(NNTI_buffer_t *)msg_hdl;
+    mpi_wr->src_offset=0;
+    mpi_wr->dst_offset=0;
+    mpi_wr->length    =msg_hdl->payload_size;
+    mpi_wr->op_state  =BUFFER_INIT;
 
     if (dest_hdl == NULL) {
-        wr->peer  =*peer_hdl;
-        dest_rank = peer_hdl->peer.NNTI_remote_process_t_u.mpi.rank;
-        tag       = NNTI_MPI_REQUEST_TAG;
+        mpi_wr->peer   =*peer_hdl;
+        mpi_wr->last_op=MPI_OP_SEND_REQUEST;
 
-        wr->last_op=MPI_OP_SEND_REQUEST;
-
+        dest_rank=peer_hdl->peer.NNTI_remote_process_t_u.mpi.rank;
+        tag      =NNTI_MPI_REQUEST_TAG;
     } else {
-        wr->peer  = dest_hdl->buffer_owner;
-        dest_rank = dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank;
-        tag       = dest_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
+        mpi_wr->peer   =dest_hdl->buffer_owner;
+        mpi_wr->last_op=MPI_OP_SEND_BUFFER;
 
-        wr->last_op=MPI_OP_SEND_BUFFER;
-
+        dest_rank=dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank;
+        tag      =dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
     }
-
-    wr->src_offset =0;
-    wr->dst_offset =0;
-    wr->length     =msg_hdl->payload_size;
 
     log_debug(nnti_debug_level, "sending to (rank=%d, tag=%d)", dest_rank, tag);
 
+    nthread_lock(&nnti_mpi_lock);
     rc=MPI_Isend(
             (char*)msg_hdl->payload,
             msg_hdl->payload_size,
@@ -786,18 +980,26 @@ NNTI_result_t NNTI_mpi_send (
             dest_rank,
             tag,
             MPI_COMM_WORLD,
-            &wr->request[SEND_INDEX]);
+            &mpi_wr->request[SEND_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to send with Isend");
         nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
-    wr->request_ptr=&wr->request[SEND_INDEX];
-    wr->request_count=1;
+    mpi_wr->request_ptr  =&mpi_wr->request[SEND_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->active_requests |= SEND_REQUEST_ACTIVE;
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
+    wr->transport_id     =msg_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
+    wr->ops              =NNTI_SEND_SRC;
+    wr->transport_private=(uint64_t)mpi_wr;
+
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -818,13 +1020,14 @@ NNTI_result_t NNTI_mpi_put (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
     int                dest_rank;
 
     log_debug(nnti_debug_level, "enter");
@@ -841,62 +1044,73 @@ NNTI_result_t NNTI_mpi_put (
                 "NNTI_mpi_put", dest_buffer_hdl);
     }
 
-    mpi_mem_hdl=(mpi_memory_handle *)src_buffer_hdl->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(src_buffer_hdl);
     assert(mpi_mem_hdl);
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
 
-    wr->reg_buf   =(NNTI_buffer_t *)src_buffer_hdl;
-    wr->peer      =dest_buffer_hdl->buffer_owner;
-    wr->src_offset=src_offset;
-    wr->dst_offset=dest_offset;
-    wr->length    =src_length;
-
-    wr->op_state = RDMA_WRITE_INIT;
+    mpi_wr->nnti_wr   =wr;
+    mpi_wr->reg_buf   =(NNTI_buffer_t *)src_buffer_hdl;
+    mpi_wr->peer      =dest_buffer_hdl->buffer_owner;
+    mpi_wr->src_offset=src_offset;
+    mpi_wr->dst_offset=dest_offset;
+    mpi_wr->length    =src_length;
+    mpi_wr->op_state  =RDMA_WRITE_INIT;
+    mpi_wr->last_op   =MPI_OP_PUT_INITIATOR;
 
     dest_rank=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank;
 
-    wr->rts_msg.length=src_length;
-    wr->rts_msg.offset=dest_offset;
-    wr->rts_msg.tag   =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
+    mpi_wr->rts_msg.length=src_length;
+    mpi_wr->rts_msg.offset=dest_offset;
+    mpi_wr->rts_msg.tag   =dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
 
-    rc=MPI_Isend(
-            &wr->rts_msg,
-            sizeof(wr->rts_msg),
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Issend(
+            &mpi_wr->rts_msg,
+            sizeof(mpi_wr->rts_msg),
             MPI_BYTE,
             dest_rank,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.rts_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTS_REQ_INDEX]);
+            &mpi_wr->request[RTS_REQ_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to Isend RTS msg");
         nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
-    wr->request_ptr=&wr->request[RTS_REQ_INDEX];
-    wr->request_count=1;
-
-    rc=MPI_Isend(
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Issend(
             (char*)src_buffer_hdl->payload+src_offset,
             src_length,
             MPI_BYTE,
             dest_rank,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag,
             MPI_COMM_WORLD,
-            &wr->request[PUT_SEND_INDEX]);
+            &mpi_wr->request[PUT_SEND_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to Isend region");
         nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
+    mpi_wr->request_ptr=&mpi_wr->request[RTS_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->active_requests |= RTS_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= PUT_SEND_REQUEST_ACTIVE;
+
     log_debug(nnti_debug_level, "putting to (%s, dest_rank=%d)", dest_buffer_hdl->buffer_owner.url, dest_rank);
 
-    wr->last_op=MPI_OP_PUT_INITIATOR;
+    wr->transport_id     =src_buffer_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
+    wr->ops              =NNTI_PUT_SRC;
+    wr->transport_private=(uint64_t)mpi_wr;
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
@@ -917,13 +1131,14 @@ NNTI_result_t NNTI_mpi_get (
         const uint64_t       src_offset,
         const uint64_t       src_length,
         const NNTI_buffer_t *dest_buffer_hdl,
-        const uint64_t       dest_offset)
+        const uint64_t       dest_offset,
+        NNTI_work_request_t *wr)
 {
     int rc=0;
     NNTI_result_t nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
     int                src_rank;
 
     log_debug(nnti_debug_level, "enter");
@@ -950,67 +1165,424 @@ NNTI_result_t NNTI_mpi_get (
                 "NNTI_mpi_get", dest_buffer_hdl);
     }
 
-    mpi_mem_hdl=(mpi_memory_handle *)dest_buffer_hdl->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(dest_buffer_hdl);
     assert(mpi_mem_hdl);
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
 
-    wr->reg_buf   =(NNTI_buffer_t *)dest_buffer_hdl;
-    wr->peer      =src_buffer_hdl->buffer_owner;
-    wr->src_offset=src_offset;
-    wr->dst_offset=dest_offset;
-    wr->length    =src_length;
-
-    wr->op_state = RDMA_READ_INIT;
+    mpi_wr->nnti_wr   =wr;
+    mpi_wr->reg_buf   =(NNTI_buffer_t *)dest_buffer_hdl;
+    mpi_wr->peer      =src_buffer_hdl->buffer_owner;
+    mpi_wr->src_offset=src_offset;
+    mpi_wr->dst_offset=dest_offset;
+    mpi_wr->length    =src_length;
+    mpi_wr->op_state  =RDMA_READ_INIT;
+    mpi_wr->last_op   =MPI_OP_GET_INITIATOR;
 
     src_rank=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank;
 
-    wr->rtr_msg.length=src_length;
-    wr->rtr_msg.offset=src_offset;
-    wr->rtr_msg.tag=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
+    mpi_wr->rtr_msg.length=src_length;
+    mpi_wr->rtr_msg.offset=src_offset;
+    mpi_wr->rtr_msg.tag=dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
 
+    nthread_lock(&nnti_mpi_lock);
     rc=MPI_Irecv(
             (char*)dest_buffer_hdl->payload+dest_offset,
             src_length,
             MPI_BYTE,
             src_rank,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag,
             MPI_COMM_WORLD,
-            &wr->request[GET_RECV_INDEX]);
+            &mpi_wr->request[GET_RECV_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to Irecv region");
         nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
-    rc=MPI_Isend(
-            &wr->rtr_msg,
-            sizeof(wr->rtr_msg),
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Issend(
+            &mpi_wr->rtr_msg,
+            sizeof(mpi_wr->rtr_msg),
             MPI_BYTE,
             src_rank,
-            src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.rtr_tag,
+            src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTR_REQ_INDEX]);
+            &mpi_wr->request[RTR_REQ_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
     if (rc != MPI_SUCCESS) {
         log_error(nnti_debug_level, "failed to Isend RTR msg");
         nnti_rc = NNTI_EBADRPC;
         goto cleanup;
     }
 
-    wr->request_ptr=&wr->request[RTR_REQ_INDEX];
-    wr->request_count=1;
+    mpi_wr->request_ptr=&mpi_wr->request[RTR_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->active_requests |= GET_RECV_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= RTR_REQUEST_ACTIVE;
 
     log_debug(nnti_debug_level, "getting from (%s, src_rank=%d)", src_buffer_hdl->buffer_owner.url, src_rank);
 
-    wr->last_op=MPI_OP_GET_INITIATOR;
+    wr->transport_id     =dest_buffer_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
+    wr->ops              =NNTI_GET_DST;
+    wr->transport_private=(uint64_t)mpi_wr;
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
-    insert_wr_wrhash(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
 cleanup:
     log_debug(nnti_debug_level, "exit");
 
     return(nnti_rc);
+}
+
+
+/**
+ * @brief Transfer data to a peer.
+ *
+ * \param[in] src_buffer_hdl    A buffer containing the data to put.
+ * \param[in] src_length        The number of bytes to put.
+ * \param[in] dest_buffer_list  A list of buffers to put the data into.
+ * \param[in] dest_count        The number of destination buffers.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_mpi_scatter (
+        const NNTI_buffer_t  *src_buffer_hdl,
+        const uint64_t        src_length,
+        const NNTI_buffer_t **dest_buffer_list,
+        const uint64_t        dest_count,
+        NNTI_work_request_t  *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+/**
+ * @brief Transfer data from a peer.
+ *
+ * \param[in] src_buffer_list  A list of buffers containing the data to get.
+ * \param[in] src_length       The number of bytes to get.
+ * \param[in] src_count        The number of source buffers.
+ * \param[in] dest_buffer_hdl  A buffer to get the data into.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_mpi_gather (
+        const NNTI_buffer_t **src_buffer_list,
+        const uint64_t        src_length,
+        const uint64_t        src_count,
+        const NNTI_buffer_t  *dest_buffer_hdl,
+        NNTI_work_request_t  *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_set_callback (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		NNTI_callback_fn_t      cbfunc,
+		void                   *context)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_read (
+		const NNTI_transport_t *trans_hdl,
+		const uint64_t          local_atomic,
+		int64_t                *value)
+{
+	nthread_lock(&transport_global_data.atomics[local_atomic].lock);
+	*value = transport_global_data.atomics[local_atomic].value;
+	nthread_unlock(&transport_global_data.atomics[local_atomic].lock);
+
+    return NNTI_OK;
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_fop (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           operand,
+		const NNTI_atomic_op_t  op,
+		NNTI_work_request_t    *wr)
+{
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    mpi_work_request  *mpi_wr=NULL;
+    int                dest_rank;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(peer_hdl);
+
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+
+    mpi_wr->nnti_wr   =wr;
+    mpi_wr->op_state  =BUFFER_INIT;
+
+    mpi_wr->atomics_result_index=result_atomic;
+
+    mpi_wr->peer   =*peer_hdl;
+    mpi_wr->last_op=MPI_OP_FETCH_ADD;
+    dest_rank      =peer_hdl->peer.NNTI_remote_process_t_u.mpi.rank;
+
+    transport_global_data.atomics_request_msg.op         =MPI_ATOMIC_FETCH_ADD;
+    transport_global_data.atomics_request_msg.index      =target_atomic;
+    transport_global_data.atomics_request_msg.compare_add=operand;
+
+    log_debug(nnti_debug_level, "sending fetch-add to (rank=%d)", dest_rank);
+
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Isend(
+            (char*)&transport_global_data.atomics_request_msg,
+            sizeof(transport_global_data.atomics_request_msg),
+            MPI_BYTE,
+            dest_rank,
+            NNTI_MPI_ATOMICS_REQUEST_TAG,
+            MPI_COMM_WORLD,
+            &mpi_wr->request[ATOMICS_SEND_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to send with Isend");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
+
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Irecv(
+            (char*)&transport_global_data.atomics_result_msg,
+            sizeof(transport_global_data.atomics_result_msg),
+            MPI_BYTE,
+            dest_rank,
+            NNTI_MPI_ATOMICS_RESULT_TAG,
+            MPI_COMM_WORLD,
+            &mpi_wr->request[ATOMICS_RECV_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to post recv with Irecv");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
+
+    mpi_wr->request_ptr  =&mpi_wr->request[ATOMICS_SEND_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->active_requests |= ATOMICS_SEND_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= ATOMICS_RECV_REQUEST_ACTIVE;
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)mpi_wr;
+
+cleanup:
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+NNTI_result_t NNTI_mpi_atomic_cswap (
+		const NNTI_transport_t *trans_hdl,
+		const NNTI_peer_t      *peer_hdl,
+		const uint64_t          target_atomic,
+		const uint64_t          result_atomic,
+		const int64_t           compare_operand,
+		const int64_t           swap_operand,
+		NNTI_work_request_t    *wr)
+{
+    int rc=0;
+    NNTI_result_t nnti_rc=NNTI_OK;
+
+    mpi_work_request  *mpi_wr=NULL;
+    int                dest_rank;
+
+    log_debug(nnti_debug_level, "enter");
+
+    assert(peer_hdl);
+
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+
+    mpi_wr->nnti_wr   =wr;
+    mpi_wr->op_state  =BUFFER_INIT;
+
+    mpi_wr->atomics_result_index=result_atomic;
+
+    mpi_wr->peer   =*peer_hdl;
+    mpi_wr->last_op=MPI_OP_FETCH_ADD;
+    dest_rank      =peer_hdl->peer.NNTI_remote_process_t_u.mpi.rank;
+
+    transport_global_data.atomics_request_msg.op         =MPI_ATOMIC_CMP_AND_SWP;
+    transport_global_data.atomics_request_msg.index      =target_atomic;
+    transport_global_data.atomics_request_msg.compare_add=compare_operand;
+    transport_global_data.atomics_request_msg.swap       =swap_operand;
+
+    log_debug(nnti_debug_level, "sending compare-swap to (rank=%d)", dest_rank);
+
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Isend(
+            (char*)&transport_global_data.atomics_request_msg,
+            sizeof(transport_global_data.atomics_request_msg),
+            MPI_BYTE,
+            dest_rank,
+            NNTI_MPI_ATOMICS_REQUEST_TAG,
+            MPI_COMM_WORLD,
+            &mpi_wr->request[ATOMICS_SEND_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to send with Isend");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
+
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Irecv(
+            (char*)&transport_global_data.atomics_result_msg,
+            sizeof(transport_global_data.atomics_result_msg),
+            MPI_BYTE,
+            dest_rank,
+            NNTI_MPI_ATOMICS_RESULT_TAG,
+            MPI_COMM_WORLD,
+            &mpi_wr->request[ATOMICS_RECV_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to post recv with Irecv");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
+
+    mpi_wr->request_ptr  =&mpi_wr->request[ATOMICS_SEND_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->active_requests |= ATOMICS_SEND_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= ATOMICS_RECV_REQUEST_ACTIVE;
+
+    wr->transport_id     =trans_hdl->id;
+    wr->reg_buf          =(NNTI_buffer_t*)NULL;
+    wr->ops              =NNTI_ATOMICS;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)mpi_wr;
+
+cleanup:
+    log_debug(nnti_debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+
+/**
+ * @brief Create a receive work request that can be used to wait for buffer
+ * operations to complete.
+ *
+ */
+NNTI_result_t NNTI_mpi_create_work_request (
+        NNTI_buffer_t        *reg_buf,
+        NNTI_work_request_t  *wr)
+{
+    mpi_memory_handle *mpi_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p ; wr=%p)", reg_buf, wr);
+
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
+    assert(mpi_mem_hdl);
+
+    wr->transport_id     =reg_buf->transport_id;
+    wr->reg_buf          =reg_buf;
+    wr->ops              =reg_buf->ops;
+    wr->transport_private=NULL;
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr=%p)", reg_buf, wr);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from a previous receive
+ * and prepares it for reuse.
+ *
+ */
+NNTI_result_t NNTI_mpi_clear_work_request (
+        NNTI_work_request_t  *wr)
+{
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+
+    wr->transport_private=NULL;
+
+    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Disassociates a receive work request from reg_buf.
+ *
+ */
+NNTI_result_t NNTI_mpi_destroy_work_request (
+        NNTI_work_request_t  *wr)
+{
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
+
+    wr->transport_id     =NNTI_TRANSPORT_NULL;
+    wr->reg_buf          =NULL;
+    wr->ops              =(NNTI_buf_ops_t)0;
+//    wr->transport_private=(uint64_t)mpi_wr;
+    wr->transport_private=NULL;
+
+//    free(mpi_wr);
+
+    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
+
+    return(NNTI_OK);
+}
+
+
+/**
+ * @brief Attempts to cancel an NNTI opertion.
+ *
+ */
+NNTI_result_t NNTI_mpi_cancel (
+        NNTI_work_request_t *wr)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+/**
+ * @brief Attempts to cancel a list of NNTI opertions.
+ *
+ */
+NNTI_result_t NNTI_mpi_cancelall (
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
+{
+    return NNTI_ENOTSUP;
+}
+
+
+/**
+ * @brief Interrupts NNTI_wait*()
+ *
+ */
+NNTI_result_t NNTI_mpi_interrupt (
+        const NNTI_transport_t *trans_hdl)
+{
+    char dummy=0xAA;
+
+    log_debug(nnti_debug_level, "enter");
+
+    log_debug(nnti_debug_level, "exit");
+
+    return NNTI_ENOTSUP;
 }
 
 
@@ -1024,22 +1596,19 @@ cleanup:
  *
  */
 NNTI_result_t NNTI_mpi_wait (
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t  *wr,
         const int             timeout,
         NNTI_status_t        *status)
 {
     int rc=MPI_SUCCESS;
     NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
 
     long elapsed_time=0;
 //    long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
-
-    int          which_req=0;
 
     log_level debug_level=nnti_debug_level;
 
@@ -1052,19 +1621,27 @@ NNTI_result_t NNTI_mpi_wait (
 
     log_debug(debug_level, "enter");
 
-    assert(reg_buf);
+    assert(wr);
     assert(status);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-    assert(mpi_mem_hdl);
-    wr=first_incomplete_wr(mpi_mem_hdl);
-    assert(wr);
+	mpi_wr=MPI_WORK_REQUEST(wr);
+    if (wr->ops != NNTI_ATOMICS) {
+    	mpi_mem_hdl=MPI_MEM_HDL(wr->reg_buf);
+    	assert(mpi_mem_hdl);
+    	if (mpi_wr==NULL) {
+    		nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    		mpi_wr=mpi_mem_hdl->wr_queue.front();
+    		nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+    		wr->transport_private=(uint64_t)mpi_wr;
+    	}
+    }
+	assert(mpi_wr);
 
-    if (is_buf_op_complete(reg_buf) == TRUE) {
-        log_debug(debug_level, "buffer op already complete");
+    if (is_wr_complete(mpi_wr) == TRUE) {
+        log_debug(debug_level, "work request already complete");
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "buffer op NOT complete");
+        log_debug(debug_level, "work request NOT complete");
 
 //        timeout_per_call = MIN_TIMEOUT;
 
@@ -1074,21 +1651,26 @@ NNTI_result_t NNTI_mpi_wait (
                 return NNTI_ECANCELED;
             }
 
+            check_atomic_operation();
             check_target_buffer_progress();
-            if (is_buf_op_complete(reg_buf) == TRUE) {
-                log_debug(debug_level, "buffer op completed during check_target_buffer_progress()");
-                nnti_rc = NNTI_OK;
-                break;
-            }
 
-            log_debug(debug_level, "waiting on reg_buf(%p) request(%p)", reg_buf , wr->request_ptr);
+            log_debug(debug_level, "waiting on wr(%p) request(%p)", wr , mpi_wr->request_ptr);
 
             memset(&event, 0, sizeof(MPI_Status));
             done=FALSE;
             trios_start_timer(call_time);
-            rc = MPI_Testany(wr->request_count, wr->request_ptr, &which_req, &done, &event);
+            nthread_lock(&nnti_mpi_lock);
+            rc = MPI_Testany(mpi_wr->request_count, mpi_wr->request_ptr, &mpi_wr->request_index, &done, &event);
+            nthread_unlock(&nnti_mpi_lock);
             trios_stop_timer("NNTI_mpi_wait - MPI_Test", call_time);
-            log_debug(debug_level, "polling status is %d, which_req=%d, done=%d", rc, which_req, done);
+            if ((rc==MPI_SUCCESS) && (mpi_wr->request_index==MPI_UNDEFINED) && (done==TRUE)) {
+                log_debug(debug_level, "MPI_Testany() says there a no active requests (rc=%d, which_req=%d, done=%d)", rc, mpi_wr->request_index, done);
+            }
+            if (rc != MPI_SUCCESS) {
+            	log_debug(debug_level, "MPI_Testany() return %d", rc);
+            	abort();
+            }
+            log_debug(debug_level, "polling status is %d, which_req=%d, done=%d", rc, mpi_wr->request_index, done);
 
             log_debug(debug_level, "Poll Event= {");
             log_debug(debug_level, "\tsource  = %d", event.MPI_SOURCE);
@@ -1101,6 +1683,7 @@ NNTI_result_t NNTI_mpi_wait (
                 /* case 1: success */
                 if (done == TRUE) {
                     nnti_rc = NNTI_OK;
+
                 }
                 /* case 2: timed out */
                 else {
@@ -1113,6 +1696,15 @@ NNTI_result_t NNTI_mpi_wait (
                         break;
                     }
 
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
+                    }
+
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1122,68 +1714,55 @@ NNTI_result_t NNTI_mpi_wait (
             /* MPI_Test failure */
             else {
                 log_error(debug_level, "MPI_Test() failed (request=%p): rc=%d",
-                        wr->request_ptr, rc);
+                        mpi_wr->request_ptr, rc);
                 nnti_rc = NNTI_EIO;
                 break;
             }
 
-            process_event(reg_buf, &event);
+            process_event(mpi_wr, &event);
 
-            if (is_buf_op_complete(reg_buf) == TRUE) {
+            if (is_wr_complete(mpi_wr) == TRUE) {
                 break;
             }
         }
     }
 
-    create_status(reg_buf, remote_op, nnti_rc, status);
+    create_status(wr, mpi_wr, nnti_rc, status);
 
 
     if (nnti_rc==NNTI_OK) {
-        mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-        if (mpi_mem_hdl->type == REQUEST_BUFFER) {
-            wr=mpi_mem_hdl->wr_queue.front();
-            mpi_mem_hdl->wr_queue.pop_front();
-            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+    	if ((mpi_wr->nnti_wr) && (mpi_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+			free(mpi_wr);
+    	} else {
+			mpi_mem_hdl=MPI_MEM_HDL(mpi_wr->reg_buf);
+			assert(mpi_mem_hdl);
+			if (mpi_mem_hdl->type == REQUEST_BUFFER) {
+				nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+				mpi_mem_hdl->wr_queue.pop_front();
+				nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+				repost_recv_work_request(mpi_wr);
+			} else if (mpi_mem_hdl->type == RECEIVE_BUFFER) {
+				nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+				mpi_mem_hdl->wr_queue.pop_front();
+				nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+				repost_recv_work_request(mpi_wr);
+			} else if (mpi_mem_hdl->type == PUT_DST_BUFFER) {
+				repost_RTS_recv_work_request(mpi_wr);
+			} else if (mpi_mem_hdl->type == GET_SRC_BUFFER) {
+				repost_RTR_recv_work_request(mpi_wr);
+			} else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
+				repost_RTR_RTS_recv_work_request(mpi_wr);
+			} else {
+				log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu",
+						(uint64_t)status->offset, (uint64_t)status->length);
+				uint32_t index=status->offset/status->length;
+				log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu, index=%llu",
+						(uint64_t)status->offset, (uint64_t)status->length, (uint64_t)index);
 
-        } else if (mpi_mem_hdl->type == RECEIVE_BUFFER) {
-            wr=mpi_mem_hdl->wr_queue.front();
-            mpi_mem_hdl->wr_queue.pop_front();
-            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
-
-        } else if (mpi_mem_hdl->type == PUT_DST_BUFFER) {
-            wr=mpi_mem_hdl->wr_queue.front();
-            mpi_mem_hdl->wr_queue.pop_front();
-            repost_RTS_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
-
-        } else if (mpi_mem_hdl->type == GET_SRC_BUFFER) {
-            wr=mpi_mem_hdl->wr_queue.front();
-            mpi_mem_hdl->wr_queue.pop_front();
-            repost_RTR_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
-
-        }
-        else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
-            wr=mpi_mem_hdl->wr_queue.front();
-            mpi_mem_hdl->wr_queue.pop_front();
-            repost_RTR_RTS_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
-
-        }
-        else {
-            assert(mpi_mem_hdl);
-            wr=mpi_mem_hdl->wr_queue.front();
-            assert(wr);
-
-            log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu",
-                    (uint64_t)status->offset, (uint64_t)status->length);
-            uint32_t index=status->offset/status->length;
-            log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu, index=%llu",
-                    (uint64_t)status->offset, (uint64_t)status->length, (uint64_t)index);
-
-            mpi_mem_hdl->wr_queue.pop_front();
-            del_wr_wrhash(wr);
-            free(wr);
-        }
+				free(mpi_wr);
+			}
+    	}
     }
-
 
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
@@ -1198,21 +1777,20 @@ NNTI_result_t NNTI_mpi_wait (
 }
 
 /**
- * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete.
+ * @brief Wait for <tt>remote_op</tt> on any buffer in <tt>wr_list</tt> to complete.
  *
- * Wait for <tt>remote_op</tt> on any buffer in <tt>buf_list</tt> to complete or timeout
+ * Wait for <tt>remote_op</tt> on any buffer in <tt>wr_list</tt> to complete or timeout
  * waiting.  This is typically used to wait for a result or a bulk data
  * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
  * means wait forever.  A timeout of <tt>0</tt> means do not wait.
  *
  * Caveats:
- *   1) All buffers in buf_list must be registered with the same transport.
+ *   1) All buffers in wr_list must be registered with the same transport.
  *   2) You can't wait on the request queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_mpi_waitany (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         uint32_t             *which,
         NNTI_status_t        *status)
@@ -1220,16 +1798,15 @@ NNTI_result_t NNTI_mpi_waitany (
     int rc=MPI_SUCCESS;
     NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
 
+    uint32_t     mpi_request_count=0;
+    MPI_Request *mpi_requests=NULL;
+    uint32_t    *request_to_wr_index=NULL;
     MPI_Status   event;
-    MPI_Request *requests=NULL;
-    int which_req=-1;
     int done=FALSE;
 
-//    int i=0;
-
-//    const NNTI_buffer_t  *wait_buf=NULL;
+    int which_req=0;
 
     long elapsed_time=0;
 //    long timeout_per_call;
@@ -1245,42 +1822,36 @@ NNTI_result_t NNTI_mpi_waitany (
 
     log_debug(debug_level, "enter");
 
-    assert(buf_list);
-    assert(buf_count > 0);
-    if (buf_count > 1) {
-        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                assert(((mpi_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
-            }
-        }
-    }
+    assert(wr_list);
+    assert(wr_count > 0);
     assert(status);
 
-    if (buf_count == 1) {
-        nnti_rc=NNTI_mpi_wait(buf_list[0], remote_op, timeout, status);
+    if (wr_count == 1) {
+        nnti_rc=NNTI_mpi_wait(wr_list[0], timeout, status);
         *which=0;
         goto cleanup;
     }
 
-    if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
-        log_debug(debug_level, "buffer op already complete (which=%u, buf_list[%d]=%p)", *which, *which, buf_list[*which]);
+    for (uint32_t i=0;i<wr_count;i++) {
+        if (wr_list[i] != NULL) {
+        	mpi_mem_hdl=MPI_MEM_HDL(wr_list[i]->reg_buf);
+        	assert(mpi_mem_hdl);
+        	mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+        	if (mpi_wr==NULL) {
+        		nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        		mpi_wr=mpi_mem_hdl->wr_queue.front();
+        		nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+        		wr_list[i]->transport_private=(uint64_t)mpi_wr;
+        	}
+        	assert(mpi_wr);
+        }
+    }
+
+    if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
+        log_debug(debug_level, "work request already complete (which=%u, wr_list[%d]=%p)", *which, *which, wr_list[*which]);
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
-
-        requests=(MPI_Request *)calloc(buf_count, sizeof(MPI_Request*));
-        assert(requests);
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                mpi_mem_hdl=(mpi_memory_handle *)buf_list[i]->transport_private;
-                assert(mpi_mem_hdl);
-                wr=mpi_mem_hdl->wr_queue.front();
-                if (wr != NULL) {
-                    requests[i]=*wr->request_ptr;
-                }
-            }
-        }
+        log_debug(debug_level, "work request NOT complete (wr_list=%p)", wr_list);
 
 //        timeout_per_call = MIN_TIMEOUT;
 
@@ -1290,32 +1861,71 @@ NNTI_result_t NNTI_mpi_waitany (
                 return NNTI_ECANCELED;
             }
 
+            check_atomic_operation();
             check_target_buffer_progress();
-            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
-                log_debug(debug_level, "buffer op completed during check_target_buffer_progress() (which=%u, buf_list[%d]=%p)",
-                        *which, *which, buf_list[*which]);
-                nnti_rc = NNTI_OK;
-                break;
+
+            log_debug(debug_level, "waiting on wr_list(%p)", wr_list);
+
+            /*
+             * The list of MPI_Requests is recreated each time through this loop.  There is probably a better way.
+             */
+            /* find the number of MPI_Requests in wr_list */
+            mpi_request_count=0;
+            for (uint32_t i=0;i<wr_count;i++) {
+                if (wr_list[i] != NULL) {
+                    mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+                    if (mpi_wr != NULL) {
+                        mpi_request_count += mpi_wr->request_count;
+                    }
+                }
+            }
+            log_debug(debug_level, "wr_list contains %lu MPI_Requests", mpi_request_count);
+
+            mpi_requests=(MPI_Request *)realloc(mpi_requests, mpi_request_count * sizeof(MPI_Request));
+            assert(mpi_requests);
+            request_to_wr_index=(uint32_t *)realloc(request_to_wr_index, mpi_request_count * sizeof(uint32_t));
+            assert(request_to_wr_index);
+
+            uint32_t request_index=0;
+            /* for each NNTI work request */
+            for (uint32_t i=0;i<wr_count;i++) {
+                if (wr_list[i] != NULL) {
+                    mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+                    if (mpi_wr != NULL) {
+                        for (uint32_t j=0;j<mpi_wr->request_count;j++) {
+                            mpi_requests[request_index]=mpi_wr->request_ptr[j];
+                            request_to_wr_index[request_index]=i;
+                            request_index++;
+                        }
+                    }
+                }
             }
 
-            log_debug(debug_level, "waiting on buf_list(%p)", buf_list);
-
+            memset(&event, 0, sizeof(MPI_Status));
+            done=FALSE;
             trios_start_timer(call_time);
-            rc = MPI_Testany(buf_count, requests, &which_req, &done, &event);
+            nthread_lock(&nnti_mpi_lock);
+            rc = MPI_Testany(mpi_request_count, mpi_requests, &which_req, &done, &event);
+            nthread_unlock(&nnti_mpi_lock);
             trios_stop_timer("NNTI_mpi_waitany - MPI_Testany", call_time);
-            log_debug(debug_level, "polling status is %d", rc);
+            if ((rc==MPI_SUCCESS) && (which_req==MPI_UNDEFINED) && (done==TRUE)) {
+                log_debug(debug_level, "MPI_Testany() says there a no active requests (rc=%d, which_req=%d, done=%d)", rc, which_req, done);
+            }
+            log_debug(debug_level, "polling status is %d, which_req=%d, done=%d", rc, which_req, done);
 
             log_debug(debug_level, "Poll Event= {");
             log_debug(debug_level, "\tsource  = %d", event.MPI_SOURCE);
             log_debug(debug_level, "\ttag     = %d", event.MPI_TAG);
+            log_debug(debug_level, "\terror   = %d", event.MPI_ERROR);
             log_debug(debug_level, "}");
 
 
             if (rc == MPI_SUCCESS) {
                 /* case 1: success */
                 if (done == TRUE) {
-                    *which=which_req;
+                    *which=request_to_wr_index[which_req];
                     nnti_rc = NNTI_OK;
+                    log_debug(debug_level, "*which == %d", *which);
                 }
                 /* case 2: timed out */
                 else {
@@ -1328,6 +1938,15 @@ NNTI_result_t NNTI_mpi_waitany (
                         break;
                     }
 
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
+                    }
+
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1337,31 +1956,54 @@ NNTI_result_t NNTI_mpi_waitany (
             /* MPI_Test failure */
             else {
                 log_error(debug_level, "MPI_Testany() failed (request=%p): rc=%d",
-                        wr->request_ptr, rc);
+                        mpi_wr->request_ptr, rc);
                 nnti_rc = NNTI_EIO;
                 break;
             }
 
-//            wait_buf=decode_event_buffer(buf_list[0], &event);
-            process_event(buf_list[*which], &event);
+            process_event(MPI_WORK_REQUEST(wr_list[*which]), &event);
 
-//            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
-//                break;
-//            }
+            if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
+                break;
+            }
         }
     }
 
 
-    create_status(buf_list[*which], remote_op, nnti_rc, status);
+    create_status(wr_list[*which], MPI_WORK_REQUEST(wr_list[*which]), nnti_rc, status);
 
-    if (nnti_rc == NNTI_OK) {
-        mpi_mem_hdl=(mpi_memory_handle *)buf_list[*which]->transport_private;
+
+    if (nnti_rc==NNTI_OK) {
+        mpi_wr=MPI_WORK_REQUEST(wr_list[*which]);
+        assert(mpi_wr);
+        mpi_mem_hdl=MPI_MEM_HDL(mpi_wr->reg_buf);
         assert(mpi_mem_hdl);
-        wr=mpi_mem_hdl->wr_queue.front();
-        assert(wr);
-        mpi_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
+
+        if (mpi_mem_hdl->type == REQUEST_BUFFER) {
+            nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+            mpi_mem_hdl->wr_queue.pop_front();
+            nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+            repost_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == RECEIVE_BUFFER) {
+            nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+            mpi_mem_hdl->wr_queue.pop_front();
+            nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+            repost_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == PUT_DST_BUFFER) {
+            repost_RTS_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == GET_SRC_BUFFER) {
+            repost_RTR_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
+            repost_RTR_RTS_recv_work_request(mpi_wr);
+        } else {
+            log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu",
+                    (uint64_t)status->offset, (uint64_t)status->length);
+            uint32_t index=status->offset/status->length;
+            log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu, index=%llu",
+                    (uint64_t)status->offset, (uint64_t)status->length, (uint64_t)index);
+
+            free(mpi_wr);
+        }
     }
 
     if (logging_debug(debug_level)) {
@@ -1370,7 +2012,8 @@ NNTI_result_t NNTI_mpi_waitany (
     }
 
 cleanup:
-    if (requests != NULL) free(requests);
+    if (mpi_requests != NULL)        free(mpi_requests);
+    if (request_to_wr_index != NULL) free(request_to_wr_index);
 
     log_debug(debug_level, "exit");
 
@@ -1380,34 +2023,32 @@ cleanup:
 }
 
 /**
- * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete.
+ * @brief Wait for <tt>remote_op</tt> on all buffers in <tt>wr_list</tt> to complete.
  *
- * Wait for <tt>remote_op</tt> on all buffers in <tt>buf_list</tt> to complete or timeout
+ * Wait for <tt>remote_op</tt> on all buffers in <tt>wr_list</tt> to complete or timeout
  * waiting.  This is typically used to wait for a result or a bulk data
  * transfer.  The timeout is specified in milliseconds.  A timeout of <tt>-1</tt>
  * means wait forever.  A timeout of <tt>0</tt> means do not wait.
  *
  * Caveats:
- *   1) All buffers in buf_list must be registered with the same transport.
+ *   1) All buffers in wr_list must be registered with the same transport.
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
  */
 NNTI_result_t NNTI_mpi_waitall (
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
         const int             timeout,
         NNTI_status_t       **status)
 {
     int rc=MPI_SUCCESS;
     NNTI_result_t nnti_rc=NNTI_OK;
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr=NULL;
 
+    uint32_t     mpi_request_count=0;
+    MPI_Request *mpi_requests=NULL;
     MPI_Status  *events=NULL;
-    MPI_Request *requests=NULL;
     int done=FALSE;
-
-//    int i=0;
 
     long elapsed_time=0;
 //    long timeout_per_call;
@@ -1423,42 +2064,35 @@ NNTI_result_t NNTI_mpi_waitall (
 
     log_debug(debug_level, "enter");
 
-    assert(buf_list);
-    assert(buf_count > 0);
-    if (buf_count > 1) {
-        /* if there is more than 1 buffer in the list, none of them can be a REQUEST_BUFFER */
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                assert(((mpi_memory_handle *)buf_list[i]->transport_private)->type != REQUEST_BUFFER);
-            }
-        }
-    }
+    assert(wr_list);
+    assert(wr_count > 0);
     assert(status);
 
-    if (buf_count == 1) {
-        nnti_rc=NNTI_mpi_wait(buf_list[0], remote_op, timeout, status[0]);
+    if (wr_count == 1) {
+        nnti_rc=NNTI_mpi_wait(wr_list[0], timeout, status[0]);
         goto cleanup;
     }
 
-    if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
-        log_debug(debug_level, "all buffer ops already complete (buf_list=%p)", buf_list);
+    for (uint32_t i=0;i<wr_count;i++) {
+        if (wr_list[i] != NULL) {
+        	mpi_mem_hdl=MPI_MEM_HDL(wr_list[i]->reg_buf);
+        	assert(mpi_mem_hdl);
+        	mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+        	if (mpi_wr==NULL) {
+        		nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        		mpi_wr=mpi_mem_hdl->wr_queue.front();
+        		nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+        		wr_list[i]->transport_private=(uint64_t)mpi_wr;
+        	}
+        	assert(mpi_wr);
+        }
+    }
+
+    if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
+        log_debug(debug_level, "all work requests already complete (wr_list=%p)", wr_list);
         nnti_rc = NNTI_OK;
     } else {
-        log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
-
-        events  =(MPI_Status *)calloc(buf_count, sizeof(MPI_Status*));
-        requests=(MPI_Request *)calloc(buf_count, sizeof(MPI_Request*));
-        assert(requests);
-        for (uint32_t i=0;i<buf_count;i++) {
-            if (buf_list[i] != NULL) {
-                mpi_mem_hdl=(mpi_memory_handle *)buf_list[i]->transport_private;
-                assert(mpi_mem_hdl);
-                wr=mpi_mem_hdl->wr_queue.front();
-                if (wr != NULL) {
-                    requests[i]=*wr->request_ptr;
-                }
-            }
-        }
+        log_debug(debug_level, "all work_requests NOT complete (wr_list=%p)", wr_list);
 
 //        timeout_per_call = MIN_TIMEOUT;
 
@@ -1468,25 +2102,58 @@ NNTI_result_t NNTI_mpi_waitall (
                 return NNTI_ECANCELED;
             }
 
+            check_atomic_operation();
             check_target_buffer_progress();
-            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
-                log_debug(debug_level, "all buffer ops completed during check_target_buffer_progress()");
-                nnti_rc = NNTI_OK;
-                break;
+
+            log_debug(debug_level, "waiting on wr_list(%p)", wr_list);
+
+            /*
+             * The list of MPI_Requests is recreated each time through this loop.  There is probably a better way.
+             */
+            /* find the number of MPI_Requests in wr_list */
+            mpi_request_count=0;
+            for (uint32_t i=0;i<wr_count;i++) {
+                if (wr_list[i] != NULL) {
+                    mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+                    if (mpi_wr != NULL) {
+                        mpi_request_count += mpi_wr->request_count;
+                    }
+                }
+            }
+            log_debug(debug_level, "wr_list (wr_count=%lu) contains %lu MPI_Requests", wr_count, mpi_request_count);
+
+            mpi_requests=(MPI_Request *)realloc(mpi_requests, mpi_request_count * sizeof(MPI_Request));
+            events      =(MPI_Status *)realloc(events, mpi_request_count * sizeof(MPI_Status));
+            assert(mpi_requests);
+            assert(events);
+            uint32_t request_index=0;
+            /* for each NNTI work request */
+            for (uint32_t i=0;i<wr_count;i++) {
+                if (wr_list[i] != NULL) {
+                    mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+                    if (mpi_wr != NULL) {
+                        for (uint32_t j=0;j<mpi_wr->request_count;j++) {
+                            mpi_requests[request_index++]=mpi_wr->request_ptr[j];
+                        }
+                    }
+                }
             }
 
-            log_debug(debug_level, "waiting on buf_list(%p)", buf_list);
-
+            memset(events, 0, mpi_request_count*sizeof(MPI_Status));
+            done=FALSE;
             trios_start_timer(call_time);
-            rc = MPI_Testall(buf_count, requests, &done, events);
+            nthread_lock(&nnti_mpi_lock);
+            rc = MPI_Testall(mpi_request_count, mpi_requests, &done, events);
+            nthread_unlock(&nnti_mpi_lock);
             trios_stop_timer("NNTI_mpi_waitall - MPI_Testall", call_time);
-            log_debug(debug_level, "polling status is %d", rc);
+            log_debug(debug_level, "polling status is %d (rc=%d, done=%d)", rc, rc, done);
 
             if (done == TRUE) {
-                for (uint32_t i=0;i<buf_count;i++) {
+                for (uint32_t i=0;i<mpi_request_count;i++) {
                     log_debug(debug_level, "Poll Event[%d]= {", i);
                     log_debug(debug_level, "\tsource  = %d", events[i].MPI_SOURCE);
                     log_debug(debug_level, "\ttag     = %d", events[i].MPI_TAG);
+                    log_debug(debug_level, "\terror   = %d", events[i].MPI_ERROR);
                     log_debug(debug_level, "}");
                 }
             }
@@ -1507,6 +2174,15 @@ NNTI_result_t NNTI_mpi_waitall (
                         break;
                     }
 
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
+                    }
+
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1516,34 +2192,57 @@ NNTI_result_t NNTI_mpi_waitall (
             /* MPI_Test failure */
             else {
                 log_error(debug_level, "MPI_Testall() failed (request=%p): rc=%d",
-                        wr->request_ptr, rc);
+                        mpi_wr->request_ptr, rc);
                 nnti_rc = NNTI_EIO;
                 break;
             }
 
-//            wait_buf=decode_event_buffer(buf_list[0], &event);
-            for (uint32_t i=0;i<buf_count;i++) {
-                process_event(buf_list[i], &events[i]);
+            for (uint32_t i=0;i<wr_count;i++) {
+                log_debug(debug_level, "processing event #%lu of %lu", i, wr_count);
+                process_event(MPI_WORK_REQUEST(wr_list[i]), &(events[i]));
             }
 
-            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+            if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
                 break;
             }
         }
     }
 
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        create_status(buf_list[i], remote_op, nnti_rc, status[i]);
+    for (uint32_t i=0;i<wr_count;i++) {
+        mpi_wr=MPI_WORK_REQUEST(wr_list[i]);
+        assert(mpi_wr);
+        mpi_mem_hdl=MPI_MEM_HDL(mpi_wr->reg_buf);
+        assert(mpi_mem_hdl);
+
+        create_status(wr_list[i], mpi_wr, nnti_rc, status[i]);
 
         if (nnti_rc == NNTI_OK) {
-            mpi_mem_hdl=(mpi_memory_handle *)buf_list[i]->transport_private;
-            assert(mpi_mem_hdl);
-            wr=mpi_mem_hdl->wr_queue.front();
-            assert(wr);
-            mpi_mem_hdl->wr_queue.pop_front();
-            del_wr_wrhash(wr);
-            free(wr);
+            if (mpi_mem_hdl->type == REQUEST_BUFFER) {
+                nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+                mpi_mem_hdl->wr_queue.pop_front();
+                nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+                repost_recv_work_request(mpi_wr);
+            } else if (mpi_mem_hdl->type == RECEIVE_BUFFER) {
+                nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+                mpi_mem_hdl->wr_queue.pop_front();
+                nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+                repost_recv_work_request(mpi_wr);
+            } else if (mpi_mem_hdl->type == PUT_DST_BUFFER) {
+                repost_RTS_recv_work_request(mpi_wr);
+            } else if (mpi_mem_hdl->type == GET_SRC_BUFFER) {
+                repost_RTR_recv_work_request(mpi_wr);
+            } else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
+                repost_RTR_RTS_recv_work_request(mpi_wr);
+            } else {
+                log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu",
+                        (uint64_t)status[i]->offset, (uint64_t)status[i]->length);
+                uint32_t index=status[i]->offset/status[i]->length;
+                log_debug(nnti_debug_level, "status->offset=%llu, status->length=%llu, index=%llu",
+                        (uint64_t)status[i]->offset, (uint64_t)status[i]->length, (uint64_t)index);
+
+                free(mpi_wr);
+            }
         }
 
         if (logging_debug(debug_level)) {
@@ -1553,6 +2252,9 @@ NNTI_result_t NNTI_mpi_waitall (
     }
 
 cleanup:
+    if (mpi_requests != NULL)        free(mpi_requests);
+    if (events != NULL)              free(events);
+
     log_debug(debug_level, "exit");
 
     trios_stop_timer("NNTI_mpi_waitall", total_time);
@@ -1570,15 +2272,54 @@ cleanup:
 NNTI_result_t NNTI_mpi_fini (
         const NNTI_transport_t *trans_hdl)
 {
+    nthread_counter_fini(&transport_global_data.mbits);
+
     nthread_lock_fini(&nnti_mpi_lock);
     nthread_lock_fini(&nnti_buf_bufhash_lock);
     nthread_lock_fini(&nnti_wr_wrhash_lock);
     nthread_lock_fini(&nnti_target_buffer_queue_lock);
 
+    if (transport_global_data.init_called_mpi_init) {
+    	MPI_Finalize();
+    }
+
     return(NNTI_OK);
 }
 
 
+
+static NNTI_result_t setup_atomics(void)
+{
+    NNTI_result_t rc=NNTI_OK; /* return code */
+
+    trios_declare_timer(callTime);
+
+    uint32_t atomics_bytes;
+
+    log_debug(nnti_debug_level, "enter");
+
+    atomics_bytes=config.min_atomics_vars * sizeof(mpi_atomic_t);
+    trios_start_timer(callTime);
+    transport_global_data.atomics=(mpi_atomic_t*)malloc(atomics_bytes);
+    if (transport_global_data.atomics == NULL) {
+    	return(NNTI_ENOMEM);
+    }
+    memset(transport_global_data.atomics, 0, atomics_bytes);
+    trios_stop_timer("malloc and memset", callTime);
+
+    trios_start_timer(callTime);
+    for (int i=0;i<config.min_atomics_vars;i++) {
+    	nthread_lock_init(&transport_global_data.atomics[i].lock);
+    	transport_global_data.atomics[i].value=0;
+    }
+    trios_stop_timer("init locks", callTime);
+
+    post_atomics_recv_request();
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(NNTI_OK);
+}
 
 
 
@@ -1588,7 +2329,7 @@ static int check_target_buffer_progress()
     int nnti_rc=NNTI_OK;
 
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+    mpi_work_request  *mpi_wr   =NULL;
 
     int rc=MPI_SUCCESS;
 
@@ -1602,265 +2343,471 @@ static int check_target_buffer_progress()
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
 
+    NNTI_buffer_t *reg_buf=NULL;
+    target_buffer_queue_iter_t i;
+
     trios_start_timer(total_time);
 
     log_debug(debug_level, "enter");
 
-    NNTI_buffer_t             *reg_buf=NULL;
-    target_buffer_queue_iter_t i;
-
     nthread_lock(&nnti_target_buffer_queue_lock);
+    if (target_buffers.size() == 0) {
+        log_debug(debug_level, "there are no registered target buffers.  we're done here.");
+    }
     for (i=target_buffers.begin(); i != target_buffers.end(); i++) {
         reg_buf = *i;
 
-        if (is_buf_op_complete(reg_buf) == TRUE) {
+        mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
+        assert(mpi_mem_hdl);
+        nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        mpi_wr=mpi_mem_hdl->wr_queue.front();
+        nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+        log_debug(debug_level, "checking reg_buf(%p) mpi_wr(%p)", reg_buf, mpi_wr);
+        if (mpi_wr==NULL) {
+            log_debug(debug_level, "there are no work requests posted.  continuing.");
             continue;
-        } else {
-            mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-            assert(mpi_mem_hdl);
-            wr=first_incomplete_wr(mpi_mem_hdl);
-            if (wr==NULL) {
+        }
+        if (is_wr_complete(mpi_wr) == TRUE) {
+            log_debug(debug_level, "this work request is complete.  continuing.");
+            continue;
+        }
+
+        log_debug(debug_level, "testing mpi_wr->reg_buf(%p) mpi_wr->request_ptr(%p)", mpi_wr->reg_buf , mpi_wr->request_ptr);
+
+        memset(&event, 0, sizeof(MPI_Status));
+        done=FALSE;
+        trios_start_timer(call_time);
+        nthread_lock(&nnti_mpi_lock);
+        rc = MPI_Testany(mpi_wr->request_count, mpi_wr->request_ptr, &which_req, &done, &event);
+        nthread_unlock(&nnti_mpi_lock);
+        trios_stop_timer("check_target_buffer_progress - MPI_Test", call_time);
+        if ((rc==MPI_SUCCESS) && (which_req==MPI_UNDEFINED) && (done==TRUE)) {
+            log_debug(debug_level, "MPI_Testany() says there a no active requests (rc=%d, which_req=%d, done=%d)", rc, which_req, done);
+        }
+        log_debug(debug_level, "polling status is %d, which_req=%d, done=%d", rc, which_req, done);
+
+        log_debug(debug_level, "Poll Event= {");
+        log_debug(debug_level, "\tsource  = %d", event.MPI_SOURCE);
+        log_debug(debug_level, "\ttag     = %d", event.MPI_TAG);
+        log_debug(debug_level, "\terror   = %d", event.MPI_ERROR);
+        log_debug(debug_level, "}");
+
+        if (rc == MPI_SUCCESS) {
+            /* case 1: success */
+            if (done == TRUE) {
+                nnti_rc = NNTI_OK;
+            } else {
                 continue;
             }
-
-            log_debug(debug_level, "testing reg_buf(%p) request(%p)", reg_buf , wr->request_ptr);
-
-            memset(&event, 0, sizeof(MPI_Status));
-            done=FALSE;
-            trios_start_timer(call_time);
-            rc = MPI_Testany(wr->request_count, wr->request_ptr, &which_req, &done, &event);
-            trios_stop_timer("check_target_buffer_progress - MPI_Test", call_time);
-            log_debug(debug_level, "polling status is %d, which_req=%d, done=%d", rc, which_req, done);
-
-            log_debug(debug_level, "Poll Event= {");
-            log_debug(debug_level, "\tsource  = %d", event.MPI_SOURCE);
-            log_debug(debug_level, "\ttag     = %d", event.MPI_TAG);
-            log_debug(debug_level, "\terror   = %d", event.MPI_ERROR);
-            log_debug(debug_level, "}");
-
-            if (rc == MPI_SUCCESS) {
-                /* case 1: success */
-                if (done == TRUE) {
-                    nnti_rc = NNTI_OK;
-                } else {
-                    continue;
-                }
-            }
-            /* MPI_Test failure */
-            else {
-                log_error(debug_level, "MPI_Test() failed (request=%p): rc=%d",
-                        wr->request_ptr, rc);
-                nnti_rc = NNTI_EIO;
-                break;
-            }
-
-            process_event(reg_buf, &event);
         }
+        /* MPI_Test failure */
+        else {
+            log_error(debug_level, "MPI_Test() failed (request=%p): rc=%d",
+                    mpi_wr->request_ptr, rc);
+            nnti_rc = NNTI_EIO;
+            break;
+        }
+
+        process_event(mpi_wr, &event);
+
+        nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+        wr_queue_iter_t victim=find(mpi_mem_hdl->wr_queue.begin(), mpi_mem_hdl->wr_queue.end(), mpi_wr);
+        if (victim != mpi_mem_hdl->wr_queue.end()) {
+            log_debug(debug_level, "erasing mpi_wr(%p) from wr_queue", mpi_wr);
+        	mpi_mem_hdl->wr_queue.erase(victim);
+        }
+        nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+
+        if (mpi_mem_hdl->type == PUT_DST_BUFFER) {
+            repost_RTS_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == GET_SRC_BUFFER) {
+            repost_RTR_recv_work_request(mpi_wr);
+        } else if (mpi_mem_hdl->type == RDMA_TARGET_BUFFER) {
+            repost_RTR_RTS_recv_work_request(mpi_wr);
+        }
+
     }
     nthread_unlock(&nnti_target_buffer_queue_lock);
 
     trios_stop_timer("check_target_buffer_progress", total_time);
+
+    log_debug(debug_level, "exit");
+
+    return(nnti_rc);
+}
+
+static int check_atomic_operation(void)
+{
+    int nnti_rc=NNTI_OK;
+
+    int rc=MPI_SUCCESS;
+
+    MPI_Status event;
+    int        done=FALSE;
+
+    int atomics_index   =-1;
+    mpi_atomic_t *atomic=NULL;
+
+    log_level debug_level=nnti_debug_level;
+
+    trios_declare_timer(call_time);
+    trios_declare_timer(total_time);
+
+    trios_start_timer(total_time);
+
+    log_debug(debug_level, "enter");
+
+    memset(&event, 0, sizeof(MPI_Status));
+    done=FALSE;
+    trios_start_timer(call_time);
+    nthread_lock(&nnti_mpi_lock);
+    rc = MPI_Test(&transport_global_data.atomics_recv_request, &done, &event);
+    nthread_unlock(&nnti_mpi_lock);
+    trios_stop_timer("check_atomic_operation - MPI_Test", call_time);
+    log_debug(debug_level, "polling status is %d", rc);
+
+    log_debug(debug_level, "Poll Event= {");
+    log_debug(debug_level, "\tsource  = %d", event.MPI_SOURCE);
+    log_debug(debug_level, "\ttag     = %d", event.MPI_TAG);
+    log_debug(debug_level, "\terror   = %d", event.MPI_ERROR);
+    log_debug(debug_level, "}");
+    log_debug(debug_level, "done = %d", done);
+
+    if (rc == MPI_SUCCESS) {
+    	/* case 1: success */
+    	if (done) {
+    		nnti_rc = NNTI_OK;
+    	} else {
+    		goto cleanup;
+    	}
+    }
+    /* MPI_Test failure */
+    else {
+    	log_error(debug_level, "MPI_Test(atomics_recv_request) failed: rc=%d", rc);
+    	nnti_rc = NNTI_EIO;
+    	goto cleanup;
+    }
+
+    atomics_index=transport_global_data.atomics_request_msg.index;
+    atomic       =&transport_global_data.atomics[atomics_index];
+
+    nthread_lock(&atomic->lock);
+
+    switch (transport_global_data.atomics_request_msg.op) {
+		case MPI_ATOMIC_FETCH_ADD:
+			transport_global_data.atomics_result_msg.result = atomic->value;
+			atomic->value += transport_global_data.atomics_request_msg.compare_add;
+			break;
+		case MPI_ATOMIC_CMP_AND_SWP:
+			transport_global_data.atomics_result_msg.result=atomic->value;
+			if (atomic->value == transport_global_data.atomics_request_msg.compare_add) {
+				atomic->value = transport_global_data.atomics_request_msg.swap;
+			}
+			break;
+		default:
+	    	log_error(debug_level, "unknown atomic op: rc=%d", transport_global_data.atomics_request_msg.op);
+			break;
+    }
+
+    nthread_lock(&nnti_mpi_lock);
+    rc=MPI_Send(
+            (char*)&transport_global_data.atomics_result_msg,
+            sizeof(transport_global_data.atomics_result_msg),
+            MPI_BYTE,
+            event.MPI_SOURCE,
+            NNTI_MPI_ATOMICS_RESULT_TAG,
+            MPI_COMM_WORLD);
+    nthread_unlock(&nnti_mpi_lock);
+    if (rc != MPI_SUCCESS) {
+        log_error(nnti_debug_level, "failed to send with Isend");
+        nnti_rc = NNTI_EBADRPC;
+        goto cleanup;
+    }
+
+    nthread_unlock(&atomic->lock);
+
+    post_atomics_recv_request();
+
+cleanup:
+    trios_stop_timer("check_atomic_operation", total_time);
+
+    log_debug(debug_level, "exit");
 
     return(nnti_rc);
 }
 
 
 static int process_event(
-        const NNTI_buffer_t  *reg_buf,
-        const MPI_Status     *event)
+        mpi_work_request *mpi_wr,
+        const MPI_Status *event)
 {
     int rc=NNTI_OK;
+    NNTI_buffer_t     *reg_buf    =NULL;
     mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
+
     log_level debug_level = nnti_debug_level;
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    assert(mpi_wr);
+
+    mpi_wr->last_event=*event;
+
+    if ((mpi_wr->nnti_wr) && (mpi_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+    	if (mpi_wr->op_state == BUFFER_INIT) {
+            log_debug(debug_level, "got NNTI_ATOMICS send completion - event arrived from %d - tag %4d",
+                    event->MPI_SOURCE, event->MPI_TAG);
+
+            mpi_wr->op_state = SEND_COMPLETE;
+            mpi_wr->active_requests &= ~ATOMICS_SEND_REQUEST_ACTIVE;
+
+            mpi_wr->request_ptr  =&mpi_wr->request[ATOMICS_RECV_INDEX];
+            mpi_wr->request_count=1;
+
+    	} else if (mpi_wr->op_state == SEND_COMPLETE) {
+            log_debug(debug_level, "got NNTI_ATOMICS recv completion - event arrived from %d - tag %4d",
+                    event->MPI_SOURCE, event->MPI_TAG);
+
+            mpi_wr->op_state = RECV_COMPLETE;
+            mpi_wr->active_requests &= ~ATOMICS_RECV_REQUEST_ACTIVE;
+    	}
+
+    	nthread_lock(&transport_global_data.atomics[mpi_wr->atomics_result_index].lock);
+    	transport_global_data.atomics[mpi_wr->atomics_result_index].value = transport_global_data.atomics_result_msg.result;
+    	nthread_unlock(&transport_global_data.atomics[mpi_wr->atomics_result_index].lock);
+
+        mpi_wr->nnti_wr->result=NNTI_OK;
+        return NNTI_OK;
+    }
+
+    reg_buf=mpi_wr->reg_buf;
+    assert(reg_buf);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr=first_incomplete_wr(mpi_mem_hdl);
-    assert(wr);
-
-    wr->last_event=*event;
-
-    log_debug(debug_level, "reg_buf=%p; wr->last_op=%d", reg_buf, wr->last_op);
+    log_debug(debug_level, "mpi_wr=%p; mpi_wr->last_op=%d", mpi_wr, mpi_wr->last_op);
     switch (mpi_mem_hdl->type) {
         case SEND_BUFFER:
-            if (wr->op_state == BUFFER_INIT) {
+            if (mpi_wr->op_state == BUFFER_INIT) {
                 log_debug(debug_level, "got SEND_BUFFER completion - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = SEND_COMPLETE;
+
+                mpi_wr->op_state = SEND_COMPLETE;
+                mpi_wr->active_requests &= ~RTR_REQUEST_ACTIVE;
             }
             break;
 
         case REQUEST_BUFFER:
-            if (wr->op_state == BUFFER_INIT) {
+            if (mpi_wr->op_state == BUFFER_INIT) {
                 log_debug(debug_level, "got NEW REQUEST completion - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RECV_COMPLETE;
+
+                mpi_wr->op_state = RECV_COMPLETE;
+                mpi_wr->dst_offset = mpi_wr->request_index*mpi_wr->length;
             }
             break;
 
         case RECEIVE_BUFFER:
-            if (wr->op_state == BUFFER_INIT) {
+            if (mpi_wr->op_state == BUFFER_INIT) {
                 log_debug(debug_level, "got RECEIVE completion - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RECV_COMPLETE;
+
+                mpi_wr->op_state = RECV_COMPLETE;
             }
             break;
 
         case PUT_SRC_BUFFER: // initiator
-            if (wr->op_state == RDMA_WRITE_INIT) {
+            if (mpi_wr->op_state == RDMA_WRITE_INIT) {
                 log_debug(debug_level, "got put_src RTS completion (initiator) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_RTS_COMPLETE;
 
-                wr->request_ptr  =&wr->request[PUT_SEND_INDEX];
-                wr->request_count=1;
+                mpi_wr->op_state = RDMA_RTS_COMPLETE;
+                mpi_wr->active_requests &= ~RTS_REQUEST_ACTIVE;
 
-            } else if (wr->op_state == RDMA_RTS_COMPLETE) {
+                mpi_wr->request_ptr  =&mpi_wr->request[PUT_SEND_INDEX];
+                mpi_wr->request_count=1;
+
+            } else if (mpi_wr->op_state == RDMA_RTS_COMPLETE) {
                 log_debug(debug_level, "got put_src WRITE completion (initiator) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_WRITE_COMPLETE;
+
+                mpi_wr->op_state = RDMA_WRITE_COMPLETE;
+                mpi_wr->active_requests &= ~PUT_SEND_REQUEST_ACTIVE;
             }
             break;
 
         case PUT_DST_BUFFER: // target
-            if (wr->op_state == RDMA_WRITE_INIT) {
+            if (mpi_wr->op_state == RDMA_WRITE_INIT) {
                 log_debug(debug_level, "got put_dst RTS completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_RTS_COMPLETE;
+
+                mpi_wr->op_state = RDMA_RTS_COMPLETE;
+                mpi_wr->active_requests &= ~RTS_REQUEST_ACTIVE;
 
                 log_debug(debug_level, "receiving data from PUT initiator - rank(%d) tag(%d) dst_offset(%llu) dst_length(%llu)",
-                        event->MPI_SOURCE, wr->rts_msg.tag,
-                        wr->rts_msg.offset, wr->rts_msg.length);
+                        event->MPI_SOURCE, mpi_wr->rts_msg.tag,
+                        mpi_wr->rts_msg.offset, mpi_wr->rts_msg.length);
+                nthread_lock(&nnti_mpi_lock);
                 MPI_Irecv(
-                        (char*)reg_buf->payload+wr->rts_msg.offset,
-                        wr->rts_msg.length,
+                        (char*)reg_buf->payload+mpi_wr->rts_msg.offset,
+                        mpi_wr->rts_msg.length,
                         MPI_BYTE,
                         event->MPI_SOURCE,
                         mpi_mem_hdl->data_tag,
                         MPI_COMM_WORLD,
-                        &wr->request[PUT_RECV_INDEX]);
-                wr->request_ptr  =&wr->request[PUT_RECV_INDEX];
-                wr->request_count=1;
+                        &mpi_wr->request[PUT_RECV_INDEX]);
+                nthread_unlock(&nnti_mpi_lock);
+                mpi_wr->request_ptr  =&mpi_wr->request[PUT_RECV_INDEX];
+                mpi_wr->request_count=1;
+                mpi_wr->active_requests |= PUT_RECV_REQUEST_ACTIVE;
 
-                wr->dst_offset=wr->rts_msg.offset;
-                wr->length    =wr->rts_msg.length;
+                mpi_wr->dst_offset=mpi_wr->rts_msg.offset;
+                mpi_wr->length    =mpi_wr->rts_msg.length;
 
-            } else if (wr->op_state == RDMA_RTS_COMPLETE) {
+            } else if (mpi_wr->op_state == RDMA_RTS_COMPLETE) {
                 log_debug(debug_level, "got put_dst WRITE completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_WRITE_COMPLETE;
+
+                mpi_wr->op_state = RDMA_WRITE_COMPLETE;
+                mpi_wr->active_requests &= ~PUT_RECV_REQUEST_ACTIVE;
             }
             break;
 
         case GET_DST_BUFFER: // initiator
-            if (wr->op_state == RDMA_READ_INIT) {
+            if (mpi_wr->op_state == RDMA_READ_INIT) {
                 log_debug(debug_level, "got get_dst RTR completion (initiator) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_RTR_COMPLETE;
 
-                wr->request_ptr  =&wr->request[GET_RECV_INDEX];
-                wr->request_count=1;
+                mpi_wr->op_state = RDMA_RTR_COMPLETE;
+                mpi_wr->active_requests &= ~RTR_REQUEST_ACTIVE;
 
-            } else if (wr->op_state == RDMA_RTR_COMPLETE) {
+                mpi_wr->request_ptr  =&mpi_wr->request[GET_RECV_INDEX];
+                mpi_wr->request_count=1;
+
+            } else if (mpi_wr->op_state == RDMA_RTR_COMPLETE) {
                 log_debug(debug_level, "got get_dst READ completion (initiator) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_READ_COMPLETE;
+
+                mpi_wr->op_state = RDMA_READ_COMPLETE;
+                mpi_wr->active_requests &= ~GET_RECV_REQUEST_ACTIVE;
             }
             break;
 
         case GET_SRC_BUFFER: // target
-            if (wr->op_state == RDMA_READ_INIT) {
+            if (mpi_wr->op_state == RDMA_READ_INIT) {
                 log_debug(debug_level, "got get_src RTR completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_RTR_COMPLETE;
+
+                mpi_wr->op_state = RDMA_RTR_COMPLETE;
+                mpi_wr->active_requests &= ~RTR_REQUEST_ACTIVE;
 
                 log_debug(debug_level, "sending data to GET initiator - rank(%d) tag(%d) src_offset(%llu) src_length(%llu)",
-                        event->MPI_SOURCE, wr->rtr_msg.tag,
-                        wr->rtr_msg.offset, wr->rtr_msg.length);
-                MPI_Isend(
-                        (char*)reg_buf->payload+wr->rtr_msg.offset,
-                        wr->rtr_msg.length,
+                        event->MPI_SOURCE, mpi_wr->rtr_msg.tag,
+                        mpi_wr->rtr_msg.offset, mpi_wr->rtr_msg.length);
+                nthread_lock(&nnti_mpi_lock);
+                MPI_Issend(
+                        (char*)reg_buf->payload+mpi_wr->rtr_msg.offset,
+                        mpi_wr->rtr_msg.length,
                         MPI_BYTE,
                         event->MPI_SOURCE,
-                        wr->rtr_msg.tag,
+                        mpi_wr->rtr_msg.tag,
                         MPI_COMM_WORLD,
-                        &wr->request[GET_SEND_INDEX]);
-                wr->request_ptr  =&wr->request[GET_SEND_INDEX];
-                wr->request_count=1;
+                        &mpi_wr->request[GET_SEND_INDEX]);
+                nthread_unlock(&nnti_mpi_lock);
+                mpi_wr->request_ptr  =&mpi_wr->request[GET_SEND_INDEX];
+                mpi_wr->request_count=1;
+                mpi_wr->active_requests |= GET_SEND_REQUEST_ACTIVE;
 
-                wr->src_offset=wr->rtr_msg.offset;
-                wr->length    =wr->rtr_msg.length;
-            } else if (wr->op_state == RDMA_RTR_COMPLETE) {
+                mpi_wr->src_offset=mpi_wr->rtr_msg.offset;
+                mpi_wr->length    =mpi_wr->rtr_msg.length;
+            } else if (mpi_wr->op_state == RDMA_RTR_COMPLETE) {
                 log_debug(debug_level, "got get_src READ completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_READ_COMPLETE;
+
+                mpi_wr->op_state = RDMA_READ_COMPLETE;
+                mpi_wr->active_requests &= ~GET_SEND_REQUEST_ACTIVE;
             }
             break;
 
         case RDMA_TARGET_BUFFER:
-            if (wr->op_state == RDMA_TARGET_INIT) {
+            if (mpi_wr->op_state == RDMA_TARGET_INIT) {
                 if (event->MPI_TAG == mpi_mem_hdl->rts_tag) {
                     log_debug(debug_level, "got target_buffer RTS completion (target) - event arrived from %d - tag %4d",
                             event->MPI_SOURCE, event->MPI_TAG);
-                    wr->op_state = RDMA_RTS_COMPLETE;
 
-                    MPI_Cancel(&wr->request[RTR_REQ_INDEX]);
+                    mpi_wr->op_state = RDMA_RTS_COMPLETE;
+                    mpi_wr->active_requests &= ~RTS_REQUEST_ACTIVE;
+
+                    nthread_lock(&nnti_mpi_lock);
+                    MPI_Cancel(&mpi_wr->request[RTR_REQ_INDEX]);
+                    nthread_unlock(&nnti_mpi_lock);
 
                     log_debug(debug_level, "receiving data from PUT initiator - rank(%d) tag(%d) dst_offset(%llu) dst_length(%llu)",
-                            event->MPI_SOURCE, wr->rts_msg.tag,
-                            wr->rts_msg.offset, wr->rts_msg.length);
+                            event->MPI_SOURCE, mpi_wr->rts_msg.tag,
+                            mpi_wr->rts_msg.offset, mpi_wr->rts_msg.length);
+                    nthread_lock(&nnti_mpi_lock);
                     MPI_Irecv(
-                            (char*)reg_buf->payload+wr->rts_msg.offset,
-                            wr->rts_msg.length,
+                            (char*)reg_buf->payload+mpi_wr->rts_msg.offset,
+                            mpi_wr->rts_msg.length,
                             MPI_BYTE,
                             event->MPI_SOURCE,
                             mpi_mem_hdl->data_tag,
                             MPI_COMM_WORLD,
-                            &wr->request[PUT_RECV_INDEX]);
-                    wr->request_ptr  =&wr->request[PUT_RECV_INDEX];
-                    wr->request_count=1;
+                            &mpi_wr->request[PUT_RECV_INDEX]);
+                    nthread_unlock(&nnti_mpi_lock);
+                    mpi_wr->request_ptr  =&mpi_wr->request[PUT_RECV_INDEX];
+                    mpi_wr->request_count=1;
+                    mpi_wr->active_requests |= PUT_RECV_REQUEST_ACTIVE;
 
-                    wr->dst_offset=wr->rts_msg.offset;
-                    wr->length    =wr->rts_msg.length;
+                    mpi_wr->dst_offset=mpi_wr->rts_msg.offset;
+                    mpi_wr->length    =mpi_wr->rts_msg.length;
 
                 } else if (event->MPI_TAG == mpi_mem_hdl->rtr_tag) {
                     log_debug(debug_level, "got target_buffer RTR completion (target) - event arrived from %d - tag %4d",
                             event->MPI_SOURCE, event->MPI_TAG);
-                    wr->op_state = RDMA_RTR_COMPLETE;
 
-                    MPI_Cancel(&wr->request[RTS_REQ_INDEX]);
+                    mpi_wr->op_state = RDMA_RTR_COMPLETE;
+                    mpi_wr->active_requests &= ~RTR_REQUEST_ACTIVE;
+
+                    nthread_lock(&nnti_mpi_lock);
+                    MPI_Cancel(&mpi_wr->request[RTS_REQ_INDEX]);
+                    mpi_wr->active_requests &= ~RTS_REQUEST_ACTIVE;
+                    nthread_unlock(&nnti_mpi_lock);
 
                     log_debug(debug_level, "sending data to GET initiator - rank(%d) tag(%d) src_offset(%llu) src_length(%llu)",
-                            event->MPI_SOURCE, wr->rtr_msg.tag,
-                            wr->rtr_msg.offset, wr->rtr_msg.length);
-                    MPI_Isend(
-                            (char*)reg_buf->payload+wr->rtr_msg.offset,
-                            wr->rtr_msg.length,
+                            event->MPI_SOURCE, mpi_wr->rtr_msg.tag,
+                            mpi_wr->rtr_msg.offset, mpi_wr->rtr_msg.length);
+                    nthread_lock(&nnti_mpi_lock);
+                    MPI_Issend(
+                            (char*)reg_buf->payload+mpi_wr->rtr_msg.offset,
+                            mpi_wr->rtr_msg.length,
                             MPI_BYTE,
                             event->MPI_SOURCE,
-                            wr->rtr_msg.tag,
+                            mpi_wr->rtr_msg.tag,
                             MPI_COMM_WORLD,
-                            &wr->request[GET_SEND_INDEX]);
-                    wr->request_ptr  =&wr->request[GET_SEND_INDEX];
-                    wr->request_count=1;
+                            &mpi_wr->request[GET_SEND_INDEX]);
+                    nthread_unlock(&nnti_mpi_lock);
+                    mpi_wr->request_ptr  =&mpi_wr->request[GET_SEND_INDEX];
+                    mpi_wr->request_count=1;
+                    mpi_wr->active_requests |= GET_SEND_REQUEST_ACTIVE;
 
-                    wr->src_offset=wr->rtr_msg.offset;
-                    wr->length    =wr->rtr_msg.length;
+                    mpi_wr->src_offset=mpi_wr->rtr_msg.offset;
+                    mpi_wr->length    =mpi_wr->rtr_msg.length;
                 } else {
 
                 }
 
-            } else if (wr->op_state == RDMA_RTS_COMPLETE) {
+            } else if (mpi_wr->op_state == RDMA_RTS_COMPLETE) {
                 log_debug(debug_level, "got target_buffer WRITE completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_TARGET_COMPLETE;
 
-            } else if (wr->op_state == RDMA_RTR_COMPLETE) {
+                mpi_wr->op_state = RDMA_TARGET_COMPLETE;
+                mpi_wr->active_requests &= ~PUT_RECV_REQUEST_ACTIVE;
+
+            } else if (mpi_wr->op_state == RDMA_RTR_COMPLETE) {
                 log_debug(debug_level, "got target_buffer READ completion (target) - event arrived from %d - tag %4d",
                         event->MPI_SOURCE, event->MPI_TAG);
-                wr->op_state = RDMA_TARGET_COMPLETE;
+
+                mpi_wr->op_state = RDMA_TARGET_COMPLETE;
+                mpi_wr->active_requests &= ~GET_SEND_REQUEST_ACTIVE;
             }
             break;
 
@@ -1874,58 +2821,112 @@ static int process_event(
     return (rc);
 }
 
-static NNTI_result_t post_recv_work_request(
-        NNTI_buffer_t  *reg_buf,
-        int64_t         tag,
-        uint64_t        offset,
-        uint64_t        length,
-        MPI_Request    *request)
+static NNTI_result_t post_recv_dst_work_request(
+        NNTI_buffer_t    *reg_buf,
+        int64_t           tag,
+        uint64_t          length)
 {
-    mpi_work_request *wr=NULL;
-    mpi_memory_handle *mpi_mem_hdl=NULL;
+    mpi_work_request    *mpi_wr     =NULL;
+    mpi_memory_handle   *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
-    wr->reg_buf    = reg_buf;
-    wr->dst_offset = offset;
-    wr->length     = length;
-    wr->tag        = tag;
-    if (request != NULL) {
-        wr->request_ptr=request;
-    } else {
-        wr->request_ptr=&wr->request[0];
-    }
-    wr->request_count=1;
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+    mpi_wr->reg_buf          = reg_buf;
+    mpi_wr->dst_offset       = 0;
+    mpi_wr->length           = length;
+    mpi_wr->tag              = tag;
+    mpi_wr->request_ptr      = &mpi_wr->request[RECV_INDEX];
+    mpi_wr->request_count    = 1;
+    mpi_wr->op_state         = BUFFER_INIT;
+    mpi_wr->active_requests |= RECV_REQUEST_ACTIVE;
 
-    wr->op_state = BUFFER_INIT;
-
-    if (mpi_mem_hdl->type==REQUEST_BUFFER) {
-        wr->last_op=MPI_OP_NEW_REQUEST;
-
-    } else if (mpi_mem_hdl->type==RECEIVE_BUFFER) {
-        wr->last_op=MPI_OP_RECEIVE;
+    if (mpi_mem_hdl->type==RECEIVE_BUFFER) {
+        mpi_wr->last_op=MPI_OP_RECEIVE;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
-    log_debug(nnti_debug_level, "posting irecv (reg_buf=%p ; wr=%p ; request_ptr=%p, tag=%lld)", reg_buf, wr, wr->request_ptr, wr->tag);
+    log_debug(nnti_debug_level, "posting irecv (reg_buf=%p ; mpi_wr=%p ; request_ptr=%p, tag=%lld)", reg_buf, mpi_wr, mpi_wr->request_ptr, mpi_wr->tag);
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            (char*)reg_buf->payload + offset,
+            (char*)reg_buf->payload,
             length,
             MPI_BYTE,
             MPI_ANY_SOURCE,
-            wr->tag,
+            mpi_wr->tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+
+static NNTI_result_t post_recv_queue_work_request(
+        NNTI_buffer_t    *reg_buf,
+        int64_t           tag,
+        uint64_t          length,
+        uint64_t          count,
+        MPI_Request      *request_list)
+{
+    uint64_t i=0;
+    mpi_work_request    *mpi_wr=NULL;
+    mpi_memory_handle   *mpi_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
+    assert(mpi_mem_hdl);
+
+    mpi_wr->reg_buf      =reg_buf;
+    mpi_wr->dst_offset   =0;
+    mpi_wr->length       =length;
+    mpi_wr->tag          =tag;
+    mpi_wr->request_ptr  =request_list;
+    mpi_wr->request_count=count;
+    mpi_wr->op_state     =BUFFER_INIT;
+
+    for (i=0;i<count;i++) {
+        uint32_t offset =i*length;
+
+        if (mpi_mem_hdl->type==REQUEST_BUFFER) {
+            mpi_wr->last_op=MPI_OP_NEW_REQUEST;
+
+        } else {
+            log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
+
+        }
+
+        log_debug(nnti_debug_level, "posting irecv (reg_buf=%p ; mpi_wr=%p ; request_ptr=%p, tag=%lld)", reg_buf, mpi_wr, mpi_wr->request_ptr, mpi_wr->tag);
+        nthread_lock(&nnti_mpi_lock);
+        MPI_Irecv(
+                (char*)reg_buf->payload + offset,
+                length,
+                MPI_BYTE,
+                MPI_ANY_SOURCE,
+                mpi_wr->tag,
+                MPI_COMM_WORLD,
+                &(request_list[i]));
+        nthread_unlock(&nnti_mpi_lock);
+    }
+
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
 
@@ -1935,42 +2936,46 @@ static NNTI_result_t post_recv_work_request(
 static NNTI_result_t post_RTR_recv_work_request(
         NNTI_buffer_t  *reg_buf)
 {
-    mpi_work_request *wr=NULL;
+    mpi_work_request  *mpi_wr     =NULL;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
-    wr->reg_buf      =reg_buf;
-    wr->request_ptr  =&wr->request[RTR_REQ_INDEX];
-    wr->request_count=1;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+    mpi_wr->reg_buf      =reg_buf;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTR_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTR_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==GET_SRC_BUFFER) {
-        wr->op_state=RDMA_READ_INIT;
+        mpi_wr->op_state=RDMA_READ_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rtr_msg,
-            sizeof(wr->rtr_msg),
+            &mpi_wr->rtr_msg,
+            sizeof(mpi_wr->rtr_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rtr_tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
 
     return(NNTI_OK);
 }
@@ -1978,42 +2983,46 @@ static NNTI_result_t post_RTR_recv_work_request(
 static NNTI_result_t post_RTS_recv_work_request(
         NNTI_buffer_t  *reg_buf)
 {
-    mpi_work_request *wr=NULL;
+    mpi_work_request *mpi_wr=NULL;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
-    wr->reg_buf      =reg_buf;
-    wr->request_ptr  =&wr->request[RTS_REQ_INDEX];
-    wr->request_count=1;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+    mpi_wr->reg_buf      =reg_buf;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTS_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTS_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==PUT_DST_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
+        mpi_wr->op_state=RDMA_WRITE_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rts_msg,
-            sizeof(wr->rts_msg),
+            &mpi_wr->rts_msg,
+            sizeof(mpi_wr->rts_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rts_tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
 
     return(NNTI_OK);
 }
@@ -2021,91 +3030,122 @@ static NNTI_result_t post_RTS_recv_work_request(
 static NNTI_result_t post_RTR_RTS_recv_work_request(
         NNTI_buffer_t  *reg_buf)
 {
-    mpi_work_request *wr=NULL;
+    mpi_work_request *mpi_wr=NULL;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
-    assert(wr);
-    wr->reg_buf      =reg_buf;
-    wr->request_ptr  =&wr->request[RTR_REQ_INDEX];
-    wr->request_count=2;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr=(mpi_work_request *)calloc(1, sizeof(mpi_work_request));
+    assert(mpi_wr);
+    mpi_wr->reg_buf      =reg_buf;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTR_REQ_INDEX];
+    mpi_wr->request_count=2;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTR_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= RTS_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==RDMA_TARGET_BUFFER) {
-        wr->op_state=RDMA_TARGET_INIT;
+        mpi_wr->op_state=RDMA_TARGET_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rtr_msg,
-            sizeof(wr->rtr_msg),
+            &mpi_wr->rtr_msg,
+            sizeof(mpi_wr->rtr_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rtr_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTR_REQ_INDEX]);
+            &mpi_wr->request[RTR_REQ_INDEX]);
 
     MPI_Irecv(
-            &wr->rts_msg,
-            sizeof(wr->rts_msg),
+            &mpi_wr->rts_msg,
+            sizeof(mpi_wr->rts_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rts_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTS_REQ_INDEX]);
+            &mpi_wr->request[RTS_REQ_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
+
+    return(NNTI_OK);
+}
+
+static NNTI_result_t post_atomics_recv_request(void)
+{
+    log_debug(nnti_debug_level, "enter");
+
+    nthread_lock(&nnti_mpi_lock);
+    MPI_Irecv(
+            &transport_global_data.atomics_request_msg,
+            sizeof(transport_global_data.atomics_request_msg),
+            MPI_BYTE,
+            MPI_ANY_SOURCE,
+            NNTI_MPI_ATOMICS_REQUEST_TAG,
+            MPI_COMM_WORLD,
+            &transport_global_data.atomics_recv_request);
+    nthread_unlock(&nnti_mpi_lock);
+
+    log_debug(nnti_debug_level, "exit");
 
     return(NNTI_OK);
 }
 
 
 static NNTI_result_t repost_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr)
+        mpi_work_request *mpi_wr)
 {
+    NNTI_buffer_t     *reg_buf    =mpi_wr->reg_buf;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    assert(reg_buf);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr->op_state = BUFFER_INIT;
+    mpi_wr->op_state=BUFFER_INIT;
+    mpi_wr->active_requests |= RECV_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==REQUEST_BUFFER) {
-        wr->last_op=MPI_OP_NEW_REQUEST;
+        mpi_wr->last_op=MPI_OP_NEW_REQUEST;
 
     } else if (mpi_mem_hdl->type==RECEIVE_BUFFER) {
-        wr->last_op=MPI_OP_RECEIVE;
+        mpi_wr->last_op=MPI_OP_RECEIVE;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
-    log_debug(nnti_debug_level, "posting irecv (reg_buf=%p ; wr=%p ; request_ptr=%p, tag=%lld)", reg_buf, wr, wr->request_ptr, wr->tag);
+    log_debug(nnti_debug_level, "posting irecv (reg_buf=%p ; mpi_wr=%p ; request_ptr=%p, tag=%lld)", reg_buf, mpi_wr, mpi_wr->request_ptr, mpi_wr->tag);
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            (char*)reg_buf->payload + wr->dst_offset,
-            wr->length,
+            (char*)reg_buf->payload + mpi_wr->dst_offset,
+            mpi_wr->length,
             MPI_BYTE,
             MPI_ANY_SOURCE,
-            wr->tag,
+            mpi_wr->tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
     log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
 
@@ -2113,279 +3153,226 @@ static NNTI_result_t repost_recv_work_request(
 }
 
 static NNTI_result_t repost_RTR_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr)
+        mpi_work_request *mpi_wr)
 {
+    NNTI_buffer_t     *reg_buf    =mpi_wr->reg_buf;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    assert(reg_buf);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr->request_ptr  =&wr->request[RTR_REQ_INDEX];
-    wr->request_count=1;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTR_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTR_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==GET_SRC_BUFFER) {
-        wr->op_state=RDMA_READ_INIT;
+        mpi_wr->op_state=RDMA_READ_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rtr_msg,
-            sizeof(wr->rtr_msg),
+            &mpi_wr->rtr_msg,
+            sizeof(mpi_wr->rtr_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rtr_tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
 
     return(NNTI_OK);
 }
 
 static NNTI_result_t repost_RTS_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr)
+        mpi_work_request *mpi_wr)
 {
+    NNTI_buffer_t     *reg_buf    =mpi_wr->reg_buf;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    assert(reg_buf);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr->request_ptr  =&wr->request[RTS_REQ_INDEX];
-    wr->request_count=1;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTS_REQ_INDEX];
+    mpi_wr->request_count=1;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTS_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==PUT_DST_BUFFER) {
-        wr->op_state=RDMA_WRITE_INIT;
+        mpi_wr->op_state=RDMA_WRITE_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rts_msg,
-            sizeof(wr->rts_msg),
+            &mpi_wr->rts_msg,
+            sizeof(mpi_wr->rts_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rts_tag,
             MPI_COMM_WORLD,
-            wr->request_ptr);
+            mpi_wr->request_ptr);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
 
     return(NNTI_OK);
 }
 
 static NNTI_result_t repost_RTR_RTS_recv_work_request(
-        NNTI_buffer_t    *reg_buf,
-        mpi_work_request *wr)
+        mpi_work_request *mpi_wr)
 {
+    NNTI_buffer_t     *reg_buf    =mpi_wr->reg_buf;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
+    assert(reg_buf);
+    mpi_mem_hdl=MPI_MEM_HDL(reg_buf);
     assert(mpi_mem_hdl);
 
-    wr->request_ptr  =&wr->request[RTR_REQ_INDEX];
-    wr->request_count=2;
-
-    wr->op_state = BUFFER_INIT;
+    mpi_wr->request_ptr  =&mpi_wr->request[RTR_REQ_INDEX];
+    mpi_wr->request_count=2;
+    mpi_wr->op_state     =BUFFER_INIT;
+    mpi_wr->active_requests |= RTR_REQUEST_ACTIVE;
+    mpi_wr->active_requests |= RTS_REQUEST_ACTIVE;
 
     if (mpi_mem_hdl->type==RDMA_TARGET_BUFFER) {
-        wr->op_state=RDMA_TARGET_INIT;
+        mpi_wr->op_state=RDMA_TARGET_INIT;
 
     } else {
         log_warn(nnti_debug_level, "bad buffer type: %llu", (uint64_t)mpi_mem_hdl->type);
 
     }
 
+    nthread_lock(&nnti_mpi_lock);
     MPI_Irecv(
-            &wr->rtr_msg,
-            sizeof(wr->rtr_msg),
+            &mpi_wr->rtr_msg,
+            sizeof(mpi_wr->rtr_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rtr_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTR_REQ_INDEX]);
+            &mpi_wr->request[RTR_REQ_INDEX]);
 
     MPI_Irecv(
-            &wr->rts_msg,
-            sizeof(wr->rts_msg),
+            &mpi_wr->rts_msg,
+            sizeof(mpi_wr->rts_msg),
             MPI_BYTE,
             MPI_ANY_SOURCE,
             mpi_mem_hdl->rts_tag,
             MPI_COMM_WORLD,
-            &wr->request[RTS_REQ_INDEX]);
+            &mpi_wr->request[RTS_REQ_INDEX]);
+    nthread_unlock(&nnti_mpi_lock);
 
-    mpi_mem_hdl->wr_queue.push_back(wr);
+    nthread_lock(&mpi_mem_hdl->wr_queue_lock);
+    mpi_mem_hdl->wr_queue.push_back(mpi_wr);
+    nthread_unlock(&mpi_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "exit (reg_buf=%p ; wr->request_ptr=%p)", reg_buf, wr->request_ptr);
+    log_debug(nnti_debug_level, "exit (reg_buf=%p ; mpi_wr->request_ptr=%p)", reg_buf, mpi_wr->request_ptr);
 
     return(NNTI_OK);
 }
 
 
 static int is_wr_complete(
-        mpi_work_request *wr)
+        mpi_work_request *mpi_wr)
 {
     int8_t rc=FALSE;
     mpi_memory_handle *mpi_mem_hdl=NULL;
 
-    mpi_mem_hdl=(mpi_memory_handle *)wr->reg_buf->transport_private;
-    assert(mpi_mem_hdl);
+    assert(mpi_wr);
 
-    switch (mpi_mem_hdl->type) {
-        case SEND_BUFFER:
-            if (wr->op_state == SEND_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case PUT_SRC_BUFFER:
-            if (wr->op_state == RDMA_WRITE_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case GET_DST_BUFFER:
-            if (wr->op_state == RDMA_READ_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case REQUEST_BUFFER:
-        case RECEIVE_BUFFER:
-            if (wr->op_state == RECV_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case PUT_DST_BUFFER:
-            if (wr->op_state == RDMA_WRITE_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case GET_SRC_BUFFER:
-            if (wr->op_state == RDMA_READ_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case RDMA_TARGET_BUFFER:
-            if (wr->op_state == RDMA_TARGET_COMPLETE) {
-                rc=TRUE;
-            }
-            break;
-        case UNKNOWN_BUFFER:
-            break;
+    if ((mpi_wr->nnti_wr) && (mpi_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+    	if (mpi_wr->op_state == RECV_COMPLETE) {
+    	    rc=TRUE;
+    	}
+    } else {
+		assert(mpi_wr->reg_buf);
+		mpi_mem_hdl=MPI_MEM_HDL(mpi_wr->reg_buf);
+		assert(mpi_mem_hdl);
+
+		switch (mpi_mem_hdl->type) {
+			case SEND_BUFFER:
+				if (mpi_wr->op_state == SEND_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case PUT_SRC_BUFFER:
+				if (mpi_wr->op_state == RDMA_WRITE_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case GET_DST_BUFFER:
+				if (mpi_wr->op_state == RDMA_READ_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case REQUEST_BUFFER:
+			case RECEIVE_BUFFER:
+				if (mpi_wr->op_state == RECV_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case PUT_DST_BUFFER:
+				if (mpi_wr->op_state == RDMA_WRITE_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case GET_SRC_BUFFER:
+				if (mpi_wr->op_state == RDMA_READ_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case RDMA_TARGET_BUFFER:
+				if (mpi_wr->op_state == RDMA_TARGET_COMPLETE) {
+					rc=TRUE;
+				}
+				break;
+			case UNKNOWN_BUFFER:
+				break;
+		}
     }
 
     log_debug(nnti_debug_level, "exit (rc=%d)", rc);
     return(rc);
 }
 
-static mpi_work_request *first_incomplete_wr(
-        mpi_memory_handle *mpi_mem_hdl)
-{
-    mpi_work_request  *wr=NULL;
-
-    log_debug(nnti_debug_level, "enter");
-
-    assert(mpi_mem_hdl);
-
-    if (mpi_mem_hdl->wr_queue.empty()) {
-        log_debug(nnti_debug_level, "work request queue is empty");
-    } else {
-        wr_queue_iter_t i;
-        for (i=mpi_mem_hdl->wr_queue.begin(); i != mpi_mem_hdl->wr_queue.end(); i++) {
-            wr=*i;
-            assert(wr);
-            if (is_wr_complete(wr) == FALSE) {
-                break;
-            }
-        }
-    }
-
-    log_debug(nnti_debug_level, "exit (wr=%p)", wr);
-    return(wr);
-}
-
-static int8_t is_wr_queue_empty(
-        const NNTI_buffer_t *reg_buf)
-{
-    int8_t rc=FALSE;
-    mpi_memory_handle *mpi_mem_hdl=NULL;
-
-    log_debug(nnti_debug_level, "enter");
-
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-    assert(mpi_mem_hdl);
-
-    if (mpi_mem_hdl->wr_queue.empty()) {
-        rc=TRUE;
-    }
-
-    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-    return(rc);
-}
-
-
-static int is_buf_op_complete(
-        const NNTI_buffer_t *reg_buf)
-{
-    int8_t rc=FALSE;
-    mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr=NULL;
-//    log_level debug_level = nnti_debug_level;
-
-    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
-
-    mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-    assert(mpi_mem_hdl);
-
-    if (is_wr_queue_empty(reg_buf) == TRUE) {
-        log_debug(nnti_debug_level, "work request queue is empty - return FALSE");
-        rc=FALSE;
-    } else {
-        wr=mpi_mem_hdl->wr_queue.front();
-        assert(wr);
-
-        rc = is_wr_complete(wr);
-    }
-
-    if (rc==TRUE) {
-        log_debug(nnti_debug_level, "op is complete");
-    }
-    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
-
-    return(rc);
-}
-
-static int8_t is_any_buf_op_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count,
-        uint32_t             *which)
+static int8_t is_any_wr_complete(
+        mpi_work_request **wr_list,
+        const uint32_t     wr_count,
+        uint32_t          *which)
 {
     int8_t rc=FALSE;
 
     log_debug(nnti_debug_level, "enter");
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        if ((buf_list[i] != NULL) &&
-            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-            (is_buf_op_complete(buf_list[i]) == TRUE)) {
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == TRUE)) {
 
             *which=i;
             rc = TRUE;
@@ -2398,18 +3385,17 @@ static int8_t is_any_buf_op_complete(
     return(rc);
 }
 
-static int8_t is_all_buf_ops_complete(
-        const NNTI_buffer_t **buf_list,
-        const uint32_t        buf_count)
+static int8_t is_all_wr_complete(
+        mpi_work_request **wr_list,
+        const uint32_t     wr_count)
 {
     int8_t rc=TRUE;
 
     log_debug(nnti_debug_level, "enter");
 
-    for (uint32_t i=0;i<buf_count;i++) {
-        if ((buf_list[i] != NULL) &&
-            (is_wr_queue_empty(buf_list[i]) == FALSE) &&
-            (is_buf_op_complete(buf_list[i]) == FALSE)) {
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == FALSE)) {
 
             rc = FALSE;
             break;
@@ -2421,149 +3407,66 @@ static int8_t is_all_buf_ops_complete(
     return(rc);
 }
 
-//static NNTI_result_t insert_buf_bufhash(NNTI_buffer_t *buf)
-//{
-//    NNTI_result_t  rc=NNTI_OK;
-//    uint32_t h=hash6432shift((uint64_t)buf->payload);
-//
-//    nthread_lock(&nnti_buf_bufhash_lock);
-//    assert(buffers_by_bufhash.find(h) == buffers_by_bufhash.end());
-//    buffers_by_bufhash[h] = buf;
-//    nthread_unlock(&nnti_buf_bufhash_lock);
-//
-//    log_debug(nnti_debug_level, "bufhash buffer added (buf=%p bufhash=%lx)", buf, h);
-//
-//    return(rc);
-//}
-//static NNTI_buffer_t *get_buf_bufhash(const uint32_t bufhash)
-//{
-//    NNTI_buffer_t *buf=NULL;
-//
-//    log_debug(nnti_debug_level, "looking for bufhash=%x", (uint64_t)bufhash);
-//    nthread_lock(&nnti_buf_bufhash_lock);
-//    if (buffers_by_bufhash.find(bufhash) != buffers_by_bufhash.end()) {
-//        buf = buffers_by_bufhash[bufhash];
-//    }
-//    nthread_unlock(&nnti_buf_bufhash_lock);
-//
-//    if (buf != NULL) {
-//        log_debug(nnti_debug_level, "buffer found (buf=%p)", buf);
-//        return buf;
-//    }
-//
-//    log_debug(nnti_debug_level, "buffer NOT found");
-////    print_bufhash_map();
-//
-//    return(NULL);
-//}
-//static NNTI_buffer_t *del_buf_bufhash(NNTI_buffer_t *buf)
-//{
-//    uint32_t h=hash6432shift((uint64_t)buf->payload);
-//    log_level debug_level = nnti_debug_level;
-//
-//    nthread_lock(&nnti_buf_bufhash_lock);
-//    if (buffers_by_bufhash.find(h) != buffers_by_bufhash.end()) {
-//        buf = buffers_by_bufhash[h];
-//    }
-//    nthread_unlock(&nnti_buf_bufhash_lock);
-//
-//    if (buf != NULL) {
-//        log_debug(debug_level, "buffer found");
-//        buffers_by_bufhash.erase(h);
-//    } else {
-//        log_debug(debug_level, "buffer NOT found");
-//    }
-//
-//    return(buf);
-//}
-//static void print_bufhash_map()
-//{
-//    if (!logging_debug(nnti_debug_level)) {
-//        return;
-//    }
-//
-//    if (buffers_by_bufhash.empty()) {
-//        log_debug(nnti_debug_level, "bufhash_map is empty");
-//        return;
-//    }
-//
-//    buf_by_bufhash_iter_t i;
-//    for (i=buffers_by_bufhash.begin(); i != buffers_by_bufhash.end(); i++) {
-//        log_debug(nnti_debug_level, "bufhash_map key=%x buf=%p", i->first, i->second);
-//    }
-//}
-
-static NNTI_result_t insert_wr_wrhash(mpi_work_request *wr)
+static int8_t is_wr_complete(
+        NNTI_work_request_t *wr)
 {
-    NNTI_result_t  rc=NNTI_OK;
-    uint32_t h=hash6432shift((uint64_t)wr);
+    mpi_work_request *mpi_wr=NULL;
 
-    nthread_lock(&nnti_wr_wrhash_lock);
-    assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
-    wr_by_wrhash[h] = wr;
-    nthread_unlock(&nnti_wr_wrhash_lock);
+    log_debug(nnti_debug_level, "enter (wr=%p)", wr);
 
-    log_debug(nnti_debug_level, "wrhash work request added (wr=%p hash=%x)", wr, h);
+    mpi_wr=MPI_WORK_REQUEST(wr);
+    assert(mpi_wr);
+
+    return(is_wr_complete(mpi_wr));
+}
+
+static int8_t is_any_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count,
+        uint32_t             *which)
+{
+    int8_t rc=FALSE;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == TRUE)) {
+
+            *which=i;
+            rc = TRUE;
+            break;
+        }
+    }
+
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
 
     return(rc);
 }
-//static mpi_work_request *get_wr_wrhash(const uint32_t wrhash)
-//{
-//    mpi_work_request *wr=NULL;
-//
-//    log_debug(nnti_debug_level, "looking for wrhash=%x", (uint64_t)wrhash);
-//    nthread_lock(&nnti_wr_wrhash_lock);
-//    if (wr_by_wrhash.find(wrhash) != wr_by_wrhash.end()) {
-//        wr = wr_by_wrhash[wrhash];
-//    }
-//    nthread_unlock(&nnti_wr_wrhash_lock);
-//
-//    if (wr != NULL) {
-//        log_debug(nnti_debug_level, "work request found (wr=%p)", wr);
-//        return wr;
-//    }
-//
-//    log_debug(nnti_debug_level, "work request NOT found");
-////    print_wrhash_map();
-//
-//    return(NULL);
-//}
-static mpi_work_request *del_wr_wrhash(mpi_work_request *wr)
+
+static int8_t is_all_wr_complete(
+        NNTI_work_request_t **wr_list,
+        const uint32_t        wr_count)
 {
-    uint32_t h=hash6432shift((uint64_t)wr);
-    log_level debug_level = nnti_debug_level;
+    int8_t rc=TRUE;
 
-    nthread_lock(&nnti_wr_wrhash_lock);
-    if (wr_by_wrhash.find(h) != wr_by_wrhash.end()) {
-        wr = wr_by_wrhash[h];
-    }
-    nthread_unlock(&nnti_wr_wrhash_lock);
+    log_debug(nnti_debug_level, "enter");
 
-    if (wr != NULL) {
-        log_debug(debug_level, "work request found");
-        wr_by_wrhash.erase(h);
-    } else {
-        log_debug(debug_level, "work request NOT found");
+    for (uint32_t i=0;i<wr_count;i++) {
+        if ((wr_list[i] != NULL) &&
+            (is_wr_complete(wr_list[i]) == FALSE)) {
+
+            rc = FALSE;
+            break;
+        }
     }
 
-    return(wr);
+    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
+
+    return(rc);
 }
-//static void print_wrhash_map()
-//{
-//    if (!logging_debug(nnti_debug_level)) {
-//        return;
-//    }
-//
-//    if (wr_by_wrhash.empty()) {
-//        log_debug(nnti_debug_level, "wrhash_map is empty");
-//        return;
-//    }
-//
-//    wr_by_wrhash_iter_t i;
-//    for (i=wr_by_wrhash.begin(); i != wr_by_wrhash.end(); i++) {
-//        log_debug(nnti_debug_level, "wrhash_map key=%lx wr=%p", i->first, i->second);
-//    }
-//}
+
+
 
 static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf)
 {
@@ -2584,22 +3487,17 @@ static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf)
 static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf)
 {
     NNTI_buffer_t             *found=NULL;
-    target_buffer_queue_iter_t i;
+    target_buffer_queue_iter_t victim;
 
     log_level debug_level = nnti_debug_level;
 
     log_debug(nnti_debug_level, "enter (buf=%p)", buf);
 
     nthread_lock(&nnti_target_buffer_queue_lock);
-    for (i=target_buffers.begin(); i != target_buffers.end(); i++) {
-        if (*i == buf) {
-            found = *i;
-            break;
-        }
-    }
-    if (found != NULL) {
-        log_debug(debug_level, "buffer found");
-        target_buffers.erase(i);
+    victim=find(target_buffers.begin(), target_buffers.end(), buf);
+    if (victim != target_buffers.end()) {
+        log_debug(debug_level, "buffer found.  erasing from target_buffers.");
+        target_buffers.erase(victim);
     } else {
         log_debug(debug_level, "buffer NOT found");
     }
@@ -2627,43 +3525,39 @@ static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf)
 //}
 
 static void create_status(
-        const NNTI_buffer_t  *reg_buf,
-        const NNTI_buf_ops_t  remote_op,
+        NNTI_work_request_t  *wr,
+        mpi_work_request     *mpi_wr,
         int                   nnti_rc,
         NNTI_status_t        *status)
 {
-    mpi_memory_handle *mpi_mem_hdl=NULL;
-    mpi_work_request  *wr        =NULL;
-
     log_debug(nnti_debug_level, "enter");
 
     memset(status, 0, sizeof(NNTI_status_t));
-    status->op     = remote_op;
-    status->result = (NNTI_result_t)nnti_rc;
-    if (nnti_rc==NNTI_OK) {
-        mpi_mem_hdl=(mpi_memory_handle *)reg_buf->transport_private;
-        assert(mpi_mem_hdl);
-        wr=mpi_mem_hdl->wr_queue.front();
-        assert(wr);
 
-        status->start  = reg_buf->payload;
-        status->length = wr->length;
-        status->result = (NNTI_result_t)nnti_rc;
-        switch (wr->last_op) {
+    status->op    =wr->ops;
+    status->result=(NNTI_result_t)nnti_rc;
+
+    if (nnti_rc==NNTI_OK) {
+        if (mpi_wr->reg_buf) {
+        	status->start =mpi_wr->reg_buf->payload;
+            status->length=mpi_wr->length;
+        }
+        status->result=(NNTI_result_t)nnti_rc;
+        switch (mpi_wr->last_op) {
             case MPI_OP_PUT_INITIATOR:
             case MPI_OP_GET_TARGET:
             case MPI_OP_SEND_REQUEST:
             case MPI_OP_SEND_BUFFER:
-                status->offset = wr->src_offset;
+                status->offset=mpi_wr->src_offset;
                 create_peer(&status->src, transport_global_data.rank); // allocates url
-                create_peer(&status->dest, wr->last_event.MPI_SOURCE); // allocates url
+                create_peer(&status->dest, mpi_wr->last_event.MPI_SOURCE); // allocates url
                 break;
             case MPI_OP_GET_INITIATOR:
             case MPI_OP_PUT_TARGET:
             case MPI_OP_NEW_REQUEST:
             case MPI_OP_RECEIVE:
-                status->offset = wr->dst_offset;
-                create_peer(&status->src, wr->last_event.MPI_SOURCE); // allocates url
+                status->offset=mpi_wr->dst_offset;
+                create_peer(&status->src, mpi_wr->last_event.MPI_SOURCE); // allocates url
                 create_peer(&status->dest, transport_global_data.rank); // allocates url
                 break;
         }
@@ -2684,14 +3578,28 @@ static void create_peer(NNTI_peer_t *peer, int rank)
     log_debug(nnti_debug_level, "exit");
 }
 
-//static void copy_peer(NNTI_peer_t *src, NNTI_peer_t *dest)
-//{
-//    log_debug(nnti_debug_level, "enter");
-//
-//    strcpy(dest->url, src->url);
-//
-//    dest->peer.transport_id                     = NNTI_TRANSPORT_MPI;
-//    dest->peer.NNTI_remote_process_t_u.mpi.rank = src->peer.NNTI_remote_process_t_u.mpi.rank;
-//
-//    log_debug(nnti_debug_level, "exit");
-//}
+static void config_init(nnti_mpi_config *c)
+{
+    c->min_atomics_vars    = 512;
+}
+
+static void config_get_from_env(nnti_mpi_config *c)
+{
+    char *env_str=NULL;
+
+    // defaults
+    c->min_atomics_vars    = 512;
+
+    if ((env_str=getenv("TRIOS_NNTI_MIN_ATOMIC_VARS")) != NULL) {
+        errno=0;
+        uint32_t min_vars=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(nnti_debug_level, "setting c->min_atomics_vars to %lu", min_vars);
+            c->min_atomics_vars=min_vars;
+        } else {
+            log_debug(nnti_debug_level, "TRIOS_NNTI_MIN_ATOMIC_VARS value conversion failed (%s).  using c->min_atomics_vars default.", strerror(errno));
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_MIN_ATOMIC_VARS is undefined.  using c->min_atomics_vars default");
+    }
+}

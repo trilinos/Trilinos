@@ -1,18 +1,17 @@
 
-INCLUDE(TribitsAddExecutableAndTest)
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../teuchos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../teuchos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/NodeAPI)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/LinAlg)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../kokkos/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../tpetra/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../tpetra/src)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../teuchos/src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../teuchos/src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/NodeAPI)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/LinAlg)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../kokkos/src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../tpetra/src)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../../tpetra/src)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -27,6 +26,7 @@ Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
+Ifpack2_UnitTestTriDiSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
 Ifpack2_UnitTestFactory.cpp
 Ifpack2_UnitTestFiltering.cpp
@@ -38,8 +38,8 @@ Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
-Ifpack2_UnitTestRILUK.cpp
 Ifpack2_UnitTestAmesos2solver.cpp
+Ifpack2_UnitTestRILUK.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
@@ -52,7 +52,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    DEPLIBS ifpack2_tpetra_testinst
+    TESTONLYLIBS ifpack2_tpetra_testinst
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -62,7 +62,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
-  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -77,7 +77,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM mpi
   NUM_MPI_PROCS 2
-  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  TESTONLYLIBS ifpack2_tpetra_testinst
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RILUKSingleProcessUnitTests
+  SOURCES 
+    Ifpack2_UnitTestSingleProcessRILUK.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 

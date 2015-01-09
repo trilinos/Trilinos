@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
   if (rank == 0) {
     std::cout
-      << "Rank: " << rank 
+      << "Rank: " << rank
       << "\t\tSize: " << size << std::endl;
   }
 
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   // Try Teuchos version
-  { 
+  {
     std::vector<int> sbuf(sendbuf);
     std::vector<int> rcnt(recvcounts);
     int rbuf;

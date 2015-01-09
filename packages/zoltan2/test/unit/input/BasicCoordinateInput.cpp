@@ -59,15 +59,15 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::Array;
 
-typedef Teuchos::SerialDenseVector<lno_t, scalar_t> tvec_t;
+typedef Teuchos::SerialDenseVector<zlno_t, zscalar_t> tvec_t;
 
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicCoordinate(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, 
-  int len, int glen, gno_t *ids,
-  scalar_t *xyz,
-  scalar_t *weights,
+  int len, int glen, zzgid_t *ids,
+  zscalar_t *xyz,
+  zscalar_t *weights,
   int nCoords, int nWeights)
 {
   int fail = 0;
@@ -82,14 +82,14 @@ int checkBasicCoordinate(
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){
-    const gno_t *idList;
-    const scalar_t *vals;
+    const zzgid_t *idList;
+    const zscalar_t *vals;
     int stride;
 
     ia->getIDsView(idList);
     ia->getEntriesView(vals, stride, x);
 
-    scalar_t *coordVal = xyz + x;
+    zscalar_t *coordVal = xyz + x;
     for (int i=0; !fail && i < len; i++, coordVal += 3){
 
       if (idList[i] != ids[i])
@@ -101,12 +101,12 @@ int checkBasicCoordinate(
   }
 
   for (int w=0; !fail && w < nWeights; w++){
-    const scalar_t *wgts;
+    const zscalar_t *wgts;
     int stride;
 
     ia->getWeightsView(wgts, stride, w);
 
-    scalar_t *weightVal = weights + len*w;
+    zscalar_t *weightVal = weights + len*w;
     for (int i=0; !fail && i < len; i++, weightVal++){
       if (wgts[stride*i] != *weightVal)
         fail = 110;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
   // Get some coordinates
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
+  typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mv_t;
   RCP<UserInputForTests> uinput;
   std::string fname("simple");
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   RCP<mv_t> coords;
 
   try{
-    coords = uinput->getCoordinates();
+    coords = uinput->getUICoordinates();
   }
   catch(std::exception &e){
     fail=1;
@@ -153,20 +153,20 @@ int main(int argc, char *argv[])
   int numLocalIds = coords->getLocalLength();
   int numGlobalIds = coords->getGlobalLength();
   int coordDim = coords->getNumVectors();
-  ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = coords->getMap()->getNodeElementList();
 
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 
-  Array<gno_t> myIds(numLocalIds);
-  gno_t base = rank * numLocalIds;
+  Array<zzgid_t> myIds(numLocalIds);
+  zgno_t base = rank * numLocalIds;
   
   int wdim = 2;
-  Array<scalar_t> weights(numLocalIds*wdim);
-  for (int i = 0; i < numLocalIds*wdim; i++) weights[i] = scalar_t(i);
+  Array<zscalar_t> weights(numLocalIds*wdim);
+  for (int i = 0; i < numLocalIds*wdim; i++) weights[i] = zscalar_t(i);
 
-  scalar_t *x_values= coords->getDataNonConst(0).getRawPtr();
-  scalar_t *y_values= x_values;  // fake 3 dimensions if needed
-  scalar_t *z_values= x_values;
+  zscalar_t *x_values= coords->getDataNonConst(0).getRawPtr();
+  zscalar_t *y_values= x_values;  // fake 3 dimensions if needed
+  zscalar_t *z_values= x_values;
 
   if (coordDim > 1){
     y_values= coords->getDataNonConst(1).getRawPtr();
@@ -174,14 +174,14 @@ int main(int argc, char *argv[])
       z_values= coords->getDataNonConst(2).getRawPtr();
   }
 
-  Array<scalar_t> xyz_values(3*numLocalIds);
+  Array<zscalar_t> xyz_values(3*numLocalIds);
 
-  for (lno_t i=0; i < numLocalIds; i++)   // global Ids
+  for (zlno_t i=0; i < numLocalIds; i++)   // global Ids
     myIds[i] = base+i;
 
-  scalar_t *x = xyz_values.getRawPtr();   // a stride-3 coordinate array
-  scalar_t *y = x+1;
-  scalar_t *z = y+1;
+  zscalar_t *x = xyz_values.getRawPtr();   // a stride-3 coordinate array
+  zscalar_t *y = x+1;
+  zscalar_t *z = y+1;
 
   for (int i=0, ii=0; i < numLocalIds; i++, ii += 3){
     x[ii] = x_values[i];
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     int ncoords = 3;
     int nweights = 0;
 
-    std::vector<const scalar_t *> values, weightValues;
+    std::vector<const zscalar_t *> values, weightValues;
     std::vector<int> valueStrides, weightStrides;
   
     values.push_back(x_values);
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     int ncoords = 2;
     int nweights = 2;
 
-    std::vector<const scalar_t *> values, weightValues;
+    std::vector<const zscalar_t *> values, weightValues;
     std::vector<int> valueStrides, weightStrides;
   
     values.push_back(xyz_values.getRawPtr());
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
     int ncoords = 1;
     int nweights = 2;
 
-    std::vector<const scalar_t *> values, weightValues;
+    std::vector<const zscalar_t *> values, weightValues;
     std::vector<int> valueStrides, weightStrides;
   
     values.push_back(x_values);

@@ -60,22 +60,22 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-/*! 
+/*!
 \brief Ifpack_SparseContainer: a class for storing and solving linear systems
 using sparse matrices.
 
-<P>To understand what an IFPACK container is, please refer to the documentation 
+<P>To understand what an IFPACK container is, please refer to the documentation
 of the pure virtual class Ifpack_Container. Currently, containers are
 used by class Ifpack_BlockRelaxation.
 
 <P>Using block methods, one needs to store all diagonal blocks and
 to be also to apply the inverse of each diagonal block. Using
 class Ifpack_DenseContainer, one can store the blocks as sparse
-matrices (Epetra_CrsMatrix), which can be advantageous when the 
+matrices (Epetra_CrsMatrix), which can be advantageous when the
 blocks are large. Otherwise,
 class Ifpack_DenseContainer is probably more appropriate.
 
-<P>Sparse containers are templated with a type T, which represent the 
+<P>Sparse containers are templated with a type T, which represent the
 class to use in the application of the inverse. (T is not
 used in Ifpack_DenseContainer). In SparseContainer, T must be
 an Ifpack_Preconditioner derived class. The container will allocate
@@ -135,11 +135,11 @@ public:
 
   //! Returns the i-th component of the vector Vector of LHS.
   virtual double& LHS(const int i, const int Vector = 0);
-  
+
   //! Returns the i-th component of the vector Vector of RHS.
   virtual double& RHS(const int i, const int Vector = 0);
 
-  //! Returns the ID associated to local row i. 
+  //! Returns the ID associated to local row i.
   /*!
    * The set of (local) rows assigned to this container is defined
    * by calling ID(i) = j, where i (from 0 to NumRows()) indicates
@@ -176,7 +176,7 @@ public:
   {
     return(Label_.c_str());
   }
-  
+
   //! Returns a pointer to the internally stored map.
   Teuchos::RCP<const Epetra_Map> Map() const
   {
@@ -215,8 +215,8 @@ public:
   //@}
 
   //@{ Mathematical functions.
-  /*! 
-   * \brief Initializes the container, by completing all the operations based 
+  /*!
+   * \brief Initializes the container, by completing all the operations based
    * on matrix structure.
    *
    * \note After a call to Initialize(), no new matrix entries can be
@@ -270,19 +270,19 @@ public:
     else
       return(Inverse_->ApplyInverseFlops());
   }
-  
+
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const;
 
 private:
-  
+
   //! Extract the submatrices identified by the ID set int ID().
   virtual int Extract(const Epetra_RowMatrix& Matrix_in);
 
   //! Number of rows in the local matrix.
-  int NumRows_; 
+  int NumRows_;
   //! Number of vectors in the local linear system.
-  int NumVectors_; 
+  int NumVectors_;
   //! Linear map on which the local matrix is based.
   Teuchos::RefCountPtr<Epetra_Map> Map_;
   //! Pointer to the local matrix.
@@ -343,16 +343,16 @@ Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs) :
   SerialComm_ = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
-  if (rhs.Map())
+  if (!rhs.Map().is_null())
     Map_ = Teuchos::rcp( new Epetra_Map(*rhs.Map()) );
 
-  if (rhs.Matrix())
+  if (!rhs.Matrix().is_null())
     Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(*rhs.Matrix()) );
 
-  if (rhs.LHS())
+  if (!rhs.LHS().is_null())
     LHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.LHS()) );
 
-  if (rhs.RHS())
+  if (!rhs.RHS().is_null())
     RHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.RHS()) );
 
 }
@@ -377,7 +377,7 @@ int Ifpack_SparseContainer<T>::NumRows() const
 template<typename T>
 int Ifpack_SparseContainer<T>::Initialize()
 {
-  
+
   if (IsInitialized_ == true)
     Destroy();
 
@@ -409,7 +409,7 @@ int Ifpack_SparseContainer<T>::Initialize()
 
   IsInitialized_ = true;
   return(0);
-  
+
 }
 
 //==============================================================================
@@ -418,7 +418,7 @@ double& Ifpack_SparseContainer<T>::LHS(const int i, const int Vector)
 {
   return(((*LHS_)(Vector))->Values()[i]);
 }
-  
+
 //==============================================================================
 template<typename T>
 double& Ifpack_SparseContainer<T>::RHS(const int i, const int Vector)
@@ -478,7 +478,7 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix_in)
 
   IsComputed_ = false;
   if (!IsInitialized()) {
-    IFPACK_CHK_ERR(Initialize()); 
+    IFPACK_CHK_ERR(Initialize());
   }
 
   // extract the submatrices
@@ -491,7 +491,7 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix_in)
   IFPACK_CHK_ERR(Inverse_->Compute());
 
   Label_ = "Ifpack_SparseContainer";
-  
+
   IsComputed_ = true;
 
   return(0);
@@ -504,7 +504,7 @@ int Ifpack_SparseContainer<T>::Apply()
   if (IsComputed() == false) {
     IFPACK_CHK_ERR(-3); // not yet computed
   }
-  
+
   IFPACK_CHK_ERR(Matrix_->Apply(*RHS_, *LHS_));
 
   ApplyFlops_ += 2 * Matrix_->NumGlobalNonzeros64();
@@ -517,12 +517,12 @@ int Ifpack_SparseContainer<T>::ApplyInverse()
 {
   if (!IsComputed())
     IFPACK_CHK_ERR(-1);
-  
+
   IFPACK_CHK_ERR(Inverse_->ApplyInverse(*RHS_, *LHS_));
 
   return(0);
 }
- 
+
 
 //==============================================================================
 template<typename T>
@@ -576,8 +576,8 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
 
     int NumEntries;
 
-    int ierr = 
-      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries, 
+    int ierr =
+      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries,
 			       &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
@@ -586,7 +586,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix_in.NumMyRows()) 
+      if (LCID >= Matrix_in.NumMyRows())
 	continue;
 
       // for local column IDs, look for each ID in the list
@@ -618,9 +618,9 @@ ostream& Ifpack_SparseContainer<T>::Print(ostream & os) const
   os << "Number of vectors       = " << NumVectors() << endl;
   os << "IsInitialized()         = " << IsInitialized() << endl;
   os << "IsComputed()            = " << IsComputed() << endl;
-  os << "Flops in Initialize()   = " << InitializeFlops() << endl; 
-  os << "Flops in Compute()      = " << ComputeFlops() << endl; 
-  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl; 
+  os << "Flops in Initialize()   = " << InitializeFlops() << endl;
+  os << "Flops in Compute()      = " << ComputeFlops() << endl;
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl;
   os << "================================================================================" << endl;
   os << endl;
 

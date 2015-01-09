@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,31 +56,31 @@
 #ifdef WITH_PRERELEASE
 
 #include "NOX_Direction_Generic.H" // base class
-#include "Teuchos_ParameterList.hpp"	   // class data element 
+#include "Teuchos_ParameterList.hpp"       // class data element
 #include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 namespace NOX {
-  class Utils;  
+  class Utils;
   class GlobalData;
 }
-                   
+
 
 namespace NOX {
 namespace Direction {
 
 //! %Modified Newton direction computation
-/*! 
+/*!
   Computes the Newton direction by solving
   \f[ Js = -f. \f]
-  where \f[ J \f] may be an old Jacobian. 
-  
+  where \f[ J \f] may be an old Jacobian.
+
   To use this direction, specify that the "Method" is "Modified-Newton" in the
   "Direction" sublist of the parameters that are passed to the solver
   (see NOX::Direction::Manager for more information on choosing the
   search direction).  The default maximum age of the Jacobian is 10, and
   can be set using the "Max Age of Jacobian" parameter in the "Modified-Newton"
-  sublist.  
+  sublist.
   Max Age of Jacobian  = 0 => Secant method (never update Jacobian)
                        = 1 => Newton's method (always update Jacobian)
                       >= 2 => Modified Newton's method
@@ -92,34 +92,34 @@ namespace Direction {
   <li>C. T. Kelley, Iterative methods for linear and nonlinear equations, volume 16 of Frontiers in Applied Mathematics, SIAM, Philadelphia PA, 1995.
 
   </ol>
- */  
+ */
 class ModifiedNewton : public Generic {
 
 public:
 
   //! Constructor
   ModifiedNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-		 Teuchos::ParameterList& params);
+         Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
 
   // derived
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params);
+             Teuchos::ParameterList& params);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 protected:
 
 private:
- 
+
   //! Return true if we can recover from a bad Newton solve
   /*!
     In other words, sometimes we'll use the calculated Newton
@@ -132,7 +132,7 @@ private:
     and we don't encounter any other errors, return true.
   */
   bool rescueBadNewtonSolve(const NOX::Abstract::Group& soln) const;
-  
+
   //! Print an error message
   void throwError(const std::string& functionName, const std::string& errorMsg);
 
@@ -145,15 +145,15 @@ private:
   Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
-  /*! 
+  /*!
     \note This is pointer rather than a reference to allow for the
-    reset function. 
+    reset function.
    */
   Teuchos::ParameterList* paramsPtr;
 
   //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
   bool doRescue;
-  
+
   //! Group containing the old Jacobian
   Teuchos::RCP<NOX::Abstract::Group> oldJacobianGrpPtr;
 

@@ -53,7 +53,21 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PHX_EVALUATOR_CLASS(DOF)
+template<typename EvalT, typename Traits>                   
+class DOF : public PHX::EvaluatorWithBaseImpl<Traits>,      
+            public PHX::EvaluatorDerived<EvalT, Traits>  {   
+public:
+
+  DOF(const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
   
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT> dof_ip;
@@ -62,23 +76,40 @@ PHX_EVALUATOR_CLASS(DOF)
   std::size_t basis_index;
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
-  bool requires_orientation;
+  bool is_vector_basis;
+};
 
-PHX_EVALUATOR_CLASS_END
+/** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
+  * Allows short cut for simple jacobian to dof structure.
+  */
+template<typename Traits>                   
+class DOF<panzer::Traits::Jacobian,Traits> : 
+            public PHX::EvaluatorWithBaseImpl<Traits>,      
+            public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
+public:
 
-//! Interpolates basis DOF values to IP DOF values
-PHX_EVALUATOR_CLASS(DOF_PointValues)
+  DOF(const Teuchos::ParameterList& p);
+
+  void postRegistrationSetup(typename Traits::SetupData d,
+                             PHX::FieldManager<Traits>& fm);
+
+  void evaluateFields(typename Traits::EvalData d);
+
+private:
+
+  typedef panzer::Traits::Jacobian::ScalarT ScalarT;
   
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT> dof_ip;
 
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
-  bool requires_orientation;
+  std::string basis_name;
+  std::size_t basis_index;
 
-  Teuchos::RCP<const PureBasis> basis;
-  BasisValues<ScalarT,PHX::MDField<ScalarT> > basisValues;
+  bool accelerate_jacobian;
+  std::vector<int> offsets;
 
-PHX_EVALUATOR_CLASS_END
+  bool is_vector_basis;
+};
 
 }
 

@@ -5,13 +5,17 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+
 #include <MueLu.hpp>
+
 #include <MueLu_EpetraOperator.hpp>
-#include <MueLu_EasyParameterListInterpreter.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Hierarchy.hpp>
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_MasterList.hpp>
+#include <MueLu_MLParameterListInterpreter.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
+#include <MueLu_HierarchyHelpers.hpp>
 
 //! @file MueLu_CreateEpetraPreconditioner.hpp
 
@@ -54,7 +58,8 @@ namespace MueLu {
     */
   Teuchos::RCP<MueLu::EpetraOperator>
   CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>&   inA,
-                             Teuchos::ParameterList& paramList,
+                             // FIXME: why is it non-const
+                             Teuchos::ParameterList& paramListIn,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
@@ -63,28 +68,36 @@ namespace MueLu {
     typedef int                                                                 GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
 
-    typedef Xpetra::MultiVector<SC, LO, GO, NO>      MultiVector;
-    typedef Xpetra::Matrix<SC, LO, GO, NO>           Matrix;
-    typedef Hierarchy<SC,LO,GO,NO>                   Hierarchy;
-    typedef HierarchyManager<SC,LO,GO,NO>            HierarchyManager;
+    using   Teuchos::ParameterList;
 
-    bool hasParamList = paramList.numParams();
+    typedef Xpetra::MultiVector<SC, LO, GO, NO>     MultiVector;
+    typedef Xpetra::Matrix<SC, LO, GO, NO>          Matrix;
+    typedef Hierarchy<SC,LO,GO,NO>                  Hierarchy;
+    typedef HierarchyManager<SC,LO,GO,NO>           HierarchyManager;
+
+    bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    RCP<Hierarchy>        H;
+    ParameterList nonSerialList, paramList;
     if (hasParamList) {
-      bool useEasy = !paramList.isSublist("Hierarchy");
+      // Separate serializable and non-serializable data from the parameter list
+      // The data is put into paramList and nonSerialList
+      ExtractNonSerializableData(paramListIn, paramList, nonSerialList);
+    } else {
+      paramList = paramListIn;
+    }
 
-      if (useEasy == false)
-        mueLuFactory = rcp(new ParameterListInterpreter    <SC,LO,GO,NO>(paramList));
-      else
-        mueLuFactory = rcp(new EasyParameterListInterpreter<SC,LO,GO,NO>(paramList));
-
-      H = mueLuFactory->CreateHierarchy();
+    std::string syntaxStr = "parameterlist: syntax";
+    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
+      paramList.remove(syntaxStr);
+      mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      H = rcp(new Hierarchy());
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList));
     }
+
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->setlib(Xpetra::UseEpetra);
 
     // Wrap A
     RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
@@ -102,11 +115,16 @@ namespace MueLu {
       nullspace = EpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(inNullspace);
 
     } else {
-      int nPDE = 1;
+      int nPDE = MasterList::getDefault<int>("number of equations");
       if (paramList.isSublist("Matrix")) {
+        // Factory style parameter list
         const Teuchos::ParameterList& operatorList = paramList.sublist("Matrix");
         if (operatorList.isParameter("PDE equations"))
           nPDE = operatorList.get<int>("PDE equations");
+
+      } else if (paramList.isParameter("number of equations")) {
+        // Easy style parameter list
+        nPDE = paramList.get<int>("number of equations");
       }
 
       nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A->getDomainMap(), nPDE);
@@ -128,9 +146,9 @@ namespace MueLu {
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
     if (hasParamList)
-      mueLuFactory->SetupHierarchy(*H);
-    else
-      H->Setup();
+      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *H, nonSerialList);
+
+    mueLuFactory->SetupHierarchy(*H);
 
     return rcp(new EpetraOperator(H));
   }
@@ -163,15 +181,26 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   Teuchos::RCP<MueLu::EpetraOperator>
-  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & inA,
+  CreateEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>  & A,
                              const std::string& xmlFileName,
                              const Teuchos::RCP<Epetra_MultiVector>& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Epetra_MultiVector>& inNullspace = Teuchos::null)
   {
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(inA->Comm()));
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *Xpetra::toXpetra(A->Comm()));
 
-    return CreateEpetraPreconditioner(inA, paramList, inCoords, inNullspace);
+    return CreateEpetraPreconditioner(A, paramList, inCoords, inNullspace);
+  }
+
+  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& A, MueLu::EpetraOperator& Op) {
+    typedef double                                                              SC;
+    typedef int                                                                 LO;
+    typedef int                                                                 GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
+
+    RCP<Hierarchy<SC,LO,GO,NO> > H = Op.GetHierarchy();
+    H->GetLevel(0)->Set("A", EpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(A));
+    H->SetupRe();
   }
 
 } //namespace

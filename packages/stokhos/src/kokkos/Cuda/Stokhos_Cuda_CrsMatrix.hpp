@@ -50,8 +50,7 @@
 //#include <cusparse.h>
 #include <cusparse_v2.h>
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+#include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -213,8 +212,8 @@ public:
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -323,7 +322,7 @@ public:
 
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,device_type> col_indices_dev(
-      Kokkos::allocate_without_initializing, "col_indices", ncol);
+      Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
     typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
@@ -332,12 +331,12 @@ public:
 
     // Copy columns of x into a contiguous multi-vector and transpose
     multi_vector_type xx(
-      Kokkos::allocate_without_initializing , "xx" , ncol , n );
+      Kokkos::ViewAllocateWithoutInitializing("xx"), ncol , n );
     GatherTranspose::apply(xx, x, col_indices_dev);
 
     // Temporary to store result (this is not transposed)
     multi_vector_type yy(
-      Kokkos::allocate_without_initializing , "yy" , n , ncol );
+      Kokkos::ViewAllocateWithoutInitializing("yy"), n , ncol );
 
     // Sparse matrix-times-multivector
     cusparseStatus_t status =
@@ -382,8 +381,8 @@ public:
     const size_t ncol = col_indices.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -423,6 +422,102 @@ public:
     }
   }
 #endif
+};
+
+template <>
+class Multiply<
+  CrsMatrix< float , Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  void ,
+  IntegralRank<2> >
+{
+public:
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< float**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< float , device_type > matrix_type;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const float alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
+    const int nz = A.graph.entries.dimension_0();
+    const size_t ncol = x.dimension_1();
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseScsrmm( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n , nz ,
+                      &alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      n ,
+                      &beta ,
+                      y.ptr_on_device() ,
+                      n );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
+};
+
+template <>
+class Multiply<
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  void ,
+  IntegralRank<2> >
+{
+public:
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< double , device_type > matrix_type;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const double alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
+    const int nz = A.graph.entries.dimension_0();
+    const size_t ncol = x.dimension_1();
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseDcsrmm( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n , nz ,
+                      &alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      n ,
+                      &beta ,
+                      y.ptr_on_device() ,
+                      n );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
 };
 
 #else
@@ -488,7 +583,7 @@ public:
   {
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,device_type> col_indices_dev(
-      Kokkos::allocate_without_initializing, "col_indices", ncol);
+      Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
     typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
@@ -529,8 +624,8 @@ public:
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
@@ -594,8 +689,8 @@ public:
     const size_t ncol = x.size();
 
     // Copy columns of x into a contiguous vector
-    vector_type xx( Kokkos::allocate_without_initializing, "xx" , n * ncol );
-    vector_type yy( Kokkos::allocate_without_initializing, "yy" , n * ncol );
+    vector_type xx( Kokkos::ViewAllocateWithoutInitializing("xx"), n * ncol );
+    vector_type yy( Kokkos::ViewAllocateWithoutInitializing("yy"), n * ncol );
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );

@@ -151,12 +151,12 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
   for (int i = 0 ; i < NumMyRows_ ; ++i)
     Reorder_[i] = -1;
 
-  vector<int> tmp;
+  std::vector<int> tmp;
   tmp.push_back(RootNode_);
 
   int count = NumMyRows_ - 1;
   int Length = Graph.MaxMyNumEntries();
-  vector<int> Indices(Length);
+  std::vector<int> Indices(Length);
   
   Reorder_[RootNode_] = count;
   count--;
@@ -165,7 +165,7 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
 
   while (tmp.size()) {
 
-    vector<int> tmp2;
+    std::vector<int> tmp2;
 
     // for each node in the previous level, look for non-marked
     // neighbors. 
@@ -175,7 +175,7 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
 					     NumEntries, &Indices[0]));
 
       if (Length > 1)
-	sort(Indices.begin(), Indices.begin() + Length);
+	std::sort(Indices.begin(), Indices.begin() + Length);
 
       for (int j = 0 ; j < NumEntries ; ++j) {
 	int col = Indices[j];

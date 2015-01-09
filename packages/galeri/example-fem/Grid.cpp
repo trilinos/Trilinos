@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
       // Now loop over all the local elements, and print  
       // the local ID of each vertex.
 
-      vector<double> coord(3);
-      vector<int> vertices(Grid.NumVerticesPerElement());
+      std::vector<double> coord(3);
+      std::vector<int> vertices(Grid.NumVerticesPerElement());
 
       for (int i = 0 ; i < Grid.NumMyElements() ; ++i) 
       {

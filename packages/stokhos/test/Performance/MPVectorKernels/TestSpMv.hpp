@@ -126,11 +126,9 @@ test_mpvector_spmv(const int ensemble_length,
   // Generate input multivector:
 
   vector_type x =
-    vector_type(Kokkos::allocate_without_initializing,
-                "x", fem_length, ensemble_length);
+    vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length, ensemble_length);
   vector_type y =
-    vector_type(Kokkos::allocate_without_initializing,
-                "y", fem_length, ensemble_length);
+    vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length, ensemble_length);
 
   //------------------------------
 
@@ -138,8 +136,7 @@ test_mpvector_spmv(const int ensemble_length,
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
-    matrix_values_type(Kokkos::allocate_without_initializing,
-                       "matrix", graph_length, ensemble_length);
+    matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length, ensemble_length);
   matrix_type matrix("block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
 
@@ -211,10 +208,8 @@ test_scalar_spmv(const int ensemble_length,
   std::vector<vector_type> x(ensemble_length);
   std::vector<vector_type> y(ensemble_length);
   for (int e=0; e<ensemble_length; ++e) {
-    x[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "x", fem_length);
-    y[e] = vector_type(Kokkos::allocate_without_initializing,
-                       "y", fem_length);
+    x[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length);
+    y[e] = vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length);
 
     Kokkos::deep_copy( x[e] , value_type(1.0) );
     Kokkos::deep_copy( y[e] , value_type(0.0) );
@@ -228,8 +223,7 @@ test_scalar_spmv(const int ensemble_length,
       Kokkos::create_staticcrsgraph<matrix_graph_type>(
         std::string("test crs graph"), fem_graph);
     matrix_values_type matrix_values =
-      matrix_values_type(Kokkos::allocate_without_initializing,
-                         "matrix", graph_length);
+      matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);
     matrix[e] = matrix_type("matrix", fem_length, matrix_values, matrix_graph);
 
     Kokkos::deep_copy( matrix[e].values , value_type(1.0) );
@@ -238,8 +232,10 @@ test_scalar_spmv(const int ensemble_length,
   //------------------------------
 
   // One iteration to warm up
-  for (int e=0; e<ensemble_length; ++e) {
-    Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+  for (int iter = 0; iter < iterCount; ++iter) {
+    for (int e=0; e<ensemble_length; ++e) {
+      Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+    }
   }
 
   device_type::fence();
@@ -285,10 +281,6 @@ struct PerformanceDriverOp {
       test_scalar_spmv<Scalar,Ordinal,Device>(
         ensemble, nGrid, nIter, dev_config );
 
-    const std::vector<double> perf_ensemble =
-      test_mpvector_spmv<storage_type>(
-        ensemble, nGrid, nIter, dev_config, Stokhos::EnsembleMultiply() );
-
     const std::vector<double> perf_mpvector =
       test_mpvector_spmv<storage_type>(
         ensemble, nGrid, nIter, dev_config, Stokhos::DefaultMultiply() );
@@ -300,8 +292,6 @@ struct PerformanceDriverOp {
               << perf_scalar[3] << " , "
               << perf_scalar[4] / perf_scalar[4] << " , "
               << perf_scalar[4] << " , "
-              << perf_ensemble[4]/ perf_scalar[4] << " , "
-              << perf_ensemble[4] << " , "
               << perf_mpvector[4]/ perf_scalar[4] << " , "
               << perf_mpvector[4] << " , "
               << std::endl;
@@ -319,12 +309,9 @@ void performance_test_driver( const int nGrid,
             << "\"FEM Size\" , "
             << "\"FEM Graph Size\" , "
             << "\"Ensemble Size\" , "
-            << "\"Total Size\" , "
             << "\"Scalar SpMv Time\" , "
             << "\"Scalar SpMv Speedup\" , "
             << "\"Scalar SpMv GFLOPS\" , "
-            << "\"Ensemble SpMv Speedup\" , "
-            << "\"Ensemble SpMv GFLOPS\" , "
             << "\"MPVector SpMv Speedup\" , "
             << "\"MPVector SpMv GFLOPS\" , "
             << std::endl;

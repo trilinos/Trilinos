@@ -31,16 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_ElementTopology.h>
-#include <Ioss_Super.h>
-#include <Ioss_Utils.h>
-#include <assert.h>
-#include <algorithm>
-#include <cstring>
-#include <map>
-#include <ostream>
-#include <string>
-#include <utility>
-#include <vector>
+#include <Ioss_Super.h>                 // for Super
+#include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR, etc
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for for_each
+#include <cstring>                      // for NULL
+#include <map>                          // for _Rb_tree_iterator, etc
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Ioss_CodeTypes.h"             // for IntVector
 
 
 namespace {

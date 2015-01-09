@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -451,10 +451,11 @@ int main (int argc, char **argv)
       error = ex_get_elem_attr (exoid, ids[i], attrib);
       printf ("\nafter ex_get_elem_attr, error = %d\n", error);
 
-      if (error == 0)
+      if (error == 0) {
          printf ("element block %d attributes:\n", ids[i]);
          for (j=0; j<num_attr[i]*num_elem_in_block[i]; j++)
            printf ("%6.4f\n", attrib[j]);
+      }
       free (attrib);
    }
 
@@ -501,7 +502,7 @@ int main (int argc, char **argv)
       {
         printf ("dist factors for node set %2d\n", ids[i]);
 
-        for (j=0; j<num_nodes_in_set; j++)
+        for (j=0; j<num_df_in_set; j++)
         {
           printf ("%5.2f\n", dist_fact[j]);
         }
@@ -533,10 +534,11 @@ int main (int argc, char **argv)
    {
      error = ex_get_prop_array(exoid, EX_NODE_SET, prop_names[i],
                          prop_values);
-     if (error == 0)
+     if (error == 0) {
        for (j=0; j<num_node_sets; j++)
          printf ("node set %2d, property(%2d): '%s'= %5d\n",
                   j+1, i+1, prop_names[i], prop_values[j]);
+     }
      else
        printf ("after ex_get_prop_array, error = %d\n", error);
    }
@@ -700,9 +702,10 @@ int main (int argc, char **argv)
      {
        error = ex_get_prop(exoid, EX_SIDE_SET, ids[j], prop_names[i],
                            &prop_value);
-       if (error == 0)
+       if (error == 0) {
          printf ("side set %2d, property(%2d): '%s'= %5d\n",
                   j+1, i+1, prop_names[i], prop_value);
+       }
        else
          printf ("after ex_get_prop, error = %d\n", error);
      }

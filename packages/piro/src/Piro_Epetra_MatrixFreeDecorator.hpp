@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -55,7 +55,7 @@ namespace Piro {
 namespace Epetra {
 
 /** \brief  Decorator class that creates a W (Jacobian) operator
- *          using Matrix-Free directional derivatives. 
+ *          using Matrix-Free directional derivatives.
  *
  * This class takes a model evaluator that supports a residual
  * calculation, and adds support for the W matrix as an
@@ -63,8 +63,8 @@ namespace Epetra {
  *
  * This class is the ModelEvaluator version of NOX_Epetra_MatrixFree.
  * One difference, is that it supports time-dependent problems
- * when x_dot != null or x_dotdot !- null, and using alpha, beta, and omega. 
- * 
+ * when x_dot != null or x_dotdot !- null, and using alpha, beta, and omega.
+ *
  */
 
 class MatrixFreeDecorator
@@ -77,7 +77,7 @@ class MatrixFreeDecorator
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MatrixFreeDecorator( 
+  MatrixFreeDecorator(
                 Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
                 double lambda_ = 1.0e-6
                 );
@@ -93,6 +93,10 @@ class MatrixFreeDecorator
   Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  /** \brief . */
+  Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
   /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_W() const;
  /** \brief . */
@@ -121,7 +125,7 @@ class MatrixFreeDecorator
 
    //These are set in the constructor and used in evalModel
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
-   // Storage for Base resid vector for MatrixFree 
+   // Storage for Base resid vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> fBase;
 
    // Constant used in formulas to pick perturbation, typically 1.0e-6
@@ -147,13 +151,13 @@ class MatrixFreeOperator
   ~MatrixFreeOperator();
 
   //!  Method to save base solution and residual
-  void setBase(const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
+  void setBase(const EpetraExt::ModelEvaluator::InArgs & modelInArgs_,
                Teuchos::RCP<Epetra_Vector> fBase,
                const bool haveXdot_, const bool haveXdotdot_);
 
   /** \name Overridden from Epetra_Operator . */
   //@{
-  
+
   int SetUseTranspose(bool UseTranspose);
   int Apply(const Epetra_MultiVector& V, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -171,19 +175,19 @@ class MatrixFreeOperator
 
    // Underlying model
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
-   // Storage for Base solution vector for MatrixFree 
+   // Storage for Base solution vector for MatrixFree
    mutable EpetraExt::ModelEvaluator::InArgs modelInArgs;
    // RCP to the x map, saved so that references to it stay in scope
    Teuchos::RCP<const Epetra_Map> map;
-   // Storage for Perturbed solution vector for MatrixFree 
+   // Storage for Perturbed solution vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> xPert;
-   // Storage for Perturbed time dependent vector for MatrixFree 
+   // Storage for Perturbed time dependent vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> xdotPert;
-   // Storage for Perturbed acceleration vector for MatrixFree 
+   // Storage for Perturbed acceleration vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> xdotdotPert;
-   // Storage for Base resid vector for MatrixFree 
+   // Storage for Base resid vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> fBase;
-   // Storage for Perturbed resid vector for MatrixFree 
+   // Storage for Perturbed resid vector for MatrixFree
    Teuchos::RCP<Epetra_Vector> fPert;
 
    double solutionNorm;

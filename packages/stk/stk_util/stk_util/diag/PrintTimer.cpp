@@ -1,32 +1,68 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 - 2011 Sandia Corporation.              */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>
+#endif
 
 #include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/diag/PrintTable.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for find_if, max, min
+#include <functional>                   // for unary_function
+#include <iomanip>                      // for setw, operator<<, _Setw, etc
+#include <limits>                       // for numeric_limits
+#include <list>                         // for _List_iterator, list, etc
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/diag/PrintTable.hpp>  // for operator<<, PrintTable, etc
+#include <stk_util/diag/WriterExt.hpp>  // for operator<<
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator>>, etc
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <stk_util/util/WriterManip.hpp>  // for hex
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include <string>                       // for basic_string, string, etc
+#include <vector>                       // for vector
+#include "stk_util/diag/Timer.hpp"      // for getEnabledTimerMetricsMask, etc
+#include "stk_util/environment/WallTime.hpp"
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
+namespace stk { namespace diag { namespace { struct ParallelTimer; } } }
 
-#include <iomanip>
-#include <ostream>
-#include <stdexcept>
-#include <typeinfo>
-#include <utility>
-#include <algorithm>
-#include <limits>
 
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterManip.hpp>
-#include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/util/Marshal.hpp>
 
 namespace stk {
 namespace diag {
 namespace {
-struct ParallelTimer;
 }}
 
 template <class T>
@@ -89,8 +125,10 @@ Percent::operator()(
       strout << "(<0.01%)";
     else if (ratio >= 100.0)
       strout << "(" << std::setw(5) << std::setprecision(1) << std::fixed << ratio << "%)";
-    else
+    else if (ratio >= 10.0)
       strout << "(" << std::setw(5) << std::setprecision(2) << std::fixed << ratio << "%)";
+    else 
+      strout << "(" << std::setw(5) << std::setprecision(3) << std::fixed << ratio << "%)";
   }
 
   return os << strout.str();
@@ -359,9 +397,11 @@ collect_timers(
   //runs on very large numbers of processors if the 'root' processor tries
   //to allocate a buffer large enough to hold timing data from all other
   //procesors.
-  int num_cycles = 16;
-  if (parallel_size < 1024) {
-    //If less than 1024 processors, just do them all at once.
+  //We will set an arbitrary limit for now, making sure that no more than
+  //64 processors' worth of timer data is gathered at a time.
+  const int max_procs_per_gather = 64;
+  int num_cycles = parallel_size/max_procs_per_gather;
+  if (parallel_size < max_procs_per_gather || num_cycles < 1) {
     num_cycles = 1;
   }
 
@@ -398,13 +438,16 @@ collect_timers(
     const int recv_size = recv_displ[parallel_size] ;
   
     buffer.assign(recv_size, 0);
+//    if (recv_size > 0) {
+//      std::cerr<<"collect_timers: proc "<<parallel_rank<<", recv_size: "<<recv_size<<std::endl;
+ //   }
   
     {
       const char * const send_ptr = send_string.data();
       char * const recv_ptr = recv_size ? & buffer[0] : 0;
       int * const recv_displ_ptr = & recv_displ[0] ;
   
-      result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+      result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                            recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                            parallel_root, comm);
       if (MPI_SUCCESS != result) {
@@ -676,21 +719,29 @@ printTable(
 
 } // namespace <empty>
 
+void printTimeToPrintTable(std::ostream& os, double durationToPrintTable)
+{
+    os << "Took " << durationToPrintTable << " seconds to generate the table above." << std::endl;
+}
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint)
 {
+  double startTimeToPrintTable = stk::wall_time();
   stk::PrintTable print_table;
 
   printTable(print_table, root_timer, metrics_mask, 40, timer_checkpoint);
 
   os << print_table;
 
+  double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
+  printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
 
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine)
 {
+  double startTimeToPrintTable = stk::wall_time();
   stk::PrintTable print_table;
   
   int parallel_size = parallel_machine_size(parallel_machine);
@@ -701,6 +752,8 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
   
   os << print_table;
   
+  double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
+  printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
 

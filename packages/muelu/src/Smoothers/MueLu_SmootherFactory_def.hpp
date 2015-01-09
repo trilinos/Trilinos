@@ -55,47 +55,48 @@
 
 namespace MueLu {
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype) {
     SetSmootherPrototypes(preAndPostSmootherPrototype);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype,
+                                                                              RCP<SmootherPrototype> postSmootherPrototype) {
     SetSmootherPrototypes(preSmootherPrototype, postSmootherPrototype);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetSmootherPrototypes(RCP<SmootherPrototype> preAndPostSmootherPrototype) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetSmootherPrototypes(RCP<SmootherPrototype> preAndPostSmootherPrototype) {
     preSmootherPrototype_  = postSmootherPrototype_ = preAndPostSmootherPrototype;
     CheckPrototypes();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype,
-                                                                                                      RCP<SmootherPrototype> postSmootherPrototype) {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype,
+                                                                                         RCP<SmootherPrototype> postSmootherPrototype) {
     preSmootherPrototype_  = preSmootherPrototype;
     postSmootherPrototype_ = postSmootherPrototype;
     CheckPrototypes();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckPrototypes() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckPrototypes() const {
     TEUCHOS_TEST_FOR_EXCEPTION(preSmootherPrototype_  != Teuchos::null && preSmootherPrototype_->IsSetup()  == true,
                                Exceptions::RuntimeError, "preSmoother prototype is not a smoother prototype (IsSetup() == true)");
     TEUCHOS_TEST_FOR_EXCEPTION(postSmootherPrototype_ != Teuchos::null && postSmootherPrototype_->IsSetup() == true,
                                Exceptions::RuntimeError, "postSmoother prototype is not a smoother prototype (IsSetup() == true)");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetSmootherPrototypes(RCP<SmootherPrototype>& preSmootherPrototype,
-                                                                                                      RCP<SmootherPrototype>& postSmootherPrototype) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherPrototypes(RCP<SmootherPrototype>& preSmootherPrototype,
+                                                                                         RCP<SmootherPrototype>& postSmootherPrototype) const {
     preSmootherPrototype  = preSmootherPrototype_;
     postSmootherPrototype = postSmootherPrototype_;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     if (preSmootherPrototype_ != Teuchos::null)
       preSmootherPrototype_->DeclareInput(currentLevel);
 
@@ -103,13 +104,13 @@ namespace MueLu {
       postSmootherPrototype_->DeclareInput(currentLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     return BuildSmoother(currentLevel, BOTH);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildSmoother(Level& currentLevel, PreOrPost const preOrPost) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildSmoother(Level& currentLevel, PreOrPost const preOrPost) const {
     // SmootherFactory is quite tricky because of the fact that one of the smoother prototypes may be zero.
     // The challenge is that we have no way of knowing how user uses this factory. For instance, lets say
     // user wants to use s1 prototype as a presmoother, and s2 as a postsmoother. He could do:
@@ -135,8 +136,16 @@ namespace MueLu {
 
     if ((preOrPost & PRE) && !preSmootherPrototype_.is_null()) {
       preSmoother = preSmootherPrototype_->Copy();
+
+      int oldRank = -1;
+      if (!currentLevel.GetComm().is_null())
+        oldRank = preSmoother->SetProcRankVerbose(currentLevel.GetComm()->getRank());
+
       preSmoother->Setup(currentLevel);
       preSmootherParams = preSmoother->GetParameterList();
+
+      if (oldRank != -1)
+        preSmoother->SetProcRankVerbose(oldRank);
 
       currentLevel.Set<RCP<SmootherBase> >("PreSmoother", preSmoother, this);
     }
@@ -175,7 +184,15 @@ namespace MueLu {
         //  - either we only do postsmoothing without any presmoothing
         //  - or our postsmoother is different from presmoother
         postSmoother = postSmootherPrototype_->Copy();
+
+        int oldRank = -1;
+        if (!currentLevel.GetComm().is_null())
+          oldRank = postSmoother->SetProcRankVerbose(GetProcRankVerbose());
+
         postSmoother->Setup(currentLevel);
+
+        if (oldRank != -1)
+          postSmoother->SetProcRankVerbose(oldRank);
       }
       postSmootherParams = postSmoother->GetParameterList();
 
@@ -200,8 +217,8 @@ namespace MueLu {
 
   } // Build()
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
     std::ostringstream out;
     out << SmootherFactoryBase::description();
     std::string preStr  = (preSmootherPrototype_ == Teuchos::null)          ? "null" : preSmootherPrototype_->description();
@@ -210,8 +227,8 @@ namespace MueLu {
     return out.str();
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {

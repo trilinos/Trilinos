@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,13 +60,13 @@
 
 //------------------------------------------------------------
 
-NOX::Direction::Broyden::BroydenMemoryUnit::BroydenMemoryUnit() 
+NOX::Direction::Broyden::BroydenMemoryUnit::BroydenMemoryUnit()
 {
   lambda = 0;
   snormsqr = 0;
 }
 
-NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit() 
+NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit()
 {
 
 }
@@ -115,7 +115,8 @@ double NOX::Direction::Broyden::BroydenMemoryUnit::sNormSqr() const
 
 //------------------------------------------------------------
 
-NOX::Direction::Broyden::BroydenMemory::BroydenMemory() 
+NOX::Direction::Broyden::BroydenMemory::BroydenMemory():
+  mMax(0)
 {
 }
 
@@ -150,7 +151,7 @@ push(const NOX::Abstract::Vector& d)
 
   // Number of updates currently stored
   int m = index.size();
-  
+
   // Adjust the index vector appropriately so that the last entry in
   // index points to the memory location to be used by the new update.
   if (m < mMax) // memory is not full - use memory location m
@@ -159,10 +160,10 @@ push(const NOX::Abstract::Vector& d)
   }
   else // memory is full, so recycle
   {
-    int k = index[0];		// save the index of the oldest update
+    int k = index[0];        // save the index of the oldest update
     for (int i = 0; i < m - 1; i ++)
       index[i] = index[i+1];
-    index[m-1] = k;		// reuse the oldest update
+    index[m-1] = k;        // reuse the oldest update
   }
 
   // Save the vector d
@@ -179,7 +180,7 @@ int NOX::Direction::Broyden::BroydenMemory::size() const
   return index.size();
 }
 
-NOX::Direction::Broyden::BroydenMemoryUnit& 
+NOX::Direction::Broyden::BroydenMemoryUnit&
 NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 {
   return memory[index[i]];
@@ -188,10 +189,12 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 //------------------------------------------------------------
 
 NOX::Direction::Broyden::
-Broyden(const Teuchos::RCP<NOX::GlobalData>& gd, 
-	Teuchos::ParameterList& p) :
+Broyden(const Teuchos::RCP<NOX::GlobalData>& gd,
+    Teuchos::ParameterList& p) :
   lsParamsPtr(NULL),
-  inexactNewtonUtils(gd, p)
+  inexactNewtonUtils(gd, p),
+  cnt(0),
+  convRate(0.0)
 {
   reset(gd, p);
 }
@@ -202,7 +205,7 @@ NOX::Direction::Broyden::~Broyden()
 }
 
 bool NOX::Direction::Broyden::
-reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
@@ -211,7 +214,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   Teuchos::ParameterList&  p = params.sublist("Broyden");
 
   // Save a pointer to the Linear Solver sublist
-  lsParamsPtr = &p.sublist("Linear Solver"); 
+  lsParamsPtr = &p.sublist("Linear Solver");
 
   // Set the default linear solver tolerance
   //if (!lsParamsPtr->isParameter("Tolerance"))
@@ -228,31 +231,31 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   // Get the memory size
   memorySizeMax = p.get("Memory", cntMax);
-  
+
   // Reset the memory
   memory.reset(memorySizeMax);
 
   return true;
 }
 
-bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir, 
-				      NOX::Abstract::Group& soln, 
-				      const NOX::Solver::Generic& solver)
+bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
+                      NOX::Abstract::Group& soln,
+                      const NOX::Solver::Generic& solver)
 {
   throwError("compute", "This direction can only be used with a line search based solver.");
   return false;
 }
 
-bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir, 
-				      NOX::Abstract::Group& soln, 
-				      const NOX::Solver::LineSearchBased& solver)
+bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
+                      NOX::Abstract::Group& soln,
+                      const NOX::Solver::LineSearchBased& solver)
 {
   // Return value for group operations (temp variable)
   NOX::Abstract::Group::ReturnType status;
-  
+
   // Compute F at current solution
   status = soln.computeF();
-  if (status != NOX::Abstract::Group::Ok) 
+  if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute F");
 
   // Check for restart
@@ -273,9 +276,9 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     // Calcuate new Jacobian
     if (utils->isPrintType(NOX::Utils::Details))
       utils->out() << "       Recomputing Jacobian" << std::endl;
- 
+
     status = oldJacobianGrpPtr->computeJacobian();
-    if (status != NOX::Abstract::Group::Ok) 
+    if (status != NOX::Abstract::Group::Ok)
       throwError("compute", "Unable to compute Jacobian");
 
     // Reset counter
@@ -283,7 +286,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   }
 
   // If necesary, scale the s-vector from the last iteration
-  if (!memory.empty()) 
+  if (!memory.empty())
   {
     double step = solver.getStepSize();
     memory[memory.size() - 1].setStep(step);
@@ -292,22 +295,22 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   // --- Calculate the Broyden direction ---
 
   // Compute inexact forcing term if requested.
-  inexactNewtonUtils.computeForcingTerm(soln, 
-					solver.getPreviousSolutionGroup(),
-					solver.getNumIterations(),
-					solver);
+  inexactNewtonUtils.computeForcingTerm(soln,
+                    solver.getPreviousSolutionGroup(),
+                    solver.getNumIterations(),
+                    solver);
 
   // dir = - J_old^{-1} * F
   cnt ++;
-  status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr, 
-						   soln.getF(), 
-						   dir);
-  if (status != NOX::Abstract::Group::Ok) 
+  status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr,
+                           soln.getF(),
+                           dir);
+  if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to apply Jacobian inverse");
   dir.scale(-1.0);
 
   // Apply the Broyden modifications to the old Jacobian (implicitly)
-  if (!memory.empty()) 
+  if (!memory.empty())
   {
     // Number of elements in the memory
     int m = memory.size();
@@ -316,10 +319,10 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     double step;
     Teuchos::RCP<const NOX::Abstract::Vector> sPtr;
 
-    // Information corresponding to index i + 1 
+    // Information corresponding to index i + 1
     // (initialized for i = -1)
     double stepNext = memory[0].step();
-    Teuchos::RCP<const NOX::Abstract::Vector> sPtrNext = 
+    Teuchos::RCP<const NOX::Abstract::Vector> sPtrNext =
       memory[0].sPtr();
 
     // Intermediate storage
@@ -342,12 +345,12 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
     step = stepNext;
     sPtr = sPtrNext;
 
-    a = sPtr->innerProduct(dir);		// <s,z>
-    b = memory[m-1].sNormSqr();	// ||s||^2
-    c = (step - 1) * a;		// (\lambda-1) <s,z>
-    denom = b - step * a;	// ||s||^2 - \lambda <s,z>
+    a = sPtr->innerProduct(dir);        // <s,z>
+    b = memory[m-1].sNormSqr();    // ||s||^2
+    c = (step - 1) * a;        // (\lambda-1) <s,z>
+    denom = b - step * a;    // ||s||^2 - \lambda <s,z>
 
-    dir.update(c / denom, *sPtr, b / denom); 
+    dir.update(c / denom, *sPtr, b / denom);
   }
 
   //! Add this direction to the memory
@@ -356,8 +359,8 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
-bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln, 
-					const NOX::Solver::LineSearchBased& solver)
+bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
+                    const NOX::Solver::LineSearchBased& solver)
 {
   // Test 1 - First iteration!
   if (solver.getNumIterations() == 0)

@@ -1,11 +1,35 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <iostream>
 #include <set>
@@ -16,12 +40,11 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
@@ -38,8 +61,7 @@ CartesianField &
 declare_vector_field_on_all_nodes(
   stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta_data);  
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), fem.node_rank() , meta_data.universal_part() , n1 );
+  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, s), meta_data.universal_part() , n1 );
 }
 
 
@@ -47,11 +69,7 @@ CartesianField &
 declare_vector_field_on_all_elements(
   stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta_data);  
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
-
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), element_rank , meta_data.universal_part() , n1 );
+  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(stk::topology::ELEMENT_RANK, s), meta_data.universal_part() , n1 );
 }
 
 //----------------------------------------------------------------------
@@ -62,29 +80,18 @@ void example_io_1( stk::ParallelMachine comm,
                    const std::string& in_filename,
                    const std::string& out_filename)
 {
-  // Initialize IO system.  Registers all element types and storage
-  // types and the exodusII default database type.
-  Ioss::Init::Initializer init_db;
-
-  static const size_t spatial_dimension = 3;
-
   std::cout
  << "========================================================================\n"
  << " Use Case 1: Simple mesh I/O                                            \n"
  << "========================================================================\n";
- 
-  stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
-  stk::mesh::Part & universal        = meta_data.universal_part();
-  stk::mesh::put_field(meta_data.declare_field< CartesianField >( "coordinates" ) , meta_data.node_rank() , universal , spatial_dimension );
-
-  //----------------------------------
-  const std::string dbtype("exodusii");
 
   // Open, read, filter meta data from the input mesh file:
   // The coordinates field will be set to the correct dimension.
 
-  stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
+  stk::io::StkMeshIoBroker mesh_data(comm);
+  mesh_data.add_mesh_database(in_filename, stk::io::READ_MESH);
+  mesh_data.create_input_mesh();
+  stk::mesh::MetaData &meta_data = mesh_data.meta_data();
 
   //----------------------------------
   // Print the parts that were read from the file:
@@ -114,23 +121,16 @@ void example_io_1( stk::ParallelMachine comm,
 
   meta_data.commit();
 
-  //----------------------------------
-  // Create mesh bulk data conforming to the mesh meta data
-  // and distributed among the given parallel machine.
-
-  stk::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data), comm);
-
   // Read the model (topology, coordinates, attributes, etc)
   // from the mesh-file into the mesh bulk data.
-  stk::io::populate_bulk_data(bulk_data, mesh_data);
+  mesh_data.populate_bulk_data();
 
   //----------------------------------
   // Create a mesh writer that will simply write out what was read.
   // the parts, attributes, and transient arguments can be different
   // that what was read.
-
-  stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
-
+  size_t resultFileIndex = mesh_data.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
+  mesh_data.write_output_mesh(resultFileIndex);
 }
 
 //----------------------------------------------------------------------

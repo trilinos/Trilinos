@@ -1,6 +1,4 @@
 
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 
 #
 # A) Define the package
@@ -12,10 +10,16 @@ TRIBITS_PACKAGE( Ifpack2 )
 # B) Set up package-specific options
 #
 
-ASSERT_DEFINED(Tpetra_ETI_SCALARS)
+ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
 SET(Ifpack2_ETI_SCALARS "double")
 SET(Ifpack2_ETI_GORDS   "int")
 SET(Ifpack2_ETI_LORDS   "int")
+
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND Ifpack2_ETI_GORDS   "long long")
+ENDIF()
+
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
   HAVE_${PACKAGE_NAME}_Trilinos
@@ -43,7 +47,7 @@ SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
 
-IF(${PACKAGE_NAME}_ENABLE_Boost)
+IF(${PACKAGE_NAME}_ENABLE_Lemon)
 IF(${PACKAGE_NAME}_ENABLE_Amesos2)
 IF(${PACKAGE_NAME}_ENABLE_Cholmod)
   SET(HAVE_IFPACK2_SUPPORTGRAPH ON )

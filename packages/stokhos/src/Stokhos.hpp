@@ -1,14 +1,12 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -75,6 +73,7 @@
 // Quadrature methods
 #include "Stokhos_TensorProductQuadrature.hpp"
 #include "Stokhos_SparseGridQuadrature.hpp"
+#include "Stokhos_SmolyakSparseGridQuadrature.hpp"
 #include "Stokhos_AnisoSparseGridQuadrature.hpp"
 #include "Stokhos_QuadratureFactory.hpp"
 
@@ -87,4 +86,4 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
 
-#endif // STOKHOS_HPP 
+#endif // STOKHOS_HPP

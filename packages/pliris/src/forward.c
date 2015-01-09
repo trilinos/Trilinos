@@ -71,7 +71,7 @@ extern int mycol;
 
 extern int me;
 
-extern int nrhs;	       /* number of rhs's stored in last col's of 
+extern int nrhs;	       /* number of rhs's stored in last col's of
 					matrix */
 extern MPI_Comm row_comm;
 extern MPI_Comm col_comm;
@@ -98,18 +98,18 @@ forward(DATA_TYPE *mat, DATA_TYPE *rhs)
   int rhs_col;			/* torus-wrap column containing the rhs */
   int k_row;                    /* torus-wrap row corresponding to kth
                                    global row */
-  int k_col;			/* torus-wrap column corresponding to kth 
+  int k_col;			/* torus-wrap column corresponding to kth
 				   global col */
 
 
   int istart;			/* Starting row index for pivot column */
 		
   int index; 			
-  int count_row;		/* dummy index */ 
+  int count_row;		/* dummy index */
   DATA_TYPE *piv_col;		/* portion of pivot column I am sending */
   DATA_TYPE ck;			/* rhs corresponding to current column
 				   of the backsubstitution */
- 
+
   MPI_Status msgstatus;
 
 #ifdef COMPLEX
@@ -118,7 +118,7 @@ forward(DATA_TYPE *mat, DATA_TYPE *rhs)
 
   piv_col = (DATA_TYPE *) malloc(my_rows * sizeof(DATA_TYPE));
   /* Perform the Forward Substitution: */
-  rhs_col = 0; 
+  rhs_col = 0;
   for (k=0; k<= nrows_matrix-2; k++)
   {
     k_row=k%nprocs_col;
@@ -146,7 +146,7 @@ forward(DATA_TYPE *mat, DATA_TYPE *rhs)
     {
 	MPI_Recv((char *)piv_col,count_row*sizeof(DATA_TYPE),
 		MPI_CHAR,k_col,0,row_comm,&msgstatus);
-    } 
+    }
     if (mycol == rhs_col)
     {
 	MPI_Bcast((char *)(&ck),sizeof(DATA_TYPE),MPI_CHAR,k_row,col_comm);
@@ -163,7 +163,7 @@ forward(DATA_TYPE *mat, DATA_TYPE *rhs)
           {
 		tmpr =  ((piv_col[count_row]).r) * ck.r -
 			((piv_col[count_row]).i) * ck.i;
-		tmpi =  ((piv_col[count_row]).r) * ck.i + 
+		tmpi =  ((piv_col[count_row]).r) * ck.i +
 			((piv_col[count_row]).i) * ck.r;
 		(rhs[i]).r = (rhs[i]).r - tmpr;
 		(rhs[i]).i = (rhs[i]).i - tmpi;	
@@ -174,7 +174,7 @@ forward(DATA_TYPE *mat, DATA_TYPE *rhs)
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }/* end of for (k=0; k<= nrows_matrix-2; k++) */
-  free(piv_col); 
+  free(piv_col);
 	
 
 }/* End of function forward */

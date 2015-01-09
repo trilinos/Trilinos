@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -166,7 +165,16 @@ SET(PARAKLETE_KLU_COMMON
   SuiteSparse/AMD/Source/amesos_amd_post_tree.c
   SuiteSparse/AMD/Source/amesos_amd_preprocess.c
   SuiteSparse/AMD/Source/amesos_amd_valid.c
+  SuiteSparse/AMD/Source/amesos_amd_l1.c
+  SuiteSparse/AMD/Source/amesos_amd_l2.c
+  SuiteSparse/AMD/Source/amesos_amd_l_aat.c
+  SuiteSparse/AMD/Source/amesos_amd_l_order.c
+  SuiteSparse/AMD/Source/amesos_amd_l_postorder.c
+  SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c
+  SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
+  SuiteSparse/AMD/Source/amesos_amd_l_valid.c
   SuiteSparse/COLAMD/Source/amesos_colamd.c
+  SuiteSparse/COLAMD/Source/amesos_colamd_l.c
   SuiteSparse/COLAMD/Source/amesos_colamd_global.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_common.c
   SuiteSparse/CHOLMOD/Core/amesos_cholmod_complex.c
@@ -224,6 +232,9 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/BTF/Source/amesos_btf_order.c
     SuiteSparse/BTF/Source/amesos_btf_maxtrans.c
     SuiteSparse/BTF/Source/amesos_btf_strongcomp.c
+    SuiteSparse/BTF/Source/amesos_btf_l_order.c
+    SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c
+    SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c
     )
 ENDIF()
 

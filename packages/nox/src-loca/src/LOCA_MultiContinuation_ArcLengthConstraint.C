@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -65,8 +65,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
 }
 
 LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
-		  const LOCA::MultiContinuation::ArcLengthConstraint& source, 
-		  NOX::CopyType type) : 
+          const LOCA::MultiContinuation::ArcLengthConstraint& source,
+          NOX::CopyType type) :
   globalData(source.globalData),
   arcLengthGroup(),
   constraints(source.constraints),
@@ -89,9 +89,9 @@ LOCA::MultiContinuation::ArcLengthConstraint::setArcLengthGroup(const Teuchos::R
 
 void
 LOCA::MultiContinuation::ArcLengthConstraint::copy(
-		   const LOCA::MultiContinuation::ConstraintInterface& src)
+           const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::MultiContinuation::ArcLengthConstraint& source = 
+  const LOCA::MultiContinuation::ArcLengthConstraint& source =
     dynamic_cast<const LOCA::MultiContinuation::ArcLengthConstraint&>(src);
 
   if (this != &source) {
@@ -116,7 +116,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::numConstraints() const
 
 void
 LOCA::MultiContinuation::ArcLengthConstraint::setX(
-					      const NOX::Abstract::Vector& y)
+                          const NOX::Abstract::Vector& y)
 {
   isValidConstraints = false;
 }
@@ -129,8 +129,8 @@ LOCA::MultiContinuation::ArcLengthConstraint::setParam(int paramID, double val)
 
 void
 LOCA::MultiContinuation::ArcLengthConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   isValidConstraints = false;
 }
@@ -141,7 +141,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -149,28 +149,28 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
   // Compute predictor if necessary
   if (!arcLengthGroup->isPredictor()) {
     status = arcLengthGroup->computePredictor();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Get tangent vector
-  const LOCA::MultiContinuation::ExtendedMultiVector& scaledTangent = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& scaledTangent =
     arcLengthGroup->getScaledPredictorTangent();
-  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& tangent =
     arcLengthGroup->getPredictorTangent();
 
   // Compute secant vector
-  Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> secant = 
+  Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> secant =
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(tangent.clone(1));
-  (*secant)[0].update(1.0, arcLengthGroup->getX(), 
-		      -1.0, arcLengthGroup->getPrevX(), 0.0);
+  (*secant)[0].update(1.0, arcLengthGroup->getX(),
+              -1.0, arcLengthGroup->getPrevX(), 0.0);
 
   // Compute [dx/ds; dp/ds]^T * [x - x_o; p - p_o] - ds
   secant->multiply(1.0, scaledTangent, constraints);
   for (int i=0; i<arcLengthGroup->getNumParams(); i++)
-    constraints(i,0) -= arcLengthGroup->getStepSize(i) * 
+    constraints(i,0) -= arcLengthGroup->getStepSize(i) *
       scaledTangent[i].innerProduct(tangent[i]);
 
   isValidConstraints = true;
@@ -189,22 +189,22 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
-		                const std::vector<int>& paramIDs, 
-		                NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-				bool isValidG)
+                        const std::vector<int>& paramIDs,
+                        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+                bool isValidG)
 {
-   std::string callingFunction = 
+   std::string callingFunction =
     "LOCA::MultiContinuation::ArcLengthConstraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  
+
   // Compute constraints if necessary
   if (!isValidG && !isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   if (!isValidG) {
     for (int i=0; i<constraints.numRows(); i++)
@@ -212,7 +212,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
   }
 
   // Get tangent vector
-  const LOCA::MultiContinuation::ExtendedMultiVector& scaledTangent = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& scaledTangent =
     arcLengthGroup->getScaledPredictorTangent();
 
   // If a param ID is equal to a constraint param ID, then that column
@@ -224,11 +224,11 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeDP(
     it = find(conParamIDs.begin(), conParamIDs.end(), paramIDs[i]);
     if (it == conParamIDs.end())
       for (int k=0; k<constraints.numRows(); k++)
-	dgdp(k,i+1) = 0.0;
+    dgdp(k,i+1) = 0.0;
     else {
       idx = it - conParamIDs.begin();
       for (int k=0; k<constraints.numRows(); k++)
-	dgdp(k,i+1) = scaledTangent.getScalar(k,idx);
+    dgdp(k,i+1) = scaledTangent.getScalar(k,idx);
     }
   }
 
@@ -257,7 +257,7 @@ const NOX::Abstract::MultiVector*
 LOCA::MultiContinuation::ArcLengthConstraint::getDX() const
 {
   // Get tangent vector
-  const LOCA::MultiContinuation::ExtendedMultiVector& tangent = 
+  const LOCA::MultiContinuation::ExtendedMultiVector& tangent =
     arcLengthGroup->getScaledPredictorTangent();
 
   return tangent.getXMultiVec().get();

@@ -58,7 +58,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 
 typedef shards::Quadrilateral<4> QuadTopo;
 
@@ -79,7 +79,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
    mesh.initialize(MPI_COMM_WORLD);
    mesh.beginModification();
       std::vector<double> coord(2);
-      stk::mesh::Part * block = mesh.getElementBlockPart("quad_elements");
+      stk_classic::mesh::Part * block = mesh.getElementBlockPart("quad_elements");
       { 
          // Add four coordinates
          //
@@ -102,7 +102,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(4,coord); 
 
          // add an element
-         std::vector<stk::mesh::EntityId> nodes;
+         std::vector<stk_classic::mesh::EntityId> nodes;
          for(std::size_t i=1;i<5;i++)
             nodes.push_back(i);
 
@@ -126,7 +126,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(6,coord); 
 
          // add an element
-         std::vector<stk::mesh::EntityId> nodes(4);
+         std::vector<stk_classic::mesh::EntityId> nodes(4);
          nodes[0] = 5;
          nodes[1] = 6;
          nodes[2] = 3;
@@ -152,7 +152,7 @@ Teuchos::RCP<STK_Interface> build2DMesh()
          mesh.addNode(8,coord); 
 
          // add an element
-         std::vector<stk::mesh::EntityId> nodes(4);
+         std::vector<stk_classic::mesh::EntityId> nodes(4);
          nodes[0] = 4;
          nodes[1] = 3;
          nodes[2] = 7;
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
       TEST_ASSERT(mesh.isModifiable());
 
       std::vector<double> coord(2);
-      stk::mesh::Part * block = mesh.getElementBlockPart("0");
+      stk_classic::mesh::Part * block = mesh.getElementBlockPart("0");
       { 
          // Add four coordinates
          //
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
          mesh.addNode(4,coord); 
 
          // add an element
-         std::vector<stk::mesh::EntityId> nodes;
+         std::vector<stk_classic::mesh::EntityId> nodes;
          for(std::size_t i=1;i<5;i++)
             nodes.push_back(i);
 
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
          mesh.addNode(6,coord); 
 
          // add an element
-         std::vector<stk::mesh::EntityId> nodes(4);
+         std::vector<stk_classic::mesh::EntityId> nodes(4);
          nodes[0] = 5;
          nodes[1] = 6;
          nodes[2] = 3;
@@ -268,9 +268,9 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    mesh.endModification();
    TEST_ASSERT(not mesh.isModifiable());
 
-   stk::mesh::EntityRank nodeRank = mesh.getNodeRank();
-   stk::mesh::EntityRank sideRank = mesh.getSideRank();
-   stk::mesh::EntityRank elmtRank = mesh.getElementRank();
+   stk_classic::mesh::EntityRank nodeRank = mesh.getNodeRank();
+   stk_classic::mesh::EntityRank sideRank = mesh.getSideRank();
+   stk_classic::mesh::EntityRank elmtRank = mesh.getElementRank();
 
    TEST_EQUALITY(mesh.getEntityCounts(nodeRank),6);
    TEST_EQUALITY(mesh.getEntityCounts(sideRank),0);
@@ -304,11 +304,11 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
 
 class CompareID {
 public:
-   CompareID(stk::mesh::EntityId id) : id_(id) {}
+   CompareID(stk_classic::mesh::EntityId id) : id_(id) {}
 
-   bool operator()(stk::mesh::Entity * e)
+   bool operator()(stk_classic::mesh::Entity * e)
    { return e->identifier()==id_; }
-   stk::mesh::EntityId id_;
+   stk_classic::mesh::EntityId id_;
 };
 
 TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->writeToExodus("simplemesh.exo");
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       mesh->getElementsSharingNode(2,elements);
  
       TEST_EQUALITY(elements.size(),2); 
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       mesh->getElementsSharingNode(4,elements);
  
       TEST_EQUALITY(elements.size(),2); 
@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       mesh->getElementsSharingNode(3,elements);
  
       TEST_EQUALITY(elements.size(),3); 
@@ -351,11 +351,11 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
 
    {
-     std::vector<stk::mesh::EntityId> nodes;
+     std::vector<stk_classic::mesh::EntityId> nodes;
      nodes.push_back(3);
      nodes.push_back(4);
 
-     std::vector<stk::mesh::Entity*> elements;
+     std::vector<stk_classic::mesh::Entity*> elements;
      mesh->getElementsSharingNodes(nodes,elements);
 
      TEST_EQUALITY(elements.size(),2); 
@@ -364,11 +364,11 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
     
    {
-      std::vector<stk::mesh::EntityId> nodes;
+      std::vector<stk_classic::mesh::EntityId> nodes;
       nodes.push_back(1);
       nodes.push_back(5);
 
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;
       mesh->getElementsSharingNodes(nodes,elements);
 
       TEST_EQUALITY(elements.size(),0); 
@@ -382,12 +382,12 @@ TEUCHOS_UNIT_TEST(tSTKInterface, subcellIndices)
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
-   stk::mesh::EntityRank sideRank = mesh->getSideRank();
+   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk_classic::mesh::EntityRank sideRank = mesh->getSideRank();
 
    mesh->buildSubcells();
 
-   std::vector<stk::mesh::EntityId> subcells;
+   std::vector<stk_classic::mesh::EntityId> subcells;
 
    TEST_THROW(mesh->getSubcellIndices(nodeRank,9,subcells),std::logic_error);
 
@@ -412,23 +412,23 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
 {
    using Teuchos::RCP;
 
-   std::vector<stk::mesh::Entity*> elements;
+   std::vector<stk_classic::mesh::Entity*> elements;
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
 
    mesh->getMyElements(elements);
 
    // loop over all elements of mesh
    for(std::size_t elmI=0;elmI<elements.size();++elmI) {
-      stk::mesh::Entity * elem = elements[elmI];
+      stk_classic::mesh::Entity * elem = elements[elmI];
       std::size_t localId = mesh->elementLocalId(elem);
 
-      stk::mesh::PairIterRelation relations = elem->relations(nodeRank);
-      stk::mesh::PairIterRelation::iterator itr;
-      stk::mesh::Entity * node = 0;
+      stk_classic::mesh::PairIterRelation relations = elem->relations(nodeRank);
+      stk_classic::mesh::PairIterRelation::iterator itr;
+      stk_classic::mesh::Entity * node = 0;
       for(itr=relations.begin();itr!=relations.end();++itr) {
          if(itr->identifier()==0) {
             node = itr->entity();
@@ -462,9 +462,9 @@ TEUCHOS_UNIT_TEST(tSTKInterface, edgeAddTest)
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
-   stk::mesh::EntityRank sideRank = mesh->getSideRank();
-   stk::mesh::EntityRank elmtRank = mesh->getElementRank();
+   stk_classic::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk_classic::mesh::EntityRank sideRank = mesh->getSideRank();
+   stk_classic::mesh::EntityRank elmtRank = mesh->getElementRank();
 
    mesh->buildSubcells();
 

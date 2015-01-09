@@ -45,7 +45,7 @@
 #define TEUCHOS_CONFIGDEFS_HPP
 
 /*! \file Teuchos_ConfigDefs.hpp
-    \brief Teuchos header file which uses auto-configuration information 
+    \brief Teuchos header file which uses auto-configuration information
 	to include necessary C++ headers.
 */
 

@@ -33,42 +33,39 @@
 #ifndef IOSS_Ioss_DatabaseIO_h
 #define IOSS_Ioss_DatabaseIO_h
 
+#include <Ioss_BoundingBox.h>           // for AxisAlignedBoundingBox
 #include <Ioss_CodeTypes.h>
-#include <string>
-#include <stdint.h>
-
-// Defines the Ioss_State enum...
-#include <Ioss_State.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_DataSize.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_EntityType.h>
-#include <Ioss_BoundingBox.h>
-
-#include <vector>
-#include <set>
+#include <Ioss_DBUsage.h>               // for DatabaseUsage, etc
+#include <Ioss_DataSize.h>              // for DataSize
+#include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_ParallelUtils.h>         // for ParallelUtils
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <Ioss_State.h>                 // for State, State::STATE_INVALID
+#include <Ioss_SurfaceSplit.h>          // for SurfaceSplitType
+#include <stddef.h>                     // for size_t, NULL
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class GroupingEntity; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class Region; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 
 namespace Ioss {
-  class GroupingEntity;
-  class ElementTopology;
   class EntityBlock;
-  class ElementBlock;
-  class FaceBlock;
-  class EdgeBlock;
-  class NodeBlock;
-  class SideBlock;
-
-  class ElementSet;
-  class FaceSet;
-  class EdgeSet;
-  class NodeSet;
-  class SideSet;
-
-  class CommSet;
-  class Region;
-  class Field;
 
   // Contains (parent_element, side) topology pairs
   typedef std::vector<std::pair<const ElementTopology*, const ElementTopology*> > TopoContainer;
@@ -116,6 +113,21 @@ namespace Ioss {
     virtual void openDatabase() const {}
     virtual void closeDatabase() const {}
 
+    //! If a database type supports groups and if the database
+    // contains groups, open the specified group.  If the group_name
+    // begins with '/', it specifies the absolute path name from the root with '/'
+    // separating groups.  Otherwise, the group_name
+    // specifies a child group of the currently active group.  If
+    // group_name == "/" then the root group is opened.
+    virtual bool open_group(const std::string &group_name) {return false;}
+
+    //! If a database type supports groups, create the specified
+    // group as a child of the current group. The name of the 
+    // group must not contain a '/' character. If the command
+    // is successful, then the group will be the active group
+    // for all subsequent writes to the database.
+    virtual bool create_subgroup(const std::string &group_name) {return false;}
+			   
     virtual bool begin(Ioss::State state) = 0;
     virtual bool   end(Ioss::State state) = 0;
 
@@ -148,14 +160,14 @@ namespace Ioss {
     template <typename T>
     int64_t get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
-      verify_and_log(reg, field);
+      verify_and_log(reg, field, 1);
       return get_field_internal(reg, field, data, data_size);
     }
 
     template <typename T>
     int64_t put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
-      verify_and_log(reg, field);
+      verify_and_log(reg, field, 0);
       return put_field_internal(reg, field, data, data_size);
     }
 
@@ -356,7 +368,7 @@ namespace Ioss {
     std::vector<std::string> qaRecords;
 
     private:
-    void verify_and_log(const GroupingEntity *reg, const Field& field) const;
+    void verify_and_log(const GroupingEntity *reg, const Field& field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region* reg, const Field& field,
                                        void *data, size_t data_size) const = 0;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+ * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
  * retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -51,9 +51,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*!
  * writes a map; this is a vector of integers of length number of mesh
@@ -154,7 +158,7 @@ int ex_put_partial_num_map (int exoid,
     if (cur_num_maps >= (int)num_maps) {
       exerrval = EX_FATAL;
       sprintf(errmsg,
-	      "Error: exceeded number of %ss ("ST_ZU") specified in file id %d",
+	      "Error: exceeded number of %ss (%"ST_ZU") specified in file id %d",
 	      ex_name_of_object(map_type),num_maps,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);

@@ -37,20 +37,19 @@
 #include <stdio.h>                      // for fprintf, printf, NULL, etc
 #include <stdlib.h>                     // for exit, free, malloc
 #include <string.h>                     // for strcpy, strlen, memset, etc
-#include <sys/select.h>                 // for time_t
-#include <time.h>                       // for asctime, localtime, time
+#include <time.h>                       // for asctime, localtime, time, etc
 #include <vector>                       // for vector
 #include "exodusII.h"                   // for ex_close, etc
 #include "nem_spread.h"                 // for NemSpread, second, etc
 #include "pe_common.h"                  // for PEX_MAX
 #include "ps_pario_const.h"             // for PIO_Time_Array
 #include "rf_allo.h"                    // for safe_free, array_alloc
+#include "rf_format.h"                  // for ST_ZU
 #include "rf_io_const.h"                // for Debug_Flag
 #include "sort_utils.h"                 // for gds_iqsort
-#include "rf_format.h"
-
 template <typename INT> struct ELEM_COMM_MAP;
 template <typename INT> struct NODE_COMM_MAP;
+
 
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
 
@@ -134,11 +133,11 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 
   if(Debug_Flag >= 4) {
     printf("Putting init global info in file id: %d\n", mesh_exoid);
-    printf("\tNumber Global Nodes: "ST_ZU"\n", (size_t)globals.Num_Node);
-    printf("\tNumber Global Elements: "ST_ZU"\n", (size_t)globals.Num_Elem);
-    printf("\tNumber Global Element Blocks: "ST_ZU"\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Global Node Sets: "ST_ZU"\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Global Side Sets: "ST_ZU"\n", (size_t)globals.Num_Side_Set);
+    printf("\tNumber Global Nodes: " ST_ZU "\n", (size_t)globals.Num_Node);
+    printf("\tNumber Global Elements: " ST_ZU "\n", (size_t)globals.Num_Elem);
+    printf("\tNumber Global Element Blocks: " ST_ZU "\n", (size_t)globals.Num_Elem_Blk);
+    printf("\tNumber Global Node Sets: " ST_ZU "\n", (size_t)globals.Num_Node_Set);
+    printf("\tNumber Global Side Sets: " ST_ZU "\n", (size_t)globals.Num_Side_Set);
   }
 
   if(ex_put_init_global(mesh_exoid, globals.Num_Node, globals.Num_Elem,
@@ -313,13 +312,13 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   if(Debug_Flag >= 6) {
     printf("Putting init load balance info in file id: %d\n",
            mesh_exoid);
-    printf("\tNumber Internal Nodes: "ST_ZU"\n", (size_t)globals.Num_Internal_Nodes[iproc]);
-    printf("\tNumber Border Nodes: "ST_ZU"\n", (size_t)globals.Num_Border_Nodes[iproc]);
-    printf("\tNumber External Nodes: "ST_ZU"\n", (size_t)globals.Num_External_Nodes[iproc]);
-    printf("\tNumber Internal Elements: "ST_ZU"\n", (size_t)globals.Num_Internal_Elems[iproc]);
-    printf("\tNumber Border Elements: "ST_ZU"\n", (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Nodal Cmaps: "ST_ZU"\n", (size_t)ncomm_cnt);
-    printf("\tNumber Elemental Cmaps: "ST_ZU"\n", (size_t)ecomm_cnt);
+    printf("\tNumber Internal Nodes: " ST_ZU "\n", (size_t)globals.Num_Internal_Nodes[iproc]);
+    printf("\tNumber Border Nodes: " ST_ZU "\n", (size_t)globals.Num_Border_Nodes[iproc]);
+    printf("\tNumber External Nodes: " ST_ZU "\n", (size_t)globals.Num_External_Nodes[iproc]);
+    printf("\tNumber Internal Elements: " ST_ZU "\n", (size_t)globals.Num_Internal_Elems[iproc]);
+    printf("\tNumber Border Elements: " ST_ZU "\n", (size_t)globals.Num_Border_Elems[iproc]);
+    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", (size_t)ncomm_cnt);
+    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", (size_t)ecomm_cnt);
     printf("\tProccesor For: %d\n", proc_for);
   }
 
@@ -612,12 +611,12 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     printf("Putting init info in file id: %d\n", mesh_exoid);
     printf("\tTitle: %s\n", cTitle);
     printf("\tNumber Dimensions: %d\n", globals.Num_Dim);
-    printf("\tNumber Nodes: "ST_ZU"\n", itotal_nodes);
-    printf("\tNumber Elements: "ST_ZU"\n",
+    printf("\tNumber Nodes: " ST_ZU "\n", itotal_nodes);
+    printf("\tNumber Elements: " ST_ZU "\n",
            (size_t)globals.Num_Internal_Elems[iproc]+(size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Element Blocks: "ST_ZU"\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Node Sets: "ST_ZU"\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Side Sets: "ST_ZU"\n", (size_t)globals.Num_Side_Set);
+    printf("\tNumber Element Blocks: " ST_ZU "\n", (size_t)globals.Num_Elem_Blk);
+    printf("\tNumber Node Sets: " ST_ZU "\n", (size_t)globals.Num_Node_Set);
+    printf("\tNumber Side Sets: " ST_ZU "\n", (size_t)globals.Num_Side_Set);
   }
 
   if(ex_put_init(mesh_exoid, cTitle, globals.Num_Dim, itotal_nodes,
@@ -653,17 +652,19 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   T *x_coord=NULL;
   T *y_coord=NULL;
   T *z_coord=NULL;
-  switch(globals.Num_Dim) {
-  case 3:
-    z_coord = globals.Coor[iproc][2];
-    /* FALLTHROUGH */
-  case 2:
-    y_coord = globals.Coor[iproc][1];
-    /* FALLTHROUGH */
-  case 1:
-    x_coord = globals.Coor[iproc][0];
-
-    break;
+  if (itotal_nodes > 0) {
+    switch(globals.Num_Dim) {
+    case 3:
+      z_coord = globals.Coor[iproc][2];
+      /* FALLTHROUGH */
+    case 2:
+      y_coord = globals.Coor[iproc][1];
+      /* FALLTHROUGH */
+    case 1:
+      x_coord = globals.Coor[iproc][0];
+      
+      break;
+    }
   }
 
   /* Output the coordinates to the parallel Exodus file */

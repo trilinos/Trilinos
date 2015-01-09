@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -91,7 +91,7 @@ MFNSpace MFCreateLOCANSpace(LOCAData* data)
 }
 
 double MFLOCANSpaceDistance(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d,
-			    MFErrorHandler err)
+                MFErrorHandler err)
 {
   double result;
   MFNVector dv;
@@ -146,7 +146,7 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d, MFErr
   LOCANVectorData *v1_data = (LOCANVectorData *) MFNVectorGetData(v1,err);
 
   double dotp = data->grp->computeScaledDotProduct(*(v0_data->u_ptr),
-						   *(v1_data->u_ptr));
+                           *(v1_data->u_ptr));
 
 #ifdef MFTIMINGS
     MFTimeMFNSpaceInner+=clock()-starttime;
@@ -155,7 +155,7 @@ double MFLOCANSpaceInner(MFNSpace cthis,MFNVector v0,MFNVector v1,void *d, MFErr
 }
 
 void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
-		     void *d, MFErrorHandler err)
+             void *d, MFErrorHandler err)
 {
 
 #ifdef MFTIMINGS
@@ -174,7 +174,7 @@ void MFLOCANSpaceAdd(MFNSpace cthis,MFNVector v0,MFNVector v1,MFNVector sum,
 }
 
 void MFLOCANSpaceScale(MFNSpace cthis,double s, MFNVector v,MFNVector w,
-		       void *d, MFErrorHandler err)
+               void *d, MFErrorHandler err)
 {
 #ifdef MFTIMINGS
   clock_t starttime;

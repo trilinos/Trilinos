@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
@@ -8,41 +6,36 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_NoFE
     SOURCES example_Poisson_NoFE.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
 IF(Trilinos_ENABLE_SEACAS)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson2D
     SOURCES example_Poisson2D.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
 
 
@@ -61,30 +54,26 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml ifpack teko
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_CurlLSFEM
     SOURCES example_CurlLSFEM.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_StabilizatedADR
     SOURCES example_StabilizedADR.cpp
-    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+      TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
-    ADD_DIR_TO_NAME
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES ADR.xml
@@ -102,14 +91,29 @@ ENDIF()
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK)
+   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STKClassic)
+  TRIBITS_ADD_EXECUTABLE(
+    Example_Poisson_STKclassic
+    SOURCES example_Poisson_stkclassic.cpp
+    )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTKclassic
+  SOURCE_FILES unit_cube_10int_hex.exo
+               unit_cube_5int_tet.exo
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  ) 
+ENDIF()
+
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK
+   AND Trilinos_ENABLE_STKIO AND Trilinos_ENABLE_STKMesh)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STK
     SOURCES example_Poisson_stk.cpp
-    DEPLIBS epetra epetraext aztecoo amesos ml
-    ADD_DIR_TO_NAME
     )
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFiles
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTK
   SOURCE_FILES unit_cube_10int_hex.exo
                unit_cube_5int_tet.exo
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -131,9 +135,8 @@ IF(Trilinos_ENABLE_Belos AND
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Tpetra
     SOURCES example_Poisson_NoFE_Tpetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen tpetra
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
@@ -152,9 +155,8 @@ IF(Trilinos_ENABLE_AztecOO AND
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_NoFE_Epetra
     SOURCES example_Poisson_NoFE_Epetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
-    DEPLIBS aztecoo epetra epetraext intrepid ml pamgen
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
@@ -165,21 +167,19 @@ ENDIF()
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
+# The executable may use MueLu only if the MueLu package is enabled.
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_MueLu)
+   Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Tpetra
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen tpetra
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
@@ -193,18 +193,15 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_MueLu)
+   Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Epetra
     SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
-    DEPLIBS belos intrepid pamgen epetra
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
@@ -220,15 +217,14 @@ IF(Trilinos_ENABLE_AztecOO AND
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
-    DEPLIBS aztecoo intrepid pamgen epetra
-    ADD_DIR_TO_NAME
     )
 ENDIF()
 
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
-  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml
+  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml intrepid_poisson_pamgen.xml
   )
 
 # mfh 14 Feb 2013
@@ -237,12 +233,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
 #
 # Tpetra has a required dependency on Teuchos and Kokkos,
 # so we don't have to name those packages explicitly here.
+# This test uses the default Kokkos Node type.
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     epetraTpetraImportBenchmark
     SOURCES epetraTpetraImportBenchmark.cpp
     COMM serial mpi
-    DEPLIBS tpetra epetra
-    ADD_DIR_TO_NAME
     )
 ENDIF()

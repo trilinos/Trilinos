@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -94,16 +94,16 @@ namespace LOCA {
      *         g(x,p) &= 0
      *     \end{split}
      * \f]
-     * where \f$x\in\Re^n\f$ is the solution vector, \f$p\in\Re^m\f$ is a 
-     * set of constraint parameters, \f$f(x,p)\in\Re^n\f$ is represented by 
-     * some LOCA::MultiContinuation::AbstractGroup, and \f$g(x,p)\in\Re^m\f$ 
-     * is a constraint represented by a 
+     * where \f$x\in\Re^n\f$ is the solution vector, \f$p\in\Re^m\f$ is a
+     * set of constraint parameters, \f$f(x,p)\in\Re^n\f$ is represented by
+     * some LOCA::MultiContinuation::AbstractGroup, and \f$g(x,p)\in\Re^m\f$
+     * is a constraint represented by a
      * LOCA::MultiContinuation::ConstraintInterface object.  Newton steps
-     * for this system are computed via some 
-     * LOCA::BorderedSolver::AbstractStrategy which is specified via   
+     * for this system are computed via some
+     * LOCA::BorderedSolver::AbstractStrategy which is specified via
      * the \c constraintParams argument to the constructor.
      */
-    class ConstrainedGroup : 
+    class ConstrainedGroup :
       public virtual LOCA::Extended::MultiAbstractGroup,
       public virtual LOCA::Abstract::Group,
       public virtual LOCA::BorderedSystem::AbstractGroup,
@@ -111,7 +111,7 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
        * \param global_data [in] Global data object
        * \param topParams [in] Parsed top-level parameter list.
@@ -133,8 +133,8 @@ namespace LOCA {
        bool skip_dfdp = false);
 
       //! Copy constructor
-      ConstrainedGroup(const ConstrainedGroup& source, 
-		       NOX::CopyType type = NOX::DeepCopy);
+      ConstrainedGroup(const ConstrainedGroup& source,
+               NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~ConstrainedGroup();
@@ -142,20 +142,20 @@ namespace LOCA {
       //! Set constraint parameter \c i to value \c val
       virtual void setConstraintParameter(int i, double val);
 
-      //! Get constraint parameter \c i 
+      //! Get constraint parameter \c i
       virtual double getConstraintParameter(int i) const;
 
       //! Get constraint parameter IDs
       virtual const std::vector<int>&
       getConstraintParamIDs() const;
 
-      /*! 
-       * @name Implementation of NOX::Abstract::Group virtual methods 
+      /*!
+       * @name Implementation of NOX::Abstract::Group virtual methods
        */
       //@{
 
       //! Assignment operator
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
@@ -165,15 +165,15 @@ namespace LOCA {
       //! Set the solution vector to y.
       virtual void setX(const NOX::Abstract::Vector& y);
 
-      /*! 
-       * \brief Compute and return solution vector, x, where 
+      /*!
+       * \brief Compute and return solution vector, x, where
        * this.x = grp.x + step * d.
        */
-      virtual void computeX(const NOX::Abstract::Group& g, 
-			    const NOX::Abstract::Vector& d,
-			    double step);
+      virtual void computeX(const NOX::Abstract::Group& g,
+                const NOX::Abstract::Vector& d,
+                double step);
 
-      //! Compute extended continuation equations 
+      //! Compute extended continuation equations
       virtual NOX::Abstract::Group::ReturnType computeF();
 
       //! Compute extended continuation jacobian
@@ -183,62 +183,62 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType computeGradient();
 
       //! Compute Newton direction for extended continuation system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computeNewton(Teuchos::ParameterList& params);
 
       //! Applies Jacobian for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobian(const NOX::Abstract::Vector& input, 
-		    NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobian(const NOX::Abstract::Vector& input,
+            NOX::Abstract::Vector& result) const;
 
       //! Jacobian transpose not defined for this system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-			     NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianTranspose(const NOX::Abstract::Vector& input,
+                 NOX::Abstract::Vector& result) const;
 
       //! Applies Jacobian inverse for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverse(Teuchos::ParameterList& params, 
-			   const NOX::Abstract::Vector& input, 
-			   NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverse(Teuchos::ParameterList& params,
+               const NOX::Abstract::Vector& input,
+               NOX::Abstract::Vector& result) const;
 
       //! Applies Jacobian for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
-			       NOX::Abstract::MultiVector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
+                   NOX::Abstract::MultiVector& result) const;
 
       //! Jacobian transpose not defined for this system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianTransposeMultiVector(
-				     const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& result) const;
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const;
 
       //! Applies Jacobian inverse for extended system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMultiVector(
-				    Teuchos::ParameterList& params, 
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const;
+                    Teuchos::ParameterList& params,
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const;
 
       //! Return \c true if extended residual is valid.
       virtual bool isF() const;
 
       //! Return \c true if the extended Jacobian is valid.
       virtual bool isJacobian() const;
-      
+
       //! Always returns false
       virtual bool isGradient() const;
-      
+
       //! Return \c true if the extended Newton direction is valid
       virtual bool isNewton() const;
 
-      //! Return extended solution vector.  
+      //! Return extended solution vector.
       virtual const NOX::Abstract::Vector& getX() const;
 
       //! Return extended residual
       virtual const NOX::Abstract::Vector& getF() const;
 
-      //! Return 2-norm of extended residual. 
+      //! Return 2-norm of extended residual.
       virtual double getNormF() const;
 
       //! Gradient is never valid
@@ -247,7 +247,7 @@ namespace LOCA {
       //! Return extended Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
-      //! Return RCP to extended solution vector.  
+      //! Return RCP to extended solution vector.
       virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
       //! Return RCP to extended residual
@@ -264,27 +264,27 @@ namespace LOCA {
 
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::Extended::MultiAbstractGroup 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::Extended::MultiAbstractGroup
+       * virtual methods
        */
       //@{
 
       //! Return underlying group
-      virtual 
-      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+      virtual
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() const;
-      
+
       //! Return underlying group
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
 
       //@}
 
-      /*! 
+      /*!
        * @name Implementation of LOCA::MultiContinuation::AbstractGroup
-       * virtual methods 
+       * virtual methods
        */
       //@{
 
@@ -293,10 +293,10 @@ namespace LOCA {
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void setParamsMulti(
-		     const std::vector<int>& paramIDs, 
-		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
-      //! Set the parameter vector in the group to p (pVector = p).  
+      //! Set the parameter vector in the group to p (pVector = p).
       virtual void setParams(const ParameterVector& p);
 
        //! Set parameter indexed by (integer) paramID
@@ -305,7 +305,7 @@ namespace LOCA {
       //! Set parameter indexed by (std::string) paramID
       virtual void setParam(std::string paramID, double val);
 
-      //! Return a const reference to the ParameterVector owned by the group. 
+      //! Return a const reference to the ParameterVector owned by the group.
       virtual const ParameterVector& getParams() const;
 
       //! Return copy of parameter indexed by (integer) paramID
@@ -314,48 +314,48 @@ namespace LOCA {
       //! Return copy of parameter indexed by (std::string) paramID
       virtual double getParam(std::string paramID) const;
 
-      /*! 
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+      /*!
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
        * indexed by paramIDs.  The first column of \em dfdp holds F,
        * which is valid if \em isValidF is true.  Otherwise F must be
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const std::vector<int>& paramIDs, 
-		       NOX::Abstract::MultiVector& dfdp, 
-		       bool isValidF);
+      computeDfDpMulti(const std::vector<int>& paramIDs,
+               NOX::Abstract::MultiVector& dfdp,
+               bool isValidF);
 
       //! Perform any preprocessing before a continuation step starts.
       /*!
        * The \c stepStatus argument indicates whether the previous step was
        * successful.
        */
-      virtual void 
+      virtual void
       preProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
        * The \c stepStatus argument indicates whether the step was
        * successful.
        */
-      virtual void 
+      virtual void
       postProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Projects solution to a few scalars for multiparameter continuation
       virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				 double *px) const;
+                 double *px) const;
 
       //! Returns the dimension of the project to draw array
       virtual int projectToDrawDimension() const;
 
- 
+
 
       //! Compute a scaled dot product
       virtual double
       computeScaledDotProduct(const NOX::Abstract::Vector& a,
-			      const NOX::Abstract::Vector& b) const;
+                  const NOX::Abstract::Vector& b) const;
 
       //! Function to print out solution and parameter after successful step
       virtual void printSolution(const double conParam) const;
@@ -370,9 +370,9 @@ namespace LOCA {
 
       //@}
 
-      /*! 
-       * @name Implementation of 
-       * LOCA::BorderedSystem::AbstractGroup virtual methods 
+      /*!
+       * @name Implementation of
+       * LOCA::BorderedSystem::AbstractGroup virtual methods
        */
       //@{
 
@@ -398,16 +398,16 @@ namespace LOCA {
        */
       virtual void
       extractSolutionComponent(const NOX::Abstract::MultiVector& v,
-			       NOX::Abstract::MultiVector& v_x) const;
+                   NOX::Abstract::MultiVector& v_x) const;
 
       /*!
        * Given the vector \c v, extract the parameter components of all
        * of the nested subvectors in \c v down to the solution component
        * for the unbordered group.
        */
-      virtual void 
+      virtual void
       extractParameterComponent(
-			   bool use_transpose,
+               bool use_transpose,
                            const NOX::Abstract::MultiVector& v,
                            NOX::Abstract::MultiVector::DenseMatrix& v_p) const;
 
@@ -418,8 +418,8 @@ namespace LOCA {
        */
       virtual void
       loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-			   NOX::Abstract::MultiVector& v) const;
+               const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+               NOX::Abstract::MultiVector& v) const;
 
       //! Fill the combined A block as described above
       virtual void fillA(NOX::Abstract::MultiVector& A) const;
@@ -432,24 +432,24 @@ namespace LOCA {
 
       //@}
 
-      /*! 
+      /*!
        * @name Implementation of LOCA::Abstract::TransposeSolveGroup
-       * virtual methods 
+       * virtual methods
        */
       //@{
-      
+
       //! Solve Jacobian-tranpose system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
-				    const NOX::Abstract::Vector& input, 
-				    NOX::Abstract::Vector& result) const;
-      
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianTransposeInverse(Teuchos::ParameterList& params,
+                    const NOX::Abstract::Vector& input,
+                    NOX::Abstract::Vector& result) const;
+
       //! Solve Jacobian-tranpose system with multiple right-hand sides
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianTransposeInverseMultiVector(
-				  Teuchos::ParameterList& params, 
-				  const NOX::Abstract::MultiVector& input, 
-				  NOX::Abstract::MultiVector& result) const;
+                  Teuchos::ParameterList& params,
+                  const NOX::Abstract::MultiVector& input,
+                  NOX::Abstract::MultiVector& result) const;
 
       //@}
 
@@ -458,7 +458,7 @@ namespace LOCA {
       getGroup();
 
       //! Get constraints
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       getConstraints();
 
@@ -515,7 +515,7 @@ namespace LOCA {
 
       //! Stores view of first column of fMultiVec
       Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> fVec;
-      
+
       //! Stores view of first column of fMultiVec as a multivec
       Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
 

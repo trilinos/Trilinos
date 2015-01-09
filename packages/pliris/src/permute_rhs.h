@@ -53,5 +53,5 @@ void	permute_rhs(DATA_TYPE *,int *);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif

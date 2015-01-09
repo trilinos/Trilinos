@@ -234,7 +234,6 @@ namespace Stokhos {
     using Teuchos::Array;
     using Teuchos::ArrayView;
 
-    typedef MultiIndex<ordinal_type> coeff_type;
     const Array< RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases = product_basis.getCoordinateBases();
     ordinal_type d = bases.size();
     ordinal_type p = product_basis.order();
@@ -377,7 +376,6 @@ namespace Stokhos {
     using Teuchos::Array;
     using Teuchos::ArrayView;
 
-    typedef MultiIndex<ordinal_type> coeff_type;
     const Array< RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases = product_basis.getCoordinateBases();
     ordinal_type d = bases.size();
     ordinal_type p = product_basis.order();
@@ -431,7 +429,6 @@ namespace Stokhos {
     using Teuchos::ArrayView;
     using Teuchos::arrayView;
     typedef typename LTBSparse3Tensor<ordinal_type, value_type>::CijkNode node_type;
-    typedef ProductBasisUtils::Cijk_1D_Iterator<ordinal_type> Cijk_Iterator;
 
     ordinal_type my_d = basis_orders.size();
     ordinal_type p = basis_orders[0];

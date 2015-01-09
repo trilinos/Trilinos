@@ -45,8 +45,8 @@
 #ifndef TEUCHOS_FLOPS_HPP
 #define TEUCHOS_FLOPS_HPP
 
-/*! \file Teuchos_Flops.hpp 
-    \brief Object for providing basic support and consistent interfaces for 
+/*! \file Teuchos_Flops.hpp
+    \brief Object for providing basic support and consistent interfaces for
 	counting/reporting floating-point operations performed in Teuchos computational
 	classes.
 */
@@ -55,20 +55,20 @@
     \brief The Teuchos Floating Point Operations Class.
 
     The Teuchos_Flops class provides basic support and consistent interfaces
-    for counting and reporting floating point operations performed in 
+    for counting and reporting floating point operations performed in
     the Teuchos computational classes.  All classes based on the Teuchos::CompObject
     can count flops by the user creating an Teuchos::Flops object and calling the SetFlopCounter()
-    method for an Teuchos_CompObject. 
+    method for an Teuchos_CompObject.
 */
 
 namespace Teuchos
 {
 class Flops
-{    
+{
   public:
 
     //! @name Constructor/Destructor.
-  //@{ 
+  //@{
 
   //! Default Constructor.
   /*! Creates a Flops instance. This instance can be queried for
@@ -90,7 +90,7 @@ class Flops
   //@}
 
   //! @name Accessor methods.
-  //@{ 
+  //@{
 
   //! Returns the number of floating point operations with \e this object and resets the count.
   double flops() const { return flops_; }
@@ -98,7 +98,7 @@ class Flops
   //@}
 
   //! @name Reset methods.
-  //@{ 
+  //@{
 
   //! Resets the number of floating point operations to zero for \e this multi-std::vector.
   void resetFlops() {flops_ = 0.0;}
@@ -112,7 +112,7 @@ class Flops
   mutable double flops_;
 
   //! @name Updating methods.
-  //@{ 
+  //@{
   //! Increment Flop count for \e this object from an int
   void updateFlops(int addflops) const {flops_ += (double) addflops; }
 
@@ -128,7 +128,7 @@ class Flops
   //@}
 
  private:
-  
+
 };
 
   // #include "Teuchos_Flops.cpp"

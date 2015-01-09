@@ -43,6 +43,8 @@
 
 #cmakedefine HAVE_MUELU_ML
 
+#cmakedefine HAVE_MUELU_TEKO
+
 #cmakedefine HAVE_MUELU_TPETRA
 
 #cmakedefine HAVE_MUELU_STRATIMIKOS
@@ -54,3 +56,5 @@
 /* Optional TPL */
 
 #cmakedefine HAVE_MUELU_BOOST
+
+#cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION

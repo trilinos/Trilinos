@@ -45,11 +45,11 @@
 % CSRI Title Page: modified from siamltex.cls
 \def\ps@csriheadings{%
   \let\@oddfoot\@empty\let\@evenfoot\@empty
-  \def\@defaulthead{ 
+  \def\@defaulthead{
     \rlap{\footnotesize CSRI Summer Proceedings 2008}\hfil\llap{\thepage}
-  }% end default headings   
+  }% end default headings
   \def\@oddhead{\@defaulthead}
-  \def\@evenhead{\@defaulthead} 
+  \def\@evenhead{\@defaulthead}
   \let\@mkboth\@gobbletwo
   \let\sectionmark\@gobble
   \let\subsectionmark\@gobble

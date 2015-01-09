@@ -3,43 +3,60 @@
 // @HEADER
 // ***********************************************************************
 //
-//              PyTrilinos: Python Interface to Trilinos
-//                 Copyright (2005) Sandia Corporation
+//          PyTrilinos: Python Interfaces to Trilinos Packages
+//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia
+// Corporation, the U.S. Government retains certain rights in this
+// software.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
 //
 // ***********************************************************************
 // @HEADER
 
 %define %loca_epetra_docstring
 "
-PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra for
-the Trilinos package LOCA:
+PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra of
+the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.Epetra is to provide a concrete interface beteen
-LOCA and Epetra.
+The purpose of LOCA.Epetra is to provide an extension of the
+NOX.Epetra.Group to LOCA.  The python version of LOCA.Epetra supports
+the following classes:
 
+    * Group  - Extension of the NOX.Epetra.Group to LOCA
 "
 %enddef
+
 %module(package      = "PyTrilinos.LOCA.Epetra",
 	directors    = "1",
 	autodoc      = "1",
@@ -51,62 +68,66 @@ LOCA and Epetra.
 #include <vector>
 
 // Teuchos includes
-#include "PyTrilinos_Teuchos_Util.h"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
+// PyTrilinos includes
+#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Epetra_Util.hpp"
+
+// Local Epetra includes
+#include "Epetra_NumPyMultiVector.hpp"
+#include "Epetra_NumPyVector.hpp"
+#include "Epetra_NumPyIntVector.hpp"
+#include "Epetra_NumPyFEVector.hpp"
+#include "Epetra_NumPySerialDenseVector.hpp"
+#include "Epetra_NumPySerialDenseMatrix.hpp"
+#include "Epetra_NumPyIntSerialDenseVector.hpp"
+#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+#include "Epetra_NumPySerialSymDenseMatrix.hpp"
 
 // Epetra includes
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Object.h"
+#include "Epetra_DLLExportMacro.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
-#include "Epetra_InvOperator.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_FEVbrMatrix.h"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.h"
-#include "Epetra_NumPyIntVector.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyFEVector.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
-
-//#include "NOX_Abstract_Group.H"
+#include "NOX.H"
 #include "NOX_Epetra_Group.H"
-//#include "NOX_Epetra_Interface_Preconditioner.H"
-//#include "NOX_Epetra_FiniteDifference.H"
-//#include "NOX_Epetra_FiniteDifferenceColoring.H"
-//#include "NOX_Epetra_LinearSystem_AztecOO.H"
-//#include "NOX_Epetra_MatrixFree.H"
-//#include "LOCA_MultiContinuation_AbstractGroup.H"
-//#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-#include "LOCA_Homotopy_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TimeDependent_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Abstract_TransposeSolveGroup.H"
-#include "LOCA_Extended_MultiAbstractGroup.H"
-#include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ExtendedGroup.H"
-#include "LOCA_MultiContinuation_NaturalGroup.H"
-#include "LOCA_MultiContinuation_AbstractStrategy.H"
 
+// LOCA includes
+#include "LOCA.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
+#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 #undef HAVE_STDINT_H
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H
@@ -123,46 +144,90 @@ using Teuchos::rcp;
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface support
-%import "Teuchos.i"
-
-%import "NOX.Abstract.i"
-%import "NOX.Epetra.__init__.i"
-
-%import "LOCA.__init__.i"
-%import "LOCA.MultiContinuation.i"
-
-//%import "LOCA_TimeDependent_AbstractGroup.H"
-//%import "LOCA_Homotopy_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-//%import "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-//%import "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-//%import "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-//%import "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-//%import "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-//%import "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-
-//%import "LOCA.Abstract.i"
-%import "LOCA.Hopf.i"
-%import "LOCA.Pitchfork.i"
-%import "LOCA.Homotopy.i"
-%import "LOCA.TurningPoint.i"
-// %pythoncode
-// %{
-// import PyTrilinos.LOCA.Homotopy
-// import PyTrilinos.LOCA.TurningPoint
-// import PyTrilinos.LOCA.Pitchfork
-// import PyTrilinos.LOCA.Hopf
-// %}
-
-%import "NOX.Epetra.Interface.i"
-%import "LOCA.Epetra.Interface.i"
-
 // Exception handling
 %include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+%include "Epetra_DLLExportMacro.h"
+
+// Teuchos and Epetra interface support
+%import "Teuchos.i"
+%include "Epetra_Base.i"    // For PyExc_EpetraError
+%import "Epetra.i"
+
+// Teuchos RCP support
+%teuchos_rcp(LOCA::Extended::MultiAbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterface)
+%teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
+%teuchos_rcp(LOCA::PhaseTransition::AbstractGroup)
+%teuchos_rcp(LOCA::TimeDependent::AbstractGroup)
+%teuchos_rcp(LOCA::BorderedSystem::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::AbstractGroup)
+%teuchos_rcp(LOCA::Homotopy::Group)
+%teuchos_rcp(LOCA::Homotopy::DeflatedGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MooreSpence::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::ExtendedGroup)
+%teuchos_rcp(LOCA::Hopf::MinimallyAugmented::Constraint)
+%teuchos_rcp(LOCA::Pitchfork::MooreSpence::AbstractGroup)
+%teuchos_rcp(LOCA::Pitchfork::MinimallyAugmented::AbstractGroup)
+%teuchos_rcp(LOCA::Abstract::Group)
+%teuchos_rcp(LOCA::Abstract::TransposeSolveGroup)
+
+// NOX interface support
+%import "NOX.Abstract.i"
+%import "NOX.Epetra.__init__.i"
+%import "NOX.Epetra.Interface.i"
+
+// Allow import from the parent directory
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+from .. import Abstract
+%}
+
+// LOCA base classes
+%import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterface.H"
+%import(module="MultiContinuation") "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
+%import(module="PhaseTransition") "LOCA_PhaseTransition_AbstractGroup.H"
+%import(module="TimeDependent") "LOCA_TimeDependent_AbstractGroup.H"
+%import(module="BorderedSystem") "LOCA_BorderedSystem_AbstractGroup.H"
+%import(module="Homotopy") "LOCA_Homotopy_AbstractGroup.H"
+%import(module="Homotopy") "LOCA_Homotopy_Group.H"
+%import(module="Homotopy") "LOCA_Homotopy_DeflatedGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%import(module="TurningPoint.MooreSpence") "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+%import(module="TurningPoint.MinimallyAugmented") "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%import(module="Hopf.MooreSpence") "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+%import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_Constraint.H"
+%import(module="Pitchfork.MooreSpence") "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+%import(module="Pitchfork.MinimallyAugmented") "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+%import(module="Abstract") "LOCA_Abstract_Group.H"
+%import(module="Abstract") "LOCA_Abstract_TransposeSolveGroup.H"
 
 // Director exception handling
 %feature("director:except")
@@ -201,33 +266,21 @@ using Teuchos::rcp;
   }
 }
 
-%rename(Abstract_Group) LOCA::Abstract::Group;
-%rename(Abstact_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
-%teuchos_rcp(Abstract_Group)
-%teuchos_rcp(Abstract_TransposeSolveGroup)
-%include "LOCA_Abstract_Group.H"
-%include "LOCA_Abstract_TransposeSolveGroup.H"
+/////////////////////////
+// LOCA Epetra support //
+/////////////////////////
 
 #undef HAVE_STDINT_H
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H
 %include "LOCA_Epetra.H"
 
-// %pythoncode
-// %{
-// from NOX.Epetra import Group
-// %}
-
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
 
-%rename(NOX_Epetra_Group) NOX::Epetra::Group;
-%include "NOX_Epetra_Group.H"
-
 // temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 
-%include "LOCA_Epetra_Group.H"
-
 %teuchos_rcp(LOCA::Epetra::Group)
+%include "LOCA_Epetra_Group.H"

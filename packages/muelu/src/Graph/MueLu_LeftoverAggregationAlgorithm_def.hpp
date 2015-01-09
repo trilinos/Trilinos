@@ -60,14 +60,14 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LeftoverAggregationAlgorithm():
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::LeftoverAggregationAlgorithm():
     phase3AggCreation_(.5),
     minNodesPerAggregate_(1)
   { }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::AggregateLeftovers(GraphBase const &graph, Aggregates &aggregates) const {
     Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
@@ -80,7 +80,7 @@ namespace MueLu {
     const RCP<const Map> nonUniqueMap = aggregates.GetMap(); //column map of underlying graph
     const RCP<const Map> uniqueMap    = graph.GetDomainMap();
 
-    MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
+    MueLu::CoupledAggregationCommHelper<LO,GO,NO> myWidget(uniqueMap, nonUniqueMap);
 
     //TODO JJH We want to skip this call
     RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
@@ -670,8 +670,8 @@ namespace MueLu {
 
   } //AggregateLeftovers
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RootCandidates(my_size_t nVertices,
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RootCandidates(my_size_t nVertices,
   ArrayView<const LO> & vertex2AggId, GraphBase const &graph,
                       ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
   {
@@ -697,9 +697,9 @@ namespace MueLu {
 
   } //RootCandidates
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO,LMO> & myWidget) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
+                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
 
     LO nAggregates = aggregates.GetNumAggregates();

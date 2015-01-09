@@ -50,6 +50,5 @@
 #include "Panzer_DOF_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DOF)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::DOF_PointValues)
 
 #endif

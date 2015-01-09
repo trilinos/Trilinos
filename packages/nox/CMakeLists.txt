@@ -1,5 +1,3 @@
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
 
 #
@@ -49,12 +47,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
 ###################################################
 # Check for DOT program for Doxygen
 ###################################################
-SET(HAVE_DOXYGEN_DOT NO)
-IF(DOXYGEN_DOT_EXECUTABLE)
-  SET(HAVE_DOXYGEN_DOT YES)
-ENDIF()
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile @ONLY)
+#SET(HAVE_DOXYGEN_DOT NO)
+#IF(DOXYGEN_DOT_EXECUTABLE)
+#  SET(HAVE_DOXYGEN_DOT YES)
+#ENDIF()
+#CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
+#               ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile @ONLY)
 
 ###################################################
 # Debug build
@@ -107,7 +105,7 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
 
 # Thyra
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
-  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore 
+  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore
   DOCSTR "Enables support for Thyra implementation of Abstract Group"
     " and Vector classes.  Defaults to ON if Thyra is enabled,"
     " otherwise defaults to OFF"

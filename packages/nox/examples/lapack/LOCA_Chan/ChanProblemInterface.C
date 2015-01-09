@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,8 +56,8 @@
 #include "NOX_Utils.H"
 
 ChanProblemInterface::ChanProblemInterface(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s)  : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int N, double a, double b, double s)  :
   globalData(global_data),
   initialGuess(N),
   alpha(a),
@@ -70,8 +70,8 @@ ChanProblemInterface::ChanProblemInterface(
 }
 
 ChanProblemInterface::ChanProblemInterface(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int N, double a, double b, double s, std::ofstream& file)  : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int N, double a, double b, double s, std::ofstream& file)  :
   globalData(global_data),
   initialGuess(N),
   alpha(a),
@@ -90,21 +90,21 @@ ChanProblemInterface::getInitialGuess()
 }
 
 bool
-ChanProblemInterface::computeF(NOX::LAPACK::Vector& f, 
-			       const NOX::LAPACK::Vector &x)
+ChanProblemInterface::computeF(NOX::LAPACK::Vector& f,
+                   const NOX::LAPACK::Vector &x)
 {
   f(0) = x(0) - beta;
   f(n-1) = x(n-1) - beta;
   for (int i=1; i<n-1; i++)
-    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) 
+    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1)
       + source_param(alpha, scale)*source_term(x(i));
-  
+
   return true;
 }
 
 bool
-ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-				     const NOX::LAPACK::Vector & x)
+ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J,
+                     const NOX::LAPACK::Vector & x)
 {
   J(0,0) = 1.0;
   J(n-1,n-1) = 1.0;
@@ -126,8 +126,8 @@ ChanProblemInterface::setParams(const LOCA::ParameterVector& p) {
 void
 ChanProblemInterface::init() {
 
-  for (int i=0; i<n; i++) 
-    initialGuess(i) = 
+  for (int i=0; i<n; i++)
+    initialGuess(i) =
       i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
 }
 
@@ -142,7 +142,7 @@ ChanProblemInterface::source_deriv(double x) {
   return (1. + x - 0.01*x*x)/(y*y);
 }
 
-double 
+double
 ChanProblemInterface::source_param(double a, double s) {
   double as = a*s;
 
@@ -155,20 +155,20 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
                                     const double conParam)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-    globalData->locaUtils->out() 
+    globalData->locaUtils->out()
       << "At parameter value: " << std::setprecision(8) << conParam
       << "   the solution vector (norm="<<x.norm()<<") is\n";
 
     if (n < 8) {
-      for (int i=0; i<n; i++) 
-	globalData->locaUtils->out() << " " << x(i);
+      for (int i=0; i<n; i++)
+    globalData->locaUtils->out() << " " << x(i);
     }
     else {
-      for (int i=0; i<6; i++) 
-	globalData->locaUtils->out() << " " << x(i);
+      for (int i=0; i<6; i++)
+    globalData->locaUtils->out() << " " << x(i);
        globalData->locaUtils->out() << " ...";
-      for (int i=n-2; i<n; i++)  
-	globalData->locaUtils->out() << " " << x(i);
+      for (int i=n-2; i<n; i++)
+    globalData->locaUtils->out() << " " << x(i);
     }
     globalData->locaUtils->out() << std::endl;
   }

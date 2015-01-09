@@ -1,580 +1,438 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
-
-#include <sstream>
-#include <cstdlib>
-#include <stdexcept>
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Trace.hpp>
+#include <algorithm>                    // for copy, remove_if
+#include <new>                          // for operator new
+#include <sstream>                      // for operator<<, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Trace.hpp>      // for TraceIf
+#include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
+#include "boost/array.hpp"              // for array
+#include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
+
 
 namespace stk {
 namespace mesh {
 namespace impl {
 
-//----------------------------------------------------------------------
-
-
-BucketRepository::BucketRepository(
-    BulkData & mesh,
-    unsigned bucket_capacity,
-    unsigned entity_rank_count,
-    EntityRepository & entity_repo
-    )
-  :m_mesh(mesh),
-   m_bucket_capacity(bucket_capacity),
-   m_buckets(entity_rank_count),
-   m_nil_bucket(NULL),
-   m_entity_repo(entity_repo)
+BucketRepository::BucketRepository(BulkData & mesh,
+                                   unsigned entity_rank_count,
+                                   const ConnectivityMap& connectivity_map,
+                                   unsigned bucket_capacity)
+  : m_mesh(mesh),
+    m_buckets(entity_rank_count),
+    m_partitions(entity_rank_count),
+    m_need_sync_from_partitions(entity_rank_count, false),
+    m_connectivity_map(connectivity_map),
+    m_bucket_capacity(bucket_capacity),
+    m_being_destroyed(false)
 {
+  // Nada.
 }
-
 
 BucketRepository::~BucketRepository()
 {
   // Destroy buckets, which were *not* allocated by the set.
 
+  m_being_destroyed = true;
+
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
+
   try {
-    for ( std::vector< std::vector<Bucket*> >::iterator
-          i = m_buckets.end() ; i != m_buckets.begin() ; ) {
-      try {
-        std::vector<Bucket*> & kset = *--i ;
 
-        while ( ! kset.empty() ) {
-          try { destroy_bucket( kset.back() ); } catch(...) {}
-          kset.pop_back();
-        }
-        kset.clear();
-      } catch(...) {}
+    for ( std::vector<std::vector<Partition *> >::iterator pv_i = m_partitions.begin();
+          pv_i != m_partitions.end(); ++pv_i)
+    {
+      for (std::vector<Partition *>::iterator p_j = pv_i->begin();
+           p_j != pv_i->end(); ++p_j)
+      {
+        Partition * tmp = *p_j;
+        tmp->~Partition();
+        partition_allocator().deallocate(tmp,1);
+      }
+      pv_i->clear();
     }
+    m_partitions.clear();
     m_buckets.clear();
+
+    const FieldVector& fields = m_mesh.mesh_meta_data().get_fields();
+    for(size_t i=0; i<fields.size(); ++i) {
+      fields[i]->get_meta_data_for_field().clear();
+    }
+
   } catch(...) {}
-
-  try { if ( m_nil_bucket ) destroy_bucket( m_nil_bucket ); } catch(...) {}
 }
 
-
-//----------------------------------------------------------------------
-// The current 'last' bucket in a family is to be deleted.
-// The previous 'last' bucket becomes the new 'last' bucket in the family.
-
-void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
+size_t BucketRepository::total_field_data_footprint(const FieldBase& f, EntityRank rank) const
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket_to_be_deleted);
-
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(entity_rank),
-                  "Entity rank " << entity_rank << " is invalid");
-
-  std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
-
-  // Get the first bucket in the same family as the bucket being deleted
-  Bucket * const first = bucket_to_be_deleted->m_bucketImpl.first_bucket_in_family();
-
-  ThrowRequireMsg( bucket_to_be_deleted->equivalent(*first), "Logic error - bucket_to_be_deleted is not in same family as first_bucket_in_family");
-  ThrowRequireMsg( first->equivalent(*bucket_to_be_deleted), "Logic error - first_bucket_in_family is not in same family as bucket_to_be_deleted");
-
-  ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
-      "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
-
-  ThrowRequireMsg( bucket_to_be_deleted == first->m_bucketImpl.get_bucket_family_pointer(),
-                   "Destroying bucket family") ;
-
-  std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
-  ThrowRequireMsg( ik != bucket_set.end() && bucket_to_be_deleted == *ik,
-      "Bucket not found in bucket set for entity rank " << entity_rank );
-
-  ik = bucket_set.erase( ik );
-
-  if ( first != bucket_to_be_deleted ) {
-
-    ThrowRequireMsg( ik != bucket_set.begin(),
-                     "Where did first bucket go?" );
-
-    first->m_bucketImpl.set_last_bucket_in_family( *--ik );
-
-    ThrowRequireMsg ( first->m_bucketImpl.get_bucket_family_pointer()->size() != 0,
-                      "TODO: Explain" );
-  }
-
-  destroy_bucket( bucket_to_be_deleted );
-}
-
-//----------------------------------------------------------------------
-void BucketRepository::destroy_bucket( Bucket * bucket )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
-
-  delete bucket;
-}
-
-//
-//----------------------------------------------------------------------
-// The input part ordinals are complete and contain all supersets.
-void
-BucketRepository::declare_nil_bucket()
-{
-  TraceIf("stk::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
-
-  if (m_nil_bucket == NULL) {
-    // Key layout:
-    // { part_count + 1 , { part_ordinals } , family_count }
-
-    std::vector<unsigned> new_key(2);
-    new_key[0] = 1 ; // part_count + 1
-    new_key[1] = 0 ; // family_count
-
-    Bucket * bucket =
-      new Bucket(m_mesh, InvalidEntityRank, new_key, 0);
-
-    bucket->m_bucketImpl.set_bucket_family_pointer( bucket );
-
-    //----------------------------------
-
-    m_nil_bucket = bucket;
-  }
-}
-
-
-/** 11/9/10 Discussion between Kendall, Alan, Todd:
- *  Kendall is confused about why presto would run faster simply by removing
- *  several fields that are not even used.  We considered this and posed the
- *  following possibility.  The current bucket allocation system guarantees
- *  that all the fields for a bucket are layed out contiguously in memory so
- *  that they can be accessed in a fast cache-friendly manner.  This also
- *  guarantees means that if a field is allocated but not used, it will still
- *  be chopped up and carried around in the bucket field data as part of the
- *  contiguous block of memory and that it will have to be skipped over as the
- *  computations progress over that block of data.  This would result in cache
- *  misses and reduced performance.  When they're removed, it makes sense that
- *  the performance might get better.
- *
- *  This leads to the idea that maybe we should test this in a use-case or
- *  performance test case and that we should include this in the performance
- *  comparison of the up-and-coming pluggable data module for the Bucket memory
- *  allocation.
- *
- *  It may be that a flat-array style data allocation for field data would
- *  eliminate this issue.
- **/
-
-//----------------------------------------------------------------------
-// The input part ordinals are complete and contain all supersets.
-Bucket *
-BucketRepository::declare_bucket(
-                        const unsigned arg_entity_rank ,
-                        const unsigned part_count ,
-                        const unsigned part_ord[] ,
-                        const std::vector< FieldBase * > & field_set
-                              )
-{
-  enum { KEY_TMP_BUFFER_SIZE = 64 };
-
-  TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
-
-  const unsigned max = static_cast<unsigned>(-1);
-
-  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
-                  "Entity rank " << arg_entity_rank << " is invalid");
-
-  ThrowRequireMsg( !m_buckets.empty(),
-    "m_buckets is empty! Did you forget to initialize MetaData before creating BulkData?");
-  std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
-
-
-  std::vector<unsigned> key(2+part_count) ;
-
-  //----------------------------------
-  // Key layout:
-  // { part_count + 1 , { part_ordinals } , family_count }
-  // Thus family_count = key[ key[0] ]
-  //
-  // for upper bound search use the maximum key.
-
-  key[0] = part_count+1;
-  key[ key[0] ] = max ;
-
+  if (rank > m_partitions.size() || static_cast<unsigned>(f.entity_rank()) != rank)
   {
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = part_ord[i] ; }
+    return 0;
   }
 
-  //----------------------------------
-  // Bucket family has all of the same parts.
-  // Look for the last bucket in this family:
-
-  const std::vector<Bucket*>::iterator ik = lower_bound( bucket_set , &key[0] );
-
-  //----------------------------------
-  // If a member of the bucket family has space, it is the last one
-  // since buckets are kept packed.
-  const bool bucket_family_exists =
-    ik != bucket_set.begin() && bucket_part_equal( ik[-1]->key() , &key[0] );
-
-  Bucket * const last_bucket = bucket_family_exists ? ik[-1] : NULL ;
-
-  Bucket          * bucket    = NULL ;
-
-  if ( last_bucket == NULL ) { // First bucket in this family
-    key[ key[0] ] = 0 ; // Set the key's family count to zero
-  }
-  else { // Last bucket present, can it hold one more entity?
-
-    ThrowRequireMsg( last_bucket->size() != 0,
-                     "Last bucket should not be empty.");
-
-    //field_map = last_bucket->m_bucketImpl.get_field_map();
-
-    const unsigned last_count = last_bucket->key()[ key[0] ];
-
-    const unsigned cap = last_bucket->capacity();
-
-    if ( last_bucket->size() < cap ) {
-      bucket = last_bucket ;
-    }
-    else if ( last_count < max ) {
-      key[ key[0] ] = 1 + last_count ; // Increment the key's family count.
-    }
-    else {
-      // ERROR insane number of buckets!
-      ThrowRequireMsg( false, "Insanely large number of buckets" );
-    }
-  }
-
-
-  //----------------------------------
-
-  //Required bucket does not exist
-  if ( NULL == bucket )
+  size_t retval = 0;
+  const std::vector<Partition *> &r_partitions = m_partitions[rank];
+  size_t num_partitions = r_partitions.size();
+  for (size_t i = 0; i < num_partitions; ++i)
   {
-    bucket = new Bucket( m_mesh, arg_entity_rank, key, m_bucket_capacity);
-
-    Bucket * first_bucket = last_bucket ? last_bucket->m_bucketImpl.first_bucket_in_family() : bucket ;
-
-    bucket->m_bucketImpl.set_first_bucket_in_family(first_bucket); // Family members point to first bucket
-
-    first_bucket->m_bucketImpl.set_last_bucket_in_family(bucket); // First bucket points to new last bucket
-
-    bucket_set.insert( ik , bucket );
+    retval += r_partitions[i]->field_data_footprint(f);
   }
-
-  //----------------------------------
-
-  ThrowRequireMsg( bucket->equivalent(*bucket->m_bucketImpl.first_bucket_in_family()), "Logic error - new bucket is not in same family as first_bucket_in_family");
-  ThrowRequireMsg( bucket->m_bucketImpl.first_bucket_in_family()->equivalent(*bucket), "Logic error - first_bucket_in_family is not in same family as new bucket");
-
-  return bucket ;
+  return retval;
 }
-
-//----------------------------------------------------------------------
-
-void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
-  k_dst.m_bucketImpl.initialize_fields(i_dst);
-}
-
-//----------------------------------------------------------------------
-
-void BucketRepository::update_field_data_states() const
-{
-  TraceIf("stk::mesh::impl::BucketRepository::update_field_data_states", LOG_BUCKET);
-
-  for ( std::vector< std::vector<Bucket*> >::const_iterator
-        i = m_buckets.begin() ; i != m_buckets.end() ; ++i ) {
-
-    const std::vector<Bucket*> & kset = *i ;
-
-    for ( std::vector<Bucket*>::const_iterator
-          ik = kset.begin() ; ik != kset.end() ; ++ik ) {
-      (*ik)->m_bucketImpl.update_state();
-    }
-  }
-}
-
-
-//----------------------------------------------------------------------
-
 
 void BucketRepository::internal_sort_bucket_entities()
 {
-  TraceIf("stk::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
-
-  for ( EntityRank entity_rank = 0 ;
-        entity_rank < m_buckets.size() ; ++entity_rank ) {
-
-    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
-
-    size_t bk = 0 ; // Offset to first bucket of the family
-    size_t ek = 0 ; // Offset to end   bucket of the family
-
-    for ( ; bk < buckets.size() ; bk = ek ) {
-      Bucket * b_scratch = NULL ;
-      Bucket * ik_vacant = buckets[bk]->m_bucketImpl.last_bucket_in_family();
-      unsigned ie_vacant = ik_vacant->size();
-
-      if ( ik_vacant->capacity() <= ie_vacant ) {
-        // Have to create a bucket just for the scratch space...
-        const unsigned * const bucket_key = buckets[bk]->key() ;
-        const unsigned         part_count = bucket_key[0] - 1 ;
-        const unsigned * const part_ord   = bucket_key + 1 ;
-
-        b_scratch = declare_bucket( entity_rank ,
-            part_count , part_ord ,
-            MetaData::get(m_mesh).get_fields() );
-
-        ik_vacant = b_scratch ;
-        ie_vacant = 0 ;
-      }
-
-      ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
-
-      // Determine offset to the end bucket in this family:
-      while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
-      if (ek < buckets.size()) ++ek ;
-
-      unsigned count = 0 ;
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        count += buckets[ik]->size();
-      }
-
-      std::vector<Entity*> entities( count );
-
-      std::vector<Entity*>::iterator j = entities.begin();
-
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        Bucket & b = * buckets[ik];
-        const unsigned n = b.size();
-        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          *j = & b[i] ;
-        }
-      }
-
-      std::sort( entities.begin() , entities.end() , EntityLess() );
-
-      j = entities.begin();
-
-      bool change_this_family = false ;
-
-      for ( size_t ik = bk ; ik != ek ; ++ik ) {
-        Bucket & b = * buckets[ik];
-        const unsigned n = b.size();
-        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          Entity * const current = & b[i] ;
-
-          if ( current != *j ) {
-
-            if ( current ) {
-              // Move current entity to the vacant spot
-              copy_fields( *ik_vacant , ie_vacant , b, i );
-              m_entity_repo.change_entity_bucket(*ik_vacant, *current, ie_vacant);
-              ik_vacant->m_bucketImpl.replace_entity( ie_vacant , current ) ;
-            }
-
-            // Set the vacant spot to where the required entity is now.
-            ik_vacant = & ((*j)->bucket()) ;
-            ie_vacant = (*j)->bucket_ordinal() ;
-            ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
-
-            // Move required entity to the required spot
-            copy_fields( b, i, *ik_vacant , ie_vacant );
-            m_entity_repo.change_entity_bucket( b, **j, i);
-            b.m_bucketImpl.replace_entity( i, *j );
-
-            change_this_family = true ;
-          }
-
-          // Once a change has occured then need to propagate the
-          // relocation for the remainder of the family.
-          // This allows the propagation to be performed once per
-          // entity as opposed to both times the entity is moved.
-
-          if ( change_this_family ) { internal_propagate_relocation( **j ); }
-        }
-      }
-
-      if ( b_scratch ) {
-        // Created a last bucket, now have to destroy it.
-        destroy_bucket( entity_rank , b_scratch );
-        --ek ;
-      }
+  for (std::vector<std::vector<Partition *> >::const_iterator
+         i = m_partitions.begin() ; i != m_partitions.end() ; ++i  )
+  {
+    const std::vector<Partition *> & pset = *i ;
+    for ( std::vector<Partition*>::const_iterator
+            ip = pset.begin() ; ip != pset.end() ; ++ip )
+    {
+      (*ip)->sort();
     }
   }
 }
 
 void BucketRepository::optimize_buckets()
 {
-  TraceIf("stk::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
-
-  for ( EntityRank entity_rank = 0 ;
-      entity_rank < m_buckets.size() ; ++entity_rank )
+  for (std::vector<std::vector<Partition *> >::const_iterator
+         i = m_partitions.begin() ; i != m_partitions.end() ; ++i  )
   {
+    const std::vector<Partition *> & pset = *i ;
+    for ( std::vector<Partition*>::const_iterator
+            ip = pset.begin() ; ip != pset.end() ; ++ip )
+    {
+      (*ip)->compress();
+    }
+  }
+}
 
-    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
+////
+//// Note that we need to construct a key vector that the particular
+//// format so we can use the lower_bound(..) function to lookup the
+//// partition.  Because we are using partitions now instead of
+//// buckets, it should be possible to do without that vector and
+//// instead do the lookup directly from the OrdinalVector.
+////
 
-    std::vector<Bucket*> tmp_buckets;
+Partition *BucketRepository::get_or_create_partition(
+  const EntityRank arg_entity_rank ,
+  const OrdinalVector &parts)
+{
+  enum { KEY_TMP_BUFFER_SIZE = 64 };
 
-    size_t begin_family = 0 ; // Offset to first bucket of the family
-    size_t end_family = 0 ; // Offset to end   bucket of the family
+  TraceIf("stk::mesh::impl::BucketRepository::get_or_create_partition", LOG_BUCKET);
 
-    //loop over families
-    for ( ; begin_family < buckets.size() ; begin_family = end_family ) {
-      Bucket * last_bucket_in_family  = buckets[begin_family]->m_bucketImpl.last_bucket_in_family();
+  ThrowRequireMsg(MetaData::get(m_mesh).check_rank(arg_entity_rank),
+                  "Entity rank " << arg_entity_rank << " is invalid");
 
-      // Determine offset to the end bucket in this family:
-      while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
-      if (end_family < buckets.size())  ++end_family ; //increment past the end
+  if (m_buckets.empty()) {
+    size_t entity_rank_count = m_mesh.mesh_meta_data().entity_rank_count();
+    ThrowRequireMsg( entity_rank_count > 0,
+                   "MetaData doesn't have any entity-ranks! Did you forget to initialize MetaData before creating BulkData?");
+    m_buckets.resize(entity_rank_count);
+    m_partitions.resize(entity_rank_count);
+    m_need_sync_from_partitions.resize(entity_rank_count, false);
+  }
 
-      //if compressed and sorted go to the next family
-      const bool is_compressed =    (end_family-begin_family == 1)
-                                 && (buckets[begin_family]->size() == buckets[begin_family]->capacity());
-      if (is_compressed) {
-        const Bucket & b = *buckets[begin_family];
-        bool is_sorted = true;
-        for (size_t i=0, end=b.size()-1; i<end && is_sorted; ++i)
+  std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
+
+  const size_t part_count = parts.size();
+  std::vector<unsigned> key(2 + part_count) ;
+
+  //----------------------------------
+  // Key layout:
+  // { part_count + 1 , { part_ordinals } , partition_count }
+  // Thus partition_count = key[ key[0] ]
+  //
+  // for upper bound search use the maximum key for a bucket in the partition.
+  const unsigned max = static_cast<unsigned>(-1);
+  key[0] = part_count+1;
+  key[ key[0] ] = max ;
+
+  {
+    for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = parts[i] ; }
+  }
+
+  // If the partition is found, the iterator will be right after it, thanks to the
+  // trickiness above.
+  const std::vector<Partition *>::iterator ik = lower_bound( partitions , &key[0] );
+  const bool partition_exists =
+    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , &key[0] );
+
+  if (partition_exists)
+  {
+    return ik[-1];
+  }
+
+  key[key[0]] = 0;
+
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
+  Partition *partition = partition_allocator().allocate(1);
+  ThrowRequire(partition != NULL);
+  partition = new (partition) Partition(m_mesh, this, arg_entity_rank, key);
+
+  m_need_sync_from_partitions[arg_entity_rank] = true;
+  partitions.insert( ik , partition );
+
+  return partition ;
+}
+
+void BucketRepository::internal_modification_end()
+{
+  sync_from_partitions();
+
+  // What needs to be done depends on the connectivity map.
+  for (EntityRank from_rank = stk::topology::NODE_RANK;
+        from_rank < m_connectivity_map.m_map.size();
+        ++from_rank)
+  {
+    const BucketVector &buckets = m_buckets[from_rank];
+    unsigned num_buckets = buckets.size();
+    for (unsigned j = 0; j < num_buckets; ++j)
+    {
+      ThrowAssert(buckets[j] != NULL);
+      Bucket &bucket = *buckets[j];
+
+      // Update the hop-saving connectivity data on this bucket.
+      //
+      for (EntityRank to_rank = stk::topology::NODE_RANK;
+          to_rank < m_connectivity_map.m_map[from_rank].size();
+          ++to_rank)
+      {
+        switch (m_connectivity_map.m_map[from_rank][to_rank])
         {
-          if(b[i].key() >= b[i+1].key()) is_sorted = false;
+        case FIXED_CONNECTIVITY:
+          switch (to_rank)
+          {
+          case stk::topology::NODE_RANK:
+            bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::EDGE_RANK:
+            bucket.m_fixed_edge_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::FACE_RANK:
+            bucket.m_fixed_face_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::ELEMENT_RANK:
+            bucket.m_fixed_element_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          default:
+            break;
+          }
+          break;
+        case DYNAMIC_CONNECTIVITY:
+          switch (to_rank)
+          {
+          case stk::topology::NODE_RANK:
+            bucket.m_dynamic_node_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::EDGE_RANK:
+            bucket.m_dynamic_edge_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::FACE_RANK:
+            bucket.m_dynamic_face_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::ELEMENT_RANK:
+            bucket.m_dynamic_element_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          case stk::topology::INVALID_RANK:
+            break;
+          default:
+            bucket.m_dynamic_other_connectivity.end_modification(&bucket.m_mesh);
+            break;
+          }
+          break;
+        case INVALID_CONNECTIVITY_TYPE:
+        default:
+          break;
         }
-        if (is_sorted) {
-          tmp_buckets.push_back(buckets[begin_family]);
-          continue;
-        }
-      }
-
-      std::vector<unsigned> new_key = buckets[begin_family]->m_bucketImpl.key_vector();
-      //index of bucket in family
-      new_key[ new_key[0] ] = 0;
-
-      unsigned new_capacity = 0 ;
-      for ( size_t i = begin_family ; i != end_family ; ++i ) {
-        new_capacity += buckets[i]->m_bucketImpl.size();
-      }
-
-      std::vector<Entity*> entities;
-      entities.reserve(new_capacity);
-
-      for ( size_t i = begin_family ; i != end_family ; ++i ) {
-        Bucket& b = *buckets[i];
-        for(size_t j=0; j<b.size(); ++j) {
-          entities.push_back(&b[j]);
-        }
-      }
-
-      std::sort( entities.begin(), entities.end(), EntityLess() );
-
-      Bucket * new_bucket = new Bucket( m_mesh,
-          entity_rank,
-          new_key,
-          new_capacity
-          );
-
-      new_bucket->m_bucketImpl.set_first_bucket_in_family(new_bucket); // Family members point to first bucket
-      new_bucket->m_bucketImpl.set_last_bucket_in_family(new_bucket); // First bucket points to new last bucket
-
-      tmp_buckets.push_back(new_bucket);
-
-      for(size_t new_ordinal=0; new_ordinal<entities.size(); ++new_ordinal) {
-        //increase size of the new_bucket
-        new_bucket->m_bucketImpl.increment_size();
-
-        Entity & entity = *entities[new_ordinal];
-        Bucket& old_bucket = entity.bucket();
-        unsigned old_ordinal = entity.bucket_ordinal();
-
-        //copy field data from old to new
-        copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
-        m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
-        new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
-        internal_propagate_relocation(entity);
-      }
-
-      for (size_t ik = begin_family; ik != end_family; ++ik) {
-        delete buckets[ik];
-        buckets[ik] = NULL;
       }
     }
-
-    buckets.swap(tmp_buckets);
   }
 }
-//----------------------------------------------------------------------
 
-void BucketRepository::remove_entity( Bucket * k , unsigned i )
+void BucketRepository::sync_from_partitions()
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
-
-  ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
-
-  const EntityRank entity_rank = k->entity_rank();
-
-  // Last bucket in the family of buckets with the same parts.
-  // The last bucket is the only non-full bucket in the family.
-
-  Bucket * const last = k->m_bucketImpl.last_bucket_in_family();
-
-  ThrowRequireMsg( last->equivalent(*k), "Logic error - last bucket in family not equivalent to bucket");
-  ThrowRequireMsg( k->equivalent(*last), "Logic error - bucket not equivalent to last bucket in family");
-
-  // Fill in the gap if it is not the last entity being removed
-
-  if ( last != k || k->size() != i + 1 ) {
-
-    // Copy last entity in last bucket to bucket *k slot i
-
-    Entity & entity = (*last)[ last->size() - 1 ];
-
-    copy_fields( *k , i , *last , last->size() - 1 );
-
-    k->m_bucketImpl.replace_entity(i, & entity ) ;
-    m_entity_repo.change_entity_bucket( *k, entity, i);
-
-    // Entity field data has relocated
-
-    internal_propagate_relocation( entity );
-  }
-
-  last->m_bucketImpl.decrement_size();
-
-  last->m_bucketImpl.replace_entity( last->size() , NULL ) ;
-
-  if ( 0 == last->size() ) {
-    destroy_bucket( entity_rank , last );
+  for (EntityRank rank = stk::topology::NODE_RANK; rank < m_partitions.size(); ++rank)
+  {
+    sync_from_partitions(rank);
   }
 }
 
-//----------------------------------------------------------------------
+namespace {
 
-void BucketRepository::internal_propagate_relocation( Entity & entity )
+inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
+
+}
+
+void BucketRepository::sync_from_partitions(EntityRank rank)
 {
-  TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
 
-  const EntityRank erank = entity.entity_rank();
-  PairIterRelation rel = entity.relations();
+  typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
-  for ( ; ! rel.empty() ; ++rel ) {
-    const EntityRank rel_rank = rel->entity_rank();
-    if ( rel_rank < erank ) {
-      Entity & e_to = * rel->entity();
+  if (!m_need_sync_from_partitions[rank])
+  {
+    return;
+  }
 
-      set_field_relations( entity, e_to, rel->identifier() );
-    }
-    else if ( erank < rel_rank ) {
-      Entity & e_from = * rel->entity();
+  std::vector<Partition *> &partitions = m_partitions[rank];
 
-      set_field_relations( e_from, entity, rel->identifier() );
+  size_t num_partitions = partitions.size();
+  size_t num_buckets = 0;
+  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+  {
+    if (!partitions[p_i]->empty())
+    {
+      num_buckets += partitions[p_i]->num_buckets();
     }
   }
+
+  m_buckets[rank].resize(num_buckets);
+
+  bool has_hole = false;
+  BucketVector::iterator bkts_i = m_buckets[rank].begin();
+  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+  {
+    Partition &partition = *partitions[p_i];
+
+    if (partition.empty())
+    {
+      partitions[p_i]->~Partition();
+      partition_allocator().deallocate(partitions[p_i],1);
+      partitions[p_i] = 0;
+      has_hole = true;
+      continue;
+    }
+    size_t num_bkts_in_partition = partition.num_buckets();
+    std::copy(partition.begin(), partition.end(), bkts_i);
+    bkts_i += num_bkts_in_partition;
+  }
+
+  if (has_hole)
+  {
+    std::vector<Partition *>::iterator new_end;
+    new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
+    size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
+    partitions.resize(new_size);
+  }
+
+  sync_bucket_ids(rank);
+
+  m_need_sync_from_partitions[rank] = false;
 }
 
+Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
+                                          const std::vector<unsigned> & arg_key,
+                                          size_t arg_capacity )
+{
+  Bucket * new_bucket = bucket_allocator().allocate(1);
+  ThrowRequire(new_bucket != NULL);
+
+  BucketVector &bucket_vec = m_buckets[arg_entity_rank];
+  const unsigned bucket_id = bucket_vec.size();
+  try {
+    new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map, bucket_id);
+  } catch(std::exception & e) {
+    bucket_allocator().deallocate(new_bucket,1);
+    throw;
+  }
+
+  bucket_vec.push_back(new_bucket);
+  m_need_sync_from_partitions[arg_entity_rank] = true;
+
+  return new_bucket;
+}
+
+void BucketRepository::deallocate_bucket(Bucket *b)
+{
+  ThrowAssertMsg(b != NULL,
+                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+
+  const unsigned bucket_id = b->bucket_id();
+  const EntityRank bucket_rank = b->entity_rank();
+
+  ThrowAssertMsg(b == m_buckets[bucket_rank][bucket_id],
+                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+
+  m_buckets[bucket_rank][bucket_id] = NULL; // space will be reclaimed by sync_from_partitions
+  m_need_sync_from_partitions[bucket_rank] = true;
+  b->~Bucket();
+  bucket_allocator().deallocate(b,1);
+}
+
+void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
+{
+  BucketVector &buckets = m_buckets[entity_rank];
+  unsigned num_buckets = buckets.size();
+  std::vector<unsigned> id_map(num_buckets);
+
+  for (unsigned i = 0; i < num_buckets; ++i)
+  {
+    ThrowAssertMsg(buckets[i] != NULL,
+                   "BucketRepository::sync_bucket_ids() called when m_buckets["
+                   << entity_rank << "] is not dense.");
+    id_map[i] = buckets[i]->bucket_id();
+    buckets[i]->m_bucket_id = i;
+  }
+
+  m_mesh.reorder_buckets_callback(entity_rank, id_map);
+}
+
+std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
+{
+  if (m_mesh.synchronized_state() != BulkData::SYNCHRONIZED)
+  {
+    std::vector<Partition *>();
+  }
+  std::vector<Partition *> retval;
+  std::vector<Partition *> const& bf_vec = m_partitions[rank];
+  for (size_t i = 0; i < bf_vec.size(); ++i)
+  {
+    retval.push_back(bf_vec[i]);
+  }
+  return retval;
+}
 
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-
-

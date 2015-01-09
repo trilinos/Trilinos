@@ -33,11 +33,10 @@
 #ifndef IOSS_Ioss_FileInfo_h
 #define IOSS_Ioss_FileInfo_h
 
+#include <sys/types.h>                  // for off_t
+#include <time.h>                       // for time_t
+#include <string>                       // for string, operator!=, etc
 #include <Ioss_CodeTypes.h>
-
-#include <string>
-#include <iosfwd>
-#include <sys/types.h>
 
 namespace Ioss {
 
@@ -119,8 +118,8 @@ namespace Ioss {
     
   private:
     std::string filename_;
-    bool exists_;   //<! this is used frequently, check on creation
-    bool readable_; //<! this is used frequently, check on creation
+    bool exists_;   ///< this is used frequently, check on creation
+    bool readable_; ///< this is used frequently, check on creation
   };
 }
 #endif // IOSS_Ioss_FileInfo_h

@@ -50,10 +50,12 @@
 
 namespace panzer {
    template <typename LO,typename GO> class UniqueGlobalIndexer;
+#ifdef PANZER_HAVE_FEI
    template <typename LO,typename GO> class DOFManagerFEI;
+#endif
 }
 
-namespace panzer_stk { 
+namespace panzer_stk_classic { 
 
 /** Write a vector to the cell data of a STK mesh. This will look up
   * the cell field <code>prefix+fieldName+postfix</code>, which is assumed
@@ -63,13 +65,15 @@ namespace panzer_stk {
   * \param[in] data Vector of doubles equatl to the total number of elements on this processor
   * \param[in] fieldName Name of field to be written (must be a STK field)
   */
-void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName);
+void write_cell_data(panzer_stk_classic::STK_Interface & mesh,const std::vector<double> & data,const std::string & fieldName);
 
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
-void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_MultiVector & x,const std::string & prefx="",const std::string & postfix="");
+void write_solution_data(const panzer::UniqueGlobalIndexer<int,int> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix="",const std::string & postfix="");
 
-void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_MultiVector & x);
-void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk::STK_Interface & mesh,Epetra_Vector & x);
+#ifdef PANZER_HAVE_FEI
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_MultiVector & x);
+void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_Vector & x);
+#endif
 
 /** Using a container, compute the sorted permutation vector
   * do not modifiy the original container.
@@ -91,7 +95,7 @@ void sorted_permutation(const RAContainer & cont,std::vector<std::size_t> & perm
 
 }
 
-namespace panzer_stk {
+namespace panzer_stk_classic {
 // utility class used by the sorted permutation objects
 template <typename RAContainer,typename Compare>
 struct PermFunctor {

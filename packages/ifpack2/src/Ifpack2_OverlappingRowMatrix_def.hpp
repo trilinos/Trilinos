@@ -556,7 +556,7 @@ rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+typename OverlappingRowMatrix<MatrixType>::mag_type
 OverlappingRowMatrix<MatrixType>::getFrobeniusNorm () const
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix does not support getFrobeniusNorm.");
@@ -586,9 +586,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     << ".");
 
   // FIXME (mfh 13 July 2013) This would be a good candidate for a
-  // Kokkos local parallel operator implementation.  That would
-  // obviate the need for getting views of the data and make the code
-  // below a lot simpler.
+  // local parallel operator implementation.  That would obviate the
+  // need for getting views of the data and make the code below a lot
+  // simpler.
 
   const RangeScalar zero = STRS::zero ();
   ArrayRCP<ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();

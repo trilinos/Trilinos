@@ -214,14 +214,19 @@ template<class MatrixType>
 size_t ReorderFilter<MatrixType>::
 getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
 {
-  typedef Teuchos::OrdinalTraits<local_ordinal_type> OTLO;
-  typedef Teuchos::OrdinalTraits<size_t> OTS;
-
-  const local_ordinal_type localRow = A_->getRowMap ()->getLocalElement (globalRow);
-  if (localRow == OTLO::invalid ()) {
-    return OTS::invalid ();
-  } else {
-    return this->getNumEntriesInLocalRow (localRow);
+  if (A_.is_null () || A_->getRowMap ().is_null ()) {
+    return Teuchos::OrdinalTraits<size_t>::invalid ();
+  }
+  else {
+    const local_ordinal_type lclRow =
+      A_->getRowMap ()->getLocalElement (globalRow);
+    if (lclRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid ()) {
+      // The calling process doesn't own any entries in this row.
+      return static_cast<size_t> (0);
+    } else {
+      const local_ordinal_type origLclRow = reverseperm_[lclRow];
+      return A_->getNumEntriesInLocalRow (origLclRow);
+    }
   }
 }
 
@@ -237,7 +242,8 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
     const local_ordinal_type localReorderedRow = reverseperm_[localRow];
     return A_->getNumEntriesInLocalRow (localReorderedRow);
   } else {
-    return Teuchos::OrdinalTraits<size_t>::invalid ();
+    // The calling process doesn't own any entries in this row.
+    return static_cast<size_t> (0);
   }
 }
 
@@ -373,7 +379,10 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     << LocalRow << " is not a valid local row index on the calling process "
     "with rank " << A_->getRowMap ()->getComm ()->getRank () << ".");
 
-  const size_t numEntries = A_->getNumEntriesInLocalRow (LocalRow);
+  // This duplicates code in getNumEntriesInGlobalRow, but avoids an
+  // extra array lookup and some extra tests.
+  const local_ordinal_type origLclRow = reverseperm_[LocalRow];
+  const size_t numEntries = A_->getNumEntriesInLocalRow (origLclRow);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     static_cast<size_t> (Indices.size ()) < numEntries ||
@@ -382,10 +391,10 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     "Ifpack2::ReorderFilter::getLocalRowCopy: The given array views are not "
     "long enough to store all the data in the given row " << LocalRow
     << ".  Indices.size() = " << Indices.size () << ", Values.size() = "
-    << Values.size () << ", but the row has " << numEntries << " entry/ies.");
+    << Values.size () << ", but the (original) row has " << numEntries
+    << " entry/ies.");
 
-  local_ordinal_type MyOriginalRow = reverseperm_[LocalRow];
-  A_->getLocalRowCopy (MyOriginalRow,Indices,Values,NumEntries);
+  A_->getLocalRowCopy (origLclRow, Indices, Values, NumEntries);
   // Do a col reindex via perm
   //
   // FIXME (mfh 30 Jan 2014) This assumes that the row and column
@@ -506,7 +515,7 @@ bool ReorderFilter<MatrixType>::supportsRowViews() const
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType ReorderFilter<MatrixType>::getFrobeniusNorm() const
+typename ReorderFilter<MatrixType>::mag_type ReorderFilter<MatrixType>::getFrobeniusNorm() const
 {
   // Reordering doesn't change the Frobenius norm.
   return A_->getFrobeniusNorm ();

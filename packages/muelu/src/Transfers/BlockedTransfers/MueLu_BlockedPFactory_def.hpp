@@ -75,230 +75,204 @@
 
 namespace MueLu {
 
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BlockedPFactory(/*RCP<FactoryBase> AFact*/)
-: /*AFact_(AFact),*//* AFact_(Teuchos::null),*/
-  diagonalView_("current") {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-}
+    validParamList->set< RCP<const FactoryBase> >("A",          null, "Generating factory of the matrix A (block matrix)");
+    validParamList->set< bool >                  ("backwards", false, "Forward/backward order");
 
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~BlockedPFactory() {}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
-  RCP<ParameterList> validParamList = rcp(new ParameterList());
-
-  validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A (block matrix)");
-
-  return validParamList;
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDiagonalView(std::string const& diagView) {
-  diagonalView_ = diagView;
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::string BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDiagonalView() {
-  return diagonalView_;
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager) {
-  FactManager_.push_back(FactManager);
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-  Input(fineLevel, "A");
-  //fineLevel.DeclareInput("A",AFact_.get(),this);
-
-  //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-
-  std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-  for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
-    SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
-    SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
-
-    if (!restrictionMode_)
-      coarseLevel.DeclareInput("P",(*it)->GetFactory("P").get(), this);
-    else
-      coarseLevel.DeclareInput("R",(*it)->GetFactory("R").get(), this);
+    return validParamList;
   }
 
-}
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    Input(fineLevel, "A");
 
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
-  typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOMatrix;
+    const ParameterList& pL = GetParameterList();
+    const bool backwards = pL.get<bool>("backwards");
 
+    const int numFactManagers = FactManager_.size();
+    for (int k = 0; k < numFactManagers; k++) {
+      int i = (backwards ? numFactManagers-1 - k : k);
+      const RCP<const FactoryManagerBase>& factManager = FactManager_[i];
 
-  //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  //std::ostringstream buf; buf << coarseLevel.GetLevelID();
+      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   factManager);
+      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), factManager);
 
-  // Level Get
-  //RCP<Matrix> A     = fineLevel.  Get< RCP<Matrix> >("A", AFact_.get()); // IMPORTANT: use main factory manager for getting A
-  RCP<Matrix> A     = Get< RCP<Matrix> >(fineLevel, "A");
-
-  RCP<BlockedCrsOMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOMatrix>(A);
-  TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
-
-  // plausibility check
-  TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != FactManager_.size(), Exceptions::RuntimeError, "MueLu::BlockedPFactory::Build: number of block rows of A does not match number of SubFactoryManagers. error.");
-  TEUCHOS_TEST_FOR_EXCEPTION(bA->Cols() != FactManager_.size(), Exceptions::RuntimeError, "MueLu::BlockedPFactory::Build: number of block cols of A does not match number of SubFactoryManagers. error.");
-
-  // build blocked prolongator
-  std::vector<RCP<Matrix> > subBlockP;
-  std::vector<RCP<const Map> >  subBlockPRangeMaps;
-  std::vector<RCP<const Map    > > subBlockPDomainMaps;
-  std::vector<GO> fullRangeMapVector;
-  std::vector<GO> fullDomainMapVector;
-  subBlockP.reserve(FactManager_.size());       // reserve size for block P operators
-  subBlockPRangeMaps.reserve(FactManager_.size());       // reserve size for block P operators
-  subBlockPDomainMaps.reserve(FactManager_.size());       // reserve size for block P operators
-
-  // build and store the subblocks and the corresponding range and domain maps
-  // since we put together the full range and domain map from the submaps we do not have
-  // to use the maps from blocked A
-  std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-  for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
-    SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
-    SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
-    if(!restrictionMode_) {
-      subBlockP.push_back(coarseLevel.Get<RCP<Matrix> >("P", (*it)->GetFactory("P").get())); // create and return block P operator
-    }
-    else {
-      subBlockP.push_back(coarseLevel.Get<RCP<Matrix> >("R", (*it)->GetFactory("R").get())); // create and return block R operator
+      if (!restrictionMode_)
+        coarseLevel.DeclareInput("P", factManager->GetFactory("P").get(), this);
+      else
+        coarseLevel.DeclareInput("R", factManager->GetFactory("R").get(), this);
     }
 
-    // check if prolongator/restrictor operators have strided maps
-    TEUCHOS_TEST_FOR_EXCEPTION(subBlockP.back()->IsView("stridedMaps")==false, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: subBlock P operator has no strided map information. error.");
-
-    // append strided row map (= range map) to list of range maps.
-    Teuchos::RCP<const Map> rangeMap = subBlockP.back()->getRowMap("stridedMaps"); /* getRangeMap(); //*/
-    subBlockPRangeMaps.push_back(rangeMap);
-
-    // use plain range map to determine the DOF ids
-    Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockP.back()->getRangeMap()->getNodeElementList(); //subBlockPRangeMaps.back()->getNodeElementList();
-    fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
-    sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
-
-    // append strided col map (= domain map) to list of range maps.
-    Teuchos::RCP<const Map> domainMap = subBlockP.back()->getColMap("stridedMaps"); /* getDomainMap(); //*/
-    subBlockPDomainMaps.push_back(domainMap);
-
-    // use plain domain map to determine the DOF ids
-    Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = subBlockP.back()->getDomainMap()->getNodeElementList(); //subBlockPDomainMaps.back()->getNodeElementList();
-    fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
-    sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
-
   }
 
-  // extract map index base from maps of blocked A
-  GO rangeIndexBase  = 0;
-  GO domainIndexBase = 0;
-  if(!restrictionMode_) { // prolongation mode: just use index base of range and domain map of bA
-    rangeIndexBase = bA->getRangeMap()->getIndexBase();
-    domainIndexBase= bA->getDomainMap()->getIndexBase();
-  } else { // restriction mode: switch range and domain map for blocked restriction operator
-    rangeIndexBase = bA->getDomainMap()->getIndexBase();
-    domainIndexBase= bA->getRangeMap()->getIndexBase();
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const
+  { }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+    RCP<Matrix> Ain = Get< RCP<Matrix> >(fineLevel, "A");
+
+    RCP<BlockedCrsMatrix> A = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
+    TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), Exceptions::BadCast, "Input matrix A is not a BlockedCrsMatrix.");
+
+    const int numFactManagers = FactManager_.size();
+
+    // Plausibility check
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Rows() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
+                               "Number of block rows [" << A->Rows() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
+    TEUCHOS_TEST_FOR_EXCEPTION(A->Cols() != as<size_t>(numFactManagers), Exceptions::RuntimeError,
+                               "Number of block cols [" << A->Cols() << "] does not match the number of SubFactorManagers [" << numFactManagers << "]");
+
+
+    // Build blocked prolongator
+    std::vector<RCP<Matrix> >     subBlockP          (numFactManagers);
+    std::vector<RCP<const Map> >  subBlockPRangeMaps (numFactManagers);
+    std::vector<RCP<const Map> >  subBlockPDomainMaps(numFactManagers);
+
+    std::vector<GO> fullRangeMapVector;
+    std::vector<GO> fullDomainMapVector;
+
+    const ParameterList& pL = GetParameterList();
+    const bool backwards = pL.get<bool>("backwards");
+
+    // Build and store the subblocks and the corresponding range and domain
+    // maps.  Since we put together the full range and domain map from the
+    // submaps, we do not have to use the maps from blocked A
+    for (int k = 0; k < numFactManagers; k++) {
+      int i = (backwards ? numFactManagers-1 - k : k);
+      const RCP<const FactoryManagerBase>& factManager = FactManager_[i];
+
+      SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   factManager);
+      SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), factManager);
+
+      if (!restrictionMode_) subBlockP[i] = coarseLevel.Get<RCP<Matrix> >("P", factManager->GetFactory("P").get());
+      else                   subBlockP[i] = coarseLevel.Get<RCP<Matrix> >("R", factManager->GetFactory("R").get());
+
+      // Check if prolongator/restrictor operators have strided maps
+      TEUCHOS_TEST_FOR_EXCEPTION(subBlockP[i]->IsView("stridedMaps") == false, Exceptions::BadCast,
+                                 "subBlock P operator [" << i << "] has no strided map information.");
+
+      // Append strided row map (= range map) to list of range maps.
+      subBlockPRangeMaps[i] = subBlockP[i]->getRowMap("stridedMaps");
+
+      // Use plain range map to determine the DOF ids
+      ArrayView<const GO> nodeRangeMap = subBlockPRangeMaps[i]->getNodeElementList();
+      fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
+      sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
+
+      // Append strided col map (= domain map) to list of range maps.
+      subBlockPDomainMaps[i] = subBlockP[i]->getColMap("stridedMaps");
+
+      // Use plain domain map to determine the DOF ids
+      ArrayView<const GO> nodeDomainMap = subBlockPDomainMaps[i]->getNodeElementList();
+      fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
+      sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
+    }
+
+    // extract map index base from maps of blocked A
+    GO rangeIndexBase  = 0;
+    GO domainIndexBase = 0;
+    if (!restrictionMode_) {
+      // Prolongation mode: just use index base of range and domain map of A
+      rangeIndexBase  = A->getRangeMap() ->getIndexBase();
+      domainIndexBase = A->getDomainMap()->getIndexBase();
+
+    } else {
+      // Restriction mode: switch range and domain map for blocked restriction operator
+      rangeIndexBase  = A->getDomainMap()->getIndexBase();
+      domainIndexBase = A->getRangeMap()->getIndexBase();
+    }
+
+    // Build full range map.
+    // If original range map has striding information, then transfer it to the
+    // new range map
+    RCP<const MapExtractor> rangeAMapExtractor = A->getRangeMapExtractor();
+    RCP<const StridedMap>   stridedRgFullMap = rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
+    RCP<const Map >         fullRangeMap = Teuchos::null;
+
+    ArrayView<GO> fullRangeMapGIDs(fullRangeMapVector.size() ? &fullRangeMapVector[0] : 0, fullRangeMapVector.size());
+    if (stridedRgFullMap != Teuchos::null) {
+      std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
+      fullRangeMap = StridedMapFactory::Build(
+                                   A->getRangeMap()->lib(),
+                                   Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                   fullRangeMapGIDs,
+                                   rangeIndexBase,
+                                   stridedData,
+                                   A->getRangeMap()->getComm(),
+                                   -1, /* the full map vector should always have strided block id -1! */
+                                   /*stridedRgFullMap->getStridedBlockId(),*/
+                                   stridedRgFullMap->getOffset());
+    } else {
+      fullRangeMap = MapFactory::Build(
+                            A->getRangeMap()->lib(),
+                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                            fullRangeMapGIDs,
+                            rangeIndexBase,
+                            A->getRangeMap()->getComm());
+    }
+
+    RCP<const MapExtractor> domainAMapExtractor = A->getDomainMapExtractor();
+    Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
+    Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
+    Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
+    if (stridedDoFullMap != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+      std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+      fullDomainMap = StridedMapFactory::Build(
+                                   A->getDomainMap()->lib(),
+                                   Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                   fullDomainMapGIDs,
+                                   domainIndexBase,
+                                   stridedData2,
+                                   A->getDomainMap()->getComm(),
+                                   -1, /* the full map vector should always have strided block id -1! */
+                                   /*stridedDoFullMap->getStridedBlockId(),*/
+                                   stridedDoFullMap->getOffset());
+    } else {
+      fullDomainMap = MapFactory::Build(
+                            A->getDomainMap()->lib(),
+                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                            fullDomainMapGIDs,
+                            domainIndexBase,
+                            A->getDomainMap()->getComm());
+    }
+
+
+    // Build map extractors
+    RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps);
+    RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps);
+
+    RCP<BlockedCrsMatrix> P = rcp(new BlockedCrsMatrix(rangeMapExtractor, domainMapExtractor, 10));
+    for (size_t i = 0; i < subBlockPRangeMaps.size(); i++)
+      for (size_t j = 0; j < subBlockPRangeMaps.size(); j++)
+        if (i == j) {
+          RCP<CrsMatrixWrap> crsOpii  = rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
+          RCP<CrsMatrix>     crsMatii = crsOpii->getCrsMatrix();
+          P->setMatrix(i, i, crsMatii);
+        } else {
+          P->setMatrix(i, j, Teuchos::null);
+        }
+
+    P->fillComplete();
+
+    // Level Set
+    if (!restrictionMode_) {
+      // Prolongation mode
+      coarseLevel.Set("P", rcp_dynamic_cast<Matrix>(P), this);
+
+    } else {
+      // Restriction mode
+      // We do not have to transpose the blocked R operator since the subblocks
+      // on the diagonal are already valid R subblocks
+      coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<Matrix>(P), this);
+    }
+
   }
-
-  // build full range map.
-  // If original range map has striding information, then transfer it to the new range map
-  RCP<const MapExtractor> rangeAMapExtractor = bA->getRangeMapExtractor();
-  Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
-  Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeAMapExtractor->getFullMap());
-  Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
-  if(stridedRgFullMap != Teuchos::null) {
-    std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
-    fullRangeMap =
-        StridedMapFactory::Build(
-            bA->getRangeMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullRangeMapGIDs,
-            rangeIndexBase,
-            stridedData,
-            bA->getRangeMap()->getComm(),
-            -1, /* the full map vector should always have strided block id -1! */
-            /*stridedRgFullMap->getStridedBlockId(),*/
-            stridedRgFullMap->getOffset());
-  } else {
-    fullRangeMap =
-        MapFactory::Build(
-            bA->getRangeMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullRangeMapGIDs,
-            rangeIndexBase,
-            bA->getRangeMap()->getComm());
-  }
-
-  RCP<const MapExtractor> domainAMapExtractor = bA->getDomainMapExtractor();
-  Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
-  Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainAMapExtractor->getFullMap());
-  Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
-  if(stridedDoFullMap != Teuchos::null) {
-    TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
-    std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
-    fullDomainMap =
-        StridedMapFactory::Build(
-            bA->getDomainMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullDomainMapGIDs,
-            domainIndexBase,
-            stridedData2,
-            bA->getDomainMap()->getComm(),
-            -1, /* the full map vector should always have strided block id -1! */
-            /*stridedDoFullMap->getStridedBlockId(),*/
-            stridedDoFullMap->getOffset());
-  } else {
-
-    fullDomainMap =
-        MapFactory::Build(
-            bA->getDomainMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullDomainMapGIDs,
-            domainIndexBase,
-            bA->getDomainMap()->getComm());
-  }
-
-  // build map extractors
-  Teuchos::RCP<const MapExtractor> rangeMapExtractor  = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(fullRangeMap,  subBlockPRangeMaps);
-  Teuchos::RCP<const MapExtractor> domainMapExtractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(fullDomainMap, subBlockPDomainMaps);
-
-  Teuchos::RCP<BlockedCrsOMatrix> bP = Teuchos::rcp(new BlockedCrsOMatrix(rangeMapExtractor,domainMapExtractor,10));
-  for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {
-    Teuchos::RCP<CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
-    Teuchos::RCP<CrsMatrix> crsMatii = crsOpii->getCrsMatrix();
-    bP->setMatrix(i,i,crsMatii);
-  }
-
-  bP->fillComplete();
-
-  //bP->describe(*fos,Teuchos::VERB_EXTREME);
-
-  // Level Set
-  if(!restrictionMode_)
-  {
-    // prolongation factory is in prolongation mode
-    coarseLevel.Set("P", Teuchos::rcp_dynamic_cast<Matrix>(bP), this);
-  }
-  else
-  {
-    // prolongation factory is in restriction mode
-    // we do not have to transpose the blocked R operator since the subblocks on the diagonal
-    // are already valid R subblocks
-    coarseLevel.Set("R", Teuchos::rcp_dynamic_cast<Matrix>(bP), this);
-  }
-
-}
-
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level &coarseLevel) const {
-
-}
 
 } // namespace MueLu
 

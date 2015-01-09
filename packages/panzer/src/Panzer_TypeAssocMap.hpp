@@ -6,12 +6,12 @@
 namespace panzer {
 
 /** This class lets you associate evaluation types with
-  * a particular value. All it does is wrap the boost::fusion::map
-  * type.
+  * a particular value.
   */
 template <typename TypesVector,typename ValueType>
 class TypeAssocMap {
 public:
+  typedef TypesVector types_vector;
 
   TypeAssocMap() 
   {

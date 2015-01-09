@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -98,9 +98,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
 
   //! Set multi-vector values from two-dimensional array.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
     Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
     A - Pointer to an array of double precision numbers.  The first vector starts at A.
@@ -109,34 +109,34 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
     MyLDA - The "Leading Dimension", or stride between vectors in memory.
     \warning This value refers to the stride on the calling processor.  Thus it is a
     local quantity, not a global quantity.
-    \param In 
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map,
          double *A, int MyLDA, int NumVectors,
         bool ignoreNonLocalEntries=false);
-  
+
   //! Set multi-vector values from array of pointers.
   /*!
-    \param In 
+    \param In
     Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
     Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
     ArrayOfPointers - An array of pointers such that ArrayOfPointers[i] points to the memory
     location containing ith vector to be copied.
-    \param In 
+    \param In
     NumVectors - Number of vectors in multi-vector.
 
     \return Integer error code, set to 0 if successful.
 
     See Detailed Description section for further discussion.
   */
-  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
+  Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map,
          double **ArrayOfPointers, int NumVectors,
             bool ignoreNonLocalEntries=false);
 
@@ -298,7 +298,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
 
   /// \brief Deallocate storage for nonlocal data.
   ///
-  /// This does not include whatever \c destroyNonlocalMapAndExporter() 
+  /// This does not include whatever \c destroyNonlocalMapAndExporter()
   /// deallocates.
   void destroyNonlocalData();
 

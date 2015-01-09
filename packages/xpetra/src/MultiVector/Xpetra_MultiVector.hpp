@@ -63,12 +63,18 @@ namespace Xpetra {
   template<class S, class LO, class GO, class N> class Vector;
 #endif
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar = double,
+            class LocalOrdinal = Map<>::local_ordinal_type,
+            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
+            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class MultiVector
     : public DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node >
   {
-
   public:
+    typedef Scalar scalar_type;
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -76,8 +82,23 @@ namespace Xpetra {
     //! Destructor.
     virtual ~MultiVector() { }
 
-   //@}
+    /// \brief Assignment operator: Does a deep copy.
+    ///
+    /// The assignment operator does a deep copy, just like
+    /// subclasses' copy constructors.
+    ///
+    /// \note This currently only works if both <tt>*this</tt> and the
+    ///   input argument are instances of the same subclass.  We do
+    ///   not currently allow assignment between an
+    ///   Xpetra::TpetraMultiVector and an Xpetra::EpetraMultiVector,
+    ///   or vice versa, for example.
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&
+    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs) {
+      assign (rhs); // dispatch to protected virtual method
+      return *this;
+    }
 
+    //@}
     //! @name Post-construction modification routines
     //@{
 
@@ -129,6 +150,9 @@ namespace Xpetra {
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha)= 0;
+
+    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    virtual void scale (Teuchos::ArrayView< const Scalar > alpha) = 0;
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     virtual void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta)= 0;
@@ -215,6 +239,14 @@ namespace Xpetra {
 
 
     //@}
+
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    ///
+    /// Each subclass must implement this.  This includes
+    /// Xpetra::EpetraMultiVector and Xpetra::TpetraMultiVector.
+    virtual void assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs) = 0;
 
   }; // MultiVector class
 

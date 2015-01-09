@@ -68,6 +68,11 @@
 #include <zoltan.h>
 #endif
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 using Teuchos::CommandLineProcessor;
 
 namespace GeometricGen{
@@ -115,38 +120,39 @@ int getNumObj(void *data, int *ierr)
 }
 //////////////////////////
 template <typename tMVector_t>
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords_, int *ierr)
 {
-	  // I know that Zoltan asks for coordinates in gid order.
-	  if (dim == 3){
-		  *ierr = 0;
-		  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
-		  double *val = coords_;
-		  const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
-		  const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
-		  const scalar_t *z = dots_->coordinates->getData(2).getRawPtr();
-		  for (int i=0; i < numObj; i++){
-			  *val++ = static_cast<double>(x[i]);
-			  *val++ = static_cast<double>(y[i]);
-			  *val++ = static_cast<double>(z[i]);
-		  }
-	  }
-	  else {
-		  *ierr = 0;
-		  DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
-		  double *val = coords_;
-		  const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
-		  const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
-		  for (int i=0; i < numObj; i++){
-			  *val++ = static_cast<double>(x[i]);
-			  *val++ = static_cast<double>(y[i]);
-		  }
+  typedef typename tMVector_t::scalar_type scalar_t;
 
-
-	  }
+  // I know that Zoltan asks for coordinates in gid order.
+  if (dim == 3){
+    *ierr = 0;
+    DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+    double *val = coords_;
+    const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
+    const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
+    const scalar_t *z = dots_->coordinates->getData(2).getRawPtr();
+    for (int i=0; i < numObj; i++){
+      *val++ = static_cast<double>(x[i]);
+      *val++ = static_cast<double>(y[i]);
+      *val++ = static_cast<double>(z[i]);
+    }
+  }
+  else {
+    *ierr = 0;
+    DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
+    double *val = coords_;
+    const scalar_t *x = dots_->coordinates->getData(0).getRawPtr();
+    const scalar_t *y = dots_->coordinates->getData(1).getRawPtr();
+    for (int i=0; i < numObj; i++){
+      *val++ = static_cast<double>(x[i]);
+      *val++ = static_cast<double>(y[i]);
+    }
+  }
 }
+
 template <typename tMVector_t>
 int getDim(void *data, int *ierr)
 {
@@ -161,8 +167,11 @@ int getDim(void *data, int *ierr)
 template <typename tMVector_t>
 void getObjList(void *data, int numGid, int numLid,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-  int wgt_dim, float *obj_wgts, int *ierr)
+  int num_wgts, float *obj_wgts, int *ierr)
 {
+  typedef typename tMVector_t::scalar_type scalar_t;
+  typedef typename tMVector_t::global_ordinal_type gno_t;
+
   *ierr = 0;
   DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
 
@@ -176,10 +185,10 @@ void getObjList(void *data, int numGid, int numLid,
     for (size_t i=0; i < localLen; i++)
       gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
-  if (wgt_dim > 0){
+  if (num_wgts > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
-      for (int w=0; w < wgt_dim; w++)
+      for (int w=0; w < num_wgts; w++)
         *wgts++ = dots_->weights[w][i];
   }
 }
@@ -202,8 +211,8 @@ const std::string distribution[] = {"distribution", "uniform"};
 #define INVALID_SHAPE_ARG(SHAPE, REQUIRED) "Invalid argument count for shape " + SHAPE + ". Requires " + REQUIRED + " argument(s)."
 #define MAX_ITER_ALLOWED 500
 
-// KDD const std::string weight_distribution = "WeightDistribution";
 const std::string weight_distribution_string = "WeightDistribution-";
+
 template <typename T>
 struct CoordinatePoint {
   T x;
@@ -574,7 +583,7 @@ public:
     for (int i = 0; i < myRank; ++i){
       //cout << "me:" << myRank << " i:" << i << " s:" << sharedRatios_[i]<< endl;
       this->assignedPrevious += lno_t(sharedRatios_[i] * this->numPoints);
-      if (i < this->numPoints % this->worldSize){
+      if (gno_t(i) < this->numPoints % this->worldSize){
         this->assignedPrevious += 1;
       }
     }
@@ -651,7 +660,7 @@ public:
   }
 
   CoordinateNormalDistribution(gno_t np_, int dim, CoordinatePoint<T> center_ ,
-                               T sd_x, T sd_y, T sd_z, int wSize) : 
+                               T sd_x, T sd_y, T sd_z, int wSize) :
     CoordinateDistribution<T,lno_t,gno_t>(np_,dim,wSize),
     standartDevx(sd_x), standartDevy(sd_y), standartDevz(sd_z)
   {
@@ -789,8 +798,8 @@ public:
   }
 
 
-  CoordinateGridDistribution(gno_t alongX, gno_t alongY, gno_t alongZ, int dim, 
-                             T l_x, T r_x, T l_y, T r_y, T l_z, T r_z , 
+  CoordinateGridDistribution(gno_t alongX, gno_t alongY, gno_t alongZ, int dim,
+                             T l_x, T r_x, T l_y, T r_y, T l_z, T r_z ,
                              int myRank_, int wSize) :
       CoordinateDistribution<T,lno_t,gno_t>(alongX * alongY * alongZ,dim,wSize),
       leftMostx(l_x), rightMostx(r_x), leftMosty(l_y), rightMosty(r_y), leftMostz(l_z), rightMostz(r_z), myRank(myRank_){
@@ -891,10 +900,10 @@ private:
 
 };
 
-template <typename T, typename lno_t, typename gno_t, typename node_t>
+template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
 class GeometricGenerator {
 private:
-  Hole<T> **holes; //to represent if there is any hole in the input
+  Hole<scalar_t> **holes; //to represent if there is any hole in the input
   int holeCount;
   int coordinate_dimension;  //dimension of the geometry
   gno_t numGlobalCoords;	//global number of coordinates requested to be created.
@@ -902,25 +911,25 @@ private:
   float *loadDistributions; //sized as the number of processors, the load of each processor.
   bool loadDistSet;
   bool distinctCoordSet;
-  CoordinateDistribution<T, lno_t,gno_t> **coordinateDistributions;
+  CoordinateDistribution<scalar_t, lno_t,gno_t> **coordinateDistributions;
   int distributionCount;
-  //CoordinatePoint<T> *points;
-  T **coords;
-  T **wghts;
-  WeightDistribution<T,T> **wd;
-  int weight_dimension;  //dimension of the geometry
+  //CoordinatePoint<scalar_t> *points;
+  scalar_t **coords;
+  scalar_t **wghts;
+  WeightDistribution<scalar_t,scalar_t> **wd;
+  int numWeightsPerCoord;
   int predistribution;
   RCP<const Teuchos::Comm<int> > comm;
-  //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
-  //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmwVector;
+  //RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector;
+  //RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmwVector;
   int worldSize;
   int myRank;
-  T minx;
-  T maxx;
-  T miny;
-  T maxy;
-  T minz;
-  T maxz;
+  scalar_t minx;
+  scalar_t maxx;
+  scalar_t miny;
+  scalar_t maxy;
+  scalar_t minz;
+  scalar_t maxz;
   std::string outfile;
   float perturbation_ratio;
 
@@ -1024,9 +1033,9 @@ private:
     int argCnt = this->countChar(coordinate_distributions, ',') + 1;
     std::string *splittedStr = new std::string[argCnt];
     splitString(coordinate_distributions, ',', splittedStr);
-    coordinateDistributions = (CoordinateDistribution<T, lno_t,gno_t> **) malloc(sizeof (CoordinateDistribution<T, lno_t,gno_t> *) * 1);
+    coordinateDistributions = (CoordinateDistribution<scalar_t, lno_t,gno_t> **) malloc(sizeof (CoordinateDistribution<scalar_t, lno_t,gno_t> *) * 1);
     for(int i = 0; i < argCnt; ){
-      coordinateDistributions = (CoordinateDistribution<T, lno_t,gno_t> **)realloc((void *)coordinateDistributions, (this->distributionCount + 1)* sizeof(CoordinateDistribution<T, lno_t,gno_t> *));
+      coordinateDistributions = (CoordinateDistribution<scalar_t, lno_t,gno_t> **)realloc((void *)coordinateDistributions, (this->distributionCount + 1)* sizeof(CoordinateDistribution<scalar_t, lno_t,gno_t> *));
 
       std::string distName = splittedStr[i++];
       gno_t np_ = 0;
@@ -1040,22 +1049,22 @@ private:
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
         np_ = fromString<gno_t>(splittedStr[i++]);
-        CoordinatePoint<T> pp;
+        CoordinatePoint<scalar_t> pp;
 
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
         pp.z = 0;
         if(this->coordinate_dimension == 3){
-          pp.z = fromString<T>(splittedStr[i++]);
+          pp.z = fromString<scalar_t>(splittedStr[i++]);
         }
 
-        T sd_x = fromString<T>(splittedStr[i++]);
-        T sd_y = fromString<T>(splittedStr[i++]);
-        T sd_z = 0;
+        scalar_t sd_x = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t sd_y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t sd_z = 0;
         if(this->coordinate_dimension == 3){
-          sd_z = fromString<T>(splittedStr[i++]);
+          sd_z = fromString<scalar_t>(splittedStr[i++]);
         }
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<T, lno_t,gno_t>(np_, this->coordinate_dimension, pp , sd_x, sd_y, sd_z, this->worldSize );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateNormalDistribution<scalar_t, lno_t,gno_t>(np_, this->coordinate_dimension, pp , sd_x, sd_y, sd_z, this->worldSize );
 
       } else if(distName == "UNIFORM" ){
         int reqArg = 5;
@@ -1067,19 +1076,19 @@ private:
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
         np_ = fromString<gno_t>(splittedStr[i++]);
-        T l_x = fromString<T>(splittedStr[i++]);
-        T r_x = fromString<T>(splittedStr[i++]);
-        T l_y = fromString<T>(splittedStr[i++]);
-        T r_y = fromString<T>(splittedStr[i++]);
+        scalar_t l_x = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r_x = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t l_y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r_y = fromString<scalar_t>(splittedStr[i++]);
 
-        T l_z = 0, r_z = 0;
+        scalar_t l_z = 0, r_z = 0;
 
         if(this->coordinate_dimension == 3){
-          l_z = fromString<T>(splittedStr[i++]);
-          r_z = fromString<T>(splittedStr[i++]);
+          l_z = fromString<scalar_t>(splittedStr[i++]);
+          r_z = fromString<scalar_t>(splittedStr[i++]);
         }
 
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<T, lno_t,gno_t>( np_,  this->coordinate_dimension, l_x, r_x, l_y, r_y, l_z, r_z, this->worldSize );
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateUniformDistribution<scalar_t, lno_t,gno_t>( np_,  this->coordinate_dimension, l_x, r_x, l_y, r_y, l_z, r_z, this->worldSize );
       } else if (distName == "GRID"){
         int reqArg = 6;
         if(this->coordinate_dimension == 3){
@@ -1100,23 +1109,23 @@ private:
         }
 
         np_ = np_x * np_y * np_z;
-        T l_x = fromString<T>(splittedStr[i++]);
-        T r_x = fromString<T>(splittedStr[i++]);
-        T l_y = fromString<T>(splittedStr[i++]);
-        T r_y = fromString<T>(splittedStr[i++]);
+        scalar_t l_x = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r_x = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t l_y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r_y = fromString<scalar_t>(splittedStr[i++]);
 
-        T l_z = 0, r_z = 0;
+        scalar_t l_z = 0, r_z = 0;
 
         if(this->coordinate_dimension == 3){
-          l_z = fromString<T>(splittedStr[i++]);
-          r_z = fromString<T>(splittedStr[i++]);
+          l_z = fromString<scalar_t>(splittedStr[i++]);
+          r_z = fromString<scalar_t>(splittedStr[i++]);
         }
 
         if(np_x < 1 || np_z < 1 || np_y < 1 ){
           throw "Provide at least 1 point along each dimension for grid test.";
         }
         //cout << "ly:" << l_y << " ry:" << r_y << endl;
-        this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<T, lno_t,gno_t>
+        this->coordinateDistributions[this->distributionCount++] = new CoordinateGridDistribution<scalar_t, lno_t,gno_t>
         (np_x, np_y,np_z, this->coordinate_dimension, l_x, r_x,l_y, r_y, l_z, r_z , this->myRank, this->worldSize);
 
       }
@@ -1167,77 +1176,77 @@ private:
     if(holeDescription == ""){
       return;
     }
-    this->holes =  (Hole<T> **) malloc(sizeof (Hole <T>*));
+    this->holes =  (Hole<scalar_t> **) malloc(sizeof (Hole <scalar_t>*));
     int argCnt = this->countChar(holeDescription, ',') + 1;
     std::string *splittedStr = new std::string[argCnt];
     splitString(holeDescription, ',', splittedStr);
 
     for(int i = 0; i < argCnt; ){
-      holes = (Hole<T> **)realloc((void *)holes, (this->holeCount + 1)* sizeof(Hole<T> *));
+      holes = (Hole<scalar_t> **)realloc((void *)holes, (this->holeCount + 1)* sizeof(Hole<scalar_t> *));
 
       std::string shapeName = splittedStr[i++];
       if(shapeName == "SQUARE" && this->coordinate_dimension == 2){
         if(i + 3 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "3");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        T edge = fromString<T>(splittedStr[i++]);
-        this->holes[this->holeCount++] = new SquareHole<T>(pp, edge);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edge = fromString<scalar_t>(splittedStr[i++]);
+        this->holes[this->holeCount++] = new SquareHole<scalar_t>(pp, edge);
       } else if(shapeName == "RECTANGLE" && this->coordinate_dimension == 2){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        T edgex = fromString<T>(splittedStr[i++]);
-        T edgey = fromString<T>(splittedStr[i++]);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edgex = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edgey = fromString<scalar_t>(splittedStr[i++]);
 
-        this->holes[this->holeCount++] = new RectangleHole<T>(pp, edgex,edgey);
+        this->holes[this->holeCount++] = new RectangleHole<scalar_t>(pp, edgex,edgey);
       } else if(shapeName == "CIRCLE" && this->coordinate_dimension == 2){
         if(i + 3 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "3");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        T r = fromString<T>(splittedStr[i++]);
-        this->holes[this->holeCount++] = new CircleHole<T>(pp, r);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r = fromString<scalar_t>(splittedStr[i++]);
+        this->holes[this->holeCount++] = new CircleHole<scalar_t>(pp, r);
       }  else if(shapeName == "CUBE" && this->coordinate_dimension == 3){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        pp.z = fromString<T>(splittedStr[i++]);
-        T edge = fromString<T>(splittedStr[i++]);
-        this->holes[this->holeCount++] = new CubeHole<T>(pp, edge);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        pp.z = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edge = fromString<scalar_t>(splittedStr[i++]);
+        this->holes[this->holeCount++] = new CubeHole<scalar_t>(pp, edge);
       }  else if(shapeName == "RECTANGULAR_PRISM" && this->coordinate_dimension == 3){
         if(i + 6 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "6");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        pp.z = fromString<T>(splittedStr[i++]);
-        T edgex = fromString<T>(splittedStr[i++]);
-        T edgey = fromString<T>(splittedStr[i++]);
-        T edgez = fromString<T>(splittedStr[i++]);
-        this->holes[this->holeCount++] = new RectangularPrismHole<T>(pp, edgex, edgey, edgez);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        pp.z = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edgex = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edgey = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t edgez = fromString<scalar_t>(splittedStr[i++]);
+        this->holes[this->holeCount++] = new RectangularPrismHole<scalar_t>(pp, edgex, edgey, edgez);
 
       }  else if(shapeName == "SPHERE" && this->coordinate_dimension == 3){
         if(i + 4 > argCnt) {
           throw INVALID_SHAPE_ARG(shapeName, "4");
         }
-        CoordinatePoint<T> pp;
-        pp.x = fromString<T>(splittedStr[i++]);
-        pp.y = fromString<T>(splittedStr[i++]);
-        pp.z = fromString<T>(splittedStr[i++]);
-        T r = fromString<T>(splittedStr[i++]);
-        this->holes[this->holeCount++] = new SphereHole<T>(pp, r);
+        CoordinatePoint<scalar_t> pp;
+        pp.x = fromString<scalar_t>(splittedStr[i++]);
+        pp.y = fromString<scalar_t>(splittedStr[i++]);
+        pp.z = fromString<scalar_t>(splittedStr[i++]);
+        scalar_t r = fromString<scalar_t>(splittedStr[i++]);
+        this->holes[this->holeCount++] = new SphereHole<scalar_t>(pp, r);
       }  else {
         std::string tmp = toString<int>(this->coordinate_dimension);
         throw INVALIDSHAPE(shapeName, tmp);
@@ -1249,7 +1258,7 @@ private:
   void getWeightDistribution(std::string *weight_distribution_arr, int wdimension){
     int wcount = 0;
 
-    this->wd = new WeightDistribution<T,T> *[wdimension];
+    this->wd = new WeightDistribution<scalar_t,scalar_t> *[wdimension];
     for(int ii = 0; ii < MAX_WEIGHT_DIM; ++ii){
       std::string weight_distribution = weight_distribution_arr[ii];
       if(weight_distribution == "") continue;
@@ -1261,12 +1270,12 @@ private:
       std::string *splittedStr = new string[count + 1];
       this->splitString(weight_distribution, ' ', splittedStr);
       //cout << count << endl;
-      T c=1;
-      T a1=0,a2=0,a3=0;
-      T x1=0,y1=0,z1=0;
-      T b1=1,b2=1,b3=1;
-      T *steps = NULL;
-      T *values= NULL;
+      scalar_t c=1;
+      scalar_t a1=0,a2=0,a3=0;
+      scalar_t x1=0,y1=0,z1=0;
+      scalar_t b1=1,b2=1,b3=1;
+      scalar_t *steps = NULL;
+      scalar_t *values= NULL;
       int stepCount = 0;
       int valueCount = 1;
 
@@ -1282,11 +1291,11 @@ private:
         //cout << "parameter:" << parameter << " value:" << value << endl;
 
         if (parameter == "a1"){
-          a1 = this->fromString<T>(value);
+          a1 = this->fromString<scalar_t>(value);
         }
         else if (parameter == "a2"){
           if(this->coordinate_dimension > 1){
-            a2 = this->fromString<T>(value);
+            a2 = this->fromString<scalar_t>(value);
           }
           else {
             throw  parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
@@ -1295,18 +1304,18 @@ private:
         }
         else if (parameter == "a3"){
           if(this->coordinate_dimension > 2){
-            a3 = this->fromString<T>(value);
+            a3 = this->fromString<scalar_t>(value);
           }
           else {
             throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "b1"){
-          b1 = this->fromString<T>(value);
+          b1 = this->fromString<scalar_t>(value);
         }
         else if (parameter == "b2"){
           if(this->coordinate_dimension > 1){
-            b2 = this->fromString<T>(value);
+            b2 = this->fromString<scalar_t>(value);
           }
           else {
             throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
@@ -1315,21 +1324,21 @@ private:
         else if (parameter == "b3"){
 
           if(this->coordinate_dimension > 2){
-            b3 = this->fromString<T>(value);
+            b3 = this->fromString<scalar_t>(value);
           }
           else {
             throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "c"){
-          c = this->fromString<T>(value);
+          c = this->fromString<scalar_t>(value);
         }
         else if (parameter == "x1"){
-          x1 = this->fromString<T>(value);
+          x1 = this->fromString<scalar_t>(value);
         }
         else if (parameter == "y1"){
           if(this->coordinate_dimension > 1){
-            y1 = this->fromString<T>(value);
+            y1 = this->fromString<scalar_t>(value);
           }
           else {
             throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
@@ -1337,7 +1346,7 @@ private:
         }
         else if (parameter == "z1"){
           if(this->coordinate_dimension > 2){
-            z1 = this->fromString<T>(value);
+            z1 = this->fromString<scalar_t>(value);
           }
           else {
             throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
@@ -1347,9 +1356,9 @@ private:
           stepCount = this->countChar(value, ',') + 1;
           std::string *stepstr = new std::string[stepCount];
           this->splitString(value, ',', stepstr);
-          steps = new T[stepCount];
+          steps = new scalar_t[stepCount];
           for (int j = 0; j < stepCount; ++j){
-            steps[j] = this->fromString<T>(stepstr[j]);
+            steps[j] = this->fromString<scalar_t>(stepstr[j]);
           }
           delete [] stepstr;
         }
@@ -1357,9 +1366,9 @@ private:
           valueCount = this->countChar(value, ',') + 1;
           std::string *stepstr = new std::string[valueCount];
           this->splitString(value, ',', stepstr);
-          values = new T[valueCount];
+          values = new scalar_t[valueCount];
           for (int j = 0; j < valueCount; ++j){
-            values[j] = this->fromString<T>(stepstr[j]);
+            values[j] = this->fromString<scalar_t>(stepstr[j]);
           }
           delete [] stepstr;
         }
@@ -1374,7 +1383,7 @@ private:
       }
 
 
-      this->wd[wcount++] =  new SteppedEquation<T,T>(a1, a2,  a3,  b1,  b2,  b3,  c,  x1,  y1,  z1, steps, values, stepCount);
+      this->wd[wcount++] =  new SteppedEquation<scalar_t,scalar_t>(a1, a2,  a3,  b1,  b2,  b3,  c,  x1,  y1,  z1, steps, values, stepCount);
 
       if(stepCount > 0){
         delete [] steps;
@@ -1382,20 +1391,20 @@ private:
 
       }
     }
-    if(wcount != this->weight_dimension){
+    if(wcount != this->numWeightsPerCoord){
       throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". But " + toString<int>(wcount)+" weight distributions are provided.";
     }
   }
 
-  void parseParams(Teuchos::ParameterList params){
+  void parseParams(const Teuchos::ParameterList & params){
     try {
       std::string holeDescription  = "";
       std::string proc_load_distributions = "";
       std::string distinctDescription = "";
       std::string coordinate_distributions = "";
-      std::string weight_dimension_parameters[MAX_WEIGHT_DIM];
+      std::string numWeightsPerCoord_parameters[MAX_WEIGHT_DIM];
       for (int i = 0; i < MAX_WEIGHT_DIM; ++i){
-        weight_dimension_parameters[i] = "";
+        numWeightsPerCoord_parameters[i] = "";
       }
 
 
@@ -1428,9 +1437,9 @@ private:
           int distribution_index = fromString<int>(distribution_index_string);
 
           if(distribution_index >= MAX_WEIGHT_DIM){
-            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed weight dimension:" + toString<int>(MAX_WEIGHT_DIM);
+            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed number of weights:" + toString<int>(MAX_WEIGHT_DIM);
           }
-          weight_dimension_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
+          numWeightsPerCoord_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
         }
         else if(paramName == "dim"){
           int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
@@ -1445,7 +1454,7 @@ private:
           if(dim < 1 && dim > MAX_WEIGHT_DIM){
             throw INVALID(paramName);
           } else {
-            this->weight_dimension = dim;
+            this->numWeightsPerCoord = dim;
           }
         }
         else if(paramName == "predistribution"){
@@ -1478,7 +1487,7 @@ private:
           } else if(distinctDescription == "F"){
             this->distinctCoordSet = true;
           } else {
-            throw "Invalid parameter for distinct_coordinates: " + distinctDescription + ". Candiates: T or F." ;
+            throw "Invalid parameter for distinct_coordinates: " + distinctDescription + ". Candidates: T or F." ;
           }
         }
 
@@ -1502,14 +1511,14 @@ private:
        */
       /*
 			if(maxx <= minx ){
-				throw "Error: maxx= "+ toString<T>(maxx)+ " and minx=" + toString<T>(minx);
+				throw "Error: maxx= "+ toString<scalar_t>(maxx)+ " and minx=" + toString<scalar_t>(minx);
 			}
 			if(maxy <= miny ){
-				throw "Error: maxy= "+ toString<T>(maxy)+ " and miny=" + toString<T>(miny);
+				throw "Error: maxy= "+ toString<scalar_t>(maxy)+ " and miny=" + toString<scalar_t>(miny);
 
 			}
 			if(this->dimension == 3 && maxz <= minz ){
-				throw "Error: maxz= "+ toString<T>(maxz)+ " and minz=" + toString<T>(minz);
+				throw "Error: maxz= "+ toString<scalar_t>(maxz)+ " and minz=" + toString<scalar_t>(minz);
 			}
        */
       if (this->loadDistSet && this->distinctCoordSet){
@@ -1519,7 +1528,7 @@ private:
       //this->getDistinctCoordinateDescription(distinctDescription);
       this->getProcLoadDistributions(proc_load_distributions);
       this->getCoordinateDistributions(coordinate_distributions);
-      this->getWeightDistribution(weight_dimension_parameters, this->weight_dimension);
+      this->getWeightDistribution(numWeightsPerCoord_parameters, this->numWeightsPerCoord);
       /*
 			if(this->numGlobalCoords <= 0){
 				throw "Must have at least 1 point";
@@ -1560,14 +1569,14 @@ public:
       free (this->coordinateDistributions);
     }
     if (this->wd){
-      for (int i = 0; i < this->weight_dimension; ++i){
+      for (int i = 0; i < this->numWeightsPerCoord; ++i){
         delete this->wd[i];
       }
       delete []this->wd;
     }
 
-    if(this->weight_dimension){
-      for(int i = 0; i < this->weight_dimension; ++i)
+    if(this->numWeightsPerCoord){
+      for(int i = 0; i < this->numWeightsPerCoord; ++i)
       delete [] this->wghts[i];
       delete []this->wghts;
     }
@@ -1586,7 +1595,7 @@ public:
     cout <<"\tUNIFORM: -> distribution-1=UNIFORM,NUMCOORDINATES,XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
     cout <<"\tGRID: -> distribution-2=GRID,XLENGTH,YLENGTH{,ZLENGTH},XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
     cout <<"\tNORMAL: -> distribution-3=NORMAL,XCENTER,YCENTER{,ZCENTER},XSD,YSD,{,ZSD}" << endl;
-    cout <<"- wdim=weight_dimension: weight dimension >= 0. There should be as many weight function as weight dimension." << endl;
+    cout <<"- wdim=numWeightsPerCoord:  There should be as many weight function as number of weights per coord." << endl;
     cout <<"- Weight Equation: w = (a1 * (x - x1)^b1) + (a2 * (y - y1)^b2) + (a3 * (z - z1)^b3) + c" << endl;
     cout << "Parameter settings:" << endl;
     cout << "\tWeightDistribution-1-a1=a1 " << endl;
@@ -1624,7 +1633,7 @@ public:
     this->comm = comm_;
     this->holes = NULL; //to represent if there is any hole in the input
     this->coordinate_dimension = 0;  //dimension of the geometry
-    this->weight_dimension = 0;  //dimension of the geometry
+    this->numWeightsPerCoord = 0;
     this->worldSize = comm_->getSize(); //comminication world object.
     this->numGlobalCoords = 0;	//global number of coordinates requested to be created.
     this->loadDistributions = NULL; //sized as the number of processors, the load of each processor.
@@ -1669,7 +1678,7 @@ public:
     for(int i = 0; i < this->distributionCount; ++i){
       for(int ii = 0; ii < this->worldSize; ++ii){
         lno_t increment  = lno_t (this->coordinateDistributions[i]->numPoints * this->loadDistributions[ii]);
-        if (ii < this->coordinateDistributions[i]->numPoints % this->worldSize){
+        if (gno_t(ii) < this->coordinateDistributions[i]->numPoints % this->worldSize){
           increment += 1;
         }
         this->numGlobalCoords += increment;
@@ -1678,21 +1687,21 @@ public:
         }
       }
       myPointCount += lno_t(this->coordinateDistributions[i]->numPoints * this->loadDistributions[myRank]);
-      if (myRank < this->coordinateDistributions[i]->numPoints % this->worldSize){
+      if (gno_t(myRank) < this->coordinateDistributions[i]->numPoints % this->worldSize){
         myPointCount += 1;
       }
     }
 
-    this->coords = new T *[this->coordinate_dimension];
+    this->coords = new scalar_t *[this->coordinate_dimension];
     for(int i = 0; i < this->coordinate_dimension; ++i){
-      this->coords[i] = new T[myPointCount];
+      this->coords[i] = new scalar_t[myPointCount];
     }
 
     for (int ii = 0; ii < this->coordinate_dimension; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
-      for(int i = 0; i < myPointCount; ++i){
+      for(lno_t i = 0; i < myPointCount; ++i){
         this->coords[ii][i] = 0;
       }
     }
@@ -1702,7 +1711,7 @@ public:
     for (int i = 0; i < distributionCount; ++i){
 
       lno_t requestedPointCount = lno_t(this->coordinateDistributions[i]->numPoints *  this->loadDistributions[myRank]);
-      if (myRank < this->coordinateDistributions[i]->numPoints % this->worldSize){
+      if (gno_t(myRank) < this->coordinateDistributions[i]->numPoints % this->worldSize){
         requestedPointCount += 1;
       }
       //cout << "req:" << requestedPointCount << endl;
@@ -1800,20 +1809,20 @@ public:
 
 
     /*
-		Zoltan2::XpetraMultiVectorAdapter < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<T, lno_t, gno_t, node_t> > (tmVector));
+		Zoltan2::XpetraMultiVectorAdapter < Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > xmv (RCP < Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > (tmVector));
 
-		RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector2;
-		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
-		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
+		RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector2;
+		Zoltan2::PartitioningSolution< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> > solution;
+		xmv.applyPartitioningSolution<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
-    if (this->weight_dimension > 0){
-    	this->wghts = new T *[this->weight_dimension];
-    	for(int i = 0; i < this->weight_dimension; ++i){
-    		this->wghts[i] = new T[this->numLocalCoords];
+    if (this->numWeightsPerCoord > 0){
+    	this->wghts = new scalar_t *[this->numWeightsPerCoord];
+    	for(int i = 0; i < this->numWeightsPerCoord; ++i){
+    		this->wghts[i] = new scalar_t[this->numLocalCoords];
     	}
     }
 
-    for(int ii = 0; ii < this->weight_dimension; ++ii){
+    for(int ii = 0; ii < this->numWeightsPerCoord; ++ii){
       switch(this->coordinate_dimension){
       case 1:
 #ifdef HAVE_ZOLTAN2_OMP
@@ -1847,8 +1856,8 @@ public:
   ///######Start perturbation function##########################//
   //############################################################//
   void perturb_data(float used_perturbation_ratio, int scale){
-	  T *maxCoords= new T [this->coordinate_dimension];
-	  T *minCoords= new T [this->coordinate_dimension];
+	  scalar_t *maxCoords= new scalar_t [this->coordinate_dimension];
+	  scalar_t *minCoords= new scalar_t [this->coordinate_dimension];
 	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
 		  minCoords[dim] = maxCoords[dim] = this->coords[dim][0];
 		  for (lno_t i = 1; i < this->numLocalCoords; ++i){
@@ -1864,18 +1873,18 @@ public:
 
 
 
-		  T center = (maxCoords[dim] + minCoords[dim]) / 2;
+		  scalar_t center = (maxCoords[dim] + minCoords[dim]) / 2;
 
 		  minCoords[dim] = center - (center - minCoords[dim]) * scale;
 		  maxCoords[dim] = (maxCoords[dim] - center) * scale + center;
 
 	  }
 
-	  gno_t numLocalToPerturb = this->numLocalCoords * used_perturbation_ratio;
+	  gno_t numLocalToPerturb = gno_t(this->numLocalCoords*used_perturbation_ratio);
 	  //cout << "numLocalToPerturb :" << numLocalToPerturb  << endl;
 	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
-		  T range = maxCoords[dim] - minCoords[dim];
-		  for (int i = 0; i < numLocalToPerturb; ++i){
+		  scalar_t range = maxCoords[dim] - minCoords[dim];
+		  for (gno_t i = 0; i < numLocalToPerturb; ++i){
 			  this->coords[dim][i] = (rand() / double (RAND_MAX)) * (range) +  minCoords[dim];
 
 		  }
@@ -1915,9 +1924,9 @@ public:
   }
 
   //returns min and max coordinates along each dimension
-  void getMinMaxCoords(T *globalMaxCoords, T *globalMinCoords){
-	  T *maxCoords= new T [this->coordinate_dimension];
-	  T *minCoords= new T [this->coordinate_dimension];
+  void getMinMaxCoords(scalar_t *globalMaxCoords, scalar_t *globalMinCoords){
+	  scalar_t *maxCoords= new scalar_t [this->coordinate_dimension];
+	  scalar_t *minCoords= new scalar_t [this->coordinate_dimension];
 	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
 		  minCoords[dim] = maxCoords[dim] = this->coords[dim][0];
 		  for (lno_t i = 1; i < this->numLocalCoords; ++i){
@@ -1931,13 +1940,13 @@ public:
 		  }
 	  }
 
-	  reduceAll<int, T>( *(this->comm), Teuchos::REDUCE_MAX,
+	  reduceAll<int, scalar_t>( *(this->comm), Teuchos::REDUCE_MAX,
 			  	  	  	  	  	  this->coordinate_dimension,
 			  	  	  	  	  	  maxCoords,
 			  	  	  	  	  	  globalMaxCoords);
 
 
-	  reduceAll<int, T>( *(this->comm), Teuchos::REDUCE_MIN,
+	  reduceAll<int, scalar_t>( *(this->comm), Teuchos::REDUCE_MIN,
 	  			  	  	  	  	  	  this->coordinate_dimension,
 	  			  	  	  	  	  	  minCoords,
 	  			  	  	  	  	  	  globalMinCoords);
@@ -1951,13 +1960,16 @@ public:
   //then distributes the points of the overloaded parts to underloaded parts.
   void blockPartition(int *coordinate_grid_parts){
 
+#ifdef _MSC_VER
+	  typedef SSIZE_T ssize_t;
+#endif
 
 	  //############################################################//
 	  ///getting minimum and maximum coordinates for each dimension///
 	  //############################################################//
 
-	  T *maxCoords= new T [this->coordinate_dimension];
-	  T *minCoords= new T [this->coordinate_dimension];
+	  scalar_t *maxCoords= new scalar_t [this->coordinate_dimension];
+	  scalar_t *minCoords= new scalar_t [this->coordinate_dimension];
 	  //global min and max coordinates in each dimension.
 	  this->getMinMaxCoords(maxCoords, minCoords);
 
@@ -1995,10 +2007,10 @@ public:
 		  shiftProcCount[dim] = remainingProc;
 	  }
 
-	  T *dim_slices = new T[coord_dim];
+	  scalar_t *dim_slices = new scalar_t[coord_dim];
 	  for (int dim = 0; dim < coord_dim; ++dim){
-		  T dim_range = maxCoords[dim] - minCoords[dim];
-		  T slice = dim_range / bestDimProcs[dim];
+		  scalar_t dim_range = maxCoords[dim] - minCoords[dim];
+		  scalar_t slice = dim_range / bestDimProcs[dim];
 		  dim_slices[dim] = slice;
 	  }
 
@@ -2014,7 +2026,7 @@ public:
 	  gno_t *partNext = new gno_t[this->numLocalCoords];
 
 
-	  for (int i = 0; i < this->numLocalCoords; ++i){
+	  for (lno_t i = 0; i < this->numLocalCoords; ++i){
 		  partNext[i] = -1;
 	  }
 	  for (int i = 0; i < this->worldSize; ++i) {
@@ -2024,7 +2036,7 @@ public:
 	  for (int i = 0; i < this->worldSize; ++i)
 		  numPointsInParts[i] = 0;
 
-	  for (int i = 0; i < this->numLocalCoords; ++i){
+	  for (lno_t i = 0; i < this->numLocalCoords; ++i){
 		  int partIndex = 0;
 		  for (int dim = 0; dim < coord_dim; ++dim){
 			  int shift = int ((this->coords[dim][i] - minCoords[dim]) / dim_slices[dim]);
@@ -2074,7 +2086,7 @@ public:
 
       //cout << "me:" << this->myRank << " ilk print" << endl;
 
-	  gno_t optimal_num = this->numGlobalCoords / double (this->worldSize) + 0.5;
+	  gno_t optimal_num = gno_t(this->numGlobalCoords/double(this->worldSize)+0.5);
 #ifdef printparts
 	  if (this->myRank == 0){
 		  gno_t totalSize = 0;
@@ -2086,9 +2098,9 @@ public:
 		  cout << "optimal_num:" << optimal_num << endl;
 	  }
 #endif
-	  gno_t *extraInPart = new gno_t [this->worldSize];
+	  ssize_t *extraInPart = new ssize_t [this->worldSize];
 
-	  gno_t extraExchange = 0;
+	  ssize_t extraExchange = 0;
 	  for (int i = 0; i < this->worldSize; ++i){
 		  extraInPart[i] = numGlobalPointsInParts[i] - optimal_num;
 		  extraExchange += extraInPart[i];
@@ -2096,7 +2108,7 @@ public:
 	  if (extraExchange != 0){
 		  int addition = -1;
 		  if (extraExchange < 0) addition = 1;
-		  for (int i = 0; i < extraExchange; ++i){
+		  for (ssize_t i = 0; i < extraExchange; ++i){
 			  extraInPart[i % this->worldSize] += addition;
 		  }
 	  }
@@ -2163,8 +2175,8 @@ public:
     		  //then consume underloaded parts.
     		  while (overload > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = overload + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = overload + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2198,8 +2210,8 @@ public:
     	      //first consume underloaded parts for the previous processors.
     		  while (exclusiveLoadUptoMe > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = exclusiveLoadUptoMe + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = exclusiveLoadUptoMe + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2214,8 +2226,8 @@ public:
     		  //consume underloaded parts for my load.
     		  while (mySendCount > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = mySendCount + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = mySendCount + underload;
 
     			  if(left >= 0){
     				  mySendParts[numPartsISendTo] = nextUnderLoadedPart;
@@ -2236,8 +2248,8 @@ public:
     		  //consume underloaded parts for the load of the processors after my index.
     		  while (sendAfterMe > 0){
     			  int nextUnderLoadedPart = underloadedPartIndices[underloadpartindex];
-    			  gno_t underload = extraInPart[nextUnderLoadedPart];
-    			  gno_t left = sendAfterMe + underload;
+    			  ssize_t underload = extraInPart[nextUnderLoadedPart];
+    			  ssize_t left = sendAfterMe + underload;
 
     			  if(left >= 0){
     				  extraInPart[nextUnderLoadedPart] = 0;
@@ -2259,7 +2271,7 @@ public:
 
     	  //get the part from which the elements will be converted.
     	  int sendFromPart = mySendFromParts[i];
-    	  gno_t sendCount = mySendFromPartsCounts[i];
+    	  ssize_t sendCount = mySendFromPartsCounts[i];
     	  while(sendCount > 0){
     		  int partToSendIndex = numPartsISendTo - 1;
     		  int partToSend = mySendParts[partToSendIndex];
@@ -2361,14 +2373,14 @@ public:
 	  this->numLocalCoords = numMyNewGnos;
 
 
-	  ArrayRCP<T> recvBuf2(distributor.getTotalReceiveLength());
+	  ArrayRCP<scalar_t> recvBuf2(distributor.getTotalReceiveLength());
 
 	  for (int i = 0; i < this->coordinate_dimension; ++i){
-		  ArrayView<T> s(this->coords[i], this->numLocalCoords);
-	      distributor.doPostsAndWaits<T>(s, 1, recvBuf2());
+		  ArrayView<scalar_t> s(this->coords[i], this->numLocalCoords);
+	      distributor.doPostsAndWaits<scalar_t>(s, 1, recvBuf2());
 		  delete [] this->coords[i];
-		  this->coords[i] = new T[this->numLocalCoords];
-	      for (int j = 0; j < this->numLocalCoords; ++j){
+		  this->coords[i] = new scalar_t[this->numLocalCoords];
+	      for (lno_t j = 0; j < this->numLocalCoords; ++j){
 	    	  this->coords[i][j] = recvBuf2[j];
 	      }
 
@@ -2378,37 +2390,36 @@ public:
   //calls MJ for p = numProcs
   int predistributeMJ(int *coordinate_grid_parts){
 	  int coord_dim = this->coordinate_dimension;
-	  //int weight_dim = 0;
 
 	  lno_t numLocalPoints = this->numLocalCoords;
 	  gno_t numGlobalPoints = this->numGlobalCoords;
 
 
 	  //T **weight = NULL;
-	  //typedef Tpetra::MultiVector<T, lno_t, gno_t, node_t> tMVector_t;
+	  //typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 	  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
 			  new Tpetra::Map<lno_t, gno_t, node_t> (numGlobalPoints, numLocalPoints, 0, comm));
 
-	  Teuchos::Array<Teuchos::ArrayView<const T> > coordView(coord_dim);
+	  Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
 
 
 
 	  for (int i=0; i < coord_dim; i++){
 		  if(numLocalPoints > 0){
-			  Teuchos::ArrayView<const T> a(coords[i], numLocalPoints);
+			  Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalPoints);
 			  coordView[i] = a;
 		  } else{
-			  Teuchos::ArrayView<const T> a;
+			  Teuchos::ArrayView<const scalar_t> a;
 			  coordView[i] = a;
 		  }
 	  }
 
-	  RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(
-			  new Tpetra::MultiVector<T, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
+	  RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >tmVector = RCP< Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >(
+			  new Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>( mp, coordView.view(0, coord_dim), coord_dim));
 
 
 	  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
-	  vector<const T *> weights;
+	  vector<const scalar_t *> weights;
 	  vector <int> stride;
 
 	  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
@@ -2446,9 +2457,9 @@ public:
 	  }
 	  CATCH_EXCEPTIONS("solve()")
 
-	  const zoltan2_partId_t *partIds= problem->getSolution().getPartList();
+	  const typename inputAdapter_t::part_t *partIds = problem->getSolution().getPartList();
 
-	  for (int i = 0; i < this->numLocalCoords;++i){
+	  for (lno_t i = 0; i < this->numLocalCoords;++i){
 		  coordinate_grid_parts[i] = partIds[i];
 		  //cout << "me:" << this->myRank << " i:" << i << " goes to:" << partIds[i] << endl;
 	  }
@@ -2466,7 +2477,7 @@ public:
 	  MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
 
-	  int weightDim = 0;
+	  int nWeights = 0;
 	  int debugLevel=0;
 	  string memoryOn("memoryOn");
 	  string memoryOff("memoryOff");
@@ -2499,7 +2510,7 @@ public:
 	    "Approximate number of global coordinates.");
 	  commandLine.setOption("numParts", &numGlobalParts,
 	    "Number of parts (default is one per proc).");
-	  commandLine.setOption("weightDim", &weightDim,
+	  commandLine.setOption("nWeights", &nWeights,
 	    "Number of weights per coordinate, zero implies uniform weights.");
 	  commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
 	  commandLine.setOption("remap", "no-remap", &remap,
@@ -2547,7 +2558,7 @@ public:
 	  RCP<Tpetra::Map<lno_t, gno_t, node_t> > mp = rcp(
 			  new Tpetra::Map<lno_t, gno_t, node_t> (this->numGlobalCoords, this->numLocalCoords, 0, this->comm));
 
-	  Teuchos::Array<Teuchos::ArrayView<const T> > coordView(coord_dim);
+	  Teuchos::Array<Teuchos::ArrayView<const scalar_t> > coordView(coord_dim);
 	  for (int i=0; i < coord_dim; i++){
 		  if(numLocalCoords > 0){
 			  Teuchos::ArrayView<const scalar_t> a(coords[i], numLocalCoords);
@@ -2561,7 +2572,7 @@ public:
 	  tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
 
 	  dots_.coordinates = tmVector;
-	  dots_.weights.resize(weightDim);
+	  dots_.weights.resize(nWeights);
 
 
 	  MEMORY_CHECK(doMemory && rank==0, "After creating input");
@@ -2599,7 +2610,7 @@ public:
 
 	  if (objective != balanceCount){
 	    oss.str("");
-	    oss << weightDim;
+	    oss << nWeights;
 	    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
 
 	    if (objective == mcnorm1)
@@ -2616,7 +2627,7 @@ public:
 	  Zoltan_Set_Num_Obj_Fn(zz, getNumObj<tMVector_t>, &dots_);
 	  Zoltan_Set_Obj_List_Fn(zz, getObjList<tMVector_t>, &dots_);
 	  Zoltan_Set_Num_Geom_Fn(zz,  getDim<tMVector_t>, &dots_);
-	  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates<tMVector_t>, &dots_);
+	  Zoltan_Set_Geom_Multi_Fn(zz, getCoords<tMVector_t>, &dots_);
 
 	  int changes, numGidEntries, numLidEntries, numImport, numExport;
 	  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
@@ -2673,8 +2684,8 @@ public:
   //############################################################//
 
 
-  int getWeightDimension(){
-    return this->weight_dimension;
+  int getNumWeights(){
+    return this->numWeightsPerCoord;
   }
   int getCoordinateDimension(){
     return this->coordinate_dimension;
@@ -2686,15 +2697,15 @@ public:
     return this->numGlobalCoords;
   }
 
-  T **getLocalCoordinatesView(){
+  scalar_t **getLocalCoordinatesView(){
     return this->coords;
   }
 
-  T **getLocalWeightsView(){
+  scalar_t **getLocalWeightsView(){
     return this->wghts;
   }
 
-  void getLocalCoordinatesCopy( T ** c){
+  void getLocalCoordinatesCopy( scalar_t ** c){
     for(int ii = 0; ii < this->coordinate_dimension; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
@@ -2705,8 +2716,8 @@ public:
     }
   }
 
-  void getLocalWeightsCopy(T **w){
-    for(int ii = 0; ii < this->weight_dimension; ++ii){
+  void getLocalWeightsCopy(scalar_t **w){
+    for(int ii = 0; ii < this->numWeightsPerCoord; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif

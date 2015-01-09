@@ -1,5 +1,4 @@
 
-INCLUDE(TribitsLibraryMacros)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -14,7 +13,7 @@ APPEND_SET(HEADERS
   Pitchfork_FiniteElementProblem.H
   NormConstraint.H
   LOCALinearConstraint.H
-  ) 
+  )
 
 APPEND_SET(SOURCES
   Basis.C

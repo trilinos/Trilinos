@@ -1,10 +1,36 @@
-/**   ------------------------------------------------------------
- *    Copyright 2005-2009, 2011 Sandia Corporation.
- *    Under the terms of Contract DE-AC04-94AL85000, there is a
- *    non-exclusive license for use of this work by or on behalf
- *    of the U.S. Government.  Export of this program may require
- *    a license from the United States Government.
- *    ------------------------------------------------------------
+/*
+// Copyright (c) 2013, Sandia Corporation.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+// 
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
  */
 
 #include <pwd.h>
@@ -22,20 +48,14 @@
 #include <locale>
 
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
-#include <stk_util/parallel/Exception.hpp>
-#include <stk_util/parallel/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#ifdef STK_BUILT_IN_SIERRA
-#  include <stk_util/parallel/mpih.hpp>
-#endif
-#include <stk_util/environment/ProductRegistry.hpp>
 
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/SlibDiagWriter.hpp>
 #include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/Trace.hpp>
+#include <stk_util/environment/Trace.hpp>
 
 #include <fcntl.h>
 
@@ -175,9 +195,9 @@ demangle(
 #ifdef PURIFY_BUILD
   return symbol;
 #else
-  std::string   s;
+  std::string   s("");
 
-  int		status;
+  int		status=-1;
 
   // GR: PathScale versions 4.x.x attempt to write the length of the demangled
   //     string to the third argument of __cxa_demangle even if a NULL value is
@@ -257,40 +277,6 @@ startup_preparallel_platform()
 #endif
 
 
-double
-wall_now()
-{
-  timeval tp;
-  struct timezone tz;
-  gettimeofday(&tp, &tz);
-  return (tp.tv_sec + (((double)(tp.tv_usec))/1000000.0));
-}
-
-
-double
-cpu_now()
-{
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return (double) (my_rusage.ru_utime.tv_sec)
-    + ((double)(my_rusage.ru_utime.tv_usec))*1.0e-6;
-
-#elif ! defined(__PGI)
-  struct rusage my_rusage;
-
-  getrusage(RUSAGE_SELF, &my_rusage);
-
-  return (double) (my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec)
-    + ((double)(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec))*1.0e-6;
-#else
-  return 0;
-#endif
-}
-
-
 void
 get_heap_info(
   size_t &		heap_size,
@@ -323,20 +309,20 @@ get_heap_info(
 # elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
-  heap_size = (unsigned int) minfo.uordblks + (unsigned int) minfo.hblkhd;
-  largest_free = (unsigned int) minfo.fordblks;
+  heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
+  largest_free = static_cast<unsigned int>(minfo.fordblks);
 
   slibout.m(Slib::LOG_MEMORY) << "size_t size " << sizeof(size_t)*8 << " bits"
                               << ", heap size " << heap_size
-                              << ", arena " << (unsigned int) minfo.arena
+                              << ", arena " << static_cast<unsigned int>(minfo.arena)
 			      << ", ordblks " << minfo.ordblks
 			      << ", smblks " << minfo.smblks
 			      << ", hblks " << minfo.hblks
-			      << ", hblkhd " << (unsigned int) minfo.hblkhd
+			      << ", hblkhd " << static_cast<unsigned int>(minfo.hblkhd)
 			      << ", usmblks " << minfo.usmblks
 			      << ", fsmblks " << minfo.fsmblks
-			      << ", uordblks " << (unsigned int) minfo.uordblks
-			      << ", fordblks " << (unsigned int) minfo.fordblks
+			      << ", uordblks " << static_cast<unsigned int>(minfo.uordblks)
+			      << ", fordblks " << static_cast<unsigned int>(minfo.fordblks)
 			      << ", keepcost " << minfo.keepcost << Diag::dendl;
 
 
@@ -345,7 +331,7 @@ get_heap_info(
 
   std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
   if (proc) {
-    proc.read((char *)&proc_status, sizeof(proc_status));
+    proc.read(reinterpret_cast<char *>(&proc_status), sizeof(proc_status));
     heap_size = proc_status.pr_brksize;
     slibout.m(Slib::LOG_MEMORY) <<"pr_brksize " << proc_status.pr_brksize
 				<< ", pr_stksize " << proc_status.pr_stksize << Diag::dendl;
@@ -392,14 +378,14 @@ get_memory_info(
 
 #if defined(SIERRA_MEMORY_INFO)
 # if defined(REDS)
-  memory_usage = (size_t) __heap_start + get_heap_usage();
+  memory_usage = static_cast<size_t>(__heap_start) + get_heap_usage();
 
 # elif defined(__linux__)
   std::ifstream proc("/proc/self/stat", std::ios_base::in|std::ios_base::binary);
   if (proc) {
 
-    std::string s;
-    int i;
+    std::string s("");
+    int i=-1;
     for (i = 0; i < 11; ++i)
       proc >> s;
 
@@ -419,7 +405,7 @@ get_memory_info(
 
     std::ifstream proc("/proc/self/psinfo", std::ios_base::in|std::ios_base::binary);
     if (proc) {
-      proc.read((char *)&proc_info, sizeof(proc_info));
+      proc.read(reinterpret_cast<char *>(&proc_info), sizeof(proc_info));
       memory_usage = proc_info.pr_size*1024;
     }
   }
@@ -429,24 +415,12 @@ get_memory_info(
 
     std::ifstream proc("/proc/self/usage", std::ios_base::in|std::ios_base::binary);
     if (proc) {
-      proc.read((char *)&proc_usage, sizeof(proc_usage));
+      proc.read(reinterpret_cast<char *>(&proc_usage), sizeof(proc_usage));
       faults = proc_usage.pr_majf;
     }
   }
 # endif
 #endif // defined(SIERRA_MEMORY_INFO)
-}
-
-
-double
-vm_now()
-{
-  size_t	memory_usage;
-  size_t	faults;
-
-  get_memory_info(memory_usage, faults);
-
-  return (double) memory_usage;
 }
 
 
@@ -488,19 +462,45 @@ domainname()
 #endif
 }
 
+namespace {
+
+std::string get_env_user()
+{
+  char* env_user = std::getenv("USER");
+  if (env_user) {
+    std::string str_env_user(env_user);
+    if (!str_env_user.empty()) {
+      return str_env_user;
+    }
+  }
+
+  std::string unknown("unknown");
+  return unknown;
+}
+
+}
 
 std::string
 username()
 {
+  std::string env_user_name = get_env_user();
 #if defined(REDS) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-  if (get_param("username").empty())
-    return "unknown";
-  else
-    return get_param("username");
+  std::string user_name(get_param("username"));
+
+  if (user_name.empty()) {
+    return env_user_name;
+  }
+
+  return user_name;
 #else
   struct passwd *user_info = ::getpwuid(::geteuid());
+  std::string user_name = (user_info ? user_info->pw_name : "unknown");
 
-  return (user_info ? user_info->pw_name : "unknown");
+  if (user_name == "unknown") {
+    return env_user_name;
+  }
+
+  return user_name;
 #endif
 }
 
@@ -730,8 +730,8 @@ namespace {
      * Determine the address of the base of the heap,
      * estimated to be the address of an allocated test block
      */
-    p1 = (char *) malloc (1);
-    heap_base = (size_t) p1;
+    p1 = malloc (1);
+    heap_base = p1;
     free (p1);
 
     /**
@@ -745,7 +745,7 @@ namespace {
      * Determine the base address of the stack;
      * the address of the PCB is in a 2 MB page below the stack
      */
-    stack_base = (size_t) _my_pcb;
+    stack_base = _my_pcb;
     stack_base &= ~0x1fffff;
     stack_base +=  0x400000;
 

@@ -46,11 +46,6 @@
 #ifndef MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 #define MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "Xpetra_ImportFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"
@@ -65,8 +60,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for coordinates generation");
@@ -78,18 +73,30 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    Input(fineLevel, "Coordinates");
-    Input(fineLevel, "Aggregates");
-    Input(fineLevel, "CoarseMap");
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    static bool isAvailableCoords = false;
+
+    if (coarseLevel.GetRequestMode() == Level::REQUEST)
+      isAvailableCoords = coarseLevel.IsAvailable("Coordinates", this);
+
+    if (isAvailableCoords == false) {
+      Input(fineLevel, "Coordinates");
+      Input(fineLevel, "Aggregates");
+      Input(fineLevel, "CoarseMap");
+    }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level &coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
+
+    if (coarseLevel.IsAvailable("Coordinates", this)) {
+      GetOStream(Runtime0) << "Reusing coordinates" << std::endl;
+      return;
+    }
 
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
