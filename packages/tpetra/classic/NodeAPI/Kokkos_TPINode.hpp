@@ -42,6 +42,13 @@
 #ifndef KOKKOS_TPINODE_HPP_
 #define KOKKOS_TPINODE_HPP_
 
+/// \file Kokkos_TPINode.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::TPINode Node type.
+/// \warning KokkosClassic::TPINode has been DEPRECATED.  For a Node
+///   that uses Pthreads for thread-level parallelism, please use
+///   Kokkos::Compat::KokkosThreadsWrapperNode instead.
+
 #include "Kokkos_ConfigDefs.hpp"
 
 // mfh 08 Jan 2015: Don't enable the contents of this file unless the
@@ -134,10 +141,15 @@ namespace KokkosClassic {
     *(static_cast<ReductionType*>(work->reduce)) = const_wdp_wrapper->wdp.identity();
   }
 
-  /** \brief %Kokkos node interface to the ThreadPool threading library.
-      \ingroup kokkos_node_api
-   */
-  class TPINode : public StandardNodeMemoryModel {
+  /// \brief Node API implementation that uses the ThreadPool Trilinos
+  ///   package for thread-level parallelism.
+  /// \ingroup kokkos_node_api
+  /// \warning This class has been DEPRECATED.  For a Node that uses
+  ///   Pthreads for thread-level parallelism, please use
+  ///   Kokkos::Compat::KokkosThreadsWrapperNode instead.
+  ///
+  /// ThreadPool uses the POSIX Threads (Pthreads) library underneath.
+  class TPETRA_DEPRECATED TPINode : public StandardNodeMemoryModel {
   public:
     /// \brief This is a "classic" Node type.
     ///

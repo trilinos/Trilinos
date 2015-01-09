@@ -81,7 +81,7 @@ namespace MueLuTests {
   {
 
     out << "version: " << MueLu::Version() << std::endl;
-    
+
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
@@ -110,11 +110,11 @@ namespace MueLuTests {
 
     RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
     coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
-    
+
     RCP<BlockedCoarseMapFactory> blockedCoarseMapFact = rcp(new BlockedCoarseMapFactory());
     blockedCoarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
     blockedCoarseMapFact->SetFactory("CoarseMap", coarseMapFact);
-        
+
     // request input for BlockedCoarseMapFactory by hand
     fineLevel.Request("Aggregates", UncoupledAggFact.get());
     fineLevel.Request("Aggregates", UncoupledAggFact.get()); // request aggregates twice as we need them here too!
@@ -131,16 +131,18 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     sumAll(comm, numAggs, numGlobalAggs);
     out << "Found " << numGlobalAggs << " aggregates" << std::endl;
-    
-    TEST_EQUALITY(map1->getMinAllGlobalIndex(), 0 );
-    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), Teuchos::as<GO>(NSdim) * numGlobalAggs - 1);
-    TEST_EQUALITY(map2->getMinAllGlobalIndex(), Teuchos::as<GO>(NSdim) * numGlobalAggs);
-    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * Teuchos::as<GO>(NSdim) * numGlobalAggs - 1);
-    TEST_EQUALITY(map1->getNodeNumElements(), numAggs * Teuchos::as<GO>(NSdim));
-    TEST_EQUALITY(map2->getNodeNumElements(), numAggs * Teuchos::as<GO>(NSdim));
+
+    using Teuchos::as;
+
+    TEST_EQUALITY(map1->getMinAllGlobalIndex(),         0 );
+    TEST_EQUALITY(map1->getMaxAllGlobalIndex(),         numGlobalAggs * as<GO>(NSdim) - 1);
+    TEST_EQUALITY(map2->getMinAllGlobalIndex(),         numGlobalAggs * as<GO>(NSdim) );
+    TEST_EQUALITY(map2->getMaxAllGlobalIndex(),     2 * numGlobalAggs * as<GO>(NSdim) - 1);
+    TEST_EQUALITY(as<GO>(map1->getNodeNumElements()),   numAggs       * as<GO>(NSdim));
+    TEST_EQUALITY(as<GO>(map2->getNodeNumElements()),   numAggs       * as<GO>(NSdim));
   } //BlockedCoarseMapFactory, Build
 
- 
+
 
 
 } // namespace MueLuTests

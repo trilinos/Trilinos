@@ -75,13 +75,6 @@ namespace KokkosClassic {
   using Teuchos::ParameterList;
 }
 
-namespace Kokkos {
-  // For backwards compatibility, bring everything in the
-  // KokkosClassic namespace into Kokkos for now.  This will
-  // go away soon.
-  using namespace KokkosClassic;
-}
-
 //! Namespace for Kokkos example classes
 namespace KokkosExamples {
 }

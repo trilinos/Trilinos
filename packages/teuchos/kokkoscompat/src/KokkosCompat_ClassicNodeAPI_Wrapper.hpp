@@ -20,23 +20,24 @@
 namespace Kokkos {
 namespace Compat {
 
-/// \brief Node that wraps a new Kokkos Device.
-/// \tparam DeviceType The type of the Kokkos Device to wrap.
+/// \brief Node that wraps a new Kokkos execution space.
+/// \tparam DeviceType The type of the Kokkos execution space to wrap.
 /// \ingroup kokkos_node_api
 template<class DeviceType>
 class KokkosDeviceWrapperNode {
 public:
-  //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
   typedef DeviceType device_type;
 
   /// \brief This is NOT a "classic" Node type.
   ///
-  /// We plan to deprecate the "classic" Node types with the 11.14
+  /// We will deprecate the "classic" Node types with the 11.14
   /// release of Trilinos, and remove them entirely with the 12.0
-  /// release.
+  /// release.  This Node type is safe to use.
   static const bool classic = false;
 
+  //! This only has meaning for the "classic" version of Tpetra.
   static const bool isHostNode = true;
+  //! This only has meaning for the "classic" version of Tpetra.
   static const bool isCUDANode = false;
 
   static int count;

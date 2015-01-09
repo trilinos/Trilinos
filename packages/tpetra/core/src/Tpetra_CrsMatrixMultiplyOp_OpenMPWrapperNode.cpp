@@ -47,7 +47,7 @@
 
 // Don't bother compiling anything, or even including anything else,
 // unless KokkosOpenMPWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 #include "Tpetra_ETIHelperMacros.h"

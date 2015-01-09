@@ -139,7 +139,7 @@ public:
   //@{ 
 
   //! The number of rows in the multivector.
-  virtual int GetVecLength () const = 0;
+  BELOS_DEPRECATED virtual int GetVecLength () const = 0;
  
   //! The number of rows in the multivector.
   //! \note This method supersedes GetVecLength, which will be deprecated.

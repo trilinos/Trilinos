@@ -42,6 +42,13 @@
 #ifndef KOKKOS_OPENMPNODE_HPP_
 #define KOKKOS_OPENMPNODE_HPP_
 
+/// \file Kokkos_OpenMPNode.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::OpenMPNode Node type.
+/// \warning KokkosClassic::OpenMPNode has been DEPRECATED.  For a
+///   Node that uses OpenMP for thread-level parallelism, please use
+///   Kokkos::Compat::KokkosOpenMPWrapperNode instead.
+
 #include "Kokkos_ConfigDefs.hpp"
 
 // mfh 08 Jan 2015: Don't enable the contents of this file unless the

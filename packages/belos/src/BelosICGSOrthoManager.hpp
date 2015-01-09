@@ -74,7 +74,7 @@ namespace Belos {
   /// \warning This function is deprecated.  Please use \c
   ///   ICGSOrthoManager::getValidParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList> 
   getDefaultIcgsParameters()
   {
     using Teuchos::as;
@@ -107,7 +107,7 @@ namespace Belos {
   /// \warning This function is deprecated.  Please use \c
   ///   ICGSOrthoManager::getFastParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList> 
   getFastIcgsParameters()
   {
     using Teuchos::ParameterList;
@@ -142,7 +142,7 @@ namespace Belos {
   ///   ICGSOrthoManager::setParameterList() or an \c ICGSOrthoManager
   ///   constructor that takes a parameter list input.
   template<class ScalarType>
-  void TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED void 
   readIcgsParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
                       int& maxNumOrthogPasses,
                       typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,

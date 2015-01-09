@@ -42,6 +42,10 @@
 #ifndef KOKKOS_TBBNODE_HPP_
 #define KOKKOS_TBBNODE_HPP_
 
+/// \file Kokkos_TBBNode.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::TBBNode Node type.
+
 #include "Kokkos_ConfigDefs.hpp"
 
 // mfh 08 Jan 2015: Don't enable the contents of this file unless the
@@ -105,15 +109,19 @@ namespace KokkosClassic {
     }
   };
 
-  /** \brief %Kokkos node interface to the Intel Threading Building Blocks threading library.
-      \ingroup kokkos_node_api
-   */
-  class TBBNode : public StandardNodeMemoryModel {
+  /// \brief Node API implementation that uses Intel's Threading
+  ///   Building Blocks (TBB) for thread-level parallelism.
+  /// \ingroup kokkos_node_api
+  /// \warning This class has been DEPRECATED.  We do not have
+  ///   immediate plans to provide a TBB Kokkos execution space to
+  ///   replace it.  If you would like one, please contact the Kokkos
+  ///   developers.
+  class TPETRA_DEPRECATED TBBNode : public StandardNodeMemoryModel {
   public:
     /// \brief This is a "classic" Node type.
     ///
-    /// That means we plan to deprecate it with the 11.14 release of
-    /// Trilinos, and remove it entirely with the 12.0 release.
+    /// That means it will be deprecated with the 11.14 release of
+    /// Trilinos, and it will go away entirely with the 12.0 release.
     static const bool classic = true;
 
     //! Constructor that sets default parameters.

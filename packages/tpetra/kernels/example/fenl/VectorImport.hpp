@@ -72,8 +72,8 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-struct VectorImport {
-
+class VectorImport {
+public:
   const MPI_Comm comm ;
   const unsigned count_owned ;
   const unsigned count_receive ;
@@ -214,7 +214,7 @@ public:
 
     MPI_Barrier( comm );
 
-    { // Pack and send 
+    { // Pack and send
       const Pack pack( send_nodeid , v , send_buffer );
 
       Kokkos::deep_copy( host_send_buffer , send_buffer );

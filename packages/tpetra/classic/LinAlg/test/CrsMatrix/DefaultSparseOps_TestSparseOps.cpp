@@ -80,12 +80,7 @@ namespace {
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) || defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   typedef KokkosClassic::SerialNode node_type;
-#  elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
-  // FIXME (mfh 28 Oct 2014) Currently, this Node type ALWAYS exists
-  // if TeuchosKokkosCompat and KokkosCore are enabled, because
-  // Kokkos::Serial always exists if KokkosCore is enabled.  There is
-  // currently no macro for protecting use of Kokkos::Serial, other
-  // than HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT.
+#  elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode node_type;
 #  else
 #    error "Sorry, this file will not build because no Node type other than the CUDA wrapper Node is defined."

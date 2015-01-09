@@ -5,6 +5,6 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     Comm          comm          PS  REQUIRED
     Numerics      numerics      PS  REQUIRED
     Remainder     remainder     PS  REQUIRED
-    KokkosCompat  kokkoscompat  EX  OPTIONAL
-    KokkosComm    kokkoscomm    EX  OPTIONAL
+    KokkosCompat  kokkoscompat  PS  OPTIONAL
+    KokkosComm    kokkoscomm    PS  OPTIONAL
   )

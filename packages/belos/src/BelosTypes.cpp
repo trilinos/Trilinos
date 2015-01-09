@@ -61,7 +61,7 @@ namespace Belos {
     }
   } // namespace (anonymous)
 
-  const char* TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED const char* 
   toString (const StatusType status)
   {
     return convertStatusTypeToRawString (status);

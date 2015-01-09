@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,13 +34,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef KOKKOS_CUDA_NODE_MEMORY_MODEL_HPP_
 #define KOKKOS_CUDA_NODE_MEMORY_MODEL_HPP_
+
+/// \file Kokkos_CUDANodeMemoryModel.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::CUDANodeMemoryModel base class for Kokkos Node
+///   types.
+/// \warning KokkosClassic::CUDANodeMemoryModel has been DEPRECATED.
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include <Teuchos_RCP.hpp>
@@ -64,16 +70,19 @@ namespace KokkosClassic {
   using Teuchos::ArrayView;
   using Teuchos::RCP;
 
-  /** \brief A default implementation of the Node memory architecture for Node with a distinct device memory space allocated by the CUDA runtime.
-      \ingroup kokkos_node_api
-   */
-  class CUDANodeMemoryModel {
+  /// \brief A default implementation of the Node memory architecture
+  ///   for Nodes with a distinct "device" memory space allocated by
+  ///   the CUDA run-time library.
+  /// \ingroup kokkos_node_api
+  /// \warning This class has been DEPRECATED and will be removed in
+  ///   the 12.0 release of Trilinos.
+  class TPETRA_DEPRECATED CUDANodeMemoryModel {
     public:
       //! Indicates that parallel buffers allocated by this node are not available for use on the host thread.
       static const bool isHostNode = false;
       static const bool isCUDANode = true;
 
-      //@{ Default Constructor 
+      //@{ Default Constructor
 
       //! Default constructor.
       CUDANodeMemoryModel();
@@ -84,7 +93,7 @@ namespace KokkosClassic {
 
       /*! \brief Allocate a parallel buffer, returning it as a pointer ecnapsulated in an ArrayRCP.
 
-          Dereferencing the returned ArrayRCP or its underlying pointer in general results in undefined 
+          Dereferencing the returned ArrayRCP or its underlying pointer in general results in undefined
           behavior outside of parallel computations.
 
           The buffer will be automatically freed by the Node when no more references remain.
@@ -92,7 +101,7 @@ namespace KokkosClassic {
           @tparam T The data type of the allocate buffer. This is used to perform alignment and determine the number of bytes to allocate.
           @param[in] size The size requested for the parallel buffer, greater than zero.
 
-          \post The method will return an ArrayRCP encapsulating a pointer. The underlying pointer may be used in parallel computation routines, 
+          \post The method will return an ArrayRCP encapsulating a pointer. The underlying pointer may be used in parallel computation routines,
                 and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
       */
       template <class T> inline
@@ -127,7 +136,7 @@ namespace KokkosClassic {
       void copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest);
 
       /*! \brief Copy data between buffers.
-          
+
         @param[in]     size     The size of the copy, greater than zero.
         @param[in]     buffSrc  The source buffer, with length at least as large as \c size.
         @param[in,out] buffDest The destination buffer, with length at least as large as \c size.
@@ -139,7 +148,7 @@ namespace KokkosClassic {
 
       /*! \brief Return a const view of a buffer for use on the host.
           This creates a \c const view of length \c size, constituting the first \c size entries of \c buff, as they exist at the time of view creation.
-          host memory allocated for the creation of this view is automatically deleted when no refences to the view remain. 
+          host memory allocated for the creation of this view is automatically deleted when no refences to the view remain.
           \pre <tt>buff.size() >= size</tt>
        */
       template <class T> inline
@@ -147,10 +156,10 @@ namespace KokkosClassic {
 
       /*! \brief Return a non-const view of a buffer for use on the host.
 
-          \param[in] rw Specifies KokkosClassic::ReadWrite or KokkosClassic::WriteOnly. If KokkosClassic::WriteOnly, the contents of the view are undefined when it is created and must 
-          be initialized on the host. However, this prevents the potential need for a copy from device to host memory needed to set the view 
+          \param[in] rw Specifies KokkosClassic::ReadWrite or KokkosClassic::WriteOnly. If KokkosClassic::WriteOnly, the contents of the view are undefined when it is created and must
+          be initialized on the host. However, this prevents the potential need for a copy from device to host memory needed to set the view
           values as when KokkosClassic::ReadWrite is specified.
-          
+
           This creates a view of length \c size, constituting the first \c size entries of \c buff, as they exist at the time of view creation.
 
           A non-const view permits changes, which must be copied back to the buffer. This does not occur until all references to the view are deleted.
@@ -169,7 +178,7 @@ namespace KokkosClassic {
 
       //! \brief Print some statistics regarding node allocation and memory transfer.
       void printStatistics(const RCP< Teuchos::FancyOStream > &os) const;
-      
+
       //! \brief Clear all statistics on memory transfer.
       void clearStatistics();
 

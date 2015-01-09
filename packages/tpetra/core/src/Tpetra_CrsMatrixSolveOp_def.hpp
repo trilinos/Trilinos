@@ -43,10 +43,9 @@
 #define TPETRA_CRSMATRIXSOLVEOP_DEF_HPP
 
 /// \file Tpetra_CrsMatrixSolveOp_def.hpp
-///
-/// Definition of Tpetra::CrsMatrixSolveOp and its nonmember constructor.
+/// \brief Definition of Tpetra::CrsMatrixSolveOp and its nonmember constructor.
 
-#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixSolveOp_decl.hpp"
 
 namespace Tpetra {
@@ -312,21 +311,19 @@ namespace Tpetra {
     return matrix_->getDomainMap();
   }
 
-} // end of namespace Tpetra
-
-template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node> > &A) {
-  return Teuchos::rcp(new Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node>(A) );
+  template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsMatrixSolveOp (const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node> >& A) {
+    return Teuchos::rcp (new CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node> (A));
 }
 
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
+} // namespace Tpetra
 
-//! Explicit instantiation macro supporting the CrsMatrixSolveOp class. Instantiates the class, the non-member constructor, and the necessary CrsMatrix::solve() member.
+/// \brief Explicit instantiation macro for CrsMatrixSolveOp.
+/// \warning This macro MUST be expanded from within the Tpetra namespace!
+///
+/// Instantiates the class, the non-member constructor, and the
+/// necessary CrsMatrix::solve() member.
 #define TPETRA_CRSMATRIX_SOLVEOP_INSTANT(OPSCALAR,MATSCALAR,LO,GO,NODE) \
   \
   template class CrsMatrixSolveOp< OPSCALAR , MATSCALAR , LO , GO , NODE >; \

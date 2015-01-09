@@ -286,8 +286,10 @@ void Task::schedule()
 
 void Task::wait( const Future< void, Kokkos::Qthread> & f )
 {
-  aligned_t tmp ;
-  qthread_readFF( & tmp , & f.m_task->m_qfeb );
+  if ( f.m_task ) {
+    aligned_t tmp ;
+    qthread_readFF( & tmp , & f.m_task->m_qfeb );
+  }
 }
 
 } // namespace Impl

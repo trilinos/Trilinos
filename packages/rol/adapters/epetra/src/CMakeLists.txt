@@ -37,12 +37,4 @@ IF (ROL_ENABLE_Epetra)
   )
 ENDIF()
 
-#
-# C) Define the targets for package's library(s)
-# 
-
-  TRIBITS_ADD_LIBRARY(
-    rolepetra
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
+INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})

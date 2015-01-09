@@ -152,7 +152,7 @@ namespace Belos {
     void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
 
     //! The (global) number of rows in the multivector.
-    int GetVecLength () const { return GlobalLength(); }
+    BELOS_DEPRECATED int GetVecLength () const { return GlobalLength(); }
 
     //! The number of rows in the multivector.
     //! \note This method supersedes GetVecLength, which will be deprecated.

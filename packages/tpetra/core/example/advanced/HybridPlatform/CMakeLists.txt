@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE(
 # types are enabled.  However, the test should still build, which is
 # why we separate the executable declaration above from the test
 # declaration below.
-IF (TpetraCore_ENABLE_TpetraClassic AND TpetraClassic_ENABLE_Serial AND TpetraClassic_ENABLE_OpenMP AND TpetraClassic_ENABLE_TBB AND TpetraClassic_ENABLE_ThreadPool AND Kokkos_ENABLE_CUDA AND TpetraClassic_ENABLE_CUDA_DOUBLE)
+IF (TpetraCore_ENABLE_TpetraClassic AND TpetraClassic_ENABLE_SerialNode AND TpetraClassic_ENABLE_OpenMPNode AND TpetraClassic_ENABLE_TBBNode AND TpetraClassic_ENABLE_TPINode AND TpetraClassic_ENABLE_ThrustGPUNode AND TpetraClassic_ENABLE_CUDA_DOUBLE)
   TRIBITS_ADD_TEST(
     HybridPlatformTutorial
     NAME HybridPlatformTutorial

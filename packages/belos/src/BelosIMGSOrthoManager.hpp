@@ -76,7 +76,7 @@ namespace Belos {
   /// \warning This function is deprecated.  Please use \c
   ///   IMGSOrthoManager::getValidParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList> 
   getDefaultImgsParameters()
   {
     using Teuchos::as;
@@ -109,7 +109,7 @@ namespace Belos {
   /// \warning This function is deprecated.  Please use \c
   ///   IMGSOrthoManager::getFastParameters() instead.
   template<class ScalarType>
-  Teuchos::RCP<const Teuchos::ParameterList> TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED Teuchos::RCP<const Teuchos::ParameterList> 
   getFastImgsParameters()
   {
     using Teuchos::ParameterList;
@@ -144,7 +144,7 @@ namespace Belos {
   ///   IMGSOrthoManager::setParameterList() or an \c IMGSOrthoManager
   ///   constructor that takes a parameter list input.
   template<class ScalarType>
-  void TEUCHOS_DEPRECATED
+  BELOS_DEPRECATED void 
   readImgsParameters (const Teuchos::RCP<const Teuchos::ParameterList>& params,
                       int& maxNumOrthogPasses,
                       typename Teuchos::ScalarTraits<ScalarType>::magnitudeType& blkTol,

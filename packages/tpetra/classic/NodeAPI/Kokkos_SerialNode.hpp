@@ -42,6 +42,13 @@
 #ifndef KOKKOS_SERIALNODE_HPP_
 #define KOKKOS_SERIALNODE_HPP_
 
+/// \file Kokkos_SerialNode.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::SerialNode Node type.
+/// \warning KokkosClassic::SerialNode has been DEPRECATED.  For a
+///   Node with comparable intent, please use
+///   Kokkos::Compat::KokkosSerialWrapperNode instead.
+
 #include "Kokkos_ConfigDefs.hpp"
 
 // mfh 08 Jan 2015: Don't enable the contents of this file unless the
@@ -60,10 +67,13 @@
 
 namespace KokkosClassic {
 
-  /** \brief %Kokkos node interface for a serial, CPU node.
-      \ingroup kokkos_node_api
-   */
-  class SerialNode : public StandardNodeMemoryModel {
+  /// \brief Node API implementation that uses sequential execution
+  ///   for "thread-level parallelism."
+  /// \ingroup kokkos_node_api
+  /// \warning This class has been DEPRECATED.  For a Node with
+  ///   comparable intent, please use
+  ///   Kokkos::Compat::KokkosSerialWrapperNode instead.
+  class TPETRA_DEPRECATED SerialNode : public StandardNodeMemoryModel {
   public:
     /// \brief This is a "classic" Node type.
     ///

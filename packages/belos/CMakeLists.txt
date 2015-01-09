@@ -9,6 +9,8 @@ TRIBITS_PACKAGE(Belos)
 ## Set up package-specific options
 ######################################################################
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 # Kokkos includes an implementation of the Tall Skinny QR (TSQR)
 # factorization.  TSQR is used to implement an OrthoManager and a
 # MatOrthoManager (which only uses TSQR in the Euclidean-inner-product

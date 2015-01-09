@@ -6,4 +6,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  EmptySparseKernelDriver
   STANDARD_PASS_OUTPUT
 ) 
 
-TRIBITS_ADD_TEST_DIRECTORIES(PDP10)
+# NOTE (mfh 09 Jan 2015): Examples here are likely obsolete,
+# given the move to the Kokkos refactor version of Tpetra.
+#TRIBITS_ADD_TEST_DIRECTORIES(PDP10)

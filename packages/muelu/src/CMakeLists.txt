@@ -149,7 +149,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-IF(TpetraClassic_ENABLE_Thrust OR
+IF(TpetraClassic_ENABLE_ThrustGPUNode OR
    (TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda))
   IF( TPL_ENABLE_MPI )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )

@@ -111,7 +111,7 @@ gaussSeidel (const LocalOrdinal numRows,
              const OffsetType x_stride,
              const MatrixScalar* const D,
              const MatrixScalar omega,
-             const Kokkos::ESweepDirection direction)
+             const KokkosClassic::ESweepDirection direction)
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
@@ -140,7 +140,7 @@ gaussSeidel (const LocalOrdinal numRows,
   }
 
   if (numCols == 1) {
-    if (direction == Kokkos::Forward) {
+    if (direction == KokkosClassic::Forward) {
       for (LO i = 0; i < numRows; ++i) {
         RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
         for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
@@ -150,7 +150,7 @@ gaussSeidel (const LocalOrdinal numRows,
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-    } else if (direction == Kokkos::Backward) {
+    } else if (direction == KokkosClassic::Backward) {
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -185,7 +185,7 @@ gaussSeidel (const LocalOrdinal numRows,
     Teuchos::Array<RangeScalar> temp (numCols);
     RangeScalar* const x_temp = temp.getRawPtr ();
 
-    if (direction == Kokkos::Forward) {
+    if (direction == KokkosClassic::Forward) {
       for (LO i = 0; i < numRows; ++i) {
         for (OffsetType c = 0; c < theNumCols; ++c) {
           x_temp[c] = ArithTraits<RangeScalar>::zero ();
@@ -201,7 +201,7 @@ gaussSeidel (const LocalOrdinal numRows,
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
-    } else if (direction == Kokkos::Backward) { // backward mode
+    } else if (direction == KokkosClassic::Backward) { // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -293,7 +293,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
                       const LocalOrdinal* const rowInd,
                       const LocalOrdinal numRowInds, // length of rowInd
                       const MatrixScalar omega,
-                      const Kokkos::ESweepDirection direction)
+                      const KokkosClassic::ESweepDirection direction)
 {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
@@ -322,7 +322,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
   }
 
   if (numCols == 1) {
-    if (direction == Kokkos::Forward) {
+    if (direction == KokkosClassic::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
@@ -333,7 +333,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-    } else if (direction == Kokkos::Backward) {
+    } else if (direction == KokkosClassic::Backward) {
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
@@ -370,7 +370,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
     Teuchos::Array<RangeScalar> temp (numCols);
     RangeScalar* const x_temp = temp.getRawPtr ();
 
-    if (direction == Kokkos::Forward) {
+    if (direction == KokkosClassic::Forward) {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
@@ -387,7 +387,7 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
           X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
         }
       }
-    } else if (direction == Kokkos::Backward) { // backward mode
+    } else if (direction == KokkosClassic::Backward) { // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.

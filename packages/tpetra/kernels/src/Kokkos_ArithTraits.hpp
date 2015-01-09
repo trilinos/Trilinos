@@ -46,9 +46,6 @@
 
 /// \file Kokkos_ArithTraits.hpp
 /// \brief Declaration and definition of Kokkos::Details::ArithTraits
-///
-/// \warning This interface is not ready for exposure to users yet.
-///   Users beware!
 
 #include <Kokkos_complex.hpp>
 
@@ -209,9 +206,6 @@ namespace Details {
 /// \class ArithTraits
 /// \brief Traits class for arithmetic on type T.
 /// \tparam T "Scalar" type of interest
-///
-/// \warning This interface is not ready for exposure to users yet.
-///   Users beware!
 ///
 /// This is a traits class for the "arithmetic" type T.  "Arithmetic
 /// types" include built-in signed and unsigned integer types,
@@ -687,11 +681,15 @@ public:
 };
 
 
-// The C++ Standard Library (with C++03 at least) only allows
-// std::complex<T> for T = float, double, or long double.
+/// \brief Partial specialization for std::complex<RealFloatType>.
+///
+/// The C++ Standard Library (with C++03 at least) only allows
+/// std::complex<RealFloatType> for RealFloatType = float, double, or
+/// long double.
 template<class RealFloatType>
 class ArithTraits<std::complex<RealFloatType> > {
 public:
+  //! Kokkos internally replaces std::complex with Kokkos::complex.
   typedef ::Kokkos::complex<RealFloatType> val_type;
   typedef RealFloatType mag_type;
 
@@ -2379,12 +2377,12 @@ public:
 // Kokkos does <i>not</i> currently support these types in device
 // functions.  It should be possible to use Kokkos' support for
 // aggregate types to implement device function support for dd_real
-// and qd_real, but we have not done this yet (as of 07 Jan 2014).
+// and qd_real, but we have not done this yet (as of 09 Jan 2015).
 // Hence, the class methods of the ArithTraits specializations for
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
 template<>
-struct ScalarTraits<dd_real>
+struct ArithTraits<dd_real>
 {
   typedef dd_real val_type;
   typedef dd_real mag_type;
@@ -2503,7 +2501,7 @@ struct ScalarTraits<dd_real>
 
 
 template<>
-struct ScalarTraits<qd_real>
+struct ArithTraits<qd_real>
 {
   typedef qd_real val_type;
   typedef qd_real mag_type;
@@ -2626,6 +2624,12 @@ struct ScalarTraits<qd_real>
 #endif // HAVE_KOKKOS_QD
 
 } // namespace Details
+
+  // Promote ArithTraits into Kokkos namespace.  At some point, we
+  // will remove it from the Details namespace completely.  We leave
+  // it there for now, because a lot of code depends on it being
+  // there.
+  using Details::ArithTraits;
 } // namespace Kokkos
 
 #endif // KOKKOS_ARITHTRAITS_HPP

@@ -611,7 +611,7 @@ public:
   static OutType convert (const std::string& t) {
     std::istringstream in (t);
     OutType out;
-    t >> out;
+    in >> out;
     return out;
   }
 };
@@ -813,25 +813,25 @@ public:
 template<>
 class ValueTypeConversionTraits<unsigned __int64, std::string> {
 public:
-	/// \brief Convert the given std::string to an <tt>unsigned long long</tt>, with checks.
-	///
-	/// If the string overflows <tt>unsigned __int64</tt>, this throws
-	/// <tt>std::range_error</tt>.  If it does not contain an integer,
-	/// this throws <tt>std::invalid_argument</tt>.
-	static unsigned __int64 safeConvert(const std::string& t) {
-		unsigned __int64 output;
-		std::istringstream stream(t);
-		stream >> output;
-		return output;
-	}
+        /// \brief Convert the given std::string to an <tt>unsigned long long</tt>, with checks.
+        ///
+        /// If the string overflows <tt>unsigned __int64</tt>, this throws
+        /// <tt>std::range_error</tt>.  If it does not contain an integer,
+        /// this throws <tt>std::invalid_argument</tt>.
+        static unsigned __int64 safeConvert(const std::string& t) {
+                unsigned __int64 output;
+                std::istringstream stream(t);
+                stream >> output;
+                return output;
+        }
 
-	//! Convert the given \c std::string to an <tt>unsigned __int64</tt>.
-	static unsigned __int64 convert(const std::string& t) {
-		unsigned __int64 output;
-		std::istringstream stream(t);
-		stream >> output;
-		return output;
-	}
+        //! Convert the given \c std::string to an <tt>unsigned __int64</tt>.
+        static unsigned __int64 convert(const std::string& t) {
+                unsigned __int64 output;
+                std::istringstream stream(t);
+                stream >> output;
+                return output;
+        }
 };
 #endif // HAVE_TEUCHOS___INT64
 
