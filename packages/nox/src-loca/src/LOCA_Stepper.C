@@ -344,6 +344,17 @@ LOCA::Stepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigen
    return true;
 }
 
+void LOCA::Stepper::computeEigenData() {
+  Teuchos::RCP< std::vector<double> > evals_r;
+  Teuchos::RCP< std::vector<double> > evals_i;
+  Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
+  Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
+  eigensolver->computeEigenvalues(
+    *curGroupPtr->getBaseLevelUnderlyingGroup(),
+    evals_r, evals_i, evecs_r, evecs_i);
+  saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
+}
+
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::start() {
   NOX::StatusTest::StatusType solverStatus;
@@ -356,6 +367,9 @@ LOCA::Stepper::start() {
 
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
+
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) computeEigenData();
 
   // Allow continuation group to postprocess the step
   if (solverStatus == NOX::StatusTest::Converged)
@@ -398,19 +412,6 @@ LOCA::Stepper::start() {
 
   // Save initial solution
   curGroupPtr->printSolution();
-
-  // Compute eigenvalues/eigenvectors if requested
-  if (calcEigenvalues) {
-    Teuchos::RCP< std::vector<double> > evals_r;
-    Teuchos::RCP< std::vector<double> > evals_i;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(
-                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-                 evals_r, evals_i, evecs_r, evecs_i);
-
-    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
-  }
 
   // Compute predictor direction
   NOX::Abstract::Group::ReturnType predictorStatus =
@@ -607,6 +608,9 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   std::string callingFunction = "LOCA::Stepper::postprocess()";
 
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) computeEigenData();
+
   // Allow continuation group to postprocess the step
   curGroupPtr->postProcessContinuationStep(stepStatus);
 
@@ -643,19 +647,6 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Print (save) solution
   curGroupPtr->printSolution();
-
-  // Compute eigenvalues/eigenvectors
-  if (calcEigenvalues) {
-    Teuchos::RCP< std::vector<double> > evals_r;
-    Teuchos::RCP< std::vector<double> > evals_i;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-    eigensolver->computeEigenvalues(
-                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-                 evals_r, evals_i, evecs_r, evecs_i);
-
-    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
-  }
 
   return stepStatus;
 }
