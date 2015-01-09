@@ -8,6 +8,9 @@
 #include "Ifpack.h"
 #include "ml_ValidateParameters.h"
 #include "ml_ifpack_epetra_wrap.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 using Teuchos::rcp;
 using Teuchos::RCP;
