@@ -46,7 +46,7 @@
 ///
 ///  Declaration of Tpetra::CrsMatrixSolveOp and its nonmember constructor.
 
-#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 
 namespace Tpetra {
 
