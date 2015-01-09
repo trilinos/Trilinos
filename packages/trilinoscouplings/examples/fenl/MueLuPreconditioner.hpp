@@ -93,7 +93,7 @@ setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
                     const Teuchos::RCP<Tpetra::MultiVector<S,LO,GO,N> >& coords)
 {
   typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
-  RCP<PreconditionerType> mueluPreconditioner;
+  Teuchos::RCP<PreconditionerType> mueluPreconditioner;
   mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName,coords);
   return mueluPreconditioner;
 }

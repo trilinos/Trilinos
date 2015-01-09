@@ -188,8 +188,8 @@ namespace Example {
       typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
       typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
 
-      RCP< const Map > rmap = A->getRowMap();
-      RCP< const Map > cmap = A->getColMap();
+      Teuchos::RCP< const Map > rmap = A->getRowMap();
+      Teuchos::RCP< const Map > cmap = A->getColMap();
 
       KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
       KokkosGraphType kokkos_graph = kokkos_matrix.graph;
@@ -206,10 +206,10 @@ namespace Example {
 
       KokkosMatrixType mean_kokkos_matrix(
         "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
-      RCP < MatrixType > M =
-        rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
+      Teuchos::RCP < MatrixType > M =
+          Teuchos::rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
 
-      RCP< PreconditionerType > mueluPreconditioner;
+      Teuchos::RCP< PreconditionerType > mueluPreconditioner;
       mueluPreconditioner =
         MueLu::CreateTpetraPreconditioner(M,xmlFileName,coords);
       return mueluPreconditioner;
