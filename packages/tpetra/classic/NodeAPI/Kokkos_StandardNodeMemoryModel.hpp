@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,13 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef KOKKOS_STANDARD_NODE_MEMORY_MODEL_HPP_
 #define KOKKOS_STANDARD_NODE_MEMORY_MODEL_HPP_
+
+/// \file Kokkos_StandardNodeMemoryModel.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::StandardNodeMemoryModel base class for Kokkos
+///   Node types.
+/// \warning KokkosClassic::StandardNodeMemoryModel has been
+///   DEPRECATED.
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_BufferMacros.hpp"
@@ -52,10 +59,12 @@
 
 namespace KokkosClassic {
 
-  /** \brief A default implementation of the Node memory architecture for a single memory space allocated by standard library calls.
-      \ingroup kokkos_node_api
-   */
-  class StandardNodeMemoryModel {
+  /// \brief A default implementation of the Node memory architecture
+  ///   for a single memory space allocated by standard library calls.
+  /// \ingroup kokkos_node_api
+  /// \warning This class has been DEPRECATED and will be removed in
+  ///   the 12.0 release of Trilinos.
+  class TPETRA_DEPRECATED StandardNodeMemoryModel {
     public:
       //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
       static const bool isHostNode = true;
@@ -65,7 +74,7 @@ namespace KokkosClassic {
 
       /*! \brief Allocate a parallel buffer, returning it as a pointer ecnapsulated in an ArrayRCP.
 
-          Dereferencing the returned ArrayRCP or its underlying pointer in general results in undefined 
+          Dereferencing the returned ArrayRCP or its underlying pointer in general results in undefined
           behavior outside of parallel computations.
 
           The buffer will be automatically freed by the Node when no more references remain.
@@ -73,7 +82,7 @@ namespace KokkosClassic {
           @tparam T The data type of the allocate buffer. This is used to perform alignment and determine the number of bytes to allocate.
           @param[in] size The size requested for the parallel buffer, greater than zero.
 
-          \post The method will return an ArrayRCP encapsulating a pointer. The underlying pointer may be used in parallel computation routines, 
+          \post The method will return an ArrayRCP encapsulating a pointer. The underlying pointer may be used in parallel computation routines,
                 and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
       */
       template <class T> inline
@@ -129,7 +138,7 @@ namespace KokkosClassic {
       }
 
       /*! \brief Copy data between buffers.
-          
+
         @param[in]     size     The size of the copy, greater than zero.
         @param[in]     buffSrc  The source buffer, with length at least as large as \c size.
         @param[in,out] buffDest The destination buffer, with length at least as large as \c size.
@@ -159,7 +168,7 @@ namespace KokkosClassic {
       //! \brief Return a non-const view of a buffer for use on the host.
       template <class T> inline
       ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
-	(void) rw; // Silence "unused parameter" compiler warning
+        (void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
         }

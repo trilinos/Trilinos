@@ -42,6 +42,13 @@
 #ifndef KOKKOS_THRUSTGPUNODE_HPP_
 #define KOKKOS_THRUSTGPUNODE_HPP_
 
+/// \file Kokkos_ThrustGPUNode.hpp
+/// \brief Declaration and definition of the (now DEPRECATED)
+///   KokkosClassic::ThrustGPUNode Node type.
+/// \warning KokkosClassic::ThrustGPUNode has been DEPRECATED.  For a
+///   Node that uses CUDA for thread-level parallelism, please use
+///   Kokkos::Compat::KokkosCudaWrapperNode instead.
+
 #include "Kokkos_ConfigDefs.hpp"
 
 // mfh 08 Jan 2015: Don't enable the contents of this file unless the
@@ -59,11 +66,15 @@
 
 namespace KokkosClassic {
 
-/** \brief %Kokkos node interface to the Thrust library for NVIDIA CUDA-capable GPUs.
-    \ingroup kokkos_node_api
-    \ingroup kokkos_cuda_support
- */
-class ThrustGPUNode : public CUDANodeMemoryModel {
+/// \brief Node API implementation that uses CUDA via the Thrust TPL
+///   for thread-level parallelism.
+/// \ingroup kokkos_node_api
+/// \ingroup kokkos_cuda_support
+///
+/// \warning KokkosClassic::ThrustGPUNode has been DEPRECATED.  For a
+///   Node that uses CUDA for thread-level parallelism, please use
+///   Kokkos::Compat::KokkosCudaWrapperNode instead.
+class TPETRA_DEPRECATED ThrustGPUNode : public CUDANodeMemoryModel {
 public:
   /// \brief This is a "classic" Node type.
   ///
