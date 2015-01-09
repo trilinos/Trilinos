@@ -6008,8 +6008,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
     		output_part_boxes,
     		is_data_ever_migrated);
 
-	result_assigned_part_ids_ = this->assigned_part_ids;
-	result_mj_gnos_ = this->current_mj_gnos;
+    result_assigned_part_ids_ = this->assigned_part_ids;
+    result_mj_gnos_ = this->current_mj_gnos;
 
     this->free_work_memory();
     this->mj_env->timerStop(MACRO_TIMERS, "MultiJagged - Total");
