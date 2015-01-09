@@ -57,7 +57,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // Ifpack2 already instantiates its classes for the default Node type.
 // Don't instantiate for that again if
 // Kokkos::Compat::KokkosSerialWrapperNode is the default Node type.
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
 #endif
 
