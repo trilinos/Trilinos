@@ -17,7 +17,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor
   TPETRA_ENABLE_KOKKOS_REFACTOR
   "Enable the \"Kokkos refactor\" version of Tpetra.  In order to enable this, you must also enable the following subpackages that do not currently build by default: KokkosCore, KokkosContainers, KokkosAlgorithms (all in Kokkos package), TeuchosKokkosCompat, TeuchosKokkosComm (both in Teuchos package), and TpetraKernels (in Tpetra package).  This option will be enabled by default in the next Trilinos release.  Once that happens, you will no longer need to enable all of those subpackages explicitly."
-  OFF
+  ON
   )
 
 ############################################################
