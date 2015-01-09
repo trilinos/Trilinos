@@ -480,7 +480,7 @@ int Ifpack_Polynomial::Compute()
   Teuchos::SerialDenseMatrix< int, double > Vmatrix(xs.size()+1,PolyDegree_+1);
   Vmatrix.putScalar(0.0);
   for( int jj=0; jj<=PolyDegree_; jj++) {
-    for( int ii=0; ii<xs.size(); ii++) {
+    for( std::vector<double>::size_type ii=0; ii<xs.size(); ii++) {
       if(jj>0) {
         Vmatrix(ii,jj)=pow(xs[ii],jj);
       }
