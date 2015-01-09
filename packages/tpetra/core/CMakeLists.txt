@@ -75,6 +75,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
+# Enable explicit template instantiation (ETI) and tests for Scalar =
+# float.
+#
+# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
+# In a debug build, we do ETI for Scalar=float, in order that this
+# capability be tested.  In a release build, we turn off ETI for
+# Scalar=float, to reduce build time.
 IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
   GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
 ELSE()
@@ -83,16 +90,30 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
-  "If explicit instantiation is enabled, instantiate over scalar field float."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = float.  This option is ${HAVE_TPETRA_INST_FLOAT_DEFAULT} by default."
   ${HAVE_TPETRA_INST_FLOAT_DEFAULT}
   )
+IF(Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
+  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = float, if the BLAS library you are using does not support float (S) arithmetic.")
+ENDIF()
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "float")
 ENDIF()
 
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT)
-  # ETI for std::complex<float> is now OFF by default.
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
+# Enable explicit template instantiation (ETI) and tests for Scalar =
+# std::complex<float>.
+#
+# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
+# In a debug build, we do ETI for Scalar=std::complex<float>, in order
+# that this capability be tested.  In a release build, we turn off ETI
+# for Scalar=std::complex<float>, to reduce build time.
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  # mfh 09 Jan 2015: std::complex<float> does NOT currently work with
+  # the Kokkos refactor version of Tpetra, due to
+  # Kokkos::atomic_fetch_add build issues.  Feel free to remove "AND
+  # NOT Tpetra_ENABLE_Kokkos_Refactor" from the above test once that
+  # gets fixed.
+  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ENDIF()
@@ -102,14 +123,23 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<float>.  This option is ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT} by default."
   ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT}  
   )
-IF(Tpetra_INST_COMPLEX_FLOAT AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex arithmetic.")
+IF(Tpetra_INST_COMPLEX_FLOAT AND (NOT HAVE_COMPLEX_BLAS OR NOT HAVE_TEUCHOS_BLASFLOAT))
+  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex (C) or float (S) arithmetic.")
 ENDIF()
-
+IF(Tpetra_INST_COMPLEX_FLOAT AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(ERROR "Scalar = std::complex<float> does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  If you need this capability urgently, please ask the Kokkos developers to fix Kokkos::atomic_fetch_add for Kokkos::complex<float>.")
+ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
 ENDIF()
 
+# Enable explicit template instantiation (ETI) and tests for Scalar =
+# std::complex<double>.
+#
+# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
+# In a debug build, we do ETI for Scalar=std::complex<float>, in order
+# that this capability be tested.  In a release build, we turn off ETI
+# for Scalar=std::complex<float>, to reduce build time.
 IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
   GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT ON)
 ELSE()
@@ -118,14 +148,29 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
-  "If explicit instantiation is enabled, instantiate over scalar field std::complex<double>."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<double>.  This option is ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT} by default."
   ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT}  
   )
+IF(Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
+  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<double>, if the BLAS library you are using does not support double-complex (Z) arithmetic.")
+ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
 ENDIF()
 
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD)
+# Enable explicit template instantiation (ETI) and tests for Scalar =
+# qd_real ("quad-double," provided by the QD TPL).
+#
+# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
+# In a debug build, we do ETI for Scalar=std::complex<float>, in order
+# that this capability be tested.  In a release build, we turn off ETI
+# for Scalar=std::complex<float>, to reduce build time.
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  # mfh 09 Jan 2015: qd_real does NOT currently work with the Kokkos
+  # refactor version of Tpetra, due to a missing Kokkos::atomic_*
+  # implementation for this class.  Feel free to remove "AND NOT
+  # Tpetra_ENABLE_Kokkos_Refactor" from the above test once that gets
+  # fixed.
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
@@ -133,14 +178,29 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_QD_REAL
   HAVE_TPETRA_INST_QD_REAL
-  "If explicit instantiation is enabled, instantiate over scalar field qd_real (requries TPL QD)."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = qd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_QD_REAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
   )
+IF(Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
 ENDIF()
 
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD)
+# Enable explicit template instantiation (ETI) and tests for Scalar =
+# qd_real ("double-double," provided by the QD TPL).
+#
+# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
+# In a debug build, we do ETI for Scalar=std::complex<float>, in order
+# that this capability be tested.  In a release build, we turn off ETI
+# for Scalar=std::complex<float>, to reduce build time.
+IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  # mfh 09 Jan 2015: dd_real does NOT currently work with the Kokkos
+  # refactor version of Tpetra, due to a missing Kokkos::atomic_*
+  # implementation for this class.  Feel free to remove "AND NOT
+  # Tpetra_ENABLE_Kokkos_Refactor" from the above test once that gets
+  # fixed.
   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
@@ -148,9 +208,12 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_DD_REAL
   HAVE_TPETRA_INST_DD_REAL
-  "If explicit instantiation is enabled, instantiate over scalar field dd_real (requries TPL QD)."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = dd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_DD_REAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
   )
+IF(Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
 ENDIF()
@@ -166,7 +229,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
-  "If explicit instantiation is enabled, instantiate over global ordinal long."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with GlobalOrdinal = long."
   ON
   )
 IF(Tpetra_INST_INT_LONG) 
@@ -174,10 +237,13 @@ IF(Tpetra_INST_INT_LONG)
   LIST(APPEND TpetraCore_ETI_SCALARS "long")
 ENDIF()
 
+# Note that long is 64 bits on some platforms, and 32 bits on other
+# platforms.  On the latter, you may use long long instead, which
+# C++11 / C99 guarantees to be at least 64 bits long.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
   HAVE_TPETRA_INST_INT_LONG_LONG
-  "If explicit instantiation is enabled, instantiate over global ordinal long long."
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with GlobalOrdinal = long long."  
   ${Teuchos_ENABLE_LONG_LONG_INT}
   )
 IF(Tpetra_INST_INT_LONG_LONG) 
@@ -185,6 +251,8 @@ IF(Tpetra_INST_INT_LONG_LONG)
   LIST(APPEND TpetraCore_ETI_SCALARS "long long")
 ENDIF()
 
+# FIXME (mfh 09 Jan 2015) Shouldn't this option be called
+# Tpetra_INST_UNSIGNED_INT?
 SET(Tpetra_INST_UNSIGNED_LONG
   ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   CACHE BOOL
@@ -247,6 +315,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_PRINT_Warnings}
   )
 
+#
+# FIXME (mfh 09 Jan 2015) This shouldn't even be an option.  We should
+# examine the Map at run time to determine the best hash function to
+# use.
+#
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_USE_MURMUR_HASH
   TPETRA_USE_MURMUR_HASH
