@@ -450,6 +450,27 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
   };
 
+  template<class Scalar, class LO, class GO, class Node>
+  class MultiVecTraitsExt<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> >
+  {
+  private:
+    typedef Xpetra::MultiVector<Scalar,LO,GO,Node> MV;
+#ifdef HAVE_XPETRA_TPETRA
+    typedef MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
+#endif
+
+  public:
+    static ptrdiff_t GetGlobalLength( const MV& mv )
+    {
+#ifdef HAVE_XPETRA_TPETRA
+      return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+  };
+
   template<>
   class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
   {
@@ -946,6 +967,38 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
+  };
+
+  template<>
+  class MultiVecTraitsExt<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
+  {
+    typedef double                                          SC;
+    typedef int                                             LO;
+    typedef int                                             GO;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType     NO;
+
+    typedef Xpetra::MultiVector<SC,LO,GO,NO>                            MV;
+#ifdef HAVE_XPETRA_TPETRA
+    typedef MultiVecTraitsExt<SC, Tpetra::MultiVector<SC,LO,GO,NO> >    MultiVecTraitsExtTpetra;
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+    typedef MultiVecTraitsExt<SC, Epetra_MultiVector>                   MultiVecTraitsExtEpetra;
+#endif
+
+  public:
+    static ptrdiff_t GetGlobalLength( const MV& mv )
+    {
+#ifdef HAVE_XPETRA_TPETRA
+      if (mv.getMap()->lib() == Xpetra::UseTpetra)
+        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+      if (mv.getMap()->lib() == Xpetra::UseEpetra)
+        return MultiVecTraitsExtEpetra::GetGlobalLength(toEpetra(mv));
+#endif
+
+      XPETRA_FACTORY_END;
+    }
   };
 
 } // end of Belos namespace
