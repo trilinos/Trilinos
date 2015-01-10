@@ -206,6 +206,10 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION void atomic_assign (const complex<RealType>& x) volatile {
+    /*The following text is wrong. Atomic operations only guarantee that each operation
+    actually takes effect: it does not guarantee any order. As a consequence the
+    component wise assignment would potentially end up with the real and imaginary part
+    coming from different assignments.*/
     // We can do atomic assignment componentwise, because atomics only
     // promise that a sequence of atomic operations, once complete,
     // will eventually reach the value it would have reached after
@@ -482,8 +486,22 @@ atomic_add (volatile ::Kokkos::complex<double>* const dest,
 }
 
 KOKKOS_INLINE_FUNCTION void
+atomic_add (volatile ::Kokkos::complex<float>* const dest,
+            const ::Kokkos::complex<float> src)
+{
+  dest->atomic_add (src);
+}
+
+KOKKOS_INLINE_FUNCTION void
 atomic_assign (volatile ::Kokkos::complex<double>* const dest,
                const ::Kokkos::complex<double> src)
+{
+  dest->atomic_assign (src);
+}
+
+KOKKOS_INLINE_FUNCTION void
+atomic_assign (volatile ::Kokkos::complex<float>* const dest,
+               const ::Kokkos::complex<float> src)
 {
   dest->atomic_assign (src);
 }
