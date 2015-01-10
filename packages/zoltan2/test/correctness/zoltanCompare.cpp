@@ -112,8 +112,8 @@ static string objectives[] = {
 };
 
 
-typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
-typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
+typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t,tMVector_t> matrixAdapter_t;
 
@@ -198,7 +198,7 @@ int runRCB(
 
   RCP<tMatrix_t> matrix;
   try{
-    matrix = uinput->getTpetraCrsMatrix();
+    matrix = uinput->getUITpetraCrsMatrix();
   }
   catch(...){
     if (me == 0)
@@ -210,7 +210,7 @@ int runRCB(
 
   RCP<tMVector_t> coords;
   try{
-   coords = uinput->getCoordinates();
+   coords = uinput->getUICoordinates();
   }
   catch(...){
     if (me == 0)
@@ -222,7 +222,7 @@ int runRCB(
 
   RCP<tMVector_t> weights;
   try{
-   weights = uinput->getWeights();
+   weights = uinput->getUIWeights();
   }
   catch(...){
     if (me == 0)
@@ -357,11 +357,11 @@ int runRCB(
 
   zz.Set_Num_Obj_Fn(znumobj<tMVector_t>, (void *) coords.getRawPtr());
   if (nWeights)
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) weights.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) weights.getRawPtr());
   else
-    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+    zz.Set_Obj_List_Fn(zobjlist<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
   zz.Set_Num_Geom_Fn(znumgeom<tMVector_t>, (void *) coords.getRawPtr());
-  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,scalar_t>, (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom<tMVector_t,zscalar_t>, (void *) coords.getRawPtr());
 
   int changes, ngid, nlid;
   int numd, nump;
