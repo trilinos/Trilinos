@@ -244,7 +244,7 @@ namespace Sacado {
 
     template <typename T>
     struct BaseExpr< GeneralFad<T,Fad::DynamicStorage<T> > > {
-      typedef DFad<T> type;
+      typedef DFad< typename GeneralFad<T,Fad::DynamicStorage<T> >::value_type > type;
     };
 
     template <typename T>

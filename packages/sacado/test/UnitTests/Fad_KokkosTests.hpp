@@ -87,17 +87,20 @@ const int global_num_cols = 7;
 const int global_fad_size = 5;
 
 // Kernel to multiply two views
-template <typename InputViewType, typename OutputViewType = InputViewType>
+template <typename InputViewType1,
+          typename InputViewType2 = InputViewType1,
+          typename OutputViewType = InputViewType1>
 struct MultiplyKernel {
-  typedef typename InputViewType::device_type device_type;
-  typedef typename InputViewType::size_type size_type;
+  typedef typename InputViewType1::device_type device_type;
+  typedef typename InputViewType1::size_type size_type;
 
-  const InputViewType  m_v1, m_v2;
+  const InputViewType1 m_v1;
+  const InputViewType2 m_v2;
   const OutputViewType m_v3;
   const bool m_update;
 
-  MultiplyKernel(const InputViewType  v1,
-                 const InputViewType  v2,
+  MultiplyKernel(const InputViewType1 v1,
+                 const InputViewType2 v2,
                  const OutputViewType v3,
                  const bool update) :
     m_v1(v1), m_v2(v2), m_v3(v3), m_update(update) {};
@@ -112,8 +115,8 @@ struct MultiplyKernel {
   }
 
   // Kernel launch
-  static void apply(const InputViewType  v1,
-                    const InputViewType  v2,
+  static void apply(const InputViewType1 v1,
+                    const InputViewType2 v2,
                     const OutputViewType v3,
                     const bool update = false) {
     const size_type nrow = v1.dimension_0();
@@ -493,11 +496,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(v2, h_v2);
 
   ConstViewType cv1 = v1;
-  ConstViewType cv2 = v2;
 
   // Launch kernel
   ViewType v3("view3", num_rows, fad_size+1);
-  MultiplyKernel<ConstViewType,ViewType>::apply(cv1,cv2,v3);
+  MultiplyKernel<ConstViewType,ViewType,ViewType>::apply(cv1,v2,v3);
 
   // Copy back
   host_view_type h_v3 = Kokkos::create_mirror_view(v3);

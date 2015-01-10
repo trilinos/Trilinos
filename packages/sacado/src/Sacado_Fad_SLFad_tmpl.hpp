@@ -251,7 +251,7 @@ namespace Sacado {
 
     template <typename T, int N>
     struct BaseExpr< GeneralFad<T,Fad::StaticStorage<T,N> > > {
-      typedef SLFad<T,N> type;
+      typedef SLFad<typename GeneralFad<T,Fad::StaticStorage<T,N> >::value_type,N> type;
     };
 
     template <typename T, int N>

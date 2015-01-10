@@ -88,7 +88,7 @@ namespace Sacado {
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Typename of base-expressions
-      typedef SFad<T,Num> base_expr_type;
+      typedef SFad<value_type,Num> base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
