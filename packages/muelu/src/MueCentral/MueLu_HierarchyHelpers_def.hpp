@@ -53,6 +53,7 @@
 #include "MueLu_HierarchyManager.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_DirectSolver_decl.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
 
@@ -125,7 +126,42 @@ namespace MueLu {
       // For coarsest level, we only need one smoother (so that we don't call direct solver twice)
       // If a user wants to do something weird there (like, solve coarsest system by using 2 forward
       // GS and 1 backward GS), one can use MergedSmoother
-      preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
+      // However, the user may have special requirements. So, check the CoarseSolver object to be of type
+      // SmootherFactory and analyze the pre- and post smoother prototype.
+      // make sure that a direct solver is only applied once (as "presmoother")
+      // a direct solver as pre- or post-smoother in combination with another type of post- or pre-smoother
+      // would be allowed (but probably makes no sense, of course...)
+      RCP<const FactoryBase> coarseSolverFactory = parentFactoryManager->GetFactory("CoarseSolver");
+      RCP<const SmootherFactory> coarseSmootherFactory = Teuchos::rcp_dynamic_cast<const SmootherFactory>(coarseSolverFactory);
+      if (coarseSmootherFactory != Teuchos::null) {
+        RCP<SmootherPrototype> preProto;
+        RCP<SmootherPrototype> postProto;
+        coarseSmootherFactory->GetSmootherPrototypes(preProto, postProto);
+
+
+        if (preProto == postProto)
+          preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
+        else {
+          // check whether pre- and/or post-smoothing is desired on coarsest level
+          if(preProto != Teuchos::null)
+            preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
+          if(postProto != Teuchos::null)
+            postSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
+        }
+
+        // TODO remove DirectSolver header...
+        /*bool bPreDirectSolver  = Teuchos::rcp_dynamic_cast<DirectSolver>(preProto)  != Teuchos::null ? true : false;
+        bool bPostDirectSolver = Teuchos::rcp_dynamic_cast<DirectSolver>(postProto) != Teuchos::null ? true : false;
+
+        if (bPreDirectSolver == true && bPostDirectSolver == true) {
+          // make sure that a direct solver is only applied once!
+          preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
+        } else {
+
+        }*/
+      }
+      else  // default handling: get default direct solver as presmoother on coarsest level
+        preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
 
     } else {
       preSmootherFact_  = parentFactoryManager->GetFactory("PreSmoother");
