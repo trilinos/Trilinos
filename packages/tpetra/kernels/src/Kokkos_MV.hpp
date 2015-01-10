@@ -283,7 +283,7 @@ struct MV_ReciprocalThresholdSelfFunctor
 
   const XVector    m_x;
   const value_type m_min_val;
-  const value_type m_min_val_mag;
+  const mag_type   m_min_val_mag;
   const size_type  m_n;
 
   MV_ReciprocalThresholdSelfFunctor(const XVector& x, const value_type& min_val, const size_type n) :
