@@ -47,7 +47,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll, etc
+#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
 #include <stk_util/util/string_case_compare.hpp>
@@ -139,7 +139,7 @@ void fillSharedEntities(stk::mesh::Ghosting& ghost_id, stk::mesh::BulkData &mesh
 
 } // namespace
 
-void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, CommAll &comm, std::vector<std::vector<shared_entity_type> > &shared_entities)
+void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &comm, std::vector<std::vector<shared_entity_type> > &shared_entities)
 {
     for(int allocation_pass = 0; allocation_pass < 2; ++allocation_pass)
     {
@@ -164,13 +164,13 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, CommAll &comm, std::
 
         if(allocation_pass == 0)
         {
-            comm.allocate_buffers(mesh.parallel_size() / 2, 0);
+            comm.allocate_buffers();
         }
     }
     comm.communicate();
 }
 
-void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(CommAll &comm, std::vector<shared_entity_type> & shared_entity_map)
+void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map)
 {
     for(int ip = this->parallel_size() - 1; ip >= 0; --ip)
     {
@@ -246,8 +246,7 @@ void BulkData::update_shared_entities_global_ids(std::vector<shared_entity_type>
     std::vector<std::vector<shared_entity_type> > shared_entities(parallel_size());
     fillSharedEntities(shared_ghosting(), *this, shared_entity_map, shared_entities);
 
-    bool propagateLocalFlag = false;
-    CommAll comm(parallel(), propagateLocalFlag);
+    stk::CommSparse comm(parallel());
     communicateSharedEntityInfo(*this, comm, shared_entities);
     unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
     resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
@@ -2204,7 +2203,7 @@ void BulkData::get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &en
     }
 
     int myProcId = this->parallel_rank();
-    stk::CommAll commStage1(this->parallel());
+    stk::CommSparse commStage1(this->parallel());
 
     size_t numEntitiesThatHaveSharingInfo = 0;
 
@@ -2253,7 +2252,7 @@ void BulkData::get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &en
 
         if(phase == 0)
         {
-            commStage1.allocate_buffers(this->parallel_size() / 4, 0);
+            commStage1.allocate_buffers();
         }
         else
         {
@@ -2292,7 +2291,7 @@ void extractEntityToMapInfoIntoVectorOfEntityKeyAndProcPairs(const int myProcId,
     }
 }
 
-void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int myProcId, stk::CommAll& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
+void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int myProcId, stk::CommSparse& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
 {
     for(int phase = 0; phase < 2; ++phase)
     {
@@ -2314,7 +2313,7 @@ void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int 
 
         if(phase == 0)
         {
-            commStage2.allocate_buffers(numProcs / 4, 0);
+            commStage2.allocate_buffers();
         }
         else
         {
@@ -2323,7 +2322,7 @@ void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int 
     }
 }
 
-void unpackCommunicationsAndStoreSharedEntityToProcPair(const int numProcs, const int myProcId, stk::CommAll& commStage2, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities)
+void unpackCommunicationsAndStoreSharedEntityToProcPair(const int numProcs, const int myProcId, stk::CommSparse& commStage2, std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities)
 {
     for(int procIndex = 0; procIndex < numProcs; procIndex++)
     {
@@ -2352,7 +2351,7 @@ void BulkData::get_locally_modified_shared_entities(stk::mesh::EntityToDependent
 {
     extractEntityToMapInfoIntoVectorOfEntityKeyAndProcPairs(this->parallel_rank(), entityKeySharing, sharedEntities);
 
-    stk::CommAll commStage2(this->parallel());
+    stk::CommSparse commStage2(this->parallel());
     communicateSharingInfoToProcsThatShareEntity(this->parallel_size(), this->parallel_rank(), commStage2, entityKeySharing);
     unpackCommunicationsAndStoreSharedEntityToProcPair(this->parallel_size(), this->parallel_rank(), commStage2, sharedEntities);
 }
@@ -2582,7 +2581,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     std::ostringstream error_msg ;
     int error_count = 0 ;
 
-    CommAll comm( p_comm );
+    stk::CommSparse comm( p_comm );
 
     EntityVector unique_list_of_send_closure;
     unique_list_of_send_closure.reserve(send_closure.size());
@@ -2599,7 +2598,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       }
     }
 
-    comm.allocate_buffers( p_size / 4 );
+    comm.allocate_buffers();
 
     for ( std::set<EntityProc,EntityLess>::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
@@ -2921,8 +2920,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
     const size_t record_entity_comm_size_before_changing_it = m_entity_comm_list.size();
     const int p_size = parallel_size() ;
 
-    bool propagateLocalFlags = false;
-    CommAll comm( parallel(), propagateLocalFlags );
+    stk::CommSparse commSparse( parallel() );
 
     for ( int phase = 0; phase < 2; ++phase ) {
       for ( std::set< EntityProc , EntityLess >::iterator
@@ -2933,7 +2931,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
         if ( ! in_ghost( ghosting , entity_key(entity) , proc ) ) {
           // Not already being sent , must send it.
-          CommBuffer & buf = comm.send_buffer( proc );
+          CommBuffer & buf = commSparse.send_buffer( proc );
           buf.pack<unsigned>( entity_rank(entity) );
           pack_entity_info(*this, buf , entity );
           pack_field_values(*this, buf , entity );
@@ -2948,10 +2946,10 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
       }
 
       if (phase == 0) {
-        comm.allocate_buffers( p_size / 2 );
+        commSparse.allocate_buffers();
       }
       else {
-        comm.communicate();
+        commSparse.communicate();
       }
     }
 
@@ -2967,7 +2965,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
     for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
       for ( int p = 0 ; p < p_size ; ++p ) {
-        CommBuffer & buf = comm.recv_buffer(p);
+        CommBuffer & buf = commSparse.recv_buffer(p);
         while ( buf.remaining() ) {
           // Only unpack if of the current entity rank.
           // If not the current entity rank, break the iteration
@@ -3269,8 +3267,7 @@ void comm_recv_to_send(
 {
   const int parallel_size = mesh.parallel_size();
 
-  bool propagate_local_error_flags = false;
-  CommAll all( mesh.parallel(), propagate_local_error_flags );
+  stk::CommSparse sparse( mesh.parallel() );
 
   // For all entity keys in new recv, send the entity key to the owning proc
   for ( int phase = 0; phase < 2; ++phase) {
@@ -3279,19 +3276,19 @@ void comm_recv_to_send(
       Entity e = mesh.get_entity(*i); // Performance issue? Not if you're just doing full regens
       const int owner = mesh.parallel_owner_rank(e);
       const EntityKey key = mesh.entity_key(e);
-      all.send_buffer( owner ).pack<EntityKey>( key );
+      sparse.send_buffer( owner ).pack<EntityKey>( key );
     }
     if (phase == 0) { //allocation phase
-      all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
+      sparse.allocate_buffers();
     }
     else { //communication phase
-      all.communicate();
+      sparse.communicate();
     }
   }
 
   // Insert into entitiesToGhostOntoOtherProcessors that there is an entity on another proc
   for ( int proc_rank = 0 ; proc_rank < parallel_size ; ++proc_rank ) {
-    CommBuffer & buf = all.recv_buffer(proc_rank);
+    stk::CommBuffer & buf = sparse.recv_buffer(proc_rank);
     while ( buf.remaining() ) {
       EntityKey key ;
       buf.unpack<EntityKey>( key );
@@ -3311,8 +3308,7 @@ void comm_sync_send_recv(
   const int parallel_rank = mesh.parallel_rank();
   const int parallel_size = mesh.parallel_size();
 
-  bool propagate_local_error_flags = false;
-  CommAll all( mesh.parallel(), propagate_local_error_flags );
+  stk::CommSparse all( mesh.parallel() );
 
   // Communication sizing:
 
@@ -3325,7 +3321,7 @@ void comm_sync_send_recv(
     }
   }
 
-  all.allocate_buffers( parallel_size / 2 , false /* Not symmetric */ );
+  all.allocate_buffers();
 
   // Loop thru all entities in entitiesToGhostOntoOtherProcessors, send the entity key to the sharing/ghosting proc
   // Also, if the owner of the entity is NOT me, also send the entity key to the owing proc
@@ -3557,7 +3553,7 @@ struct EntityParallelState {
 
 bool pack_entity_modification( const BulkData & mesh ,
                                const bool packShared ,
-                               CommAll & comm )
+                               stk::CommSparse & comm )
 {
   bool flag = false;
   bool packGhosted = packShared == false;
@@ -3593,25 +3589,28 @@ void communicate_entity_modification( const BulkData & mesh ,
                                       const bool shared ,
                                       std::vector<EntityParallelState > & data )
 {
-  bool propagate_local_error_flags = false;
-  CommAll comm( mesh.parallel(), propagate_local_error_flags );
+  stk::CommSparse comm( mesh.parallel() );
   const int p_size = comm.parallel_size();
 
   // Sizing send buffers:
   const bool local_mod = pack_entity_modification( mesh , shared , comm );
 
-  // Allocation of send and receive buffers:
-  const bool global_mod = comm.allocate_buffers( comm.parallel_size() / 2 , false , local_mod );
+  int global_mod_int = 0;
+  int local_mod_int = local_mod ? 1 : 0;
+  stk::all_reduce_max(mesh.parallel(), &local_mod_int, &global_mod_int, 1);
+  const bool global_mod = global_mod_int == 1 ? true : false;
 
+  // Allocation of send and receive buffers:
   if ( global_mod )
   {
-    const EntityCommListInfoVector & entityCommList = mesh.comm_list();
+    comm.allocate_buffers();
 
     // Packing send buffers:
     pack_entity_modification( mesh , shared , comm );
 
     comm.communicate();
 
+    const EntityCommListInfoVector & entityCommList = mesh.comm_list();
     for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
       CommBuffer & buf = comm.recv_buffer( procNumber );
       EntityKey key;
@@ -3985,8 +3984,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
 void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity> &shared_modified )
 {
-    bool propagate_local_error_flags = false;
-    CommAll comm_all( parallel(), propagate_local_error_flags );
+    stk::CommSparse comm_sparse( parallel() );
 
     for ( int phase = 0; phase < 2; ++phase ) {
         for ( std::vector<Entity>::const_iterator i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
@@ -3994,21 +3992,21 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
             if ( parallel_owner_rank(entity) == parallel_rank() &&
                    state(entity)  != Created ) {
                 for ( PairIterEntityComm jc = internal_entity_comm_map_shared(entity_key(entity)) ; ! jc.empty() ; ++jc ) {
-                    comm_all.send_buffer( jc->proc ) .pack<EntityKey>( entity_key(entity) );
+                    comm_sparse.send_buffer( jc->proc ) .pack<EntityKey>( entity_key(entity) );
                 }
             }
         }
 
         if (phase == 0) { //allocation phase
-            comm_all.allocate_buffers( parallel_size() / 2 );
+            comm_sparse.allocate_buffers();
         }
         else { // communication phase
-            comm_all.communicate();
+            comm_sparse.communicate();
         }
     }
 
     for ( int receive_proc = 0 ; receive_proc < parallel_size() ; ++receive_proc ) {
-        CommBuffer & buf = comm_all.recv_buffer( receive_proc );
+        CommBuffer & buf = comm_sparse.recv_buffer( receive_proc );
         EntityKey key ;
         while ( buf.remaining() ) {
             buf.unpack<EntityKey>( key );
@@ -4866,7 +4864,7 @@ bool shared_with_proc(const EntityCommListInfo& info, int proc) {
 }
 
 void pack_induced_memberships( BulkData& bulk_data,
-                               CommAll & comm ,
+                               stk::CommSparse & comm ,
                                const EntityCommListInfoVector & entity_comm )
 {
   OrdinalVector empty , induced ;
@@ -4893,7 +4891,7 @@ void pack_induced_memberships( BulkData& bulk_data,
   }
 }
 
-void pack_part_memberships( BulkData& meshbulk, CommAll & comm ,
+void pack_part_memberships( BulkData& meshbulk, stk::CommSparse & comm ,
                             const std::vector<EntityProc> & send_list )
 {
   for ( std::vector<EntityProc>::const_iterator
@@ -4974,11 +4972,11 @@ void BulkData::internal_resolve_shared_membership()
     //  Send just the current induced memberships from the sharing to
     //  the owning processes.
     {
-        CommAll comm(p_comm);
+        stk::CommSparse comm(p_comm);
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
-        comm.allocate_buffers(p_size / 2);
+        comm.allocate_buffers();
 
         pack_induced_memberships(*this, comm, m_entity_comm_list);
 
@@ -5061,11 +5059,11 @@ void BulkData::internal_resolve_shared_membership()
 
         generate_send_list(p_rank, send_list);
 
-        CommAll comm(p_comm);
+        stk::CommSparse comm(p_comm);
 
         pack_part_memberships(*this, comm, send_list);
 
-        comm.allocate_buffers(p_size / 4);
+        comm.allocate_buffers();
 
         pack_part_memberships(*this, comm, send_list);
 

@@ -74,7 +74,7 @@ namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
-namespace stk { class CommAll; }
+namespace stk { class CommSparse; }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -871,7 +871,7 @@ private: //functions
   inline void set_entity_key(Entity entity, EntityKey key);
   void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
 
-  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(CommAll &comm, std::vector<shared_entity_type> & shared_entity_map);
+  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
 
   inline void internal_mark_entity(Entity entity, entitySharing sharedType);
   inline bool internal_add_node_sharing_called() const;
