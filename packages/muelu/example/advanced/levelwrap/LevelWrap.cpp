@@ -108,6 +108,7 @@ namespace MueLuExamples {
   void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
     using Teuchos::RCP;
     using Teuchos::rcp;
+#ifdef HAVE_MUELU_BELOS
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
@@ -153,6 +154,7 @@ namespace MueLuExamples {
         throw std::runtime_error("Belos failed to converge");
     }
 #endif
+#endif // #ifdef HAVE_MUELU_BELOS
   }
 
 
@@ -160,6 +162,7 @@ namespace MueLuExamples {
   void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
     using Teuchos::RCP;
     using Teuchos::rcp;
+#ifdef HAVE_MUELU_BELOS
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
@@ -205,6 +208,7 @@ namespace MueLuExamples {
         throw std::runtime_error("Belos failed to converge");
     }
 #endif
+#endif // #ifdef HAVE_MUELU_BELOS
 
   }
 
@@ -315,6 +319,7 @@ int main(int argc, char *argv[]) {
     B->randomize();
     RCP<TimeMonitor> tm;
 
+#ifdef HAVE_MUELU_BELOS
     // Belos Options
     RCP<Teuchos::ParameterList> SList = rcp(new Teuchos::ParameterList );
     SList->set("Verbosity",Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
@@ -322,6 +327,7 @@ int main(int argc, char *argv[]) {
     SList->set("Output Style",Belos::Brief);
     SList->set("Maximum Iterations",200);
     SList->set("Convergence Tolerance",1e-10);
+#endif
 
 
     // =========================================================================
@@ -346,8 +352,10 @@ int main(int argc, char *argv[]) {
       H->GetLevel(0)->Set("A", A);
       mueLuFactory.SetupHierarchy(*H);
 
+#ifdef HAVE_MUELU_BELOS
       // Solve
       MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
+#endif
 
       // Extract R,P & Ac for LevelWrap Usage
       H->GetLevel(1)->Get("R",R);
@@ -388,7 +396,9 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("Nullspace", nullspace);
       mueLuFactory.SetupHierarchy(*H);
 
+#ifdef HAVE_MUELU_BELOS
       MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
+#endif
 
     }
     out << thickSeparator << std::endl;
@@ -421,8 +431,9 @@ int main(int argc, char *argv[]) {
       H->GetLevel(1)->Set("P", P);
       H->GetLevel(1)->Set("Nullspace", nullspace);
       mueLuFactory.SetupHierarchy(*H);
-
+#ifdef HAVE_MUELU_BELOS
       MueLuExamples::solve_system_hierarchy(lib,A,X,B,H,SList);
+#endif
 
     }
     out << thickSeparator << std::endl;
@@ -441,8 +452,9 @@ int main(int argc, char *argv[]) {
       MueLuList.set("level 1",level1);
       MueLuList.set("verbosity","high");
       MueLuList.set("coarse: max size",100);
-
+#ifdef HAVE_MUELU_BELOS
       MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+#endif
     }
 
     // =========================================================================
@@ -458,8 +470,9 @@ int main(int argc, char *argv[]) {
       MueLuList.set("level 1",level1);
       MueLuList.set("verbosity","high");
       MueLuList.set("coarse: max size",100);
-
+#ifdef HAVE_MUELU_BELOS
       MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
+#endif
     }
 
 
@@ -477,7 +490,9 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_AMESOS2_KLU2
       MLList.set("coarse: type","Amesos-KLU");
 #endif
+#ifdef HAVE_MUELU_BELOS
       MueLuExamples::solve_system_list(lib,A,X,B,MLList,SList);
+#endif
     }
 
     success = true;

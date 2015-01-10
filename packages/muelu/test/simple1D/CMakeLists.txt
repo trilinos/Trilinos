@@ -34,11 +34,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   # JJH: 9/3/2013 This test is failing.  Until Andrey fixes it, I'm allowing
   #               it to compile (for coverage) but not run.
+  IF (${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     simple1D-Emin
     SOURCES Emin.cpp
     COMM serial mpi
     )
+  ENDIF()
+  
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #   simple1D-Emin
   #   SOURCES Emin.cpp

@@ -13,6 +13,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  IF (${PACKAGE_NAME}_ENABLE_Belos)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Maxwell3D
@@ -47,6 +48,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
     SOURCE_FILES M0.txt M1.txt S.txt D0.txt coords.txt
     )
-
+  ENDIF()
 ENDIF()
 

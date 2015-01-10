@@ -754,7 +754,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
   {
-#if defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_Ifpack2)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       out << "===== Generating matrices =====" << std::endl;
