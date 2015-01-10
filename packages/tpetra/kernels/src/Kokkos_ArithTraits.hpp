@@ -987,7 +987,7 @@ public:
 #endif // __CUDACC__
   }
   static mag_type abs (const val_type& x) {
-    return ::fabs (x);
+    return ::fabsl (x);
   }
   static val_type zero () {
     return 0.0;
