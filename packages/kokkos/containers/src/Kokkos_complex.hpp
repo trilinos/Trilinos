@@ -119,10 +119,9 @@ public:
   //! Assignment operator.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
-  complex<RealType>& operator= (const complex<InputRealType>& src) volatile {
+  void operator= (const complex<InputRealType>& src) volatile {
     re_ = src.re_;
     im_ = src.im_;
-    return *this;
   }
 
   //! Assignment operator (from a real number).
@@ -132,6 +131,14 @@ public:
     re_ = val;
     im_ = static_cast<RealType> (0.0);
     return *this;
+  }
+
+  //! Assignment operator (from a real number).
+  template<class InputRealType>
+  KOKKOS_INLINE_FUNCTION
+  void operator= (const InputRealType& val) volatile {
+    re_ = val;
+    im_ = static_cast<RealType> (0.0);
   }
 
   /// \brief Assignment operator from std::complex.
