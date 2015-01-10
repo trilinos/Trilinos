@@ -2355,7 +2355,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      hostView_j.dimension_0 () < dataAsArcp.size (), std::logic_error,
+        static_cast<size_t>(hostView_j.dimension_0 ()) < static_cast<size_t>(dataAsArcp.size ()), std::logic_error,
       "Tpetra::MultiVector::getData: hostView_j.dimension_0() = "
       << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
       << dataAsArcp.size () << ".  "
@@ -2404,7 +2404,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      hostView_j.dimension_0 () < dataAsArcp.size (), std::logic_error,
+        static_cast<size_t>(hostView_j.dimension_0 ()) < static_cast<size_t>(dataAsArcp.size ()), std::logic_error,
       "Tpetra::MultiVector::getDataNonConst: hostView_j.dimension_0() = "
       << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
       << dataAsArcp.size () << ".  "

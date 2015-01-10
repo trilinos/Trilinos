@@ -2701,12 +2701,12 @@ namespace Tpetra {
     const char suffix[] = ".  This should never happen.  Please report this "
       "bug to the Tpetra developers.";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indices.size () != values.size (), std::logic_error,
+        static_cast<size_t>(indices.size ()) != static_cast<size_t>(values.size ()), std::logic_error,
       "At the end of this method, for local row " << localRow << ", "
       "indices.size() = " << indices.size () << " != values.size () = "
       << values.size () << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      indices.size () != numEntries, std::logic_error,
+        static_cast<size_t>(indices.size ()) != static_cast<size_t>(numEntries), std::logic_error,
       "At the end of this method, for local row " << localRow << ", "
       "indices.size() = " << indices.size () << " != numEntries = "
       << numEntries << suffix);
