@@ -658,7 +658,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
       for (size_t i = 0; i < numMyRows; ++i) {
         blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
-        scalar_type* diagBlock = BlockDiagonal_->getLocalBlock (i,i).getRawPtr ();
+        scalar_type* diagBlock = (scalar_type*) BlockDiagonal_->getLocalBlock (i,i).getRawPtr ();
         for (local_ordinal_type subRow = 0; subRow < blockSize; ++subRow) {
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries ; ++k) {
