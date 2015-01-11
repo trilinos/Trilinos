@@ -49,15 +49,15 @@
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
-#define IFPACK2_LOCAL_INSTANT(LO,GO,N) \
-  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO,GO,N)
+#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)    
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-// Ifpack2 already does ETI for the default Node type.  Don't do it
-// again if Kokkos::Compat::KokkosSerialWrapperNode is the default.
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  IFPACK2_LOCAL_INSTANT(int, int, Kokkos_Compat_KokkosSerialWrapperNode)
+#define LCLINST(LO, GO) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO, GO, Kokkos_Compat_KokkosSerialWrapperNode)
+
+IFPACK2_INSTANTIATE_LG(LCLINST)
+
 #endif
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

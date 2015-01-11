@@ -49,16 +49,19 @@
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#define IFPACK2_LOCAL_INSTANT(SC,LO,GO,N) \
-  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(SC,LO,GO,N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
 // Ifpack2 already instantiates its classes for the default Node type.
 // Don't instantiate for that again if
 // Kokkos::Compat::KokkosSerialWrapperNode is the default Node type.
 #if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  IFPACK2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
+
+// Need this for the mangling of the Node typedef.
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+#define LCLINST(SC, LO, GO) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(SC, LO, GO, Kokkos_Compat_KokkosSerialWrapperNode)
+
+IFPACK2_INSTANTIATE_SLG(LCLINST)
+
 #endif
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
