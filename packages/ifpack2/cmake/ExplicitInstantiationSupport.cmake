@@ -23,6 +23,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     MESSAGE(STATUS "ETI set (before exclusions): ${Ifpack2_ETI_LIBRARYSET}")
   ENDIF()
 ELSE()
+  # FIXME (mfh 11 Jan 2015) We should still use Tpetra to govern what
+  # Scalar, LO, and GO types get used here.
+  #
   # these macros are used only for testing
   TRIBITS_ETI_TYPE_EXPANSION(Ifpack2_ETI_LIBRARYSET "S=double" "LO=int" "GO=int|long")
   IF (SS_FOR_DEV_PS_FOR_RELEASE AND HAVE_COMPLEX_BLAS)

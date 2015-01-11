@@ -1,24 +1,43 @@
-
-
 #
-# A) Define the package
+# Define the package
 #
-
 TRIBITS_PACKAGE( Ifpack2 )
 
 #
-# B) Set up package-specific options
+# Set up package-specific options
+#
+
+#
+# Do explicit template instantiation (ETI) and testing over the same
+# Scalar, LocalOrdinal, and GlobalOrdinal types as for Tpetra objects.
+# However, by default, exclude all of Tpetra's GlobalOrdinal (GO)
+# types from the ETI list.  This is because Tpetra adds all GO ETI
+# types to the list of Scalar ETI types.  (This lets it implement
+# certain communication patterns involving e.g., Vector<GO, LO, GO>.)
 #
 
 ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
-SET(Ifpack2_ETI_SCALARS "double")
-SET(Ifpack2_ETI_GORDS   "int")
-SET(Ifpack2_ETI_LORDS   "int")
+ASSERT_DEFINED(TpetraCore_ETI_LORDS)
+ASSERT_DEFINED(TpetraCore_ETI_GORDS)
 
-IF(Tpetra_INST_INT_LONG_LONG) 
-  LIST(APPEND Ifpack2_ETI_GORDS   "long long")
-ENDIF()
+#
+# Exclude GlobalOrdinal types from the list of Scalar types over which
+# Ifpack2 does ETI.
+#
+# Look at each entry in Tpetra's list of ETI Scalar types.  If it is
+# also a Tpetra ETI GlobalOrdinal type, don't append it to Ifpack2's
+# list of ETI Scalar types.  Otherwise, do.
+SET (Ifpack2_ETI_SCALARS_TEMP ) # start with the empty list
+FOREACH (scalarName IN LISTS TpetraCore_ETI_SCALARS)
+  LIST (FIND TpetraCore_ETI_GORDS ${scalarName} scalarNameIndex)
+  IF (-1 EQUAL scalarNameIndex) # not in the list of integer types
+    LIST (APPEND Ifpack2_ETI_SCALARS_TEMP ${scalarName})
+  ENDIF ()
+ENDFOREACH ()
 
+SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS_TEMP})
+SET(Ifpack2_ETI_LORDS   ${TpetraCore_ETI_LORDS})
+SET(Ifpack2_ETI_GORDS   ${TpetraCore_ETI_GORDS})
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
@@ -47,12 +66,11 @@ SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
 
-IF(${PACKAGE_NAME}_ENABLE_Lemon)
-IF(${PACKAGE_NAME}_ENABLE_Amesos2)
-IF(${PACKAGE_NAME}_ENABLE_Cholmod)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Lemon)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Cholmod)
+IF(${PACKAGE_NAME}_ENABLE_Lemon AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Cholmod)
   SET(HAVE_IFPACK2_SUPPORTGRAPH ON )
-ENDIF()
-ENDIF()
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -76,6 +94,8 @@ ADD_SUBDIRECTORY(adapters)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
+# Promote these variables to be visible outside of the "scope" of this
+# directory -- e.g., to other packages.
 GLOBAL_SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS})
 GLOBAL_SET(Ifpack2_ETI_GORDS   ${Ifpack2_ETI_GORDS})
 GLOBAL_SET(Ifpack2_ETI_LORDS   ${Ifpack2_ETI_LORDS})
