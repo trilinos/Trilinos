@@ -16,11 +16,13 @@ TRIBITS_PACKAGE( Ifpack2 )
 # certain communication patterns involving e.g., Vector<GO, LO, GO>.)
 #
 
+# Make sure that Tpetra actually defined these variables, even if they
+# are empty.
 ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
 ASSERT_DEFINED(TpetraCore_ETI_LORDS)
 ASSERT_DEFINED(TpetraCore_ETI_GORDS)
+ASSERT_DEFINED(TpetraCore_ETI_NODES)
 
-#
 # Exclude GlobalOrdinal types from the list of Scalar types over which
 # Ifpack2 does ETI.
 #
@@ -38,6 +40,7 @@ ENDFOREACH ()
 SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS_TEMP})
 SET(Ifpack2_ETI_LORDS   ${TpetraCore_ETI_LORDS})
 SET(Ifpack2_ETI_GORDS   ${TpetraCore_ETI_GORDS})
+SET(Ifpack2_ETI_NODES   ${TpetraCore_ETI_NODES})
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Trilinos
@@ -97,8 +100,9 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 # Promote these variables to be visible outside of the "scope" of this
 # directory -- e.g., to other packages.
 GLOBAL_SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS})
-GLOBAL_SET(Ifpack2_ETI_GORDS   ${Ifpack2_ETI_GORDS})
 GLOBAL_SET(Ifpack2_ETI_LORDS   ${Ifpack2_ETI_LORDS})
+GLOBAL_SET(Ifpack2_ETI_GORDS   ${Ifpack2_ETI_GORDS})
+GLOBAL_SET(Ifpack2_ETI_NODES   ${Ifpack2_ETI_NODES})
 
 #
 # Exclude files for source package.
