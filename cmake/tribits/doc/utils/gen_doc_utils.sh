@@ -37,7 +37,7 @@ function update_if_different {
        cp $base_file_name.$tmpext $base_file_name
     fi
   else
-     echo "Copy to non-existing file $base_file_name" 
+    echo "Copy to non-existing file $base_file_name" 
     cp $base_file_name.$tmpext $base_file_name 
   fi
 }
@@ -49,10 +49,9 @@ function generate_git_version_file {
     echo
     echo "Generating git version"
     echo
-    echo `git describe` > TribitsGitVersion.txt.tmp
+    echo `git describe` > TribitsGitVersion.txt
   else
-    echo "Unknown version" > TribitsGitVersion.txt.tmp
+    echo "Unknown version" > TribitsGitVersion.txt
   fi
-  update_if_different  TribitsGitVersion.txt  tmp
 
 }

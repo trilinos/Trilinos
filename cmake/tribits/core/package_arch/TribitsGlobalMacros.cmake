@@ -1540,6 +1540,7 @@ MACRO(TRIBITS_SETUP_ENV)
     ENABLE_LANGUAGE(C)
     INCLUDE(CMakeDetermineCCompiler)
     PRINT_VAR(CMAKE_C_COMPILER_ID)
+    PRINT_VAR(CMAKE_C_COMPILER_VERSION)
     # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
     # directory for a listing of known compiler types.
   ENDIF()
@@ -1549,6 +1550,7 @@ MACRO(TRIBITS_SETUP_ENV)
     ENABLE_LANGUAGE(CXX)
     INCLUDE(CMakeDetermineCXXCompiler)
     PRINT_VAR(CMAKE_CXX_COMPILER_ID)
+    PRINT_VAR(CMAKE_CXX_COMPILER_VERSION)
     # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
     # directory for a listing of known compiler types.
   ENDIF()

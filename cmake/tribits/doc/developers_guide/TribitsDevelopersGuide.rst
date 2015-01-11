@@ -6223,15 +6223,16 @@ The `TriBITS Package-by-Package CTest/Dash Driver`_ system using the
 Regulated Backward Compatibility and Deprecated Code
 ----------------------------------------------------
 
-The motivation and ideas behind regulated backward compatibility and
+The motivation and ideas behind `Regulated Backward Compatibility` and
 deprecated code are described in the `TriBITS Lifecycle Model`_ document.
-Here, the details of the implementation in the TriBITS system are given and
-how transitions between non-backward compatible versions is accomplished.
+Here, the details of the implementation in TriBITS are given and how
+transitions between non-backward compatible major versions is accomplished.
 
-This section describes the process to use for deprecating code within a major
-version sequence and finally removing deprecated code when transitioning to a
-new the major repository version X to X+1 for the TriBITS version numbering
-scheme X.Y.Z.  This information is given as a process with different phases.
+This section describes the process for deprecating code within a major
+backward-compatible version sequence and finally removing deprecated code when
+transitioning to a new major version X to X+1 for the semantic versioning
+numbering scheme X.Y.Z.  This information is given as a process with different
+phases.
 
 The processing for managing deprecated code is as follows and more details are
 given below:
@@ -6346,11 +6347,33 @@ example, one would deprecate standard C/C++ constructs for the package
   // Deprecate a typedef
   SOMEPACKAGE_DEPRECATED typedef someTypeDef int;
 
-The GCC and Intel C and C++ compilers both support adding extra attributes
-including the ``__deprecated__`` attribute.  When this attribute is applied to
-a given C/C++ entity, it produces a compiler warning that can be searched for
-in the compiler output and elevated to an error (when ``-Werror`` is also
-passed to the compiler).
+The GCC (version 3.1 and newer) and Intel C and C++ compilers both support
+adding extra attributes including the ``__deprecated__`` attribute.  When this
+attribute is applied to a given C/C++ entity, it produces a compiler warning
+that can be searched for in the compiler output and elevated to an error (when
+``-Werror`` is also passed to the compiler).
+
+In addition to the basic deprecated warning, one can also add an optional
+deprecated warning message using the macro
+``<PACKAGE_UCNAME>_DEPRECATED_MSG()``.  For example, if a new function is
+replacing an old function, one might use::
+
+  // Deprecated old unsafe function taking raw pointers
+  SOMEPACKAGE_DEPRECATED_MSG(
+    "Please use the safe someFunc(const Ptr<const std::string>&) instead!")
+  void someFunc(const std::string *str);
+
+  // New version take does not take raw pointers (and is therefore safer)
+  void someFunc(const Teuchos::Ptr<const std::string> &str);
+
+Then, if user code calls the version ``someFunc(const std::string*)`` they
+will get the string::
+
+  "Please use the safe someFunc(const Ptr<const std::string>&) instead!"
+
+printed as well by the compiler.  Note that the custom message will only be
+printed for GCC versions 4.5 and newer.  If an older version of GCC is used,
+then the message string is ignored.
 
 
 Deprecating preprocessor macros

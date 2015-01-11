@@ -24,12 +24,22 @@ void HelloWorld::printHelloWorld(std::ostream &out) const
   out << "Release is enabled!\n";
 #endif
   out << "Sqr(3) = " << HeaderOnlyTpl::sqr(3) << "\n";
+#ifdef SIMPLECXX_SHOW_DEPRECATED_WARNINGS
+  (void)someOldFunc();
+  (void)someOldFunc2();
+#endif
 }
 
 
 int HelloWorld::someOldFunc() const
 {
   return 1;
+}
+
+
+int HelloWorld::someOldFunc2() const
+{
+  return 2;
 }
 
 

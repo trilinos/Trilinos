@@ -145,10 +145,22 @@ FUNCTION(TRIBITS_CONFIGURE_FILE  PACKAGE_NAME_CONFIG_FILE)
       "#    define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED\n"
       "#  endif\n"
       "#endif\n"
+      "\n"
+      "#ifndef ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG\n"
+      "#  if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))\n"
+      "#    define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__ (#MSG) ))\n"
+      "#  elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))\n"
+      "#    define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__))\n"
+      "#  else\n"
+      "#    define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG(MSG)\n"
+      "#  endif\n"
+      "#endif\n"
       )
   ELSE()
-    SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
-      "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED")
+    MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+      "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED\n"
+      "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG(MSG)\n"
+      )
   ENDIF()
 
   IF (${PARENT_PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
