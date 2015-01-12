@@ -55,6 +55,7 @@ enum { STK_MPI_TAG_SIZING = 0 , STK_MPI_TAG_DATA = 1 };
 
 namespace {
 
+#ifndef NDEBUG
 bool all_to_all_dense( ParallelMachine p_comm ,
                        const CommBuffer * const send ,
                        const CommBuffer * const recv ,
@@ -221,7 +222,10 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
 
   return MPI_SUCCESS == result ;
 }
+#endif // #ifndef NDEBUG
 
+
+#ifdef NDEBUG
 void communicate_sparse( ParallelMachine p_comm ,
                         const CommBuffer * const send ,
                         const CommBuffer * const recv )
@@ -291,7 +295,7 @@ void communicate_sparse( ParallelMachine p_comm ,
   }
 #endif
 }
-
+#endif
 }
 
 #else
@@ -300,6 +304,7 @@ void communicate_sparse( ParallelMachine p_comm ,
 
 namespace {
 
+#ifndef NDEBUG
 bool all_to_all_dense( ParallelMachine ,
                        const CommBuffer * const send ,
                        const CommBuffer * const recv ,
@@ -313,6 +318,7 @@ bool all_to_all_sparse( ParallelMachine ,
 { return send == recv ; }
 
 }
+#endif // #ifndef NDEBUG
 
 #endif
 
