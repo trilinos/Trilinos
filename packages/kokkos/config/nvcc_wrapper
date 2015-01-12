@@ -111,7 +111,7 @@ do
     object_files_xlinker="$object_files_xlinker -Xlinker $1"
     ;;
   #Handle object files: -x cu applies to all input files, so give them to linker, except if only linking
-  *.so.*)
+  *.so.*|*.dylib)
     object_files_xlinker="$object_files_xlinker -Xlinker $1"
     object_files="$object_files -Xlinker $1"
     ;;
