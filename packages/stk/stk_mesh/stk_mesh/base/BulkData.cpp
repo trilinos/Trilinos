@@ -1209,14 +1209,27 @@ bool BulkData::in_ghost( const Ghosting & ghost , EntityKey key , int proc ) con
 void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 {
   procs.clear();
+
+  ThrowAssertMsg(is_valid(get_entity(key)),
+                  "BulkData::comm_procs ERROR, input key "<<key<<" not a valid entity. Contact sierra-help@sandia.gov");
+
   for ( PairIterEntityComm ec = entity_comm_map(key); ! ec.empty() ; ++ec ) {
+#ifndef NDEBUG
+      EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
+                                                                          m_entity_comm_list.end(),
+                                                                          key);
+      if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
+          ThrowAssertMsg( lb_itr->entity != Entity(),
+                          "comm-list contains invalid entity for key "<<key<<". Contact sierra-help@sandia.gov");
+      }
+#endif
     procs.push_back( ec->proc );
   }
   std::sort( procs.begin() , procs.end() );
-  std::vector<int>::iterator
-    i = std::unique( procs.begin() , procs.end() );
+  std::vector<int>::iterator i = std::unique( procs.begin() , procs.end() );
   procs.erase( i , procs.end() );
 }
+
 void BulkData::comm_shared_procs( EntityKey key, std::vector<int> & procs ) const
 {
   procs.clear();
@@ -3890,6 +3903,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     }
     else { // Receiving from 'remote_proc' for ghosting
 
+      const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
       bool isCustomGhost = false;
       PairIterEntityComm pairIterEntityComm = entity_comm_map(key);
       for(unsigned j=0; j<pairIterEntityComm.size(); ++j)
@@ -3897,9 +3911,14 @@ void BulkData::internal_resolve_ghosted_modify_delete()
           if (pairIterEntityComm[j].ghost_id > 1)
           {
               isCustomGhost = true;
-              break;
+              if ( hasBeenPromotedToSharedOrOwned )
+              {
+                  entity_comm_map_erase(key, *m_ghosting[pairIterEntityComm[j].ghost_id]);
+                  ghosting_change_flags[pairIterEntityComm[j].ghost_id] = true ;
+              }
           }
       }
+
       const bool isAuraGhost = !isCustomGhost;
 
       if(isAuraGhost)
@@ -3910,7 +3929,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
       if(!isAlreadyDestroyed)
       {
-          const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
           const bool wasDestroyedByOwner = remotely_destroyed;
           const bool shouldDestroyGhost = wasDestroyedByOwner || (isAuraGhost && !hasBeenPromotedToSharedOrOwned);
 
@@ -4212,16 +4230,16 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 }
 
 
-bool BulkData::modification_end( modification_optimization opt, bool delete_ghosts, 
+bool BulkData::modification_end( modification_optimization opt,
                                  ModificationEndAuraOption aura_option)
 {
   Trace_("stk::mesh::BulkData::modification_end");
 
   bool return_value;
   if(aura_option == MODIFICATION_END_ADD_AURA) {
-    return_value = internal_modification_end( true, opt, delete_ghosts );
+    return_value = internal_modification_end( true, opt );
   } else {
-    return_value = internal_modification_end( false, opt, delete_ghosts );
+    return_value = internal_modification_end( false, opt );
   }
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);
@@ -4346,7 +4364,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
   return true ;
 }
 
-bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt, bool delete_ghosts )
+bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt)
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
@@ -4360,14 +4378,10 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
     // which can cause deletion of ghost entities.
-    if(delete_ghosts) {
-      internal_resolve_shared_modify_delete();
-    }
+    internal_resolve_shared_modify_delete();
     // Resolve modification or deletion of ghost entities
     // by destroying ghost entities that have been touched.
-    if(delete_ghosts) {
-      internal_resolve_ghosted_modify_delete();
-    }
+    internal_resolve_ghosted_modify_delete();
     update_comm_list_based_on_changes_in_comm_map();
 
     // Resolve creation of entities: discover sharing and set unique ownership.

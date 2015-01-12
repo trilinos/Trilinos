@@ -40,7 +40,7 @@ namespace mesh {
 
 bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh, bool generate_aura)
 {
-  return mesh.internal_modification_end(generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT, true );
+  return mesh.internal_modification_end(generate_aura, BulkData::MOD_END_COMPRESS_AND_SORT );
 }
 
 } // namespace mesh

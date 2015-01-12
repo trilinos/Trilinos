@@ -204,7 +204,7 @@ public:
 
   enum ModificationEndAuraOption{MODIFICATION_END_ADD_AURA, MODIFICATION_END_NO_AURA};
 
-  bool modification_end( modification_optimization opt = MOD_END_SORT, bool delete_ghosts=true, 
+  bool modification_end( modification_optimization opt = MOD_END_SORT,
                          ModificationEndAuraOption aura_option=MODIFICATION_END_ADD_AURA );
   bool modification_end_for_entity_creation( EntityRank entity_rank, modification_optimization opt = MOD_END_SORT);
 
@@ -773,7 +773,10 @@ protected: //functions
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
-  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val) { return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity)); }
+  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val)
+  {
+      return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity));
+  }
   bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
   bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
@@ -795,7 +798,7 @@ protected: //functions
                                      NewOwnerMap & new_owner_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt, bool delete_ghosts );
+  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
   void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
