@@ -13,6 +13,8 @@ TRIBITS_PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 # B) Set up package-specific options
 #
 
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 # Anasazi includes tests that may require complex arithmetic in order
 # to build.  These include especially (but not exclusively) the
 # Tpetra-specific tests, since Tpetra objects are templated on the

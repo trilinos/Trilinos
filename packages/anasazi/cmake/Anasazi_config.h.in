@@ -61,6 +61,9 @@
 
 #cmakedefine ANASAZI_TEUCHOS_TIME_MONITOR
 
+/* Add macros for declaring functions deprecated */
+@ANASAZI_DEPRECATED_DECLARATIONS@
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus

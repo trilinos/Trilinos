@@ -55,24 +55,54 @@ namespace Amesos2 {
 
 #ifdef HAVE_TPETRA_INST_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(KLU2,float,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,float,int,unsigned int);
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,unsigned int);
 #endif
-/*#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,int,int);
-#endif*/
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,int,unsigned int);
+#endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,int);
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG
-  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,long);
-#endif
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,long long int);
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,unsigned int);
 #endif
 }
+#ifdef HAVE_TPETRA_INST_INT_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,float,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,long);
+#endif
+}
+#endif
 
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,float,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,double,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<float>,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(KLU2,std::complex<double>,int,long long);
+#endif
+}
+#endif
 //
 // 7-Nov-2014: JJH code copied from Amesos2_SuperLU.cpp.
 //
