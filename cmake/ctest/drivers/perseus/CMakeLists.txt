@@ -32,6 +32,22 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 180
 )
 
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_Downstream_KokkosRefactor_ETI_THREADS_INTEL
+  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_threads_hwloc_intel_perseus.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 180
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_Downstream_KokkosRefactor_ETI_SERIAL_GCC
+  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 180
+)
+
 #TRILINOS_DRIVER_ADD_DASHBOARD(
 #  MPI_Downstream_KokkosRefactor_ETI_SERIAL_Intel
 #  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_serial_intel_perseus.cmake

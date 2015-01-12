@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES KokkosCore KokkosContainers KokkosAlgorithms TeuchosKokkosCompat TeuchosKokkosComm TpetraKernels TpetraClassic Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2)
+SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU=ON"
@@ -90,8 +90,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   "-DAmesos_ENABLE_TESTS=OFF"
   "-DAmesos_ENABLE_EXAMPLES=OFF"
-  "-DAmesos2_ENABLE_TESTS=OFF"
-  "-DAmesos2_ENABLE_EXAMPLES=OFF"
   "-DIfpack_ENABLE_TESTS=OFF"
   "-DIfpack_ENABLE_EXAMPLES=OFF"
   "-DEpetra_ENABLE_TESTS=OFF"
@@ -100,17 +98,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DEpetraExt_ENABLE_EXAMPLES=OFF"
   "-DZoltan_ENABLE_TESTS=OFF"
   "-DZoltan_ENABLE_EXAMPLES=OFF"
-  "-DZoltan2_ENABLE_TESTS=OFF"
-  "-DZoltan2_ENABLE_EXAMPLES=OFF"
   
-  "-DTrilinos_ENABLE_Tpetra=ON"
-  "-DTrilinos_ENABLE_KokkosCore=ON"
-  "-DTrilinos_ENABLE_KokkosContainers=ON"
-  "-DTrilinos_ENABLE_KokkosAlgorithms=ON"
-  "-DTrilinos_ENABLE_TpetraClassic=ON"
-  "-DTrilinos_ENABLE_TpetraKernels=ON"
-  "-DTrilinos_ENABLE_TeuchosKokkosCompat=ON"
-  "-DTrilinos_ENABLE_TeuchosKokkosComm=ON"
 )
 
 #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"

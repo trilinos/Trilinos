@@ -70,7 +70,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
   SET( CTEST_BUILD_FLAGS "-j16 -i" )
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "4" )
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "1" )
 
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
@@ -82,11 +82,16 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
 
-    "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicxx" 
-    "-DCMAKE_C_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicc" 
-    "-DMPI_CXX_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicxx" 
-    "-DMPI_C_COMPILER:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpicc" 
-    "-DMPI_EXEC:FILEPATH=/opt/mpi/openmpi/1.8/intel/cuda6037/bin/mpirun"
+    "-DMPI_BASE_DIR=/opt/mpi/openmpi/1.8/intel/cuda6037"
+    "-D MPI_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
+    "-D MPI_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
+    "-D MPI_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
+    "-D CMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
+    "-D CMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
+    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
+    "-D MPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
+    "-D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
+
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
@@ -94,10 +99,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTPL_SuperLU_INCLUDE_DIRS=/home/crtrott/Software/SuperLU_4.3/SRC"
  
 
-    "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.0.9"
+    "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.5.14"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "Intel-14.0.1")
+  SET_DEFAULT(COMPILER_VERSION "Intel-15.0.0")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -105,6 +110,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
          "-DMPI_BASE_DIR:PATH=/opt/mpi/openmpi/1.8/intel/cuda6037"
+         "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
+         "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
        )
   ENDIF()
 

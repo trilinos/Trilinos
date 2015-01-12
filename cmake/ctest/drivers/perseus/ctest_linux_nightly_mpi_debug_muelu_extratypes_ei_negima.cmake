@@ -53,68 +53,32 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.perseus.gcc.cmake")
 
 #
-# Platform/compiler specific options for typhon using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME OPENMPI_1.8.3_DEBUG_DEV_MueLu_ExtraTypes_EI)
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
-  SET( CTEST_BUILD_FLAGS "-j16 -i" )
+  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+)
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "1" )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-
-    "-DMPI_BASE_DIR=/opt/mpi/openmpi/1.8.2/gcc/4.8.3/cuda-6.5"
-    "-D MPI_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
-    "-D MPI_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
-    "-D MPI_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-    "-D CMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
-    "-D CMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
-    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-    "-D MPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
-    "-D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
-
-
-    "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DTPL_SuperLU_LIBRARIES=/home/crtrott/Software/SuperLU_4.3/lib/libsuperlu_4.3.a"
-    "-DTPL_SuperLU_INCLUDE_DIRS=/home/crtrott/Software/SuperLU_4.3/SRC"
- 
-
-    "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.5.14"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.3")
-
-  #Ensuring that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-         "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/opt/mpi/openmpi/1.8.2/gcc/4.8.3/cuda-6.5"
-         "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
-         "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
-       )
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
