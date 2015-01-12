@@ -186,15 +186,15 @@ namespace Tpetra {
   /// \warning Do NOT rely on the contents of this namespace.
   namespace Details {
 
-    //! Declarations of types default template parameters.
+    //! Declarations of values of Tpetra classes' default template parameters.
     namespace DefaultTypes {
-      //! Default Scalar template parameter.
+      //! Default value of Scalar template parameter.
       typedef double scalar_type;
-      //! Default LocalOrdinal template parameter.
+      //! Default value of LocalOrdinal template parameter.
       typedef int local_ordinal_type;
-      //! Default GlobalOrdinal template parameter.
+      //! Default value of GlobalOrdinal template parameter.
       typedef int global_ordinal_type;
-      //! Default Node template parameter.
+      //! Default value of Node template parameter.
       typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
     } // namespace DefaultTypes
 
