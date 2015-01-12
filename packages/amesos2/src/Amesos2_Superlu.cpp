@@ -55,24 +55,56 @@ namespace Amesos2 {
 
 #ifdef HAVE_TPETRA_INST_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,unsigned int);
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,unsigned int);
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,unsigned int);
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int);
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,unsigned int);
 #endif
-#ifdef HAVE_TPETRA_INST_INT_LONG
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long);
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long);
-#endif
+
 }
 
+#ifdef HAVE_TPETRA_INST_INT_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,long);
+#endif
+}
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,long long);
+#endif
+}
+#endif
 //
 // mfh 16 Jan 2014: Hack to make explicit instantiation for
 // Ifpack2::Details::Amesos2Wrapper work.
