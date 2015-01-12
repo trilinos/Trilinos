@@ -73,9 +73,9 @@ namespace Tpetra {
   /// architectures.  TPETRA_USE_KOKKOS_DISTOBJECT must be defined in
   /// order to use this class.
   template <class Packet,
-            class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type>
   class DistObjectKA :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {

@@ -65,11 +65,11 @@ namespace Tpetra {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template<class Scalar = MultiVector<>::scalar_type,
-         class LocalOrdinal = typename MultiVector<Scalar>::local_ordinal_type,
-         class GlobalOrdinal = typename MultiVector<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node = typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
-         const bool classic = Node::classic>
+template <class Scalar = Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type,
+          const bool classic = Node::classic>
 class Vector {
   // See partial specializations for documentation of methods.
 };

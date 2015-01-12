@@ -71,9 +71,9 @@ namespace Tpetra {
 /// \warning This class is DEPRECATED.  There are known outstanding
 ///   bugs with the current implementations of variable-block-size
 ///   sparse matrices and related classes in Tpetra.
-template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
-          class GlobalOrdinal = typename CrsGraph<LocalOrdinal>::global_ordinal_type,
-          class Node = typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
+template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type>
 class TPETRA_DEPRECATED BlockCrsGraph : public Teuchos::Describable {
 public:
   typedef LocalOrdinal  local_ordinal_type;

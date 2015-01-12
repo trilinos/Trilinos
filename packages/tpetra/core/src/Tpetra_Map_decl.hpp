@@ -128,14 +128,14 @@ namespace Tpetra {
   ///   <li> \c long </li>
   ///   <li> <tt>long long</tt> (if the configure-time option
   ///        <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set) </li>
-  ///   <li> \c ptrdiff_t </li>
+  ///   <li> \c ptrdiff_t (a signed integer type which is 64 bits on
+  ///        64-bit machines) </li>
   ///   </ul>
-  ///   If you use the default <tt>GlobalOrdinal</tt> type, which
-  ///   is <tt>int</tt>, then the <i>global</i> number of rows or
-  ///   columns in the matrix may be no more than \c INT_MAX, which
-  ///   for typical 32-bit \c int is \f$2^{31} - 1\f$ (about two
-  ///   billion).  If you want to solve larger problems, you must use
-  ///   a 64-bit integer type here.
+  ///   If the default <tt>GlobalOrdinal</tt> is <tt>int</tt>, then
+  ///   the <i>global</i> number of rows or columns in the matrix may
+  ///   be no more than \c INT_MAX, which for typical 32-bit \c int is
+  ///   \f$2^{31} - 1\f$ (about two billion).  If you want to solve
+  ///   larger problems, you must use a 64-bit integer type here.
   ///
   /// \tparam Node A class implementing on-node shared-memory parallel
   ///   operations.  It must implement the
@@ -253,9 +253,9 @@ namespace Tpetra {
   /// product functions produce small dense matrices that are required
   /// by all images.  Replicated local objects handle these
   /// situations.
-  template <class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type>
   class Map : public Teuchos::Describable {
   public:
     //! @name Typedefs

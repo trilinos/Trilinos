@@ -119,10 +119,10 @@ namespace Experimental {
 /// }
 /// \endcode
 ///
-template<class Scalar = BlockMultiVector<>::scalar_type,
-         class LO = typename BlockMultiVector<Scalar>::local_ordinal_type,
-         class GO = typename BlockMultiVector<Scalar, LO>::global_ordinal_type,
-         class Node = typename BlockMultiVector<Scalar, LO, GO>::node_type>
+template<class Scalar = Details::DefaultTypes::scalar_type,
+         class LO = Details::DefaultTypes::local_ordinal_type,
+         class GO = Details::DefaultTypes::global_ordinal_type,
+         class Node = Details::DefaultTypes::node_type>
 class BlockCrsMatrix :
   virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   virtual public Tpetra::DistObject<char, LO, GO, Node>

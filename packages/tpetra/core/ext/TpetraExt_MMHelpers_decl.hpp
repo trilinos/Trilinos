@@ -61,10 +61,10 @@ namespace Tpetra {
 ///
 /// These contents may be a mixture of local and remote rows of the
 /// actual matrix.
-  template <class Scalar = CrsMatrix<>::scalar_type,
-            class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar = Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type>
 class CrsMatrixStruct {
 public:
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -77,15 +77,15 @@ public:
   void deleteContents ();
 
   /** \brief Original row map of matrix */
-  Teuchos::RCP<const map_type > origRowMap;
+  Teuchos::RCP<const map_type> origRowMap;
   /** \brief Desired row map for "imported" version of the matrix */
-  Teuchos::RCP<const map_type > rowMap;
+  Teuchos::RCP<const map_type> rowMap;
   /** \brief Col map for the original version of the matrix */
-  Teuchos::RCP<const map_type > colMap;
+  Teuchos::RCP<const map_type> colMap;
   /** \brief Domain map for original matrix */
-  Teuchos::RCP<const map_type > domainMap;
+  Teuchos::RCP<const map_type> domainMap;
   /** \brief Colmap garnered as a result of the import */
-  Teuchos::RCP<const map_type > importColMap;
+  Teuchos::RCP<const map_type> importColMap;
   /** \brief The imported matrix */
   Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  importMatrix;
   /** \brief The original matrix */

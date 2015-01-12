@@ -65,10 +65,10 @@ namespace Tpetra {
 /// \warning This class is DEPRECATED.  There are known outstanding
 ///   bugs with the current implementations of variable-block-size
 ///   sparse matrices and related classes in Tpetra.
-template <class Scalar = MultiVector<>::scalar_type,
-          class LocalOrdinal = MultiVector<>::local_ordinal_type,
-          class GlobalOrdinal = typename MultiVector<LocalOrdinal>::global_ordinal_type,
-          class Node = typename MultiVector<LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar = Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type>
 class TPETRA_DEPRECATED BlockMultiVector :
   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 public:

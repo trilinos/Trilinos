@@ -88,14 +88,10 @@ namespace Tpetra {
   /// implementations of RowMatrix, which do useful things like
   /// wrapping an existing matrix to view only certain desired
   /// entries.
-  template<class Scalar =
-             Operator<>::scalar_type,
-           class LocalOrdinal =
-             typename Operator<Scalar>::local_ordinal_type,
-           class GlobalOrdinal =
-             typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-           class Node =
-             typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar = Details::DefaultTypes::scalar_type,
+            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type>
   class RowMatrix :
     virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     virtual public SrcDistObject,

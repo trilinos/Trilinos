@@ -86,12 +86,9 @@ namespace Tpetra {
   ///   of entries in the MultiVector input and output of apply().
   template <class Scalar,
             class MatScalar = Scalar,
-            class LocalOrdinal =
-            typename CrsMatrix<MatScalar>::local_ordinal_type,
-            class GlobalOrdinal =
-            typename CrsMatrix<MatScalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-            typename CrsMatrix<MatScalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type>
   class CrsMatrixSolveOp :
     public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:

@@ -118,9 +118,9 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template<class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+           class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+           class Node = Details::DefaultTypes::node_type>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {

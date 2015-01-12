@@ -81,6 +81,7 @@
 #include <TpetraCore_config.h>
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 //! %Tpetra namespace
 namespace Tpetra {
@@ -142,31 +143,36 @@ namespace Tpetra {
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
 
-  /** \brief Global size_t object.
-
-      Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
-
-      Currently, it is typedefed to size_t.
-   */
-
+  /// \brief Global size_t object.
+  ///
+  /// This type is intended to support scenarios where the global
+  /// memory allocation is larger than that of a single node.
+  ///
+  /// Currently, it is typedefed to \c size_t.
   typedef size_t global_size_t;
 
-  /*! Local versus global allocation of Map elements */
+  /// \brief Enum for local versus global allocation of Map entries.
+  ///
+  /// \c LocallyReplicated means that the Map's entries are locally
+  /// replicated across all processes.
+  ///
+  /// \c GloballyDistributed means that the Map's entries are globally
+  /// distributed across all processes.
   enum LocalGlobal {
-    LocallyReplicated,  /*!< Indicates that map elements are locally replicated across all nodes */
-    GloballyDistributed /*!< Indicates that map elements are globally distributed across all nodes */
+    LocallyReplicated,
+    GloballyDistributed
   };
 
-  /*! Return status of Map lookup */
+  /// \brief Return status of Map remote index lookup (getRemoteIndexList()).
   enum LookupStatus {
-    AllIDsPresent, /*!< Indicates that all queried IDs were present in the Map */
-    IDNotPresent   /*!< Indicates that at least one of the specified IDs was not present in the Map */
+    AllIDsPresent, /*!< All queried indices were present in the Map */
+    IDNotPresent   /*!< At least one of the specified indices was not present in the Map */
   };
 
   /*! Allocation profile for matrix/graph entries */
   enum ProfileType {
-    StaticProfile,  /*!< Indicates a single, static allocation (strict and more efficient) */
-    DynamicProfile  /*!< Indicates multiple, dynamic allocations (flexibile, but less efficient) */
+    StaticProfile,  /*!< Single, static allocation (strict and more efficient) */
+    DynamicProfile  /*!< Multiple, dynamic allocations (flexibile, but less efficient) */
   };
 
   /*! Optimize storage option */
@@ -174,6 +180,25 @@ namespace Tpetra {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
+
+
+  /// \brief Namespace for Tpetra implementation details.
+  /// \warning Do NOT rely on the contents of this namespace.
+  namespace Details {
+
+    //! Declarations of types default template parameters.
+    namespace DefaultTypes {
+      //! Default Scalar template parameter.
+      typedef double scalar_type;
+      //! Default LocalOrdinal template parameter.
+      typedef int local_ordinal_type;
+      //! Default GlobalOrdinal template parameter.
+      typedef int global_ordinal_type;
+      //! Default Node template parameter.
+      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+    } // namespace DefaultTypes
+
+  } // namespace Details
 
   enum EPrivateComputeViewConstructor {
     COMPUTE_VIEW_CONSTRUCTOR

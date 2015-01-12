@@ -140,10 +140,10 @@ template<class S, class LO, class GO, class N> class BlockCrsMatrix;
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
-template<class Scalar = ::Tpetra::MultiVector<>::scalar_type,
-         class LO = typename ::Tpetra::MultiVector<Scalar>::local_ordinal_type,
-         class GO = typename ::Tpetra::MultiVector<Scalar, LO>::global_ordinal_type,
-         class Node = typename ::Tpetra::MultiVector<Scalar, LO, GO>::node_type>
+template<class Scalar = Details::DefaultTypes::scalar_type,
+         class LO = Details::DefaultTypes::local_ordinal_type,
+         class GO = Details::DefaultTypes::global_ordinal_type,
+         class Node = Details::DefaultTypes::node_type>
 class BlockMultiVector :
     public Tpetra::DistObject<Scalar, LO, GO, Node>
 {

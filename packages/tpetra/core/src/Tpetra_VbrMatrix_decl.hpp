@@ -117,10 +117,10 @@ non-optimized-storage state.
   bugs with the current implementations of variable-block-size
   sparse matrices and related classes in Tpetra.
 */
-template<class Scalar = Operator<>::scalar_type,
-         class LocalOrdinal = typename Operator<Scalar>::local_ordinal_type,
-         class GlobalOrdinal = typename Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node = typename Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar = Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type>
 class TPETRA_DEPRECATED VbrMatrix :
   public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
   public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {

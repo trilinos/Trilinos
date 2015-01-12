@@ -363,11 +363,11 @@ namespace Tpetra {
   ///   That is, if some but not all rows are shared by more than one
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
-  template<class Scalar = double,
-           class LocalOrdinal = Map<>::local_ordinal_type,
-           class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-           class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type,
-           const bool classic = Node::classic>
+  template <class Scalar = Details::DefaultTypes::scalar_type,
+            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type,
+            const bool classic = Node::classic>
   class MultiVector {
     // See partial specializations for documentation of methods.
   };

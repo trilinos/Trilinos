@@ -76,9 +76,9 @@ namespace Tpetra {
     with the current implementations of variable-block-size sparse
     matrices and related classes in Tpetra.
 */
-template <class LocalOrdinal = Map<>::local_ordinal_type,
-          class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-          class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type>
 class TPETRA_DEPRECATED BlockMap : public Teuchos::Describable {
 public:
   typedef LocalOrdinal  local_ordinal_type;

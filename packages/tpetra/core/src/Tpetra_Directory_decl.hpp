@@ -121,9 +121,9 @@ namespace Tpetra {
   ///   already exists.  Epetra_Directory is an abstract interface
   ///   with one implementation (Epetra_BasicDirectory);
   ///   Tpetra::Directory is a concrete implementation.
-  template <class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template<class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+           class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+           class Node = Details::DefaultTypes::node_type>
   class Directory : public Teuchos::Describable {
   public:
     //! Type of the Map specialization to give to the constructor.

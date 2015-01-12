@@ -73,10 +73,10 @@ namespace Experimental {
 /// "multivectors" that are not "multi."  That is, a BlockVector has a
 /// single vector (column).  Please refer to the documentation of
 /// BlockMultiVector for details.
-template<class Scalar = BlockMultiVector<>::scalar_type,
-         class LO = typename BlockMultiVector<Scalar>::local_ordinal_type,
-         class GO = typename BlockMultiVector<Scalar, LO>::global_ordinal_type,
-         class Node = typename BlockMultiVector<Scalar, LO, GO>::node_type>
+template<class Scalar = Details::DefaultTypes::scalar_type,
+         class LO = Details::DefaultTypes::local_ordinal_type,
+         class GO = Details::DefaultTypes::global_ordinal_type,
+         class Node = Details::DefaultTypes::node_type>
 class BlockVector : public BlockMultiVector<Scalar, LO, GO, Node> {
 private:
   typedef BlockMultiVector<Scalar, LO, GO, Node> base_type;

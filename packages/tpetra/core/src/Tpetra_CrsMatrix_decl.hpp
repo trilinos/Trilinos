@@ -166,10 +166,10 @@ namespace Tpetra {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar = RowMatrix<>::scalar_type,
-            class LocalOrdinal = typename RowMatrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename RowMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type,
+  template <class Scalar = Details::DefaultTypes::scalar_type,
+            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+            class Node = Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
   class CrsMatrix {
     // See partial specializations for documentation of methods.
