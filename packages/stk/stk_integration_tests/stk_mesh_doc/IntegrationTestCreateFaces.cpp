@@ -230,7 +230,6 @@ TEST(StkIo, CreateFacesCountFaces)
     EXPECT_EQ(6u,   read_file_count_sides("AL.e", true));
     EXPECT_EQ(13u,  read_file_count_sides("ALeDA.e", true));
     EXPECT_EQ(14u,  read_file_count_sides("ALeDB.e", true));
-    EXPECT_EQ(13u,  read_file_count_sides("ALeDeRA.e", true));
     EXPECT_EQ(13u,  read_file_count_sides("ALeDfRA.e", true));
     EXPECT_EQ(14u,  read_file_count_sides("ALeDfRB.e", true));
     EXPECT_EQ(7u,   read_file_count_sides("ALe.e", true));
@@ -282,7 +281,6 @@ TEST(StkIo, CreateFacesFullyConnected)
     EXPECT_TRUE(read_file_fully_connected("AL.e", true));
     EXPECT_TRUE(read_file_fully_connected("ALeDA.e", true));
     EXPECT_TRUE(read_file_fully_connected("ALeDB.e", true));
-    EXPECT_TRUE(read_file_fully_connected("ALeDeRA.e", true));
     EXPECT_TRUE(read_file_fully_connected("ALeDfRA.e", true));
     EXPECT_TRUE(read_file_fully_connected("ALeDfRB.e", true));
     EXPECT_TRUE(read_file_fully_connected("ALe.e", true));
@@ -334,7 +332,6 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("AL.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDA.e", true));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDB.e", true));
-    EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDeRA.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDfRA.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeDfRB.e", true));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALe.e", true));
@@ -386,7 +383,6 @@ TEST(StkIo, CreateFacesSharedFacesSameElements)
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("AL.e", true));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDA.e", true));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDB.e", true));
-    EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDeRA.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALeDfRA.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALeDfRB.e", true));
     EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALe.e", true));
@@ -438,7 +434,6 @@ TEST(StkIo, NoCreateFaces)
     EXPECT_EQ(1u,  read_file_count_sides("AL.e", false));
     EXPECT_EQ(2u,  read_file_count_sides("ALeDA.e", false));
     EXPECT_EQ(2u,  read_file_count_sides("ALeDB.e", false));
-    EXPECT_EQ(3u,  read_file_count_sides("ALeDeRA.e", false));
     EXPECT_EQ(3u,  read_file_count_sides("ALeDfRA.e", false));
     EXPECT_EQ(2u,  read_file_count_sides("ALeDfRB.e", false));
     EXPECT_EQ(1u,  read_file_count_sides("ALe.e", false));
@@ -489,7 +484,6 @@ TEST(StkIo, NoCreateFacesFullyConnected)
     EXPECT_FALSE(read_file_fully_connected("AL.e", false));
     EXPECT_FALSE(read_file_fully_connected("ALeDA.e", false));
     EXPECT_FALSE(read_file_fully_connected("ALeDB.e", false));
-    EXPECT_FALSE(read_file_fully_connected("ALeDeRA.e", false));
     EXPECT_FALSE(read_file_fully_connected("ALeDfRA.e", false));
     EXPECT_FALSE(read_file_fully_connected("ALeDfRB.e", false));
     EXPECT_FALSE(read_file_fully_connected("ALe.e", false));
@@ -541,7 +535,6 @@ TEST(StkIo, NoCreateFacesSharedFacesDifferentElements)
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("AL.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDB.e", false));
-    EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDeRA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDfRA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeDfRB.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALe.e", false));
@@ -593,7 +586,6 @@ TEST(StkIo, NoCreateFacesSharedFacesSameElements)
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("AL.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDB.e", false));
-    EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDeRA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRA.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRB.e", false));
     EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALe.e", false));
