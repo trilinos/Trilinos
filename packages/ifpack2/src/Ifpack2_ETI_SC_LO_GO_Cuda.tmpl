@@ -50,9 +50,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 // Ifpack2 already instantiates its classes for the default Node type.
-// Don't instantiate for that again if
-// Kokkos::Compat::KokkosCudaWrapperNode is the default Node type.
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(KOKKOS_HAVE_CUDA) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 // Need this for the mangling of the Node typedef.
 IFPACK2_ETI_MANGLING_TYPEDEFS()

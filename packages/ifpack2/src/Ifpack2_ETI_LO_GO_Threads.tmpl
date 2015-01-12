@@ -49,10 +49,12 @@
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)    
+// Ifpack2 already instantiates its classes for the default Node type.
+#if defined(KOKKOS_HAVE_PTHREAD) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
+// Need this for the mangling of the Node typedef.
 #define LCLINST(LO, GO) \
   IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO, GO, Kokkos_Compat_KokkosThreadsWrapperNode)
 
