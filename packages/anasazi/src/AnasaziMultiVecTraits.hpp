@@ -200,7 +200,7 @@ namespace Anasazi {
     /// MultiVecTraitsExt in this file.  Most Anasazi users will not
     /// need to do this, since MultiVecTraits already has
     /// specializations for Epetra, Tpetra, and Thyra objects.
-    static int GetVecLength( const MV& mv )
+    ANASAZI_DEPRECATED static int GetVecLength( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }
 
     //! Obtain the number of vectors in \c mv

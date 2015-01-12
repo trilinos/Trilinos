@@ -330,7 +330,7 @@ namespace Anasazi {
       return X_view;
     }
 
-    static int GetVecLength (const MV& mv) {
+    ANASAZI_DEPRECATED static int GetVecLength (const MV& mv) {
       return static_cast<int> (mv.getGlobalLength ());
     }
 

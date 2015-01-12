@@ -177,7 +177,7 @@ namespace Anasazi {
     //@{ 
 
     //! Obtain the number of vectors in *this.
-    int GetVecLength () const { return Epetra_MV->GlobalLength(); }
+    ANASAZI_DEPRECATED int GetVecLength () const { return Epetra_MV->GlobalLength(); }
 
     //! The number of rows in the multivector.
     //! \note This method supersedes GetVecLength, which will be deprecated.

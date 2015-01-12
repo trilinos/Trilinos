@@ -125,7 +125,7 @@ public:
   //@{ 
 
   //! The number of rows in the multivector.
-  virtual int GetVecLength () const = 0;
+  ANASAZI_DEPRECATED virtual int GetVecLength () const = 0;
 
   //! The number of rows in the multivector.
   //! \note This method supersedes GetVecLength, which will be deprecated.
@@ -398,7 +398,7 @@ public:
     //@{ 
 
     //! Obtain the vector length of \c mv.
-    static int GetVecLength( const MultiVec<ScalarType>& mv )
+    ANASAZI_DEPRECATED static int GetVecLength( const MultiVec<ScalarType>& mv )
     { return mv.GetVecLength(); }
 
     //! Obtain the number of vectors in \c mv
