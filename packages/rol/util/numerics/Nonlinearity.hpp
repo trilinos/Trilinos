@@ -44,10 +44,12 @@
 #ifndef __NONLINEARITY__
 #define __NONLINEARITY__
 
-#include<cstdarg>
+//#include<cstdarg>
 
 /*! \brief An abstract base class from which to derive functors for evaluating 
-    nonlinearities
+    nonlinearities.
+    \detail In general, we can evaluate a function of the form 
+    \f[ a(y,y',u,x) \f] 
 */
 template<class T>
 class Nonlinearity {
@@ -55,8 +57,7 @@ public:
 
     virtual ~Nonlinearity(){}
 
-    // Single argument function
-    virtual T operator()(const T &arg){ return arg; }
+    virtual T operator()(const T &y, const T &y_x, const T &u, const T &x) = 0;
   
 };
 
