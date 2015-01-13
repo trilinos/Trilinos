@@ -260,14 +260,13 @@ IF(Tpetra_INST_INT_LONG_LONG)
   LIST(APPEND TpetraCore_ETI_SCALARS "long long")
 ENDIF()
 
-# FIXME (mfh 09 Jan 2015) Shouldn't this option be called
-# Tpetra_INST_UNSIGNED_INT?
-SET(Tpetra_INST_UNSIGNED_LONG
+SET(Tpetra_INST_INT_UNSIGNED
   ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   CACHE BOOL
   "If explicit instantiation is enabled, instatiate over global ordinal unsigned int."
   )
-IF (Tpetra_INST_UNSIGNED_LONG)
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
+IF (Tpetra_INST_INT_UNSIGNED)
   LIST(APPEND TpetraCore_ETI_GORDS   "unsigned int")
   LIST(APPEND TpetraCore_ETI_SCALARS "unsigned int")
   # NOTE: The above types are used because they help catch errors with caused
