@@ -70,7 +70,7 @@ namespace Amesos2 {
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
@@ -82,7 +82,7 @@ namespace Amesos2 {
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
@@ -94,7 +94,7 @@ namespace Amesos2 {
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
@@ -106,7 +106,7 @@ namespace Amesos2 {
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
@@ -128,7 +128,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
@@ -140,7 +140,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
@@ -152,7 +152,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
@@ -164,7 +164,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
@@ -181,7 +181,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
@@ -193,7 +193,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
@@ -205,7 +205,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
@@ -217,7 +217,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
@@ -234,7 +234,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
@@ -246,7 +246,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
@@ -258,7 +258,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
@@ -270,7 +270,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
@@ -287,7 +287,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
@@ -299,7 +299,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
@@ -311,7 +311,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+    AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
@@ -323,7 +323,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+      AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
