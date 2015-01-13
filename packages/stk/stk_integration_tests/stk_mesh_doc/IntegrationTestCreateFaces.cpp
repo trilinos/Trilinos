@@ -133,11 +133,11 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int cou
 
     stk::mesh::FieldBase const * coord = mesh.mesh_meta_data().coordinate_field();
     stk::mesh::BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
+    bool extra_face_not_accounted_for = false;
     for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
         stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
         for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
             stk::mesh::Entity face = bucket[face_count];
-
             bool all_x_equal_half = true;
             stk::mesh::Entity const * node = mesh.begin_nodes(face);
             for (unsigned node_count = 0; node_count < mesh.num_nodes(face); ++node_count) {
@@ -160,16 +160,21 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int cou
                 else if (count4 == static_cast<int>(mesh.num_elements(face))) {
                     count4 = -1;
                 }
+                else {
+                    extra_face_not_accounted_for = true;
+                }
                 if (debug) {
+                    std::cout << "num_elements:" << mesh.num_elements(face) << std::endl;
                     stk::mesh::Entity const * elements = mesh.begin_elements(face);
                     for (unsigned elem_count = 0; elem_count < mesh.num_elements(face); ++elem_count) {
                         std::cout << "elem_count " << elem_count << " id " << mesh.entity_key(elements[elem_count])  << " for face_count " << face_count << " for bucket count " << bucket_count << std::endl;
                     }
+                    std::cout.flush();
                 }
             }
         }
     }
-    if (count4 == -1 && count3 == -1 && count2 == -1 && count1 == -1) {
+    if (!debug && count4 == -1 && count3 == -1 && count2 == -1 && count1 == -1 && !extra_face_not_accounted_for) {
         return true;
     }
     else {
@@ -189,7 +194,6 @@ bool read_file_check_face_elem_connectivity(std::string filename, bool create_fa
         stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
         stkMeshIoBroker.create_input_mesh();
         stkMeshIoBroker.populate_bulk_data();
-
         stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
         if (create_faces) {
             stk::mesh::create_faces(mesh);
@@ -210,7 +214,6 @@ unsigned read_file_count_sides(std::string filename, bool create_faces) {
         stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
         if (create_faces) {
             stk::mesh::create_faces(mesh);
-
         }
         std::vector<unsigned> countVec;
         stk::mesh::count_entities(mesh.mesh_meta_data().universal_part(), mesh, countVec);
@@ -681,51 +684,102 @@ TEST(StkIo, CreateFacesCheckFaceElemConnectivity)
 {
     EXPECT_TRUE(read_file_check_face_elem_connectivity("A.e",       true, 1, -1, -1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("e.e",       true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AA.e",      true, 1,  1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AA.e",      true, 2, -1, -1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("AB.e",      true, 1,  1, -1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("AD.e",      true, 1, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("Ae.e",      true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AL.e",      true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("eD.e",      true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("eL.e",      true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeA.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeB.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("Aef.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     true, 2, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("Ae.e",      true, 3, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AL.e",      true, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("eD.e",      true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("eL.e",      true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     true, 2, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeA.e",     true, 4, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeB.e",     true, 3, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("Aef.e",     true, 5, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     true, 2, 1, -1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("ARA.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefA.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefB.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   true, 2, -1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   true, 2, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     true, 2, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    true, 3, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefA.e",    true, 6, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefB.e",    true, 6, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    true, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   true, 3, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   true, 3, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   true, 3, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   true, 1, 1, 1, 1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   true, 2, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   true, 1, 1, 1, 1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   true, 3, 1, -1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRB.e",   true, 1, 1, 1, 1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   true, 3, 1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   true, 2, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   true, 2, 1, 1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLA.e",   true, 3, 1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   true, 2, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   true, 2, 1, 1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   true, 3, 1, -1, -1));
-    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   true, 2, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   true, 2, 1, 1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", true, 4, 1, 1, -1));
     EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", true, 3, 1, 1, 1));
+}
+
+TEST(StkIo, NoCreateFacesCheckFaceElemConnectivity)
+{
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("A.e",       false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("e.e",       false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AA.e",      false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AB.e",      false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AD.e",      false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("Ae.e",      false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AL.e",      false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("eD.e",      false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("eL.e",      false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADA.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADB.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeA.e",     false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AeB.e",     false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("Aef.e",     false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALB.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARA.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARB.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ARe.e",     false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDA.e",    false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADDB.e",    false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefA.e",    false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AefB.e",    false, -1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRA.e",    false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALRB.e",    false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDA.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeDB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLA.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeLB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRA.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ADeRB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDA.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDB.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLA.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeLB.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRB.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDA.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReDB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLA.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReLB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 1, 1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRB.e",   false, 1, -1, -1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 1, 1, 1, -1));
+    EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", false, 1, 1, -1, -1));
 }
 
 } // empty namespace
