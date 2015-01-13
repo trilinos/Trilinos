@@ -96,6 +96,18 @@ T atomic_exchange(
   return *((T*)&tmp);
 }
 
+template< typename T >
+__inline__ __device__
+T atomic_exchange(
+  volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) != sizeof(unsigned long long int) &&
+                                    sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
+{
+  cuda_abort("Error: calling atomic_exchange with 128bit type is not supported on CUDA execution space.");
+  return T();
+}
+
 /** \brief  Atomic exchange for any type with compatible size */
 template< typename T >
 __inline__ __device__
@@ -119,6 +131,17 @@ void atomic_assign(
   (void) atomicExch( ((type*)dest) , *((type*)&val) );
 }
 
+template< typename T >
+__inline__ __device__
+void atomic_assign(
+  volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) != sizeof(unsigned long long int) &&
+                                    sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
+{
+  cuda_abort("Error: calling atomic_assign with 128bit type is not supported on CUDA execution space.");
+}
+
 //----------------------------------------------------------------------------
 
 #elif defined(KOKKOS_ATOMICS_USE_GCC) || defined(KOKKOS_ATOMICS_USE_INTEL)
@@ -139,7 +162,7 @@ T atomic_exchange( volatile T * const dest ,
   union U {
     T val_T ;
     type val_type ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } old ;
 #else
   union { T val_T ; type val_type ; } old ;
@@ -165,7 +188,7 @@ T atomic_exchange( volatile T * const dest ,
   union U {
     Impl::cas128_t i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
@@ -201,7 +224,7 @@ void atomic_assign( volatile T * const dest ,
   union U {
     T val_T ;
     type val_type ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } old ;
 #else
   union { T val_T ; type val_type ; } old ;
@@ -225,7 +248,7 @@ void atomic_assign( volatile T * const dest ,
   union U {
     Impl::cas128_t i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {

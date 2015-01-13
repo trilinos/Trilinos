@@ -86,6 +86,17 @@ T atomic_compare_exchange( volatile T * const dest , const T & compare ,
   return *((T*)&tmp);
 }
 
+template < typename T >
+__inline__ __device__
+T atomic_compare_exchange( volatile T * const dest , const T & compare ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) != sizeof(unsigned long long int) &&
+                                    sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
+{
+  cuda_abort("Error: calling atomic_compare_exchange with 128bit type is not supported on CUDA execution space.");
+  return T();
+}
+
 //----------------------------------------------------------------------------
 // GCC native CAS supports int, long, unsigned int, unsigned long.
 // Intel native CAS support int and long with the same interface as GCC.
@@ -125,7 +136,7 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
   union U {
     int i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } tmp ;
 #else
   union U {
@@ -148,7 +159,7 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
   union U {
     long i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } tmp ;
 #else
   union U {
@@ -172,7 +183,7 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
   union U {
     Impl::cas128_t i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } tmp ;
 #else
   union U {

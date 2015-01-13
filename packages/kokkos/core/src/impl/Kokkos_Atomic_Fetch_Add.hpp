@@ -78,7 +78,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     int i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
@@ -108,7 +108,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     unsigned long long int i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
@@ -126,6 +126,17 @@ T atomic_fetch_add( volatile T * const dest ,
   } while ( assume.i != oldval.i );
 
   return oldval.t ;
+}
+
+template < typename T >
+__inline__ __device__
+T atomic_fetch_add( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) != sizeof(unsigned long long int) &&
+                                    sizeof(T) == sizeof(Impl::cas128_t), const T >::type val )
+{
+  cuda_abort("Error: calling atomic_fetch_add with 128bit type is not supported on CUDA execution space.");
+  return T();
 }
 
 //----------------------------------------------------------------------------
@@ -161,7 +172,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     int i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
@@ -191,7 +202,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     long i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
@@ -222,7 +233,7 @@ T atomic_fetch_add( volatile T * const dest ,
   union U {
     Impl::cas128_t i ;
     T t ;
-    U() {};
+    KOKKOS_INLINE_FUNCTION U() {};
   } assume , oldval , newval ;
 #else
   union U {
