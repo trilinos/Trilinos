@@ -132,19 +132,215 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
 
 #if defined(KOKKOS_HAVE_SERIAL) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosSerialWrapperNode)
+#define NODETYPE Kokkos_Compat_KokkosSerialWrapperNode
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(float, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(KOKKOS_HAVE_PTHREAD) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+#define NODETYPE Kokkos_Compat_KokkosThreadsWrapperNode
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(float, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(KOKKOS_HAVE_OPENMP) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
+#define NODETYPE Kokkos_Compat_KokkosOpenMPWrapperNode
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(float, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(KOKKOS_HAVE_CUDA) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
+#define NODETYPE Kokkos_Compat_KokkosCudaWrapperNode
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(float, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(double, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, int, NODETYPE)
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, long, long, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
+  #endif
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
+    #ifdef HAVE_TPETRA_INST_INT_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, long, long, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+      AMESOS2_KLU2_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+#endif
+#undef NODETYPE
 #endif
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
