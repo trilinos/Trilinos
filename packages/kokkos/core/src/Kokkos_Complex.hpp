@@ -242,12 +242,9 @@ public:
     // mix them and expect to get the same answer if the order of
     // operations changes.
     #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-    ::Kokkos::atomic_assign(this,x);
+      ::Kokkos::atomic_assign(this,x);
     #else
-      #if defined(KOKKOS_HAVE_PTHREAD) || defined(KOKKOS_HAVE_OPENMP) || defined(__CUDA_ARCH__)
-      #else
       *this = x;
-      #endif
     #endif
   }
 
