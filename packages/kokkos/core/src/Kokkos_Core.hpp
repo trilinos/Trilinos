@@ -97,7 +97,11 @@ void initialize(int& narg, char* arg[]);
 
 void initialize(const InitArguments& args = InitArguments());
 
+/** \brief  Finalize the spaces that were initialized via Kokkos::initialize */
 void finalize();
+
+/** \brief  Finalize all known execution spaces */
+void finalize_all();
 
 void fence();
 
