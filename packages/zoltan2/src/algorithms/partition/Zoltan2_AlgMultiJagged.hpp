@@ -63,6 +63,10 @@
 #include <Zoltan2_Util.hpp>
 #include <vector>
 
+#include <Teuchos_Hashtable.hpp>
+// TODO:  KDD Switch Teuchos::Hashtable to unordered_map after move to C++11
+// TODO   KDD #include <unordered_map>
+
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #ifdef HAVE_ZOLTAN2_MPI
 #define ENABLE_ZOLTAN_MIGRATION
@@ -6190,11 +6194,38 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         	result_mj_gnos
     		);
 
-    ArrayRCP<const mj_gno_t> gnoList = arcp(result_mj_gnos, 0,
-                                            this->num_local_coords, true);
-    ArrayRCP<mj_part_t> partId = arcp(result_assigned_part_ids, 0,
-                                      this->num_local_coords, true);
-    solution->setParts(gnoList, partId, true);
+    // Reorder results so that they match the order of the input
+    // TODO:  KDD Once C++11 is supported, switch Hashtable to unordered_map
+    Teuchos::Hashtable<mj_gno_t, mj_lno_t> 
+                       localGidToLid(this->num_local_coords);
+    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+      localGidToLid.put(this->initial_mj_gnos[i], i);
+
+    mj_gno_t *gnoList = new mj_gno_t[this->num_local_coords];
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
+                                      0, this->num_local_coords, true);
+ 
+    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+      // TODO:  KDD gnoList should not be needed once all partitioners 
+      // TODO:  KDD return data in the correct order.  Build it for now
+      // TODO:  just to satisfy the setParts function.  We can remove it from
+      // TODO:  setParts later.
+      mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
+      gnoList[origLID] = result_mj_gnos[i];
+      partId[origLID] = result_assigned_part_ids[i];
+    }
+    
+    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+      // Sanity test  TODO:  Remove this loop once we are sure all is well.
+      assert(gnoList[i] == this->initial_mj_gnos[i]);
+    }
+
+    delete [] result_mj_gnos;
+    delete [] result_assigned_part_ids;
+
+    ArrayRCP<const mj_gno_t> gnoListRCP = arcp(gnoList,
+                                               0, this->num_local_coords, true);
+    solution->setParts(gnoListRCP, partId, true);
     this->free_work_memory();
 }
 
