@@ -143,32 +143,35 @@ void initialize_internal(const InitArguments& args)
 #endif
 }
 
-void finalize_internal()
+void finalize_internal( const bool all_spaces = false )
 {
 
 #if defined( KOKKOS_HAVE_CUDA )
-  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value ) {
+  if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value || all_spaces ) {
     Kokkos::Cuda::finalize();
   }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
   if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
-      Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ) {
+      Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ||
+      all_spaces ) {
     Kokkos::OpenMP::finalize();
   }
 #endif
 
 #if defined( KOKKOS_HAVE_PTHREAD )
   if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
-      Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ) {
+      Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ||
+      all_spaces ) {
     Kokkos::Threads::finalize();
   }
 #endif
 
 #if defined( KOKKOS_HAVE_SERIAL )
   if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
-      Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ) {
+      Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ||
+      all_spaces ) {
     Kokkos::Serial::finalize();
   }
 #endif
@@ -418,6 +421,12 @@ void initialize(const InitArguments& arguments) {
 void finalize()
 {
   Impl::finalize_internal();
+}
+
+void finalize_all()
+{
+  enum { all_spaces = true };
+  Impl::finalize_internal( all_spaces );
 }
 
 void fence()
