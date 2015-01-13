@@ -46,7 +46,11 @@
 // so we can defer inclusion of mpi.h to here.  This also fixes Bug
 // 5631:  https://software.sandia.gov/bugzilla/show_bug.cgi?id=5631
 #ifdef HAVE_MPI
-#include "mpi.h"
+#  include "mpi.h"
+#endif
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#  include "Kokkos_Core.hpp"
 #endif
 
 
@@ -144,6 +148,11 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 
 GlobalMPISession::~GlobalMPISession()
 {
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+  Kokkos::finalize_all();
+#endif
+
   haveMPIState_ = false;
 #ifdef HAVE_MPI
   const int mpierr = ::MPI_Finalize();
