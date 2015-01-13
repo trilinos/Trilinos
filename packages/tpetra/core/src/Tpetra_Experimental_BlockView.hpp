@@ -51,7 +51,7 @@
 
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
 #  include <Kokkos_ArithTraits.hpp>
-#  include <Kokkos_complex.hpp>
+#  include <Kokkos_Complex.hpp>
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 namespace { // anonymous

@@ -73,6 +73,10 @@
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_hwloc.hpp>
 
+#ifdef KOKKOS_HAVE_CXX11
+#include <Kokkos_Complex.hpp>
+#endif
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {

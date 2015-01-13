@@ -124,6 +124,22 @@ public:
     im_ = src.im_;
   }
 
+  //! Assignment operator.
+  template<class InputRealType>
+  KOKKOS_INLINE_FUNCTION
+  void operator= (const volatile complex<InputRealType>& src) volatile {
+    re_ = src.re_;
+    im_ = src.im_;
+  }
+
+  //! Assignment operator.
+  template<class InputRealType>
+  KOKKOS_INLINE_FUNCTION
+  void operator= (const volatile complex<InputRealType>& src) {
+    re_ = src.re_;
+    im_ = src.im_;
+  }
+
   //! Assignment operator (from a real number).
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
@@ -201,8 +217,12 @@ public:
     // We can do the atomic update of a complex number componentwise,
     // since the components don't interact in an add operation.  This
     // does NOT work for dd_real!
+    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+    ::Kokkos::atomic_add(this,x);
+    #else
     ::Kokkos::atomic_add (&re_, x.real ());
     ::Kokkos::atomic_add (&im_, x.imag ());
+    #endif
   }
 
   KOKKOS_INLINE_FUNCTION void atomic_assign (const complex<RealType>& x) volatile {
@@ -221,8 +241,11 @@ public:
     // Those operations do not commute with each other, so we cannot
     // mix them and expect to get the same answer if the order of
     // operations changes.
-    ::Kokkos::atomic_assign (&re_, x.real ());
-    ::Kokkos::atomic_assign (&im_, x.imag ());
+    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+      ::Kokkos::atomic_assign(this,x);
+    #else
+      *this = x;
+    #endif
   }
 
   KOKKOS_INLINE_FUNCTION

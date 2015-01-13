@@ -1,8 +1,8 @@
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,26 +34,30 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#ifndef __NONLINEARITY__
+#define __NONLINEARITY__
 
-#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include<cstdarg>
 
-#include "Tpetra_ETIHelperMacros.h"
-#include "Tpetra_@CLASS_FILE_NAME@.hpp"
-#include "Tpetra_@CLASS_FILE_NAME@_def.hpp"
+/*! \brief An abstract base class from which to derive functors for evaluating 
+    nonlinearities
+*/
+template<class T>
+class Nonlinearity {
+public:
 
-namespace Tpetra {
+    virtual ~Nonlinearity(){}
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+    // Single argument function
+    virtual T operator()(const T &arg){ return arg; }
+  
+};
 
-  INSTANTIATE_TPETRA_MP_VECTOR_THREADS(TPETRA_@UPPER_CASE_CLASS@_INSTANT)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif

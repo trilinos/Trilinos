@@ -339,7 +339,7 @@ namespace Tpetra {
 
 
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#  include <Kokkos_complex.hpp>
+#  include <Kokkos_Complex.hpp>
 
 // Specializations of Teuchos::SerializationTraits for
 // Kokkos::complex<{float,double}>.

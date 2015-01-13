@@ -246,7 +246,7 @@ void Lagrange<Real>::interpolant(const int k, ROL::Vector<Real> &l){
     Teuchos::RCP<std::vector<Real> > lp = 
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(l)).getVector()); 
 
-    std::fill(lp->begin(),l->end(),0);
+    std::fill(lp->begin(),lp->end(),0);
 
     Teuchos::RCP<std::vector<Real> > ekp = Teuchos::rcp(new std::vector<Real>(nin_,0));
     (*ekp)[k] = 1.0; 

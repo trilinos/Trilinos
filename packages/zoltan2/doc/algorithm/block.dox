@@ -16,11 +16,11 @@ IDs of the objects and optionally object weights.
 
 \section block_parameters Parameters
 
-In order to anable MJ:
+In order to enable Block:
 - \e algorithm should be set to \e block
 
 
-The following parameters are used by the MJ algorithm:
+The following parameters are used by the Block algorithm:
 
 - \e imbalance_tolerance (default is \e 1.1 )
 - \e partitioning_objective (default: if weights specified, <em>balance_object_weights</em>; otherwise <em>balance_object_count</em>) 

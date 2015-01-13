@@ -11,7 +11,6 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -144,13 +143,13 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
 
-#if defined( HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE )
+#if defined( KOKKOS_HAVE_PTHREAD )
     if ( cmdline.CMD_USE_THREADS ) {
       run< Kokkos::Threads >( comm , cmdline );
     }
 #endif
 
-#if defined( HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE )
+#if defined( KOKKOS_HAVE_OPENMP )
     if ( cmdline.CMD_USE_OPENMP ) {
       run< Kokkos::OpenMP >( comm , cmdline );
     }

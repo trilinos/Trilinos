@@ -1,7 +1,7 @@
 #ifndef KOKKOS_TEST_COMPLEX_HPP
 #define KOKKOS_TEST_COMPLEX_HPP
 
-#include <Kokkos_complex.hpp>
+#include <Kokkos_Complex.hpp>
 #include <gtest/gtest.h>
 #include <iostream>
 

@@ -1709,7 +1709,7 @@ namespace Tpetra {
         "insertIndices threw an exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      numNewInds > oldRowVals.size (), std::runtime_error,
+      numNewInds > static_cast<size_t> (oldRowVals.size ()), std::runtime_error,
       "Tpetra::CrsGraph::insertIndicesAndValues: numNewInds (" << numNewInds
       << ") > oldRowVals.size() (" << oldRowVals.size () << ".");
 #else
@@ -1720,10 +1720,10 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      rowInfo.numEntries + numNewInds > oldRowVals.size (), std::runtime_error,
-      "Tpetra::CrsGraph::insertIndicesAndValues: rowInfo.numEntries (" <<
-      rowInfo.numEntries << ") + numNewInds (" << numNewInds <<
-      ") > oldRowVals.size() (" << oldRowVals.size () << ").");
+      rowInfo.numEntries + numNewInds > static_cast<size_t> (oldRowVals.size ()),
+      std::runtime_error, "Tpetra::CrsGraph::insertIndicesAndValues: rowInfo."
+      "numEntries (" << rowInfo.numEntries << ") + numNewInds (" << numNewInds
+      << ") > oldRowVals.size() (" << oldRowVals.size () << ").");
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_type> (numNewInds) > newRowVals.size (),
       std::runtime_error, "Tpetra::CrsGraph::insertIndicesAndValues: "

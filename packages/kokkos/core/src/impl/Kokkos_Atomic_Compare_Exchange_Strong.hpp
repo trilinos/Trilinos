@@ -121,7 +121,19 @@ KOKKOS_INLINE_FUNCTION
 T atomic_compare_exchange( volatile T * const dest, const T & compare,
   typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(int) , const T & >::type val )
 {
-  union { int i ; T t ; } tmp ;
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    int i ;
+    T t ;
+    U() {};
+  } tmp ;
+#else
+  union U {
+    int i ;
+    T t ;
+  } tmp ;
+#endif
+
   tmp.i = __sync_val_compare_and_swap( (int*) dest , *((int*)&compare) , *((int*)&val) );
   return tmp.t ;
 }
@@ -132,11 +144,46 @@ T atomic_compare_exchange( volatile T * const dest, const T & compare,
   typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
                                     sizeof(T) == sizeof(long) , const T & >::type val )
 {
-  union { long i ; T t ; } tmp ;
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    long i ;
+    T t ;
+    U() {};
+  } tmp ;
+#else
+  union U {
+    long i ;
+    T t ;
+  } tmp ;
+#endif
+
   tmp.i = __sync_val_compare_and_swap( (long*) dest , *((long*)&compare) , *((long*)&val) );
   return tmp.t ;
 }
 
+template < typename T >
+KOKKOS_INLINE_FUNCTION
+T atomic_compare_exchange( volatile T * const dest, const T & compare,
+  typename Kokkos::Impl::enable_if< sizeof(T) != sizeof(int) &&
+                                    sizeof(T) != sizeof(long) &&
+                                    sizeof(T) == sizeof(Impl::cas128_t), const T & >::type val )
+{
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+    U() {};
+  } tmp ;
+#else
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+  } tmp ;
+#endif
+
+  tmp.i = Impl::cas128( (Impl::cas128_t*) dest , *((Impl::cas128_t*)&compare) , *((Impl::cas128_t*)&val) );
+  return tmp.t ;
+}
 //----------------------------------------------------------------------------
 
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )

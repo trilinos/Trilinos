@@ -135,7 +135,15 @@ T atomic_exchange( volatile T * const dest ,
 
   type assumed ;
 
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    T val_T ;
+    type val_type ;
+    U() {};
+  } old ;
+#else
   union { T val_T ; type val_type ; } old ;
+#endif
 
   old.val_T = *dest ;
 
@@ -145,6 +153,36 @@ T atomic_exchange( volatile T * const dest ,
   } while ( assumed != old.val_type );
 
   return old.val_T ;
+}
+
+template< typename T >
+KOKKOS_INLINE_FUNCTION
+T atomic_exchange( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(Impl::cas128_t)
+                                  , const T & >::type val )
+{
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+    U() {};
+  } assume , oldval , newval ;
+#else
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+  } assume , oldval , newval ;
+#endif
+
+  oldval.t = *dest ;
+  newval.t = val;
+
+  do {
+    assume.i = oldval.i ;
+    oldval.i = Impl::cas128( (volatile Impl::cas128_t*) dest , assume.i , newval.i );
+  } while ( assume.i != oldval.i );
+
+  return oldval.t ;
 }
 
 template< typename T >
@@ -159,7 +197,15 @@ void atomic_assign( volatile T * const dest ,
 
   type assumed ;
 
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    T val_T ;
+    type val_type ;
+    U() {};
+  } old ;
+#else
   union { T val_T ; type val_type ; } old ;
+#endif
 
   old.val_T = *dest ;
 
@@ -169,6 +215,32 @@ void atomic_assign( volatile T * const dest ,
   } while ( assumed != old.val_type );
 }
 
+template< typename T >
+KOKKOS_INLINE_FUNCTION
+void atomic_assign( volatile T * const dest ,
+  typename Kokkos::Impl::enable_if< sizeof(T) == sizeof(Impl::cas128_t)
+                                  , const T & >::type val )
+{
+#ifdef KOKKOS_HAVE_CXX11
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+    U() {};
+  } assume , oldval , newval ;
+#else
+  union U {
+    Impl::cas128_t i ;
+    T t ;
+  } assume , oldval , newval ;
+#endif
+
+  oldval.t = *dest ;
+  newval.t = val;
+  do {
+    assume.i = oldval.i ;
+    oldval.i = Impl::cas128( (volatile Impl::cas128_t*) dest , assume.i , newval.i);
+  } while ( assume.i != oldval.i );
+}
 //----------------------------------------------------------------------------
 
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )

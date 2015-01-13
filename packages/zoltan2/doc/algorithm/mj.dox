@@ -18,7 +18,7 @@ weights are not provided, MJ assumes coordinates are equally weighted.
 
 \section mj_parameters Parameters
 
-In order to anable MJ:
+In order to enable MJ:
 - algorithm should be set to "multijagged"
 
 
