@@ -111,6 +111,24 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_add(volatile T * const dest, const T src);
+
+// Atomic increment
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment(volatile T* a);
+
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_decrement(volatile T* a);
+}
+
+
+#include<impl/Kokkos_Atomic_Assembly_X86.hpp>
+
+namespace Kokkos {
 
 
 inline
@@ -128,6 +146,8 @@ const char * atomic_query_version()
 }
 
 } // namespace Kokkos
+
+//#include "impl/Kokkos_Atomic_Assembly_X86.hpp"
 
 //----------------------------------------------------------------------------
 // Atomic exchange

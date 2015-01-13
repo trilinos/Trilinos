@@ -47,7 +47,7 @@
 /// \file Kokkos_ArithTraits.hpp
 /// \brief Declaration and definition of Kokkos::Details::ArithTraits
 
-#include <Kokkos_complex.hpp>
+#include <Kokkos_Complex.hpp>
 
 #include <cfloat>
 #include <climits>
