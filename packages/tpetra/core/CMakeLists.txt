@@ -36,6 +36,10 @@ SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
 GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE ON)
 GLOBAL_SET(Tpetra_INST_DOUBLE ON)
 
+# int as global ordinal is also always built
+GLOBAL_SET(Tpetra_INST_INT_INT ON)
+GLOBAL_SET(HAVE_TPETRA_INST_INT_INT ON)
+
 #Set Variable which were implicitly set when the Kokkos packages were optional dependencies
 IF(Tpetra_ENABLE_Kokkos_Refactor)
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
