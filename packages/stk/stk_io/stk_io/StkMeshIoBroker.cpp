@@ -460,6 +460,12 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       stk::mesh::Part * const sb_part = meta.get_part(block->name());
       stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
+      // NOTE: Using the exodus pseudo-id "side_ids" will not correctly identify embedded
+      //       faces in a mesh.  For example, if side 1 of element 2 is the same as side 3 of element 4,
+      //       the side_ids will be 21 and 43 which will result in two different faces being created
+      //       below instead of a single face since both faces share the same nodal connectivity and
+      //       should be the same face.
+      
       block->get_field_data("ids", side_ids);
       block->get_field_data("element_side", elem_side);
 
@@ -470,6 +476,10 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       // are 'faces' or 'edges'.  This is needed since for shell-type
       // elements, (and actually all elements) a sideset can specify either a face or an edge...
       // For a quad shell, sides 1,2 are faces and 3,4,5,6 are edges.
+
+      // NOTE: This assumes that the sides within a side block are homogenous.  If the side_set
+      //       is not split into homogenous side_blocks, then the topology will not necessarily
+      //       be the same and this could fail (a sideset of mixed edges and faces)
       int par_dimen = block->topology()->parametric_dimension();
 
       size_t side_count = side_ids.size();
@@ -525,10 +535,25 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       // are 'faces' or 'edges'.  This is needed since for shell-type
       // elements, (and actually all elements) a sideset can specify either a face or an edge...
       // For a quad shell, sides 1,2 are faces and 3,4,5,6 are edges.
+
+      // NOTE: This assumes that the sides within a side block are homogenous.  If the side_set
+      //       is not split into homogenous side_blocks, then the topology will not necessarily
+      //       be the same and this could fail (a sideset of mixed edges and faces)
       int par_dimen = block->topology()->parametric_dimension();
+      STKIORequire(par_dimen == 1 || par_dimen == 2);
+      
+      stk::mesh::EntityRank side_rank = par_dimen == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
+
+      // Would be nice to do:
+      //    std::vector<stk::mesh::Entity> sides ;
+      //    get_entities(*sb_part, bulk, sides, NULL);
+      // But, we need the entities in the exact same order and count  as they appear on the
+      // mesh file.  The get_entities can give them in different order and will ignore duplicated
+      // "sides" that occur in some exodus files.
 
       size_t side_count = side_ids.size();
-      std::vector<stk::mesh::Entity> sides(side_count);
+      std::vector<stk::mesh::Entity> sides;
+      sides.reserve(side_count);
       for(size_t is=0; is<side_count; ++is) {
         stk::mesh::Entity const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
@@ -537,19 +562,10 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
         // subsetted out of the analysis mesh. Only process if
         // non-null.
         if (bulk.is_valid(elem)) {
-          // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-          int side_ordinal = elem_side[is*2+1] - 1;
-
-          if (par_dimen == 1) {
-            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
-            sides[is] = side;
-          }
-          else if (par_dimen == 2) {
-            stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
-            sides[is] = side;
-          }
+	  stk::mesh::Entity side = bulk.get_entity(side_rank, side_ids[is]);
+	  sides.push_back(side);
         } else {
-          sides[is] = stk::mesh::Entity();
+          sides.push_back(stk::mesh::Entity());
         }
       }
 

@@ -285,7 +285,9 @@ void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
   if (io_entity_count != entity_count) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Field count mismatch for IO field '"
-           << io_field.get_name() << "'. The IO system has " << io_entity_count
+           << io_field.get_name()
+	   << "' on " << io_entity->type_string() << " " << io_entity->name()
+	   << ". The IO system has " << io_entity_count
            << " entries, but the stk:mesh system has " << entity_count
            << " entries. The two counts must match.";
     throw std::runtime_error(errmsg.str());
@@ -320,7 +322,9 @@ void internal_subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
   if (io_entity_count != entity_count) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Field count mismatch for IO field '"
-           << io_field.get_name() << "'. The IO system has " << io_entity_count
+           << io_field.get_name()
+	   << "' on " << io_entity->type_string() << " " << io_entity->name()
+	   << ". The IO system has " << io_entity_count
            << " entries, but the stk:mesh system has " << entity_count
            << " entries. The two counts must match.";
     throw std::runtime_error(errmsg.str());
@@ -374,7 +378,9 @@ void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
   if (io_entity_count != entity_count) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Field count mismatch for IO field '"
-           << io_field.get_name() << "'. The IO system has " << io_entity_count
+           << io_field.get_name()
+	   << "' on " << io_entity->type_string() << " " << io_entity->name()
+	   << ". The IO system has " << io_entity_count
            << " entries, but the stk:mesh system has " << entity_count
            << " entries. The two counts must match.";
     throw std::runtime_error(errmsg.str());
