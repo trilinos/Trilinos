@@ -65,6 +65,7 @@
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestTaskPolicy.hpp>
+// #include <TestTeamVector.hpp>
 
 namespace Test {
 
@@ -250,7 +251,7 @@ TEST_F( qthread , team_scan )
   TestScanTeam< Kokkos::Qthread >( 10000 );
 }
 
-#if defined (KOKKOS_HAVE_CXX11)
+#if defined (KOKKOS_HAVE_CXX11) && 0 /* disable */
 TEST_F( qthread , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Qthread >(0) ) );

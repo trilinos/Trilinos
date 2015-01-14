@@ -65,6 +65,7 @@
 #include <TestAggregateReduction.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
+#include <TestCXX11Deduction.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTemplateMetaFunctions.hpp>
@@ -328,6 +329,11 @@ TEST_F( openmp , cxx11 )
 #endif
 
 #if defined (KOKKOS_HAVE_CXX11)
+TEST_F( openmp , reduction_deduction )
+{
+  TestCXX11::test_reduction_deduction< Kokkos::OpenMP >();
+}
+
 TEST_F( openmp , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::OpenMP >(0) ) );

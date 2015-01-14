@@ -69,6 +69,7 @@
 #include <TestCompilerMacros.hpp>
 #include <TestTaskPolicy.hpp>
 #include <TestCXX11.hpp>
+#include <TestCXX11Deduction.hpp>
 #include <TestTeamVector.hpp>
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTemplateMetaFunctions.hpp>
@@ -348,6 +349,11 @@ TEST_F( serial , cxx11 )
 #endif
 
 #if defined (KOKKOS_HAVE_CXX11)
+TEST_F( serial , reduction_deduction )
+{
+  TestCXX11::test_reduction_deduction< Kokkos::Serial >();
+}
+
 TEST_F( serial , team_vector )
 {
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Serial >(0) ) );
