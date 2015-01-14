@@ -342,6 +342,8 @@ TEST(StkIo, CreateFacesCountFaces)
         EXPECT_EQ(2u,   read_file_count_sides("eL.e", true));
         EXPECT_EQ(12u,   read_file_count_sides("AXA.e", true));
         EXPECT_EQ(13u,   read_file_count_sides("ALeXfRA.e", true));
+        EXPECT_EQ(11u,   read_file_count_sides("ASA.e", true));
+        EXPECT_EQ(13u,   read_file_count_sides("ALeSfRA.e", true));
     }
 }
 
@@ -398,6 +400,8 @@ TEST(StkIo, CreateFacesFullyConnected)
         EXPECT_TRUE(read_file_fully_connected("eL.e", true));
         EXPECT_TRUE(read_file_fully_connected("AXA.e", true));
         EXPECT_TRUE(read_file_fully_connected("ALeXfRA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("ASA.e", true));
+        EXPECT_TRUE(read_file_fully_connected("ALeSfRA.e", true));
     }
 }
 
@@ -454,6 +458,8 @@ TEST(StkIo, CreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("eL.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeXfRA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ASA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_different_elements("ALeSfRA.e", true));
     }
 }
 
@@ -510,6 +516,8 @@ TEST(StkIo, CreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", true));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXA.e", true));
         EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALeXfRA.e", true));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ASA.e", true));
+        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALeSfRA.e", true));
     }
 }
 
@@ -566,6 +574,8 @@ TEST(StkIo, NoCreateFaces)
         EXPECT_EQ(1u,  read_file_count_sides("eL.e", false));
         EXPECT_EQ(2u,  read_file_count_sides("AXA.e", false));
         EXPECT_EQ(3u,  read_file_count_sides("ALeXfRA.e", false));
+        EXPECT_EQ(0u,  read_file_count_sides("ASA.e", false));
+        EXPECT_EQ(3u,  read_file_count_sides("ALeSfRA.e", false));
     }
 }
 
@@ -622,6 +632,8 @@ TEST(StkIo, NoCreateFacesFullyConnected)
         EXPECT_FALSE(read_file_fully_connected("eL.e", false));
         EXPECT_FALSE(read_file_fully_connected("AXA.e", false));
         EXPECT_FALSE(read_file_fully_connected("ALeXfRA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("ASA.e", false));
+        EXPECT_FALSE(read_file_fully_connected("ALeSfRA.e", false));
     }
 }
 
@@ -678,6 +690,8 @@ TEST(StkIo, NoCreateFacesSharedFacesDifferentElements)
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("eL.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("AXA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeXfRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ASA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_different_elements("ALeSfRA.e", false));
     }
 }
 
@@ -734,6 +748,8 @@ TEST(StkIo, NoCreateFacesSharedFacesSameElements)
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("AXA.e", false));
         EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeXfRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ASA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeSfRA.e", false));
     }
 }
 
@@ -790,6 +806,8 @@ TEST(StkIo, CreateFacesCheckFaceElemConnectivity)
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", true, 4, 1, 1, -1));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AXA.e",     true, 1, 1, -1, -1));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", true, 4, 1, 1, -1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ASA.e",     true, 2, -1, -1, -1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeSfRA.e", true, 4, 1, 1, -1));
     }
 }
 
@@ -846,6 +864,8 @@ TEST(StkIo, NoCreateFacesCheckFaceElemConnectivity)
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRB.e", false, 1, 1, 1, -1));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("AXA.e",     false, 1, 1, -1, -1));
         EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeXfRA.e", false, 1, 1, 1, -1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ASA.e",     false, -1, -1, -1, -1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeSfRA.e", false, 1, 1, 1, -1));
     }
 }
 
