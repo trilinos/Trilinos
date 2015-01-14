@@ -1272,7 +1272,7 @@ namespace Belos {
     for (int j = 1; j < max_blk_ortho_; ++j) {
 
       for (int i=0; i<nq; i++) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
+        Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
 
         // Apply another step of classical Gram-Schmidt
         MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
