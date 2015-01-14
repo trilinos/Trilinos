@@ -6,8 +6,6 @@
 /// \brief Task view is inherited from matrix view and have a member for the task handler.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "util.hpp"
-
 namespace Example { 
 
   using namespace std;

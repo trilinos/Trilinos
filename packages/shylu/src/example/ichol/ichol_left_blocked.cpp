@@ -19,7 +19,7 @@ typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> Crs
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::Uplo Uplo;
-typedef Example::Algo Algo;
+typedef Example::AlgoIChol AlgoIChol;
 
 using Example::IChol;
 
@@ -51,10 +51,10 @@ int main (int argc, char *argv[]) {
   {
     CrsMatrixView L(LL);
 
-    //int r_val = IChol<Uplo::Lower,Algo::LeftBlocked>::invoke(L);
+    //int r_val = IChol<Uplo::Lower,AlgoIChol::LeftBlocked>::invoke(L);
     int r_val = 0;
-    IChol<Uplo::Lower,Algo::LeftBlocked>::blocksize = atoi(argv[2]);
-    IChol<Uplo::Lower,Algo::LeftBlocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
+    IChol<Uplo::Lower,AlgoIChol::LeftBlocked>::blocksize = atoi(argv[2]);
+    IChol<Uplo::Lower,AlgoIChol::LeftBlocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
     if (r_val != 0) { 
       cout << " Error = " << r_val << endl;
       return r_val;

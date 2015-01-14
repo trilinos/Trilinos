@@ -1,6 +1,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_TaskPolicy.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
                                                            
@@ -12,12 +13,12 @@
 #include "crs_row_view.hpp"
 
 #include "crs_matrix_helper.hpp"
-
-#include "task_graphviz.hpp"
-#include "task_factory.hpp"
 #include "crs_task_view.hpp"
 
-#include "ichol_left_by_blocks.hpp"
+#include "task_policy_graphviz.hpp"
+#include "task_factory.hpp"
+
+#include "ichol.hpp"
 
 using namespace std;
 
@@ -26,7 +27,8 @@ typedef int    ordinal_type;
 typedef int    size_type;
 
 // space 
-typedef Kokkos::Serial space_type;
+//typedef Kokkos::Serial space_type;
+typedef Kokkos::Qthread space_type;
 
 // flat matrix 
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
@@ -35,12 +37,16 @@ typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 // scotch reordering
 typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
 
-// tasking environments
-//typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
-//                             Kokkos::Future<int,space_type> > TaskFactory;
-#define USE_GRAPHVIZ
+//#define USE_GRAPHVIZ
+
+#ifdef USE_GRAPHVIZ
 typedef Example::TaskFactory<Example::TaskPolicy,
                              Example::Future> TaskFactory;
+#else
+typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
+                             Kokkos::Future<int,space_type> > TaskFactory;
+using Kokkos::wait;
+#endif
 
 // flat2hier
 typedef Example::CrsMatrixHelper CrsMatrixHelper; 
@@ -53,8 +59,9 @@ typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type,space_type> Cr
 typedef Example::CrsTaskView<CrsHierBase,TaskFactory> CrsHierView;
 
 typedef Example::Uplo Uplo;
+typedef Example::AlgoIChol AlgoIChol;
 
-using Example::ICholLeftByBlocks;
+using Example::IChol;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -62,7 +69,11 @@ int main (int argc, char *argv[]) {
     return -1;
   }
 
-  Kokkos::initialize();
+  // Kokkos::initialize();
+  const int threads_count = 16;
+  Kokkos::Qthread::initialize( threads_count );
+  Kokkos::Qthread::print_configuration( std::cout , true );
+
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
@@ -90,34 +101,40 @@ int main (int argc, char *argv[]) {
 
   CrsHierBase HH("HH");
 
-  //CrsMatrixHelper::flat2hier(LL, HH);
-  CrsMatrixHelper::flat2hier(LL, HH,
+  CrsMatrixHelper::flat2hier(Uplo::Lower, LL, HH,
                              S.NumBlocks(),
                              S.RangeVector(),
                              S.TreeVector());
 
   cout << HH << endl;
 
-  TaskFactory::policy_type policy;
   CrsHierView H(HH);
-  ICholLeftByBlocks<Uplo::Lower>::invoke(policy, H);
 
+  IChol<Uplo::Lower,AlgoIChol::LeftByBlocks>::invoke(H);
+
+#ifdef USE_GRAPHVIZ
+  // do nothing
+#else
   for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
-    TaskFactory::wait(policy, HH.Value(k).Future());
+    wait(HH.Value(k).Future());
+#endif
 
   cout << LL << endl;
 
 #ifdef USE_GRAPHVIZ
   ofstream out;
-  out.open("graph.gv");
+  out.open("graph_left.gv");
   if (!out.good()) {
     cout << "Error in open the file: task_graph.gv" << endl;
     return -1;
   }
+
+  TaskFactory::policy_type policy;
   policy.graphviz(out);
 #endif
 
-  Kokkos::finalize(); 
+  Kokkos::Qthread::finalize();
+  //Kokkos::finalize(); 
 
   return 0;
 }

@@ -15,31 +15,31 @@ namespace Example {
            typename CrsMatViewType>
   KOKKOS_INLINE_FUNCTION 
   int
-  Gemm<Trans::NoTranspose,Trans::Transpose>
+  Gemm<Trans::NoTranspose,Trans::ConjTranspose,
+       AlgoGemm::ForLeftBlocked>
   ::invoke(const ScalarType alpha,
            const CrsMatViewType A,
-           const CrsMatViewType X,
+           const CrsMatViewType B,
            const ScalarType beta,
-           const CrsMatViewType Y) {
+           const CrsMatViewType C) {
     typedef typename CrsMatViewType::ordinal_type  ordinal_type;
     typedef typename CrsMatViewType::value_type    value_type;
     typedef typename CrsMatViewType::row_view_type row_view_type;
 
-    // case that X.transpose, A.no_transpose, Y.no_transpose
+    scale(beta, C);
 
-    for (ordinal_type j=0;j<X.NumRows();++j) {
-      row_view_type x = X.extractRow(j);
-      if (x.NumNonZeros()) {
-        for (ordinal_type i=0;i<Y.NumRows();++i) {
-          row_view_type y = Y.extractRow(i);
-          row_view_type a = A.extractRow(i);
+    row_view_type a, b, c;
+    for (ordinal_type j=0;j<B.NumRows();++j) {
+      b.setView(B, j);
+      if (b.NumNonZeros()) {
+        for (ordinal_type i=0;i<C.NumRows();++i) {
+          c.setView(C, i);
+          a.setView(A, i);
 
-          if (y.NumNonZeros() && a.NumNonZeros()) {
-            ordinal_type id = y.Index(j);
-            if (id >= 0) {
-              value_type &upsilon = y.Value(id);
-              upsilon = beta*upsilon + alpha*dot(a, x);
-            }
+          if (c.NumNonZeros() && a.NumNonZeros()) {
+            ordinal_type id = c.Index(j);
+            if (id >= 0) 
+              c.Value(id) += alpha*dot(a, b);
           }
         }
       }
@@ -47,7 +47,7 @@ namespace Example {
     
     return 0;
   }
-
+  
 }
 
 #endif

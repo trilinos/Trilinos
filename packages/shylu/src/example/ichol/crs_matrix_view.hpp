@@ -14,30 +14,54 @@ namespace Example {
 
   using namespace std;
 
-  // forward declaration
-  template <typename CrsMatBaseType>
+  template<typename CrsMatBaseType>  
   class CrsRowView;
 
   template<typename CrsMatBaseType>
   class CrsMatrixView : public Disp {
   public:
+    typedef typename CrsMatBaseType::space_type    space_type;
+    typedef typename CrsMatBaseType::memory_traits memory_traits;
+    
     typedef typename CrsMatBaseType::value_type    value_type;
     typedef typename CrsMatBaseType::ordinal_type  ordinal_type;
+    typedef typename CrsMatBaseType::size_type     size_type;
 
-    typedef CrsRowView<CrsMatBaseType> row_view_type;
+    typedef CrsMatBaseType             mat_base_type;
+    typedef CrsRowView<mat_base_type>  row_view_type;
 
-    template<typename T> using range_type = pair<T,T>;
-
+    // be careful this use rcp and atomic operation
+    // - use setView to create a view if _rows is not necessary
+    // - copy constructor and assignment operator will do soft copy of the object
+    typedef Kokkos::View<row_view_type*,space_type,memory_traits> row_view_type_array;
+    
   private:
-    ordinal_type  _offm;    // offset in rows
-    ordinal_type  _offn;    // offset in cols
-    ordinal_type  _m;       // # of rows
-    ordinal_type  _n;       // # of cols
-
     CrsMatBaseType *_base;   // pointer to the base object
+
+    ordinal_type  _offm;     // offset in rows
+    ordinal_type  _offn;     // offset in cols
+    ordinal_type  _m;        // # of rows
+    ordinal_type  _n;        // # of cols
+
+    row_view_type_array _rows;
     
   public:
-    //
+    KOKKOS_INLINE_FUNCTION
+    void fillRowViewArray(const bool flag = true) {
+      if (flag) {
+        if (_rows.dimension_0() < _m)
+          _rows = row_view_type_array(_base->Label() + "::View::RowViewArray", _m);
+        
+        for (ordinal_type i=0;i<_m;++i)
+          _rows[i].setView(*this, i);
+      } else {
+        _rows = row_view_type_array();
+      }
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    row_view_type& RowView(const ordinal_type i) const { return _rows[i]; }
+
     KOKKOS_INLINE_FUNCTION
     void setView(CrsMatBaseType *base,
                  const ordinal_type offm, const ordinal_type m,
@@ -63,36 +87,13 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     ordinal_type  NumCols() const { return _n; }
 
-    KOKKOS_INLINE_FUNCTION
-    row_view_type extractRow(const ordinal_type i) const { 
-      typedef typename row_view_type::value_type_array_view   value_type_array_view;
-      typedef typename row_view_type::ordinal_type_array_view ordinal_type_array_view;
-
-      // grep a row from base
-      ordinal_type ii = _offm + i;  
-      ordinal_type_array_view cols = _base->ColsInRow(ii);
-      value_type_array_view   vals = _base->ValuesInRow(ii);
-
-      ordinal_type *ptr_begin = cols.ptr_on_device();
-      ordinal_type *ptr_end   = cols.ptr_on_device() + cols.dimension_0();
-
-      ordinal_type view_begin = lower_bound(ptr_begin, ptr_end, _offn     ) - ptr_begin; 
-      ordinal_type view_end   = upper_bound(ptr_begin, ptr_end, _offn+_n-1) - ptr_begin; 
-
-      range_type<ordinal_type> range(view_begin, view_end);
-
-      cols = Kokkos::subview<ordinal_type_array_view>(cols, range);
-      vals = Kokkos::subview<value_type_array_view>(vals, range);
-
-      return row_view_type(_offn, _n, view_end - view_begin, cols, vals);
-    }
-
     CrsMatrixView()
       : _base(NULL),
         _offm(0),
         _offn(0),
         _m(0),
-        _n(0)
+        _n(0),
+        _rows()
     { } 
 
     CrsMatrixView(const CrsMatrixView &b)
@@ -100,9 +101,10 @@ namespace Example {
         _offm(b._offm),
         _offn(b._offn),
         _m(b._m),
-        _n(b._n)
+        _n(b._n),
+        _rows(b._rows)
     { } 
-    
+
     CrsMatrixView(CrsMatBaseType &b)
       : _base(&b),
         _offm(0),
@@ -121,28 +123,16 @@ namespace Example {
         _n(n) 
     { } 
 
-    CrsMatrixView transpose() const {
-      return CrsMatrixView(_base, _offn, _n, _offm, _m);
-    }
-    
     ostream& showMe(ostream &os) const {
       const int w = 4;
       if (_base != NULL) 
         os << _base->Label() << "::View, "
            << " Offs ( " << setw(w) << _offm << ", " << setw(w) << _offn << " ); "
            << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); ";
-      //<< " BaseObject = " << BaseObject() << ";" ;
       else 
         os << "-- Base object is null --";
       
       return os;
-    }
-
-    ostream& showMeDetail(ostream &os) const {
-      showMe(os);
-      os << endl << endl;
-      for (ordinal_type i=0;i<_m;++i)
-        os << extractRow(i) << endl;
     }
 
   };

@@ -1,6 +1,8 @@
 #include <Kokkos_Core.hpp>
+
 #include <Kokkos_TaskPolicy.hpp>
 #include <impl/Kokkos_Serial_TaskPolicy.hpp>
+
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
@@ -21,7 +23,6 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef size_t size_type;
 
-//typedef Kokkos::Qthread space_type;
 typedef Kokkos::Serial space_type; 
 
 typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
@@ -65,10 +66,14 @@ int main (int argc, char *argv[]) {
   CrsHierBase HH("HH");
   CrsMatrixHelper::flat2hier(LL, HH);
 
+  cout << "Hier Matrix HH = " << endl
+       << HH << endl;
+
   CrsHierView H;
   H.setView(&HH, 2, 3, 2, 3);
-  cout << "Block Matrix H = " << endl;
-  H.showMeDetail(cout);
+
+  cout << "Block Partitioned Matrix H = " << endl
+       << H << endl;
 
   Kokkos::finalize();
 

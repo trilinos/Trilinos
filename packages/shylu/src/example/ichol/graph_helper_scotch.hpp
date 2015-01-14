@@ -47,6 +47,9 @@ namespace Example {
     void setLabel(string label) { _label = label; }
     string Label() const { return _label; }
 
+    size_type NumNonZeros() const { return _nnz; }
+    ordinal_type NumRows() const { return _m; } 
+
     ordinal_type_array PermVector()    const { return _perm; }
     ordinal_type_array InvPermVector() const { return _peri; }
 
@@ -100,14 +103,15 @@ namespace Example {
     }
 
     int computeOrdering() {
-      int ierr = 0, level = log2(_nnz)+10;
-        
+      int ierr = 0, level = max(1, int(log2(_m)-15)); // level = log2(_nnz)+10; 
+
       SCOTCH_Strat stradat;
+
       SCOTCH_Num straval = (SCOTCH_STRATLEVELMAX   | 
                             SCOTCH_STRATLEVELMIN   | 
                             SCOTCH_STRATLEAFSIMPLE | 
                             SCOTCH_STRATSEPASIMPLE);
-
+      
       ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
       ierr = SCOTCH_stratGraphOrderBuild (&stradat, straval, level, 0.2);CHKERR(ierr);
       
@@ -126,6 +130,11 @@ namespace Example {
       SCOTCH_stratExit(&stradat);
 
       _is_ordered = true;
+
+      //cout << "SCOTCH level = " << level << endl;
+      //cout << "Range   Tree " << endl;
+      //for (int i=0;i<_cblk;++i)
+      //  cout << _range[i] << " :: " << i << " " << _tree[i] << endl;
 
       return 0;
     }

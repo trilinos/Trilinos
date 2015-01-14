@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
   {
     CrsMatrixView A(&AA,    2, 6, 
                     /**/    3, 8);
-    A.showMeDetail(cout);
+    cout << A << endl;
   }
 
   Kokkos::finalize();

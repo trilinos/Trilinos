@@ -52,6 +52,7 @@ namespace Example {
             
             // gemm dependence
             task_factory_type::addDependence(policy, f, aa.Future());              
+            task_factory_type::addDependence(policy, f, xx.Future());              
             
             // self
             task_factory_type::addDependence(policy, f, yy.Future());

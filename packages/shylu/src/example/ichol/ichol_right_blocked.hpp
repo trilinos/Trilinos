@@ -25,8 +25,6 @@ namespace Example {
 
     ordinal_type mb = blocksize;
 
-    cout << *A.BaseObject() << endl;
-
     CrsMatViewType ATL, ATR,      A00, A01, A02,
       /**/         ABL, ABR,      A10, A11, A12,
       /**/                        A20, A21, A22;
