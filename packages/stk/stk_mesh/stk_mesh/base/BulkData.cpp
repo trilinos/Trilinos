@@ -3913,8 +3913,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
               isCustomGhost = true;
               if ( hasBeenPromotedToSharedOrOwned )
               {
-                  entity_comm_map_erase(key, *m_ghosting[pairIterEntityComm[j].ghost_id]);
                   ghosting_change_flags[pairIterEntityComm[j].ghost_id] = true ;
+                  entity_comm_map_erase(key, *m_ghosting[pairIterEntityComm[j].ghost_id]);
               }
           }
       }
