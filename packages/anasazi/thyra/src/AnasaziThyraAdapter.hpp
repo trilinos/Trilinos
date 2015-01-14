@@ -494,6 +494,24 @@ namespace Anasazi {
 
   };        
 
+  template<class ScalarType>
+  class MultiVecTraitsExt< ScalarType, Thyra::MultiVectorBase<ScalarType> >
+  {
+  private:
+    typedef Thyra::MultiVectorBase<ScalarType> TMVB;
+
+  public:
+    //! @name New attribute methods
+    //@{
+
+    //! Obtain the vector length of \c mv.
+    //! \note This method supersedes GetVecLength, which will be deprecated.
+    static ptrdiff_t GetGlobalLength( const TMVB & mv )
+    { return static_cast<ptrdiff_t>(mv.range()->dim()); }
+
+    //@}
+  };
+
   ///////////////////////////////////////////////////////////////////////// 
   //
   // Implementation of the Anasazi::OperatorTraits for Thyra::LinearOpBase
