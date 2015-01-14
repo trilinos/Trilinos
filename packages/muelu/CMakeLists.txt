@@ -86,62 +86,59 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
 
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
-# - MueLu_INST_DOUBLE_INT_INT         (= ON by default)
-# - MueLu_INST_DOUBLE_INT_LONGLONGINT (= ON by default if TEUCHOS_ENABLE_LONG_LONG_INT enabled)
-# - MueLu_INST_COMPLEX_INT_INT        (= ON by default if TEUCHOS_ENABLE_COMPLEX enabled)       TODO: we also need to check Tpetra_COMPLEX if EI of Tpetra=ON
+# - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   # <double, int, int>
-  # Examples and tests need at least this one
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_INST_DOUBLE_INT_INT
-    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT
-    "Enable the use of explicit template instantiation with <double, int, int>."
-    ON
-    )
+  # Examples and tests need at least this one, also if Epetra is enabled
+  IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT OFF)
+  ENDIF()
 
   IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
     IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-      MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the option MueLu_INST_DOUBLE_INT_INT or disable examples and tests.")
+      MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
+    ENDIF()
+  ENDIF()
+
+  IF(${PACKAGE_NAME}_ENABLE_Epetra)
+    IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+      MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
     ENDIF()
   ENDIF()
 
   # <double, int, long>
-  SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT_DEFAULT OFF)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT
-    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT
-    "Enable the use of explicit template instantiation with <double, int, long>."
-    ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT_DEFAULT}
-    )
-
-  # <double, int, long long int>
-  IF(Teuchos_ENABLE_LONG_LONG_INT)
-    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT ON)
+  IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT ON)
   ELSE()
-    SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT OFF)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT OFF)
   ENDIF()
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
-    HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT
-    "Enable the use of explicit template instantiation with <double, int, long long int>."
-    ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT_DEFAULT}
-    )
+
+  # <double, int, long long int>
+   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT OFF)
+  ENDIF()
 
   # <complex, int, int>
-  # Teuchos_ENABLE_COMPLEX is ON by default (in release mode or when SS is enabled) but we don't want MueLu to be instantiated explicitly with complex by default as it is not frequently used.
-  #  IF(Teuchos_ENABLE_COMPLEX)
-  #    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT ON)
-  #  ELSE()
-    SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT OFF)
-  #  ENDIF()
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    ${PACKAGE_NAME}_INST_COMPLEX_INT_INT
-    HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT
-    "Enable the use of explicit template instantiation with <complex, int, int>."
-    ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT_DEFAULT}
-    )
+  IF(Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_INT_INT)
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT ON)
+  ELSE()
+    GLOBAL_SET(${PACKAGE_NAME}_INST_COMPLEX_INT_INT OFF)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_COMPLEX_INT_INT OFF)
+  ENDIF()
+
   MESSAGE(STATUS "${PACKAGE_NAME} ETI support enabled")
   MESSAGE(STATUS "<double,  int, int>       : ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT}")
   MESSAGE(STATUS "<double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
