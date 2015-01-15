@@ -55,17 +55,25 @@
 // MueLu
 #include "MueLu.hpp"
 #include "MueLu_ConfigDefs.hpp"
+
 #include <MueLu_BaseClass.hpp>
-#include <MueLu_Utilities_fwd.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
-#include <MueLu_CoupledRBMFactory.hpp>
-#include <MueLu_RAPShiftFactory.hpp>
-#include <MueLu_PgPFactory.hpp>
-#include <MueLu_GenericRFactory.hpp>
-#include <MueLu_CoupledAggregationFactory.hpp>
-#include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_CoalesceDropFactory_fwd.hpp>
+#include <MueLu_CoupledAggregationFactory_fwd.hpp>
+#include <MueLu_CoupledRBMFactory_fwd.hpp>
+#include <MueLu_GenericRFactory_fwd.hpp>
+#include <MueLu_PFactory_fwd.hpp>
+#include <MueLu_PgPFactory_fwd.hpp>
+#include <MueLu_RAPFactory_fwd.hpp>
+#include <MueLu_RAPShiftFactory_fwd.hpp>
+#include <MueLu_SaPFactory_fwd.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>
+#include <MueLu_SmootherFactory_fwd.hpp>
+#include <MueLu_SmootherPrototype_fwd.hpp>
+#include <MueLu_TentativePFactory_fwd.hpp>
+#include <MueLu_TransPFactory_fwd.hpp>
+#include <MueLu_UncoupledAggregationFactory_fwd.hpp>
+#include <MueLu_Utilities_fwd.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>

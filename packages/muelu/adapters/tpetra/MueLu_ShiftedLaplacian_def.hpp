@@ -48,6 +48,24 @@
 
 #include "MueLu_ShiftedLaplacian_decl.hpp"
 
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_CoupledRBMFactory.hpp>
+#include <MueLu_GenericRFactory.hpp>
+#include <MueLu_PFactory.hpp>
+#include <MueLu_PgPFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_RAPShiftFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_ShiftedLaplacian.hpp>
+#include <MueLu_ShiftedLaplacianOperator.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <MueLu_SmootherPrototype.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_Utilities.hpp>
+
 namespace MueLu {
 
 // Destructor
