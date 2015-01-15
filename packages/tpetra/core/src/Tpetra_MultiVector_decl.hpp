@@ -327,10 +327,10 @@ namespace Tpetra {
   /// multivector's data.  One is to use the optional RTI (Reduction /
   /// Transformation Interface) subpackage of Tpetra.  You may enable
   /// this at Trilinos configure time by setting the CMake Boolean
-  /// option \c Tpetra_ENABLE_RTI to \c ON.  Be aware that building
-  /// and using RTI requires that your C++ compiler support the
-  /// language features in the new C++11 standard.  RTI allows you to
-  /// implement arbitrary element-wise operations over a vector,
+  /// option \c TpetraCore_ENABLE_RTI to \c ON.  Be aware that
+  /// building and using RTI requires that your C++ compiler support
+  /// the language features in the new C++11 standard.  RTI allows you
+  /// to implement arbitrary element-wise operations over a vector,
   /// followed by arbitrary reductions over the elements of that
   /// vector.  We recommend RTI for most users.
   ///

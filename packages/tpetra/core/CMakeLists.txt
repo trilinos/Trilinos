@@ -580,7 +580,7 @@ ELSE()
 ENDIF()
 
 IF (Tpetra_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_RTI)
-  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting Tpetra_ENABLE_RTI, yet the Kokkos refactor (new) version of Tpetra is enabled.  We have not yet certified RTI for use with the new version of Tpetra.  If you really need RTI right now, you may bring back the old version of Tpetra temporarily by setting Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that the old version of Tpetra will go away completely with the 12.0 release of Trilinos.")
+  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting ${PACKAGE_NAME}_ENABLE_RTI, yet the Kokkos refactor (new) version of Tpetra is enabled.  We have not yet certified RTI for use with the new version of Tpetra.  If you really need RTI right now, you may bring back the old version of Tpetra temporarily by setting Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that the old version of Tpetra will go away completely with the 12.0 release of Trilinos.")
 ENDIF ()
 
 #
@@ -590,7 +590,7 @@ ENDIF ()
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inout)
 ADD_SUBDIRECTORY(ext)
-IF (Tpetra_ENABLE_RTI)
+IF (${PACKAGE_NAME}_ENABLE_RTI)
   ADD_SUBDIRECTORY(rti)
 ENDIF()
  
