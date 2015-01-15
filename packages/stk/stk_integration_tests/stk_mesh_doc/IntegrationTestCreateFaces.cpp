@@ -129,7 +129,7 @@ unsigned count_shared_faces_between_same_element(stk::mesh::BulkData& mesh) {
     return shared_face_count;
 }
 
-bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int count2, int count3, int count4, bool debug) {
+bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1=-1, int count2=-1, int count3=-1, int count4=-1, int count5=-1, int count6=-1, bool debug=false) {
 
     stk::mesh::FieldBase const * coord = mesh.mesh_meta_data().coordinate_field();
     stk::mesh::BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
@@ -160,6 +160,12 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int cou
                 else if (count4 == static_cast<int>(mesh.num_elements(face))) {
                     count4 = -1;
                 }
+                else if (count5 == static_cast<int>(mesh.num_elements(face))) {
+                    count5 = -1;
+                }
+                else if (count6 == static_cast<int>(mesh.num_elements(face))) {
+                    count6 = -1;
+                }
                 else {
                     extra_face_not_accounted_for = true;
                 }
@@ -174,7 +180,7 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int cou
             }
         }
     }
-    if (!debug && count4 == -1 && count3 == -1 && count2 == -1 && count1 == -1 && !extra_face_not_accounted_for) {
+    if (!debug && count6 == -1 && count5 == -1 &&  count4 == -1 && count3 == -1 && count2 == -1 && count1 == -1 && !extra_face_not_accounted_for) {
         return true;
     }
     else {
@@ -182,12 +188,12 @@ bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1, int cou
             return false;
         }
         else {
-            return check_face_elem_connectivity(mesh, count1, count2, count3, count4, true);
+            return check_face_elem_connectivity(mesh, count1, count2, count3, count4, count5, count6, true);
         }
     }
 }
 
-bool read_file_check_face_elem_connectivity(std::string filename, bool create_faces, int count1, int count2, int count3, int count4) {
+bool read_file_check_face_elem_connectivity(std::string filename, bool create_faces, int count1=-1, int count2=-1, int count3=-1, int count4=-1, int count5=-1, int count6=-1) {
     const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (numprocs == 1) {
         stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
@@ -198,7 +204,7 @@ bool read_file_check_face_elem_connectivity(std::string filename, bool create_fa
         if (create_faces) {
             stk::mesh::create_faces(mesh);
         }
-        return check_face_elem_connectivity(mesh, count1, count2, count3, count4, false);
+        return check_face_elem_connectivity(mesh, count1, count2, count3, count4, count5, count6);
     }
     return false;
 }
