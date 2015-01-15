@@ -28,27 +28,26 @@ namespace Example {
 
     scale(beta, C);
 
-    row_view_type a, c;
+    // row_view_type a, c;
     for (ordinal_type k=0;k<A.NumRows();++k) {
-      a.setView(A, k);
+      //a.setView(A, k);
+      row_view_type &a = A.RowView(k);
       const ordinal_type nnz = a.NumNonZeros();
-
       for (ordinal_type i=0;i<nnz;++i) {
         const ordinal_type row_at_i = a.Col(i);
         const value_type   val_at_i = conj(a.Value(i));
+
+        //c.setView(C, row_at_i);
+        row_view_type &c = C.RowView(row_at_i);
         
-        c.setView(C, row_at_i);
-        ordinal_type prev = 0;
-        
-        for (ordinal_type j=0;j<nnz;++j) {
+        ordinal_type idx = 0;
+        for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
           ordinal_type col_at_j = a.Col(j);
           value_type   val_at_j = a.Value(j);
           
-          ordinal_type idx = c.Index(col_at_j, prev);
-          if (idx >= 0) {
+          idx = c.Index(col_at_j, idx);
+          if (idx >= 0) 
             c.Value(idx) += alpha*val_at_i*val_at_j;
-            prev = idx;
-          }
         }
       }
     }

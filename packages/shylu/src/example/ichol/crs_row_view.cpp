@@ -42,12 +42,13 @@ int main (int argc, char *argv[]) {
     CrsMatrixView A(&AA,    2, 6, 
                     /**/    3, 8);
   
-    CrsRowView row = A.extractRow(2);
+    CrsRowView row;
+    row.setView(A, 2);
     cout << row << endl;
 
     cout << "Densified row view = " << endl;
-    for (ordinal_type j=0;j<row.NumCols();++j) 
-      cout << row.ValueAtColumn(j) << "  ";
+    for (ordinal_type j=0;j<row.NumCols();++j)
+      cout << row.ValueAtColumn(j) << " " ;
     cout << endl;
   }
 

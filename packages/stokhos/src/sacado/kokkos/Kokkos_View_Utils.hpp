@@ -50,7 +50,7 @@ KOKKOS_INLINE_FUNCTION
 void raise_error(const char *msg)
 {
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-  cuda_abort(msg);
+  Kokkos::abort(msg);
 #else
   throw std::runtime_error(msg);
 #endif

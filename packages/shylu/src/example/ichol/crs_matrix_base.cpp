@@ -70,9 +70,13 @@ int main (int argc, char *argv[]) {
     C.copy(A);
     cout << C << endl;
 
-    CrsMatrixBase D("D, deep-copy of A lower triangular");
-    D.copy(Uplo::Lower, A);
-    cout << D << endl;
+    CrsMatrixBase Dl("D, deep-copy of A lower triangular");
+    Dl.copy(Uplo::Lower, A);
+    cout << Dl << endl;
+
+    CrsMatrixBase Du("D, deep-copy of A upper triangular");
+    Du.copy(Uplo::Upper, A);
+    cout << Du << endl;
 
     CrsMatrixBase::ordinal_type_array p ("External::PermVector", n);
     CrsMatrixBase::ordinal_type_array ip("External::InvPermVector", m);    

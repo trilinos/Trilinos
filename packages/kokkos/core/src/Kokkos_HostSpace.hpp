@@ -51,6 +51,7 @@
 #include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Traits.hpp>
+#include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
 

@@ -2,9 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,39 +40,64 @@
 // ************************************************************************
 //@HEADER
 */
+#include <Kokkos_Core.hpp>
 
-#ifndef KOKKOS_IMPL_ERROR_HPP
-#define KOKKOS_IMPL_ERROR_HPP
+#ifndef TESTCXX11DEDUCTION_HPP
+#define TESTCXX11DEDUCTION_HPP
 
-#include <string>
-#include <iosfwd>
+namespace TestCXX11 {
 
-namespace Kokkos {
-namespace Impl {
+#if defined( KOKKOS_HAVE_CXX11 )
 
-void host_abort( const char * const );
+struct TestReductionDeductionTagA {};
+struct TestReductionDeductionTagB {};
 
-void throw_runtime_exception( const std::string & );
+template < class ExecSpace >
+struct TestReductionDeductionFunctor {
 
-void traceback_callstack( std::ostream & );
+  // KOKKOS_INLINE_FUNCTION
+  // void operator()( long i , long & value ) const
+  // { value += i + 1 ; }
 
-std::string human_memory_size(size_t arg_bytes);
+  KOKKOS_INLINE_FUNCTION
+  void operator()( TestReductionDeductionTagA , long i , long & value ) const
+  { value += ( 2 * i + 1 ) + ( 2 * i + 2 ); }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const TestReductionDeductionTagB & , const long i , long & value ) const
+  { value += ( 3 * i + 1 ) + ( 3 * i + 2 ) + ( 3 * i + 3 ) ; }
+
+};
+
+template< class ExecSpace >
+void test_reduction_deduction()
+{
+  typedef TestReductionDeductionFunctor< ExecSpace > Functor ;
+
+  const long N = 50 ;
+  // const long answer  = N % 2 ? ( N * ((N+1)/2 )) : ( (N/2) * (N+1) );
+  const long answerA = N % 2 ? ( (2*N) * (((2*N)+1)/2 )) : ( ((2*N)/2) * ((2*N)+1) );
+  const long answerB = N % 2 ? ( (3*N) * (((3*N)+1)/2 )) : ( ((3*N)/2) * ((3*N)+1) );
+  long result = 0 ;
+
+  // Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace>(0,N) , Functor() , result );
+  // ASSERT_EQ( answer , result );
+  
+  Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace,TestReductionDeductionTagA>(0,N) , Functor() , result );
+  ASSERT_EQ( answerA , result );
+  
+  Kokkos::parallel_reduce( Kokkos::RangePolicy<ExecSpace,TestReductionDeductionTagB>(0,N) , Functor() , result );
+  ASSERT_EQ( answerB , result );
+}
+
+#else /* ! defined( KOKKOS_HAVE_CXX11 ) */
+
+template< class ExecSpace >
+void test_reduction_deduction() {}
+
+#endif /* ! defined( KOKKOS_HAVE_CXX11 ) */
 
 }
-}
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-namespace Kokkos {
-inline
-void abort( const char * const message ) { Kokkos::Impl::host_abort(message); }
-}
-#endif /* defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA ) */
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#endif /* #ifndef KOKKOS_IMPL_ERROR_HPP */
+#endif
 

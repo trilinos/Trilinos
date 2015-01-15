@@ -114,14 +114,16 @@ public:
   typename JoinOp::value_type team_reduce( const ValueType & value
                                          , const JoinOp & op_in ) const
     {
+      typedef JoinLambdaAdapter<ValueType,JoinOp> JoinOpFunctor ;
+      const JoinOpFunctor op(op_in);
       ValueType * const base_data = (ValueType *) m_team_reduce ;
-      const JoinLambdaAdapter<ValueType,JoinOp> op(op_in);
 #else
   template< class JoinOp >
   __device__ inline
   typename JoinOp::value_type team_reduce( const typename JoinOp::value_type & value
                                          , const JoinOp & op ) const
     {
+      typedef JoinOp JoinOpFunctor ;
       typename JoinOp::value_type * const base_data = (typename JoinOp::value_type *) m_team_reduce ;
 #endif
 
@@ -131,7 +133,7 @@ public:
 
       base_data[ threadIdx.y ] = value ;
 
-      Impl::cuda_intra_block_reduce_scan<false>( op , base_data );
+      Impl::cuda_intra_block_reduce_scan<false,JoinOpFunctor,void>( op , base_data );
 
       return base_data[ blockDim.y - 1 ];
     }
@@ -156,7 +158,7 @@ public:
 
       base_data[ threadIdx.y + 1 ] = value ;
 
-      Impl::cuda_intra_block_reduce_scan<true>( Impl::CudaJoinFunctor<Type>() , base_data + 1 );
+      Impl::cuda_intra_block_reduce_scan<true,Impl::CudaJoinFunctor<Type>,void>( Impl::CudaJoinFunctor<Type>() , base_data + 1 );
 
       if ( global_accum ) {
         if ( blockDim.y == threadIdx.y + 1 ) {
@@ -592,7 +594,7 @@ public:
     }
 
     // Reduce with final value at blockDim.y - 1 location.
-    if ( cuda_single_inter_block_reduce_scan<false>(
+    if ( cuda_single_inter_block_reduce_scan<false,FunctorType,work_tag>(
            m_functor , blockIdx.x , gridDim.x ,
            kokkos_impl_cuda_shared_memory<size_type>() , m_scratch_space , m_scratch_flags ) ) {
 
@@ -761,7 +763,7 @@ public:
     }
 
     // Reduce with final value at blockDim.y - 1 location.
-    if ( cuda_single_inter_block_reduce_scan<false>(
+    if ( cuda_single_inter_block_reduce_scan<false,FunctorType,work_tag>(
            m_functor , blockIdx.x , gridDim.x ,
            kokkos_impl_cuda_shared_memory<size_type>() , m_scratch_space , m_scratch_flags ) ) {
 
@@ -936,7 +938,7 @@ public:
     // Reduce and scan, writing out scan of blocks' totals and block-groups' totals.
     // Blocks' scan values are written to 'blockIdx.x' location.
     // Block-groups' scan values are at: i = ( j * blockDim.y - 1 ) for i < gridDim.x
-    cuda_single_inter_block_reduce_scan<true>( m_functor , blockIdx.x , gridDim.x , kokkos_impl_cuda_shared_memory<size_type>() , m_scratch_space , m_scratch_flags );
+    cuda_single_inter_block_reduce_scan<true,FunctorType,work_tag>( m_functor , blockIdx.x , gridDim.x , kokkos_impl_cuda_shared_memory<size_type>() , m_scratch_space , m_scratch_flags );
   }
 
   //----------------------------------------
@@ -985,7 +987,7 @@ public:
       }
 
       // Scan block values into locations shared_data[1..blockDim.y]
-      cuda_intra_block_reduce_scan<true>( m_functor , ValueTraits::pointer_type(shared_data+word_count.value) );
+      cuda_intra_block_reduce_scan<true,FunctorType,work_tag>( m_functor , ValueTraits::pointer_type(shared_data+word_count.value) );
 
       {
         size_type * const block_total = shared_data + word_count.value * blockDim.y ;

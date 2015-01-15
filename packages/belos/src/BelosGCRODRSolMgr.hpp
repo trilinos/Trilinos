@@ -2086,7 +2086,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
-  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( HH );
+  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( Teuchos::Copy, HH, HH.numRows(), HH.numCols() );
   for( i=0; i<m; ++i )
     harmHH(i, m-1) += d * e_m[i];
 

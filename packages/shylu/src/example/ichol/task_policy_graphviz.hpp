@@ -57,6 +57,7 @@ namespace Example {
       return (os << endl);
     }    
   };
+
   class Future {
   private:
     Task *_task;

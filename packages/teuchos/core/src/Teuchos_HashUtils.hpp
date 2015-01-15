@@ -98,6 +98,15 @@ namespace Teuchos
     }
 
   /** \relates HashUtils
+      \brief Get the hash code of an unsigned
+  */
+  template <> inline int hashCode(const unsigned& x)
+    {
+      return HashUtils::getHashCode(
+        reinterpret_cast<const unsigned char *>(&x), sizeof(unsigned));
+    }
+
+  /** \relates HashUtils
       \brief Get the hash code of a double
   */
   template <> inline int hashCode(const double& x)

@@ -37,7 +37,6 @@ int main (int argc, char *argv[]) {
     return -1;
   }
   AA.importMatrixMarket(in);
-  cout << AA << endl;
 
   GraphHelper S(AA);
 
@@ -46,8 +45,6 @@ int main (int argc, char *argv[]) {
 
   CrsMatrixBase PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
-
-  cout << PA << endl;
 
   Kokkos::finalize();
 

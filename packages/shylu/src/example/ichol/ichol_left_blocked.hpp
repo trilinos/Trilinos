@@ -10,17 +10,6 @@
 /// factorization does not lead to an efficient computation. 
 /// This algorithm is only for the testing and debugging purpose.
 
-#include "partition.hpp"
-
-#include "scale.hpp"
-#include "dot.hpp"
-
-#include "gemv.hpp"
-#include "gemm.hpp"
-
-#include "trsv.hpp"
-#include "trsm.hpp"
-
 namespace Example { 
 
   using namespace std;
@@ -30,7 +19,7 @@ namespace Example {
   template<typename CrsMatViewType>
   KOKKOS_INLINE_FUNCTION 
   int 
-  IChol<Uplo::Lower,Algo::LeftBlocked>::invoke(const CrsMatViewType A) {
+  IChol<Uplo::Lower,AlgoIChol::LeftBlocked>::invoke(const CrsMatViewType A) {
     typedef typename CrsMatViewType::value_type   value_type;
     typedef typename CrsMatViewType::ordinal_type ordinal_type;
 
@@ -58,13 +47,15 @@ namespace Example {
       Merge_2x1(A10,
                 A20, AB0);
 
-      Gemm<Trans::NoTranspose,Trans::Transpose>::invoke(-1.0, AB0, A10, 1.0, AB1);
+      Gemm<Trans::NoTranspose,Trans::ConjTranspose,
+        AlgoGemm::ForLeftBlocked>::invoke(-1.0, AB0, A10, 1.0, AB1);
 
-      int r_val = IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(A11);
+      int r_val = IChol<Uplo::Lower,AlgoIChol::LeftUnblocked>::invoke(A11);
       if (r_val) 
         return r_val;
 
-      Trsm<Side::Right,Uplo::Lower,Trans::Transpose>::invoke(Diag::NonUnit, 1.0, A11, A21);
+      Trsm<Side::Right,Uplo::Lower,Trans::ConjTranspose,
+        AlgoTrsm::ForLeftBlocked>::invoke(Diag::NonUnit, 1.0, A11, A21);
       
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

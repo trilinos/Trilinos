@@ -23,10 +23,11 @@ namespace Example {
     typedef typename CrsMatViewType::ordinal_type  ordinal_type;
     typedef typename CrsMatViewType::row_view_type row_view_type;
 
-    row_view_type r1t, r2t;
+    // row_view_type r1t, r2t;
 
     for (ordinal_type i=0;i<A.NumRows();++i) {
-      r1t.setView(A, i);
+      //r1t.setView(A, i);
+      row_view_type &r1t = A.RowView(i);
 
       // extract diagonal from alpha11
       value_type &alpha = r1t.Value(0);
@@ -44,22 +45,21 @@ namespace Example {
         r1t.Value(j) /= alpha;
       
       // hermitian rank update
-      for (ordinal_type i=1;i<r1t.NumNonZeros();++i) {
+      for (ordinal_type i=1;i<nnz_r1t;++i) {
         const ordinal_type row_at_i = r1t.Col(i);
-        const value_type   val_at_i = r1t.Value(i);
+        const value_type   val_at_i = conj(r1t.Value(i));
 
-        r2t.setView(A, row_at_i);
-        ordinal_type prev = 0;
+        //r2t.setView(A, row_at_i);
+        row_view_type &r2t = A.RowView(row_at_i);
+        ordinal_type idx = 0;
         
-        for (ordinal_type j=1;j<nnz_r1t;++j) {
+        for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
           const ordinal_type col_at_j = r1t.Col(j);
           const value_type   val_at_j = r1t.Value(j);
 
-          const ordinal_type idx = r2t.Index(col_at_j, prev);
-          if (idx >= 0) {
-            r2t.Value(idx) -= val_at_i*conj(val_at_j);
-            prev = idx;
-          }
+          idx = r2t.Index(col_at_j, idx);
+          if (idx >= 0) 
+            r2t.Value(idx) -= val_at_i*val_at_j;
         }
       }
     }

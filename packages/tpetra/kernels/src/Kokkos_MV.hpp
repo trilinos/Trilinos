@@ -1282,7 +1282,7 @@ struct MultiVecDotFunctor {
   {
     if (value_count != dots.dimension_0 ()) {
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort("Kokkos::MultiVecDotFunctor: value_count does not match the length of 'dots'");
+      Kokkos::abort("Kokkos::MultiVecDotFunctor: value_count does not match the length of 'dots'");
 #else
       std::ostringstream os;
       os << "Kokkos::MultiVecDotFunctor: value_count does not match the length "
@@ -1419,7 +1419,7 @@ struct MultiVecNorm2SquaredFunctor {
   {
     if (value_count != norms.dimension_0 ()) {
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort("Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match the length of 'norms'");
+      Kokkos::abort("Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match the length of 'norms'");
 #else
       std::ostringstream os;
       os << "Kokkos::MultiVecNorm2SquaredFunctor: value_count does not match "
@@ -1522,7 +1522,7 @@ struct MultiVecNorm1Functor {
   {
     if (value_count != norms.dimension_0 ()) {
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort("Kokkos::MultiVecNorm1Functor: value_count does not match the length of 'norms'");
+      Kokkos::abort("Kokkos::MultiVecNorm1Functor: value_count does not match the length of 'norms'");
 #else
       std::ostringstream os;
       os << "Kokkos::MultiVecNorm1Functor: value_count does not match the "
@@ -1624,7 +1624,7 @@ struct MultiVecNormInfFunctor {
   {
     if (value_count != norms.dimension_0 ()) {
 #if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort("Kokkos::MultiVecNormInfFunctor: value_count does not match the length of 'norms'");
+      Kokkos::abort("Kokkos::MultiVecNormInfFunctor: value_count does not match the length of 'norms'");
 #else
       std::ostringstream os;
       os << "Kokkos::MultiVecNormInfFunctor: value_count does not match the "

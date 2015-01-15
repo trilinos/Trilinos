@@ -31,23 +31,24 @@ namespace Example {
     template<typename TaskFunctorType>
     static 
     future_type create(policy_type &policy, const TaskFunctorType &func) {
-      return policy.create(func, 13); 
+      return policy.create(func, 20); 
     }
-
+    
     static
     void spawn(policy_type &policy, const future_type &obj) {
       policy.spawn(obj);
     }
     
     static
-    void addDependence(policy_type &policy, const future_type &dep,
-                       future_type &obj) {
-      policy.add_dependence(obj, dep);
+    void addDependence(policy_type &policy, 
+                       const future_type &after, const future_type &before) {
+      policy.add_dependence(after, before);
     }
 
-    static 
-    void wait(policy_type &policy, const future_type &obj) {
-      policy.wait(obj);
+    static
+    void wait(policy_type &policy,
+              const future_type &obj) {
+      // policy.wait(obj);
     }
 
   };

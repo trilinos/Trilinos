@@ -166,6 +166,7 @@ namespace Impl {
      , "b" ( swap.lower )
      : "cc"
     );
+    (void) swapped;
     return cmp;
   }
 

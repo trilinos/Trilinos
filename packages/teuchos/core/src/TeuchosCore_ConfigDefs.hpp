@@ -1,12 +1,12 @@
+/*
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,27 +35,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
-//
 // @HEADER
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
-#include "MueLu_ExplicitInstantiation.hpp"
+*/
 
-#include "MueLu_RebalanceBlockInterpolationFactory_def.hpp"
+#ifndef TEUCHOSCORE_CONFIGDEFS_HPP
+#define TEUCHOSCORE_CONFIGDEFS_HPP
 
-#include "Tpetra_ETIHelperMacros.h"
+/*! \file Teuchos_ConfigDefs.hpp
+    \brief Teuchos header file which uses auto-configuration information
+	to include necessary C++ headers.
+*/
 
-#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-        template class MueLu::RebalanceBlockInterpolationFactory<S,LO,GO,N>;
+#include "TeuchosCore_config.h"
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
-
-#endif
+#endif /* TEUCHOSCORE_CONFIGDEFS_HPP */

@@ -54,8 +54,9 @@ namespace Example {
 
     row_view_type a(A,0), b(B,0); 
     value_type &aa = a.Value(0);
-    
-    for (ordinal_type j=0;j<b.NumNonZeros();++j) {
+
+    const ordinal_type nnz = b.NumNonZeros();
+    for (ordinal_type j=0;j<nnz;++j) {
       value_type &bb = b.Value(j);
 
       future_type f = task_factory_type
@@ -97,50 +98,41 @@ namespace Example {
 
     const ordinal_type nnz = a.NumNonZeros();
 
-    // update herk on diagonals
+    // update herk
     for (ordinal_type i=0;i<nnz;++i) {
       const ordinal_type row_at_i = a.Col(i);
       value_type &val_at_i = a.Value(i);
 
       c.setView(C, row_at_i);
 
-      ordinal_type idx = c.Index(row_at_i, 0);
-      if (idx >= 0) {
-        value_type &cc = c.Value(idx);
-        future_type f = task_factory_type
-          ::create(policy, 
-                   Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
-                   ::TaskFunctor<double,value_type>(-1.0, val_at_i, 1.0, cc));
-            
-        // dependence
-        task_factory_type::addDependence(policy, f, val_at_i.Future());              
-            
-        // self
-        task_factory_type::addDependence(policy, f, cc.Future());
-        
-        // place task signature on y
-        cc.setFuture(f);
-        
-        // spawn a task
-        task_factory_type::spawn(policy, f);
-      }
-    }
-
-    // update gemm on off-diagonals 
-    for (ordinal_type i=0;i<nnz;++i) {
-      const ordinal_type row_at_i = a.Col(i);
-      value_type &val_at_i = a.Value(i);
-
-      c.setView(C, row_at_i);
-      ordinal_type prev = 0;
-
-      for (ordinal_type j=0;j<nnz;++j) {
+      ordinal_type idx = 0;
+      for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
         const ordinal_type col_at_j = a.Col(j);
         value_type &val_at_j = a.Value(j);
 
-        if (row_at_i != col_at_j) {
-
-          ordinal_type idx = c.Index(col_at_j, prev);
+        if (row_at_i == col_at_j) {
+          idx = c.Index(row_at_i, idx);
+          if (idx >= 0) {
+            value_type &cc = c.Value(idx);
+            future_type f = task_factory_type
+              ::create(policy, 
+                       Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
+                       ::TaskFunctor<double,value_type>(-1.0, val_at_i, 1.0, cc));
+            
+            // dependence
+            task_factory_type::addDependence(policy, f, val_at_i.Future());              
+            
+            // self
+            task_factory_type::addDependence(policy, f, cc.Future());
+            
+            // place task signature on y
+            cc.setFuture(f);
+            
+            // spawn a task
+            task_factory_type::spawn(policy, f);
+          }
+        } else {
+          idx = c.Index(col_at_j, idx);
           if (idx >= 0) {
             value_type &cc = c.Value(idx);
             future_type f = task_factory_type

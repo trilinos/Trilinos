@@ -148,7 +148,8 @@ void finalize_internal( const bool all_spaces = false )
 
 #if defined( KOKKOS_HAVE_CUDA )
   if( Impl::is_same< Kokkos::Cuda , Kokkos::DefaultExecutionSpace >::value || all_spaces ) {
-    Kokkos::Cuda::finalize();
+    if(Kokkos::Cuda::is_initialized())
+      Kokkos::Cuda::finalize();
   }
 #endif
 
@@ -156,7 +157,8 @@ void finalize_internal( const bool all_spaces = false )
   if( Impl::is_same< Kokkos::OpenMP , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::OpenMP , Kokkos::HostSpace::execution_space >::value ||
       all_spaces ) {
-    Kokkos::OpenMP::finalize();
+    if(Kokkos::OpenMP::is_initialized())
+      Kokkos::OpenMP::finalize();
   }
 #endif
 
@@ -164,7 +166,8 @@ void finalize_internal( const bool all_spaces = false )
   if( Impl::is_same< Kokkos::Threads , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::Threads , Kokkos::HostSpace::execution_space >::value ||
       all_spaces ) {
-    Kokkos::Threads::finalize();
+    if(Kokkos::Threads::is_initialized())
+      Kokkos::Threads::finalize();
   }
 #endif
 
@@ -172,7 +175,8 @@ void finalize_internal( const bool all_spaces = false )
   if( Impl::is_same< Kokkos::Serial , Kokkos::DefaultExecutionSpace >::value ||
       Impl::is_same< Kokkos::Serial , Kokkos::HostSpace::execution_space >::value ||
       all_spaces ) {
-    Kokkos::Serial::finalize();
+    if(Kokkos::Serial::is_initialized())
+      Kokkos::Serial::finalize();
   }
 #endif
 

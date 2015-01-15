@@ -50,7 +50,6 @@
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_CudaTypes.hpp>
 #include <Kokkos_View.hpp>
-#include <Cuda/Kokkos_Cuda_abort.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -74,7 +73,7 @@ struct AssertShapeBoundsAbort< CudaSpace >
                      const size_t /* i4 */ , const size_t /* i5 */ ,
                      const size_t /* i6 */ , const size_t /* i7 */ )
     {
-      Kokkos::cuda_abort("Kokkos::View array bounds violation");
+      Kokkos::abort("Kokkos::View array bounds violation");
     }
 };
 

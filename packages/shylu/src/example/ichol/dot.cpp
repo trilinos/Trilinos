@@ -1,8 +1,8 @@
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
-#include "crs_row_view.hpp"
 #include "crs_matrix_view.hpp"
+#include "crs_row_view.hpp"
 
 #include "dot.hpp"
 
@@ -40,12 +40,14 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsRowView a = CrsMatrixView(&AA, /**/ 2, 6, /**/ 3, 8).extractRow(2);
-    CrsRowView b = CrsMatrixView(&AA, /**/ 3, 7, /**/ 3, 8).extractRow(2);
+    CrsRowView a, b;
+    a.setView(CrsMatrixView(&AA, /**/ 2, 6, /**/ 3, 8), 2);
+    b.setView(CrsMatrixView(&AA, /**/ 3, 7, /**/ 3, 8), 2);
     
     cout << " a = " << endl << a << endl;
     cout << " b = " << endl << b << endl;
-    cout << " dot(a,b) = " << Example::dot<CrsRowView>(a,b) << endl;
+    cout << " dot(a,b) = " << Example::dot(a,b) << endl;
+    cout << " dot(a,a) = " << Example::dot(a) << endl;
   }
 
   Kokkos::finalize(); 

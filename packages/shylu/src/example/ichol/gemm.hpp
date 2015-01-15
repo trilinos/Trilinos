@@ -10,42 +10,42 @@ namespace Example {
 
   using namespace std;
 
-  template<int ArgTransA, int ArgTransX>
+  template<int ArgTransA, int ArgTransB, int ArgAlgo>
   struct Gemm {
     template<typename ScalarType, 
              typename CrsMatViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const ScalarType alpha,
                       const CrsMatViewType A,
-                      const CrsMatViewType X,
+                      const CrsMatViewType B,
                       const ScalarType beta,
-                      const CrsMatViewType Y);
+                      const CrsMatViewType C);
 
     template<typename ScalarType, 
              typename CrsMatViewType>
     class TaskFunctor {
     private:
       ScalarType _alpha, _beta;
-      CrsMatViewType _A, _X, _Y;
+      CrsMatViewType _A, _B, _C;
       
     public:
       TaskFunctor(const ScalarType alpha,
                   const CrsMatViewType A,
-                  const CrsMatViewType X,
+                  const CrsMatViewType B,
                   const ScalarType beta,
-                  const CrsMatViewType Y) 
+                  const CrsMatViewType C) 
         : _alpha(alpha),
           _beta(beta),
           _A(A),
-          _X(X),
-          _Y(Y) 
+          _B(B),
+          _C(C) 
       { }
 
       string Label() const { return "Gemm"; }
 
       typedef int value_type;      
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_alpha, _A, _X, _beta, _Y);
+        r_val = Gemm::invoke(_alpha, _A, _B, _beta, _C);
       }
     };
 
@@ -53,6 +53,8 @@ namespace Example {
 
 }
 
+
 #include "gemm_nt_t.hpp"
+#include "gemm_t_nt.hpp"
 
 #endif

@@ -243,21 +243,21 @@ namespace Impl {
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
     Scalar shfl(const Scalar &val, const int& srcLane, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl from a device with CC<3.0.");
       return val;
     }
 
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
     Scalar shfl_down(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
       return val;
     }
 
     template<typename Scalar>
     KOKKOS_INLINE_FUNCTION
     Scalar shfl_up(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
       return val;
     }
   #endif
@@ -265,21 +265,21 @@ namespace Impl {
     template<typename Scalar>
     inline
     Scalar shfl(const Scalar &val, const int& srcLane, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl from a device with CC<3.0.");
       return val;
     }
 
     template<typename Scalar>
     inline
     Scalar shfl_down(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
       return val;
     }
 
     template<typename Scalar>
     inline
     Scalar shfl_up(const Scalar &val, const int& delta, const int& width) {
-      if(width > 1) cuda_abort("Error: calling shfl_down from a device with CC<3.0.");
+      if(width > 1) Kokkos::abort("Error: calling shfl_down from a device with CC<3.0.");
       return val;
     }
 #endif

@@ -60,21 +60,21 @@ void mexFunction(int nlhs,
                   m, n, nnz,
                   ap, aj, ax);
 
-  mxArray *Lmat = mxCreateSparse(m, n, nnz, mxREAL);
+  mxArray *Umat = mxCreateSparse(m, n, nnz, mxREAL);
 
-  CrsMatrixBase::size_type_array    lp((size_type*)(mxGetJc(Lmat)), m+1);
-  CrsMatrixBase::ordinal_type_array lj((ordinal_type*)(mxGetIr(Lmat)), nnz);
-  CrsMatrixBase::value_type_array   lx((value_type*)(mxGetPr(Lmat)), nnz);
+  CrsMatrixBase::size_type_array    up((size_type*)(mxGetJc(Umat)), m+1);
+  CrsMatrixBase::ordinal_type_array uj((ordinal_type*)(mxGetIr(Umat)), nnz);
+  CrsMatrixBase::value_type_array   ux((value_type*)(mxGetPr(Umat)), nnz);
 
 
   // output sparse matrix
-  CrsMatrixBase L("CrsMatrixBase::Matlab::L",
+  CrsMatrixBase U("CrsMatrixBase::Matlab::U",
                   m, n, nnz,
-                  lp, lj, lx);
+                  up, uj, ux);
 
-  L.copy(Uplo::Lower, A);
+  U.copy(Uplo::Upper, A);
 
-  int r_val = Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(CrsMatrixView(L));
+  int r_val = Example::IChol<Uplo::Upper,Algo::RightUnblockedOpt1>::invoke(CrsMatrixView(U));
   if (r_val != 0)  {
     stringstream ss;
     ss << " Error in " << __FILE__ << ", " << __LINE__ << ", " __FUNCT__ << endl;
@@ -83,7 +83,7 @@ void mexFunction(int nlhs,
   }
 
   // return the output matrix
-  plhs[0] = Lmat;
+  plhs[0] = Umat;
 
   Kokkos::finalize();
 }

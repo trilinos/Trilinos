@@ -389,10 +389,10 @@ struct VerifyExecutionCanAccessMemorySpace< Kokkos::CudaSpace , Kokkos::HostSpac
 {
   enum { value = false };
   KOKKOS_INLINE_FUNCTION static void verify( void )
-    { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
+    { Kokkos::abort("Cuda code attempted to access HostSpace memory"); }
 
   KOKKOS_INLINE_FUNCTION static void verify( const void * )
-    { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
+    { Kokkos::abort("Cuda code attempted to access HostSpace memory"); }
 };
 
 /** Running in CudaSpace accessing CudaUVMSpace: ok */
@@ -421,10 +421,10 @@ struct VerifyExecutionCanAccessMemorySpace<
 {
   enum { value = false };
   KOKKOS_INLINE_FUNCTION static void verify( void )
-    { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
+    { Kokkos::abort("Cuda code attempted to access unknown Space memory"); }
 
   KOKKOS_INLINE_FUNCTION static void verify( const void * )
-    { Kokkos::cuda_abort("Cuda code attempted to access unknown Space memory"); }
+    { Kokkos::abort("Cuda code attempted to access unknown Space memory"); }
 };
 
 //----------------------------------------------------------------------------

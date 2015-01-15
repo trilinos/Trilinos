@@ -229,13 +229,13 @@ bool cuda_inter_block_reduction( typename FunctorValueTraits< FunctorType , void
  *   (c) blockDim.x == blockDim.z == 1
  */
 
-template< bool DoScan , class FunctorType >
+template< bool DoScan , class FunctorType , class ArgTag >
 __device__
 void cuda_intra_block_reduce_scan( const FunctorType & functor ,
-                                   const typename FunctorValueTraits< FunctorType , void >::pointer_type base_data )
+                                   const typename FunctorValueTraits< FunctorType , ArgTag >::pointer_type base_data )
 {
-  typedef FunctorValueTraits< FunctorType , void >  ValueTraits ;
-  typedef FunctorValueJoin<   FunctorType , void >  ValueJoin ;
+  typedef FunctorValueTraits< FunctorType , ArgTag >  ValueTraits ;
+  typedef FunctorValueJoin<   FunctorType , ArgTag >  ValueJoin ;
 
   typedef typename ValueTraits::pointer_type  pointer_type ;
 
@@ -244,7 +244,7 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
 
   // Must have power of two thread count
 
-  if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
+  if ( BlockSizeMask & blockDim.y ) { Kokkos::abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
 
 #define BLOCK_REDUCE_STEP( R , TD , S )  \
   if ( ! ( R & ((1<<(S+1))-1) ) ) { ValueJoin::join( functor , TD , (TD - (value_count<<S)) ); }
@@ -324,7 +324,7 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
  *
  *  Global reduce result is in the last threads' 'shared_data' location.
  */
-template< bool DoScan , class FunctorType >
+template< bool DoScan , class FunctorType , class ArgTag >
 __device__
 bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
                                           const Cuda::size_type   block_id ,
@@ -334,10 +334,10 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
                                           Cuda::size_type * const global_flags )
 {
   typedef Cuda::size_type                  size_type ;
-  typedef FunctorValueTraits< FunctorType , void >  ValueTraits ;
-  typedef FunctorValueJoin<   FunctorType , void >  ValueJoin ;
-  typedef FunctorValueInit<   FunctorType , void >  ValueInit ;
-  typedef FunctorValueOps<    FunctorType , void >  ValueOps ;
+  typedef FunctorValueTraits< FunctorType , ArgTag >  ValueTraits ;
+  typedef FunctorValueJoin<   FunctorType , ArgTag >  ValueJoin ;
+  typedef FunctorValueInit<   FunctorType , ArgTag >  ValueInit ;
+  typedef FunctorValueOps<    FunctorType , ArgTag >  ValueOps ;
 
   typedef typename ValueTraits::pointer_type    pointer_type ;
   typedef typename ValueTraits::reference_type  reference_type ;
@@ -346,13 +346,13 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
   const unsigned BlockSizeShift = power_of_two_if_valid( blockDim.y );
 
   // Must have power of two thread count
-  if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_single_inter_block_reduce_scan requires power-of-two blockDim"); }
+  if ( BlockSizeMask & blockDim.y ) { Kokkos::abort("Cuda::cuda_single_inter_block_reduce_scan requires power-of-two blockDim"); }
 
   const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
     word_count( ValueTraits::value_size( functor ) / sizeof(size_type) );
 
   // Reduce the accumulation for the entire block.
-  cuda_intra_block_reduce_scan<false>( functor , pointer_type(shared_data) );
+  cuda_intra_block_reduce_scan<false,FunctorType,ArgTag>( functor , pointer_type(shared_data) );
 
   {
     // Write accumulation total to global scratch space.
@@ -382,7 +382,7 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
       }
     }
 
-    cuda_intra_block_reduce_scan<DoScan>( functor , pointer_type(shared_data) );
+    cuda_intra_block_reduce_scan<DoScan,FunctorType,ArgTag>( functor , pointer_type(shared_data) );
 
     if ( DoScan ) {
 

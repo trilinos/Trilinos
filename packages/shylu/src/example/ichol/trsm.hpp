@@ -10,7 +10,7 @@ namespace Example {
 
   using namespace std;
 
-  template<int ArgSide,int ArgUplo, int ArgTrans> 
+  template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo> 
   struct Trsm {
     template<typename ScalarType,
              typename CrsMatViewType>
@@ -51,5 +51,6 @@ namespace Example {
 }
 
 #include "trsm_r_l_t.hpp"
+#include "trsm_l_u_t.hpp"
 
 #endif

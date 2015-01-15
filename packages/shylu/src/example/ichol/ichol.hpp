@@ -10,8 +10,7 @@ namespace Example {
 
   using namespace std;
 
-  template<int ArgUplo, 
-           int ArgAlgo = Algo::LeftUnblocked>
+  template<int ArgUplo, int ArgAlgo>
   class IChol {
   public:
     static int blocksize;
@@ -42,10 +41,31 @@ namespace Example {
 
   };
 
-  template<int ArgUplo,int ArgAlgo> int IChol<ArgUplo,ArgAlgo>::blocksize = 32;
+  template<int ArgUplo, int ArgAlgo> int IChol<ArgUplo,ArgAlgo>::blocksize = 32;
 }
 
+// basic utils
+#include "util.hpp"
+#include "partition.hpp"
+
+// unblocked version blas operations
+#include "dot.hpp"
+#include "scale.hpp"
+
+// blocked version blas operations
+#include "gemm.hpp"
+#include "trsm.hpp"
+#include "herk.hpp"
+
+// left looking: only for testing 
 #include "ichol_left_unblocked.hpp"
 #include "ichol_left_blocked.hpp"
+#include "ichol_left_by_blocks.hpp"
+
+// right looking: better performance with CRS
+#include "ichol_right_unblocked.hpp"
+#include "ichol_right_unblocked_opt1.hpp"
+#include "ichol_right_blocked.hpp"
+#include "ichol_right_by_blocks.hpp"
 
 #endif

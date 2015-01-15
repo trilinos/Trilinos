@@ -31,7 +31,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     ARGS
       "--verbose --left-prec --num-rhs=10"
-      "--verbose --right-prec --num-rhs=10"
     STANDARD_PASS_OUTPUT 
   )
 

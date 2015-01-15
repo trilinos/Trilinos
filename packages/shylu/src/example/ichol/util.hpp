@@ -100,20 +100,36 @@ namespace Example {
     static const int NoTranspose   = 803;
   };
 
-  /// \class Algo
+  /// \class AlgoChol
   /// \brief Algorithmic variants in sparse factorization and sparse BLAS operations. 
-  class Algo {
+  class AlgoChol {
   public:
     // One side factorization on flat matrices
-    static const int LeftUnblocked  = 1001;
-    static const int LeftBlocked    = 1002;
-    static const int RightUnblocked = 1003;
-    static const int RightBlocked   = 1004;
+    static const int LeftUnblocked      = 1001;
+    static const int LeftUnblockedOpt1  = 1002;
+    static const int LeftBlocked        = 1101;
+
+    static const int RightUnblocked     = 1201;
+    static const int RightUnblockedOpt1 = 1202;
+    static const int RightBlocked       = 1301;
 
     // One side factorization on hier matrices
-    static const int LeftByBlocksVariant1   = 1101;
-    static const int RightByBlocksVariant1  = 1102;
+    static const int LeftByBlocks       = 1401;
+    static const int RightByBlocks      = 1501;
   };
+
+  // aliasing name space
+  typedef AlgoChol AlgoIChol;
+
+  class AlgoGemm {
+  public:
+    // One side factorization on flat matrices
+    static const int ForLeftBlocked  = 2001;
+    static const int ForRightBlocked = 2002;
+  };
+
+  typedef AlgoGemm AlgoHerk;
+  typedef AlgoGemm AlgoTrsm;
 
   /// \brief Interface for overloaded stream operators.
   template<typename T> 

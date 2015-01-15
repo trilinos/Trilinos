@@ -300,11 +300,11 @@ void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Impl::enable_if<
                       ( ! Impl::is_integral< ExecPolicy >::value )
-                      , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type
+                      , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type
                       >::type result_ref )
 {
-  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
-  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , void >  ValueOps ;
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , typename ExecPolicy::work_tag >  ValueOps ;
 
   // Wrap the result output request in a view to inform the implementation
   // of the type and memory space.

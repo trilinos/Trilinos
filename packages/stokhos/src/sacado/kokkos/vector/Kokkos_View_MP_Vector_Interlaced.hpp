@@ -282,12 +282,7 @@ private:
       per_thread( ! StokhosStorageStaticDimension ? length / dev.team_size() : 0 );
 
     if ( per_thread.value * dev.team_size() != length ) {
-      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible vector-size : team-size" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible vector-size : team-size");
     }
   }
 #else
@@ -1014,12 +1009,7 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     const int length = part.end - part.begin ;
 
     if ( DstStaticLength && DstStaticLength != length ) {
-      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning");
     }
 
     unsigned dims[8];

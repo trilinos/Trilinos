@@ -485,7 +485,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     result.norm2(n2);
 
     out << "||L*randvec||_2 - ||iL*randvec||_2 = " << n1[0]-n2[0] << std::endl;
-    TEST_EQUALITY(n1[0]-n2[0] < 1e-7, true);
+    TEST_EQUALITY(n1[0]-n2[0] < 1e-6, true);
     out << std::endl;
 
     iU.apply(permRandVec,permResult);

@@ -38,10 +38,6 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
-#include "impl/Kokkos_Error.hpp"
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-#include "Cuda/Kokkos_Cuda_abort.hpp"
-#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -248,11 +244,7 @@ private:
           << ") must be a multiple of StorageType::static_size ("
           << FadStaticDimension+1
           << ")" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort( msg.str().c_str() );
-#else
-      Impl::throw_runtime_exception( msg.str() );
-#endif
+      Kokkos::abort( msg.str().c_str() );
     }
   }
 
@@ -958,12 +950,7 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
     const int length = part.end - part.begin ;
 
     if ( DstStaticLength && DstStaticLength != length ) {
-      const char msg[] = "Kokkos::View< Fad ... > incompatible partitioning" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Fad ... > incompatible partitioning");
     }
 
     // Copy the offset map:

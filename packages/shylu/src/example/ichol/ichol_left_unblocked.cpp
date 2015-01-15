@@ -19,7 +19,7 @@ typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> Crs
 typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
 
 typedef Example::Uplo Uplo;
-typedef Example::Algo Algo;
+typedef Example::AlgoIChol AlgoIChol;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -49,9 +49,11 @@ int main (int argc, char *argv[]) {
   {
     CrsMatrixView L(LL);
 
-    //int r_val = Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::invoke(L);
     int r_val = 0;
-    Example::IChol<Uplo::Lower,Algo::LeftUnblocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
+
+    //r_val = Example::IChol<Uplo::Lower,AlgoIChol::LeftUnblocked>::invoke(L);
+    Example::IChol<Uplo::Lower,AlgoIChol::LeftUnblocked>::TaskFunctor<CrsMatrixView>(L).apply(r_val);
+
     if (r_val != 0)  {
       cout << " Error = " << r_val << endl;
       return r_val;

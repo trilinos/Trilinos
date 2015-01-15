@@ -46,6 +46,9 @@
     \brief A MPI utilities class, providing methods for initializing,
         finalizing, and querying the global MPI session
 */
+
+#include "TeuchosCore_ConfigDefs.hpp"
+
 #include "Teuchos_ArrayView.hpp"
 
 

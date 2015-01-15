@@ -49,29 +49,13 @@
 
 #include "MueLu_TransPFactory_def.hpp"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-template class MueLu::TransPFactory<double, int, int>;
-#endif
+#include "Tpetra_ETIHelperMacros.h"
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGINT
-template class MueLu::TransPFactory<double, int, long>;
-#endif
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::TransPFactory<S,LO,GO,N>;
 
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
-# ifdef HAVE_TEUCHOS_LONG_LONG_INT
-template class MueLu::TransPFactory<double, int, long long int>;
-# else
-# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
-# endif
-#endif
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
-# ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-template class MueLu::TransPFactory<std::complex<double>, int, int>;
-# else
-# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
-# endif
-#endif
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
 

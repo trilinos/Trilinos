@@ -26,15 +26,17 @@ namespace Example {
     typedef typename CrsMatViewType::value_type    value_type;
     typedef typename CrsMatViewType::row_view_type row_view_type;
 
-    row_view_type a, b1, b2;
+    //row_view_type a, b1, b2;
 
     for (ordinal_type k=0;k<A.NumRows();++k) {
       // pick a diag
-      a.setView(A, k);
+      //a.setView(A, k);
+      row_view_type &a = A.RowView(k);
       const value_type diag = a.Value(0);
 
       // invert
-      b1.setView(B, k);
+      //b1.setView(B, k);
+      row_view_type &b1 = B.RowView(k);
 
       const ordinal_type nnz_b1 = b1.NumNonZeros();
       for (ordinal_type j=0;j<nnz_b1;++j) 
@@ -45,19 +47,18 @@ namespace Example {
       for (ordinal_type i=1;i<nnz_a;++i) {
         const ordinal_type row_at_i = a.Col(i);
         const value_type   val_at_i = conj(a.Value(i));
-          
-        b2.setView(B, row_at_i);
-        ordinal_type prev = 0;
 
-        for (ordinal_type j=0;j<nnz_b1;++j) {
+        //b2.setView(B, row_at_i);
+        row_view_type &b2 = B.RowView(row_at_i);
+        
+        ordinal_type idx = 0;
+        for (ordinal_type j=0;j<nnz_b1 && (idx > -2);++j) {
           ordinal_type col_at_j = b1.Col(j);
           value_type   val_at_j = b1.Value(j);
 
-          ordinal_type idx = b2.Index(col_at_j, prev);
-          if (idx >= 0) {
+          idx = b2.Index(col_at_j, idx);
+          if (idx >= 0) 
             b2.Value(idx) += alpha*val_at_i*val_at_j;
-            prev = idx;
-          }
         }
       }
     }

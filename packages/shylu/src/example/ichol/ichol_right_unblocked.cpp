@@ -59,12 +59,12 @@ int main (int argc, char *argv[]) {
   cout << UU << endl;
   
   CrsMatrixView U(UU);
-    
+  U.fillRowViewArray();
+  
   int r_val = 0;
   
   // r_val = Example::IChol<Uplo::Upper,AlgoIChol::RightUnblocked>::invoke(U);
-  Example::IChol<Uplo::Upper,AlgoIChol::RightUnblocked>::TaskFunctor<CrsMatrixView>(U).apply(r_val);
-  //Example::IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>::TaskFunctor<CrsMatrixView>(U).apply(r_val);
+  Example::IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>::TaskFunctor<CrsMatrixView>(U).apply(r_val);
   
   if (r_val != 0)  {
     cout << " Error = " << r_val << endl;

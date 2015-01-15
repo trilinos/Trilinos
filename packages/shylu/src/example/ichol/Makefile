@@ -4,28 +4,43 @@ info :
 	@echo "make all"
 	@echo "make run"
 
-OBJ   = 
+SRC   = 
 
-TEST  = ichol_left_by_blocks
+OBJ   = $(SRC:.cpp=.o)
 
+TEST  = ichol_strong_scale
 TESTS = \
 	crs_matrix_base \
 	crs_matrix_view \
 	crs_row_view \
-	partition \
-	dot \
-	ichol_left_unblocked \
-	ichol_left_blocked \
+	\
 	scotch \
 	qthread \
-	kokkos_array \
-	crs_hier_base \
+	crs_matrix_helper \
+	\
+	partition \
+	dot \
+	\
+	ichol_left_unblocked \
+	ichol_left_blocked \
+	\
+	ichol_right_unblocked \
+	ichol_right_blocked \
+	\
+	crs_matrix_base_future \
+	task_policy_graphviz \
 	crs_task_view \
-	ichol_left_by_blocks 
+	\
+	ichol_left_by_blocks \
+	ichol_right_by_blocks \
+	\
+	ichol_strong_scale
 
-	# symbolic_task \
-
-
+MEXFILE  = mex/ichol_unblocked
+MEXFILES = \
+	mex/kokkos \
+	mex/ichol_unblocked \
+	mex/ichol_blocked 
 
 TRILINOS_DIR = ${HOME}/Work/lib/trilinos/kokkos-openmp
 QTHREADS_DIR = ${HOME}/Work/lib/qthreads
@@ -35,7 +50,10 @@ include $(TRILINOS_DIR)/include/Makefile.export.Kokkos
 include $(TRILINOS_DIR)/include/Makefile.export.KokkosExample
 
 CC = g++
-CCFLAGS = -g -O0 -std=c++11 -fopenmp -march=native
+MEX = mex
+
+CCFLAGS = -g -O3 -std=c++11 -fopenmp -fPIC -fdiagnostics-color=auto 
+#-march=native 
 
 CCINCS = -I. -I${QTHREADS_DIR}/include -I${TRILINOS_DIR}/include -I${SCOTCH_DIR}/include
 CCWARN = -Wno-pointer-arith
@@ -50,7 +68,7 @@ LDFLAGS = -L$(QTHREADS_DIR)/lib \
 	  -L${SCOTCH_DIR}/lib \
 	  -lscotch -lscotcherr -lscotcherrexit \
 	  -L${TRILINOS_DIR}/lib \
-          -ltpetrakernels \
+          -lkokkoscorelinalg \
 	  -lkokkoscontainers \
 	  -lkokkoscore \
 	  -lkokkos \
@@ -58,7 +76,13 @@ LDFLAGS = -L$(QTHREADS_DIR)/lib \
 	  ${KokkosExample_TPL_LIBRARIES} \
 	  -lpthread
 
-CPP_WORK = g++ $(CCFLAGS) $(CCINCS) $(CCDEBUG) $(CCWARN) $(CCDEFS)
+CPP_WORK = $(CC) $(CCFLAGS) $(CCINCS) $(CCDEBUG) $(CCWARN) $(CCDEFS)
+MEX_WORK = $(MEX) -v -largeArrayDims \
+	CC="${CC}" \
+	CXXFLAGS="${CCFLAGS}" \
+	CXXOPTIMFLAGS="${CCFLAGS} -DNDEBUG" \
+	LD="\${CC} -fopenmp -O3" \
+	$(CCINCS) $(CCDEBUG) $(CCDEFS)
 
 %.o : %.cu
 	@echo "Compiling $<"
@@ -79,11 +103,17 @@ one : $(TEST).o ${OBJ}
 all :
 	@for e in $(TESTS) ; do make one TEST=$$e ; done
 
+matlab : $(MEXFILE).cpp
+	@echo "Linking   $<"
+	$(MEX_WORK) $(MEXFILE).cpp ${OBJ} $(LDFLAGS)
+
+matlab-all : 
+	@for e in $(MEXFILES) ; do make matlab MEXFILE=$$e ; done
+
 clean :
-	@/bin/rm -f *.o *~ *.log
+	@/bin/rm -f *.o *~ *.log *.mexa64 
 	@for t in $(TESTS) ; do rm -f $$t ; done
-	@for d in $(DIRS); do (cd $$d; make clean ); done
 
 
-DEPENDS = $(OBJ:.o=.d)
+DEPENDS = $(OBJ:.o=.d) 
 sinclude $(DEPENDS)

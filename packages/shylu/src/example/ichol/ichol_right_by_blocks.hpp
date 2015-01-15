@@ -71,6 +71,9 @@ namespace Example {
 
 }
 
+// select one of the following variants
+
 #include "ichol_right_by_blocks_var1.hpp"
+//#include "ichol_right_by_blocks_serial.hpp"
 
 #endif
