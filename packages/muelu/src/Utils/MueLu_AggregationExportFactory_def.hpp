@@ -142,18 +142,18 @@ namespace MueLu {
     GetOStream(Runtime0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
-    GO numAggs = aggregates->GetNumAggregates();
+    GO numAggs   = aggregates->GetNumAggregates();
+    GO indexBase = aggregates->GetMap()->getIndexBase(); // extract indexBase from overlapping map within aggregates structure. The indexBase is constant throughout the whole simulation (either 0 = C++ or 1 = Fortran)
+    GO offset    = amalgInfo->GlobalOffset();            // extract offset for global dof ids
+    
+    
     std::vector<GlobalOrdinal> nodeIds;
     for (int i = 0; i < numAggs; ++i) {
       fout << "Agg " << minGlobalAggId[myRank] + i << " Proc " << myRank << ":";
 
+      // TODO: Use k+=DofsPerNode instead of ++k and get rid of std::unique call afterwards
       for (int k = aggStart[i]; k < aggStart[i+1]; ++k) {
-        /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
-          if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
-          std::cout << " NOT ON CUR PROC!";
-          std::cout << std::endl;*/
-
-        nodeIds.push_back(aggToRowMap[k]/DofsPerNode);
+        nodeIds.push_back((aggToRowMap[k] - offset - indexBase) / DofsPerNode + indexBase);       
       }
 
       // remove duplicate entries from nodeids

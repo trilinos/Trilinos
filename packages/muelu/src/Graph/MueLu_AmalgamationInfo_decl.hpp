@@ -125,6 +125,11 @@ namespace MueLu {
 
     GO ComputeGlobalDOF(GO const &gNodeID, LO const &step=0) const;
 
+    /*! Access routines */
+    
+    /// returns offset of global dof ids
+    GO GlobalOffset() { return offset_; }
+    
   private:
 
     //! @name amalgamation information variables
