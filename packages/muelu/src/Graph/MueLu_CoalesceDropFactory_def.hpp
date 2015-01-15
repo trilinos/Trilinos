@@ -120,6 +120,8 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
+    typedef Xpetra::MultiVector<double,LO,GO,NO> dxMV;
+
     typedef Teuchos::ScalarTraits<SC> STS;
 
     if (predrop_ != Teuchos::null)
@@ -373,7 +375,7 @@ namespace MueLu {
         // ap: somehow, if I move this line to [*1*], Belos throws an error
         // I'm not sure what's going on. Do we always have to Get data, if we did
         // DeclareInput for it?
-        RCP<MultiVector> Coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
+        RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
@@ -435,13 +437,13 @@ namespace MueLu {
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
-          RCP<MultiVector>      ghostedCoords;
+          RCP<dxMV>             ghostedCoords;
           RCP<Vector>           ghostedLaplDiag;
           Teuchos::ArrayRCP<SC> ghostedLaplDiagData;
           if (threshold != STS::zero()) {
             // Get ghost coordinates
             RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-            ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+            ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
             ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 
             // Construct Distance Laplacian diagonal
@@ -471,7 +473,7 @@ namespace MueLu {
                 LO col = indices[colID];
 
                 if (row != col)
-                  localLaplDiagData[row] += STS::one()/MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                  localLaplDiagData[row] += STS::one()/MueLu::Utils<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
               }
             }
             ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
@@ -537,7 +539,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utils<SC,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                SC laplVal = STS::one() / MueLu::Utils<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 

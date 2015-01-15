@@ -982,7 +982,9 @@ namespace MueLu {
       return;
     }
 
-    RCP<MultiVector> coords  = level.Get<RCP<MultiVector> >("Coordinates");
+    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+
+    RCP<xdMV> coords  = level.Get<RCP<xdMV> >("Coordinates");
 
     size_t           blkSize = A->GetFixedBlockSize();
 
@@ -1018,14 +1020,14 @@ namespace MueLu {
         nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
       }
 
-      Array<ArrayView<const Scalar> >      coordDataView;
-      std::vector<ArrayRCP<const Scalar> > coordData;
+      Array<ArrayView<const double> >      coordDataView;
+      std::vector<ArrayRCP<const double> > coordData;
       for (size_t i = 0; i < coords->getNumVectors(); i++) {
         coordData.push_back(coords->getData(i));
         coordDataView.push_back(coordData[i]());
       }
 
-      RCP<MultiVector> newCoords = MultiVectorFactory::Build(nodeMap, coordDataView(), coords->getNumVectors());
+      RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
       level.Set("Coordinates", newCoords);
     }
   }

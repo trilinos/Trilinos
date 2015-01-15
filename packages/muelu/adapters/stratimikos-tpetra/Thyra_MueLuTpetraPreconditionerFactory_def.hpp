@@ -171,13 +171,28 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
   // Create a copy, as we may remove some things from the list
   Teuchos::ParameterList paramList = *paramList_;
 
-  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  Teuchos::RCP<MV> coords;
-  if (paramList.isType<Teuchos::RCP<MV> >("Coordinates")) {
-    coords = paramList.get<Teuchos::RCP<MV> >("Coordinates");
+  typedef Tpetra::MultiVector<float, LocalOrdinal, GlobalOrdinal, Node> fMV;
+  typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMV;
+  Teuchos::RCP<fMV> floatCoords;
+  Teuchos::RCP<dMV> doubleCoords;
+  if (paramList.isType<Teuchos::RCP<dMV> >("Coordinates")) {
+    doubleCoords = paramList.get<Teuchos::RCP<dMV> >("Coordinates");
     paramList.remove("Coordinates");
+  } else if (paramList.isType<Teuchos::RCP<fMV> >("Coordinates")) {
+    floatCoords = paramList.get<Teuchos::RCP<fMV> >("Coordinates");
+    paramList.remove("Coordinates");
+    doubleCoords = Teuchos::rcp(new dMV(floatCoords->getMap(),floatCoords->getNumVectors()));
+    //deep_copy(*doubleCoords,*floatCoords);  //TODO reenable after deep_copy is fixed:
+                                              // "Tpetra_KokkosRefactor_MultiVector_decl.hpp:2276: error: no type named ‘host_memory_space’ in ‘class Kokkos::Serial::memory_space’
+    for (size_t i=0; i<floatCoords->getNumVectors(); ++i) {
+      Teuchos::ArrayRCP<const float> fdata = floatCoords->getData(i);
+      Teuchos::ArrayRCP<double> ddata = doubleCoords->getDataNonConst(i);
+      for (int j=0; j<fdata.size(); ++j)
+        ddata[j]=fdata[j];
+    }
   }
 
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
   Teuchos::RCP<MV> null_space;
   if (paramList.isType<Teuchos::RCP<MV> >("Nullspace")) {
     null_space = paramList.get<Teuchos::RCP<MV> >("Nullspace");
@@ -185,7 +200,7 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
   }
 
   typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
-  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, coords, null_space);
+  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
 
   timer.stop();
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {

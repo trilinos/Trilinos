@@ -99,7 +99,7 @@ namespace MueLu {
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
     RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<MultiVector> coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords   = Get< RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(level, "Coordinates");
     RCP<const Map>   map      = coords->getMap();
 
     GO               numParts = level.Get<GO>("number of partitions");

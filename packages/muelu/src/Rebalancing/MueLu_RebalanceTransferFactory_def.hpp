@@ -121,6 +121,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
+    typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
 
     const ParameterList& pL = GetParameterList();
 
@@ -130,9 +131,9 @@ namespace MueLu {
 
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates")) {
       std::string fileName = "coordinates_level_0.m";
-      RCP<MultiVector> fineCoords = fineLevel.Get< RCP<MultiVector> >("Coordinates");
+      RCP<xdMV> fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates");
       if (fineCoords != Teuchos::null)
-        Utils::Write(fileName, *fineCoords);
+        MueLu::Utils<double,LO,GO,NO>::Write(fileName, *fineCoords);
     }
 
     RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -207,7 +208,7 @@ namespace MueLu {
 
         if (pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
           if (IsAvailable(coarseLevel, "Coordinates"))
-            Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+            Set(coarseLevel, "Coordinates", Get< RCP<xdMV> >(coarseLevel, "Coordinates"));
 
         return;
       }
@@ -215,7 +216,7 @@ namespace MueLu {
       if (pL.isParameter("Coordinates") &&
           pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
           IsAvailable(coarseLevel, "Coordinates")) {
-        RCP<MultiVector> coords = Get<RCP<MultiVector> >(coarseLevel, "Coordinates");
+        RCP<xdMV> coords = Get<RCP<xdMV> >(coarseLevel, "Coordinates");
 
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
@@ -249,7 +250,7 @@ namespace MueLu {
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
 
-        RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
         if (pL.get<bool>("useSubcomm") == true)
@@ -259,7 +260,7 @@ namespace MueLu {
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
-          Utils::Write(fileName, *permutedCoords);
+          MueLu::Utils<double,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {

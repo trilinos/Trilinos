@@ -157,3 +157,4 @@ typedef MueLu::VariableContainer VariableContainer;
 #ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
 typedef MueLu::SmootherFactoryBase SmootherFactoryBase;
 #endif
+

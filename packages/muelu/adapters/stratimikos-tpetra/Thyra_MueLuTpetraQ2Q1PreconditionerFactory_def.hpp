@@ -197,9 +197,11 @@ void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::ParameterList paramList = *paramList_;
 
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  Teuchos::RCP<MV> coords;
-  if (paramList.isType<Teuchos::RCP<MV> >("Coordinates")) {
-    coords = paramList.get<Teuchos::RCP<MV> >("Coordinates");
+  typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMV;
+  //FIXME coords is unused -- is this intentional?
+  Teuchos::RCP<dMV> coords;
+  if (paramList.isType<Teuchos::RCP<dMV> >("Coordinates")) {
+    coords = paramList.get<Teuchos::RCP<dMV> >("Coordinates");
     paramList.remove("Coordinates");
   }
 
@@ -209,14 +211,14 @@ void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     paramList.remove("Nullspace");
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coordsVel;
-  if (paramList.isType<  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >  >("Velcoords")) {
-    coordsVel = paramList.get<Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > ("Velcoords");
+  Teuchos::RCP<dMV> coordsVel;
+  if (paramList.isType<  dMV >  >("Velcoords")) {
+    coordsVel = paramList.get<Teuchos::RCP<dMV> > ("Velcoords");
     paramList.remove("Velcoords");
   }
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coordsPres;
-  if (paramList.isType<  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >  >("Prescoords")) {
-    coordsPres = paramList.get<Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > ("Prescoords");
+  Teuchos::RCP<dMV> coordsPres;
+  if (paramList.isType<dMV> >("Prescoords")) {
+    coordsPres = paramList.get<Teuchos::RCP<dMV> > ("Prescoords");
     paramList.remove("Prescoords");
   }
 

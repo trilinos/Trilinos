@@ -135,9 +135,11 @@ namespace MueLu {
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
+    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+
     const ParameterList& pL = GetParameterList();
 
-    RCP<MultiVector> coords = Get< RCP<MultiVector> >(currentLevel, "Coordinates");
+    RCP<xdMV> coords = Get< RCP<xdMV> >(currentLevel, "Coordinates");
     RCP<Matrix>      A      = Get< RCP<Matrix> >     (currentLevel, "A");
     RCP<const Map>   rowMap = A->getRowMap();
     RCP<const Map>   colMap = A->getColMap();
@@ -157,10 +159,10 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(bx_ > 3 || by_ > 3 || bz_ > 3, Exceptions::RuntimeError, "Currently cannot deal with brick size > 3");
     }
 
-    RCP<MultiVector> overlappedCoords = coords;
+    RCP<xdMV> overlappedCoords = coords;
     RCP<const Import> importer = ImportFactory::Build(coords->getMap(), colMap);
     if (!importer.is_null()) {
-      overlappedCoords = MultiVectorFactory::Build(colMap, coords->getNumVectors());
+      overlappedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(colMap, coords->getNumVectors());
       overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
     }
 
@@ -257,7 +259,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<MultiVector>& coords, const RCP<const Map>& map) const {
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
     x_    = coords->getData(0);
@@ -290,7 +292,7 @@ namespace MueLu {
   RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::container>
   BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Construct1DMap (const RCP<const Teuchos::Comm<int> >& comm,
-                  const ArrayRCP<const Scalar>& x) const
+                  const ArrayRCP<const double>& x) const
   {
     int n = x.size();
 
