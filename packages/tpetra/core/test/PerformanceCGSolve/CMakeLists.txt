@@ -9,7 +9,10 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 # The performance test currently depends on KokkosCore for its timers.
 # Otherwise, it does not use anything else in KokkosCore directly.
-IF (Trilinos_ENABLE_KokkosCore)
+#
+# FIXME (mfh 15 Jan 2015) The test currently does not build for me if
+# the Kokkos refactor version of Tpetra is disabled.
+IF (Trilinos_ENABLE_KokkosCore AND Tpetra_ENABLE_Kokkos_Refactor)
   TRIBITS_ADD_EXECUTABLE(
     Performance-CGSolve
     SOURCES
