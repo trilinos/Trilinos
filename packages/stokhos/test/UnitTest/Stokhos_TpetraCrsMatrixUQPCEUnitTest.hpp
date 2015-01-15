@@ -1994,13 +1994,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     getParametersFromXmlFile("muelu_cheby.xml");
   RCP<OP> M =
     MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
-  // RCP<OP> M =
-  //   MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix);
-  // typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
-  // Ifpack2::Factory factory;
-  // RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
-  // M->initialize();
-  // M->compute();
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -2092,7 +2085,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_AMESOS2_SUPERLU)
+#if defined(HAVE_STOKHOS_AMESOS2)
 
 //
 // Test Amesos2 solve for a 1-D Laplacian matrix
@@ -2205,7 +2198,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Amesos2::Solver<Tpetra_CrsMatrix,Tpetra_MultiVector> Solver;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   std::string solver_name;
-#if defined(HAVE_AMESOS2_KLU2)
+#if defined(HAVE_AMESOS2_BASKER)
+  solver_name = "basker";
+#elif defined(HAVE_AMESOS2_KLU2)
   solver_name = "klu2";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
   solver_name = "superlu_dist";
@@ -2224,6 +2219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   success = true;
   return;
 #endif
+  out << "Solving linear system with " << solver_name << std::endl;
   RCP<Solver> solver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(
     solver_name, matrix, x, b);
   solver->solve();
