@@ -787,11 +787,41 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/pce/amesos2/*.cpp
           )
 
-        TRANSFORM_CPP_TO_CU("${AMESOS2_SOURCES}" AMESOS2_CUDA_SOURCES ${DO_TRANSFORM})
+        SET(AMESOS2_ETI_CLASSES "")
+        IF(Amesos2_ENABLE_Basker)
+          LIST(APPEND AMESOS2_ETI_CLASSES
+            Basker
+            )
+        ENDIF()
+
+        IF (Kokkos_ENABLE_Pthread)
+          PROCESS_ETI_TEMPLATE(
+            "${AMESOS2_ETI_CLASSES}"
+            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Threads.tmpl
+            "Amesos2_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
+            AMESOS2_SRCS)
+          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+        ENDIF()
+        IF (Kokkos_ENABLE_OpenMP)
+          PROCESS_ETI_TEMPLATE(
+            "${AMESOS2_ETI_CLASSES}"
+            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_OpenMP.tmpl
+            "Amesos2_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
+            AMESOS2_SRCS)
+          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+        ENDIF()
+        IF (Kokkos_ENABLE_Cuda)
+          PROCESS_ETI_TEMPLATE(
+            "${AMESOS2_ETI_CLASSES}"
+            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Cuda.tmpl
+            "Amesos2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
+            AMESOS2_SRCS)
+          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+        ENDIF()
         TRIBITS_ADD_LIBRARY(
           stokhos_amesos2
           HEADERS ${AMESOS2_HEADERS}
-          SOURCES ${AMESOS2_CUDA_SOURCES}
+          SOURCES ${AMESOS2_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           ADDED_LIB_TARGET_NAME_OUT STOKHOS_AMESOS2_LIBNAME
           )

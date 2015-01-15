@@ -39,15 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_AMESOS2_MP_VECTOR_HPP
-#define STOKHOS_AMESOS2_MP_VECTOR_HPP
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
-// This header file should be included whenever compiling any Amesos2
-// code with Stokhos scalar types
+#include "Ifpack2_config.h"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-// MP includes and specializations
-#include "Stokhos_Tpetra_MP_Vector.hpp"
-#include "Amesos2_Solver_MP_Vector.hpp"
-#include "Amesos2_Basker_MP_Vector.hpp"
+#include "Tpetra_ETIHelperMacros.h"
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Amesos2_MP_Vector.hpp"
 
-#endif // STOKHOS_AMESOS2_MP_VECTOR_HPP
+#include "Amesos2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Amesos2_@CLASS_FILE_NAME@_def.hpp"
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#define AMESOS2_@UPPER_CASE_CLASS@_INSTANT(S,LO,GO,N)                   \
+  template class Amesos2::Basker<Tpetra::CrsMatrix<S, LO, GO, N>,       \
+                                  Tpetra::MultiVector<S, LO, GO,  N> >;
+
+INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(AMESOS2_@UPPER_CASE_CLASS@_INSTANT)
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
