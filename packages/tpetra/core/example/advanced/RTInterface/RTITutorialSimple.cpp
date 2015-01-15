@@ -42,15 +42,8 @@
 */
 
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_XMLParameterListReader.hpp>
-#include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 
-#include <Tpetra_ConfigDefs.hpp>
-
-#undef HAVE_KOKKOSCLASSIC_THRUST
-
-#include <Tpetra_HybridPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_RTI.hpp>
@@ -68,8 +61,8 @@ public:
 };
 
 // A few examples of RTI capability
-template <class Node>
-void simple_rti_examples(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
+void
+simple_rti_examples (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::RCP;
   using Tpetra::RTI::reduce;
@@ -77,99 +70,69 @@ void simple_rti_examples(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, co
   using Tpetra::RTI::reductionGlob;
   using Tpetra::RTI::unary_transform;
   using Tpetra::RTI::binary_transform;
-  const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  // Create a simple map with 1000 local entries per node
-  const size_t numLocal   = 1000*comm->getSize();
-  auto map = Tpetra::createContigMapWithNode<int,int>(INVALID,numLocal,comm,node);
-  auto   dx = Tpetra::createVector<double>(map),
-         dy = Tpetra::createVector<double>(map);
+  using std::cout;
+  using std::endl;
+  typedef Tpetra::global_size_t GST;
+
+  // Create a Map with 1000 local entries per process
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+  const Tpetra::Map<>::global_ordinal_type indexBase = 0;
+  const size_t numLocal = 1000*comm->getSize ();
+  RCP<const Tpetra::Map<> > map =
+    rcp (new Tpetra::Map<> (INVALID, numLocal, indexBase, comm));
+  auto dx = Tpetra::createVector<double> (map);
+  auto dy = Tpetra::createVector<double> (map);
 
   // Set dx to random
-  dx->randomize();
+  dx->randomize ();
 
   // Assign dy = dx, multiple ways!
   // Via functor
-  binary_transform( *dy, *dx, AssignSecond<double>() );
+  binary_transform (*dy, *dx, AssignSecond<double> ());
   // Via C++11 lambda expression
-  binary_transform( *dy, *dx, [](double, double xx){return xx;} );
+  binary_transform (*dy, *dx, [] (double, double xx) { return xx; });
   // Via convenient macro
-  TPETRA_BINARY_TRANSFORM( dy, dx,   dx );
+  TPETRA_BINARY_TRANSFORM( dy, dx, dx );
 
   // Perform multi-precision inner product...
   // floating point inner product with double precision accumulator
-  float fresult; double dresult;
-  auto fx = Tpetra::createVector<float>(map),
-       fy = Tpetra::createVector<float>(map);
-  TPETRA_BINARY_TRANSFORM( fx, dx, (float)dx );
-  TPETRA_BINARY_TRANSFORM( fy, dy, (float)dy );
+  float fresult;
+  double dresult;
+  auto fx = Tpetra::createVector<float> (map);
+  auto fy = Tpetra::createVector<float> (map);
+  TPETRA_BINARY_TRANSFORM( fx, dx, (float) dx );
+  TPETRA_BINARY_TRANSFORM( fy, dy, (float) dy );
   // ... using a composite adaptor and standard functors
-  fresult = reduce(*fx, *fy, reductionGlob<ZeroOp<double>>(std::multiplies<float>(), std::plus<double>()) );
+  fresult = reduce (*fx, *fy,
+                    reductionGlob<ZeroOp<double> > (std::multiplies<float> (),
+                                                    std::plus<double> ()));
   // ... using a convenience macro to generate all of that
-  fresult = TPETRA_REDUCE2( fx, fy,   fx*fy, ZeroOp<double>, std::plus<double>() );
-
+  fresult = TPETRA_REDUCE2( fx, fy, fx*fy, ZeroOp<double>, std::plus<double> ());
   // compare against double precision approach
-  dresult = TPETRA_REDUCE2( dx, dy,   dx*dy, ZeroOp<double>, std::plus<double>() );
-  if (comm->getRank() == 0) {
-    std::cout << " Float product/double accumulator: " << fresult << std::endl;
-    std::cout << "Double product/double accumulator: " << dresult << std::endl;
+  dresult = TPETRA_REDUCE2( dx, dy, dx*dy, ZeroOp<double>, std::plus<double> ());
+  if (comm->getRank () == 0) {
+    cout << "Float product  / double accumulator: " << fresult << endl;
+    cout << "Double product / double accumulator: " << dresult << endl;
   }
 }
 
-// User-specified run object; think of this as main(), but templated on the node type
-template <class Node>
-class runTest {
-  public:
-    // HybridNode requires a method with this signature
-    static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
-    {
-      std::cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
-      simple_rti_examples<Node>(comm,node);
-    }
-};
+int main (int argc, char **argv)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::cout;
+  using std::endl;
 
-// Actual main(): configure the HybridPlatform
-int main(int argc, char **argv) {
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+  Teuchos::GlobalMPISession mpisess (&argc, &argv, &std::cout);
+  RCP<const Teuchos::Comm<int> > comm =
+    rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
 
-  //
-  // read machine file and initialize platform
-  //
-  std::string machine_list(
-    "<ParameterList>                                                               "
-    "  <ParameterList name='%1=0'>                                                 "
-    "    <Parameter name='NodeType' type='string' value='default'/>                "
-    "  </ParameterList>                                                            "
-    "  <ParameterList name='=-1'>                                                  "
-    "    <Parameter name='NodeType' type='string' value='KokkosClassic::OpenMPNode'/>     "
-    "    <Parameter name='Verbose' type='int' value='0'/>                          "
-    "    <Parameter name='Num Threads' type='int' value='-1'/>                     "
-    "  </ParameterList>                                                            "
-    "  <ParameterList name='=-2'>                                                  "
-    "    <Parameter name='NodeType' type='string' value='KokkosClassic::TBBNode'/>        "
-    "    <Parameter name='Verbose' type='int' value='0'/>                          "
-    "    <Parameter name='Num Threads' type='int' value='-1'/>                     "
-    "  </ParameterList>                                                            "
-    "  <ParameterList name='=-3'>                                                  "
-    "    <Parameter name='NodeType' type='string' value='KokkosClassic::TPINode'/>        "
-    "    <Parameter name='Verbose' type='int' value='0'/>                          "
-    "    <Parameter name='Num Threads' type='int' value='0'/>                      "
-    "  </ParameterList>                                                            "
-    "  <ParameterList name='=-4'>                                                  "
-    "    <Parameter name='NodeType' type='string' value='KokkosClassic::ThrustGPUNode'/>  "
-    "    <Parameter name='Verbose' type='int' value='0'/>                          "
-    "    <Parameter name='Device Number' type='int' value='0'/>                    "
-    "  </ParameterList>                                                            "
-    "</ParameterList>                                                              "
-  );
+  cout << "Running test on MPI process rank " << comm->getRank ()
+       << " of " << comm->getSize () << endl;
+  simple_rti_examples (comm);
 
-  // Load the machine ParameterList from the string above; this will typically
-  // be loaded from an XML file
-  Teuchos::ParameterList machPL;
-  Teuchos::updateParametersFromXmlString(machine_list, inOutArg(machPL));
-  Tpetra::HybridPlatform platform(comm,machPL);
-  platform.runUserCode<runTest>();
-
-  if (comm->getRank() == 0) std::cout << "End Result: TEST PASSED" << std::endl;
+  if (comm->getRank () == 0) {
+    cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 }
