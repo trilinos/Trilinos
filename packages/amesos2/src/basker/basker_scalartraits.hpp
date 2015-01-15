@@ -38,7 +38,6 @@ struct BASKER_ScalarTraits
   typedef T magnitudeType;
   static inline double reciprocal(double c ){return 0;}
   static inline double divide(double a, double b){return 0;}
-  static inline double divideConjugate(double a, double b){return 0;}
   static inline magnitudeType approxABS(double a){return 0;}
   static inline magnitudeType abs(double a){return 0;}
   static inline bool gt (double a, double b){return 0;}  
@@ -51,7 +50,6 @@ struct BASKER_ScalarTraits<double>
   typedef double magnitudeType;
   static inline double reciprocal(double c){return 1.0/c;}
   static inline double divide(double a, double b){return a/b;}
-  static inline double divideConjugate(double a, double b){return a/b;}
   static inline magnitudeType approxABS(double a)
   { return (SCALAR_ABS(a));}
   static inline magnitudeType abs(double a)
@@ -67,7 +65,6 @@ struct BASKER_ScalarTraits<float>
   typedef float magnitudeType;
   static inline float reciprocal(float c){return 1.0/c;}
   static inline float divide(float a, float b){return a/b;}
-  static inline float divideConjugate(float a, float b){return a/b;}
   static inline magnitudeType approxABS(float a)
   { return (SCALAR_ABS(a));}
   static inline magnitudeType abs(float a)
@@ -127,30 +124,6 @@ struct BASKER_ScalarTraits< std::complex<T> >
         {
             r = br / bi ;
             den = r * br + bi ;
-            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
-        }
-        return ret;
-    }
-
-    static inline ComplexT divideConjugate (ComplexT a, ComplexT b)
-    {
-        T r, den, ar, ai, br, bi ;
-        ComplexT ret;
-
-        br = (Teuchos::ScalarTraits<ComplexT>::real(b)) ;
-        bi = (Teuchos::ScalarTraits<ComplexT>::imag(b)) ;
-        ar = (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
-        ai = (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
-        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
-        {
-            r = (-bi) / br ;
-            den = br - r * bi ;
-            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
-        }
-        else
-        {
-            r = br / (-bi) ;
-            den =  r * br - bi;
             ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
         }
         return ret;
@@ -252,30 +225,6 @@ struct BASKER_ScalarTraits< std::complex<T> >
         {
             r = br / bi ;
             den = r * br + bi ;
-            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
-        }
-        return ret;
-    }
-
-    static inline ComplexT divideConjugate (ComplexT a, ComplexT b)
-    {
-        T r, den, ar, ai, br, bi ;
-        ComplexT ret;
-
-        br = (std::real(b)) ;
-        bi = (std::imag(b)) ;
-        ar = (std::real(a)) ;
-        ai = (std::imag(a)) ;
-        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
-        {
-            r = (-bi) / br ;
-            den = br - r * bi ;
-            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
-        }
-        else
-        {
-            r = br / (-bi) ;
-            den =  r * br - bi;
             ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
         }
         return ret;
