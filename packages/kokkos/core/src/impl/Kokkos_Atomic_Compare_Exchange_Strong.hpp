@@ -93,7 +93,7 @@ T atomic_compare_exchange( volatile T * const dest , const T & compare ,
                                     sizeof(T) != sizeof(unsigned long long int) &&
                                     sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
 {
-  cuda_abort("Error: calling atomic_compare_exchange with 128bit type is not supported on CUDA execution space.");
+  Kokkos::abort("Error: calling atomic_compare_exchange with 128bit type is not supported on CUDA execution space.");
   return T();
 }
 

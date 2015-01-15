@@ -84,6 +84,7 @@ public:
 
   //@}
   /*------------------------------------------------------------------------*/
+
   /** \brief  Initialization will construct one or more instances */
   static Qthread & instance( int = 0 );
 

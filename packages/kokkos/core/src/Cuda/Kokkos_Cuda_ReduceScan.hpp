@@ -244,7 +244,7 @@ void cuda_intra_block_reduce_scan( const FunctorType & functor ,
 
   // Must have power of two thread count
 
-  if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
+  if ( BlockSizeMask & blockDim.y ) { Kokkos::abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
 
 #define BLOCK_REDUCE_STEP( R , TD , S )  \
   if ( ! ( R & ((1<<(S+1))-1) ) ) { ValueJoin::join( functor , TD , (TD - (value_count<<S)) ); }
@@ -346,7 +346,7 @@ bool cuda_single_inter_block_reduce_scan( const FunctorType     & functor ,
   const unsigned BlockSizeShift = power_of_two_if_valid( blockDim.y );
 
   // Must have power of two thread count
-  if ( BlockSizeMask & blockDim.y ) { cuda_abort("Cuda::cuda_single_inter_block_reduce_scan requires power-of-two blockDim"); }
+  if ( BlockSizeMask & blockDim.y ) { Kokkos::abort("Cuda::cuda_single_inter_block_reduce_scan requires power-of-two blockDim"); }
 
   const integral_nonzero_constant< size_type , ValueTraits::StaticValueSize / sizeof(size_type) >
     word_count( ValueTraits::value_size( functor ) / sizeof(size_type) );

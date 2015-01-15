@@ -135,7 +135,7 @@ T atomic_fetch_add( volatile T * const dest ,
                                     sizeof(T) != sizeof(unsigned long long int) &&
                                     sizeof(T) == sizeof(Impl::cas128_t), const T >::type val )
 {
-  cuda_abort("Error: calling atomic_fetch_add with 128bit type is not supported on CUDA execution space.");
+  Kokkos::abort("Error: calling atomic_fetch_add with 128bit type is not supported on CUDA execution space.");
   return T();
 }
 

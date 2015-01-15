@@ -104,7 +104,7 @@ T atomic_exchange(
                                     sizeof(T) != sizeof(unsigned long long int) &&
                                     sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
 {
-  cuda_abort("Error: calling atomic_exchange with 128bit type is not supported on CUDA execution space.");
+  Kokkos::abort("Error: calling atomic_exchange with 128bit type is not supported on CUDA execution space.");
   return T();
 }
 
@@ -139,7 +139,7 @@ void atomic_assign(
                                     sizeof(T) != sizeof(unsigned long long int) &&
                                     sizeof(T) == sizeof(Impl::cas128_t) , const T & >::type val )
 {
-  cuda_abort("Error: calling atomic_assign with 128bit type is not supported on CUDA execution space.");
+  Kokkos::abort("Error: calling atomic_assign with 128bit type is not supported on CUDA execution space.");
 }
 
 //----------------------------------------------------------------------------

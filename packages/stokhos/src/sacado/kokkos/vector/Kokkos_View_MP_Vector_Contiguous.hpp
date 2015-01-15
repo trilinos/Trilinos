@@ -1226,12 +1226,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     //
     if ( dst_type::is_static && (part.begin % dst.m_sacado_size.value ||
                                  part.begin + dst.m_sacado_size.value != part.end) ) {
-      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning");
     }
 
     dst.m_management.decrement( dst.m_ptr_on_device );
@@ -1621,12 +1616,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     typedef View<ST,SL,SD,SM,ViewMPVectorContiguous> src_type ;
 
     if ( src.m_stride != 1 ) {
-      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible assignment");
     }
 
     dst.m_management.decrement( dst.m_ptr_on_device );
@@ -1707,12 +1697,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     typedef typename dst_type::array_layout dst_layout_type ;
 
     if ( src.m_stride != 1 ) {
-      const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-      cuda_abort(msg);
-#else
-      throw std::runtime_error(msg);
-#endif
+      Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible assignment");
     }
 
     dst.m_management.decrement( dst.m_ptr_on_device );
