@@ -190,9 +190,9 @@ int runRCB(
     uinput = new UserInputForTests(zoltanTestDirectory, testArgs[testCnt*3],
                                    comm, true);
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests " << e.what() << std::endl;
     return 1;
   }
 
@@ -200,9 +200,9 @@ int runRCB(
   try{
     matrix = uinput->getUITpetraCrsMatrix();
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get matrix" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get matrix " << e.what() << std::endl;
     return 1;
   }
 
@@ -212,9 +212,9 @@ int runRCB(
   try{
    coords = uinput->getUICoordinates();
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get coordinates" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get coordinates " << e.what() << std::endl;
     return 1;
   }
 
@@ -224,9 +224,9 @@ int runRCB(
   try{
    weights = uinput->getUIWeights();
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: get weights" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get weights " << e.what() << std::endl;
     return 1;
   }
 
@@ -239,9 +239,9 @@ int runRCB(
   try{
     ia = new matrixAdapter_t(matrixConst, nWeights);
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter " << e.what() << std::endl;
     return 1;
   }
 
@@ -253,9 +253,9 @@ int runRCB(
   try{
     ca = new vectorAdapter_t(coords);
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "Test " << testCnt << ":  FAIL: vector adapter" << std::endl;
+      std::cout << "Test " << testCnt << ":  FAIL: vector adapter " << e.what() << std::endl;
     return 1;
   }
 
@@ -276,7 +276,7 @@ int runRCB(
   params.set("num_global_parts", numGlobalParts);
   params.set("bisection_num_test_cuts", 1);
   params.set("average_cuts", testArgs[testCnt*3+1]);
-  params.set("rectilinear_blocks", testArgs[testCnt*3+2]);
+  params.set("rectilinear", testArgs[testCnt*3+2]);
 
   if (me == 0) {
     std::cout << "Test " << testCnt << " filename            = "
@@ -319,18 +319,18 @@ int runRCB(
     problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params);
   }
 #endif
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "FAIL: problem" << std::endl;
+      std::cout << "FAIL: problem " << e.what() << std::endl;
     return 1;
   }
 
   try{
     problem->solve();
   }
-  catch(...){
+  catch(std::exception &e){
     if (me == 0)
-      std::cout << "FAIL: solve" << std::endl;
+      std::cout << "FAIL: solve " << e.what() << std::endl;
     return 1;
   }
 
