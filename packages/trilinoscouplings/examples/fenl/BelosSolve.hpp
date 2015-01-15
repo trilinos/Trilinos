@@ -146,8 +146,9 @@ belos_solve(
 
     // Create tpetra-vector storing coordinates for repartitioning
     typename Mesh::node_coord_type node_coords = mesh.node_coord();
-    Teuchos::RCP<VectorType> coords =
-      Teuchos::rcp(new VectorType(x->getMap(), node_coords.dimension_1()));
+    //Teuchos::RCP<VectorType> coords =
+    Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
+      Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x->getMap(), node_coords.dimension_1()));
     fill_coords(node_coords, coords->getDualView().d_view);
 
     std::string xmlFileName="muelu.xml";

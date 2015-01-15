@@ -69,7 +69,7 @@ namespace Example {
     setupPreconditioner(
       const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
       const std::string& xmlFilename,
-      const Teuchos::RCP<Tpetra::MultiVector<S,LO,GO,N> >& coords) = 0;
+      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords) = 0;
 
   private:
 
