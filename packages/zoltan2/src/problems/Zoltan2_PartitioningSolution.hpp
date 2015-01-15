@@ -1310,33 +1310,6 @@ template <typename Adapter>
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
 
-#ifdef DELETETHIS
-  if (dataDidNotMove) {
-    // Case where the algorithm provides the part list in the same order
-    // that it received the gnos.
-
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
-    }
-    else{
-      zgid_t *gidList = new zgid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<zgid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const zgid_t>(gidList, 0, len);
-    }
-    parts_ = partList;
-  }
-  else 
-#endif // DELETETHIS
   {
     // Case where the algorithm moved the data.
     // KDDKDD Should we require the algorithm to return the parts in
@@ -1598,9 +1571,6 @@ template <typename Adapter>
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
 
-#ifdef DELETETHIS
-  if (dataDidNotMove) 
-#endif // DELETETHIS
   {
     // Case where the algorithm provides the part list in the same order
     // that it received the gnos.
@@ -1625,140 +1595,6 @@ template <typename Adapter>
     }
     parts_ = partList;
   }
-#ifdef DELETETHIS
-  else {
-    // Case where the algorithm moved the data.
-    // KDDKDD Should we require the algorithm to return the parts in
-    // KDDKDD the same order as the gnos provided by the model?
-
-    // We send part information to the process that "owns" the global number.
-
-    ArrayView<zgid_t> emptyView;
-    ArrayView<int> procList;
-
-    if (len){
-      int *tmp = new int [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
-      procList = ArrayView<int>(tmp, len);
-    }
-
-    idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
-
-    int remotelyOwned = 0;
-    int rank = comm_->getRank();
-    int nprocs = comm_->getSize();
-
-    for (size_t i=0; !remotelyOwned && i < len; i++){
-      if (procList[i] != rank)
-        remotelyOwned = 1;
-    }
-
-    int anyRemotelyOwned=0;
-
-    try{
-      reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
-        &remotelyOwned, &anyRemotelyOwned);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
-
-    if (anyRemotelyOwned){
-
-      // Send the owners of these gnos their part assignments.
-
-      Array<int> countOutBuf(nprocs, 0);
-      Array<int> countInBuf(nprocs, 0);
-
-      Array<gno_t> outBuf(len*2, 0);
-
-      if (len > 0){
-        Array<lno_t> offsetBuf(nprocs+1, 0);
-
-        for (size_t i=0; i < len; i++){
-          countOutBuf[procList[i]]+=2;
-        }
-
-        offsetBuf[0] = 0;
-        for (int i=0; i < nprocs; i++)
-          offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
-
-        for (size_t i=0; i < len; i++){
-          int p = procList[i];
-          int off = offsetBuf[p];
-          outBuf[off] = gnoList[i];
-          outBuf[off+1] = static_cast<gno_t>(partList[i]);
-          offsetBuf[p]+=2;
-        }
-      }
-
-      ArrayRCP<gno_t> inBuf;
-
-      try{
-        AlltoAllv<gno_t>(*comm_, *env_,
-          outBuf(), countOutBuf(), inBuf, countInBuf());
-      }
-      Z2_FORWARD_EXCEPTIONS;
-
-      outBuf.clear();
-      countOutBuf.clear();
-
-      gno_t newLen = 0;
-      for (int i=0; i < nprocs; i++)
-        newLen += countInBuf[i];
-
-      countInBuf.clear();
-
-      newLen /= 2;
-
-      ArrayRCP<part_t> parts;
-      ArrayRCP<const gno_t> myGnos;
-
-      if (newLen > 0){
-
-        gno_t *tmpGno = new gno_t [newLen];
-        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
-
-        part_t *tmpPart = new part_t [newLen];
-        env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
-
-        size_t next = 0;
-        for (gno_t i=0; i < newLen; i++){
-          tmpGno[i] = inBuf[next++];
-          tmpPart[i] = inBuf[next++];
-        }
-
-        parts = arcp(tmpPart, 0, newLen);
-        myGnos = arcp(tmpGno, 0, newLen);
-      }
-
-      gnoList = myGnos;
-      partList = parts;
-      len = newLen;
-    }
-
-    delete [] procList.getRawPtr();
-
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
-    }
-    else{
-      zgid_t *gidList = new zgid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<zgid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const zgid_t>(gidList, 0, len);
-    }
-
-    parts_ = partList;
-  }
-#endif // DELETETHIS
 
   // Now determine which process gets each object, if not one-to-one.
 
