@@ -56,8 +56,9 @@
 namespace Tpetra {
 
 /// \brief A platform class for hybrid nodes.
-/// \warning Users should consider this class DEPRECATED.
-class HybridPlatform : public Teuchos::Describable {
+/// \warning This class is DEPRECATED and will be removed in the next
+///   major release (12.0) of Trilinos.
+class TPETRA_DEPRECATED HybridPlatform : public Teuchos::Describable {
 private:
   typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_type;
 

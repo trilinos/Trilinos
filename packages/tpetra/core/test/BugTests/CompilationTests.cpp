@@ -101,7 +101,6 @@ typedef int DistObject;
 typedef int Distributor;
 typedef int Export;
 typedef int FDStencil;
-typedef int HybridPlatform;
 typedef int Import;
 typedef int KernelOp;
 typedef int Map;

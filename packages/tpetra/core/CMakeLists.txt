@@ -579,8 +579,8 @@ ELSE()
   MESSAGE(STATUS "Not enabling Tpetra/RTI")
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat AND ${PACKAGE_NAME}_ENABLE_RTI)
-  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting Tpetra_ENABLE_RTI, and you also enabled the TeuchosKokkosCompat subpackage of Kokkos.  The new Kokkos wrapper Nodes in the TeuchosKokkosCompat subpackage are currently incompatible with RTI.  Note that this has nothing to do with the Kokkos refactor version of Tpetra; it's just that the new Kokkos wrapper Nodes are a bit less tolerant.")
+IF (Tpetra_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_RTI)
+  MESSAGE(FATAL_ERROR "You enabled the Reduction/Transformation Interface (RTI) in Tpetra by setting Tpetra_ENABLE_RTI, yet the Kokkos refactor (new) version of Tpetra is enabled.  We have not yet certified RTI for use with the new version of Tpetra.  If you really need RTI right now, you may bring back the old version of Tpetra temporarily by setting Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that the old version of Tpetra will go away completely with the 12.0 release of Trilinos.")
 ENDIF ()
 
 #
