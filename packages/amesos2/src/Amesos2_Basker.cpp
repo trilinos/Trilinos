@@ -54,6 +54,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_EPETRA_INST(Basker);
 #endif
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_TPETRA_INST_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(Basker,float,int,int);
 #endif
@@ -66,12 +67,54 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<double>,int,int);
 #endif
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,float,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<float>,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<double>,int,unsigned);
+#endif
+#endif
+
 #ifdef HAVE_TPETRA_INST_INT_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,float,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,long);
 #endif
-#if defined(HAVE_TEUCHOS_LONG_LONG_INT) && defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-  AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,long long int);
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<float>,int,long);
 #endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<double>,int,long);
+#endif
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,float,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Basker,double,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<float>,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Basker,std::complex<double>,int,long long);
+#endif
+#endif
+
+
 
 }
 
