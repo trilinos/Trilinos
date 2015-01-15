@@ -6225,7 +6225,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 
     ArrayRCP<const mj_gno_t> gnoListRCP = arcp(gnoList,
                                                0, this->num_local_coords, true);
-    solution->setParts(gnoListRCP, partId, true);
+    solution->setParts(gnoListRCP, partId);
     this->free_work_memory();
 }
 

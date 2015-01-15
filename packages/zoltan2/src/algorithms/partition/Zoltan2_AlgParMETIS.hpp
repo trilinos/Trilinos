@@ -284,7 +284,7 @@ void AlgParMETIS<Adapter>::partition(
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxgnos);
 
-  solution->setParts(gnos, partList, true);
+  solution->setParts(gnos, partList);
 
   env->memory("Zoltan2-ParMETIS: After creating solution");
 

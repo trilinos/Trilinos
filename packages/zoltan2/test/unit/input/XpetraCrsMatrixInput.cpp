@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
   ArrayRCP<part_t> solnParts(p, 0, nrows, true);
 
   soln_t solution(env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts, false);//could use true, but test false
+  solution.setParts(gidArray, solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix
