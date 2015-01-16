@@ -259,7 +259,7 @@ public:
       pStream = Teuchos::rcp(&bhs, false);
     }
 
-    std::ios::fmtflags f( outStream.flags() );
+    std::ios::fmtflags f( pStream->flags() );
 
     Teuchos::RCP<Vector> v    = this->clone();
     Teuchos::RCP<Vector> vtmp = this->clone();
@@ -339,7 +339,7 @@ public:
 
     *pStream << "************   End verification of linear algebra.\n\n";
 
-    outStream.flags( f );
+    pStream->flags( f );
 
     return vCheck;
   }
