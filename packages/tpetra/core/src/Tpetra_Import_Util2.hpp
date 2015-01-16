@@ -53,9 +53,13 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
+
+// Tpetra::CrsMatrix uses the functions below in its implementation.  To
+// avoid a circular include issue, only include the declarations for CrsMatrix.
+// We will include the definition after the functions here have been defined.
+#include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Import_Util {
@@ -931,5 +935,10 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
 
 } // namespace Import_Util
 } // namespace Tpetra
+
+// We can include the definitions for Tpetra::CrsMatrix now that the above
+// functions have been defined.  For ETI, this isn't necessary, so we just
+// including the generated hpp
+#include "Tpetra_CrsMatrix.hpp"
 
 #endif // TPETRA_IMPORT_UTIL_HPP
