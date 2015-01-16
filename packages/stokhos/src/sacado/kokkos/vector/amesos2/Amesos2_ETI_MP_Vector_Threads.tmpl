@@ -39,29 +39,23 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
+#include "Amesos2_config.h"
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_Amesos2_MP_Vector.hpp"
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
-
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
-
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
-#include "Stokhos_MueLu_UQ_PCE.hpp"
-
-#include "MueLu_ConstraintFactory_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::ConstraintFactory<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
+#include "Amesos2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Amesos2_@CLASS_FILE_NAME@_def.hpp"
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-INSTANTIATE_TPETRA_UQ_PCE_CUDA(MUELU_INST_N)
+#define AMESOS2_@UPPER_CASE_CLASS@_INSTANT(S,LO,GO,N)                   \
+  template class Amesos2::Basker<Tpetra::CrsMatrix<S, LO, GO, N>,       \
+                                  Tpetra::MultiVector<S, LO, GO,  N> >;
 
-#endif
+INSTANTIATE_TPETRA_MP_VECTOR_THREADS(AMESOS2_@UPPER_CASE_CLASS@_INSTANT)
 
-
+#endif // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

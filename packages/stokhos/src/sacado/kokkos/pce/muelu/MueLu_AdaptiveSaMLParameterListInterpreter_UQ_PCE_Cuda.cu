@@ -50,7 +50,6 @@
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
 #include "MueLu_AdaptiveSaMLParameterListInterpreter_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
