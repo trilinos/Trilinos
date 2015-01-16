@@ -262,7 +262,7 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( HAVE_TPETRA_INST_PTHREAD )
     if ( cmdline.CMD_USE_THREADS ) {
 #if defined(__MIC__)
       if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
@@ -286,7 +286,7 @@ int main( int argc , char ** argv )
     }
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( HAVE_TPETRA_INST_OPENMP )
     if ( cmdline.CMD_USE_OPENMP ) {
 #if defined(__MIC__)
       if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
@@ -310,7 +310,7 @@ int main( int argc , char ** argv )
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( HAVE_TPETRA_INST_CUDA )
     if ( cmdline.CMD_USE_CUDA ) {
       if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
            cmdline.CMD_USE_UQ_ENSEMBLE == 16 )

@@ -46,7 +46,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+#if defined (HAVE_TPETRA_INST_PTHREAD)
 INST_DEVICE_HOST( Threads )
 #endif
 

@@ -61,7 +61,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+#if defined (HAVE_TPETRA_INST_PTHREAD)
 
 typedef Stokhos::DynamicStorage<int,double,Threads> Storage_Threads;
 typedef Sacado::UQ::PCE<Storage_Threads> Scalar_Threads;
@@ -82,7 +82,7 @@ INST_KL( double , double , Threads )
 
 #endif
 
-#if defined (KOKKOS_HAVE_OPENMP)
+#if defined (HAVE_TPETRA_INST_OPENMP)
 
 typedef Stokhos::DynamicStorage<int,double,OpenMP> Storage_OpenMP;
 typedef Sacado::UQ::PCE<Storage_OpenMP> Scalar_OpenMP;

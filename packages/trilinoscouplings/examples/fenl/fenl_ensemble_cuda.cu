@@ -46,7 +46,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_CUDA)
+#if defined (HAVE_TPETRA_INST_CUDA)
 INST_DEVICE_GPU( Cuda )
 #endif
 

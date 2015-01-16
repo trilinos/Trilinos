@@ -2660,7 +2660,7 @@ typedef std::complex<double> ComplexDouble;
 #endif // HAVE_XPETRA_TPETRA
 
 
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL && !defined(TPETRA_HAVE_KOKKOS_REFACTOR) 
   using KokkosClassic::SerialNode;
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )

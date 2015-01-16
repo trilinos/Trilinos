@@ -44,12 +44,13 @@
 #include <fenl_impl.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
+#include <TpetraCore_config.h>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+#if defined (HAVE_TPETRA_INST_PTHREAD)
 
 INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
            ElementComputationConstantCoefficient , ManufacturedSolution )
@@ -58,7 +59,7 @@ INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
 
 #endif
 
-#if defined (KOKKOS_HAVE_OPENMP)
+#if defined (HAVE_TPETRA_INST_OPENMP)
 
 INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
            ElementComputationConstantCoefficient , ManufacturedSolution )

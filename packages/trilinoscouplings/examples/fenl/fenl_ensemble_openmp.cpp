@@ -46,7 +46,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_OPENMP)
+#if defined (HAVE_TPETRA_INST_OPENMP)
 INST_DEVICE_HOST( OpenMP )
 #endif
 
