@@ -91,10 +91,10 @@ void initialize_internal(const InitArguments& args)
     } else {
       Kokkos::OpenMP::initialize();
     }
-    std::cout << "Kokkos::initialize() fyi: OpenMP enabled and initialized" << std::endl ;
+    //std::cout << "Kokkos::initialize() fyi: OpenMP enabled and initialized" << std::endl ;
   }
   else {
-    std::cout << "Kokkos::initialize() fyi: OpenMP enabled but not initialized" << std::endl ;
+    //std::cout << "Kokkos::initialize() fyi: OpenMP enabled but not initialized" << std::endl ;
   }
 #endif
 
@@ -111,10 +111,10 @@ void initialize_internal(const InitArguments& args)
     } else {
       Kokkos::Threads::initialize();
     }
-    std::cout << "Kokkos::initialize() fyi: Pthread enabled and initialized" << std::endl ;
+    //std::cout << "Kokkos::initialize() fyi: Pthread enabled and initialized" << std::endl ;
   }
   else {
-    std::cout << "Kokkos::initialize() fyi: Pthread enabled but not initialized" << std::endl ;
+    //std::cout << "Kokkos::initialize() fyi: Pthread enabled but not initialized" << std::endl ;
   }
 #endif
 
@@ -138,7 +138,7 @@ void initialize_internal(const InitArguments& args)
     else {
       Kokkos::Cuda::initialize();
     }
-    std::cout << "Kokkos::initialize() fyi: Cuda enabled and initialized" << std::endl ;
+    //std::cout << "Kokkos::initialize() fyi: Cuda enabled and initialized" << std::endl ;
   }
 #endif
 }
@@ -336,7 +336,6 @@ void initialize(int& narg, char* arg[])
         }
 
         if((strncmp(arg[iarg],"--kokkos-ndevices",17) == 0) || !kokkos_ndevices_found) {
-          printf("Ndevices: %i %i\n",ndevices,skip_device);
           char *str;
           if ((str = getenv("SLURM_LOCALID"))) {
             int local_rank = atoi(str);
