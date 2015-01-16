@@ -96,6 +96,10 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
+    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcp(&consistency, false));
+    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON)) {
+      errorFlag++;
+    }
 
     // Basis tests.
     // set x to first basis vector
@@ -124,9 +128,11 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     };
 
-    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcp(&consistency, false));
-    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON)) {
-      errorFlag = 1;
+    // Repeat the checkVector tests with a zero vector.
+    x.scale(0.0);
+    consistency = x.checkVector(x, x, true, *outStream);
+    if (checkvec.norm() > 0.0) {
+      errorFlag++;
     }
 
   }

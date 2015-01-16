@@ -243,6 +243,7 @@ public:
                                          const Vector<Real> &y,
                                          const bool printToStream = true,
                                          std::ostream & outStream = std::cout ) const {
+    Real zero =  0.0;
     Real one  =  1.0;
     Real a    =  1.234;
     Real b    = -432.1;
@@ -319,7 +320,14 @@ public:
 
     // Consistency of scalar multiplication and norm.
     v->set(*this);
-    v->scale(one/v->norm()); vCheck.push_back(std::abs(v->norm() - one));
+    Real vnorm = v->norm();
+    if (vnorm == zero) {
+      v->scale(a);
+      vCheck.push_back(std::abs(v->norm() - zero));
+    } else {
+      v->scale(one/vnorm);
+      vCheck.push_back(std::abs(v->norm() - one));
+    }
     *pStream << std::setw(width) << std::left << "Consistency of scalar multiplication and norm. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Reflexivity.
