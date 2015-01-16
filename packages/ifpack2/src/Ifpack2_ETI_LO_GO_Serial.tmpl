@@ -51,7 +51,7 @@
 #include "Tpetra_CrsGraph.hpp"
 
 // Ifpack2 already instantiates its classes for the default Node type.
-#if defined(KOKKOS_HAVE_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 // Need this for the mangling of the Node typedef.
 TPETRA_ETI_MANGLING_TYPEDEFS()
