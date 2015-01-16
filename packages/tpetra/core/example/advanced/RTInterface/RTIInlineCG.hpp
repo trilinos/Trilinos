@@ -219,8 +219,12 @@ class CGDriver {
   // output
   bool                             testPassed;
 
-  template <class Node>
-  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Vector<>::node_type Node;
+
+  void
+  run (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     using std::pair;
     using std::make_pair;
@@ -238,10 +242,9 @@ class CGDriver {
     typedef typename STS::magnitudeType magnitude_type;
 
     // Static types
-    typedef int                                    LO;
-    typedef int                                    GO;
-    typedef Tpetra::Operator<S,LO,GO,Node>   Operator;
-    typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
+    typedef Tpetra::Operator<S>   Operator;
+    typedef Tpetra::Vector<S>       Vector;
+    typedef Tpetra::Map<> map_type;
 
     Teuchos::FancyOStream& os = *out;
     Teuchos::OSTab tab0 (os);
@@ -265,8 +268,11 @@ class CGDriver {
     // create the operator
     RCP<const Operator> A;
     {
-      auto map = Tpetra::createUniformContigMapWithNode<LO,GO,Node>(N,comm,node);
-      A = Tpetra::RTI::kernelOp<S>( TpetraExamples::DiagKernel<S>(N,kappa), map );
+      typedef Tpetra::global_size_t GST;
+      const GST numGlobal = static_cast<GST> (N);
+      const GO indexBase = 0;
+      RCP<const map_type> map = rcp (new map_type (numGlobal, indexBase, comm));
+      A = Tpetra::RTI::kernelOp<S> (TpetraExamples::DiagKernel<S> (N, kappa), map);
     }
     os << "Created operator" << endl;
 
