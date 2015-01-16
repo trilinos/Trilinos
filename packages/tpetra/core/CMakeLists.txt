@@ -79,6 +79,28 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #-----------------------------------------------------------------------
 #---------------Explicit Template Instantiation Logic-------------------
 #-----------------------------------------------------------------------
+#
+# For Ordinal Types, Scalars and Nodes macros are defined which say 
+# (i) whether the type gets instantiated and 
+# (ii) whether the type is available. 
+# If ETI is on both are identical, if not the settings of the latter
+# depend on the Kokkos and global trilinos settings respecitivly. 
+#
+# The availability macros have the following pattern: HAVE_TPETRA_[TYPE]
+# The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
+# The cmake options have the pattern:                 Tpetra_INST_[TYPE]
+#
+# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG
+# The node types are:    SERIALCLASSIC, SERIAL, OPENMP, PTHREAD, CUDA
+# The scalar types are:  DOUBLE, FLOAT, COMPLEX_DOUBLE, COMPLEX_FLOAT
+#
+# A downstream package or application should use the availability macros to check
+# whether something can be used/instantiated. 
+#
+# Note (i): that the ordinal types are internally also added to the scalar types
+# for instantiation of MultiVector.
+# Note (ii): some of the types can only be enabled if certain requirements are fullfilled.
+
 SET(TpetraCore_ETI_SCALARS "")
 SET(TpetraCore_ETI_GORDS   "")
 SET(TpetraCore_ETI_LORDS   "int")
@@ -113,15 +135,18 @@ IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
         GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
         GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
       ELSE()
-        MESSAGE(STATUS "While pthreads are enabled they will not be explicitly instantiated in Tpetra unless you set Tpetra_INST_PTHREAD=ON")        
-        GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
-        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
-        GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
-        GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+        IF (Kokkos_ENABLE_Pthreads)
+          MESSAGE(STATUS "While pthreads are enabled they will not be explicitly instantiated in Tpetra unless you set Tpetra_INST_PTHREAD=ON")        
+          GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+          GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
+          GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
+          GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
+        ELSE()
+          MESSAGE(FATAL_ERROR "No Kokkos execution space is enabled.")
+        ENDIF()  
       ENDIF()
     ENDIF()
   ENDIF()  
-ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SERIAL
@@ -157,28 +182,116 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::SerialNode.  This option is OFF by default."
   OFF
   )
-
+  
+  #Setting the availability Macros and check default node is not disabled
+  
+  IF(Tpetra_INST_SERIALCLASSIC)
+    GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosClassic SerialNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Tpetra_INST_SERIAL)
+    GLOBAL_SET(HAVE_TPETRA_SERIAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_SERIAL OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosSerialWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Tpetra_INST_OPENMP)
+    GLOBAL_SET(HAVE_TPETRA_OPENMP ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosOpenMPWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Tpetra_INST_PTHREAD)
+    GLOBAL_SET(HAVE_TPETRA_PTHREAD ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosThreadsWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Tpetra_INST_CUDA)
+    GLOBAL_SET(HAVE_TPETRA_CUDA ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_CUDA OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosCudaWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  
 # Append the instantiation list
 
-IF(Tpetra_INST_SERIALCLASSIC) 
-  LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::SerialNode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode")
-ENDIF()
-IF(Tpetra_INST_SERIAL) 
-  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
-  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
-ENDIF()
-IF(Tpetra_INST_PTHREAD) 
-  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
-  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosThreadsWrapperNode")
-ENDIF()
-IF(Tpetra_INST_OPENMP) 
-  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
-  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosOpenMPWrapperNode")
-ENDIF()
-IF(Tpetra_INST_CUDA) 
-  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
-  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
+  IF(Tpetra_INST_SERIALCLASSIC) 
+    LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::SerialNode")
+    MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode")
+  ENDIF()
+  IF(Tpetra_INST_SERIAL) 
+    LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+    MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
+  ENDIF()
+  IF(Tpetra_INST_PTHREAD) 
+    LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+    MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosThreadsWrapperNode")
+  ENDIF()
+  IF(Tpetra_INST_OPENMP) 
+    LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+    MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosOpenMPWrapperNode")
+  ENDIF()
+  IF(Tpetra_INST_CUDA) 
+    LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+    MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
+  ENDIF()
+
+ELSE()
+
+  GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
+
+# without ETI all nodes are available to downstream packages 
+# which have their execution space enabled in Kokkos
+
+  GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
+  IF(Kokkos_ENABLE_Serial)
+    GLOBAL_SET(HAVE_TPETRA_SERIAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_SERIAL OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosSerialWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Kokkos_ENABLE_Pthread)
+    GLOBAL_SET(HAVE_TPETRA_PTHREAD ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosThreadsWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Kokkos_ENABLE_OpenMP)
+    GLOBAL_SET(HAVE_TPETRA_OPENMP ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosOpenMPWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
+  IF(Kokkos_ENABLE_Cuda)
+    GLOBAL_SET(HAVE_TPETRA_CUDA ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_CUDA OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: set KokkosCudaWrapperNode as default node type but its not enabled.")   
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 ELSE()
@@ -228,11 +341,10 @@ IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
       ENDIF()
     ENDIF()
   ENDIF()  
-ENDIF()
 
 # Enable Global Ordinals
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
+TRIBITS_ADD_OPTION_AND_DEFINE(  
   Tpetra_INST_INT_INT
   HAVE_TPETRA_INST_INT_INT
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = int.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
@@ -260,23 +372,69 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
   ) 
 
-# Append to list
+  # Set the availability Macros
 
-IF(Tpetra_INST_INT_INT) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "int")
-  LIST(APPEND TpetraCore_ETI_GORDS "int")
-ENDIF()
-IF(Tpetra_INST_INT_UNSIGNED) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
-  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
-ENDIF()
-IF(Tpetra_INST_INT_LONG) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "long")
-  LIST(APPEND TpetraCore_ETI_GORDS "long")
-ENDIF()
-IF(Tpetra_INST_INT_LONG_LONG) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "long long")
-  LIST(APPEND TpetraCore_ETI_GORDS "long long")
+  IF(Tpetra_INST_INT_INT) 
+    GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_INT_INT OFF)
+  ENDIF()
+  IF(Tpetra_INST_INT_UNSIGNED) 
+    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED OFF)
+  ENDIF()
+  IF(Tpetra_INST_INT_LONG) 
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG OFF)
+  ENDIF()
+  IF(Tpetra_INST_INT_LONG_LONG) 
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG OFF)
+  ENDIF()
+  
+  # Append to instantiation list
+
+  IF(Tpetra_INST_INT_INT) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "int")
+    LIST(APPEND TpetraCore_ETI_GORDS "int")
+  ENDIF()
+  IF(Tpetra_INST_INT_UNSIGNED) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+    LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+  ENDIF()
+  IF(Tpetra_INST_INT_LONG) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "long")
+    LIST(APPEND TpetraCore_ETI_GORDS "long")
+  ENDIF()
+  IF(Tpetra_INST_INT_LONG_LONG) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "long long")
+    LIST(APPEND TpetraCore_ETI_GORDS "long long")
+  ENDIF()
+
+  # Make sure one ordinal type got activated
+  
+  IF(Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
+  ELSE()
+    MESSAGE(FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled. One GlobalOrdinal type needs to be enabled to use ETI.")   
+  ENDIF()  
+
+ELSE()
+  #Settings if ETI is not enabled. All ordinals are available but non get instantiated. 
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+  
+  GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
+  GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
+  GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
+  GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
+  
+  GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
 ENDIF()
 
 #-----------------------------------------------------------------------
@@ -295,7 +453,6 @@ IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
     GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
     GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE_DEFAULT ON)
   ENDIF()  
-ENDIF()
 
 # Enable (Floaty) Scalars
 
@@ -412,42 +569,101 @@ IF(Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
 ENDIF()
 
+# Set availability macros 
+
+  IF(Tpetra_INST_FLOAT) 
+    GLOBAL_SET(HAVE_TPETRA_FLOAT ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_FLOAT OFF)
+  ENDIF()
+  IF(Tpetra_INST_DOUBLE) 
+    GLOBAL_SET(HAVE_TPETRA_DOUBLE ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_DOUBLE OFF)
+  ENDIF()
+  IF(Tpetra_INST_COMPLEX_FLOAT) 
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT OFF)
+  ENDIF()
+  IF(Tpetra_INST_COMPLEX_DOUBLE) 
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE OFF)
+  ENDIF()
+  IF(Tpetra_INST_QD_REAL) 
+    GLOBAL_SET(HAVE_TPETRA_QD_REAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_QD_REAL OFF)
+  ENDIF()
+  IF(Tpetra_INST_DD_REAL) 
+    GLOBAL_SET(HAVE_TPETRA_DD_REAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_DD_REAL OFF)
+  ENDIF()
+
 # Add to list 
 
-IF(Tpetra_INST_FLOAT) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "float")
-ENDIF()
-IF(Tpetra_INST_DOUBLE) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "double")
-ENDIF()
-IF(Tpetra_INST_COMPLEX_FLOAT) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
-ENDIF()
-IF(Tpetra_INST_COMPLEX_DOUBLE) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
-ENDIF()
-IF(Tpetra_INST_QD_REAL) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
-ENDIF()
-IF(Tpetra_INST_DD_REAL) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
-ENDIF()
+  IF(Tpetra_INST_FLOAT) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "float")
+  ENDIF()
+  IF(Tpetra_INST_DOUBLE) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "double")
+  ENDIF()
+  IF(Tpetra_INST_COMPLEX_FLOAT) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+  ENDIF()
+  IF(Tpetra_INST_COMPLEX_DOUBLE) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+  ENDIF()
+  IF(Tpetra_INST_QD_REAL) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
+  ENDIF()
+  IF(Tpetra_INST_DD_REAL) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
+  ENDIF()
 
-IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+  # Make sure one scalar type got activated
+  
   IF(Tpetra_INST_FLOAT OR Tpetra_INST_DOUBLE OR Tpetra_INST_COMPLEX_FLOAT OR Tpetra_INST_COMPLEX_DOUBLE OR Tpetra_INST_QD_REAL OR Tpetra_INST_DD_REAL)
     GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
   ELSE()
     MESSAGE(FATAL_ERROR "Tpetra: No Scalar types are enabled. One Scalar type needs to be enabled to use ETI.") 
   ENDIF()
-  IF(Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
-    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
+ELSE()
+
+  # settings without ETI
+  
+  GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
+
+  GLOBAL_SET(HAVE_TPETRA_FLOAT ON)
+  GLOBAL_SET(HAVE_TPETRA_DOUBLE ON)
+
+  IF (HAVE_COMPLEX_BLAS)
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT ON)
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE ON)
   ELSE()
-    MESSAGE(FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled. One GlobalOrdinal type needs to be enabled to use ETI.")   
-  ENDIF() 
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT OFF)
+    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE OFF)
+  ENDIF()
+
+  IF (${PACKAGE_NAME}_ENABLE_QD)
+    GLOBAL_SET(HAVE_TPETRA_QD_REAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_QD_REAL OFF)
+  ENDIF()
+  IF (${PACKAGE_NAME}_ENABLE_DD)
+    GLOBAL_SET(HAVE_TPETRA_DD_REAL ON)
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_DD_REAL OFF)
+  ENDIF()
 ENDIF()
 
 ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 ASSERT_DEFINED(HAVE_TPETRA_GLOBALORDINAL)
+
+
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL

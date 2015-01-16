@@ -157,6 +157,24 @@
 #cmakedefine HAVE_TPETRA_INST_OPENMP
 #cmakedefine HAVE_TPETRA_INST_CUDA
 
+#cmakedefine HAVE_TPETRA_INT_INT
+#cmakedefine HAVE_TPETRA_INT_LONG
+#cmakedefine HAVE_TPETRA_INT_LONG_LONG
+#cmakedefine HAVE_TPETRA_INT_UNSIGNED
+
+#cmakedefine HAVE_TPETRA_FLOAT
+#cmakedefine HAVE_TPETRA_DOUBLE
+#cmakedefine HAVE_TPETRA_COMPLEX_FLOAT
+#cmakedefine HAVE_TPETRA_COMPLEX_DOUBLE
+#cmakedefine HAVE_TPETRA_DD_REAL
+#cmakedefine HAVE_TPETRA_QD_REAL
+
+#cmakedefine HAVE_TPETRA_SERIALCLASSIC
+#cmakedefine HAVE_TPETRA_SERIAL
+#cmakedefine HAVE_TPETRA_PTHREAD
+#cmakedefine HAVE_TPETRA_OPENMP
+#cmakedefine HAVE_TPETRA_CUDA
+
 #cmakedefine HAVE_TPETRA_THREADED_MKL
 
 #cmakedefine HAVE_TPETRACORE_RTI
