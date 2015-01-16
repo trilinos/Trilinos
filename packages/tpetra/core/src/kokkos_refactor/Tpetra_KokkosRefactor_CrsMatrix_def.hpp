@@ -4405,9 +4405,18 @@ namespace Tpetra {
       ! isFillComplete (), std::runtime_error,
       "Tpetra::CrsMatrix::apply(): Cannot call apply() until fillComplete() "
       "has been called.");
+
     if (mode == Teuchos::NO_TRANS) {
       applyNonTranspose (X, Y, alpha, beta);
     } else {
+      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
+      //when bets==0. This was not the case with transpose in a multithreaded
+      //environment where a multiplication with subsequent atomic_adds is used
+      //since 0 is effectively not special cased. Doing the explicit set to zero here
+      //This catches cases where Y is nan or inf.
+      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+      if(beta == ZERO)
+        Y.putScalar (ZERO);
       applyTranspose (X, Y, mode, alpha, beta);
     }
   }
