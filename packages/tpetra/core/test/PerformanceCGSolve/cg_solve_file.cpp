@@ -42,13 +42,13 @@
 */
 
 #include "cg-solve_file.hpp"
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
   int run_cudawrapper(int& argc, char* argv[]);
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
   int run_openmpwrapper(int& argc, char* argv[]);
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
   int run_threadswrapper(int& argc, char* argv[]);
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
@@ -67,15 +67,15 @@ int main(int argc, char *argv[]) {
   // Specify types used in this example
   //
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_cudawrapper(argc,argv);
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_openmpwrapper(argc,argv);
 #endif
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_threadswrapper(argc,argv);
 #endif

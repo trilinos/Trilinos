@@ -1,4 +1,4 @@
-
+IF (Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES 
@@ -39,6 +39,6 @@ matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
 EXEDEPS MatrixMatrix_UnitTests
 )
-
+ENDIF()
 
 

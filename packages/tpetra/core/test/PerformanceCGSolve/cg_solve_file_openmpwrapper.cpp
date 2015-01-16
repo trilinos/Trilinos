@@ -43,7 +43,7 @@
 
 #include "cg-solve_file.hpp"
 
-#if defined(KOKKOS_HAVE_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 int run_openmpwrapper(int& argc, char* argv[]) {
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode                Node;
   std::cout << "Running: KokkosOpenMPWrapperNode" << std::endl;

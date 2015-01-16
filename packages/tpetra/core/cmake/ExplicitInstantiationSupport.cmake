@@ -51,7 +51,7 @@ IF(TpetraClassic_ENABLE_ThrustGPUNode)
   ENDIF()
 ENDIF()
 
-TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=int|long|unsigned int" "LO=.*" "GO=.*" "N=.*")
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=int|long|unsigned int|unsigned|long long" "LO=.*" "GO=.*" "N=.*")
 
 ASSERT_DEFINED(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
 IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
@@ -142,12 +142,12 @@ TRIBITS_ETI_GENERATE_MACROS(
 # testing macros
 TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
-    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*"
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=unsigned LO=.* GO=.* N=.*;S=unsigned int LO=.* GO=.* N=.*;S=long long LO=.* GO=.* N=.*"
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
 TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
-    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=KokkosClassic::ThrustGPUNode"
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=unsigned LO=.* GO=.* N=.*;S=unsigned int LO=.* GO=.* N=.*;S=long long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=KokkosClassic::ThrustGPUNode"
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
 

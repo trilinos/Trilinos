@@ -406,8 +406,15 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportUnion, ContigPlusContig, LOCAL_ORDINAL, GLOBAL_ORDINAL )
 
 //UNIT_TEST_GROUP(int, int)
-
+#ifdef HAVE_TPETRA_INST_INT_INT
+UNIT_TEST_GROUP(int, int)
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
 UNIT_TEST_GROUP(int, long)
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+UNIT_TEST_GROUP(int, unsigned)
+#endif
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 

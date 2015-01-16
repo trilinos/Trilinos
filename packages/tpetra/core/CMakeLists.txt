@@ -27,18 +27,6 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
 
 ASSERT_DEFINED(KokkosClassic_DefaultNode)
 ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
-SET(TpetraCore_ETI_SCALARS "double;int")
-SET(TpetraCore_ETI_GORDS   "int")
-SET(TpetraCore_ETI_LORDS   "int")
-SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
-
-# double is always built; these variables are needed for backwards # compatibility
-GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE ON)
-GLOBAL_SET(Tpetra_INST_DOUBLE ON)
-
-# int as global ordinal is also always built
-GLOBAL_SET(Tpetra_INST_INT_INT ON)
-GLOBAL_SET(HAVE_TPETRA_INST_INT_INT ON)
 
 #Set Variable which were implicitly set when the Kokkos packages were optional dependencies
 IF(Tpetra_ENABLE_Kokkos_Refactor)
@@ -88,88 +76,274 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
   )
 
-# Enable explicit template instantiation (ETI) and tests for Scalar =
-# float.
-#
-# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
-# In a debug build, we do ETI for Scalar=float, in order that this
-# capability be tested.  In a release build, we turn off ETI for
-# Scalar=float, to reduce build time.
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_TEUCHOS_BLASFLOAT) 
-  GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
+#-----------------------------------------------------------------------
+#---------------Explicit Template Instantiation Logic-------------------
+#-----------------------------------------------------------------------
+SET(TpetraCore_ETI_SCALARS "")
+SET(TpetraCore_ETI_GORDS   "")
+SET(TpetraCore_ETI_LORDS   "int")
+SET(TpetraCore_ETI_NODES   "")
+
+#-----------------------------------------------------------------------
+#---------------------Global Ordinals-----------------------------------
+#-----------------------------------------------------------------------
+
+# The logic is different depending on whether Tpetra_ENABLE_Kokkos_Refactor is on
+IF( Tpetra_ENABLE_Kokkos_Refactor)
+
+# The user gets what he asks for, and if nothing is asked for enable "KokkosSerialWrapperNode"
+
+IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+  IF (Kokkos_ENABLE_Cuda) 
+    GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+    GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
+    GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
+  ELSE()
+    IF (Kokkos_ENABLE_OpenMP) 
+      GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+      GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+      GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
+      GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+    ELSE()
+      #Treat Pthreads differently: by default its off as a node since pthreads is on by default
+      IF (Kokkos_ENABLE_Serial)
+        GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
+        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
+        GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+      ELSE()
+        MESSAGE(STATUS "While pthreads are enabled they will not be explicitly instantiated in Tpetra unless you set Tpetra_INST_PTHREAD=ON")        
+        GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
+        GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
+        GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+      ENDIF()
+    ENDIF()
+  ENDIF()  
 ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_SERIAL
+  HAVE_TPETRA_INST_SERIAL
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosSerialWrapperNode.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_SERIAL_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_PTHREAD
+  HAVE_TPETRA_INST_PTHREAD
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosThreadsWrapperNode.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_OPENMP
+  HAVE_TPETRA_INST_OPENMP
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosOpenMPWrapperNode.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_OPENMP_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_CUDA
+  HAVE_TPETRA_INST_CUDA
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosCudaWrapperNode.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_CUDA_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_SERIALCLASSIC
+  HAVE_TPETRA_INST_SERIALCLASSIC
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::SerialNode.  This option is OFF by default."
+  OFF
+  )
+
+# Append the instantiation list
+
+IF(Tpetra_INST_SERIALCLASSIC) 
+  LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::SerialNode")
+  MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode")
+ENDIF()
+IF(Tpetra_INST_SERIAL) 
+  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
+ENDIF()
+IF(Tpetra_INST_PTHREAD) 
+  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosThreadsWrapperNode")
+ENDIF()
+IF(Tpetra_INST_OPENMP) 
+  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosOpenMPWrapperNode")
+ENDIF()
+IF(Tpetra_INST_CUDA) 
+  LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+  MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
+ENDIF()
+
+ELSE()
+
+SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
+
+ENDIF()
+
+
+#-----------------------------------------------------------------------
+#---------------------Global Ordinals-----------------------------------
+#-----------------------------------------------------------------------
+#The user gets what he asks for, and if nothing is asked for enable "int"
+ 
+# Default logic
+# Note that long is 64 bits on some platforms, and 32 bits on other
+# platforms.  On the latter, you may use long long instead, which
+# C++11 / C99 guarantees to be at least 64 bits long.
+
+# NOTE: The unsigned int is used because they help catch errors with caused
+# when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
+# global_size_t (using wrong Teuchos::OrdinalTraits<>::invald(). 
+
+IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+  IF (Tpetra_INST_INT_LONG_LONG OR HAVE_TEUCHOS_LONG_LONG_INT) 
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
+  ELSE()
+    IF (Tpetra_INST_INT_LONG) 
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
+    ELSE()
+      IF (Tpetra_INST_INT_UNSIGNED)
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT ON)  
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
+      ELSE()
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
+      ENDIF()
+    ENDIF()
+  ENDIF()  
+ENDIF()
+
+# Enable Global Ordinals
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_INT
+  HAVE_TPETRA_INST_INT_INT
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = int.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_INT_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_UNSIGNED
+  HAVE_TPETRA_INST_INT_UNSIGNED
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = unsigned.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
+  )
+ 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG
+  HAVE_TPETRA_INST_INT_LONG
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = long.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG_LONG
+  HAVE_TPETRA_INST_INT_LONG_LONG
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = long long.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
+  ) 
+
+# Append to list
+
+IF(Tpetra_INST_INT_INT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "int")
+  LIST(APPEND TpetraCore_ETI_GORDS "int")
+ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+ENDIF()
+IF(Tpetra_INST_INT_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "long")
+  LIST(APPEND TpetraCore_ETI_GORDS "long")
+ENDIF()
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "long long")
+  LIST(APPEND TpetraCore_ETI_GORDS "long long")
+ENDIF()
+
+#-----------------------------------------------------------------------
+#---------------------Scalars-------------------------------------------
+#-----------------------------------------------------------------------
+# The user gets what he asks for, and if nothing is asked for enable "double"
+# Double is always enabled since tests explicitly depend on it.
+
+# Default Logic
+
+IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+  IF (Tpetra_INST_FLOAT) 
+    GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
+    GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE_DEFAULT ON)  
+  ELSE()
+    GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
+    GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE_DEFAULT ON)
+  ENDIF()  
+ENDIF()
+
+# Enable (Floaty) Scalars
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_DOUBLE
+  HAVE_TPETRA_INST_DOUBLE
+  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = double.  This option is ${HAVE_TPETRA_INST_DOUBLE_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_DOUBLE_DEFAULT}
+  )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = float.  This option is ${HAVE_TPETRA_INST_FLOAT_DEFAULT} by default."
   ${HAVE_TPETRA_INST_FLOAT_DEFAULT}
   )
-IF(Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
-  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = float, if the BLAS library you are using does not support float (S) arithmetic.")
-ENDIF()
-IF(Tpetra_INST_FLOAT) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "float")
+
+# Enable complex
+ 
+IF (HAVE_COMPLEX_BLAS)
+  IF (Tpetra_INST_DOUBLE)
+    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
+  ELSE()
+    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  ENDIF()
+  IF (Tpetra_INST_DOUBLE)
+    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+  ELSE()
+    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+  ENDIF()
+ELSE()
+  GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
 ENDIF()
 
-# Enable explicit template instantiation (ETI) and tests for Scalar =
-# std::complex<float>.
-#
-# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
-# In a debug build, we do ETI for Scalar=std::complex<float>, in order
-# that this capability be tested.  In a release build, we turn off ETI
-# for Scalar=std::complex<float>, to reduce build time.
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS AND HAVE_TEUCHOS_BLASFLOAT AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  # mfh 09 Jan 2015: std::complex<float> does NOT currently work with
-  # the Kokkos refactor version of Tpetra, due to
-  # Kokkos::atomic_fetch_add build issues.  Feel free to remove "AND
-  # NOT Tpetra_ENABLE_Kokkos_Refactor" from the above test once that
-  # gets fixed.
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<float>.  This option is ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT}  
+  ${HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT}
   )
-IF(Tpetra_INST_COMPLEX_FLOAT AND (NOT HAVE_COMPLEX_BLAS OR NOT HAVE_TEUCHOS_BLASFLOAT))
-  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex (C) or float (S) arithmetic.")
-ENDIF()
-IF(Tpetra_INST_COMPLEX_FLOAT AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(ERROR "Scalar = std::complex<float> does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  If you need this capability urgently, please ask the Kokkos developers to fix Kokkos::atomic_fetch_add for Kokkos::complex<float>.")
-ENDIF()
-IF(Tpetra_INST_COMPLEX_FLOAT) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
-ENDIF()
 
-# Enable explicit template instantiation (ETI) and tests for Scalar =
-# std::complex<double>.
-#
-# ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
-# In a debug build, we do ETI for Scalar=std::complex<float>, in order
-# that this capability be tested.  In a release build, we turn off ETI
-# for Scalar=std::complex<float>, to reduce build time.
-IF (ST_FOR_DEV_PT_FOR_RELEASE AND HAVE_COMPLEX_BLAS)
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<double>.  This option is ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT}  
+  ${HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT}
   )
-IF(Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<double>, if the BLAS library you are using does not support double-complex (Z) arithmetic.")
-ENDIF()
-IF(Tpetra_INST_COMPLEX_DOUBLE) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
-ENDIF()
 
 # Enable explicit template instantiation (ETI) and tests for Scalar =
 # qd_real ("quad-double," provided by the QD TPL).
@@ -188,19 +362,14 @@ IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABL
 ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
 ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_QD_REAL
   HAVE_TPETRA_INST_QD_REAL
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = qd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_QD_REAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
   )
-IF(Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
-ENDIF()
-IF(Tpetra_INST_QD_REAL) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
-ENDIF()
-
+  
 # Enable explicit template instantiation (ETI) and tests for Scalar =
 # qd_real ("double-double," provided by the QD TPL).
 #
@@ -223,60 +392,62 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_TPETRA_INST_DD_REAL
   "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = dd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_DD_REAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
-  )
+  )  
+  
+# Check for support in BLAS
+  
+IF(Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
+  MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = float, if the BLAS library you are using does not support float (S) arithmetic.")
+ENDIF()
+IF(Tpetra_INST_COMPLEX_FLOAT AND (NOT HAVE_COMPLEX_BLAS OR NOT HAVE_TEUCHOS_BLASFLOAT))
+  MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex (C) or float (S) arithmetic.")
+ENDIF()
+IF(Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
+  MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<double>, if the BLAS library you are using does not support double-complex (Z) arithmetic.")
+ENDIF()
+IF(Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF()
 IF(Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+  MESSAGE(SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF()
+
+# Add to list 
+
+IF(Tpetra_INST_FLOAT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "float")
+ENDIF()
+IF(Tpetra_INST_DOUBLE) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "double")
+ENDIF()
+IF(Tpetra_INST_COMPLEX_FLOAT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+ENDIF()
+IF(Tpetra_INST_COMPLEX_DOUBLE) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+ENDIF()
+IF(Tpetra_INST_QD_REAL) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
 ENDIF()
 
-#
-# Set GlobalOrdinal ETI types.  
-#
-# Unfortunately, we have to add these types to the list of Scalar ETI
-# types as well, since some downstream packages use Scalar =
-# GlobalOrdinal to implement certain communication patterns.
-#
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_INT_LONG
-  HAVE_TPETRA_INST_INT_LONG
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with GlobalOrdinal = long."
-  ON
-  )
-IF(Tpetra_INST_INT_LONG) 
-  LIST(APPEND TpetraCore_ETI_GORDS   "long")
-  LIST(APPEND TpetraCore_ETI_SCALARS "long")
+IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+  IF(Tpetra_INST_FLOAT OR Tpetra_INST_DOUBLE OR Tpetra_INST_COMPLEX_FLOAT OR Tpetra_INST_COMPLEX_DOUBLE OR Tpetra_INST_QD_REAL OR Tpetra_INST_DD_REAL)
+    GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
+  ELSE()
+    MESSAGE(FATAL_ERROR "Tpetra: No Scalar types are enabled. One Scalar type needs to be enabled to use ETI.") 
+  ENDIF()
+  IF(Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
+  ELSE()
+    MESSAGE(FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled. One GlobalOrdinal type needs to be enabled to use ETI.")   
+  ENDIF() 
 ENDIF()
 
-# Note that long is 64 bits on some platforms, and 32 bits on other
-# platforms.  On the latter, you may use long long instead, which
-# C++11 / C99 guarantees to be at least 64 bits long.
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_INT_LONG_LONG
-  HAVE_TPETRA_INST_INT_LONG_LONG
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with GlobalOrdinal = long long."  
-  ${Teuchos_ENABLE_LONG_LONG_INT}
-  )
-IF(Tpetra_INST_INT_LONG_LONG) 
-  LIST(APPEND TpetraCore_ETI_GORDS   "long long")
-  LIST(APPEND TpetraCore_ETI_SCALARS "long long")
-ENDIF()
-
-SET(Tpetra_INST_INT_UNSIGNED
-  ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
-  CACHE BOOL
-  "If explicit instantiation is enabled, instatiate over global ordinal unsigned int."
-  )
-GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
-IF (Tpetra_INST_INT_UNSIGNED)
-  LIST(APPEND TpetraCore_ETI_GORDS   "unsigned int")
-  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned int")
-  # NOTE: The above types are used because they help catch errors with caused
-  # when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
-  # global_size_t (using wrong Teuchos::OrdinalTraits<>::invald(). 
-ENDIF()
+ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
+ASSERT_DEFINED(HAVE_TPETRA_GLOBALORDINAL)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL

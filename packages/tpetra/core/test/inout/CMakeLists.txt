@@ -3,6 +3,7 @@
 # the sparse matrix to be read in has enough rows that it may be
 # distributed over all of them, and as long as Proc 0 has enough
 # memory to handle all the sparse matrix's data.
+IF(Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_CrsMatrix_InOutTest
   SOURCES
@@ -12,6 +13,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+ENDIF()
 
 # This test should work for any number of MPI processes, as long as
 # the dense matrix to be read in has enough rows that it may be
@@ -59,6 +61,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # just builds.  It's good for testing Matrix Market input and output
 # for Map and CrsMatrix, with arbitrary files.  The test should work
 # with or without MPI support.
+IF (Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_FileTest
   SOURCES
@@ -66,4 +69,5 @@ TRIBITS_ADD_EXECUTABLE(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
-  
+ENDIF()
+

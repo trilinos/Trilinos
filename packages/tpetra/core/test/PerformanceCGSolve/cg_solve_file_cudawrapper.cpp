@@ -43,7 +43,7 @@
 
 #include "cg-solve_file.hpp"
 
-#if defined(KOKKOS_HAVE_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 int run_cudawrapper(int& argc, char* argv[]) {
   typedef Kokkos::Compat::KokkosCudaWrapperNode                Node;
   std::cout << "Running: KokkosCudaWrapperNode" << std::endl;
