@@ -289,9 +289,12 @@ namespace Sacado {
   };
 
   //! The View Fad type associated with this type
+  /*!
+   * Do not include the const in the base expr type.
+   */
   template< class ValueType, int N, unsigned length, unsigned stride >
   struct ViewFadType< const Sacado::FAD_NS::SLFad< ValueType, N >, length, stride > {
-    typedef Sacado::FAD_NS::ViewFad< const ValueType,length,stride,Sacado::FAD_NS::SLFad<const ValueType,N > > type;
+    typedef Sacado::FAD_NS::ViewFad< const ValueType,length,stride,Sacado::FAD_NS::SLFad<ValueType,N > > type;
   };
 
 } // namespace Sacado
