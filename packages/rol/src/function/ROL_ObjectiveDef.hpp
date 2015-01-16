@@ -114,7 +114,9 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   // Evaluate objective value at x.
   this->update(x);
@@ -163,7 +165,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     eta = eta*eta_factor;
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return gCheck;
 } // checkGradient
@@ -183,7 +186,9 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > g = hv.clone();
@@ -236,7 +241,8 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
     eta = eta*eta_factor;
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return hvCheck;
 } // checkHessVec
@@ -266,7 +272,9 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   hsymCheck[1] = vHw;
   hsymCheck[2] = std::abs(vHw-wHv);
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   if (printToStream) {
     outStream << std::right
@@ -281,7 +289,8 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
               << "\n";
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return hsymCheck;
 

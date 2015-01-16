@@ -340,7 +340,9 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
   Real eta_factor = 1e-1;
   Real eta = 1.0;
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
   Teuchos::RCP<Vector<Real> > c = jv.clone();
@@ -399,7 +401,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyJacobian(con
     eta = eta*eta_factor;
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return jvCheck;
 } // checkApplyJacobian
@@ -430,7 +433,9 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
   Teuchos::RCP<Vector<Real> > ex   = x.clone();
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
   this->value(*c0, x, tol);
@@ -490,7 +495,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointJacob
     eta = eta*eta_factor;
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return ajvCheck;
 } // checkApplyAdjointJacobian
@@ -518,7 +524,9 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
   Teuchos::RCP<Vector<Real> > AJnew = hv.clone();
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
 
-  std::ios::fmtflags f( outStream.flags() );
+  // Save the format state of the original outStream.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(outStream);
 
   // Apply adjoint Jacobian to u.
   this->applyAdjointJacobian(*AJu, u, x, tol);
@@ -571,7 +579,8 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
     eta = eta*eta_factor;
   }
 
-  outStream.flags( f );
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
 
   return ahuvCheck;
 } // checkApplyAdjointHessian

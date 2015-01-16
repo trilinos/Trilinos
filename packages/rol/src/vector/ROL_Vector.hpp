@@ -263,8 +263,6 @@ public:
     Teuchos::oblackholestream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
-    //std::ios::fmtflags f( pStream->flags() );
-
     Teuchos::RCP<Vector> v    = this->clone();
     Teuchos::RCP<Vector> vtmp = this->clone();
     Teuchos::RCP<Vector> xtmp = x.clone();
@@ -351,8 +349,6 @@ public:
 
     // Restore format state of the original pStream.
     pStream->copyfmt(oldFormatState);
-
-    //pStream->flags( f );
 
     return vCheck;
   }
