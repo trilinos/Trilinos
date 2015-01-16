@@ -46,8 +46,8 @@
   typedef double                                                       Scalar;
   typedef Teuchos::ScalarTraits<Scalar>                                SCT;
   typedef SCT::magnitudeType                                           Magnitude;
-  typedef int                                                          LocalOrdinal;
-  typedef long                                                         GlobalOrdinal;
+  typedef Tpetra::Map<>::local_ordinal_type                            LocalOrdinal;
+  typedef Tpetra::Map<>::global_ordinal_type                           GlobalOrdinal;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType                 Platform;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType       Node;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               Map;

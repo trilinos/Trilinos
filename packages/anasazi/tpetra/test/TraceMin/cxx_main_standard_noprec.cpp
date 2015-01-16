@@ -48,16 +48,14 @@
   typedef double                                                 Scalar;
   typedef Teuchos::ScalarTraits<Scalar>                          SCT;
   typedef SCT::magnitudeType                                     Magnitude;
-  typedef int                                                    LocalOrdinal;
-  typedef long                                                   GlobalOrdinal;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal>               Map;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> MV;
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal>    OP;
+  typedef Tpetra::Map<>::local_ordinal_type                      LocalOrdinal;
+  typedef Tpetra::Map<>::global_ordinal_type                     GlobalOrdinal;
+  typedef Tpetra::Map<>               Map;
+  typedef Tpetra::MultiVector<Scalar> MV;
+  typedef Tpetra::Operator<Scalar>    OP;
   typedef Anasazi::MultiVecTraits<Scalar, MV>                    MVT;
   typedef Anasazi::OperatorTraits<Scalar, MV, OP>                OPT;
-  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal>             Import;
-
-
+  typedef Tpetra::Import<>             Import;
 
 //
 // Define a class for our user-defined operator.
