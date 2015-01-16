@@ -51,17 +51,13 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <TpetraExt_TypeStack.hpp>
 
-// no CXX11 on the GPU
-#undef HAVE_KOKKOSCLASSIC_THRUST
-#include <Tpetra_HybridPlatform.hpp>
-
 #include <IRTRDriver.hpp>
 
 /** \file IRTR_double.cpp
     \brief An example of a standard-precision eigensolver using Tpetra::RTI and double.
  */
 
-int main(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -71,45 +67,25 @@ int main(int argc, char *argv[])
   //
   // Get the communicator
   //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  const int myImageID = comm->getRank();
+  RCP<Teuchos::oblackholestream> blackhole =
+    rcp (new Teuchos::oblackholestream ());
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, blackhole.getRawPtr ());
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  const int myRank = comm->getRank ();
 
   //
   // Get example parameters from command-line processor
   //
-  bool verbose = (myImageID==0);
+  bool verbose = (myRank==0);
   std::string matfile;
   std::string xmlfile;
-  std::string machineFile;
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("matrix-file",&matfile,"Filename for matrix");
-  cmdp.setOption("param-file", &xmlfile,"XML file for solver parameters");
-  cmdp.setOption("machine-file",&machineFile,"Filename for XML machine description file.");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("matrix-file", &matfile, "Filename for matrix");
+  cmdp.setOption ("param-file", &xmlfile, "XML file for solver parameters");
+  if (cmdp.parse (argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
-
-  //
-  // read machine file and initialize platform
-  //
-  RCP<Teuchos::ParameterList> machinePL = Teuchos::parameterList();
-  std::string defaultMachine(
-    " <ParameterList>                                                               "
-    "   <ParameterList name='%1=0'>                                                 "
-    "     <Parameter name='NodeType'     type='string' value='default'/> "
-    "   </ParameterList>                                                            "
-    " </ParameterList>                                                              "
-  );
-  Teuchos::updateParametersFromXmlString(defaultMachine,machinePL.ptr());
-  if (machineFile != "") Teuchos::updateParametersFromXmlFile(machineFile,machinePL.ptr());
-
-  //
-  // create the platform object
-  //
-  Tpetra::HybridPlatform platform(comm,*machinePL);
 
   //
   // Define the scalar type
@@ -121,15 +97,18 @@ int main(int argc, char *argv[])
   //
   IRTR_Driver<Scalar> driver;
   // hand output stream to driver
-  if (verbose) driver.out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
-  else         driver.out = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+  if (verbose) {
+    driver.out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+  } else {
+    driver.out = Teuchos::getFancyOStream (blackhole);
+  }
   // hand matrix file to driver
   driver.matrixFile = matfile;
 
   //
   // get the solver parameters
   //
-  RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
+  RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
   // default solver stack parameters
   std::string xmlString(
     " <ParameterList>                                                       \n"
@@ -140,15 +119,17 @@ int main(int argc, char *argv[])
     "   <Parameter name='theta' value='2'  type='double'/>                  \n"
     " </ParameterList>                                                      \n"
   );
-  Teuchos::updateParametersFromXmlString(xmlString,params.ptr());
-  if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,params.ptr());
+  Teuchos::updateParametersFromXmlString (xmlString, params.ptr ());
+  if (xmlfile != "") {
+    Teuchos::updateParametersFromXmlFile (xmlfile, params.ptr ());
+  }
   // hand solver parameters to driver
   driver.params = params;
 
   //
   // run the driver
   //
-  platform.runUserCode(driver);
+  driver.run (comm);
 
   //
   // Print result

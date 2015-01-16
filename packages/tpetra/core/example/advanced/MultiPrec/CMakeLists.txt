@@ -1,14 +1,24 @@
 INCLUDE(TribitsETISupport)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-JOIN(allnodes   "|" FALSE ${TpetraCore_ETI_NODES}  )
+# These examples need Scalar = float and double.  If explicit template
+# instantiation (ETI) is enabled, we have to make sure that those
+# types are in the ETI Scalar list.
+ASSERT_DEFINED (TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
+IF (TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
+  LIST (FIND TpetraCore_ETI_SCALARS "float" floatFindIndex)
+  LIST (FIND TpetraCore_ETI_SCALARS "double" doubleFindIndex)
+  IF (floatFindIndex EQUAL -1 OR doubleFindIndex EQUAL -1) # -1 means not in list
+    SET (floatAndDoubleEnabled OFF)
+  ELSE ()
+    SET (floatAndDoubleEnabled ON)
+  ENDIF ()
+ELSE ()
+  SET (floatAndDoubleEnabled ON)
+ENDIF ()
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
-IF (${PROJECT_NAME}_ENABLE_CXX11)
-
-  TRIBITS_ETI_TYPE_EXPANSION(dfneeds "S=double|float" "LO=int" "GO=int" "N=${allnodes}")
-  TRIBITS_ETI_TYPE_EXPANSION(dfneeds "SOUT=float"     "SIN=double"  "LO=int" "GO=int" "N=${allnodes}")
-  TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${dfneeds})
+IF (${PROJECT_NAME}_ENABLE_CXX11 AND floatAndDoubleEnabled)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(IRTR_double
     SOURCES IRTR_double
@@ -60,11 +70,9 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       EXEDEPS IRTR_double
       )
 
-  IF (Tpetra_ENABLE_QD) 
-
-    TRIBITS_ETI_TYPE_EXPANSION(qdneeds "S=qd_real|dd_real" "LO=int" "GO=int" "N=${allnodes}")
-    TRIBITS_ETI_TYPE_EXPANSION(qdneeds "SOUT=double|dd_real" "SIN=qd_real" "LO=int" "GO=int" "N=${allnodes}")
-    TRIBITS_ADD_ETI_INSTANTIATIONS(Tpetra ${qdneeds})
+  # This enable requires the QD TPL for Scalar = qd_real.  qd_real
+  # must also be in the list of ETI Scalar types, if ETI is enabled.
+  IF (Tpetra_ENABLE_QD AND (NOT TpetraCore_ENABLE_EXPLICIT_INSTANTIATION OR Tpetra_INST_QD_REAL))
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd
       SOURCES MultiPrecExample_qd
@@ -102,5 +110,4 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
     )
 
   ENDIF() # Tpetra_ENABLE_QD
-
 ENDIF()

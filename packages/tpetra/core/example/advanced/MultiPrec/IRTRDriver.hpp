@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -87,14 +87,18 @@ template <class S, class Sinner = S>
 class IRTR_Driver {
   public:
   // input
-  Teuchos::RCP<Teuchos::FancyOStream>     out; 
+  Teuchos::RCP<Teuchos::FancyOStream>     out;
   Teuchos::RCP<Teuchos::ParameterList> params;
   std::string                      matrixFile;
   // output
   bool                             testPassed;
 
-  template <class Node> 
-  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) 
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type Node;
+
+  void
+  run (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     using std::plus;
     using std::endl;
@@ -105,16 +109,15 @@ class IRTR_Driver {
     using Tpetra::RTI::ZeroOp;
 
     // Static types
-    typedef int                     LO;
-    typedef int                     GO;
-    typedef Tpetra::Map<LO,GO,Node>               Map;
-    typedef Tpetra::CrsMatrix<S,LO,GO,Node> CrsMatrix;
-    typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
+    typedef Tpetra::Map<>            Map;
+    typedef Tpetra::CrsMatrix<S>     CrsMatrix;
+    typedef Tpetra::Vector<S>        Vector;
     typedef Teuchos::ScalarTraits<S> ST;
 
     IRTRdetails::fpu_fix<S> ff; ff.fix();
 
-    *out << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
+    *out << "Running test with Node==" << Teuchos::TypeNameTraits<Node>::name ()
+         << " on rank " << comm->getRank() << "/" << comm->getSize() << std::endl;
 
     // read the matrix
     RCP<CrsMatrix> A;
@@ -127,31 +130,35 @@ class IRTR_Driver {
     else {
       fillParams->set("Preserve Local Graph",true);
     }
-    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A,rowMap,fillParams);
-    rowMap = A->getRowMap();
+    RCP<Node> node = rcp (new Node ());
+    Tpetra::Utils::readHBMatrix (matrixFile, comm, node, A, rowMap, fillParams);
+    rowMap = A->getRowMap ();
 
     testPassed = true;
 
     // compute an inital vector
-    auto x = Tpetra::createVector<S>(rowMap);
-    x->randomize();
+    auto x = Tpetra::createVector<S> (rowMap);
+    x->randomize ();
 
     // call the solve
-    S lambda = TpetraExamples::IRTR<Sinner,S,LO,GO,Node>(out,*params,A,x);
+    S lambda = TpetraExamples::IRTR<Sinner,S,LO,GO,Node> (out, *params, A, x);
 
     // check that residual is as requested
     {
-      auto r = Tpetra::createVector<S>(rowMap);
-      A->apply(*x,*r);
+      auto r = Tpetra::createVector<S> (rowMap);
+      A->apply (*x, *r);
       // compute A*x - x*lambda, while simultaneously computing |A*x - x*lambda|
-      const S r_r = XFORM_REDUCE(r, x,                          // fused: 
-                                 r - x*lambda,                  //      : r = r - x*lambda = A*x - x*lambda
-                                 r*r, ZeroOp<S>, plus<S>() );   //      : sum r'*r
-      const S rnrm = Teuchos::ScalarTraits<S>::squareroot(r_r);
+      const S r_r =
+        XFORM_REDUCE(r, x,                          // fused:
+                     r - x*lambda,                  //      : r = r - x*lambda = A*x - x*lambda
+                     r*r, ZeroOp<S>, plus<S>() );   //      : sum r'*r
+      const S rnrm = Teuchos::ScalarTraits<S>::squareroot (r_r);
       // check that residual is as requested
-      *out << "|A*x - x*lambda|/|lambda|: " << rnrm / ST::magnitude(lambda) << endl;
-      const double tolerance = params->get<double>("tolerance");
-      if (rnrm / lambda > tolerance) testPassed = false;
+      *out << "|A*x - x*lambda|/|lambda|: " << rnrm / ST::magnitude (lambda) << endl;
+      const double tolerance = params->get<double> ("tolerance");
+      if (rnrm / lambda > tolerance) {
+        testPassed = false;
+      }
     }
 
     ff.unfix();
