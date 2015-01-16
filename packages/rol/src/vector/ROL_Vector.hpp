@@ -259,14 +259,20 @@ public:
       pStream = Teuchos::rcp(&bhs, false);
     }
 
-    std::ios::fmtflags f( pStream->flags() );
+    // Save the format state of the original pStream.
+    Teuchos::oblackholestream oldFormatState, headerFormatState;
+    oldFormatState.copyfmt(*pStream);
+
+    //std::ios::fmtflags f( pStream->flags() );
 
     Teuchos::RCP<Vector> v    = this->clone();
     Teuchos::RCP<Vector> vtmp = this->clone();
     Teuchos::RCP<Vector> xtmp = x.clone();
     Teuchos::RCP<Vector> ytmp = y.clone();
 
-    *pStream << "\n************ Begin verification of linear algebra.\n\n";
+    //*pStream << "\n************ Begin verification of linear algebra.\n\n";
+    *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
+    headerFormatState.copyfmt(*pStream);
 
     // Commutativity of addition.
     v->set(*this); xtmp->set(x); ytmp->set(y);
@@ -337,9 +343,16 @@ public:
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
     *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
 
-    *pStream << "************   End verification of linear algebra.\n\n";
+    //*pStream << "************   End verification of linear algebra.\n\n";
 
-    pStream->flags( f );
+    // Restore format state of pStream used for the header info.
+    pStream->copyfmt(headerFormatState);
+    *pStream << std::setw(width) << std::left << "********** End verification of linear algebra. " << "\n\n";
+
+    // Restore format state of the original pStream.
+    pStream->copyfmt(oldFormatState);
+
+    //pStream->flags( f );
 
     return vCheck;
   }
