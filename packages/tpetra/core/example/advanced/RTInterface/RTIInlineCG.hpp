@@ -57,10 +57,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 
-// no gpu support for RTI
-#undef HAVE_KOKKOSCLASSIC_THRUST
-#include <Tpetra_HybridPlatform.hpp>
-
 #include <Tpetra_MatrixIO.hpp>
 #include <Tpetra_RTI.hpp>
 #include <Tpetra_RTIOp.hpp>
@@ -107,26 +103,30 @@ namespace TpetraExamples {
   template <class T1, class T2, class Op>
   pair_op<T1,T2,Op> make_pair_op(Op op) { return pair_op<T1,T2,Op>(op); }
 
-  //! Class to demonstrate a simple diagonal matrix.
+  /// \brief Operator representing a diagonal matrix.
+  /// \tparam S The "Scalar" type; the type of the entries of the
+  ///   input and output vectors.
   template <class S>
   class DiagKernel : public Tpetra::RTI::detail::StdOpKernel<S>
   {
-    protected:
-      int N_;
-      S kappa_;
-    public:
-      DiagKernel(int N, const S & kappa) : N_(N), kappa_(kappa) {}
-      inline void execute(int i) {
-        this->_vec_inout[i] = this->_alpha * ((kappa_-1.0) * (S)(i)/(S)(N_-1) + 1.0) * this->_vec_in2[i] + this->_beta * this->_vec_inout[i];
-      }
+  protected:
+    int N_;
+    S kappa_;
+
+  public:
+    DiagKernel(int N, const S & kappa) : N_(N), kappa_(kappa) {}
+    inline void execute(int i) {
+      this->_vec_inout[i] = this->_alpha * ((kappa_-1.0) * (S)(i)/(S)(N_-1) + 1.0) * this->_vec_in2[i] + this->_beta * this->_vec_inout[i];
+    }
   };
-
-
 
   //! \brief Recursive, self-preconditioning flexible CG.
   template <class S, class LO, class GO, class Node>
-  void RTICG(const RCP<const Tpetra::Operator<S,LO,GO,Node>> &A, RCP<Tpetra::Vector<S,LO,GO,Node>> b,
-             const RCP<Teuchos::FancyOStream> &out, ParameterList &plist)
+  void
+  RTICG (const RCP<const Tpetra::Operator<S,LO,GO,Node> >& A,
+         RCP<Tpetra::Vector<S,LO,GO,Node> > b,
+         const RCP<Teuchos::FancyOStream>& out,
+         ParameterList& plist)
   {
     using Tpetra::RTI::ZeroOp;
     using Teuchos::as;
@@ -145,9 +145,9 @@ namespace TpetraExamples {
     RCP<Time> timer = Teuchos::TimeMonitor::getNewTimer(
                         "CG<"+Teuchos::TypeNameTraits<S>::name()+">"
                       );
-    auto r = Tpetra::createVector<S>(A->getRangeMap()),
-         p = Tpetra::createVector<S>(A->getRangeMap()),
-        Ap = Tpetra::createVector<S>(A->getRangeMap());
+    auto r = Tpetra::createVector<S> (A->getRangeMap ());
+    auto p = Tpetra::createVector<S> (A->getRangeMap ());
+    auto Ap = Tpetra::createVector<S> (A->getRangeMap ());
     auto x = b;
 
     if (verbose) {
