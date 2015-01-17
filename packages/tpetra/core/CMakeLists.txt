@@ -297,8 +297,21 @@ ENDIF()
 ELSE()
 
 SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
+GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
+GLOBAL_SET(HAVE_TPETRA_SERIAL OFF)
+GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
+GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
+GLOBAL_SET(HAVE_TPETRA_CUDA OFF)
 
 ENDIF()
+
+
+MESSAGE(STATUS "Tpetra Node availability: ")
+MESSAGE(STATUS "   SerialNode (Kokkos::Classic): ${HAVE_TPETRA_SERIALCLASSIC}")
+MESSAGE(STATUS "   KokkosSerialWrapperNode:      ${HAVE_TPETRA_SERIAL}")
+MESSAGE(STATUS "   KokkosThreadsWrapperNode:     ${HAVE_TPETRA_PTHREAD}")
+MESSAGE(STATUS "   KokkosOpenMPWrapperNode:      ${HAVE_TPETRA_OPENMP}")
+MESSAGE(STATUS "   KokkosCudaWrapperNode:        ${HAVE_TPETRA_CUDA}")
 
 
 #-----------------------------------------------------------------------
