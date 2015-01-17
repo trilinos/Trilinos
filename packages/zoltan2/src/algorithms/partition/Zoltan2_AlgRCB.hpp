@@ -485,7 +485,7 @@ void AlgRCB<Adapter>::partition(
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
-    coordList_t *avSubList = new coordList_t [multiVectorDim];
+    /*coordList_t *avSubList = new coordList_t [multiVectorDim];
   
     for (int dim=0; dim < multiVectorDim; dim++)
       avSubList[dim] = mvector->getData(dim).view(0, localSize);
@@ -498,6 +498,10 @@ void AlgRCB<Adapter>::partition(
     try{
       subMvector = rcp(new mvector_t(
         subMap, subVectors.view(0, multiVectorDim), multiVectorDim));
+    }*/
+    RCP<mvector_t> subMvector;
+    try{
+      subMvector = mvector->offsetViewNonConst(subMap,0);
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
