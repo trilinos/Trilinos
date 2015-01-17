@@ -195,25 +195,13 @@ namespace MueLu {
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
     ArrayRCP<GO>                      decompEntries = decomposition->getDataNonConst(0);
 
-    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartList();
-
-    // K. Devine comment:
-    //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed
-    //   in the same order as the input. Using getIdList() compensates for differences
-    //   in the order. Eventually, Zoltan2 will guarantee identical ordering; at that time,
-    //   all code marked with
-    //       "KDDKDD NEW"
-    //   can be reverted to the code marked with
-    //       "KDDKDD OLD".
-    const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
+    const typename InputAdapterType::part_t * parts = problem->getSolution().getPartListView();
 
     for (GO i = 0; i < numElements; i++) {
-      // GO localID = i;                           // KDDKDD OLD
-      GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 
       for (LO j = 0; j < blkSize; j++)
-        decompEntries[localID*blkSize + j] = partNum;
+        decompEntries[i*blkSize + j] = partNum;
     }
 
     Set(level, "Partition", decomposition);
