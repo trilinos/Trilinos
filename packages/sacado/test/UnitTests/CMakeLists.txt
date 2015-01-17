@@ -130,25 +130,20 @@ IF (Sacado_ENABLE_KokkosCore)
   ENDIF()
 
   IF (Kokkos_ENABLE_Cuda)
-    IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-    ENDIF()
-    CUDA_COMPILE(CUDA_SOURCES Fad_KokkosTests_Cuda.cu)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       FadKokkosTests_Cuda
       SOURCES Fad_KokkosTests.hpp
-              ${CUDA_SOURCES}
+              Fad_KokkosTests_Cuda.cpp
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
       RUN_SERIAL
       )
 
-    CUDA_COMPILE(CUDA_SOURCES Fad_KokkosTests_NoViewSpec_Cuda.cu)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       FadKokkosTests_NoViewSpec_Cuda
       SOURCES Fad_KokkosTests.hpp
-              ${CUDA_SOURCES}
+              Fad_KokkosTests_NoViewSpec_Cuda.cpp
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1

@@ -2,7 +2,9 @@
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/Fad)
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test/utils)
 
-IF (${PACKAGE_NAME}_ENABLE_Teuchos)
+# Don't build these tests when Cuda is enabled -- they take forever to compile
+# using the nvcc wrapper
+IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth
