@@ -1,5 +1,24 @@
 
-Release notes for Trilinos v11.8.
+Release notes for Trilinos v11.12 or v12 -- I haven't decided yet.
+
+The PartitioningSolution class's interface has changed.
+-  methods getPartList and getProcList have been renamed to 
+   getPartListView and getProcListView to emphasize that a view, not a copy,
+   is being returned.
+-  method getPartListView now returns the part identifiers in the same order
+   that the local data was provided.  The user's localData[i] is assigned 
+   to getPartListView()[i].  Conversions from global identifiers
+   from PartitioningSolution::getIdList() to local identifiers are no longer
+   needed.  
+-  methods getIdList and getLocalNumberOfIds have been removed.
+-  method convertSolutionToImportList has been removed and replaced 
+   by the helper function getImportList in Zoltan2_PartitioningHelpers.hpp.
+-  pointAssign and boxAssign methods have been added for some geometric 
+   partitioners.
+
+----------------------------------
+
+Release notes for Trilinos v11.8
 
 Simplified input Adapter classes for easier implementation by applications.
 (This change may break backward compatibility for some users.)
