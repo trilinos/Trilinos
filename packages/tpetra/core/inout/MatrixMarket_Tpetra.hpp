@@ -71,31 +71,7 @@
 #include <vector>
 #include <stdexcept>
 
-
-// Macro that marks a function as "possibly unused," in order to
-// suppress build warnings.
-#if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
-#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
-#  elif defined(__clang__)
-#    if __has_attribute(unused)
-#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
-#    else
-#      define TRILINOS_UNUSED_FUNCTION
-#    endif // Clang has 'unused' attribute
-#  elif defined(__IBMCPP__)
-// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
-//
-// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
-#    define TRILINOS_UNUSED_FUNCTION
-#  else // some other compiler
-#    define TRILINOS_UNUSED_FUNCTION
-#  endif
-#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
-
-
 namespace Tpetra {
-  ///
   /// \namespace MatrixMarket
   /// \brief Matrix Market file readers and writers for sparse and
   ///   dense matrices (as \c CrsMatrix resp. \c MultiVector).
@@ -110,75 +86,22 @@ namespace Tpetra {
   /// input stream.
   ///
   /// Matrix Market files are designed for easy reading and writing of
-  /// test matrices by both humans and computers.  They are not
+  /// test matrices by both humans and computers.  They are <i>not</i>
   /// intended for high-performance or parallel file input and output.
   /// You should use a true parallel file format if you want to do
-  /// parallel input and output of sparse or dense matrices.  Since
-  /// the Matrix Market format is not optimized for performance or
-  /// parallelism, our readers and writers assume that the entire
-  /// matrix can fit in a single MPI process.  We do all the file
-  /// input or output on the MPI process with rank 0 ("Process 0").
-  /// Distributed input matrices are gathered from all MPI processes
-  /// in the participating communicator, and distributed output
-  /// matrices are broadcast from Process 0 to all MPI processes in
-  /// the participating communicator.
+  /// parallel input and output of sparse or dense matrices.
   ///
+  /// Since the Matrix Market format is not optimized for performance
+  /// or parallelism, some of our readers and writers assume that the
+  /// entire matrix can fit in a single MPI process.  Nevertheless, we
+  /// always do all of the file input or output on the MPI process
+  /// with rank 0 in the given communicator ("Process 0").
+  /// Distributed input matrices may be gathered from all MPI
+  /// processes in the participating communicator, and distributed
+  /// output matrices are broadcast from Process 0 to all MPI
+  /// processes in the participating communicator.  In some cases, we
+  /// have optimized this to save memory.
   namespace MatrixMarket {
-
-    namespace {
-#ifdef HAVE_MPI
-      // We're communicating integers of type IntType.  Figure
-      // out the right MPI_Datatype for IntType.  Usually it
-      // is int or long, so these are good enough for now.
-      template<class IntType> TRILINOS_UNUSED_FUNCTION MPI_Datatype
-      getMpiDatatype () {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Not implemented for IntType != int, long, or long long");
-      }
-
-      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
-      getMpiDatatype<int> () { return MPI_INT; }
-
-      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
-      getMpiDatatype<long> () { return MPI_LONG; }
-
-      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
-      getMpiDatatype<long long> () { return MPI_LONG_LONG; }
-#endif // HAVE_MPI
-
-      template<class IntType>
-      void
-      reduceSum (const IntType sendbuf[],
-                 IntType recvbuf[],
-                 const int count,
-                 const int root,
-                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-      {
-#ifdef HAVE_MPI
-        using Teuchos::RCP;
-        using Teuchos::rcp_dynamic_cast;
-        using Teuchos::MpiComm;
-
-        // Get the raw MPI communicator, so we don't have to wrap MPI_Reduce in Teuchos.
-        RCP<const MpiComm<int> > mpiComm = rcp_dynamic_cast<const MpiComm<int> > (comm);
-        if (! mpiComm.is_null ()) {
-          MPI_Datatype rawMpiType = getMpiDatatype<IntType> ();
-          MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
-          const int err =
-            MPI_Reduce (reinterpret_cast<void*> (const_cast<IntType*> (sendbuf)),
-                        reinterpret_cast<void*> (const_cast<IntType*> (recvbuf)),
-                        count, rawMpiType, MPI_SUM, root, rawMpiComm);
-          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, "MPI_Reduce failed");
-          return;
-        }
-#endif // HAVE_MPI
-        // Serial communicator case: just copy.  count is the
-        // amount to receive, so it's the amount to copy.
-        std::copy (sendbuf, sendbuf + count, recvbuf);
-      }
-
-    } // namespace (anonymous)
-
     /// \class Reader
     /// \brief Matrix Market file reader for CrsMatrix and MultiVector.
     /// \author Mark Hoemmen
@@ -194,9 +117,9 @@ namespace Tpetra {
     /// input stream.
     ///
     /// All methods of this class only open files or read from input
-    /// streams on the MPI process with rank 0, with respect to the
-    /// MPI communicator over which the given CrsMatrix or MultiVector
-    /// is to be distributed.
+    /// streams on MPI Process 0, with respect to the MPI communicator
+    /// over which the given CrsMatrix or MultiVector is to be
+    /// distributed.
     ///
     /// We define the MultiVector type returned by readDense() and
     /// readDenseFile() using the scalar_type, local_ordinal_type,
@@ -239,7 +162,7 @@ namespace Tpetra {
     public:
       //! This class' template parameter; a specialization of CrsMatrix.
       typedef SparseMatrixType sparse_matrix_type;
-      typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
+      typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
 
       /// Type of the entries of the sparse matrix.
       /// The first template parameter of CrsMatrix and MultiVector.
@@ -256,8 +179,7 @@ namespace Tpetra {
       /// whole matrix and don't have a notion of distribution.
       typedef typename SparseMatrixType::global_ordinal_type
         global_ordinal_type;
-      /// The Kokkos Node type.
-      /// The fourth template parameter of CrsMatrix and MultiVector.
+      //! The fourth template parameter of CrsMatrix and MultiVector.
       typedef typename SparseMatrixType::node_type node_type;
 
       //! The MultiVector specialization associated with SparseMatrixType.
@@ -272,16 +194,21 @@ namespace Tpetra {
                           global_ordinal_type,
                           node_type> vector_type;
 
-      typedef RCP<node_type> node_ptr;
-      typedef Comm<int> comm_type;
-      typedef RCP<const comm_type> comm_ptr;
+      typedef Teuchos::Comm<int> comm_type;
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef RCP<const map_type> map_ptr;
+
+      // DEPRECATED typedefs for backwards compatibility.
+      typedef Teuchos::RCP<const comm_type> comm_ptr;
+      typedef Teuchos::RCP<const map_type> map_ptr;
+      typedef Teuchos::RCP<node_type> node_ptr;
 
     private:
       /// \typedef size_type
       /// \brief Handy typedef for entries of arrays such as rowPtr.
-      typedef typename ArrayRCP<global_ordinal_type>::size_type size_type;
+      ///
+      /// This assumes that the ArrayRCP<T>::size_type typedef is the
+      /// same for all T, which we know to be true.
+      typedef Teuchos::ArrayRCP<int>::size_type size_type;
 
       /// \brief Compute initial range map.
       ///
@@ -294,9 +221,9 @@ namespace Tpetra {
       /// \param numRows [in] Global number of rows in the matrix.
       ///
       /// \return Range map to be used for constructing a CrsMatrix.
-      static RCP<const map_type>
-      makeRangeMap (const RCP<const comm_type>& pComm,
-                    const RCP<node_type>& pNode,
+      static Teuchos::RCP<const map_type>
+      makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
+                    const Teuchos::RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
       {
         // A conventional, uniformly partitioned, contiguous map.
@@ -484,14 +411,16 @@ namespace Tpetra {
                   const bool debug=false)
       {
          using Teuchos::as;
+         using Teuchos::Comm;
          using Teuchos::CommRequest;
+         using Teuchos::RCP;
          using Teuchos::receive;
          using Teuchos::send;
          using std::cerr;
          using std::endl;
 
          const bool extraDebug = false;
-         comm_ptr pComm = pRowMap->getComm();
+         RCP<const comm_type> pComm = pRowMap->getComm ();
          const int numProcs = pComm->getSize ();
          const int myRank = pComm->getRank ();
          const int rootRank = 0;
@@ -829,16 +758,20 @@ namespace Tpetra {
       /// Column indices are zero-based on input.  This method will
       /// change them in place to match the index base of the input
       /// row Map (\c pRowMap).
-      static sparse_matrix_ptr
-      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
-                  ArrayRCP<size_t>& myRowPtr,
-                  ArrayRCP<global_ordinal_type>& myColInd,
-                  ArrayRCP<scalar_type>& myValues,
-                  const map_ptr& pRowMap,
-                  const map_ptr& pRangeMap,
-                  const map_ptr& pDomainMap,
+      static Teuchos::RCP<sparse_matrix_type>
+      makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
+                  Teuchos::ArrayRCP<size_t>& myRowPtr,
+                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
+                  Teuchos::ArrayRCP<scalar_type>& myValues,
+                  const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const map_type>& pRangeMap,
+                  const Teuchos::RCP<const map_type>& pDomainMap,
                   const bool callFillComplete = true)
       {
+        using Teuchos::ArrayView;
+        using Teuchos::null;
+        using Teuchos::RCP;
+        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
         // Typedef to make certain type declarations shorter.
@@ -867,7 +800,7 @@ namespace Tpetra {
         // Create with DynamicProfile, so that the fillComplete() can
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
-        sparse_matrix_ptr A =
+        RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
                                        DynamicProfile));
 
@@ -913,17 +846,19 @@ namespace Tpetra {
       ///
       /// Each process inserts its data into the sparse matrix, and
       /// then all processes call fillComplete().
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
                   ArrayRCP<size_t>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
-                  const map_ptr& pRowMap,
-                  const map_ptr& pRangeMap,
-                  const map_ptr& pDomainMap,
+                  const Teuchos::RCP<const map_type>& pRowMap,
+                  const Teuchos::RCP<const map_type>& pRangeMap,
+                  const Teuchos::RCP<const map_type>& pDomainMap,
                   const RCP<Teuchos::ParameterList>& constructorParams,
                   const RCP<Teuchos::ParameterList>& fillCompleteParams)
       {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
         // Typedef to make certain type declarations shorter.
@@ -956,7 +891,7 @@ namespace Tpetra {
         // Create with DynamicProfile, so that the fillComplete() can
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
-        sparse_matrix_ptr A =
+        RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
                                        DynamicProfile, constructorParams));
 
@@ -998,7 +933,7 @@ namespace Tpetra {
       ///
       /// This method computes \c colMap only if it is null on input,
       /// and if \c callFillComplete is true.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
                   Teuchos::ArrayRCP<size_t>& myRowPtr,
                   Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
@@ -1167,12 +1102,13 @@ namespace Tpetra {
       static Tuple<global_ordinal_type, 3>
       readCoordDims (std::istream& in,
                      size_t& lineNumber,
-                     const RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                     const comm_ptr& pComm,
+                     const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                     const Teuchos::RCP<const comm_type>& pComm,
                      const bool tolerant = false,
                      const bool debug = false)
       {
         using Teuchos::MatrixMarket::readCoordinateDimensions;
+        using Teuchos::Tuple;
 
         // Packed coordinate matrix dimensions (numRows, numCols,
         // numNonzeros); computed on Rank 0 and broadcasted to all MPI
@@ -1266,25 +1202,27 @@ namespace Tpetra {
       ///   sparse matrix.
       ///
       static RCP<adder_type>
-      makeAdder (const RCP<const Comm<int> >& pComm,
-                 RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
-                 const Tuple<global_ordinal_type, 3>& dims,
+      makeAdder (const Teuchos::RCP<const Comm<int> >& pComm,
+                 Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                 const Teuchos::Tuple<global_ordinal_type, 3>& dims,
                  const bool tolerant=false,
                  const bool debug=false)
       {
-        if (pComm->getRank() == 0) {
-          typedef Teuchos::MatrixMarket::Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
-          RCP<raw_adder_type> pRaw =
-            rcp (new raw_adder_type (dims[0], dims[1], dims[2], tolerant, debug));
-          return rcp (new adder_type (pRaw, pBanner->symmType()));
+        if (pComm->getRank () == 0) {
+          typedef Teuchos::MatrixMarket::Raw::Adder<scalar_type,
+                                                    global_ordinal_type>
+            raw_adder_type;
+          Teuchos::RCP<raw_adder_type> pRaw =
+            Teuchos::rcp (new raw_adder_type (dims[0], dims[1], dims[2],
+                                              tolerant, debug));
+          return Teuchos::rcp (new adder_type (pRaw, pBanner->symmType ()));
         }
         else {
-          return null;
+          return Teuchos::null;
         }
       }
 
     public:
-
       /// \brief Read sparse matrix from the given Matrix Market file.
       ///
       /// Open the given file on MPI Rank 0 (with respect to the given
@@ -1309,7 +1247,7 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
                       const RCP<const Comm<int> >& pComm,
                       const RCP<node_type>& pNode,
@@ -1317,12 +1255,13 @@ namespace Tpetra {
                       const bool tolerant=false,
                       const bool debug=false)
       {
-        const int myRank = Teuchos::rank (*pComm);
+        const int myRank = pComm->getRank ();
         std::ifstream in;
 
         // Only open the file on Rank 0.
-        if (myRank == 0)
-          in.open (filename.c_str());
+        if (myRank == 0) {
+          in.open (filename.c_str ());
+        }
         return readSparse (in, pComm, pNode, callFillComplete, tolerant, debug);
         // We can rely on the destructor of the input stream to close
         // the file on scope exit, even if readSparse() throws an
@@ -1358,7 +1297,7 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
                       const RCP<const Comm<int> >& pComm,
                       const RCP<node_type>& pNode,
@@ -1369,7 +1308,7 @@ namespace Tpetra {
       {
         std::ifstream in;
         if (pComm->getRank () == 0) { // only open on Process 0
-          in.open (filename.c_str());
+          in.open (filename.c_str ());
         }
         return readSparse (in, pComm, pNode, constructorParams,
                            fillCompleteParams, tolerant, debug);
@@ -1412,7 +1351,7 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
                       const RCP<const map_type>& rowMap,
                       RCP<const map_type>& colMap,
@@ -1482,18 +1421,24 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
-                  const RCP<const Comm<int> >& pComm,
-                  const RCP<node_type>& pNode,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
                   const bool callFillComplete=true,
                   const bool tolerant=false,
                   const bool debug=false)
       {
         using Teuchos::MatrixMarket::Banner;
+        using Teuchos::arcp;
+        using Teuchos::ArrayRCP;
         using Teuchos::broadcast;
+        using Teuchos::null;
         using Teuchos::ptr;
+        using Teuchos::RCP;
+        using Teuchos::REDUCE_MAX;
         using Teuchos::reduceAll;
+        using Teuchos::Tuple;
         using std::cerr;
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -1895,9 +1840,10 @@ namespace Tpetra {
         // and the distribution of its rows.  Creating a Map is a
         // collective operation, so we don't have to do a broadcast of
         // a success Boolean.
-        map_ptr pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
-        map_ptr pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
-        map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
+        RCP<const map_type> pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
+        RCP<const map_type> pDomainMap =
+          makeDomainMap (pRangeMap, dims[0], dims[1]);
+        RCP<const map_type> pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
 
         if (debug && myRank == rootRank) {
           cerr << "-- Distributing the matrix data" << endl;
@@ -1936,7 +1882,7 @@ namespace Tpetra {
         // never store more than two copies of the matrix's entries in
         // memory at once, which is no worse than what Tpetra
         // promises.
-        sparse_matrix_ptr pMatrix =
+        RCP<sparse_matrix_type> pMatrix =
           makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
                       pRowMap, pRangeMap, pDomainMap, callFillComplete);
         // Only use a reduce-all in debug mode to check if pMatrix is
@@ -1945,7 +1891,7 @@ namespace Tpetra {
         if (debug) {
           int localIsNull = pMatrix.is_null () ? 1 : 0;
           int globalIsNull = 0;
-          reduceAll (*pComm, Teuchos::REDUCE_MAX, localIsNull, ptr (&globalIsNull));
+          reduceAll (*pComm, REDUCE_MAX, localIsNull, ptr (&globalIsNull));
           TEUCHOS_TEST_FOR_EXCEPTION(globalIsNull != 0, std::logic_error,
             "Reader::makeMatrix() returned a null pointer on at least one "
             "process.  Please report this bug to the Tpetra developers.");
@@ -1970,9 +1916,9 @@ namespace Tpetra {
 
           if (extraDebug && debug) {
             const global_size_t globalNumRows =
-              pRangeMap->getGlobalNumElements();
+              pRangeMap->getGlobalNumElements ();
             const global_size_t globalNumCols =
-              pDomainMap->getGlobalNumElements();
+              pDomainMap->getGlobalNumElements ();
             if (myRank == rootRank) {
               cerr << "-- Matrix is "
                    << globalNumRows << " x " << globalNumCols
@@ -2029,7 +1975,7 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
                   const RCP<const Comm<int> >& pComm,
                   const RCP<node_type>& pNode,
@@ -2443,9 +2389,10 @@ namespace Tpetra {
         // and the distribution of its rows.  Creating a Map is a
         // collective operation, so we don't have to do a broadcast of
         // a success Boolean.
-        map_ptr pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
-        map_ptr pDomainMap = makeDomainMap (pRangeMap, dims[0], dims[1]);
-        map_ptr pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
+        RCP<const map_type> pRangeMap = makeRangeMap (pComm, pNode, dims[0]);
+        RCP<const map_type> pDomainMap =
+          makeDomainMap (pRangeMap, dims[0], dims[1]);
+        RCP<const map_type> pRowMap = makeRowMap (null, pComm, pNode, dims[0]);
 
         if (debug && myRank == rootRank) {
           cerr << "-- Distributing the matrix data" << endl;
@@ -2481,7 +2428,7 @@ namespace Tpetra {
         // never store more than two copies of the matrix's entries in
         // memory at once, which is no worse than what Tpetra
         // promises.
-        sparse_matrix_ptr pMatrix =
+        Teuchos::RCP<sparse_matrix_type> pMatrix =
           makeMatrix (myNumEntriesPerRow, myRowPtr, myColInd, myValues,
                       pRowMap, pRangeMap, pDomainMap, constructorParams,
                       fillCompleteParams);
@@ -2579,12 +2526,12 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static sparse_matrix_ptr
+      static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
-                  const RCP<const map_type>& rowMap,
-                  RCP<const map_type>& colMap,
-                  const RCP<const map_type>& domainMap,
-                  const RCP<const map_type>& rangeMap,
+                  const Teuchos::RCP<const map_type>& rowMap,
+                  Teuchos::RCP<const map_type>& colMap,
+                  const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
                   const bool callFillComplete=true,
                   const bool tolerant=false,
                   const bool debug=false)
@@ -2592,8 +2539,11 @@ namespace Tpetra {
         using Teuchos::MatrixMarket::Banner;
         using Teuchos::as;
         using Teuchos::broadcast;
+        using Teuchos::Comm;
         using Teuchos::ptr;
+        using Teuchos::RCP;
         using Teuchos::reduceAll;
+        using Teuchos::Tuple;
         using std::cerr;
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -4859,8 +4809,9 @@ namespace Tpetra {
     template<class SparseMatrixType>
     class Writer {
     public:
+      //! Template parameter of this class; specialization of CrsMatrix.
       typedef SparseMatrixType sparse_matrix_type;
-      typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
+      typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
 
       //! Type of the entries of the sparse matrix.
       typedef typename SparseMatrixType::scalar_type scalar_type;
