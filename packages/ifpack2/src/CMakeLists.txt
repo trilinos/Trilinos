@@ -65,7 +65,6 @@ APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 # Automatically generate ETI (explicit template instanatiation) files
 # for Node types that use the (new) Kokkos Devices.
 SET(IFPACK2_CPP_SOURCES "")
-SET(IFPACK2_CU_SOURCES "")
 IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of Ifpack2 classes templated on <Scalar, LO, GO,
   # Node> for which we want to do ETI using this system.  These
@@ -115,7 +114,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     )
 
   # ETI for the Kokkos::Serial device.
-  IF (Kokkos_ENABLE_Serial)
+  IF (Tpetra_INST_SERIAL)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Serial.tmpl
@@ -131,7 +130,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::Threads device.
-  IF (Kokkos_ENABLE_Pthread)
+  IF (Tpetra_INST_PTHREAD)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Threads.tmpl
@@ -147,7 +146,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::OpenMP device.
-  IF (Kokkos_ENABLE_OpenMP)
+  IF (Tpetra_INST_OPENMP)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_OpenMP.tmpl
@@ -163,19 +162,19 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # ETI for the Kokkos::Cuda device.
-  IF (Kokkos_ENABLE_Cuda)
+  IF (Tpetra_INST_CUDA)
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_CLASSES}"
       Ifpack2_ETI_SC_LO_GO_Cuda.tmpl
-      "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_Cuda.cu"
+      "Ifpack2_CLASS_FILE_NAME_Cuda.cpp"
       IFPACK2_SRCS)
-    LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
     IFPACK2_PROCESS_ETI_TEMPLATE(
       "${IFPACK2_ETI_LO_GO_CLASSES}"
       Ifpack2_ETI_LO_GO_Cuda.tmpl
-      "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_Cuda.cu"
+      "Ifpack2_CLASS_FILE_NAME_Cuda.cpp"
       IFPACK2_SRCS)
-    LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
 ENDIF()
 
@@ -186,16 +185,5 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   ifpack2
   HEADERS ${HEADERS}
-  SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES} ${IFPACK2_CUDA_SOURCES}
+  SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES}
   )
-
-IF(TpetraCore_ENABLE_TeuchosKokkosCompat AND Kokkos_ENABLE_Cuda)
-  IF( TPL_ENABLE_MPI )
-    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-  TRIBITS_ADD_LIBRARY(
-    ifpack2_cuda
-    SOURCES ${IFPACK2_CU_SOURCES}
-    CUDALIBRARY
-    )
-ENDIF()
