@@ -551,12 +551,6 @@ void AlgRCB<Adapter>::partition(
 
   ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
 
-// TODO KDDKDD REMOVE
-for (typename ArrayRCP<const gno_t>::size_type i=0; i < gnoList.size(); i++)
-  std::cout << "unordered " << gnoList[i] << " (" << partId[i] << ") " 
-            << std::endl;
-// TODO KDDKDD REMOVE
-
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
      (numGlobalCoords < 500)){
     std::ostringstream oss;
@@ -576,12 +570,6 @@ for (typename ArrayRCP<const gno_t>::size_type i=0; i < gnoList.size(); i++)
   Tpetra::Vector<part_t, lno_t, gno_t, node_t> ordered(inputmap);
   ordered.doExport(migrated, exporter, Tpetra::INSERT);
   ArrayRCP<part_t> orderedpartId = ordered.getDataNonConst();
-
-// TODO KDDKDD REMOVE
-for (size_t i=0; i < ordered.getLocalLength(); i++)
-  std::cout << "ordered " << inputmap->getNodeElementList()[i] << " ("
-            << orderedpartId[i] << ") " << std::endl;
-// TODO KDDKDD REMOVE
 
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS &&
      (numGlobalCoords < 500)){
