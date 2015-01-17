@@ -383,7 +383,7 @@ public:
       \return The return value is a NULL pointer if part IDs are
                 synonomous with process IDs.
    */
-  const int *getProcList() const {
+  const int *getProcListView() const {
     if (procs_.size() > 0) return procs_.getRawPtr();
     else                   return NULL;
   }
