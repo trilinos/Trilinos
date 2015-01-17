@@ -239,15 +239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
-typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
-#elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
-typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-#elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA)
-typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
-#else
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-#endif
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(
   Tpetra_CrsMatrix, MatVec, double, int, int, Node )

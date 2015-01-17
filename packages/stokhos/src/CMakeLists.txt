@@ -12,59 +12,6 @@ FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_L
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(PROCESS_ETI_TEMPLATE)
 
-FUNCTION(TRANSFORM_CPP_TO_CU SOURCES NEW_SOURCES ENABLE_TRANSFORM)
-
-  IF(ENABLE_TRANSFORM)
-    # If CUDA is enabled, replace each .cpp file with a generated .cu
-    # file in the sources list that #include's the .cpp file
-    SET(CUDA_SOURCES "")
-    SET(NON_CUDA_SOURCES "")
-    FOREACH(CPP_FILE ${SOURCES})
-      IF("${CPP_FILE}" MATCHES ".+\\.cpp$")
-        # Strip .cpp and leading path
-        STRING(REGEX REPLACE ".*/(.+)\\.cpp$" "\\1" BASE_FILE "${CPP_FILE}")
-
-        # Create .cu file
-        SET(CU_FILE "${CMAKE_CURRENT_BINARY_DIR}/${BASE_FILE}_CU.cu")
-        STRING(CONFIGURE "#include <@CPP_FILE@>\n" CU_STRING)
-
-        # Write .cu file, only if it doesn't exist or contents changed
-        SET(WRITE_CU_FILE TRUE)
-        IF (EXISTS "${CU_FILE}")
-          FILE(READ "${CU_FILE}" EXISTING_CU_STRING)
-          IF (CU_STRING STREQUAL EXISTING_CU_STRING)
-            SET(WRITE_CU_FILE FALSE)
-          ENDIF()
-        ENDIF()
-        IF(WRITE_CU_FILE)
-          FILE(WRITE ${CU_FILE} ${CU_STRING})
-        ENDIF()
-
-        # Add .cu file to list of nvcc sources
-        APPEND_SET(CUDA_SOURCES ${CU_FILE})
-      ELSE()
-        # Add file to list of non-nvcc sources
-        APPEND_SET(NON_CUDA_SOURCES ${CU_FILE})
-      ENDIF()
-    ENDFOREACH()
-
-    # Add MPI include directory to NVCC flags if MPI enabled
-    IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-    ENDIF()
-
-    # CUDA compile the cuda sources
-    CUDA_COMPILE(CUDA_COMPILED_SOURCES ${CUDA_SOURCES})
-
-    # Set list of sources
-    SET(${NEW_SOURCES} ${NON_CUDA_SOURCES} ${CUDA_COMPILED_SOURCES} PARENT_SCOPE)
-  ELSE()
-    # If CUDA is not enabled, do nothing
-    SET(${NEW_SOURCES} ${SOURCES} PARENT_SCOPE)
-  ENDIF()
-
-ENDFUNCTION(TRANSFORM_CPP_TO_CU)
-
 #
 # A) Package-specific configuration options
 #
@@ -445,30 +392,6 @@ IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     )
 ENDIF()
 
-# # CUDA/Thrust
-# IF (Stokhos_ENABLE_Thrust)
-#   # this is a manual specification of include dirs, necessary because
-#   # CUDA_COMPILE doesn't recognize the package architecture system.
-#   GET_PROPERTY(Stokhos_CUDA_INC_DIRS DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
-#   LIST(APPEND Stokhos_CUDA_INC_DIRS ${Teuchos_INCLUDE_DIRS})
-#   IF (${PACKAGE_NAME}_ENABLE_TriKota)
-#     LIST(APPEND Stokhos_CUDA_INC_DIRS ${TriKota_INCLUDE_DIRS})
-#   ENDIF()
-#   #message("Stokhos_CUDA_INC_DIRS = ${Stokhos_CUDA_INC_DIRS}")
-#   CUDA_INCLUDE_DIRECTORIES(${Stokhos_CUDA_INC_DIRS})
-#   CUDA_COMPILE(CUDA_SOURCES
-#     Stokhos_CUDAStorage.cu
-#     Stokhos_CUDAQuadOrthogPolyExpansion.cu
-#   )
-#   SET(HEADERS ${HEADERS}
-#     Stokhos_CUDAStorage.hpp
-#     Stokhos_CUDAStorageImp.hpp
-#     Stokhos_CUDAQuadOrthogPolyExpansion.hpp
-#     Stokhos_CUDAQuadOrthogPolyExpansionImp.hpp
-#     )
-#   SET(SOURCES ${SOURCES} ${CUDA_SOURCES})
-# ENDIF()
-
 # Include cusp
 IF (Stokhos_ENABLE_Cusp)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/cusp)
@@ -596,7 +519,7 @@ IF (Stokhos_ENABLE_Sacado)
         sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
         )
-      IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+      IF(Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
         LIST(APPEND SACADO_HEADERS
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
           sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
@@ -636,7 +559,6 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
       SET(TPETRA_HEADERS "")
       SET(TPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
-      SET(TPETRA_CU_SOURCES "")
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
@@ -657,7 +579,7 @@ IF (Stokhos_ENABLE_Sacado)
         SET(TPETRAEXT_ETI_CLASSES
           MatrixMatrix
           )
-        IF (Kokkos_ENABLE_Pthread)
+        IF (Tpetra_INST_PTHREAD)
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
             sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Threads.tmpl
@@ -683,7 +605,7 @@ IF (Stokhos_ENABLE_Sacado)
             TPETRA_SRCS)
           LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
         ENDIF()
-        IF (Kokkos_ENABLE_OpenMP)
+        IF (Tpetra_INST_OPENMP)
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
             sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_OpenMP.tmpl
@@ -709,31 +631,31 @@ IF (Stokhos_ENABLE_Sacado)
             TPETRA_SRCS)
           LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
         ENDIF()
-        IF (Kokkos_ENABLE_Cuda)
+        IF (Tpetra_INST_CUDA)
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
             sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_MP_Vector_Cuda.cu"
+            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CU_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_MP_Vector_Cuda.cu"
+            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CU_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_UQ_PCE_Cuda.cu"
+            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CU_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_UQ_PCE_Cuda.cu"
+            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CU_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
         ENDIF()
       ENDIF()
 
@@ -748,25 +670,10 @@ IF (Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      # Cuda compile
-      IF(Kokkos_ENABLE_Cuda)
-        # Add MPI include directory to NVCC flags if MPI enabled
-        IF( TPL_ENABLE_MPI )
-          CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-        ENDIF()
-        CUDA_COMPILE(TPETRA_CUDA_SOURCES ${TPETRA_CU_SOURCES})
-      ENDIF()
-
-      IF(Kokkos_ENABLE_Cuda)
-        SET(DO_TRANSFORM TRUE)
-      ELSE()
-        SET(DO_TRANSFORM FALSE)
-      ENDIF()
-
       TRIBITS_ADD_LIBRARY(
         stokhos_tpetra
         HEADERS ${TPETRA_HEADERS}
-        SOURCES ${TPETRA_CPP_SOURCES} ${TPETRA_CUDA_SOURCES}
+        SOURCES ${TPETRA_CPP_SOURCES}
         DEPLIBS ${STOKHOS_DEPLIBS}
         ADDED_LIB_TARGET_NAME_OUT STOKHOS_TPETRA_LIBNAME
         )
@@ -794,7 +701,7 @@ IF (Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
-        IF (Kokkos_ENABLE_Pthread)
+        IF (Tpetra_INST_PTHREAD)
           PROCESS_ETI_TEMPLATE(
             "${AMESOS2_ETI_CLASSES}"
             sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Threads.tmpl
@@ -802,7 +709,7 @@ IF (Stokhos_ENABLE_Sacado)
             AMESOS2_SRCS)
           LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
         ENDIF()
-        IF (Kokkos_ENABLE_OpenMP)
+        IF (Tpetra_INST_OPENMP)
           PROCESS_ETI_TEMPLATE(
             "${AMESOS2_ETI_CLASSES}"
             sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_OpenMP.tmpl
@@ -810,7 +717,7 @@ IF (Stokhos_ENABLE_Sacado)
             AMESOS2_SRCS)
           LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
         ENDIF()
-        IF (Kokkos_ENABLE_Cuda)
+        IF (Tpetra_INST_CUDA)
           PROCESS_ETI_TEMPLATE(
             "${AMESOS2_ETI_CLASSES}"
             sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Cuda.tmpl
@@ -834,13 +741,12 @@ IF (Stokhos_ENABLE_Sacado)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2)
         SET(IFPACK2_HEADERS "")
         SET(IFPACK2_CPP_SOURCES Stokhos_Dummy.cpp)
-        SET(IFPACK2_CU_SOURCES "")
         APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
         APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.hpp)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
-          IF (Kokkos_ENABLE_Pthread)
+          IF (Tpetra_INST_PTHREAD)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Threads.tmpl
@@ -854,7 +760,7 @@ IF (Stokhos_ENABLE_Sacado)
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
-          IF (Kokkos_ENABLE_OpenMP)
+          IF (Tpetra_INST_OPENMP)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_OpenMP.tmpl
@@ -868,31 +774,26 @@ IF (Stokhos_ENABLE_Sacado)
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
-          IF (Kokkos_ENABLE_Cuda)
+          IF (Tpetra_INST_CUDA)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_MP_Vector_Cuda.cu"
+              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
               IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
+            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cu"
+              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
               IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
+            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
-        ENDIF()
-
-        # Cuda compile
-        IF(Kokkos_ENABLE_Cuda)
-          CUDA_COMPILE(IFPACK2_CUDA_SOURCES ${IFPACK2_CU_SOURCES})
         ENDIF()
 
         TRIBITS_ADD_LIBRARY(
           stokhos_ifpack2
           HEADERS ${IFPACK2_HEADERS}
-          SOURCES ${IFPACK2_CPP_SOURCES} ${IFPACK2_CUDA_SOURCES}
+          SOURCES ${IFPACK2_CPP_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           ADDED_LIB_TARGET_NAME_OUT STOKHOS_IFPACK2_LIBNAME
           )
@@ -906,33 +807,27 @@ IF (Stokhos_ENABLE_Sacado)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
         SET(MUELU_HEADERS "")
         SET(MUELU_CPP_SOURCES Stokhos_Dummy.cpp)
-        SET(MUELU_CU_SOURCES "")
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
-          IF (Kokkos_ENABLE_Pthread)
+          IF (Tpetra_INST_PTHREAD)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Threads.cpp)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Threads.cpp)
           ENDIF()
-          IF (Kokkos_ENABLE_OpenMP)
+          IF (Tpetra_INST_OPENMP)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_OpenMP.cpp)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_OpenMP.cpp)
           ENDIF()
-          IF (Kokkos_ENABLE_Cuda)
-            APPEND_GLOB(MUELU_CU_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Cuda.cu)
-            APPEND_GLOB(MUELU_CU_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Cuda.cu)
+          IF (Tpetra_INST_CUDA)
+            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Cuda.cpp)
+            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Cuda.cpp)
           ENDIF()
-        ENDIF()
-
-        # Cuda compile
-        IF(Kokkos_ENABLE_Cuda)
-          CUDA_COMPILE(MUELU_CUDA_SOURCES ${MUELU_CU_SOURCES})
         ENDIF()
 
         TRIBITS_ADD_LIBRARY(
           stokhos_muelu
           HEADERS ${MUELU_HEADERS}
-          SOURCES ${MUELU_CPP_SOURCES} ${MUELU_CUDA_SOURCES}
+          SOURCES ${MUELU_CPP_SOURCES}
           DEPLIBS ${STOKHOS_DEPLIBS}
           ADDED_LIB_TARGET_NAME_OUT STOKHOS_MUELU_LIBNAME
           )

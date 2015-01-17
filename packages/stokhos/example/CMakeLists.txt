@@ -423,13 +423,9 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Cusp)
 
-  SET(CUDA_SOURCES "")
-
-  CUDA_COMPILE(CUDA_SOURCES cusp/cusp_sa_blockcg.cu)
-
   TRIBITS_ADD_EXECUTABLE(
     cusp_sa_blockcg_example
-    SOURCES ${CUDA_SOURCES}
+    SOURCES cusp/cusp_sa_blockcg.cpp
     COMM serial mpi
     )
 ENDIF()

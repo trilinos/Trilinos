@@ -46,7 +46,7 @@ for i in SC-LO-GO-NO-LMO
             | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
             | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
             | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
-            > MueLu_${className}_MP_Vector_Cuda.cu
+            > MueLu_${className}_MP_Vector_Cuda.cpp
 
     fi
 
