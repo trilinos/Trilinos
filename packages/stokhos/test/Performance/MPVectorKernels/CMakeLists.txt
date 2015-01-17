@@ -6,12 +6,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 IF (Stokhos_ENABLE_KokkosCore)
 
+  SET(CUDA_SOURCES "")
+  IF (Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
+    SET(CUDA_SOURCES TestSpMv_Cuda.cpp)
+  ENDIF()
   TRIBITS_ADD_EXECUTABLE(
     MPVectorSpMvTest
     SOURCES TestSpMv.hpp
             TestSpMv.cpp
             TestSpMv_Host.cpp
-            TestSpMv_Cuda.cpp
+            ${CUDA_SOURCES}
     COMM serial mpi
     )
 
