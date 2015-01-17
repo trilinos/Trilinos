@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   ArrayRCP<part_t> solnParts(p, 0, vlen, true);
 
   soln_t solution(env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(solnParts);
 
   std::vector<const zscalar_t *> emptyWeights;
   std::vector<int> emptyStrides;

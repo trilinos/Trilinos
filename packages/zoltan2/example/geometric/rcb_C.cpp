@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
 
   // Check it.  Part sizes should all be odd.
 
-  const part_t *partAssignments = solution4.getPartList();
+  const part_t *partAssignments = solution4.getPartListView();
 
   int numInEmptyParts = 0;
   for (size_t i=0; i < localCount; i++){

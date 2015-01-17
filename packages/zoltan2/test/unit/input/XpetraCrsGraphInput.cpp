@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   ArrayRCP<part_t> solnParts(p, 0, nvtx, true);
 
   soln_t solution(env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph

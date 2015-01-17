@@ -6201,7 +6201,6 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     for (mj_lno_t i = 0; i < this->num_local_coords; i++)
       localGidToLid.put(this->initial_mj_gnos[i], i);
 
-    mj_gno_t *gnoList = new mj_gno_t[this->num_local_coords];
     ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
                                       0, this->num_local_coords, true);
  
@@ -6211,21 +6210,13 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       // TODO:  just to satisfy the setParts function.  We can remove it from
       // TODO:  setParts later.
       mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
-      gnoList[origLID] = result_mj_gnos[i];
       partId[origLID] = result_assigned_part_ids[i];
     }
     
-    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
-      // Sanity test  TODO:  Remove this loop once we are sure all is well.
-      assert(gnoList[i] == this->initial_mj_gnos[i]);
-    }
-
     delete [] result_mj_gnos;
     delete [] result_assigned_part_ids;
 
-    ArrayRCP<const mj_gno_t> gnoListRCP = arcp(gnoList,
-                                               0, this->num_local_coords, true);
-    solution->setParts(gnoListRCP, partId);
+    solution->setParts(partId);
     this->free_work_memory();
 }
 

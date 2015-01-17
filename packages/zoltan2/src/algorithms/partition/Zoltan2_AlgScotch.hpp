@@ -344,9 +344,7 @@ void AlgPTScotch<Adapter>::partition(
     delete [] partloctab;
   }
 
-  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
-
-  solution->setParts(gnos, partList);
+  solution->setParts(partList);
 
   env->memory("Zoltan2-Scotch: After creating solution");
 
@@ -373,8 +371,7 @@ void AlgPTScotch<Adapter>::partition(
   ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
-  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
-  solution->setParts(gnos, partList);
+  solution->setParts(partList);
 
 #endif // DO NOT HAVE_MPI
 }

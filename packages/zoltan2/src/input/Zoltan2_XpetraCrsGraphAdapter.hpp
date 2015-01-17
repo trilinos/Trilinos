@@ -53,7 +53,7 @@
 #include <Zoltan2_GraphAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_Util.hpp>
+#include <Zoltan2_PartitioningHelpers.hpp>
 
 #include <Xpetra_CrsGraph.hpp>
 
@@ -400,32 +400,21 @@ template <typename User, typename UserCoord>
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
-  // Get an import list
-
-  size_t len = solution.getLocalNumberOfIds();
-  const zgid_t *gids = solution.getIdList();
-  const part_t *parts = solution.getPartList();
-  ArrayRCP<zgid_t> gidList = arcp(const_cast<zgid_t *>(gids), 0, len, false);
-  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
-    false);
-
-  ArrayRCP<lno_t> dummyIn;
-  ArrayRCP<zgid_t> importList;
-  ArrayRCP<lno_t> dummyOut;
+  // Get an import list (rows to be received)
   size_t numNewVtx;
-  const RCP<const Comm<int> > comm = graph_->getComm();
-
+  ArrayRCP<zgid_t> importList;
   try{
-    numNewVtx = solution.convertSolutionToImportList(
-      0, dummyIn, importList, dummyOut);
+    numNewVtx = Zoltan2::getImportList<Adapter,
+                                       XpetraCrsGraphAdapter<User,UserCoord> > 
+                                      (solution, this, importList);
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  // Move the rows, creating a new matrix.
   RCP<const User> inPtr = rcp(&in, false);
-
-  RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-   inPtr, numNewVtx, importList.getRawPtr());
-
+  RCP<const User> outPtr = 
+                  XpetraTraits<User>::doMigration(inPtr, numNewVtx,
+                                                  importList.getRawPtr());
   out = const_cast<User *>(outPtr.get());
   outPtr.release();
 }

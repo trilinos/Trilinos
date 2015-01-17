@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
   ArrayRCP<part_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   try{
-    solution->setParts(gidArray, partList);
+    solution->setParts(partList);
   }
   catch (std::exception &e){
     fail=10;
@@ -235,19 +235,8 @@ int main(int argc, char *argv[])
   // Test the Solution get methods that may be called by users 
   // or migration functions.
 
-  if (solution->getLocalNumberOfIds() != size_t(numIdsPerProc))
-    fail = 11;
-
   if (!fail){
-    const zgno_t *gids = solution->getIdList();
-    for (int i=0; !fail && i < numIdsPerProc; i++){
-      if (gids[i] != myGids[i])
-        fail = 12;
-    }
-  }
-
-  if (!fail){
-    const part_t *parts = solution->getPartList();
+    const part_t *parts = solution->getPartListView();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (parts[i] != part_t(myGids[i] % numGlobalParts))
         fail = 13;

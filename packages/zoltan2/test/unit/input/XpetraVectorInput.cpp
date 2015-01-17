@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
   Zoltan2::PartitioningSolution<adapter_t> solution(
     env, comm, idMap, nWeights);
-  solution.setParts(gidArray, solnParts);
+  solution.setParts(solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector, no weights

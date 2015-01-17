@@ -188,19 +188,13 @@ int run_pointAssign_tests(
 
     // test correctness of pointAssign for owned points
     {
-      // TODO  KDD:  ONCE CERTAIN THAT MJ RETURNS PARTS IN CORRECT ORDER,
-      // TODO  KDD:  WILL NOT NEED THE zgids ARRAY.
       const typename Adapter::part_t *solnPartView = 
-                                      problem->getSolution().getPartList();
-      const zgno_t *zgids = problem->getSolution().getIdList();
+                                      problem->getSolution().getPartListView();
      
       size_t numPoints = coords->getLocalLength();
-      for (size_t j = 0; j < numPoints; j++) {
+      for (size_t localID = 0; localID < numPoints; localID++) {
 
-        // size_t localID = j;                              // KDDKDD OLD
-        size_t localID = 
-               coords->getMap()->getLocalElement(zgids[j]); // KDDKDD NEW
-        typename Adapter::part_t solnPart = solnPartView[j];
+        typename Adapter::part_t solnPart = solnPartView[localID];
 
         for (int i = 0; i < coordDim; i++)
           pointDrop[i] = coords->getData(i)[localID];
@@ -210,7 +204,8 @@ int run_pointAssign_tests(
         }
         CATCH_EXCEPTIONS_WITH_COUNT(ierr, me + ": pointAssign -- OwnedPoints");
 
-        std::cout << me << " Point " << localID << " GID " << zgids[j] 
+        std::cout << me << " Point " << localID 
+                  << " gid " << coords->getMap()->getGlobalElement(localID)
                   << " (" << pointDrop[0];
         if (coordDim > 1) std::cout << " " << pointDrop[1];
         if (coordDim > 2) std::cout << " " << pointDrop[2];
@@ -790,12 +785,11 @@ int testFromDataFile(
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
         const inputAdapter_t::part_t *zparts =
-              problem->getSolution().getPartList();
-        const zgno_t *zgids = problem->getSolution().getIdList();
+              problem->getSolution().getPartListView();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
             << " lid " << i 
-            << " gid " << zgids[i] 
+            << " gid " << coords->getMap()->getGlobalElement(i)
             << " part " << zparts[i] << endl;
     }
 
@@ -968,11 +962,11 @@ int testFromSeparateDataFiles(
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
         const inputAdapter_t::part_t *zparts =
-                                      problem->getSolution().getPartList();
-        const zgno_t *zgids = problem->getSolution().getIdList();
+                                      problem->getSolution().getPartListView();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
-            << " gid " << zgids[i] << " part " << zparts[i] << endl;
+            << " gid " << coords->getMap()->getGlobalElement(i)
+            << " part " << zparts[i] << endl;
     }
 
     if (comm->getRank() == 0){

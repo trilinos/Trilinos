@@ -154,28 +154,12 @@ int main(int narg, char **arg)
   int *sumCnt = new int [nprocs];
   memset(totalCnt, 0, nprocs * sizeof(int));
 
-  const zzgid_t *idList = solution.getIdList();
-  const part_t *partList = solution.getPartList();
+  const part_t *partList = solution.getPartListView();
   const zscalar_t libImbalance = problem.getWeightImbalance();
 
-  for (int i=0; !fail && i < numMyIdentifiers; i++){
-    if (idList[i] != myIds[i])
-      fail = 1;
-
-    if (!fail) {
-      totalCnt[partList[i]]++;
-      totalWeight[partList[i]] += myWeights[i];
-    }
-  }
-
-  gfail = globalFail(comm, fail);
-
-  if (gfail){
-    if (rank==0){
-      std::cout << "failure in solution data" << std::endl;
-      std::cout << "FAIL" << std:: endl;
-    }
-    return 1;
+  for (int i=0; i < numMyIdentifiers; i++){
+    totalCnt[partList[i]]++;
+    totalWeight[partList[i]] += myWeights[i];
   }
 
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 

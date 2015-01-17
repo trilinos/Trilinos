@@ -120,14 +120,6 @@ void testFromDataFile(
   if (me == 0)
     cout << "Problem solved" << endl;
 
-  if (coordsConst->getGlobalLength() < 40) {
-    int len = coordsConst->getLocalLength();
-    const inputAdapter_t::part_t *zparts = problem.getSolution().getPartList();
-    const zgno_t *zgids = problem.getSolution().getIdList(); 
-    for (int i = 0; i < len; i++)
-      cout << me << " gid " << zgids[i] << " part " << zparts[i] << endl;
-  }
-
   if (comm->getRank() == 0)
     problem.printMetrics(cout);
 }

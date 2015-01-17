@@ -138,7 +138,6 @@ void getSolutionCenterCoordinates(
 
 	typedef typename Adapter::lno_t lno_t;
 	typedef typename Adapter::gno_t gno_t;
-	typedef typename Adapter::zgid_t zgid_t;
 
 	typedef StridedData<lno_t, scalar_t> input_t;
 	ArrayView<const gno_t> gnos;
@@ -171,8 +170,7 @@ void getSolutionCenterCoordinates(
 	}
 
 	//get parts with parallel gnos.
-	const part_t *parts = soln_->getPartList();
-	const zgid_t *soln_gnos = soln_->getIdList();
+	const part_t *parts = soln_->getPartListView();
 	/*
     for (lno_t i=0; i < numLocalCoords; i++){
         cout << "me:" << comm->getRank() << " gno:" << soln_gnos[i] << " tmp.part :" << parts[i]<< endl;
@@ -187,7 +185,7 @@ void getSolutionCenterCoordinates(
 	//insert each point in solution to hash.
 	for (lno_t i=0; i < numLocalCoords; i++){
 		GNO_LNO_PAIR<gno_t, part_t> tmp;
-		tmp.gno = soln_gnos[i];
+		tmp.gno = gnos[i];
 		tmp.part = parts[i];
 		//cout << "gno:" << tmp.gno << " tmp.part :" << tmp.part << endl;
 		//count the local number of points in each part.

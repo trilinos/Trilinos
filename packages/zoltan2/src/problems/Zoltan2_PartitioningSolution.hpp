@@ -321,7 +321,7 @@ public:
    * in its InputAdapter is found and saved in this PartitioningSolution.
    */
 
-  void setParts(ArrayRCP<const gno_t> &gnoList, ArrayRCP<part_t> &partList);
+  void setParts(ArrayRCP<part_t> &partList);
 
   // Do not use this version of setParts; it exists only for deprecated RCB.
   void setParts(ArrayRCP<const gno_t> &gnoList,
@@ -370,22 +370,15 @@ public:
 
   /*! \brief Return the communicator associated with the solution.
    */
-  const RCP<const Comm<int> > &getCommunicator() const { return comm_;}
+  inline const RCP<const Comm<int> > &getCommunicator() const { return comm_;}
 
-  /*! \brief Returns the local number of Ids.
+  /*! \brief Return the environment associated with the solution.
    */
-  size_t getLocalNumberOfIds() const { return gids_.size(); }
-
-  /*! \brief Returns the user's global ID list.
-   */
-  const zgid_t *getIdList() const {
-    if (gids_.size() > 0) return gids_.getRawPtr();
-    else                  return NULL;
-  }
+  inline const RCP<const Environment> &getEnvironment() const { return env_;}
 
   /*! \brief Returns the part list corresponding to the global ID list.
    */
-  const part_t *getPartList() const {
+  const part_t *getPartListView() const {
     if (parts_.size() > 0) return parts_.getRawPtr();
     else                   return NULL;
   }
@@ -468,42 +461,6 @@ public:
     }
     Z2_FORWARD_EXCEPTIONS
   }
-
-  /*! \brief Create an import list from the export list.
-   *
-   *  \param numExtra The amount of related information of type
-   *            \c Extra that you would like to associate with the data.
-   *  \param xtraInfo  The extra information related to your global Ids.
-   *       The information for the <tt>k-th</tt> global ID would begin at
-   *       <tt> xtraInfo[k*numExtra]</tt> and end before
-   *       <tt> xtraInfo[(k+1)*numExtra]</tt>.
-   *  \param imports on return is the list of global Ids assigned to
-   *        this process under the Solution.
-   *  \param newXtraInfo on return is the extra information associated
-   *     with the global Ids in the import list.
-   *
-   * The list returned in getPartList() is an export list, detailing
-   * to which part each object should be moved.  This method provides
-   * a new list, listing the global IDs of the objects to be imported
-   * to my part or parts.
-   *
-   * Because this method does global communication, it can also
-   * send useful data related to the global IDs.  For example, if the global IDs
-   * represent matrix rows, the extra data could be the number of non zeros
-   * in the row.
-   *
-   * \todo A version which takes the export part numbers and returns the
-   *            import part numbers in addition to the global IDs.  Although
-   *            this can be done with the extra data, it might be better
-   *            to do it explicitly.
-   */
-
-  template <typename Extra>
-    size_t convertSolutionToImportList(
-      int numExtra,
-      ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::zgid_t> &imports,
-      ArrayRCP<Extra> &newXtraInfo) const;
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -658,8 +615,7 @@ private:
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.
 
-  ArrayRCP<const zgid_t>  gids_;   // User's global IDs
-  ArrayRCP<part_t> parts_;      // part number assigned to gids_[i]
+  ArrayRCP<part_t> parts_;      // part number assigned to localid[i]
 
   bool haveSolution_;
 
@@ -669,7 +625,7 @@ private:
   // The solution calculates this from the part assignments,
   // unless onePartPerProc_.
 
-  ArrayRCP<int> procs_;       // process rank assigned to gids_[i]
+  ArrayRCP<int> procs_;       // process rank assigned to localid[i]
 
   ////////////////////////////////////////////////////////////////
   // Algorithm used to compute the solution; 
@@ -694,7 +650,7 @@ template <typename Adapter>
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY??  WHY NOT ZERO?
@@ -729,7 +685,7 @@ template <typename Adapter>
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_(), algorithm_(algorithm)
 {
   nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY?? WHY NOT ZERO?
@@ -1421,25 +1377,6 @@ template <typename Adapter>
 
     delete [] procList.getRawPtr();
 
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
-    }
-    else{
-      zgid_t *gidList = new zgid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<zgid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const zgid_t>(gidList, 0, len);
-    }
-
     parts_ = partList;
   }
 
@@ -1549,7 +1486,7 @@ template <typename Adapter>
 
 //  This version of setParts should be used.
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::setParts( ArrayRCP<const gno_t> &gnoList, ArrayRCP<part_t> &partList)
+  void PartitioningSolution<Adapter>::setParts(ArrayRCP<part_t> &partList)
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
 
@@ -1567,34 +1504,10 @@ template <typename Adapter>
     IdentifierTraits<part_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
 
   IdentifierTraits<part_t>::globalMinMax(*comm_, len == 0,
-    lMin, lMax, gMin, gMax);
+                                         lMin, lMax, gMin, gMax);
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
-
-  {
-    // Case where the algorithm provides the part list in the same order
-    // that it received the gnos.
-
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcp_reinterpret_cast<const zgid_t>(gnoList);
-    }
-    else{
-      zgid_t *gidList = new zgid_t [len];
-      env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
-      ArrayView<zgid_t> gidView(gidList, len);
-
-      const gno_t *gnos = gnoList.getRawPtr();
-      ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
-
-      try{
-        idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-
-      gids_ = arcp<const zgid_t>(gidList, 0, len);
-    }
-    parts_ = partList;
-  }
+  parts_ = partList;
 
   // Now determine which process gets each object, if not one-to-one.
 
@@ -1700,82 +1613,6 @@ template <typename Adapter>
   env_->debug(DETAILED_STATUS, "Exiting setParts");
 }
 
-template <typename Adapter>
-  template <typename Extra>
-    size_t PartitioningSolution<Adapter>::convertSolutionToImportList(
-      int numExtra, ArrayRCP<Extra> &xtraInfo,
-      ArrayRCP<typename Adapter::zgid_t> &imports,       // output
-      ArrayRCP<Extra> &newXtraInfo) const               // output
-{
-  env_->localInputAssertion(__FILE__, __LINE__, "no solution yet",
-    haveSolution_, BASIC_ASSERTION);
-  env_->debug(DETAILED_STATUS, "Entering convertSolutionToImportList");
-
-  int numProcs                = comm_->getSize();
-  size_t localNumIds          = gids_.size();
-
-  // How many to each process?
-  Array<int> counts(numProcs, 0);
-  if (onePartPerProc_)
-    for (size_t i=0; i < localNumIds; i++)
-      counts[parts_[i]]++;
-  else
-    for (size_t i=0; i < localNumIds; i++)
-      counts[procs_[i]]++;
-
-  Array<gno_t> offsets(numProcs+1, 0);
-  for (int i=1; i <= numProcs; i++){
-    offsets[i] = offsets[i-1] + counts[i-1];
-  }
-
-  Array<zgid_t> gidList(localNumIds);
-  Array<Extra> numericInfo;
-
-  if (numExtra > 0)
-    numericInfo.resize(localNumIds);
-
-  if (onePartPerProc_){
-    for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[parts_[i]];
-      gidList[idx] = gids_[i];
-      if (numExtra > 0)
-        numericInfo[idx] = xtraInfo[i];
-      offsets[parts_[i]] = idx + 1;
-    }
-  }
-  else {
-    for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[procs_[i]];
-      gidList[idx] = gids_[i];
-      if (numExtra > 0)
-        numericInfo[idx] = xtraInfo[i];
-      offsets[procs_[i]] = idx + 1;
-    }
-  }
-
-  Array<int> recvCounts(numProcs, 0);
-
-  try{
-    AlltoAllv<zgid_t>(*comm_, *env_, gidList(),
-      counts(), imports, recvCounts());
-  }
-  catch (std::exception &e){
-    throw std::runtime_error("alltoallv 1");
-  }
-
-  if (numExtra > 0){
-    try{
-      AlltoAllv<Extra>(*comm_, *env_, xtraInfo(),
-        counts(), newXtraInfo, recvCounts());
-    }
-    catch (std::exception &e){
-      throw std::runtime_error("alltoallv 2");
-    }
-  }
-
-  env_->debug(DETAILED_STATUS, "Exiting convertSolutionToImportList");
-  return imports.size();
-}
 
 template <typename Adapter>
   void PartitioningSolution<Adapter>::procToPartsMap(int procId,

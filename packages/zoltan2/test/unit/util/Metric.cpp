@@ -238,7 +238,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   for (int i=0; i < numLocalObj; i++)
     partNum[i] = rank;
 
-  solution->setParts(gidArray, partAssignment);
+  solution->setParts(partAssignment);
   RCP<const Zoltan2::PartitioningSolution<idInput_t> > solutionConst =
     rcp_const_cast<const Zoltan2::PartitioningSolution<idInput_t> >(solution);
 

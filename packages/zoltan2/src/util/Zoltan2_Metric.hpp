@@ -888,7 +888,7 @@ template <typename Adapter>
 
   // Parts to which objects are assigned.
 
-  const part_t *parts = solution->getPartList();
+  const part_t *parts = solution->getPartListView();
   env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
     parts, BASIC_ASSERTION);
   ArrayView<const part_t> partArray(parts, numLocalObjects);

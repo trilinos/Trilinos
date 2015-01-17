@@ -309,12 +309,12 @@ int main(int narg, char** arg)
     return -1;
   }
 
-  ////// Basic metric checking of the partitioning solution
-  ////// Not ordinarily done in application code; just doing it for testing here.
+  ///// Basic metric checking of the partitioning solution
+  ///// Not ordinarily done in application code; just doing it for testing here.
   size_t checkNparts = comm->getSize();
   
-  size_t  checkLength = problem.getSolution().getLocalNumberOfIds();
-  const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartList();
+  size_t  checkLength = origMatrix->getNodeNumRows();
+  const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartListView();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];

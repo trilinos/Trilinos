@@ -2457,7 +2457,7 @@ public:
 	  }
 	  CATCH_EXCEPTIONS("solve()")
 
-	  const typename inputAdapter_t::part_t *partIds = problem->getSolution().getPartList();
+	  const typename inputAdapter_t::part_t *partIds = problem->getSolution().getPartListView();
 
 	  for (lno_t i = 0; i < this->numLocalCoords;++i){
 		  coordinate_grid_parts[i] = partIds[i];
