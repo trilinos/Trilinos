@@ -55,7 +55,6 @@
 #include "MueLu_SmootherBase_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
-#include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 
 // Warning: on TopRAPFactory and TopSmootherFactory constructors, Teuchos::null doesn't mean "default factory" but "no build"
