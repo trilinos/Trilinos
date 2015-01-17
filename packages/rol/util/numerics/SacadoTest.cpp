@@ -58,39 +58,45 @@ typedef Sacado::Fad::SFad<RealT,1> FadType;
 
 /* Examples of nonlinearities */
 
-template<class ScalarT>
-class Linear : public Nonlinearity<ScalarT> {
+class Linear {
 public:
+    template<class ScalarT>
     ScalarT operator() (const ScalarT &y, const ScalarT &y_x, const ScalarT &u, const ScalarT &x) {
-         return y+2.0*u;
+         return y;
     } 
 };
 
-template<class ScalarT>
-class Reaction : public Nonlinearity<ScalarT> {
+class Reaction {
 public:
+    template<class ScalarT> 
     ScalarT operator() (const ScalarT &y, const ScalarT &y_x, const ScalarT &u, const ScalarT &x) {
          return u*y;
     } 
 };
 
-template<class ScalarT>
-class Advection : public Nonlinearity<ScalarT> {
+class Advection {
 public:
+    template<class ScalarT>
     ScalarT operator() (const ScalarT &y, const ScalarT &y_x, const ScalarT &u, const ScalarT &x) {
          return u*y_x;
     } 
 };
 
-template<class ScalarT>
-class Burgers : public Nonlinearity<ScalarT> {
+class Burgers {
 public:
+    template<class ScalarT>
     ScalarT operator() (const ScalarT &y, const ScalarT &y_x, const ScalarT &u, const ScalarT &x) {
          return y*y/2.0;
     } 
 };
 
-
+class Quadratic {
+public:
+    template<class ScalarT>
+    ScalarT operator() (const ScalarT &y, const ScalarT &y_x, const ScalarT &u, const ScalarT &x) {
+         return y*y+2*u*u;
+    } 
+};
 
 
 
@@ -112,24 +118,36 @@ int main(int argc, char *argv[]) {
 
     int errorFlag = 0;
 
+    // Number of interpolation points
     int ni = atoi(argv[1]);
+
+    // Number of quadrature points
     int nq = atoi(argv[2]);
+
+    // Which variable (sim=0 or opt=1) we differentiate with to
     int blk = atoi(argv[3]);
-    
+
     bool diffTestFun = false;
 
-    Teuchos::RCP<Nonlinearity<FadType> > func_fad = Teuchos::rcp(new Linear<FadType>);
+    int blks[2] = {0,0}; 
+   
+    // End points of the single element domain 
+    RealT xlr[2] = {0.0,1.0};  
 
-    FiniteElement<FadType,RealT> fe_fad(ni,nq);
+    // Create a nonlinearity functor
+    Quadratic nlfun;
 
-    Teuchos::RCP<std::vector<RealT> > x_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
-    Teuchos::RCP<std::vector<RealT> > y_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
-    Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
-    Teuchos::RCP<std::vector<RealT> > f_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
-    Teuchos::RCP<std::vector<RealT> > v_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
-    Teuchos::RCP<std::vector<RealT> > jv_rcp = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<NodalBasis<RealT> > basisp = Teuchos::rcp(new NodalBasis<RealT>(ni,nq));
+
+    Teuchos::RCP<std::vector<RealT> > x_rcp   = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > y_rcp   = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > u_rcp   = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > f_rcp   = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > v_rcp   = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > jv_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
+    Teuchos::RCP<std::vector<RealT> > hv_rcp  = Teuchos::rcp( new std::vector<RealT>(ni, 0) );
     Teuchos::RCP<std::vector<RealT> > jac_rcp = Teuchos::rcp( new std::vector<RealT>(ni*ni, 0) );
-
+  
     (*v_rcp)[0] = 1.0;
    
     StdVector<RealT> x(x_rcp);
@@ -139,8 +157,9 @@ int main(int argc, char *argv[]) {
     StdVector<RealT> v(v_rcp);
     StdVector<RealT> jv(jv_rcp);
     StdVector<RealT> jac(jac_rcp);
+    StdVector<RealT> hv(hv_rcp);
 
-    fe_fad.getInterpolationPoints(x);
+
 
     for(int i=0;i<ni;++i){ 
         (*u_rcp)[i] = 1.0;
@@ -153,6 +172,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<FadType> > u_fad_rcp   = Teuchos::rcp( new std::vector<FadType> );
     Teuchos::RCP<std::vector<FadType> > f_fad_rcp   = Teuchos::rcp( new std::vector<FadType> );
     Teuchos::RCP<std::vector<FadType> > jac_fad_rcp = Teuchos::rcp( new std::vector<FadType> ); 
+    Teuchos::RCP<std::vector<FadType> > hv_fad_rcp  = Teuchos::rcp( new std::vector<FadType> );
+    
 
     y_fad_rcp->reserve(ni); 
     u_fad_rcp->reserve(ni); 
@@ -160,12 +181,15 @@ int main(int argc, char *argv[]) {
     jv_fad_rcp->reserve(ni); 
     f_fad_rcp->reserve(ni); 
     jac_fad_rcp->reserve(ni*ni); 
+    hv_fad_rcp->reserve(ni); 
+   
 
     for(int i=0;i<ni;++i) {
         y_fad_rcp->push_back((*y_rcp)[i]);
         u_fad_rcp->push_back((*u_rcp)[i]);
         v_fad_rcp->push_back((*v_rcp)[i]);
         jv_fad_rcp->push_back(0);
+        hv_fad_rcp->push_back(0);
         f_fad_rcp->push_back(0);
         for(int j=0;j<ni;++j){
             jac_fad_rcp->push_back(0);
@@ -176,16 +200,21 @@ int main(int argc, char *argv[]) {
     StdVector<FadType> u_fad(u_fad_rcp);
     StdVector<FadType> v_fad(v_fad_rcp);
     StdVector<FadType> jv_fad(jv_fad_rcp);
+    StdVector<FadType> hv_fad(hv_fad_rcp);
     StdVector<FadType> f_fad(f_fad_rcp);
     StdVector<FadType> jac_fad(jac_fad_rcp);
- 
-    fe_fad.vectorFunction(y_fad,u_fad,diffTestFun,func_fad,f_fad);
-    fe_fad.applyJacobianBlock(y_fad,u_fad,diffTestFun,func_fad,v_fad,blk,jv_fad);
-    fe_fad.buildJacobianBlock(y_fad,u_fad,diffTestFun,func_fad,blk,jac_fad);  
+
+
+    vectorFunction(y_fad,u_fad,diffTestFun,xlr,&nlfun,basisp,f_fad);
+    applyJacobianBlock(y_fad,u_fad,diffTestFun,xlr,&nlfun,basisp,v_fad,blk,jv_fad);
+    buildJacobianBlock(y_fad,u_fad,diffTestFun,xlr,&nlfun,basisp,blk,jac_fad);  
+    applyHessianBlock(y_fad,u_fad,diffTestFun,xlr,&nlfun,basisp,v_fad,v_fad,blks,hv_fad);
+
 
     for(int i=0;i<ni;++i) {
-        (*f_rcp)[i] = (*f_fad_rcp)[i].val();
+        (*f_rcp)[i]  = (*f_fad_rcp)[i].val();
         (*jv_rcp)[i] = (*jv_fad_rcp)[i].val();
+        (*hv_rcp)[i] = (*hv_fad_rcp)[i].val();
     }    
 
     printvec(*f_rcp,"f");
@@ -200,6 +229,7 @@ int main(int argc, char *argv[]) {
        std::cout << std::endl;
     }   
 
+    printvec(*hv_rcp,"hv");
    
  
     if (errorFlag != 0)
