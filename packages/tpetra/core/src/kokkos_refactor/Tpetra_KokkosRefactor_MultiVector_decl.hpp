@@ -2273,7 +2273,7 @@ namespace Tpetra {
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
-      typedef typename DD::memory_space::host_memory_space HD;
+      typedef typename MultiVector<DS, DL, DG, Kokkos::Compat::KokkosDeviceWrapperNode<DD> >::dual_view_type::host_mirror_space HD;
 
       if (src.getDualView ().modified_device >= src.getDualView ().modified_host) {
         // Device memory has the most recent version of src.

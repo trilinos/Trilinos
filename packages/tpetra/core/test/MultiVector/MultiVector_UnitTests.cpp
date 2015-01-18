@@ -2856,6 +2856,57 @@ namespace {
     }
   }
 
+  // Make sure that deep_copy compiles, and actually does a deep copy.
+  //
+  // NOTE: This test only exercises deep_copy for MVs of the same type.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeepCopy, LO, GO, Scalar, Node )
+  {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::mag_type mag_type;
+
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+
+    Teuchos::Array<mag_type> norms (numVecs);
+
+    MV X (map, numVecs);
+    X.putScalar (static_cast<Scalar> (42.0));
+    X.normInf (norms ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms[j], static_cast<mag_type> (42.0) );
+      norms[j] = Teuchos::ScalarTraits<mag_type>::zero ();
+    }
+
+    MV Y (X, Teuchos::Copy);
+    Y.normInf (norms ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms[j], static_cast<mag_type> (42.0) );
+      norms[j] = Teuchos::ScalarTraits<mag_type>::zero ();
+    }
+
+    MV Z (map, numVecs);
+    Tpetra::deep_copy (Z, X);
+    Z.normInf (norms ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms[j], static_cast<mag_type> (42.0) );
+      norms[j] = Teuchos::ScalarTraits<mag_type>::zero ();
+    }
+
+    MV W (map, numVecs);
+    W.update (STS::one (), Y, -STS::one (), Z, STS::zero ());
+    W.normInf (norms ());
+    for (size_t j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms[j], Teuchos::ScalarTraits<mag_type>::zero () );
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -2889,7 +2940,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonContigView     , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
