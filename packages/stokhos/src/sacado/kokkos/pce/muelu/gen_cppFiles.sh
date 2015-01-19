@@ -27,6 +27,13 @@ for i in SC-LO-GO-NO-LMO
             conditionClose=""
         fi
 
+        cat ${i}-Serial.tmpl \
+            | sed "s/\$TMPL_CLASS/$className/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
+            | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
+            > MueLu_${className}_UQ_PCE_Serial.cpp
+
         cat ${i}-Threads.tmpl \
             | sed "s/\$TMPL_CLASS/$className/g" \
             | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \

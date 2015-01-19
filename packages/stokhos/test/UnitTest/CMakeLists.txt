@@ -458,6 +458,28 @@ IF(Stokhos_ENABLE_Sacado)
         )
     ENDIF()
 
+    IF (Kokkos_ENABLE_Serial)
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewMPVectorUnitTest_Serial
+        SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
+                Stokhos_KokkosViewMPVectorUnitTest_Serial.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewUQPCEUnitTest_Serial
+        SOURCES Stokhos_KokkosViewUQPCEUnitTest.hpp
+                Stokhos_KokkosViewUQPCEUnitTest_Serial.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
+    ENDIF()
+
     IF (Kokkos_ENABLE_OpenMP)
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -518,6 +540,26 @@ IF(Stokhos_ENABLE_Sacado)
           KokkosCrsMatrixUQPCEUnitTest_Threads
           SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest.hpp
                   Stokhos_KokkosCrsMatrixUQPCEUnitTest_Threads.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          )
+      ENDIF()
+
+      IF (HAVE_TPETRA_SERIAL)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosCrsMatrixMPVectorUnitTest_Serial
+          SOURCES Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp
+                  Stokhos_KokkosCrsMatrixMPVectorUnitTest_Serial.cpp
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 1
+          )
+
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          KokkosCrsMatrixUQPCEUnitTest_Serial
+          SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest.hpp
+                  Stokhos_KokkosCrsMatrixUQPCEUnitTest_Serial.cpp
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
@@ -588,6 +630,26 @@ IF(Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
+        IF (HAVE_TPETRA_SERIAL)
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixMPVectorUnitTest_Serial
+            SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+                    Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial.cpp
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            NUM_MPI_PROCS 4
+            )
+
+          TRIBITS_ADD_EXECUTABLE_AND_TEST(
+            TpetraCrsMatrixUQPCEUnitTest_Serial
+            SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest.hpp
+                    Stokhos_TpetraCrsMatrixUQPCEUnitTest_Serial.cpp
+            COMM serial mpi
+            STANDARD_PASS_OUTPUT
+            NUM_MPI_PROCS 4
+            )
+        ENDIF()
+
         IF (HAVE_TPETRA_OPENMP)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
             TpetraCrsMatrixMPVectorUnitTest_OpenMP
@@ -645,16 +707,18 @@ ENDIF()
 # Need to fix these tests so they don't require Epetra
 IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    KokkosArrayKernelsUnitTest_Serial
-#    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-#            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-#            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-#            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
-#    COMM serial mpi
-#    STANDARD_PASS_OUTPUT
-#    NUM_MPI_PROCS 1
-##    )
+  IF (Kokkos_ENABLE_Serial)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_Serial
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+             Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+             Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+             Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(

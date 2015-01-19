@@ -340,6 +340,12 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_Update.hpp
     kokkos/Stokhos_MatrixMarket.hpp
     )
+  IF(Kokkos_ENABLE_Serial)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
+    SET(HEADERS ${HEADERS}
+      kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
+      )
+  ENDIF()
   IF(Kokkos_ENABLE_Pthread)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
     SET(HEADERS ${HEADERS}
@@ -579,6 +585,32 @@ IF (Stokhos_ENABLE_Sacado)
         SET(TPETRAEXT_ETI_CLASSES
           MatrixMatrix
           )
+        IF (Tpetra_INST_SERIAL)
+          PROCESS_ETI_TEMPLATE(
+            "${TPETRA_ETI_CLASSES}"
+            sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Serial.tmpl
+            "Tpetra_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+            TPETRA_SRCS)
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          PROCESS_ETI_TEMPLATE(
+            "${TPETRAEXT_ETI_CLASSES}"
+            sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Serial.tmpl
+            "TpetraExt_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+            TPETRA_SRCS)
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          PROCESS_ETI_TEMPLATE(
+            "${TPETRA_ETI_CLASSES}"
+            sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Serial.tmpl
+            "Tpetra_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+            TPETRA_SRCS)
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          PROCESS_ETI_TEMPLATE(
+            "${TPETRAEXT_ETI_CLASSES}"
+            sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Serial.tmpl
+            "TpetraExt_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+            TPETRA_SRCS)
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        ENDIF()
         IF (Tpetra_INST_PTHREAD)
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
@@ -701,6 +733,14 @@ IF (Stokhos_ENABLE_Sacado)
             )
         ENDIF()
 
+        IF (Tpetra_INST_SERIAL)
+          PROCESS_ETI_TEMPLATE(
+            "${AMESOS2_ETI_CLASSES}"
+            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Serial.tmpl
+            "Amesos2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+            AMESOS2_SRCS)
+          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+        ENDIF()
         IF (Tpetra_INST_PTHREAD)
           PROCESS_ETI_TEMPLATE(
             "${AMESOS2_ETI_CLASSES}"
@@ -746,6 +786,20 @@ IF (Stokhos_ENABLE_Sacado)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
+          IF (Tpetra_INST_SERIAL)
+            PROCESS_ETI_TEMPLATE(
+              "${IFPACK2_ETI_CLASSES}"
+              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Serial.tmpl
+              "Ifpack2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+              IFPACK2_SRCS)
+            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+            PROCESS_ETI_TEMPLATE(
+              "${IFPACK2_ETI_CLASSES}"
+              sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Serial.tmpl
+              "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+              IFPACK2_SRCS)
+            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+          ENDIF()
           IF (Tpetra_INST_PTHREAD)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
@@ -810,6 +864,10 @@ IF (Stokhos_ENABLE_Sacado)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+          IF (Tpetra_INST_SERIAL)
+            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Serial.cpp)
+            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Serial.cpp)
+          ENDIF()
           IF (Tpetra_INST_PTHREAD)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Threads.cpp)
             APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Threads.cpp)

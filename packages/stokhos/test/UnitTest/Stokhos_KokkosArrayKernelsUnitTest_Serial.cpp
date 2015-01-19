@@ -66,7 +66,7 @@ UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Serial )
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize threads
+  // Initialize serial
   Kokkos::Serial::initialize();
 
   // Setup (has to happen after initialization)
