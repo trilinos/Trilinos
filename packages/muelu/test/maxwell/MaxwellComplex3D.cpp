@@ -245,11 +245,11 @@ int main(int argc, char *argv[]) {
     Belos::ReturnType status = solver -> solve();
     int iters = solver -> getNumIters();
     success = (iters<20 && status == Belos::Converged);
-    if(success) {
-      if(commrank==0)
-        std::cout<<"SUCCESS! Belos converged in "<<iters<<" iterations."<<std::endl;
-    } else {
-      throw(MueLu::Exceptions::RuntimeError("FAIL! Belos did not converge fast enough."));
+    if (commrank == 0) {
+      if (success)
+        std::cout << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+      else
+        std::cout << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
