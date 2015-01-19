@@ -93,7 +93,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
   private:
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraits   <Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraitsExt<Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
 #endif
 
   public:
@@ -215,7 +216,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
+        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -484,12 +485,14 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraits   <Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
     typedef Xpetra::EpetraMultiVector                  EpetraMultiVector;
-    typedef MultiVecTraits<Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
+    typedef MultiVecTraits   <Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
+    typedef MultiVecTraitsExt<Scalar, Epetra_MultiVector> MultiVecTraitsExtEpetra;
 #endif
 
   public:
@@ -649,12 +652,12 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsTpetra::GetVecLength(toTpetra(mv));
+        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
-        return MultiVecTraitsEpetra::GetVecLength(toEpetra(mv));
+        return MultiVecTraitsExtEpetra::GetGlobalLength(toEpetra(mv));
 #endif
 
       XPETRA_FACTORY_END;
