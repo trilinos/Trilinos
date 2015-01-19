@@ -182,14 +182,7 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
     floatCoords = paramList.get<Teuchos::RCP<fMV> >("Coordinates");
     paramList.remove("Coordinates");
     doubleCoords = Teuchos::rcp(new dMV(floatCoords->getMap(),floatCoords->getNumVectors()));
-    //deep_copy(*doubleCoords,*floatCoords);  //TODO reenable after deep_copy is fixed:
-                                              // "Tpetra_KokkosRefactor_MultiVector_decl.hpp:2276: error: no type named ‘host_memory_space’ in ‘class Kokkos::Serial::memory_space’
-    for (size_t i=0; i<floatCoords->getNumVectors(); ++i) {
-      Teuchos::ArrayRCP<const float> fdata = floatCoords->getData(i);
-      Teuchos::ArrayRCP<double> ddata = doubleCoords->getDataNonConst(i);
-      for (int j=0; j<fdata.size(); ++j)
-        ddata[j]=fdata[j];
-    }
+    deep_copy(*doubleCoords,*floatCoords);
   }
 
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
