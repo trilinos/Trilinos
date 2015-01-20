@@ -69,9 +69,6 @@
 /* Define if Boost is enabled */
 #cmakedefine HAVE_STOKHOS_BOOST
 
-/* Define if KokkosCore is enabled */
-#cmakedefine HAVE_STOKHOS_KOKKOSCORE
-
 /* Define if TpetraKernels is enabled */
 #cmakedefine HAVE_STOKHOS_TPETRAKERNELS
 #ifdef HAVE_STOKHOS_TPETRAKERNELS

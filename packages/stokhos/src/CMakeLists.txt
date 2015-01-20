@@ -320,71 +320,69 @@ IF (Stokhos_ENABLE_EpetraExt)
     )
 ENDIF()
 
-IF (Stokhos_ENABLE_KokkosCore)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)
+SET(HEADERS ${HEADERS}
+  kokkos/Stokhos_Multiply.hpp
+  kokkos/Stokhos_CrsMatrix.hpp
+  kokkos/Stokhos_BlockCrsMatrix.hpp
+  kokkos/Stokhos_StochasticProductTensor.hpp
+  kokkos/Stokhos_SymmetricDiagonalSpec.hpp
+  kokkos/Stokhos_CrsProductTensor.hpp
+  kokkos/Stokhos_TiledCrsProductTensor.hpp
+  kokkos/Stokhos_SimpleTiledCrsProductTensor.hpp
+  kokkos/Stokhos_CooProductTensor.hpp
+  kokkos/Stokhos_FlatSparse3Tensor.hpp
+  kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
+  kokkos/Stokhos_LinearSparse3Tensor.hpp
+  kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
+  kokkos/Stokhos_TinyVec.hpp
+  kokkos/Stokhos_Update.hpp
+  kokkos/Stokhos_MatrixMarket.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomField.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomFieldImp.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunction.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunctionImp.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialEigenPair.hpp
+  kokkos/kl/Stokhos_KL_Kokkos_ProductEigenPair.hpp
+  )
+IF(Kokkos_ENABLE_Serial)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
   SET(HEADERS ${HEADERS}
-    kokkos/Stokhos_Multiply.hpp
-    kokkos/Stokhos_CrsMatrix.hpp
-    kokkos/Stokhos_BlockCrsMatrix.hpp
-    kokkos/Stokhos_StochasticProductTensor.hpp
-    kokkos/Stokhos_SymmetricDiagonalSpec.hpp
-    kokkos/Stokhos_CrsProductTensor.hpp
-    kokkos/Stokhos_TiledCrsProductTensor.hpp
-    kokkos/Stokhos_SimpleTiledCrsProductTensor.hpp
-    kokkos/Stokhos_CooProductTensor.hpp
-    kokkos/Stokhos_FlatSparse3Tensor.hpp
-    kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
-    kokkos/Stokhos_LinearSparse3Tensor.hpp
-    kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
-    kokkos/Stokhos_TinyVec.hpp
-    kokkos/Stokhos_Update.hpp
-    kokkos/Stokhos_MatrixMarket.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomField.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomFieldImp.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunction.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunctionImp.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialEigenPair.hpp
-    kokkos/kl/Stokhos_KL_Kokkos_ProductEigenPair.hpp
+    kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
-  IF(Kokkos_ENABLE_Serial)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
-    SET(HEADERS ${HEADERS}
-      kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
-      )
-  ENDIF()
-  IF(Kokkos_ENABLE_Pthread)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
-    SET(HEADERS ${HEADERS}
-      kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
-      )
-  ENDIF()
-  IF(Kokkos_ENABLE_OpenMP)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
-    SET(HEADERS ${HEADERS}
-      kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
-      kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
-      )
-  ENDIF()
-  IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
-    SET(HEADERS ${HEADERS}
-      kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
-      kokkos/Cuda/Stokhos_Cuda_WarpShuffle.hpp
-      kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
-      kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
-      kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
-      kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_SimpleTiledCrsProductTensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
-      kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp
-      kokkos/Cuda/Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp
-      )
-  ENDIF()
+ENDIF()
+IF(Kokkos_ENABLE_Pthread)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
+  SET(HEADERS ${HEADERS}
+    kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
+    )
+ENDIF()
+IF(Kokkos_ENABLE_OpenMP)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
+  SET(HEADERS ${HEADERS}
+    kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
+    kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
+    )
+ENDIF()
+IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
+  SET(HEADERS ${HEADERS}
+    kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
+    kokkos/Cuda/Stokhos_Cuda_WarpShuffle.hpp
+    kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
+    kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
+    kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
+    kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_SimpleTiledCrsProductTensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp
+    kokkos/Cuda/Stokhos_Cuda_LinearSparse3Tensor.hpp
+    kokkos/Cuda/Stokhos_Cuda_LexicographicBlockSparse3Tensor.hpp
+    )
 ENDIF()
 
 # NOX
@@ -470,92 +468,89 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
-  IF (Stokhos_ENABLE_KokkosCore)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce)
+  LIST(APPEND SACADO_HEADERS
+    sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
+    sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+    sacado/kokkos/Stokhos_MemoryTraits.hpp
+    sacado/kokkos/Stokhos_KokkosTraits.hpp
+    sacado/kokkos/Stokhos_StaticArrayTraits.hpp
+    sacado/kokkos/Stokhos_DynArrayTraits.hpp
+    sacado/kokkos/Stokhos_StaticStorage.hpp
+    sacado/kokkos/Stokhos_StaticFixedStorage.hpp
+    sacado/kokkos/Stokhos_DynamicStorage.hpp
+    sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
+    sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
+    sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
+    sacado/kokkos/Stokhos_ViewStorage.hpp
+    sacado/kokkos/Kokkos_View_Utils.hpp
+    sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
+    sacado/kokkos/vector/Sacado_MP_Vector.hpp
+    sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
+    sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
+    sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
+    sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
+    sacado/kokkos/vector/Kokkos_View_MP_Vector_Contiguous.hpp
+    sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
+    sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
+    sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
+    sacado/kokkos/vector/Kokkos_Parallel_MP_Vector.hpp
+    sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
+    sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
+
+    sacado/kokkos/pce/Stokhos_Sacado_Kokkos_UQ_PCE.hpp
+    sacado/kokkos/pce/Sacado_UQ_PCE.hpp
+    sacado/kokkos/pce/Sacado_UQ_PCE_Imp.hpp
+    sacado/kokkos/pce/Sacado_UQ_PCE_Traits.hpp
+    sacado/kokkos/pce/Sacado_UQ_PCE_ScalarTraitsImp.hpp
+    sacado/kokkos/pce/Kokkos_View_UQ_PCE.hpp
+    sacado/kokkos/pce/Kokkos_View_UQ_PCE_Contiguous.hpp
+    sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
+    sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
+    sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
+    sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
+    )
+  LIST(APPEND SACADO_SOURCES
+    sacado/kokkos/Stokhos_MemoryTraits.cpp
+    sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
+    )
+  IF (Stokhos_ENABLE_TpetraKernels)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
     LIST(APPEND SACADO_HEADERS
-      sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
-      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
-      sacado/kokkos/Stokhos_MemoryTraits.hpp
-      sacado/kokkos/Stokhos_KokkosTraits.hpp
-      sacado/kokkos/Stokhos_StaticArrayTraits.hpp
-      sacado/kokkos/Stokhos_DynArrayTraits.hpp
-      sacado/kokkos/Stokhos_StaticStorage.hpp
-      sacado/kokkos/Stokhos_StaticFixedStorage.hpp
-      sacado/kokkos/Stokhos_DynamicStorage.hpp
-      sacado/kokkos/Stokhos_DynamicStridedStorage.hpp
-      sacado/kokkos/Stokhos_DynamicThreadedStorage.hpp
-      sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
-      sacado/kokkos/Stokhos_ViewStorage.hpp
-      sacado/kokkos/Kokkos_View_Utils.hpp
-      sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
-      sacado/kokkos/vector/Sacado_MP_Vector.hpp
-      sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector_Contiguous.hpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector_Interlaced.hpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
-      sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
-      sacado/kokkos/vector/Kokkos_Parallel_MP_Vector.hpp
-      sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
-      sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
-
-      sacado/kokkos/pce/Stokhos_Sacado_Kokkos_UQ_PCE.hpp
-      sacado/kokkos/pce/Sacado_UQ_PCE.hpp
-      sacado/kokkos/pce/Sacado_UQ_PCE_Imp.hpp
-      sacado/kokkos/pce/Sacado_UQ_PCE_Traits.hpp
-      sacado/kokkos/pce/Sacado_UQ_PCE_ScalarTraitsImp.hpp
-      sacado/kokkos/pce/Kokkos_View_UQ_PCE.hpp
-      sacado/kokkos/pce/Kokkos_View_UQ_PCE_Contiguous.hpp
-      sacado/kokkos/pce/Kokkos_View_UQ_PCE_Utils.hpp
-      sacado/kokkos/pce/Kokkos_Atomic_UQ_PCE.hpp
-      sacado/kokkos/pce/Teuchos_LAPACK_UQ_PCE.hpp
-      sacado/kokkos/pce/Teuchos_SerialQRDenseSolver_UQ_PCE.hpp
+      sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
+      sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
+      sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
+      sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
+      sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
+      sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE.hpp
+      sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
+      sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
       )
-    LIST(APPEND SACADO_SOURCES
-      sacado/kokkos/Stokhos_MemoryTraits.cpp
-      sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
+    IF(Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
+      LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+        sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
+        )
+    ENDIF()
+  ENDIF()
+  IF (Stokhos_ENABLE_TeuchosKokkosComm)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
+    LIST(APPEND SACADO_HEADERS
+      sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
+      sacado/kokkos/pce/mpicomm/Kokkos_TeuchosCommAdapters_UQ_PCE.hpp
       )
-    IF (Stokhos_ENABLE_TpetraKernels)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
-      LIST(APPEND SACADO_HEADERS
-        sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
-        sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
-        sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
-        sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
-        sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
-        sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE.hpp
-        sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
-        sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
-        )
-      IF(Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
-        LIST(APPEND SACADO_HEADERS
-          sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
-          sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
-          )
-      ENDIF()
-    ENDIF()
-    IF (Stokhos_ENABLE_TeuchosKokkosComm)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/mpicomm)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/mpicomm)
-      LIST(APPEND SACADO_HEADERS
-        sacado/kokkos/vector/mpicomm/Kokkos_TeuchosCommAdapters_MP_Vector.hpp
-        sacado/kokkos/pce/mpicomm/Kokkos_TeuchosCommAdapters_UQ_PCE.hpp
-        )
-    ENDIF()
-    IF (Stokhos_ENABLE_KokkosAlgorithms)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
-      LIST(APPEND SACADO_HEADERS
-        sacado/kokkos/vector/algorithms/Kokkos_Random_MP_Vector.hpp
-        sacado/kokkos/pce/algorithms/Kokkos_Random_UQ_PCE.hpp
-        )
-    ENDIF()
-
+  ENDIF()
+  IF (Stokhos_ENABLE_KokkosAlgorithms)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/algorithms)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/algorithms)
+    LIST(APPEND SACADO_HEADERS
+      sacado/kokkos/vector/algorithms/Kokkos_Random_MP_Vector.hpp
+      sacado/kokkos/pce/algorithms/Kokkos_Random_UQ_PCE.hpp
+      )
   ENDIF()
 
   TRIBITS_ADD_LIBRARY(
@@ -566,341 +561,339 @@ IF (Stokhos_ENABLE_Sacado)
     )
   LIST(APPEND STOKHOS_DEPLIBS stokhos_sacado)
 
-  IF (Stokhos_ENABLE_KokkosCore)
-    IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
-      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
-      SET(TPETRA_HEADERS "")
-      SET(TPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
-      APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
-      APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
-      IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
-        APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
-        APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
-        SET(TPETRA_ETI_CLASSES
-          MultiVector
-          Vector
-          RowMatrix
-          RowMatrixTransposer
-          DistObject
-          CrsMatrix
-          CrsGraph
-          Experimental::BlockVector
-          Experimental::BlockMultiVector
-          Experimental::BlockCrsMatrix
+  IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
+    SET(TPETRA_HEADERS "")
+    SET(TPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
+    APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
+    APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
+    IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
+      APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.cpp)
+      APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
+      SET(TPETRA_ETI_CLASSES
+        MultiVector
+        Vector
+        RowMatrix
+        RowMatrixTransposer
+        DistObject
+        CrsMatrix
+        CrsGraph
+        Experimental::BlockVector
+        Experimental::BlockMultiVector
+        Experimental::BlockCrsMatrix
+        )
+      SET(TPETRAEXT_ETI_CLASSES
+        MatrixMatrix
+        )
+      IF (Tpetra_INST_SERIAL)
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Serial.tmpl
+          "Tpetra_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Serial.tmpl
+          "TpetraExt_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Serial.tmpl
+          "Tpetra_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Serial.tmpl
+          "TpetraExt_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_PTHREAD)
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Threads.tmpl
+          "Tpetra_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Threads.tmpl
+          "TpetraExt_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Threads.tmpl
+          "Tpetra_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Threads.tmpl
+          "TpetraExt_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_OPENMP)
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_OpenMP.tmpl
+          "Tpetra_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_OpenMP.tmpl
+          "TpetraExt_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_OpenMP.tmpl
+          "Tpetra_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_OpenMP.tmpl
+          "TpetraExt_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_CUDA)
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Cuda.tmpl
+          "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Cuda.tmpl
+          "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRA_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Cuda.tmpl
+          "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+        PROCESS_ETI_TEMPLATE(
+          "${TPETRAEXT_ETI_CLASSES}"
+          sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Cuda.tmpl
+          "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
+          TPETRA_SRCS)
+        LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+      ENDIF()
+    ENDIF()
+
+    # Belos is a required dependency for Ifpack2, so we need the Belos
+    # adapters if either is enabled.
+    IF (Stokhos_ENABLE_Belos OR Stokhos_ENABLE_Ifpack2)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/belos)
+      LIST(APPEND TPETRA_HEADERS
+        sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
+        sacado/kokkos/pce/belos/Belos_TpetraAdapter_UQ_PCE.hpp
+        )
+    ENDIF()
+
+    TRIBITS_ADD_LIBRARY(
+      stokhos_tpetra
+      HEADERS ${TPETRA_HEADERS}
+      SOURCES ${TPETRA_CPP_SOURCES}
+      DEPLIBS ${STOKHOS_DEPLIBS}
+      ADDED_LIB_TARGET_NAME_OUT STOKHOS_TPETRA_LIBNAME
+      )
+    SET_PROPERTY(TARGET ${STOKHOS_TPETRA_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+    LIST(APPEND STOKHOS_DEPLIBS stokhos_tpetra)
+
+    IF (Stokhos_ENABLE_Amesos2)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
+      SET(AMESOS2_HEADERS "")
+      SET(AMESOS2_SOURCES Stokhos_Dummy.cpp)
+      APPEND_GLOB(AMESOS2_HEADERS
+        sacado/kokkos/vector/amesos2/*.hpp
+        sacado/kokkos/pce/amesos2/*.hpp
+        )
+      APPEND_GLOB(AMESOS2_SOURCES
+        sacado/kokkos/vector/amesos2/*.cpp
+        sacado/kokkos/pce/amesos2/*.cpp
+        )
+
+      SET(AMESOS2_ETI_CLASSES "")
+      IF(Amesos2_ENABLE_Basker)
+        LIST(APPEND AMESOS2_ETI_CLASSES
+          Basker
           )
-        SET(TPETRAEXT_ETI_CLASSES
-          MatrixMatrix
-          )
+      ENDIF()
+
+      IF (Tpetra_INST_SERIAL)
+        PROCESS_ETI_TEMPLATE(
+          "${AMESOS2_ETI_CLASSES}"
+          sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Serial.tmpl
+          "Amesos2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+          AMESOS2_SRCS)
+        LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_PTHREAD)
+        PROCESS_ETI_TEMPLATE(
+          "${AMESOS2_ETI_CLASSES}"
+          sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Threads.tmpl
+          "Amesos2_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
+          AMESOS2_SRCS)
+        LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_OPENMP)
+        PROCESS_ETI_TEMPLATE(
+          "${AMESOS2_ETI_CLASSES}"
+          sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_OpenMP.tmpl
+          "Amesos2_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
+          AMESOS2_SRCS)
+        LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+      ENDIF()
+      IF (Tpetra_INST_CUDA)
+        PROCESS_ETI_TEMPLATE(
+          "${AMESOS2_ETI_CLASSES}"
+          sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Cuda.tmpl
+          "Amesos2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
+          AMESOS2_SRCS)
+        LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
+      ENDIF()
+      TRIBITS_ADD_LIBRARY(
+        stokhos_amesos2
+        HEADERS ${AMESOS2_HEADERS}
+        SOURCES ${AMESOS2_SOURCES}
+        DEPLIBS ${STOKHOS_DEPLIBS}
+        ADDED_LIB_TARGET_NAME_OUT STOKHOS_AMESOS2_LIBNAME
+        )
+      SET_PROPERTY(TARGET ${STOKHOS_AMESOS2_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+      LIST(APPEND STOKHOS_DEPLIBS stokhos_amesos2)
+    ENDIF()
+
+    IF (Stokhos_ENABLE_Ifpack2)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2)
+      SET(IFPACK2_HEADERS "")
+      SET(IFPACK2_CPP_SOURCES Stokhos_Dummy.cpp)
+      APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
+      APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.hpp)
+      IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
+        APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
+        APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
         IF (Tpetra_INST_SERIAL)
           PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Serial.tmpl
-            "Tpetra_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Serial.tmpl
+            "Ifpack2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Serial.tmpl
-            "TpetraExt_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Serial.tmpl
-            "Tpetra_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Serial.tmpl
-            "TpetraExt_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Serial.tmpl
+            "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
         ENDIF()
         IF (Tpetra_INST_PTHREAD)
           PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Threads.tmpl
-            "Tpetra_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Threads.tmpl
+            "Ifpack2_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Threads.tmpl
-            "TpetraExt_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Threads.tmpl
-            "Tpetra_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Threads.tmpl
-            "TpetraExt_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Threads.tmpl
+            "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
         ENDIF()
         IF (Tpetra_INST_OPENMP)
           PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_OpenMP.tmpl
-            "Tpetra_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_OpenMP.tmpl
+            "Ifpack2_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_OpenMP.tmpl
-            "TpetraExt_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_OpenMP.tmpl
-            "Tpetra_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_OpenMP.tmpl
-            "TpetraExt_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_OpenMP.tmpl
+            "Ifpack2_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
         ENDIF()
         IF (Tpetra_INST_CUDA)
           PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/Tpetra_ETI_MP_Vector_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Cuda.tmpl
+            "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/vector/tpetra/TpetraExt_ETI_MP_Vector_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRA_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
-          PROCESS_ETI_TEMPLATE(
-            "${TPETRAEXT_ETI_CLASSES}"
-            sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Cuda.tmpl
-            "${CMAKE_CURRENT_BINARY_DIR}/TpetraExt_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
-            TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+            "${IFPACK2_ETI_CLASSES}"
+            sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Cuda.tmpl
+            "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
+            IFPACK2_SRCS)
+          LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
         ENDIF()
-      ENDIF()
-
-      # Belos is a required dependency for Ifpack2, so we need the Belos
-      # adapters if either is enabled.
-      IF (Stokhos_ENABLE_Belos OR Stokhos_ENABLE_Ifpack2)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/belos)
-        LIST(APPEND TPETRA_HEADERS
-          sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
-          sacado/kokkos/pce/belos/Belos_TpetraAdapter_UQ_PCE.hpp
-          )
       ENDIF()
 
       TRIBITS_ADD_LIBRARY(
-        stokhos_tpetra
-        HEADERS ${TPETRA_HEADERS}
-        SOURCES ${TPETRA_CPP_SOURCES}
+        stokhos_ifpack2
+        HEADERS ${IFPACK2_HEADERS}
+        SOURCES ${IFPACK2_CPP_SOURCES}
         DEPLIBS ${STOKHOS_DEPLIBS}
-        ADDED_LIB_TARGET_NAME_OUT STOKHOS_TPETRA_LIBNAME
+        ADDED_LIB_TARGET_NAME_OUT STOKHOS_IFPACK2_LIBNAME
         )
-      SET_PROPERTY(TARGET ${STOKHOS_TPETRA_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
-      LIST(APPEND STOKHOS_DEPLIBS stokhos_tpetra)
-
-      IF (Stokhos_ENABLE_Amesos2)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/amesos2)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
-        SET(AMESOS2_HEADERS "")
-        SET(AMESOS2_SOURCES Stokhos_Dummy.cpp)
-        APPEND_GLOB(AMESOS2_HEADERS
-          sacado/kokkos/vector/amesos2/*.hpp
-          sacado/kokkos/pce/amesos2/*.hpp
-          )
-        APPEND_GLOB(AMESOS2_SOURCES
-          sacado/kokkos/vector/amesos2/*.cpp
-          sacado/kokkos/pce/amesos2/*.cpp
-          )
-
-        SET(AMESOS2_ETI_CLASSES "")
-        IF(Amesos2_ENABLE_Basker)
-          LIST(APPEND AMESOS2_ETI_CLASSES
-            Basker
-            )
-        ENDIF()
-
-        IF (Tpetra_INST_SERIAL)
-          PROCESS_ETI_TEMPLATE(
-            "${AMESOS2_ETI_CLASSES}"
-            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Serial.tmpl
-            "Amesos2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
-            AMESOS2_SRCS)
-          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
-        ENDIF()
-        IF (Tpetra_INST_PTHREAD)
-          PROCESS_ETI_TEMPLATE(
-            "${AMESOS2_ETI_CLASSES}"
-            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Threads.tmpl
-            "Amesos2_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
-            AMESOS2_SRCS)
-          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
-        ENDIF()
-        IF (Tpetra_INST_OPENMP)
-          PROCESS_ETI_TEMPLATE(
-            "${AMESOS2_ETI_CLASSES}"
-            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_OpenMP.tmpl
-            "Amesos2_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
-            AMESOS2_SRCS)
-          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
-        ENDIF()
-        IF (Tpetra_INST_CUDA)
-          PROCESS_ETI_TEMPLATE(
-            "${AMESOS2_ETI_CLASSES}"
-            sacado/kokkos/vector/amesos2/Amesos2_ETI_MP_Vector_Cuda.tmpl
-            "Amesos2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
-            AMESOS2_SRCS)
-          LIST(APPEND AMESOS2_SOURCES ${AMESOS2_SRCS})
-        ENDIF()
-        TRIBITS_ADD_LIBRARY(
-          stokhos_amesos2
-          HEADERS ${AMESOS2_HEADERS}
-          SOURCES ${AMESOS2_SOURCES}
-          DEPLIBS ${STOKHOS_DEPLIBS}
-          ADDED_LIB_TARGET_NAME_OUT STOKHOS_AMESOS2_LIBNAME
-          )
-        SET_PROPERTY(TARGET ${STOKHOS_AMESOS2_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
-        LIST(APPEND STOKHOS_DEPLIBS stokhos_amesos2)
-      ENDIF()
-
-      IF (Stokhos_ENABLE_Ifpack2)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2)
-        SET(IFPACK2_HEADERS "")
-        SET(IFPACK2_CPP_SOURCES Stokhos_Dummy.cpp)
-        APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
-        APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.hpp)
-        IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
-          APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
-          APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
-          IF (Tpetra_INST_SERIAL)
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Serial.tmpl
-              "Ifpack2_CLASS_FILE_NAME_MP_Vector_Serial.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Serial.tmpl
-              "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-          ENDIF()
-          IF (Tpetra_INST_PTHREAD)
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Threads.tmpl
-              "Ifpack2_CLASS_FILE_NAME_MP_Vector_Threads.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Threads.tmpl
-              "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-          ENDIF()
-          IF (Tpetra_INST_OPENMP)
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_OpenMP.tmpl
-              "Ifpack2_CLASS_FILE_NAME_MP_Vector_OpenMP.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_OpenMP.tmpl
-              "Ifpack2_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-          ENDIF()
-          IF (Tpetra_INST_CUDA)
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_MP_Vector_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_MP_Vector_Cuda.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_CLASSES}"
-              sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-          ENDIF()
-        ENDIF()
-
-        TRIBITS_ADD_LIBRARY(
-          stokhos_ifpack2
-          HEADERS ${IFPACK2_HEADERS}
-          SOURCES ${IFPACK2_CPP_SOURCES}
-          DEPLIBS ${STOKHOS_DEPLIBS}
-          ADDED_LIB_TARGET_NAME_OUT STOKHOS_IFPACK2_LIBNAME
-          )
-        SET_PROPERTY(TARGET ${STOKHOS_IFPACK2_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
-        LIST(APPEND STOKHOS_DEPLIBS stokhos_ifpack2)
-
-      ENDIF()
-
-      IF (Stokhos_ENABLE_MueLu)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
-        SET(MUELU_HEADERS "")
-        SET(MUELU_CPP_SOURCES Stokhos_Dummy.cpp)
-        APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
-        APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
-        IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
-          IF (Tpetra_INST_SERIAL)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Serial.cpp)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Serial.cpp)
-          ENDIF()
-          IF (Tpetra_INST_PTHREAD)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Threads.cpp)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Threads.cpp)
-          ENDIF()
-          IF (Tpetra_INST_OPENMP)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_OpenMP.cpp)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_OpenMP.cpp)
-          ENDIF()
-          IF (Tpetra_INST_CUDA)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Cuda.cpp)
-            APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Cuda.cpp)
-          ENDIF()
-        ENDIF()
-
-        TRIBITS_ADD_LIBRARY(
-          stokhos_muelu
-          HEADERS ${MUELU_HEADERS}
-          SOURCES ${MUELU_CPP_SOURCES}
-          DEPLIBS ${STOKHOS_DEPLIBS}
-          ADDED_LIB_TARGET_NAME_OUT STOKHOS_MUELU_LIBNAME
-          )
-        SET_PROPERTY(TARGET ${STOKHOS_MUELU_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
-        LIST(APPEND STOKHOS_DEPLIBS stokhos_muelu)
-      ENDIF()
+      SET_PROPERTY(TARGET ${STOKHOS_IFPACK2_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+      LIST(APPEND STOKHOS_DEPLIBS stokhos_ifpack2)
 
     ENDIF()
+
+    IF (Stokhos_ENABLE_MueLu)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
+      SET(MUELU_HEADERS "")
+      SET(MUELU_CPP_SOURCES Stokhos_Dummy.cpp)
+      APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
+      APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
+      IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
+        IF (Tpetra_INST_SERIAL)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Serial.cpp)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Serial.cpp)
+        ENDIF()
+        IF (Tpetra_INST_PTHREAD)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Threads.cpp)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Threads.cpp)
+        ENDIF()
+        IF (Tpetra_INST_OPENMP)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_OpenMP.cpp)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_OpenMP.cpp)
+        ENDIF()
+        IF (Tpetra_INST_CUDA)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*_Cuda.cpp)
+          APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*_Cuda.cpp)
+        ENDIF()
+      ENDIF()
+
+      TRIBITS_ADD_LIBRARY(
+        stokhos_muelu
+        HEADERS ${MUELU_HEADERS}
+        SOURCES ${MUELU_CPP_SOURCES}
+        DEPLIBS ${STOKHOS_DEPLIBS}
+        ADDED_LIB_TARGET_NAME_OUT STOKHOS_MUELU_LIBNAME
+        )
+      SET_PROPERTY(TARGET ${STOKHOS_MUELU_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+      LIST(APPEND STOKHOS_DEPLIBS stokhos_muelu)
+    ENDIF()
+
   ENDIF()
 
   # IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)

@@ -44,8 +44,6 @@
 
 #include "Stokhos_ConfigDefs.h"
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
-
 #include "Kokkos_Macros.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
@@ -65,7 +63,5 @@
 
 #include "Teuchos_SerialQRDenseSolver_UQ_PCE.hpp"
 #include "Teuchos_LAPACK_UQ_PCE.hpp"
-
-#endif // HAVE_STOKHOS_KOKKOSCORE
 
 #endif // STOKHOS_SACADO_KOKKOS_MP_VECTOR_HPP

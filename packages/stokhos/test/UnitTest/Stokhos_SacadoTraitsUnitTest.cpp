@@ -47,7 +47,6 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado.hpp"
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
 
 #include <Kokkos_Core.hpp>
@@ -59,8 +58,6 @@ typedef Kokkos::Threads node_type;
 #else
 typedef Kokkos::Serial node_type;
 #endif
-
-#endif /* #ifdef HAVE_STOKHOS_KOKKOSCORE */
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarType, ad_type, scalar_type )
 {
@@ -151,7 +148,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, pce_expr_type, double
 //
 // Sacado::MP::Vector
 //
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 typedef Stokhos::DynamicStorage<int,double,node_type> kokkos_storage_type;
 typedef Sacado::MP::Vector<kokkos_storage_type> mp_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, mp_type, double )
@@ -161,7 +157,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, mp_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, mp_type, double )
 
 // Can't test Expr because there is no way to actually create one
-#endif
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

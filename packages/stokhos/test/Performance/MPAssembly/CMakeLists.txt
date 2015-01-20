@@ -1,27 +1,22 @@
-
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-IF (Stokhos_ENABLE_KokkosCore)
-
-  SET(CUDA_SOURCES "")
-  IF (Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
-    SET(CUDA_SOURCES TestAssembly_Cuda.cpp)
-  ENDIF()
-  TRIBITS_ADD_EXECUTABLE(
-    MPVectorAssemblyTest
-    SOURCES BoxElemFixture.hpp
-            BoxElemPart.hpp
-            BoxElemPart.cpp
-            HexElement.hpp
-            fenl_functors.hpp
-            TestAssembly.hpp
-            TestAssembly.cpp
-            TestAssembly_Host.cpp
-            ${CUDA_SOURCES}
-    COMM serial mpi
-    )
-
+SET(CUDA_SOURCES "")
+IF (Stokhos_ENABLE_CUDA AND HAVE_TPETRA_CUDA)
+  SET(CUDA_SOURCES TestAssembly_Cuda.cpp)
 ENDIF()
+TRIBITS_ADD_EXECUTABLE(
+  MPVectorAssemblyTest
+  SOURCES BoxElemFixture.hpp
+          BoxElemPart.hpp
+          BoxElemPart.cpp
+          HexElement.hpp
+          fenl_functors.hpp
+          TestAssembly.hpp
+          TestAssembly.cpp
+          TestAssembly_Host.cpp
+          ${CUDA_SOURCES}
+  COMM serial mpi
+  )

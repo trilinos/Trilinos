@@ -55,11 +55,8 @@
 
 #include "Stokhos_ConfigDefs.h"
 #include "Stokhos_KL_ExponentialRandomField.hpp"
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_KL_Kokkos_ExponentialRandomField.hpp"
-#endif
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 template <typename Value, typename Device>
 struct RF {
   typedef Value value_type;
@@ -85,7 +82,6 @@ struct RF {
     y(0) = rf.evaluate(x, rv);
   }
 };
-#endif
 
 int main(int argc, char **argv)
 {
@@ -121,7 +117,6 @@ int main(int argc, char **argv)
     double result = rf.evaluate(x, rvar);
     std::cout << "result = " << result << std::endl;
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
     Kokkos::initialize();
     {
     Stokhos::KL::Kokkos::ExponentialRandomField<double> rf2(solverParams);
@@ -139,7 +134,6 @@ int main(int argc, char **argv)
     std::cout << "result = " << result2 << std::endl;
     }
     Kokkos::finalize();
-#endif
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

@@ -38,9 +38,7 @@
 
 #include "Sacado.hpp"
 #include "Stokhos_Sacado.hpp"
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
-#endif
 #include "Sacado_mpl_apply.hpp"
 
 template <typename uq_type>
@@ -136,7 +134,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, et_orthog_poly_type )
 // because the operators do not return a specialization of Expr, rather
 // a class derived from a specialization.  I'll have to think about how
 // to do this in a general way.
-#ifdef HAVE_STOKHOS_KOKKOSCORE
 //
 // Sacado::MP::Vector
 //
@@ -151,7 +148,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, kokkos_mp_type )
 typedef Stokhos::DynamicStorage<int,double,device> dynamic_storage_type;
 typedef Sacado::UQ::PCE<dynamic_storage_type> kokkos_pce_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, kokkos_pce_type )
-#endif
 */
 
 int main( int argc, char* argv[] ) {
