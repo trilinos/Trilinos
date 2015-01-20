@@ -434,6 +434,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ELSE()
     MESSAGE(FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled. One GlobalOrdinal type needs to be enabled to use ETI.")   
   ENDIF()  
+  IF(Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE(FATAL_ERROR "Tpetra: Long long enabled in Tpetra but not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT to ON or set Tpetra_INST_INT_LONG_LONG to OFF.")
+  ENDIF()
 
 ELSE()
   #Settings if ETI is not enabled. All ordinals are available but non get instantiated. 
@@ -442,7 +445,7 @@ ELSE()
   GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
   GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
   
-  GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
+  GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Teuchos_ENABLE_LONG_LONG_INT})
   GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
   GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
   GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
