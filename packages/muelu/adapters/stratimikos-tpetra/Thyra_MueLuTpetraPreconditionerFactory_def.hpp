@@ -55,6 +55,7 @@
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
+#include "TpetraCore_config.h"
 #include "Tpetra_CrsMatrix.hpp"
 
 #include "Teuchos_Ptr.hpp"
@@ -171,19 +172,26 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
   // Create a copy, as we may remove some things from the list
   Teuchos::ParameterList paramList = *paramList_;
 
+  //Tpetra does not instantiate on Scalar=float by default, so we must check for this 
+  //FIXME This will still break if LO != int or GO != int
+# if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
   typedef Tpetra::MultiVector<float, LocalOrdinal, GlobalOrdinal, Node> fMV;
-  typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMV;
   Teuchos::RCP<fMV> floatCoords;
+# endif
+  typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMV;
   Teuchos::RCP<dMV> doubleCoords;
   if (paramList.isType<Teuchos::RCP<dMV> >("Coordinates")) {
     doubleCoords = paramList.get<Teuchos::RCP<dMV> >("Coordinates");
     paramList.remove("Coordinates");
-  } else if (paramList.isType<Teuchos::RCP<fMV> >("Coordinates")) {
+  }
+# if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
+  else if (paramList.isType<Teuchos::RCP<fMV> >("Coordinates")) {
     floatCoords = paramList.get<Teuchos::RCP<fMV> >("Coordinates");
     paramList.remove("Coordinates");
     doubleCoords = Teuchos::rcp(new dMV(floatCoords->getMap(),floatCoords->getNumVectors()));
     deep_copy(*doubleCoords,*floatCoords);
   }
+# endif
 
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
   Teuchos::RCP<MV> null_space;
