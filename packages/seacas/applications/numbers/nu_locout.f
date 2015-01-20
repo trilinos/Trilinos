@@ -57,8 +57,8 @@ C
       DO 10 IO=IOMIN, IOMAX
          WRITE (IO, 20) NODEL(:LENSTR(NODEL)), TOLER(1), TOLER(2),
      *      TYPE(:LENSTR(TYPE))
-   20 FORMAT (//' Locating all ',A,' at a distance ',1PE10.3,
-     *   ' plus/minus ',1PE10.3,/' from the ',A)
+   20 FORMAT (//' Locating all ',A,' at a distance ',1PE15.8,
+     *   ' plus/minus ',1PE15.8,/' from the ',A)
 C
       IF (TYPE .EQ. 'LINE') THEN
          IF (NDIM .EQ. 2) THEN
@@ -89,8 +89,8 @@ C
      *        ' to   Point (',3(1PE11.3),')',2X,A)
    50 FORMAT (' (',2(1PE11.3),')')
    60 FORMAT (' (',3(1PE11.3),')')
-   70 FORMAT (' ',1PE10.3,' X + ',1PE10.3,' Y + ',1PE10.3,
-     *    ' Z = ',1PE10.3)
+   70 FORMAT (' ',1PE15.8,' X + ',1PE15.8,' Y + ',1PE15.8,
+     *    ' Z = ',1PE15.8)
    80 FORMAT (' Sorted on field ',A,/)
 C
       RETURN

@@ -139,7 +139,7 @@ C
          DO 100 IO=IOMIN,IOMAX
             WRITE (IO, 110) TREAD, SUM
   100    CONTINUE
-  110    FORMAT (1X,2(1PE10.3,2X))
+  110    FORMAT (1X,2(1PE15.8,2X))
 
       END IF
       GO TO 50

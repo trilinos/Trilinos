@@ -181,7 +181,7 @@ C ... Note that volume is set to zero for all non-selected elements
          DO 100 IO=IOMIN,IOMAX
             WRITE (IO, 110) TREAD, sum(nelblk+1), (SUM(i),i=1, nelblk)
  100     CONTINUE
- 110     FORMAT (1X,32(1PE10.3,2X))
+ 110     FORMAT (1X,32(1PE15.8,2X))
          
       END IF
       GO TO 50

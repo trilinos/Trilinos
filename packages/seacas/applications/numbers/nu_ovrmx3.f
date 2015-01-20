@@ -286,7 +286,7 @@ c     *                             IFAC, (IX(MAP(J,IFAC),IEL),J=1,4)
             END IF
   140    CONTINUE
   150 CONTINUE
- 160  FORMAT (T2,I6,T11,I6,T18,A16,T36,3(1PE10.3,2X))
+ 160  FORMAT (T2,I6,T11,I6,T18,A16,T36,3(1PE15.8,2X))
 C  160 FORMAT (T3,I6,T11,I6,T18,A16,T37,I1,T43,4(I6,2X))
   170 FORMAT (/
      &     '  Slave    Master    Penetration  	    Nodal Coordinates'/,

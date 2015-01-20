@@ -218,7 +218,7 @@ C ... Determine mins, maxs, averages, and std. dev. for selected block/elem
 
                WRITE (IO, 90)
    70       CONTINUE
-   80       FORMAT (I5,(T8,2(1PE10.3,I6,2X),2(1PE10.3,2X),3X,A8))
+   80       FORMAT (I5,(T8,2(1PE15.8,I6,2X),2(1PE15.8,2X),3X,A8))
    90       FORMAT (' ------------------')
          END IF
   100 CONTINUE

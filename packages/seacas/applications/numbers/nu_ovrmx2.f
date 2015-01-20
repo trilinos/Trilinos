@@ -212,7 +212,7 @@ C
             END IF
  120     CONTINUE
  130  CONTINUE
- 140  FORMAT (T3,I6,T11,I6,T18,A16,T37,I1,T43,2(F10.3,2X))
+ 140  FORMAT (T3,I6,T11,I6,T18,A16,T37,I1,T43,2(F15.8,2X))
  150  FORMAT ('  Slave    Master  Penetration  Element'/
      *     '   Node   Element    Distance     Face      Location')
       RETURN

@@ -146,7 +146,7 @@ C ... Beginning of Time Step Loop
          DO 160 IO=IOMIN, IOMAX
            WRITE (IO, 56) TREAD
  160      CONTINUE
- 56      FORMAT (' At Time = ', 1PE10.3)
+ 56      FORMAT (' At Time = ', 1PE15.8)
          IF (NDIM .EQ. 3) THEN
             CALL OVRMX3 (LTEESS(IEPTM), DISP, A(IX), NSEGM, A(IMNMX),
      *           A(INQS), NIQS, A(ITMP), LTNESS(IPTRM),

@@ -495,7 +495,7 @@ C ... Determine mins, maxs, averages, and std. dev. for selected block/elem
                   WRITE (IO, 130)
   110          CONTINUE
 
-  120          FORMAT (I4,(T7,2(1PE10.3,I9,1X),2(1PE10.3,2X),A8))
+  120          FORMAT (I4,(T7,2(1PE15.8,I9,1X),2(1PE15.8,2X),A8))
   130          FORMAT (' ------------------')
             END IF
   140    CONTINUE

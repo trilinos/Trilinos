@@ -104,9 +104,9 @@ C
          WRITE (IO,60) TVOL
    20 CONTINUE
    30 FORMAT (/' Cavity Flag(s): ',8I8)
-   40 FORMAT ( ' Apex at X =',1PE10.3,', Y =',1PE10.3)
-   50 FORMAT ( ' Apex at X =',1PE10.3,', Y =',1PE10.3,', Z =',1PE10.3)
-   60 FORMAT (/' Undeformed Volume of Cavity is ',1PE10.3)
+   40 FORMAT ( ' Apex at X =',1PE15.8,', Y =',1PE15.8)
+   50 FORMAT ( ' Apex at X =',1PE15.8,', Y =',1PE15.8,', Z =',1PE15.8)
+   60 FORMAT (/' Undeformed Volume of Cavity is ',1PE15.8)
 
 C
 C ... REWIND EXODUS FILE TO BEGINNING OF TIMESTEPS
@@ -157,7 +157,7 @@ C
      *            -DELDEL, -DELRAT
   120       CONTINUE
          END IF
-  130    FORMAT (1X,5(1PE10.3,2X))
+  130    FORMAT (1X,5(1PE15.8,2X))
          DELLAS = DELVOL
          TIMEL  = TREAD
          GO TO 90

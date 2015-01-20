@@ -31,26 +31,6 @@ C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C    
 
-C $Id: output.f,v 1.5 1997/06/20 19:11:27 caforsy Exp $
-C $Log: output.f,v $
-C Revision 1.5  1997/06/20 19:11:27  caforsy
-C Port to ibm
-C
-C Revision 1.4  1996/06/25 21:48:58  gdsjaar
-C Modified output to support large (millions of elements) models
-C
-c Revision 1.3  1991/09/16  20:07:46  gdsjaar
-c Upped integer output format to deal with elements over 100,000
-c
-c Revision 1.2  1991/02/21  16:38:00  gdsjaar
-c Moved ENGNOT function out of write statements
-c
-c Revision 1.1.1.1  1991/02/21  15:44:38  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:44:37  gdsjaar
-c Initial revision
-c
       SUBROUTINE OUTPUT (MASS, DENS, VOLM, CG, ZI, MAT, NDIM, NBLK,
      *   VOL, VOLMN, IELM, NQUAD, LABMAT, AXI, TIME)
 C
@@ -68,46 +48,46 @@ C
          ENG1 = ENGNOT(TIME,2)
          IF (FIRST) THEN
             WRITE (IO, 10) NQUAD, ENG1
-   10       FORMAT ('1',5X,'Mass Properties Calculation',/
-     *                  5X,I1,'-Point Quadrature, Time = ',A16)
+   10       FORMAT (5X,'Mass Properties Calculation',/
+     *              5X,I1,'-Point Quadrature, Time = ',A16)
          ELSE
             WRITE (IO, 20) ENG1
-   20       FORMAT ('1     Time = ',A16)
+   20       FORMAT ('      Time = ',A16)
          END IF
          TMASS = 0.
          ILAB = 3
          IF (NDIM .EQ. 2 .AND. .NOT. AXI) ILAB = 2
          WRITE (IO, 30) LABEL(ILAB)
-   30    FORMAT(/5X,'Material',4X,'Density',8X,A6,10X,'Mass',
-     *      8X,'Label')
+   30    FORMAT(/5X,'Material',7X,'Density',14X,A6,16X,'Mass',
+     *      13X,'Label')
          DO 50 ITMP=1,NBLK
             I = MAT(6, ITMP)
             IF (MAT(5,I) .NE. 1) GOTO 50
             WRITE (IO, 40) MAT(1,I),DENS(I),VOLM(I),MASS(I),LABMAT(I)
             TMASS = TMASS + MASS(I)
-   40       FORMAT (I10,3(5X,1PE10.3),5X,A16)
+   40       FORMAT (I10,3(5X,1PE15.8),5X,A16)
    50    CONTINUE
 C
          WRITE (IO, 60) VOL, TMASS
-   60    FORMAT (25X,2(5X,'----------')/,18X,'Total: ',2(5X,1PE10.3)/)
+   60    FORMAT (25X,2(5X,'----------')/,18X,'Total: ',2(5X,1PE15.8)/)
          IF (NDIM .EQ. 2) THEN
             WRITE (IO, 70) CG(1), CG(2), 0.0
          ELSE
             WRITE (IO, 70) (CG(I),I=1,3)
    70       FORMAT (5x,'MASS PROPERTIES--- (Inertias at centroid)'/
-     *         5X,' Xc = ',1PE10.3,'   Yc = ',1PE10.3,
-     *         '   Zc = ',1PE10.3)
+     *         5X,' Xc = ',1PE15.8,'   Yc = ',1PE15.8,
+     *         '   Zc = ',1PE15.8)
          END IF
          WRITE (IO, 80) (ZI(I),I=1,3)
-   80    FORMAT (5X,'Ixx = ',1PE10.3,'  Iyy = ',1PE10.3,
-     *      '  Izz = ',1PE10.3)
+   80    FORMAT (5X,'Ixx = ',1PE15.8,'  Iyy = ',1PE15.8,
+     *      '  Izz = ',1PE15.8)
          IF (NDIM .EQ. 2 .AND. .NOT. AXI) THEN
             WRITE (IO, 90) ZI(4)
-   90       FORMAT (5X,'Ixy = ',1PE10.3/)
+   90       FORMAT (5X,'Ixy = ',1PE15.8/)
          ELSE IF (NDIM .EQ. 3) THEN
             WRITE (IO, 100) (ZI(I),I=4,6)
-  100       FORMAT (5X,'Ixy = ',1PE10.3,'  Ixz = ',1PE10.3,
-     *         '  Iyz = ',1PE10.3/)
+  100       FORMAT (5X,'Ixy = ',1PE15.8,'  Ixz = ',1PE15.8,
+     *         '  Iyz = ',1PE15.8/)
          ELSE
             WRITE (IO, 110)
   110       FORMAT (//)
