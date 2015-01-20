@@ -127,6 +127,12 @@ IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
     Piro_Epetra_NECoupledModelEvaluator.cpp
     )
 ENDIF()
+
+# Add rol/adapters/thyra directories if Rol is enabled
+IF (Piro_ENABLE_ROL)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector)
+ENDIF()
 #
 
 #
