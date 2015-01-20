@@ -331,7 +331,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
                       "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
                       "after buildGlobalUnknowns has been called"); 
   //Some stuff for the Map.
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   typedef Tpetra::Vector<LO,GO> Vector;
@@ -936,11 +936,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
 }
 
 template <typename LO,typename GO>
-Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
 DOFManager<LO,GO>::
 buildOverlapMapFromElements(const ElementBlockAccess & access) const
 {
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
 
   /*
@@ -974,8 +974,8 @@ template <typename LO,typename GO>
 void DOFManager<LO,GO>::
 fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                          std::vector<std::vector< GO > > & elementGIDs,
-                         const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
-                         const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const
+                         const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
+                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
 {
   using Teuchos::ArrayRCP;
 
@@ -1027,10 +1027,10 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
 
 /*
 template <typename LO,typename GO>
-Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
-DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> > & map)
+Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
+DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> > & map)
 {
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
   typedef Tpetra::CrsGraph<LO, GO, Node> Graph;
 

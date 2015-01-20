@@ -55,12 +55,13 @@
 
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
 
-template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
 class TpetraLinearObjContainer : public LinearObjContainer
                                , public ThyraObjContainer<ScalarT> {
    TpetraLinearObjContainer();

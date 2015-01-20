@@ -55,7 +55,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 
 namespace panzer {
 
@@ -68,7 +68,7 @@ class UniqueGlobalIndexer;
     Default implementation throws exceptions.  Residual specialization will be used for setting solution.
 
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class ScatterInitialCondition_Tpetra;
 
 // **************************************************************

@@ -55,7 +55,7 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 
-#include"Kokkos_DefaultNode.hpp"
+#include"Panzer_NodeType.hpp"
 
 namespace panzer {
 
@@ -69,7 +69,7 @@ class UniqueGlobalIndexer; //forward declaration
     and that the nmber of dofs is equal to the size of the solution
     names vector.
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class GatherSolution_Tpetra;
 
 // **************************************************************

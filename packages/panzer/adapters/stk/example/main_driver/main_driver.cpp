@@ -53,7 +53,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Panzer_ConfigDefs.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"

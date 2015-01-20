@@ -64,7 +64,7 @@ template <typename GO> class STKConnManager;
   * This particular class is usesd most frequently with an ML preconditioner that
   * requres the nodal coordinates for repartitioning.
   */
-template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=panzer::TpetraNodeType>
 class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
   ParameterListCallback(const std::string & coordFieldName,

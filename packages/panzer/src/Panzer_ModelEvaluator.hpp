@@ -60,7 +60,7 @@
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Panzer_NodeType.hpp>
 
 namespace panzer {
 
