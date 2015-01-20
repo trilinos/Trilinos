@@ -90,12 +90,7 @@ class Objective_Sacado {
 
 
 
-/** \brief A Sacado-accesible function which computes the gradient of the Zakharov function 
-    using automatic differentiation.
-    @param[in]  x is the optimization vector
-    @param[out] J is the value of the objective function
-    @param[out] g is the gradient of the objective function    
-*/
+
 template<class Real, class Obj>
 template<class ScalarT>
 void Objective_Sacado<Real,Obj>::gradient(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) { 
@@ -135,16 +130,10 @@ void Objective_Sacado<Real,Obj>::gradient(Vector<ScalarT> &g, const Vector<Scala
 
 
 
-/** \brief A Sacado-accesible function which computes the action of the Hessian on a given direction vector
-    @param[in]   x is the optimization vector
-    @param[in]   v is a given direction vector 
-    @param[out]  J is the value of the objective function
-    @param[out]  g is the gradient of the objective function
-    @param[out]  hv is the action of the Hessian the direction v 
-*/
 template <class Real, class Obj>
 template <class ScalarT>
-void Objective_Sacado<Real,Obj>::hessVec( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol ) {
+void Objective_Sacado<Real,Obj>::hessVec( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
+                                          const Vector<ScalarT> &x, Real &tol ) {
   
     // Get a pointer to the optimization vector 
     Teuchos::RCP<const std::vector<ScalarT> > xp =

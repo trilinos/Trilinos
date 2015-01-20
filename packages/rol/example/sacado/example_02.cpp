@@ -53,6 +53,8 @@
 **/
 
 #include "example_02.hpp"
+#include "Objective_Sacado.hpp"
+#include "Constraint_Sacado.hpp"
 
 typedef double RealT;
 
@@ -75,12 +77,18 @@ int main(int argc, char **argv)
   // *** Example body.
 
   try {
+
     // Run derivative checks, etc.
     int dim = 5;
     int nc = 3;
 
-    Teuchos::RCP< Objective_Sacado<RealT> > obj = Teuchos::rcp( new Objective_Sacado<RealT>() ) ;
-    Teuchos::RCP< Constraint_Sacado<RealT> > constr = Teuchos::rcp( new Constraint_Sacado<RealT>(nc,dim) );
+    Teuchos::RCP< ROL_Objective_Sacado<RealT,Objective_Sacado<RealT,Example_Objective<RealT> > > > obj = 
+        Teuchos::rcp( new ROL_Objective_Sacado<RealT,Objective_Sacado<RealT,Example_Objective<RealT> > > ());
+
+    Teuchos::RCP< ROL_Constraint_Sacado<RealT,Constraint_Sacado<RealT,Example_Constraint<RealT> > > > constr =
+        Teuchos::rcp( new ROL_Constraint_Sacado<RealT,Constraint_Sacado<RealT,Example_Constraint<RealT> > > ());
+
+    constr->setConstraintDimension(nc);
 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
 
