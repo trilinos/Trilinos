@@ -60,7 +60,8 @@ namespace panzer_stk_classic {
   }
 
   //! Build the mesh object
-  Teuchos::RCP<STK_Interface> CustomMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
+  Teuchos::RCP<STK_Interface> 
+  CustomMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::buildMesh()");
 
@@ -76,7 +77,8 @@ namespace panzer_stk_classic {
     return mesh;
   }
 
-  Teuchos::RCP<STK_Interface> CustomMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
+  Teuchos::RCP<STK_Interface> 
+  CustomMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::buildUncomittedMesh()");
 
@@ -93,7 +95,9 @@ namespace panzer_stk_classic {
     return mesh;
   }
 
-  void CustomMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const
+  void 
+  CustomMeshFactory::completeMeshConstruction(STK_Interface &mesh,
+                                              stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::completeMeshConstruction()");
 
@@ -115,7 +119,8 @@ namespace panzer_stk_classic {
   }
 
   //! From ParameterListAcceptor
-  void CustomMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
+  void 
+  CustomMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> &paramList)
   {
     paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
 
@@ -141,7 +146,8 @@ namespace panzer_stk_classic {
   }
 
   //! From ParameterListAcceptor
-  Teuchos::RCP<const Teuchos::ParameterList> CustomMeshFactory::getValidParameters() const
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  CustomMeshFactory::getValidParameters() const
   {
     static RCP<Teuchos::ParameterList> defaultParams;
 
@@ -171,7 +177,8 @@ namespace panzer_stk_classic {
     return defaultParams;
   }
 
-  void CustomMeshFactory::initializeWithDefaults()
+  void 
+  CustomMeshFactory::initializeWithDefaults()
   {
     // get valid parameters
     RCP<Teuchos::ParameterList> validParams = rcp(new Teuchos::ParameterList(*getValidParameters()));
@@ -180,7 +187,9 @@ namespace panzer_stk_classic {
     setParameterList(validParams);
   }
 
-  void CustomMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, STK_Interface & mesh) const
+  void 
+  CustomMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, 
+                                   STK_Interface &mesh) const
   {
     typedef shards::Hexahedron<8> HexTopo;
     const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
@@ -188,7 +197,7 @@ namespace panzer_stk_classic {
 
     for (int blk=0;blk<NumBlocks_;++blk) {
       std::stringstream ebPostfix;
-      ebPostfix << "-" <<  blk;
+      ebPostfix << "-" <<  blk ;
 
       // add element blocks
       mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
@@ -203,7 +212,9 @@ namespace panzer_stk_classic {
     mesh.addSideset("back",side_ctd);
   }
 
-  void CustomMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,STK_Interface & mesh) const
+  void 
+  CustomMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,
+                                   STK_Interface &mesh) const
   {
     mesh.beginModification();
 
@@ -240,7 +251,8 @@ namespace panzer_stk_classic {
     mesh.endModification();
   }
 
-  void CustomMeshFactory::addSideSets(STK_Interface & mesh) const
+  void 
+  CustomMeshFactory::addSideSets(STK_Interface &mesh) const
   {
     mesh.beginModification();
 
