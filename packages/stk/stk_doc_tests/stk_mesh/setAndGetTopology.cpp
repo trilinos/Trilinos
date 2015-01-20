@@ -77,8 +77,6 @@ TEST(stkMeshHowTo, setAndGetTopology)
     }
 
     mesh.modification_end();
-    //Note: this test is only about setting/getting topology, so we didn't bother to
-    //create nodes to connect to the above elements, etc.
 
     stk::topology elem1_topology = mesh.bucket(elem1).topology();
     stk::topology elem2_topology = mesh.bucket(elem2).topology();
