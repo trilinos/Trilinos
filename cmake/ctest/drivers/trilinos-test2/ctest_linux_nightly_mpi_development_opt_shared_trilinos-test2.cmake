@@ -79,7 +79,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos/gcc4.7.2/openmpi-1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin/swig"
+  "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-3.0.4/bin/swig"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DTPL_ENABLE_Expat:BOOL=ON"
   "-DTPL_ENABLE_LAMMPS:BOOL=ON"
@@ -91,6 +91,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
   "-DPyTrilinos_ENABLE_STK=OFF"
+  "-DPyTrilinos_ENABLE_Tpetra=OFF"
   "-DTPL_ENABLE_CppUnit:BOOL=ON"
   )
 
