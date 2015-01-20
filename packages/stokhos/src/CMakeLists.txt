@@ -322,6 +322,7 @@ ENDIF()
 
 IF (Stokhos_ENABLE_KokkosCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)
   SET(HEADERS ${HEADERS}
     kokkos/Stokhos_Multiply.hpp
     kokkos/Stokhos_CrsMatrix.hpp
@@ -339,6 +340,12 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_TinyVec.hpp
     kokkos/Stokhos_Update.hpp
     kokkos/Stokhos_MatrixMarket.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomField.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomFieldImp.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunction.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunctionImp.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialEigenPair.hpp
+    kokkos/kl/Stokhos_KL_Kokkos_ProductEigenPair.hpp
     )
   IF(Kokkos_ENABLE_Serial)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)
