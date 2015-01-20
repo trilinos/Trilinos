@@ -85,6 +85,7 @@
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_MultiBlockMeshFactory.hpp"
+#include "Panzer_STK_CustomMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -831,6 +832,14 @@ namespace panzer_stk_classic {
 	mesh_factory->setParameterList(in_mesh);
       }
     }
+    else if (mesh_params.get<std::string>("Source") ==  "Custom Mesh") {
+      mesh_factory = Teuchos::rcp(new panzer_stk_classic::CustomMeshFactory());
+      mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Custom Mesh"))));
+    }
+    else {
+      // throw a runtime exception for invalid parameter values
+    }
+
 
     // get rebalancing parameters
     if(mesh_params.isSublist("Rebalance")) {
