@@ -41,7 +41,6 @@
 namespace stk { namespace mesh { class Part; } }
 
 namespace {
-//-BEGIN
 
 void check_connectivities_for_stkMeshHowTo_generateNewEntities(stk::mesh::BulkData &mesh,
     stk::mesh::Entity tet_elem, stk::mesh::Entity hex_elem,
@@ -65,6 +64,7 @@ void check_connectivities_for_stkMeshHowTo_generateNewEntities(stk::mesh::BulkDa
   }
 }
 
+//-BEGIN
 TEST(stkMeshHowTo, generateNewEntities)
 {
   const unsigned spatialDimension = 3;
@@ -86,8 +86,8 @@ TEST(stkMeshHowTo, generateNewEntities)
   std::vector<size_t> requests(metaData.entity_rank_count(), 0);
   const size_t num_nodes_requested = 12;
   const size_t num_elems_requested =  2;
-  requests[0] = num_nodes_requested;
-  requests[3] = num_elems_requested;
+  requests[stk::topology::NODE_RANK] = num_nodes_requested;
+  requests[stk::topology::ELEMENT_RANK] = num_elems_requested;
   std::vector<stk::mesh::Entity> requested_entities;
 
   mesh.generate_new_entities(requests, requested_entities);
