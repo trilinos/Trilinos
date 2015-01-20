@@ -48,9 +48,9 @@ namespace stk {
 
 #if defined( STK_HAS_MPI )
 
-static const int STK_MPI_TAG_MSG_SIZING      = 01010101;
-static const int STK_MPI_TAG_PROC_SIZING = 01110111;
-static const int STK_MPI_TAG_DATA        = 11011011;
+static const int STK_COMMSPARSE_MPI_TAG_MSG_SIZING  = 10101;
+static const int STK_COMMSPARSE_MPI_TAG_PROC_SIZING = 10111;
+static const int STK_COMMSPARSE_MPI_TAG_DATA        = 11011;
 
 namespace {
 
@@ -60,7 +60,7 @@ void communicate_any( ParallelMachine p_comm ,
                         const std::vector<int>& send_procs,
                         const std::vector<int>& recv_procs )
 {
-  static const int mpi_tag = STK_MPI_TAG_DATA ;
+  static const int mpi_tag = STK_COMMSPARSE_MPI_TAG_DATA ;
 
   //------------------------------
   // Receive count
@@ -356,7 +356,7 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
 
   // do point-to-point send/recvs
 
-  const int mpi_tag = STK_MPI_TAG_PROC_SIZING;
+  const int mpi_tag = STK_COMMSPARSE_MPI_TAG_PROC_SIZING;
 
   MPI_Request request_null = MPI_REQUEST_NULL ;
   MPI_Status init_status;
@@ -461,7 +461,7 @@ void comm_recv_msg_sizes(ParallelMachine comm ,
 
   // do point-to-point send/recvs
 
-  const int mpi_tag = STK_MPI_TAG_MSG_SIZING ;
+  const int mpi_tag = STK_COMMSPARSE_MPI_TAG_MSG_SIZING ;
 
   MPI_Request request_null = MPI_REQUEST_NULL ;
   const unsigned num_recv = recv_procs.size();
