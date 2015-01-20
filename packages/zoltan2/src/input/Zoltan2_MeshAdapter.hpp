@@ -253,7 +253,7 @@ public:
     return false;
   }
 
-
+#ifdef BASE2NDADJS
   virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
 				    MeshEntityType through,
 				    const lno_t *&offsets,
@@ -427,6 +427,7 @@ public:
 
     return nadj;
   }
+#endif
 
   /*! \brief Returns the number of second adjacencies on this process.
    *
@@ -435,8 +436,11 @@ public:
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through) const {
+#ifdef BASE2NDADJS
     if (!availAdjs(sourcetarget, through))
+#endif
       return 0;
+#ifdef BASE2NDADJS
     else {
       lno_t const *offsets;
       zgid_t const *adjacencyIds;
@@ -446,6 +450,7 @@ public:
       delete [] adjacencyIds;
       return nadj;
     }
+#endif
   }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
@@ -465,13 +470,17 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
+#ifdef BASE2NDADJS
     if (!availAdjs(sourcetarget, through)) {
+#endif
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+#ifdef BASE2NDADJS
     } else {
       get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
     }
+#endif
   }
 
 
