@@ -56,8 +56,7 @@
 
 
 #include "example_01.hpp"
-#include "Objective_Sacado.hpp"
-
+#include "ROL_Sacado_Objective.hpp"
 
 typedef double RealT;
 
@@ -80,7 +79,7 @@ int main(int argc, char **argv)
 
     try {
 
-        ROL_Objective_Sacado<RealT,Objective_Sacado<RealT,Zakharov<RealT> > > obj;
+        Sacado_Objective<RealT,Zakharov<RealT> > obj;
     
         int dim = 10; // Set problem dimension. 
 
