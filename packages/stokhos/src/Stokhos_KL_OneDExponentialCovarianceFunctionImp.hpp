@@ -1,14 +1,12 @@
-// $Id: Stokhos_Quadrature.hpp,v 1.4 2009/09/14 18:35:48 etphipp Exp $ 
-// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_Quadrature.hpp,v $ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,12 +43,12 @@
 
 template <typename value_type>
 Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
-OneDExponentialCovarianceFunction(int M, 
-				  const value_type& a, 
-				  const value_type& b, 
-				  const value_type& L_,
-				  const std::string& dim_name,
-				  Teuchos::ParameterList& solverParams) :
+OneDExponentialCovarianceFunction(int M,
+                                  const value_type& a,
+                                  const value_type& b,
+                                  const value_type& L_,
+                                  const int dim_name,
+                                  Teuchos::ParameterList& solverParams) :
   L(L_),
   eig_pair(M)
 {
@@ -63,72 +61,50 @@ OneDExponentialCovarianceFunction(int M,
   int i=0;
   double pi = 4.0*std::atan(1.0);
   int idx = 0;
-  
+
   aa = (b-a)/2.0;
   while (i < M-1) {
     alpha = aa/L;
-    omega = bisection(EigFuncCos(alpha), idx*pi, idx*pi+pi/2.0-eps, 
-		      tol, max_it) / aa;
+    omega = bisection(EigFuncCos(alpha), idx*pi, idx*pi+pi/2.0-eps,
+                      tol, max_it) / aa;
     lambda = 2.0*L/(L*L*omega*omega + 1.0);
     eig_pair[i].eig_val = lambda;
-    eig_pair[i].eig_func = Teuchos::rcp(new 
-      ExponentialOneDEigenFunction<value_type>(
-	ExponentialOneDEigenFunction<value_type>::COS, a, b, omega, dim_name)
-      );
+    eig_pair[i].eig_func = ExponentialOneDEigenFunction<value_type>(
+      ExponentialOneDEigenFunction<value_type>::COS, a, b, omega, dim_name);
     i++;
 
     omega = bisection(EigFuncSin(alpha), idx*pi+pi/2.0+eps, (idx+1)*pi,
-		      tol, max_it) / aa;
+                      tol, max_it) / aa;
     lambda = 2.0*L/(L*L*omega*omega + 1.0);
     eig_pair[i].eig_val = lambda;
-    eig_pair[i].eig_func = Teuchos::rcp(new
-      ExponentialOneDEigenFunction<value_type>(
-	ExponentialOneDEigenFunction<value_type>::SIN, a, b, omega, dim_name)
-      );
+    eig_pair[i].eig_func = ExponentialOneDEigenFunction<value_type>(
+      ExponentialOneDEigenFunction<value_type>::SIN, a, b, omega, dim_name);
     i++;
 
     idx++;
   }
   if (i < M) {
-    omega = bisection(EigFuncCos(alpha), idx*pi, idx*pi+pi/2.0-eps, 
-		      tol, max_it) / aa;
+    omega = bisection(EigFuncCos(alpha), idx*pi, idx*pi+pi/2.0-eps,
+                      tol, max_it) / aa;
     lambda = 2.0*L/(L*L*omega*omega + 1.0);
     eig_pair[i].eig_val = lambda;
-    eig_pair[i].eig_func = Teuchos::rcp(new
-      ExponentialOneDEigenFunction<value_type>(
-	ExponentialOneDEigenFunction<value_type>::COS, a, b, omega, dim_name)
-      );
+    eig_pair[i].eig_func = ExponentialOneDEigenFunction<value_type>(
+      ExponentialOneDEigenFunction<value_type>::COS, a, b, omega, dim_name);
   }
-}
-
-template <typename value_type>
-value_type
-Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
-evaluateCovariance(const value_type& x, const value_type& xp) const
-{
-  return std::exp(-std::abs(x-xp)/L);
-}
-
-template <typename value_type>
-const Teuchos::Array< Stokhos::KL::OneDEigenPair<value_type> >&
-Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
-getEigenPairs() const
-{
-  return eig_pair;
 }
 
 template <typename value_type>
 template <class Func>
 value_type
 Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
-newton(const Func& func, const value_type& a, const value_type& b, 
+newton(const Func& func, const value_type& a, const value_type& b,
        magnitude_type tol, int max_num_its)
 {
   value_type u = (a+b)/2.0;
   value_type f = func.eval(u);
   int nit = 0;
-  while (Teuchos::ScalarTraits<value_type>::magnitude(f) > tol && 
-	 nit < max_num_its) {
+  while (Teuchos::ScalarTraits<value_type>::magnitude(f) > tol &&
+         nit < max_num_its) {
     std::cout << "u = " << u << " f = " << f << std::endl;
     value_type dfdu = func.deriv(u);
     u -= f / dfdu;
@@ -136,7 +112,7 @@ newton(const Func& func, const value_type& a, const value_type& b,
     ++nit;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
-		     "Nonlinear solver did not converge!" << std::endl);
+                     "Nonlinear solver did not converge!" << std::endl);
 
   return u;
 }
@@ -145,8 +121,8 @@ template <typename value_type>
 template <class Func>
 value_type
 Stokhos::KL::OneDExponentialCovarianceFunction<value_type>::
-bisection(const Func& func, const value_type& a, const value_type& b, 
-	  magnitude_type tol, int max_num_its)
+bisection(const Func& func, const value_type& a, const value_type& b,
+          magnitude_type tol, int max_num_its)
 {
   value_type low, hi;
   value_type fa = func.eval(a);
@@ -167,9 +143,9 @@ bisection(const Func& func, const value_type& a, const value_type& b,
   int nit = 0;
   value_type u = low + (hi - low)/2.0;
   value_type f = func.eval(u);
-  while ((Teuchos::ScalarTraits<value_type>::magnitude(hi - low) > 2.0*tol || 
-	  Teuchos::ScalarTraits<value_type>::magnitude(f) > tol) && 
-	  nit < max_num_its) {
+  while ((Teuchos::ScalarTraits<value_type>::magnitude(hi - low) > 2.0*tol ||
+          Teuchos::ScalarTraits<value_type>::magnitude(f) > tol) &&
+          nit < max_num_its) {
     //std::cout << "u = " << u << " f = " << f << std::endl;
     if (f <= 0.0)
       low = u;
@@ -180,7 +156,7 @@ bisection(const Func& func, const value_type& a, const value_type& b,
     ++nit;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(nit >= max_num_its, std::logic_error,
-		     "Nonlinear solver did not converge!" << std::endl);
+                     "Nonlinear solver did not converge!" << std::endl);
 
   return u;
 }

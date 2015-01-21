@@ -182,8 +182,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
-  Stokhos_KL_OneDEigenPair.hpp
   Stokhos_KL_ProductEigenPair.hpp
+  Stokhos_KL_OneDExponentialEigenPair.hpp
   Stokhos_KL_OneDExponentialCovarianceFunction.hpp
   Stokhos_KL_OneDExponentialCovarianceFunctionImp.hpp
   Stokhos_KL_ExponentialRandomField.hpp
@@ -339,12 +339,6 @@ SET(HEADERS ${HEADERS}
   kokkos/Stokhos_TinyVec.hpp
   kokkos/Stokhos_Update.hpp
   kokkos/Stokhos_MatrixMarket.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomField.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_ExponentialRandomFieldImp.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunction.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialCovarianceFunctionImp.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_OneDExponentialEigenPair.hpp
-  kokkos/kl/Stokhos_KL_Kokkos_ProductEigenPair.hpp
   )
 IF(Kokkos_ENABLE_Serial)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Serial)

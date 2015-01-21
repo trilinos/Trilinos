@@ -39,30 +39,24 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
+// random_field_example
 //
 //  usage:
-//     hermite_example
+//     random_field_example
 //
 //  output:
-//     prints the Hermite Polynomial Chaos Expansion of the simple function
-//
-//     v = 1/(log(u)^2+1)
-//
-//     where u = 1 + 0.4*H_1(x) + 0.06*H_2(x) + 0.002*H_3(x), x is a zero-mean
-//     and unit-variance Gaussian random variable, and H_i(x) is the i-th
-//     Hermite polynomial.
+//     prints out KL expansion for an exponential random field
 
 #include "Stokhos_ConfigDefs.h"
 #include "Stokhos_KL_ExponentialRandomField.hpp"
-#include "Stokhos_KL_Kokkos_ExponentialRandomField.hpp"
 
-template <typename Value, typename Device>
+// Functor for evaluating random field on the device
+template <typename Value, typename Device = Kokkos::DefaultExecutionSpace>
 struct RF {
   typedef Value value_type;
   typedef Device device_type;
 
-  typedef Stokhos::KL::Kokkos::ExponentialRandomField<value_type> rf_type;
+  typedef Stokhos::KL::ExponentialRandomField<value_type,device_type> rf_type;
   typedef Kokkos::View<value_type*,device_type> point_type;
   typedef Kokkos::View<value_type*,device_type> rv_type;
   typedef Kokkos::View<value_type*,device_type> result_type;
@@ -85,8 +79,11 @@ struct RF {
 
 int main(int argc, char **argv)
 {
+  Kokkos::initialize();
+
   try {
 
+    // Create random field
     int M = 10;
     Teuchos::ParameterList solverParams;
     solverParams.set("Number of KL Terms", M);
@@ -103,10 +100,10 @@ int main(int argc, char **argv)
     solverParams.set("Domain Upper Bounds", domain_upper);
     solverParams.set("Domain Lower Bounds", domain_lower);
     solverParams.set("Correlation Lengths", correlation_length);
-
     Stokhos::KL::ExponentialRandomField<double> rf(solverParams);
     rf.print(std::cout);
 
+    // Evaluate random field at a point
     Teuchos::Array<double> x(ndim);
     for (int i=0; i<ndim; i++)
       x[i] = (domain_upper[i] + domain_lower[i])/2.0 +
@@ -115,27 +112,30 @@ int main(int argc, char **argv)
     for (int i=0; i<M; i++)
       rvar[i] = 1.5;
     double result = rf.evaluate(x, rvar);
-    std::cout << "result = " << result << std::endl;
+    std::cout << "result (host)  = " << result << std::endl;
 
-    Kokkos::initialize();
-    {
-    Stokhos::KL::Kokkos::ExponentialRandomField<double> rf2(solverParams);
-    rf2.print(std::cout);
-
-    Kokkos::View<double*> x2("x", ndim);
+    // Evaluate random field in a functor on device
+    typedef Kokkos::View<double*> view_type;
+    typedef typename view_type::HostMirror host_view_type;
+    view_type x_view("x", ndim);
+    host_view_type host_x = Kokkos::create_mirror_view(x_view);
     for (int i=0; i<ndim; i++)
-      x2[i] = (domain_upper[i] + domain_lower[i])/2.0 +
-        0.1*(domain_upper[i] - domain_lower[i])/2.0;
-    Kokkos::View<double*> rvar2("rvar", M);
+      host_x(i) = x[i];
+    Kokkos::deep_copy(x_view, host_x);
+    view_type rvar_view("rvar", M);
+    host_view_type host_rvar = Kokkos::create_mirror_view(rvar_view);
     for (int i=0; i<M; i++)
-      rvar2[i] = 1.5;
-    RF<double, Kokkos::DefaultExecutionSpace> rf_func(rf2, x2, rvar2);
-    double result2 = rf_func.y(0);
-    std::cout << "result = " << result2 << std::endl;
-    }
-    Kokkos::finalize();
+      host_rvar(i) = rvar[i];
+    Kokkos::deep_copy(rvar_view, host_rvar);
+    RF<double> rf_func(rf, x_view, rvar_view);
+    host_view_type host_y = Kokkos::create_mirror_view(rf_func.y);
+    Kokkos::deep_copy(host_y, rf_func.y);
+    double result2 = host_y(0);
+    std::cout << "result (device)= " << result2 << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
+
+  Kokkos::finalize();
 }

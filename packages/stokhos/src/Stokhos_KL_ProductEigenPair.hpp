@@ -1,14 +1,12 @@
-// $Id: Stokhos_Quadrature.hpp,v 1.4 2009/09/14 18:35:48 etphipp Exp $ 
-// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_Quadrature.hpp,v $ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,74 +43,93 @@
 #define STOKHOS_KL_PRODUCT_EIGENPAIR_HPP
 
 #include "Teuchos_Array.hpp"
-#include "Stokhos_KL_OneDEigenPair.hpp"
 
 namespace Stokhos {
 
   namespace KL {
 
     //! Container for multi-dimensional product of 1-D eigenfunctions/values
-    template <typename value_type>
+    template <typename eigen_function_type, typename Device>
     struct ProductEigenPair {
+
+      typedef typename eigen_function_type::value_type value_type;
+      typedef Device device_type;
+      typedef OneDEigenPair<eigen_function_type> one_d_eigen_pair_type;
+      typedef Teuchos::Array<one_d_eigen_pair_type> eig_pair_type;
 
       //! Product eigenvalue
       value_type eig_val;
 
       //! Eigenpairs for each dimension
-      Teuchos::Array< OneDEigenPair<value_type> > eig_pairs;
+      eig_pair_type eig_pairs;
 
       //! Default constructor
       ProductEigenPair() : eig_val(0.0), eig_pairs() {}
 
-      //! Constructor
-      ProductEigenPair(
-	const Teuchos::Array< OneDEigenPair<value_type> >& eig_pairs_) 
-	: eig_val(1.0), eig_pairs(eig_pairs_) {
-	std::size_t sz = eig_pairs.size();
-	for (std::size_t i=0; i<sz; i++)
-	  eig_val *= eig_pairs[i].eig_val;
+      //! Copy constructor
+      ProductEigenPair(const ProductEigenPair& ep) :
+        eig_val(ep.eig_val), eig_pairs(ep.eig_pairs) {}
+
+      //! Assignment
+      ProductEigenPair& operator=(const ProductEigenPair& ep) {
+        if (this != &ep) {
+          eig_val = ep.eig_val;
+          eig_pairs = ep.eig_pairs;
+        }
+        return *this;
+      }
+
+      //! Set eigen pairs
+      void set(const Teuchos::Array<one_d_eigen_pair_type>& ep) {
+        eig_val = 1.0;
+        eig_pairs = ep;
+        std::size_t sz = eig_pairs.size();
+        for (std::size_t i=0; i<sz; i++)
+          eig_val *= eig_pairs[i].eig_val;
       }
 
       //! Evaluate eigenfunction at a given point
-      value_type evalEigenfunction(const Teuchos::Array<value_type>& x) const {
-	value_type result = 1.0;
-	std::size_t sz = eig_pairs.size();
-	for (std::size_t i=0; i<sz; i++)
-	  result *= eig_pairs[i].eig_func->evaluate(x[i]);
-	return result;
+      template <typename point_type>
+      KOKKOS_INLINE_FUNCTION
+      value_type evalEigenfunction(const point_type& x) const {
+        value_type result = 1.0;
+        std::size_t sz = eig_pairs.size();
+        for (std::size_t i=0; i<sz; i++)
+          result *= eig_pairs[i].eig_func.evaluate(x[i]);
+        return result;
       }
-      
+
       //! Print eigenpair
       void print(std::ostream& os) const {
-	os << eig_val << ", ";
-	std::size_t sz = eig_pairs.size();
-	for (std::size_t i=0; i<sz-1; i++) {
-	  os << "(";
-	  eig_pairs[i].eig_func->print(os);
-	  os << ") * ";
-	}
-	os << "(";
-	eig_pairs[eig_pairs.size()-1].eig_func->print(os);
-	os << ")";
+        os << eig_val << ", ";
+        std::size_t sz = eig_pairs.size();
+        for (std::size_t i=0; i<sz-1; i++) {
+          os << "(";
+          eig_pairs[i].eig_func.print(os);
+          os << ") * ";
+        }
+        os << "(";
+        eig_pairs[eig_pairs.size()-1].eig_func.print(os);
+        os << ")";
       }
     };
-    
-    template <typename value_type>
-    std::ostream& 
-    operator << (std::ostream& os, const ProductEigenPair<value_type>& f) {
+
+    template <typename E, typename D>
+    std::ostream&
+    operator << (std::ostream& os, const ProductEigenPair<E,D>& f) {
       f.print(os);
       return os;
     }
 
     //! Predicate class for sorting product eigenfunctions based on eigenvalue
-    template <typename value_type>
-    struct ProductEigenPairGreater : 
-      public std::binary_function<ProductEigenPair<value_type>,
-				  ProductEigenPair<value_type>,
-				  bool> {
-      bool operator() (const ProductEigenPair<value_type>& a, 
-		       const ProductEigenPair<value_type>& b) {
-	return a.eig_val > b.eig_val;
+    template <typename E, typename D>
+    struct ProductEigenPairGreater :
+      public std::binary_function<ProductEigenPair<E,D>,
+                                  ProductEigenPair<E,D>,
+                                  bool> {
+      bool operator() (const ProductEigenPair<E,D>& a,
+                       const ProductEigenPair<E,D>& b) {
+        return a.eig_val > b.eig_val;
       }
     }; // struct ProductEigenPairGreater
 
