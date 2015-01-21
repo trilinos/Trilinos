@@ -12,7 +12,7 @@ for i in SC-LO-GO-NO-LMO
 
   for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
     do
-    if ! grep -q -x $className $classListDir/EI-Exceptions.classList
+    if ! grep -q -x $className EI-Exceptions.classList
         then
 
         condition=$(cat $classList | grep "^$className -" | cut -d "-" -f2-)

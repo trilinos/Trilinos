@@ -47,12 +47,29 @@
 
 //! \brief ROL interface wrapper for Sacado Constraint
 template<class Real, class Constr>
-class ROL_Constraint_Sacado : public EqualityConstraint<Real> {
+class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
 
     private:
         Constr constr_;
+
+        int dim_;
+
+        template<class ScalarT>
+        void applyJacobianAD( Vector<ScalarT> &jv, const Vector<ScalarT> &v,
+                              const Vector<ScalarT> &x, Real &tol );   
  
+        template<class ScalarT>
+        void applyAdjointJacobianAD( Vector<ScalarT> &aju, const Vector<ScalarT> &u,
+                                     const Vector<ScalarT> &x, Real &tol);
+
+        template<class ScalarT>
+        void applyAdjointHessianAD( Vector<ScalarT> &ahuv, const Vector<ScalarT> &u,
+                                    const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol);
+
+
     public: 
+
+    Sacado_EqualityConstraint(int dim) : dim_(dim) {}
 
     void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
         constr_.value(c,x,tol);
@@ -60,58 +77,26 @@ class ROL_Constraint_Sacado : public EqualityConstraint<Real> {
     
     void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
                        const Vector<Real> &x, Real &tol) {
-        constr_.applyJacobian(jv,v,x,tol);
+        this->applyJacobianAD(jv,v,x,tol);
     }
 
     void applyAdjointJacobian(Vector<Real> &aju, const Vector<Real> &u,
                               const Vector<Real> &x, Real &tol) {
-        constr_.applyAdjointJacobian(aju,u,x,tol);
+        this->applyAdjointJacobianAD(aju,u,x,tol);
     } 
 
     void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u,
                              const Vector<Real> &v, const Vector<Real> &x, Real &tol){
-        constr_.applyAdjointHessian(ahuv,u,v,x,tol);
+        this->applyAdjointHessianAD(ahuv,u,v,x,tol);
     }
 
-    void setConstraintDimension(int dim) { constr_.setConstraintDimension(dim); }
 };
-
-
-//! \brief Implement automatic differentiation for first and second derivatives of a generic constraint
-template<class Real, class Constr>
-class Constraint_Sacado {
-
-    private:
-        Constr constr_;
-        
-    public:
-
-        template<class ScalarT>
-        void value(Vector<ScalarT> &c, const Vector<ScalarT> &x, Real &tol) {
-            constr_.value(c,x,tol);  
-        }
-
-        template<class ScalarT>
-        void applyJacobian(Vector<ScalarT> &jv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol);
-
-        template<class ScalarT>
-        void applyAdjointJacobian(Vector<ScalarT> &aju, const Vector<ScalarT> &u, 
-                                  const Vector<ScalarT> &x, Real &tol);
-
-        template<class ScalarT>
-        void applyAdjointHessian(Vector<ScalarT> &ahuv, const Vector<ScalarT> &u,
-                                 const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol);
-
-        void setConstraintDimension(int dim) { constr_.dim = dim; }
-};
-
-
 
 
 template<class Real, class Constr>
 template<class ScalarT>
-void Constraint_Sacado<Real,Constr>::applyJacobian(Vector<ScalarT> &jv, const Vector<ScalarT> &v, 
-                                                   const Vector<ScalarT> &x, Real &tol) {
+void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv, const Vector<ScalarT> &v, 
+                                                             const Vector<ScalarT> &x, Real &tol) {
 
     // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
@@ -124,8 +109,6 @@ void Constraint_Sacado<Real,Constr>::applyJacobian(Vector<ScalarT> &jv, const Ve
     // Get a pointer to the direction vector
     Teuchos::RCP<const std::vector<ScalarT> > vp =
         (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
-
-    int m = constr_.dim;
 
     Teuchos::RCP<std::vector<ScalarT> > jvp = 
         Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(jv)).getVector());
@@ -141,9 +124,9 @@ void Constraint_Sacado<Real,Constr>::applyJacobian(Vector<ScalarT> &jv, const Ve
 
     // Create a vector of independent variables
     Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    c_fad_rcp->reserve(m);
+    c_fad_rcp->reserve(dim_);
 
-    for(int j=0; j<m; ++j) {
+    for(int j=0; j<dim_; ++j) {
         c_fad_rcp->push_back(0);  
     }
 
@@ -151,9 +134,9 @@ void Constraint_Sacado<Real,Constr>::applyJacobian(Vector<ScalarT> &jv, const Ve
     StdVector<FadType> c_fad(c_fad_rcp);
 
     // Evaluate constraint     
-    this->value(c_fad,x_fad,tol);
+    constr_.value(c_fad,x_fad,tol);
 
-    for(int i=0; i<m; ++i) {
+    for(int i=0; i<dim_; ++i) {
         (*jvp)[i] = 0;
         for(int j=0; j<n; ++j) {
             (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j); 
@@ -165,8 +148,8 @@ void Constraint_Sacado<Real,Constr>::applyJacobian(Vector<ScalarT> &jv, const Ve
 
 template<class Real, class Constr>
 template<class ScalarT>
-void Constraint_Sacado<Real,Constr>::applyAdjointJacobian(Vector<ScalarT> &aju, const Vector<ScalarT> &u, 
-                                                          const Vector<ScalarT> &x, Real &tol) {
+void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<ScalarT> &aju, const Vector<ScalarT> &u, 
+                                                                    const Vector<ScalarT> &x, Real &tol) {
 
    // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
@@ -183,7 +166,6 @@ void Constraint_Sacado<Real,Constr>::applyAdjointJacobian(Vector<ScalarT> &aju, 
         Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(aju)).getVector());
 
     int n = xp->size();
-    int m = constr_.dim;
 
     // Create a vector of independent variables
     Teuchos::RCP<std::vector<FadType> > x_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
@@ -195,8 +177,8 @@ void Constraint_Sacado<Real,Constr>::applyAdjointJacobian(Vector<ScalarT> &aju, 
     }
 
     Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    c_fad_rcp->reserve(m);
-    for(int j=0; j<m; ++j) {
+    c_fad_rcp->reserve(dim_);
+    for(int j=0; j<dim_; ++j) {
         c_fad_rcp->push_back(0);  
     }
 
@@ -204,11 +186,11 @@ void Constraint_Sacado<Real,Constr>::applyAdjointJacobian(Vector<ScalarT> &aju, 
     StdVector<FadType> c_fad(c_fad_rcp);
  
     // Evaluate constraint
-    this->value(c_fad,x_fad,tol);
+    constr_.value(c_fad,x_fad,tol);
     
     FadType udotc = 0;
     
-    for(int j=0;j<m;++j){ 
+    for(int j=0;j<dim_;++j){ 
         udotc += (*c_fad_rcp)[j]*(*up)[j];
     } 
 
@@ -220,9 +202,9 @@ void Constraint_Sacado<Real,Constr>::applyAdjointJacobian(Vector<ScalarT> &aju, 
 
 template<class Real, class Constr>
 template<class ScalarT>
-void Constraint_Sacado<Real,Constr>::applyAdjointHessian(Vector<ScalarT> &ahuv, const Vector<ScalarT> &u,
-                                                         const Vector<ScalarT> &v, const Vector<ScalarT> &x, 
-                                                         Real &tol){
+void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<ScalarT> &ahuv, const Vector<ScalarT> &u,
+                                                                   const Vector<ScalarT> &v, const Vector<ScalarT> &x, 
+                                                                   Real &tol){
 
    // Data type which supports automatic differentiation 
     typedef Sacado::Fad::SFad<ScalarT,1> FadType;
@@ -246,9 +228,6 @@ void Constraint_Sacado<Real,Constr>::applyAdjointHessian(Vector<ScalarT> &ahuv, 
     // Number of optimization variables
     int n = xp->size();
 
-    // Number of constraints
-    int m = up->size();
-    
     // Create a vector of independent variables
     Teuchos::RCP<std::vector<FadType> > x_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
     x_fad_rcp->reserve(n);
@@ -268,13 +247,13 @@ void Constraint_Sacado<Real,Constr>::applyAdjointHessian(Vector<ScalarT> &ahuv, 
 
     // Allocate for constraint vector
     Teuchos::RCP<std::vector<FadType> > c_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
-    c_fad_rcp->reserve(m);
+    c_fad_rcp->reserve(dim_);
 
     // Allocate for dual constraint vector
     Teuchos::RCP<std::vector<FadType> > u_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
-    u_fad_rcp->reserve(m);
+    u_fad_rcp->reserve(dim_);
 
-     for(int j=0; j<m; ++j) {
+     for(int j=0; j<dim_; ++j) {
         c_fad_rcp->push_back(0);  
         u_fad_rcp->push_back((*up)[j]);
     }
@@ -285,7 +264,7 @@ void Constraint_Sacado<Real,Constr>::applyAdjointHessian(Vector<ScalarT> &ahuv, 
     StdVector<FadType> aju_fad(aju_fad_rcp);
 
     // Evaluate constraint adjoint Jacobian direction
-    this->applyAdjointJacobian( aju_fad, u_fad, x_fad, tol);
+    this->applyAdjointJacobianAD( aju_fad, u_fad, x_fad, tol);
 
     for(int i=0; i<n; ++i) {
         (*ahuvp)[i] = (*aju_fad_rcp)[i].dx(0);             

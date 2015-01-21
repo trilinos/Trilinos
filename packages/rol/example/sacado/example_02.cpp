@@ -53,13 +53,13 @@
 **/
 
 #include "example_02.hpp"
-#include "Objective_Sacado.hpp"
-#include "Constraint_Sacado.hpp"
-
+#include "ROL_Sacado_Objective.hpp"
+#include "ROL_Sacado_EqualityConstraint.hpp"
 typedef double RealT;
 
 int main(int argc, char **argv)
 {
+
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -82,13 +82,11 @@ int main(int argc, char **argv)
     int dim = 5;
     int nc = 3;
 
-    Teuchos::RCP< ROL_Objective_Sacado<RealT,Objective_Sacado<RealT,Example_Objective<RealT> > > > obj = 
-        Teuchos::rcp( new ROL_Objective_Sacado<RealT,Objective_Sacado<RealT,Example_Objective<RealT> > > ());
+    Teuchos::RCP< Sacado_Objective<RealT,Example_Objective<RealT> > > obj = 
+        Teuchos::rcp( new Sacado_Objective<RealT,Example_Objective<RealT>  > ());
 
-    Teuchos::RCP< ROL_Constraint_Sacado<RealT,Constraint_Sacado<RealT,Example_Constraint<RealT> > > > constr =
-        Teuchos::rcp( new ROL_Constraint_Sacado<RealT,Constraint_Sacado<RealT,Example_Constraint<RealT> > > ());
-
-    constr->setConstraintDimension(nc);
+    Teuchos::RCP< Sacado_EqualityConstraint<RealT,Example_Constraint<RealT> > > constr =
+        Teuchos::rcp( new Sacado_EqualityConstraint<RealT,Example_Constraint<RealT> > (nc));
 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
 
@@ -208,8 +206,5 @@ int main(int argc, char **argv)
 
   return 0;
    
-
-
-
 
 }

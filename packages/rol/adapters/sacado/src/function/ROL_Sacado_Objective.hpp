@@ -45,10 +45,21 @@
 
 /** \brief Generic objective wrapper class for class that uses Sacado */
 template<class Real, class Obj>
-class ROL_Objective_Sacado : public Objective<Real> {
+class Sacado_Objective : public Objective<Real> {
     private:
         Obj obj_;
+
+
+    /* Evaluate the gradient at x */
+    template<class ScalarT> 
+    void gradientAD( Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol );
+
+    /* Compute the action of the Hessian evaluated at x on a vector v */
+    template<class ScalarT> 
+    void hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol ); 
+
     public:
+
     /* Evaluate the objective function at x */
     Real value( const Vector<Real> &x, Real &tol ) {
       return obj_.value(x,tol);
@@ -56,44 +67,22 @@ class ROL_Objective_Sacado : public Objective<Real> {
 
     /* Evaluate the gradient at x */
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-        obj_.gradient(g,x,tol); 
+        this->gradientAD(g,x,tol); 
     }
 
     /* Compute the action of the Hessian evaluated at x on a vector v */
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-        obj_.hessVec(hv,v,x,tol);
+        this->hessVecAD(hv,v,x,tol);
     }
 };
 
-
-
-template<class Real, class Obj>
-class Objective_Sacado {
-    private:
-        Obj obj_;
-    public:
-
-    /* Evaluate the objective function at x */
-    template<class ScalarT> 
-    ScalarT value( const Vector<ScalarT> &x, Real &tol ) {
-      return obj_.value(x,tol);
-    }
-
-    /* Evaluate the gradient at x */
-    template<class ScalarT> 
-    void gradient( Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol );
-
-    /* Compute the action of the Hessian evaluated at x on a vector v */
-    template<class ScalarT> 
-    void hessVec( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol ); 
-};
 
 
 
 
 template<class Real, class Obj>
 template<class ScalarT>
-void Objective_Sacado<Real,Obj>::gradient(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) { 
+void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) { 
 
     // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
@@ -120,7 +109,7 @@ void Objective_Sacado<Real,Obj>::gradient(Vector<ScalarT> &g, const Vector<Scala
     StdVector<FadType> x_fad(x_fad_rcp);
 
     // AD access to objective function
-    FadType J_fad = this->value(x_fad,tol);
+    FadType J_fad = obj_.value(x_fad,tol);
 
     // Evaluate gradient
     for(int i=0; i<n; ++i) {
@@ -132,8 +121,8 @@ void Objective_Sacado<Real,Obj>::gradient(Vector<ScalarT> &g, const Vector<Scala
 
 template <class Real, class Obj>
 template <class ScalarT>
-void Objective_Sacado<Real,Obj>::hessVec( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
-                                          const Vector<ScalarT> &x, Real &tol ) {
+void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
+                                            const Vector<ScalarT> &x, Real &tol ) {
   
     // Get a pointer to the optimization vector 
     Teuchos::RCP<const std::vector<ScalarT> > xp =
@@ -170,7 +159,7 @@ void Objective_Sacado<Real,Obj>::hessVec( Vector<ScalarT> &hv, const Vector<Scal
     StdVector<FadType> x_fad(x_fad_rcp);
     StdVector<FadType> g_fad(g_fad_rcp);
 
-    this->gradient(g_fad,x_fad,tol);
+    this->gradientAD(g_fad,x_fad,tol);
 
     for(int i=0; i<n; ++i) {
         (*hvp)[i] = (*g_fad_rcp)[i].dx(0);            
