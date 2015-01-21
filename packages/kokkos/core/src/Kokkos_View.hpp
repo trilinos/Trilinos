@@ -624,7 +624,8 @@ public:
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
-      m_offset_map.set_padding();
+      if(Alloc::AllowPadding)
+        m_offset_map.set_padding();
 
       m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map );
     }
@@ -643,7 +644,8 @@ public:
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
       m_offset_map.assign( layout );
-      m_offset_map.set_padding();
+      if(Alloc::AllowPadding)
+        m_offset_map.set_padding();
 
       m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map );
 

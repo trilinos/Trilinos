@@ -446,6 +446,7 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocate
   typedef const ViewAllocate & property_type ;
 
   enum { Initialize = true };
+  enum { AllowPadding = false };
 
   inline
   static const std::string & label( property_type p ) { return p.label ; }
@@ -462,6 +463,7 @@ struct ViewAllocProp< Traits , std::string
   typedef const std::string & property_type ;
 
   enum { Initialize = true };
+  enum { AllowPadding = false };
 
   inline
   static const std::string & label( property_type s ) { return s ; }
@@ -482,6 +484,7 @@ public:
   typedef const label_type & property_type ;
 
   enum { Initialize = true };
+  enum { AllowPadding = false };
 
   inline
   static std::string label( property_type s ) { return std::string(s) ; }
@@ -498,6 +501,7 @@ struct ViewAllocProp< Traits , Kokkos::ViewAllocateWithoutInitializing
   typedef const Kokkos::ViewAllocateWithoutInitializing & property_type ;
 
   enum { Initialize = false };
+  enum { AllowPadding = false };
 
   inline
   static std::string label( property_type s ) { return s.label ; }
