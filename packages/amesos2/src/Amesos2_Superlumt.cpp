@@ -118,7 +118,7 @@ namespace Amesos2 {
 
 
 #include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_SUPERLUMT_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::Superlumt<Tpetra::CrsMatrix<S, LO, GO, N>,      \

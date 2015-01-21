@@ -117,7 +117,7 @@ namespace Amesos2 {
 #endif
 
 #include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_PARDISOMKL_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::PardisoMKL<Tpetra::CrsMatrix<S, LO, GO, N>,      \

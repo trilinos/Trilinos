@@ -118,7 +118,7 @@ namespace Amesos2 {
 // Ifpack2::Details::Amesos2Wrapper work.
 //
 #include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::Superlu<Tpetra::CrsMatrix<S, LO, GO, N>,      \

@@ -122,7 +122,7 @@ namespace Amesos2 {
 // 26-Nov-2014: JJH code copied from Amesos2_SuperLU.cpp.
 //
 #include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_BASKER_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::Basker<Tpetra::CrsMatrix<S, LO, GO, N>,      \

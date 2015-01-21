@@ -115,7 +115,7 @@ namespace Amesos2 {
 // 7-Nov-2014: JJH code copied from Amesos2_SuperLU.cpp.
 //
 #include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_KLU2_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::KLU2<Tpetra::CrsMatrix<S, LO, GO, N>,      \
