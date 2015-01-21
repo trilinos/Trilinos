@@ -41,3 +41,25 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_BATCHMANAGER_HPP
+#define ROL_BATCHMANAGER_HPP
+
+#include "Teuchos_RefCountPtr.hpp"
+#include "ROL_Vector.hpp"
+
+namespace ROL {
+
+template<class Real> 
+class BatchManager {
+public:
+  virtual ~BatchManager() {}
+  virtual int batchID(void) = 0;
+  virtual int numBatches(void) = 0;
+  virtual void sumAll(Real* input, Real* output, int dim) = 0;
+  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) = 0;
+  virtual void barrier(void) {}
+};
+
+}
+
+#endif

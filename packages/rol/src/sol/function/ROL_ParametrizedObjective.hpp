@@ -41,3 +41,33 @@
 // ************************************************************************
 // @HEADER
 
+
+#ifndef ROL_PARAMETRIZEDOBJECTIVE_HPP
+#define ROL_PARAMETRIZEDOBJECTIVE_HPP
+
+#include "ROL_Types.hpp"
+#include "ROL_Objective.hpp"
+#include <iostream>
+
+namespace ROL {
+
+template<class Real>
+class ParametrizedObjective : public Objective<Real> {
+private:
+  std::vector<Real> param_;
+
+protected:
+  const std::vector<Real> getParameter(void) const {
+    return this->param_;
+  }
+
+public:
+  virtual ~ParametrizedObjective(void) {}
+  virtual void setParameter(const std::vector<Real> &param) {
+    this->param_ = param;
+  }
+};
+
+}
+
+#endif

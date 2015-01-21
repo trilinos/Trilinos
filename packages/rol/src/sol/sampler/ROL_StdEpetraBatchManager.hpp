@@ -41,3 +41,35 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_STDEPETRABATCHMANAGER_HPP
+#define ROL_STDEPETRABATCHMANAGER_HPP
+
+#include "ROL_EpetraBatchManager.hpp"
+#include "ROL_StdVector.hpp"
+
+namespace ROL {
+
+template<class Real> 
+class StdEpetraBatchManager : public EpetraBatchManager<Real> {
+public:
+  StdEpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : EpetraBatchManager<Real>(comm) {}
+  void sumAll(Vector<Real> &input, Vector<Real> &output) {
+    Teuchos::RCP<std::vector<Real> > input_ptr = Teuchos::rcp_const_cast<std::vector<Real> >(
+      (Teuchos::dyn_cast<StdVector<Real> >(input)).getVector());
+    Teuchos::RCP<std::vector<Real> > output_ptr = Teuchos::rcp_const_cast<std::vector<Real> >(
+      (Teuchos::dyn_cast<StdVector<Real> >(output)).getVector());
+    int dim_i = input_ptr->size();
+    int dim_o = output_ptr->size();
+    if ( dim_i != dim_o ) {
+      std::cout << "StdEpetraBatchManager: DIMENSION MISMATCH ON RANK " 
+                << EpetraBatchManager<Real>::batchID() << "\n";
+    }
+    else {
+      EpetraBatchManager<Real>::sumAll(&(*input_ptr)[0],&(*output_ptr)[0],dim_i);
+    }
+  }
+};
+
+}
+
+#endif

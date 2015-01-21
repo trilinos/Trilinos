@@ -41,3 +41,59 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_SPARSEGRIDGENERATOR_HPP
+#define ROL_SPARSEGRIDGENERATOR_HPP
+
+#include "Teuchos_RCP.hpp"
+#include "Epetra_Comm.h"
+
+#include "ROL_SampleGenerator.hpp"
+#include "ROL_Quadrature.hpp"
+
+namespace ROL {
+
+struct SparseGridInfo {
+  int dim;
+  int maxLevel;
+  std::vector<EROLBurkardt> rule1D;
+  std::vector<EROLGrowth> growth1D;
+  bool normalize;
+  bool useSandia;
+};
+
+template<class Real> 
+class SparseGridGenerator : public SampleGenerator<Real> {
+private:
+  Teuchos::RCP<Quadrature<Real> > grid_;
+  bool adaptive_;
+  SparseGridInfo info_;
+  std::multimap<Real,std::vector<int> > activeIndex_;
+  std::set<std::vector<int> > oldIndex_;
+  Real error_;
+  std::vector<int> index_;
+  std::vector<int> search_index_;
+  int direction_;
+
+  bool isAdmissible(std::vector<int> &index, int direction);
+  void buildDiffRule(Quadrature<Real> &outRule, std::vector<int> &index);
+  bool checkMaxLevel(std::vector<int> &index);
+  void splitSamples(std::vector<std::vector<Real> > &mypts, std::vector<Real> &mywts);
+  void updateSamples(Quadrature<Real> &grid);
+
+public:
+  SparseGridGenerator(Teuchos::RCP<BatchManager<Real> > &bman, SparseGridInfo &info, bool adaptive = false);
+  SparseGridGenerator(Teuchos::RCP<BatchManager<Real> > &bman, const char* SGinfo, const char* SGdata, 
+                      bool isNormalized = true);
+
+  void update(const Vector<Real> &x);
+  Real computeError(std::vector<Real> &vals);
+  Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x);
+  void refine(void);
+  void setSamples(bool inConstructor = false);
+}; // class SparseGridGenerator
+
+} // namespace ROL
+
+#include <ROL_SparseGridGeneratorDef.hpp>
+
+#endif

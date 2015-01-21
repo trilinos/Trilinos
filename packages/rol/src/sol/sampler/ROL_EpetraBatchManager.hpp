@@ -41,3 +41,31 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_EPETRABATCHMANAGER_HPP
+#define ROL_EPETRABATCHMANAGER_HPP
+
+#include "ROL_BatchManager.hpp"
+#include "Epetra_Comm.h"
+
+namespace ROL {
+
+template<class Real> 
+class EpetraBatchManager : public BatchManager<Real> {
+protected: 
+  Teuchos::RCP<Epetra_Comm> comm_;
+
+public:
+  virtual ~EpetraBatchManager() {}
+  EpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : comm_(comm) {}
+  int batchID(void) { return comm_->MyPID(); }
+  int numBatches(void) { return comm_->NumProc(); }
+  void sumAll(Real* input, Real* output, int dim) { comm_->SumAll(input,output,dim); }
+  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) = 0;
+  void barrier(void) {
+    comm_->Barrier();
+  }
+};
+
+}
+
+#endif

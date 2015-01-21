@@ -41,3 +41,93 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_SAMPLEGENERATOR_HPP
+#define ROL_SAMPLEGENERATOR_HPP
+
+#include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_Comm.h"
+#include "ROL_BatchManager.hpp"
+#include "ROL_Vector.hpp"
+
+namespace ROL {
+
+template<class Real> 
+class SampleGenerator {
+private:
+  Teuchos::RCP<BatchManager<Real> > bman_;
+  std::vector<std::vector<Real> > points_;
+  std::vector<Real> weights_;
+  int begin_;
+
+protected:
+  void setPoints(std::vector<std::vector<Real> > &p) {
+    points_.clear();
+    points_.insert(points_.begin(),p.begin(),p.end());
+  }
+  void setWeights(std::vector<Real> &w) {
+    weights_.clear();
+    weights_.insert(weights_.begin(),w.begin(),w.end());
+  }
+
+public:
+  virtual ~SampleGenerator() {}
+  SampleGenerator(Teuchos::RCP<BatchManager<Real> > &bman) : begin_(0), bman_(bman) {}
+
+  virtual void update(const Vector<Real> &x) {
+    begin_ = 0;
+  } 
+
+  virtual int start(void) {
+    return begin_;
+  }
+
+  virtual Real computeError(std::vector<Real> &vals) {
+    return 0.0;
+  }
+
+  virtual Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x) {
+    return 0.0;
+  }
+
+  virtual void refine(void) {
+    begin_ = numMySamples();
+  }
+
+  virtual void setSamples(bool inConstructor = false) {}
+
+  virtual int numMySamples(void) {
+    return weights_.size();
+  }
+
+  virtual std::vector<Real> getMyPoint(const int i) {
+    return points_[i];
+  }  
+
+  virtual Real getMyWeight(const int i) {
+    return weights_[i];
+  }
+
+  int batchID(void) {
+    return bman_->batchID();
+  }
+
+  int numBatches(void) {
+    return bman_->numBatches();
+  }
+
+  void sumAll(Real *input, Real *output, int dim) {
+    bman_->sumAll(input, output, dim);
+  }
+
+  void sumAll(Vector<Real> &input, Vector<Real> &output) {
+    bman_->sumAll(input,output);
+  }
+
+  void barrier(void) {
+    bman_->barrier();
+  }
+};
+
+}
+
+#endif

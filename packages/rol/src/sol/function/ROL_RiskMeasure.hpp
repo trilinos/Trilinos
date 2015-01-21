@@ -41,3 +41,70 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_RISKMEASURE_HPP
+#define ROL_RISKMEASURE_HPP
+
+#include "ROL_Vector.hpp"
+
+namespace ROL {
+
+template<class Real>
+class RiskMeasure {
+protected:
+  Real val_;
+  Real gv_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > hv_;
+
+public:
+  virtual ~RiskMeasure() {}
+
+  virtual void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+    this->val_ = 0.0;
+    this->gv_ = 0.0;
+    this->g_  = x.clone(); this->g_->zero();
+    this->hv_ = x.clone(); this->hv_->zero();
+    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
+  }
+
+  virtual void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x, 
+                     Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+    this->val_ = 0.0;
+    this->gv_ = 0.0;
+    this->g_  = x.clone(); this->g_->zero();
+    this->hv_ = x.clone(); this->hv_->zero();
+    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
+    v0 = Teuchos::rcp(&const_cast<Vector<Real> &>(v),false);
+  }
+
+  virtual void update(const Real val, const Real weight) {
+    this->val_ += weight * val;
+  }
+
+  virtual void update(const Real val, const Vector<Real> &g, const Real weight) {
+    this->g_->axpy(weight,g);
+  }
+
+  virtual void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv, 
+                      const Real weight) {
+    this->hv_->axpy(weight,hv);
+  }
+
+  virtual Real getValue(SampleGenerator<Real> &sampler) {
+    Real val = 0.0;
+    sampler.sumAll(&(this->val_),&val,1);
+    return val;
+  }
+
+  virtual void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
+    sampler.sumAll(*(this->g_),g);
+  }
+
+  virtual void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
+    sampler.sumAll(*(this->hv_),hv);
+  }
+};
+
+}
+
+#endif
