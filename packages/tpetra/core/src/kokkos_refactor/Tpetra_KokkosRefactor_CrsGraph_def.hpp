@@ -1738,8 +1738,13 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
       //We supply a workaround n as well as other code variants which produce or not produce the error
-  #if defined(GCC_VERSION)
-  #if GCC_VERSION >= 40900
+  #if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+    #define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+    #if GCC_VERSION >= 40900
+      #define GCC_WORKAROUND
+    #endif
+  #endif
+  #ifdef GCC_WORKAROUND
       size_type nNI = static_cast<size_type>(numNewInds);
       memcpy( &oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
       /*
@@ -1789,7 +1794,6 @@ namespace Tpetra {
         oldRowVals[oldInd] = newRowVals[newInd];
       }
   #endif // GCC Workaround
-  #endif // GCC_VERSION defined
 #ifdef HAVE_TPETRA_DEBUG
     }
     catch (std::exception& e) {
