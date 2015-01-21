@@ -144,9 +144,9 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
   product_eigen_values =
     eigen_value_array_type("product eigen vvalues", num_prod);
   typename eigen_func_array_type::HostMirror host_product_eigen_funcs =
-    ::Kokkos::create_mirror_view(product_eigen_funcs);
+    Kokkos::create_mirror_view(product_eigen_funcs);
   typename eigen_value_array_type::HostMirror host_product_eigen_values =
-    ::Kokkos::create_mirror_view(product_eigen_values);
+    Kokkos::create_mirror_view(product_eigen_values);
   for (int i=0; i<num_prod; ++i) {
     host_product_eigen_values(i) = 1.0;
     for (int j=0; j<dim; ++j) {
@@ -155,8 +155,8 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
         product_eig_pairs[i].eig_pairs[j].eig_func;
     }
   }
-  ::Kokkos::deep_copy(product_eigen_funcs, host_product_eigen_funcs);
-  ::Kokkos::deep_copy(product_eigen_values, host_product_eigen_values);
+  Kokkos::deep_copy(product_eigen_funcs, host_product_eigen_funcs);
+  Kokkos::deep_copy(product_eigen_values, host_product_eigen_values);
 }
 
 template <typename value_type, typename device_type>

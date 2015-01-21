@@ -105,15 +105,15 @@ namespace Stokhos {
      * also accepted.
      */
     template <typename value_type,
-              typename device_type = ::Kokkos::DefaultExecutionSpace>
+              typename device_type = Kokkos::DefaultExecutionSpace>
     class ExponentialRandomField {
     public:
 
       typedef ExponentialOneDEigenFunction<value_type> one_d_eigen_func_type;
       typedef OneDEigenPair<one_d_eigen_func_type> one_d_eigen_pair_type;
       typedef ProductEigenPair<one_d_eigen_func_type,device_type> product_eigen_pair_type;
-      typedef ::Kokkos::View<one_d_eigen_func_type**,device_type> eigen_func_array_type;
-      typedef ::Kokkos::View<value_type*,device_type> eigen_value_array_type;
+      typedef Kokkos::View<one_d_eigen_func_type**,device_type> eigen_func_array_type;
+      typedef Kokkos::View<value_type*,device_type> eigen_value_array_type;
 
       //! Default constructor
       ExponentialRandomField() : num_KL(0), mean(0), std_dev(0) {}
