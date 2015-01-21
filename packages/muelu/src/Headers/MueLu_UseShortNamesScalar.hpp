@@ -318,6 +318,10 @@ typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiC
 typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmoother;
 #endif
 
+#ifdef MUELU_ZOLTAN2INTERFACE_SHORT
+typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;

@@ -102,10 +102,6 @@ typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> Unco
 typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggregationFactory;
 #endif
 
-#ifdef MUELU_ZOLTAN2INTERFACE_SHORT
-typedef MueLu::Zoltan2Interface<LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
-#endif
-
 #ifdef MUELU_ZOLTANINTERFACE_SHORT
 typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;
 #endif

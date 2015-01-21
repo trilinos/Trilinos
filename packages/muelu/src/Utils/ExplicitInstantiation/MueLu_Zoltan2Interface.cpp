@@ -51,11 +51,11 @@
 
 #include "TpetraCore_ETIHelperMacros.h"
 
-#define MUELU_LOCAL_INSTANT(LO,GO,N) \
-        template class MueLu::Zoltan2Interface<LO,GO,N>;
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::Zoltan2Interface<S,LO,GO,N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
 #endif

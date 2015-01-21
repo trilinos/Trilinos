@@ -77,3 +77,4 @@ TrilinosSmoother
 UserPFactory
 SemiCoarsenPFactory
 UzawaSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
+Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
