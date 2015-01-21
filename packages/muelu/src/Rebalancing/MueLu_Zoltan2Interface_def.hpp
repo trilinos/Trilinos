@@ -143,7 +143,7 @@ namespace MueLu {
 
     Array<double> weightsPerRow(numElements);
     for (LO i = 0; i < numElements; i++) {
-      weightsPerRow[i] = Teuchos::ScalarTraits<SC>::zero();
+      weightsPerRow[i] = 0.0;
       for (LO j = 0; j < blkSize; j++) {
         weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
         // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
