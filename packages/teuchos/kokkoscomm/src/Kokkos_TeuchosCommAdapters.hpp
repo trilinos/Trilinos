@@ -133,7 +133,6 @@ reduceAll (const SendViewType& sendBuf,
   // type.
   typedef typename SendViewType::value_type send_value_type;
   typedef typename RecvViewType::value_type recv_value_type;
-  typedef send_value_type val_type;
 
   const bool typesDiffer =
     ! Kokkos::Impl::is_same<send_value_type, recv_value_type>::value;
@@ -159,9 +158,53 @@ reduceAll (const SendViewType& sendBuf,
   }
   else {
     const Ordinal count = static_cast<Ordinal> (sendBuf.dimension_0 ());
-    reduceAll<Ordinal, val_type> (comm, reductionType, count,
-                                  sendBuf.ptr_on_device (),
-                                  recvBuf.ptr_on_device ());
+    reduceAll (comm, reductionType, count,
+               sendBuf.ptr_on_device (),
+               recvBuf.ptr_on_device ());
+  }
+}
+
+template<typename Ordinal, typename Serializer,
+         typename ST, typename SL, typename SD, typename SM, typename SS,
+         typename RT, typename RL, typename RD, typename RM, typename RS>
+void
+reduceAll(const Comm<Ordinal>& comm,
+          const Serializer& serializer,
+          const EReductionType reductType,
+          const Ordinal count,
+          const Kokkos::View<ST,SL,SD,SM,SS>& sendBuffer,
+          const Kokkos::View<RT,RL,RD,RM,RS>& recvBuffer)
+{
+  // We can't use the array of intrinsic scalar type
+  // ((non_)const_array_intrinsic_type) here, because we're doing a
+  // reduction.  That means we need to compute with the actual value
+  // type.
+  typedef Kokkos::View<ST,SL,SD,SM,SS> SendViewType;
+  typedef Kokkos::View<RT,RL,RD,RM,RS> RecvViewType;
+  typedef typename SendViewType::value_type send_value_type;
+  typedef typename RecvViewType::value_type recv_value_type;
+
+  const bool typesDiffer =
+    ! Kokkos::Impl::is_same<send_value_type, recv_value_type>::value;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    typesDiffer, std::invalid_argument, "Teuchos::reduceAll: Send and receive "
+    "Views contain data of different types.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    SendViewType::rank > 1 || RecvViewType::rank > 1, std::invalid_argument,
+    "Teuchos::reduceAll: Both send and receive Views must have rank 1.  "
+    "The send View's rank is " << SendViewType::rank << " and the receive "
+    "View's rank is " << RecvViewType::rank << ".");
+
+  // mfh 04 Nov 2014: Don't let Teuchos::SerialComm do a deep copy;
+  // that always happens on the host, since SerialComm doesn't know
+  // about Kokkos.
+  if (comm.getSize () == 1) {
+    Kokkos::deep_copy (recvBuffer, sendBuffer);
+  }
+  else {
+    reduceAll (comm, serializer, reductType, count,
+               sendBuffer.ptr_on_device (),
+               recvBuffer.ptr_on_device ());
   }
 }
 
