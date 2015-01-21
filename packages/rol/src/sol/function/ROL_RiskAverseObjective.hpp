@@ -100,7 +100,7 @@ public:
     Real val = 0.0;
     Teuchos::RCP<Vector<Real> > x0;
     rm_->reset(x0,x);
-    for ( unsigned i = 0; i < vsampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < vsampler_->numMySamples(); i++ ) {
       pObj_->setParameter(vsampler_->getMyPoint(i));
       if ( storage_ && value_storage_.count(vsampler_->getMyPoint(i)) ) {
         val = value_storage_[vsampler_->getMyPoint(i)];
@@ -123,7 +123,7 @@ public:
     rm_->reset(x0,x);
     Teuchos::RCP<Vector<Real> > g0 = x0->clone();
     Real val = 0.0;
-    for ( unsigned i = 0; i < gsampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
       pObj_->setParameter(gsampler_->getMyPoint(i));
       if ( storage_ && value_storage_.count(gsampler_->getMyPoint(i)) ) {
         val = value_storage_[gsampler_->getMyPoint(i)];
@@ -160,7 +160,7 @@ public:
     Real gv  = 0.0;
     Teuchos::RCP<Vector<Real> > g0 = x0->clone();
     Teuchos::RCP<Vector<Real> > h0 = x0->clone();
-    for ( unsigned i = 0; i < gsampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
       pObj_->setParameter(gsampler_->getMyPoint(i));
       if ( storage_ && value_storage_.count(gsampler_->getMyPoint(i)) ) {
         val = value_storage_[gsampler_->getMyPoint(i)];

@@ -50,11 +50,11 @@
 namespace ROL {
 
 enum EAbsoluteValue {
-  ABROLUTEVALUE_TRUE = 0,
-  ABROLUTEVALUE_SQUAREROOT,
-  ABROLUTEVALUE_SQRTDENOM,
-  ABROLUTEVALUE_C2,
-  ABROLUTEVALUE_LAST
+  ABSOLUTEVALUE_TRUE = 0,
+  ABSOLUTEVALUE_SQUAREROOT,
+  ABSOLUTEVALUE_SQRTDENOM,
+  ABSOLUTEVALUE_C2,
+  ABSOLUTEVALUE_LAST
 };
 
 template<class Real>
@@ -64,16 +64,19 @@ private:
   EAbsoluteValue eav_;
 
 public: 
-  AbsoluteValue(Real param = 1.e2, EAbsoluteValue eav = ABROLUTEVALUE_TRUE) : param_(param), eav_(eav) {
-    if ( eav != ABROLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON ) { param_ = 1.e2; }
+  AbsoluteValue(Real param = 1.e2, EAbsoluteValue eav = ABSOLUTEVALUE_TRUE) : param_(param), eav_(eav) {
+    if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON ) { param_ = 1.e2; }
   }
   Real evaluate(Real input, int deriv) {
     Real val = 0.0;
     switch(this->eav_) {
-      case ABROLUTEVALUE_TRUE:       val = this->true_absolute_value(input,deriv);  break;
-      case ABROLUTEVALUE_SQUAREROOT: val = this->sqrt_absolute_value(input,deriv);  break;
-      case ABROLUTEVALUE_SQRTDENOM:  val = this->sqrtd_absolute_value(input,deriv); break;
-      case ABROLUTEVALUE_C2:         val = this->c2_absolute_value(input,deriv);    break;
+      case ABSOLUTEVALUE_TRUE:       val = this->true_absolute_value(input,deriv);  break;
+      case ABSOLUTEVALUE_SQUAREROOT: val = this->sqrt_absolute_value(input,deriv);  break;
+      case ABSOLUTEVALUE_SQRTDENOM:  val = this->sqrtd_absolute_value(input,deriv); break;
+      case ABSOLUTEVALUE_C2:         val = this->c2_absolute_value(input,deriv);    break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::AbsoluteValue): Absolute value approximation not defined!");
     }
     return val;
   }
@@ -98,17 +101,21 @@ private:
   }
 
   Real sqrt_absolute_value( Real input, int deriv ) {
-    if ( deriv == 0 )      { return std::sqrt(input*input + 1.0/this->param_); }
-    else if ( deriv == 1 ) { return input/std::sqrt(input*input+1.0/this->param_); }
-    else if ( deriv == 2 ) { return (1.0/this->param_)/std::pow(input*input+1.0/this->param_,1.5); }
+    Real output = 0.0;
+    if ( deriv == 0 )      { output = std::sqrt(input*input + 1.0/this->param_); }
+    else if ( deriv == 1 ) { output = input/std::sqrt(input*input+1.0/this->param_); }
+    else if ( deriv == 2 ) { output = (1.0/this->param_)/std::pow(input*input+1.0/this->param_,1.5); }
+    return output;
   }
 
   Real sqrtd_absolute_value( Real input, int deriv ) {
-    if ( deriv == 0 )      { return input*input/std::sqrt(input*input + 1.0/this->param_); }
-    else if ( deriv == 1 ) { return (2.0/this->param_*input+std::pow(input,3.0)) /
+    Real output = 0.0;
+    if ( deriv == 0 )      { output = input*input/std::sqrt(input*input + 1.0/this->param_); }
+    else if ( deriv == 1 ) { output = (2.0/this->param_*input+std::pow(input,3.0)) /
                                     std::pow(input*input+1.0/this->param_,1.5); }
-    else if ( deriv == 2 ) { return ((2.0/this->param_-input*input)/this->param_) / 
+    else if ( deriv == 2 ) { output = ((2.0/this->param_-input*input)/this->param_) / 
                                     std::pow(input*input+1.0/this->param_,2.5); }
+    return output;
   }
 
   Real c2_absolute_value( Real input, int deriv ) {

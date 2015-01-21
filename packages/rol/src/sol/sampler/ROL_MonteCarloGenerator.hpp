@@ -55,10 +55,9 @@ private:
   int  nSamp_;
   bool use_normal_;
   bool use_SA_;
+  bool adaptive_;
   int  numNewSamps_;
   std::vector<std::vector<Real> > data_; 
-
-  bool adaptive_;
 
   Real sum_val_;
   Real sum_val2_;
@@ -95,7 +94,7 @@ private:
     // Separate samples across processes
     int frac = this->nSamp_ / nProc;
     int rem  = this->nSamp_ % nProc;
-    int N    = frac;
+    unsigned N    = frac;
     if ( rank < rem ) {
       N++;
     }
@@ -137,7 +136,7 @@ private:
     // Separate samples across processes
     int frac = nSamp / nProc;
     int rem  = nSamp % nProc;
-    int N    = frac;
+    unsigned N = frac;
     if ( rank < rem ) {
       N++;
     }
@@ -191,7 +190,7 @@ public:
     : SampleGenerator<Real>(bman), nSamp_(nSamp), use_normal_(false), use_SA_(use_SA), adaptive_(adaptive),
       numNewSamps_(numNewSamps), sum_val_(0.0), sum_val2_(0.0), sum_ng_(0.0), sum_ng2_(0.0),
       useDist_(false) {
-    int dim = bounds.size();
+    unsigned dim = bounds.size();
     data_.clear();
     Real tmp = 0.0;
     for ( unsigned j = 0; j < dim; j++ ) {
@@ -212,7 +211,7 @@ public:
     : SampleGenerator<Real>(bman), nSamp_(nSamp), use_normal_(true), use_SA_(use_SA), adaptive_(adaptive),
       numNewSamps_(numNewSamps), sum_val_(0.0), sum_val2_(0.0), sum_ng_(0.0), sum_ng2_(0.0), 
       useDist_(false) {
-    int dim = mean.size();
+    unsigned dim = mean.size();
     data_.clear();
     std::vector<Real> tmp(2,0.0);
     for ( unsigned j = 0; j < dim; j++ ) {
@@ -292,7 +291,7 @@ public:
     if ( this->adaptive_ && !(this->use_SA_) ) {
       std::vector<std::vector<Real> > pts;
       std::vector<Real> pt(this->data_.size(),0.0);
-      for ( unsigned i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
+      for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
         pt = SampleGenerator<Real>::getMyPoint(i);
         pts.push_back(pt);
       }

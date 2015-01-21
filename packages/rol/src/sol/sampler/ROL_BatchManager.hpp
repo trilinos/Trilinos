@@ -53,10 +53,25 @@ template<class Real>
 class BatchManager {
 public:
   virtual ~BatchManager() {}
-  virtual int batchID(void) = 0;
-  virtual int numBatches(void) = 0;
-  virtual void sumAll(Real* input, Real* output, int dim) = 0;
-  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) = 0;
+
+  virtual int batchID(void) {
+    return 0;
+  }
+
+  virtual int numBatches(void) {
+    return 1;
+  }
+
+  virtual void sumAll(Real* input, Real* output, int dim) {
+    for (int i=0; i<dim; i++) {
+      output[i] = input[i];
+    }
+  }
+
+  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
+    output.set(input);
+  }
+
   virtual void barrier(void) {}
 };
 

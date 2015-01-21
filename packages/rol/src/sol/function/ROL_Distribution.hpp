@@ -123,6 +123,9 @@ public:
         data_[0] = 0.0;
         data_[1] = 1.0;
         break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
   }
 
@@ -141,6 +144,9 @@ public:
       case DISTRIBUTION_LAPLACE:      val = laplace_pdf(input);      break;
       case DISTRIBUTION_CAUCHY:       val = cauchy_pdf(input);       break;
       case DISTRIBUTION_SMALE:        val = smale_pdf(input);        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     return val;
   }
@@ -158,6 +164,9 @@ public:
       case DISTRIBUTION_LAPLACE:      val = laplace_cdf(input);      break;
       case DISTRIBUTION_CAUCHY:       val = cauchy_cdf(input);       break;
       case DISTRIBUTION_SMALE:        val = smale_cdf(input);        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     return val;
   }
@@ -175,6 +184,9 @@ public:
       case DISTRIBUTION_LAPLACE:      val = laplace_intcdf(input);      break;
       case DISTRIBUTION_CAUCHY:       val = cauchy_intcdf(input);       break;
       case DISTRIBUTION_SMALE:        val = smale_intcdf(input);        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     return val;
   }
@@ -192,6 +204,9 @@ public:
       case DISTRIBUTION_LAPLACE:      val = laplace_invcdf(input);      break;
       case DISTRIBUTION_CAUCHY:       val = cauchy_invcdf(input);       break;
       case DISTRIBUTION_SMALE:        val = smale_invcdf(input);        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     return val;
   }
@@ -261,6 +276,9 @@ public:
         T[5] = 1;
         X[6] = data_[2]+4.0*(Real)rand()/(Real)RAND_MAX; 
         T[6] = 0;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                          ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     for ( int k = 0; k < size; k++ ) {
       if ( T[k] == 0 ) {

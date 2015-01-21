@@ -107,6 +107,21 @@ APPEND_SET(HEADERS
   )
 
 #
+# sol headers
+#
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
+INCLUDE_DIRECTORIES(${DIR}/function
+                    ${DIR}/vector
+                    ${DIR}/sampler
+                    ${DIR}/sampler/sparse_grids
+                   )
+APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
+                    ${DIR}/vector/*.hpp
+                    ${DIR}/sampler/*.hpp
+                    ${DIR}/sampler/sparse_grids/*.hpp
+                   )
+
+#
 # zoo headers
 #
 

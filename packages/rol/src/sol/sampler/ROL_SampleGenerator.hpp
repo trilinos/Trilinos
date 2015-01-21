@@ -54,10 +54,10 @@ namespace ROL {
 template<class Real> 
 class SampleGenerator {
 private:
+  int begin_;
   Teuchos::RCP<BatchManager<Real> > bman_;
   std::vector<std::vector<Real> > points_;
   std::vector<Real> weights_;
-  int begin_;
 
 protected:
   void setPoints(std::vector<std::vector<Real> > &p) {

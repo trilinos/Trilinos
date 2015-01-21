@@ -58,7 +58,7 @@ private:
 
 public:
   SmoothCVaRQuad(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
-    : prob_(prob), eps_(eps), pf_(pf), ExpectationQuad<Real>() {}
+    : ExpectationQuad<Real>(), prob_(prob), eps_(eps), pf_(pf) {}
 
   Real error(Real x, int deriv = 0) {
     Real err = (prob_/(1.0-prob_))*pf_->evaluate(x,deriv) 
