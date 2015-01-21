@@ -73,7 +73,7 @@ namespace
     stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
     EXPECT_EQ(1280u, entityCounts[stk::topology::ELEMENT_RANK]);
     //+ The shell faces are the same as the boundary hex faces
-    EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
+    EXPECT_EQ(2112u, entityCounts[stk::topology::FACE_RANK]);
 
     // Edges are not generated, only faces.
     EXPECT_EQ(0u,   entityCounts[stk::topology::EDGE_RANK]);

@@ -231,6 +231,12 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
+  /// return the permutation index which gives the lowest lexicographical ordering of the nodes that preserves polarity
+  /// input 'nodes' is expected to be of length num_nodes.
+  template <typename NodeArray>
+  BOOST_GPU_ENABLED
+  unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
+
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED

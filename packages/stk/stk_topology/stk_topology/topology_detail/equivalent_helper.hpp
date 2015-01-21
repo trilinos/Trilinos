@@ -112,6 +112,64 @@ lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bo
 
 template <typename Topology, typename NodeArray, typename Node>
 BOOST_GPU_ENABLED inline
+typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
+lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &nodes, const NodeArray &element_nodes, Node)
+{
+  Node permutation[Topology::num_nodes];
+
+  unsigned my_permutation_index = Topology::num_permutations;
+
+  //am i positive or negative
+  for (unsigned i=0; i<Topology::num_permutations; ++i) {
+      Topology::permutation_nodes(nodes, i, permutation);
+
+      if ( std::equal( permutation,     permutation     + Topology::num_nodes,
+                         &element_nodes[0] ) )
+      {
+          my_permutation_index = i;
+          break;
+      }
+  }
+  unsigned min_permutation_index;
+  if (my_permutation_index != Topology::num_permutations) {
+      bool positive_polarity = my_permutation_index < Topology::num_positive_permutations;
+      //if positive, only match 0-num_positive
+      unsigned low = 0;
+      unsigned high = Topology::num_positive_permutations;
+      //if negative, only match num_positive - num_perm
+      if (!positive_polarity) {
+          low = Topology::num_positive_permutations;
+          high = Topology::num_permutations;
+      }
+      min_permutation_index = low;
+      Node min_permutation[Topology::num_nodes];
+      Topology::permutation_nodes(element_nodes, min_permutation_index, min_permutation);
+      for (unsigned i=low + 1; i<high; ++i) {
+          Topology::permutation_nodes(element_nodes, i, permutation);
+
+          if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
+                                             min_permutation, min_permutation + Topology::num_nodes ) )
+          {
+              std::copy(permutation, permutation + Topology::num_nodes, min_permutation);
+              min_permutation_index = i;
+          }
+      }
+  }
+  else {
+      min_permutation_index = Topology::num_permutations;
+  }
+  return min_permutation_index;
+
+}
+
+template <typename Topology, typename NodeArray, typename Node>
+BOOST_GPU_ENABLED inline
+typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
+lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &, const NodeArray &, Node)
+{ return 0; }
+
+template <typename Topology, typename NodeArray, typename Node>
+BOOST_GPU_ENABLED inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &, bool , Node)
 { return 0; }

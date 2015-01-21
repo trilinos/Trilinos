@@ -85,7 +85,7 @@ namespace
     std::vector<unsigned> entityCounts;
     stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
     EXPECT_EQ( 896u, entityCounts[stk::topology::ELEMENT_RANK]);
-    EXPECT_EQ( 384u, entityCounts[stk::topology::FACE_RANK]);
+    EXPECT_EQ( 768u, entityCounts[stk::topology::FACE_RANK]);
 
     // Edges are not generated, only faces.
     EXPECT_EQ(0u,   entityCounts[stk::topology::EDGE_RANK]);

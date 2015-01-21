@@ -148,29 +148,74 @@ struct create_face_impl
 
         Entity const *face_entity = m_bucket.begin_faces(ielem);
         ConnectivityOrdinal const *face_ords = m_bucket.begin_face_ordinals(ielem);
-        for (int f=0 ; f < num_existing_faces ; ++f) {
-          face_exists[face_ords[f]] = mesh.is_valid(face_entity[f]);
+        for (int side_ordinal=0 ; side_ordinal < num_existing_faces ; ++side_ordinal) {
+          face_exists[face_ords[side_ordinal]] = mesh.is_valid(face_entity[side_ordinal]);
         }
       }
 
-      for (unsigned f=0; f < Topology::num_faces; ++f) {
-        if (face_exists[f]) {
+      for (unsigned side_ordinal=0; side_ordinal < Topology::num_faces; ++side_ordinal) {
+        if (face_exists[side_ordinal]) {
           continue;
         }
-
-        topology faceTopology = elemTopology.face_topology(f);
+        topology faceTopology = elemTopology.face_topology(side_ordinal);
 
         // Use node identifier instead of node local_offset for cross-processor consistency.
-        EntityIdVector face_node_ids(faceTopology.num_nodes());
-        Topology::face_nodes(elem_node_ids, f, face_node_ids.begin());
-        const unsigned smallest_permutation = faceTopology.lexicographical_smallest_permutation(face_node_ids);
-
-        EntityVector face_nodes(faceTopology.num_nodes());
-        Topology::face_nodes(elem_nodes, f, face_nodes.begin());
-
+        EntityIdVector side_node_ids(faceTopology.num_nodes());
+        Topology::face_nodes(elem_node_ids, side_ordinal, side_node_ids.begin());
+        unsigned smallest_permutation;
         EntityVector permuted_face_nodes(faceTopology.num_nodes());
-        faceTopology.permutation_nodes(face_nodes, smallest_permutation, permuted_face_nodes.begin());
+        //if this is a shell OR these nodes are connected to a shell
+        bool is_connected_to_shell = false;
+        {
+            std::set<EntityId> shells_connected_to_all_nodes;
+            for (unsigned count=0; count<side_node_ids.size(); ++count) {
+                Entity node = mesh.get_entity(stk::topology::NODE_RANK, side_node_ids[count]);
+                Entity const * elements_on_node = mesh.begin_elements(node);
+                unsigned num_elements = mesh.num_connectivity(node, stk::topology::ELEM_RANK);
+                std::set<EntityId> shells_connected_to_node;
+                for (unsigned elem_count=0; elem_count<num_elements; ++elem_count) {
+                    if (mesh.bucket(elements_on_node[elem_count]).topology().is_shell() ) {
+                        shells_connected_to_node.insert(mesh.entity_key(elements_on_node[elem_count]).id());
+                    }
+                }
+                if (0u == count) {
+                    shells_connected_to_all_nodes = shells_connected_to_node;
+                }
+                else {
+                    std::set<EntityId> intersected_set;
+                    std::insert_iterator<std::set<EntityId> > intersected_set_iter(intersected_set, intersected_set.begin());
+                    std::set_intersection(shells_connected_to_all_nodes.begin(), shells_connected_to_all_nodes.end(),
+                                          shells_connected_to_node.begin(), shells_connected_to_node.end(),
+                                          intersected_set_iter);
+                    shells_connected_to_all_nodes = intersected_set;
+                }
+                if (0u == shells_connected_to_all_nodes.size()) {
+                    break;
+                }
+            }
+            if (0u < shells_connected_to_all_nodes.size()) {
+                is_connected_to_shell = true;
+            }
+        }
+        if (elemTopology.is_shell || is_connected_to_shell) {
 
+            EntityIdVector element_node_id_vector(faceTopology.num_nodes());
+            EntityIdVector element_node_ordinal_vector(faceTopology.num_nodes());
+            EntityVector element_node_vector(faceTopology.num_nodes());
+            elemTopology.face_node_ordinals(side_ordinal, &element_node_ordinal_vector[0]);
+            for (unsigned count = 0; count < faceTopology.num_nodes(); ++count) {
+                element_node_vector[count] = m_bucket.begin_nodes(ielem)[element_node_ordinal_vector[count]];
+                element_node_id_vector[count] = mesh.identifier(element_node_vector[count]);
+            }
+            smallest_permutation = faceTopology.lexicographical_smallest_permutation_preserve_polarity(side_node_ids, element_node_id_vector);
+            faceTopology.permutation_nodes(&element_node_vector[0], smallest_permutation, permuted_face_nodes.begin());
+        }
+        else {
+            smallest_permutation = faceTopology.lexicographical_smallest_permutation(side_node_ids);
+            EntityVector face_nodes(faceTopology.num_nodes());
+            Topology::face_nodes(elem_nodes, side_ordinal, face_nodes.begin());
+            faceTopology.permutation_nodes(face_nodes, smallest_permutation, permuted_face_nodes.begin());
+        }
         Entity face;
 
         typename face_map_type::iterator iface = m_face_map.find(permuted_face_nodes);
@@ -205,7 +250,7 @@ struct create_face_impl
         else {
           face = iface->second;
         }
-        mesh.declare_relation(m_bucket[ielem], face, f);
+        mesh.declare_relation(m_bucket[ielem], face, side_ordinal);
       }
     }
   }
@@ -307,15 +352,27 @@ void create_faces( BulkData & mesh, const Selector & element_selector, bool conn
   BucketVector const& element_buckets =
       mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & mesh.mesh_meta_data().locally_owned_part());
 
+  BucketVector shells_first_element_buckets;
+  shells_first_element_buckets.reserve(element_buckets.size());
   //create the faces for the elements in each bucket
   for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
-    Bucket &b = *element_buckets[i];
-
-    create_face_impl functor( count_faces, ids_requested, face_map, shared_face_map, b);
-    stk::topology::apply_functor< create_face_impl > apply(functor);
-    apply( b.topology() );
+      Bucket *b = element_buckets[i];
+      if (b->topology().is_shell()) {
+          shells_first_element_buckets.push_back(b);
+      }
   }
-
+  for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
+      Bucket *b = element_buckets[i];
+      if ( ! b->topology().is_shell()) {
+          shells_first_element_buckets.push_back(b);
+      }
+  }
+  for (size_t i=0, e=shells_first_element_buckets.size(); i<e; ++i) {
+     Bucket &b = *shells_first_element_buckets[i];
+     create_face_impl functor( count_faces, ids_requested, face_map, shared_face_map, b);
+     stk::topology::apply_functor< create_face_impl > apply(functor);
+     apply( b.topology() );
+  }
   if (connect_faces_to_edges) {
       // connect pre-existing edges to new faces
       impl::connect_faces_to_edges(mesh, element_selector, edge_map);

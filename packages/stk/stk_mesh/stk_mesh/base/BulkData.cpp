@@ -1582,7 +1582,7 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
             ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
             const int num_conn         = bucket->num_connectivity(b_ord, r);
             for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
-              out << "          " << print_entity_key(m_mesh_meta_data, entity_key(entities[c_itr])) << "[" << ordinals[c_itr] << "]  ";
+              out << "          [" << ordinals[c_itr] << "]  " << entity_key(entities[c_itr]) << "  ";
               if (r != stk::topology::NODE_RANK) {
                 out << this->bucket(entities[c_itr]).topology();
               }

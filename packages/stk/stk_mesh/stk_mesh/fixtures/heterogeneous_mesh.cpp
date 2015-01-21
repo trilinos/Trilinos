@@ -42,6 +42,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase::Restriction, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_io/StkMeshIoBroker.hpp>
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -63,12 +64,12 @@ void heterogeneous_mesh_meta_data(
   VectorFieldType & node_coord )
 {
   stk::mesh::Part & universal        = meta_data.universal_part();
-  meta_data.declare_part_with_topology("hexes", stk::topology::HEX_8);
-  meta_data.declare_part_with_topology("wedges", stk::topology::WEDGE_6);
-  meta_data.declare_part_with_topology("tets", stk::topology::TET_4);
-  meta_data.declare_part_with_topology("pyramids", stk::topology::PYRAMID_5);
-  meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4);
-  meta_data.declare_part_with_topology("tri_shells", stk::topology::SHELL_TRI_3);
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("hexes", stk::topology::HEX_8));
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("wedges", stk::topology::WEDGE_6));
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("tets", stk::topology::TET_4));
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("pyramids", stk::topology::PYRAMID_5));
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4));
+  stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("tri_shells", stk::topology::SHELL_TRI_3));
   
   const stk::mesh::FieldBase::Restriction & res =
     stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );

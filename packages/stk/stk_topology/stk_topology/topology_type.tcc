@@ -306,6 +306,12 @@ struct topology::topology_type
     return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
   }
 
+  template <typename NodeArray>
+  static unsigned lexicographical_smallest_permutation_preserve_polarity( const NodeArray & nodes, const NodeArray & element_nodes)
+  {
+    return topology_detail::lexicographical_smallest_permutation_preserve_polarity_helper( type(), nodes, element_nodes, nodes[0]);
+  }
+
   BOOST_GPU_ENABLED
   operator topology_t() const
   { return Topology; }

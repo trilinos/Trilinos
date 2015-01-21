@@ -52,7 +52,7 @@ void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* tri
     }
 }
 
-//Lexicographical
+//BEGIN_lexicographical
 TEST(stk_topology_understanding, lexicographical_smallest_permutation)
 {
     {
@@ -84,6 +84,72 @@ TEST(stk_topology_understanding, lexicographical_smallest_permutation)
         EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
     }
 }
+//END_lexicographical
+
+//BEGIN_Preserves_polarity_lexicographical
+TEST(stk_topology_understanding, lexicographical_smallest_permutation_preserve_polarity)
+{
+    {
+        stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
+        unsigned shell_node_ids[3] = {10, 8, 12};
+        {
+            unsigned triangle_node_ids[3] = {12, 10, 8};
+
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned expected_positive_permutation = 2;
+
+            EXPECT_EQ(expected_positive_permutation, permutation_index);
+            EXPECT_LT(expected_positive_permutation, triangular_shell.num_positive_permutations());
+        }
+        {
+            unsigned triangle_node_ids[3] = {12, 8, 10};
+
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned expected_negative_permutation = 5;
+
+            EXPECT_EQ(expected_negative_permutation, permutation_index);
+            EXPECT_GE(expected_negative_permutation, triangular_shell.num_positive_permutations());
+        }
+    }
+}
+
+TEST(stk_topology_understanding, quad_lexicographical_smallest_permutation_preserve_polarity)
+{
+    {
+        stk::topology quad_shell = stk::topology::SHELL_QUAD_4;
+        unsigned shell_node_ids[4] = {1, 2, 3, 4};
+        {
+            unsigned quad_node_ids[4] = {1, 2, 3, 4};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_positive_permutation = 0;
+
+            EXPECT_EQ(expected_positive_permutation, permutation_index);
+            EXPECT_LT(expected_positive_permutation, quad_shell.num_positive_permutations());
+        }
+
+        {
+            unsigned quad_node_ids[4] = {1, 4, 3, 2};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_negative_permutation = 4;
+
+            EXPECT_EQ(expected_negative_permutation, permutation_index);
+            EXPECT_GE(expected_negative_permutation, quad_shell.num_positive_permutations());
+        }
+
+        {
+            unsigned quad_node_ids[4] = {4, 2, 3, 1};
+
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned expected_invalid_permutation = 8;
+
+            EXPECT_EQ(expected_invalid_permutation, permutation_index);
+            EXPECT_EQ(expected_invalid_permutation, quad_shell.num_permutations());
+        }
+    }
+}
+//END_Preserves_polarity_lexicographical
 
 //SubTopology
 TEST(stk_topology_understanding, sub_topology)

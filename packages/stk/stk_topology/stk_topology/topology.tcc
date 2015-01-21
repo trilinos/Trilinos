@@ -225,7 +225,27 @@ struct lexicographical_smallest_permutation_impl {
   bool              m_only_positive_permutations;
 };
 
-}} /*namespace stk::topology_detail*/
+template <typename NodeArray>
+struct lexicographical_smallest_permutation_preserve_polarity_impl {
+  typedef unsigned result_type;
+
+  BOOST_GPU_ENABLED
+  lexicographical_smallest_permutation_preserve_polarity_impl( const NodeArray &nodes, const NodeArray &element_nodes)
+    : m_nodes(nodes), m_element_nodes(element_nodes)
+  {}
+
+  template <typename Topology>
+  BOOST_GPU_ENABLED
+  result_type operator()(Topology) const
+  { return Topology::lexicographical_smallest_permutation_preserve_polarity(m_nodes, m_element_nodes); }
+
+  const NodeArray & m_nodes;
+  const NodeArray & m_element_nodes;
+};
+
+}
+
+} /*namespace stk::topology_detail*/
 
 namespace stk {
 
@@ -260,6 +280,16 @@ unsigned topology::lexicographical_smallest_permutation( const NodeArray &nodes,
 {
   typedef topology_detail::lexicographical_smallest_permutation_impl< NodeArray > functor;
   functor f(nodes, only_positive_permutations);
+  topology::apply_functor< functor > apply( f );
+  return apply(m_value);
+}
+
+template <typename NodeArray>
+BOOST_GPU_ENABLED inline
+unsigned topology::lexicographical_smallest_permutation_preserve_polarity( const NodeArray &nodes, const NodeArray &element_nodes) const
+{
+  typedef topology_detail::lexicographical_smallest_permutation_preserve_polarity_impl< NodeArray > functor;
+  functor f(nodes, element_nodes);
   topology::apply_functor< functor > apply( f );
   return apply(m_value);
 }
