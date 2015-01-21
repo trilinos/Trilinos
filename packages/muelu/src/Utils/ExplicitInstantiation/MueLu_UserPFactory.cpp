@@ -49,7 +49,7 @@
 
 #include "MueLu_UserPFactory_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
         template class MueLu::UserPFactory<S,LO,GO,N>;

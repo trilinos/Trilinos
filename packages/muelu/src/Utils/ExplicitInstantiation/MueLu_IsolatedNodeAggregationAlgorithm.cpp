@@ -49,7 +49,7 @@
 
 #include "MueLu_IsolatedNodeAggregationAlgorithm_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(LO,GO,N) \
         template class MueLu::IsolatedNodeAggregationAlgorithm<LO,GO,N>;

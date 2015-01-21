@@ -49,7 +49,7 @@
 
 #include "MueLu_Ifpack2Smoother_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
         template class MueLu::Ifpack2Smoother<S,LO,GO,N>;

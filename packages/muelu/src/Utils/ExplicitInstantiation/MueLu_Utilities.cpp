@@ -47,7 +47,7 @@
 
 #include "MueLu_Utilities_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #ifndef _MSC_VER // error C2950: 'MueLu::Utils2<double,int,int>' : cannot explicitly instantiate an explicit specialization
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N)          \

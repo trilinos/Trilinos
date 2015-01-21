@@ -49,7 +49,7 @@
 
 #include "MueLu_ThresholdAFilterFactory_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
         template class MueLu::ThresholdAFilterFactory<S,LO,GO,N>;

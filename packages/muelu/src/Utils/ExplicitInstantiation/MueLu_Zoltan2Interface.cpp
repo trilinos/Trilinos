@@ -49,7 +49,7 @@
 
 #include "MueLu_Zoltan2Interface_def.hpp"
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(LO,GO,N) \
         template class MueLu::Zoltan2Interface<LO,GO,N>;
