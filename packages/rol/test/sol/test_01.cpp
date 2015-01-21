@@ -47,6 +47,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_StdVector.hpp"
+#include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -54,6 +55,7 @@
 #include "ROL_Algorithm.hpp"
 
 #include "ROL_CVaRVector.hpp"
+#include "ROL_CVaRBoundConstraint.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
@@ -71,17 +73,22 @@
 
 template<class Real> 
 class ParametrizedObjectiveEx1 : public ROL::ParametrizedObjective<Real> {
+private:
+  Real alpha_; 
+
 public:
-  ParametrizedObjectiveEx1( ) {}
+  ParametrizedObjectiveEx1(Real alpha = 1.e1) : alpha_(alpha) {}
 
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > ex = 
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Real ip = 0.0;
+    Real ip  = 0.0;
+    Real pen = 0.0; 
     for ( unsigned i = 0; i < ex->size(); i++ ) {
-      ip += (*ex)[i]*(this->getParameter())[i];
+      ip  += (*ex)[i]*(this->getParameter())[i];
+      pen += (*ex)[i]; 
     }
-    return -std::cos(ip);
+    return ip + alpha_*0.5*std::pow(pen-1.0,2.0);
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
@@ -89,13 +96,12 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
     Teuchos::RCP<std::vector<Real> > eg =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
-    Real ip = 0.0;
+    Real pen = 0.0;
     for ( unsigned i = 0; i < ex->size(); i++ ) {
-      ip += (*ex)[i]*(this->getParameter())[i];
+      pen += (*ex)[i];
     }
-    ip = std::sin(ip);
     for ( unsigned i = 0; i < ex->size(); i++ ) {
-      (*eg)[i] = ip*(this->getParameter())[i];
+      (*eg)[i] = (this->getParameter())[i] + alpha_*(pen-1.0);
     } 
   }
 
@@ -106,15 +112,12 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
     Teuchos::RCP<std::vector<Real> > ehv =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
-    Real ip1 = 0.0;
-    Real ip2 = 0.0;
+    Real pen = 0.0;
     for ( unsigned i = 0; i < ex->size(); i++ ) {
-      ip1 += (*ex)[i]*(this->getParameter())[i];
-      ip2 += (*ev)[i]*(this->getParameter())[i];
+      pen += (*ev)[i];
     }
-    ip1 = std::cos(ip1);
     for ( unsigned i = 0; i < ex->size(); i++ ) {
-      (*ehv)[i] = ip1*ip2*(this->getParameter())[i]; 
+      (*ehv)[i] = alpha_*pen; 
     } 
   }
 };
@@ -153,39 +156,38 @@ int main(int argc, char* argv[]) {
   /************************* CONSTRUCT SOL COMPONENTS *******************************************/
   /**********************************************************************************************/
   // Build vectors
-  unsigned dim = 2;
+  unsigned dim = 4;
   Teuchos::RCP<std::vector<double> > x_rcp = Teuchos::rcp( new std::vector<double>(dim,0.0) );
   ROL::StdVector<double> x(x_rcp);
   Teuchos::RCP<std::vector<double> > d_rcp = Teuchos::rcp( new std::vector<double>(dim,0.0) );
   ROL::StdVector<double> d(d_rcp);
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*d_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*d_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   // Build samplers
   int nSamp = 1000;  
+  std::vector<std::vector<double> > bounds(dim);
   std::vector<double> tmp(2,0.0);
-  tmp[0] = -1.0; tmp[1] = 1.0;
-  std::vector<std::vector<double> > bounds(dim,tmp);
+  double inc = 0.125;
+  double val = -0.5;
+  for (unsigned i = 0; i < dim; i++) {
+    tmp[0] = val-inc; tmp[1] = val+inc;
+    bounds[i] = tmp;
+    std::cout << val-inc << "  " << val+inc << "\n";
+    inc *= 2.0;
+  }
   Teuchos::RCP<ROL::BatchManager<double> > bman =
     Teuchos::rcp(new ROL::BatchManager<double>());
   ROL::MonteCarloGenerator<double> vsampler(nSamp,bounds,bman,false,false,100);
-  /*std::vector<double> mean(dim,0.0); mean[1] = 1.0;
-  std::vector<double> std(dim,1.0);  std[1]  = 5.0;
-  ROL::MonteCarloGenerator<double> gsampler(nSamp,mean,std,bman);
-  std::ofstream file;
-  std::stringstream name;
-  file.open(name.str().c_str());
-  for ( unsigned i = 0; i < gsampler.numMySamples(); i++ ) {
-    for ( unsigned j = 0; j < dim; j++ ) { 
-      file << (gsampler.getMyPoint(i))[j] << "  ";
-    }
-    file << "\n";
-  }
-  file.close();*/
   // Build risk-averse objective function
   ParametrizedObjectiveEx1<double> pObj;
   Teuchos::RCP<ROL::RiskMeasure<double> > rm;
   Teuchos::RCP<ROL::RiskAverseObjective<double> > obj;
+  // Build bound constraints
+  std::vector<double> l(dim,0.0);
+  std::vector<double> u(dim,1.0);
+  Teuchos::RCP<ROL::BoundConstraint<double> > con = 
+    Teuchos::rcp( new ROL::StdBoundConstraint<double>(l,u) );
   // Test parametrized objective functions
   std::cout << "Check Derivatives of Parametrized Objective Function\n";
   pObj.setParameter(vsampler.getMyPoint(0));
@@ -199,7 +201,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -207,7 +209,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -223,14 +225,14 @@ int main(int argc, char* argv[]) {
   ROL::EAbsoluteValue eav = ROL::ABSOLUTEVALUE_C2;
   Teuchos::RCP<ROL::PositiveFunction<double> > pf = Teuchos::rcp( new ROL::AbsoluteValue<double>(gamma,eav) );
   // Moment vector
-  std::vector<double> order(3,0.0); order[0] = 2.0; order[1] = 3.0; order[2] = 4.0;
+  std::vector<double> order(2,0.0); order[0] = 2.0; order[1] = 4.0;
   // Moment coefficients
-  std::vector<double> coeff(3,0.5);
+  std::vector<double> coeff(2,0.1);
   rm  = Teuchos::rcp( new ROL::MeanDeviation<double>(order,coeff,pf) );
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -238,7 +240,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -253,7 +255,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -261,7 +263,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -273,14 +275,14 @@ int main(int argc, char* argv[]) {
   /**********************************************************************************************/
   std::cout << "\nMEAN PLUS DEVIATION FROM TARGET\n";
   // Moment targets
-  std::vector<double> target(3,-0.5);
+  std::vector<double> target(2,-0.1);
   // Risk measure
   rm  = Teuchos::rcp( new ROL::MeanDeviationFromTarget<double>(target,order,coeff,pf) );
   // Risk averse objective
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -288,7 +290,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -300,12 +302,14 @@ int main(int argc, char* argv[]) {
   /**********************************************************************************************/
   std::cout << "\nMEAN PLUS VARIANCE FROM TARGET\n";
   // Risk measure
+  coeff[1] = 0.0;
   rm  = Teuchos::rcp( new ROL::MeanVarianceFromTarget<double>(target,order,coeff,pf) );
+  coeff[1] = 0.1;
   // Risk averse objective
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -313,7 +317,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -339,7 +343,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -347,7 +351,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -364,7 +368,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -372,7 +376,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -389,7 +393,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -397,7 +401,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -414,7 +418,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -422,7 +426,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
@@ -437,9 +441,11 @@ int main(int argc, char* argv[]) {
   double c = 0.8;
   rm  = Teuchos::rcp( new ROL::CVaR<double>(prob,c,plusf) );
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+  Teuchos::RCP<ROL::BoundConstraint<double> > CVaRcon = 
+    Teuchos::rcp( new ROL::CVaRBoundConstraint<double>(con) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   double xv = 10.0*(double)rand()/(double)RAND_MAX-5.0, dv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
   Teuchos::RCP<ROL::Vector<double> > xp = Teuchos::rcp(&x,false);
@@ -452,7 +458,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(xc,*obj,true);
+  algo->run(xc,*obj,*CVaRcon,true);
   // Print Solution
   std::cout << "t = " << xc.getVaR() << "\n";
   std::cout << "x = (";
@@ -471,7 +477,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   xv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
   dv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
@@ -487,7 +493,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(xq,*obj,true);
+  algo->run(xq,*obj,*CVaRcon,true);
   // Print Solution
   std::cout << "t = " << xq.getVaR() << "\n";
   std::cout << "x = (";
@@ -503,7 +509,7 @@ int main(int argc, char* argv[]) {
   obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
   // Test objective functions
   for ( unsigned i = 0; i < dim; i++ ) {
-    (*x_rcp)[i] = 10.0*(double)rand()/(double)RAND_MAX - 5.0;
+    (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
   }
   std::cout << "\nCheck Derivatives of Risk-Averse Objective Function\n";
   obj->checkGradient(x,d,true);
@@ -511,7 +517,7 @@ int main(int argc, char* argv[]) {
   // Run ROL algorithm
   step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
   algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-  algo->run(x,*obj,true);
+  algo->run(x,*obj,*con,true);
   // Print Solution
   std::cout << "x = (";
   for ( unsigned i = 0; i < dim-1; i++ ) {
