@@ -50,7 +50,7 @@
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_SERIAL)
 
 #include "Tpetra_CrsMatrix_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
 
 #define TPETRA_CRSMATRIX_SERIALNODE_INSTANT( SCALAR, LO, GO ) \

@@ -49,7 +49,7 @@
 // looks a bit different than the other ones.
 
 #include "TpetraExt_BlockExtraction_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "TpetraExt_BlockExtraction_def.hpp"
 
 namespace Tpetra {

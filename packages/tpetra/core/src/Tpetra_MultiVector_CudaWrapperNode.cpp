@@ -49,7 +49,7 @@
 // unless KokkosOpenMPWrapperNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #  include "Tpetra_MultiVector_decl.hpp"
-#  include "Tpetra_ETIHelperMacros.h"
+#  include "TpetraCore_ETIHelperMacros.h"
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_KOKKOSCUDAWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \

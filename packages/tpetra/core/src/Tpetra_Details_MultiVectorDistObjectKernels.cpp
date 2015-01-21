@@ -49,7 +49,7 @@
 
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && TPETRA_USE_KOKKOS_DISTOBJECT
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_Details_MultiVectorDistObjectKernels_def.hpp"
 
 #include "Kokkos_Core.hpp"

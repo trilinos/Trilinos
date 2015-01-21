@@ -50,7 +50,7 @@
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_TBB)
 
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 
 #define TPETRA_CRSMATRIX_MULTIPLYOP_TBBNODE_INSTANT( T, SCALAR, LO, GO ) \

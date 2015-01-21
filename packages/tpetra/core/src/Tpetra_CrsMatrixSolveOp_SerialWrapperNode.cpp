@@ -50,7 +50,7 @@
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 #include "Tpetra_CrsMatrixSolveOp_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 
 // FIXME (mfh 09 Jan 2015) This is unfortunately needed for

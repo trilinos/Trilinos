@@ -45,7 +45,7 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "TpetraExt_MMHelpers_def.hpp"
 
 namespace Tpetra {

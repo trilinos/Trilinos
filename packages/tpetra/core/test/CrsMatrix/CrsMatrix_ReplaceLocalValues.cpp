@@ -46,7 +46,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_ETIHelperMacros.h>
+#include <TpetraCore_ETIHelperMacros.h>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>

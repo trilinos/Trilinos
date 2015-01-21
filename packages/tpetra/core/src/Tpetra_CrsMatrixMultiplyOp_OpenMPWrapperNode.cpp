@@ -50,7 +50,7 @@
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 
 #define TPETRA_CRSMATRIX_MULTIPLYOP_OPENMPWRAPPERNODE_INSTANT( T, SCALAR, LO, GO ) \

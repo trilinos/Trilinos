@@ -46,7 +46,7 @@
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 #include "Tpetra_Experimental_BlockVector_def.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
 

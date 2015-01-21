@@ -41,7 +41,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#include <Tpetra_ETIHelperMacros.h>
+#include <TpetraCore_ETIHelperMacros.h>
 
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_DefaultPlatform.hpp>

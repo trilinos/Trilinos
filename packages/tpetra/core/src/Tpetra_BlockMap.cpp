@@ -49,7 +49,7 @@
 // looks a bit different than the other ones.
 
 #include "Tpetra_BlockMap_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_BlockMap_def.hpp"
 
 namespace Tpetra {

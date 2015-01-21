@@ -49,7 +49,7 @@
 // unless KokkosSerialWrapperNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Tpetra_CrsMatrix_decl.hpp"
-#include "Tpetra_ETIHelperMacros.h"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
 
 #define TPETRA_CRSMATRIX_SERIALWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \

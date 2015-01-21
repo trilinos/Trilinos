@@ -49,7 +49,7 @@
 // unless OpenMPNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_OPENMP)
 #  include "Tpetra_MultiVector_decl.hpp"
-#  include "Tpetra_ETIHelperMacros.h"
+#  include "TpetraCore_ETIHelperMacros.h"
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_OPENMPNODE_INSTANT( SCALAR, LO , GO ) \
