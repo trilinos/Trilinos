@@ -955,6 +955,145 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
   Device::finalize();                                                   \
   if (Kokkos::HostSpace::execution_space::is_initialized())             \
     Kokkos::HostSpace::execution_space::finalize();                     \
+}                                                                       \
+TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
+    comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
+                                                                        \
+  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
+    Kokkos::HostSpace::execution_space::initialize();                   \
+  if (!Device::is_initialized())                                        \
+    Device::initialize();                                               \
+                                                                        \
+  int n = 7;                                                            \
+  int p = 5;                                                            \
+  int num_proc = comm->getSize();                                       \
+  ValueTypeSerializer<int,FadType> fts(                                 \
+    rcp(new ValueTypeSerializer<int,double>), p);                       \
+                                                                        \
+  Kokkos::View<FadType*,Device> x("x",n,p+1), sums("sums",n,p+1),       \
+    sums2("sums2",n,p+1), sums3("sums3",n,p+1);                         \
+  for (int i=0; i<n; i++) {                                             \
+    x[i] = FadType(p, 1.0*(i+1));                                       \
+    for (int j=0; j<p; j++)                                             \
+      x[i].fastAccessDx(j) = 2.0*(i+1);                                 \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    sums[i] = FadType(p, 1.0*(i+1)*num_proc);                           \
+    for (int j=0; j<p; j++)                                             \
+      sums[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                     \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    sums2[i] = FadType(p, 0.0);                                         \
+  }                                                                     \
+                                                                        \
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, x, sums2);          \
+  bool success1 = checkFadArrays(                                       \
+    sums, sums2, std::string(#FAD)+" Sum All", out);                    \
+  success1 = checkResultOnAllProcs(*comm, out, success1);               \
+                                                                        \
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, x, sums3);     \
+  bool success2 = checkFadArrays(                                       \
+    sums, sums3, std::string(#FAD)+" Sum All FTS", out);                \
+  success2 = checkResultOnAllProcs(*comm, out, success2);               \
+  success = success1 && success2;                                       \
+                                                                        \
+  Device::finalize();                                                   \
+  if (Kokkos::HostSpace::execution_space::is_initialized())             \
+    Kokkos::HostSpace::execution_space::finalize();                     \
+}                                                                       \
+TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
+    comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
+                                                                        \
+  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
+    Kokkos::HostSpace::execution_space::initialize();                   \
+  if (!Device::is_initialized())                                        \
+    Device::initialize();                                               \
+                                                                        \
+  int n = 7;                                                            \
+  int p = 5;                                                            \
+  int rank = comm->getRank();                                           \
+  int num_proc = comm->getSize();                                       \
+  ValueTypeSerializer<int,FadType> fts(                                 \
+    rcp(new ValueTypeSerializer<int,double>), p);                       \
+                                                                        \
+  Kokkos::View<FadType*,Device> x("x",n,p+1), maxs("maxs",n,p+1),       \
+    maxs2("maxs2",n,p+1), maxs3("maxs3",n,p+1);                         \
+  for (int i=0; i<n; i++) {                                             \
+    x[i] = FadType(p, 1.0*(i+1)*(rank+1));                              \
+    for (int j=0; j<p; j++)                                             \
+      x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                        \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    maxs[i] = FadType(p, 1.0*(i+1)*num_proc);                           \
+    for (int j=0; j<p; j++)                                             \
+      maxs[i].fastAccessDx(j) = 2.0*(i+1)*num_proc;                     \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    maxs2[i] = FadType(p, 0.0);                                         \
+  }                                                                     \
+                                                                        \
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, x, maxs2);          \
+  bool success1 = checkFadArrays(                                       \
+    maxs, maxs2, std::string(#FAD)+" Max All", out);                    \
+  success1 = checkResultOnAllProcs(*comm, out, success1);               \
+                                                                        \
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, x, maxs3);     \
+  bool success2 = checkFadArrays(                                       \
+    maxs, maxs3, std::string(#FAD)+" Max All FTS", out);                \
+  success2 = checkResultOnAllProcs(*comm, out, success2);               \
+  success = success1 && success2;                                       \
+                                                                        \
+  Device::finalize();                                                   \
+  if (Kokkos::HostSpace::execution_space::is_initialized())             \
+    Kokkos::HostSpace::execution_space::finalize();                     \
+}                                                                       \
+TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >                           \
+    comm = Teuchos::DefaultComm<Ordinal>::getComm();                    \
+                                                                        \
+  if (!Kokkos::HostSpace::execution_space::is_initialized())            \
+    Kokkos::HostSpace::execution_space::initialize();                   \
+  if (!Device::is_initialized())                                        \
+    Device::initialize();                                               \
+                                                                        \
+  int n = 7;                                                            \
+  int p = 5;                                                            \
+  int rank = comm->getRank();                                           \
+  ValueTypeSerializer<int,FadType> fts(                                 \
+    rcp(new ValueTypeSerializer<int,double>), p);                       \
+                                                                        \
+  Kokkos::View<FadType*,Device> x("x",n,p+1), mins("mins",n,p+1),       \
+    mins2("mins2",n,p+1), mins3("mins3",n,p+1);                         \
+  for (int i=0; i<n; i++) {                                             \
+    x[i] = FadType(p, 1.0*(i+1)*(rank+1));                              \
+    for (int j=0; j<p; j++)                                             \
+      x[i].fastAccessDx(j) = 2.0*(i+1)*(rank+1);                        \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    mins[i] = FadType(p, 1.0*(i+1));                                    \
+    for (int j=0; j<p; j++)                                             \
+      mins[i].fastAccessDx(j) = 2.0*(i+1);                              \
+  }                                                                     \
+  for (int i=0; i<n; i++) {                                             \
+    mins2[i] = FadType(p, 0.0);                                         \
+  }                                                                     \
+                                                                        \
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, x, mins2);          \
+  bool success1 = checkFadArrays(                                       \
+    mins, mins2, std::string(#FAD)+" Min All", out);                    \
+  success1 = checkResultOnAllProcs(*comm, out, success1);               \
+                                                                        \
+  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, x, mins3);     \
+  bool success2 = checkFadArrays(                                       \
+    mins, mins3, std::string(#FAD)+" Min All FTS", out);                \
+  success2 = checkResultOnAllProcs(*comm, out, success2);               \
+  success = success1 && success2;                                       \
+                                                                        \
+  Device::finalize();                                                   \
+  if (Kokkos::HostSpace::execution_space::is_initialized())             \
+    Kokkos::HostSpace::execution_space::finalize();                     \
 }
 
 #ifdef KOKKOS_HAVE_OPENMP

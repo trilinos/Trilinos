@@ -630,6 +630,117 @@ namespace Sacado {
 namespace Teuchos {
 
 template<typename Ordinal,
+         typename ST, typename SL, typename SD, typename SM,
+         typename RT, typename RL, typename RD, typename RM>
+void
+reduceAll(const Comm<Ordinal>& comm,
+          const EReductionType reductType,
+          const Ordinal count,
+          const Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewSpecializeSacadoFad>& sendBuffer,
+          const Kokkos::View<RT,RL,RD,RM,Kokkos::Impl::ViewSpecializeSacadoFad>& recvBuffer)
+{
+  // We can't implement reduceAll by extracting the underlying array (since we
+  // can't reduce across the derivative dimension) and we can't just extract
+  // a pointer due to ViewFad.  In principle we could handle ViewFad in the
+  // serializer, but for the time being we just copy the view's into local
+  // buffers (on the host).
+  typedef Kokkos::Impl::ViewSpecializeSacadoFad specialize;
+  typedef Kokkos::View<ST,SL,SD,SM,specialize> SendViewType;
+  typedef Kokkos::View<RT,RL,RD,RM,specialize> RecvViewType;
+  typedef typename SendViewType::value_type send_value_type;
+  typedef typename RecvViewType::value_type recv_value_type;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    SendViewType::rank > 1 || RecvViewType::rank > 1, std::invalid_argument,
+    "Teuchos::reduceAll: Both send and receive Views must have rank 1.  "
+    "The send View's rank is " << SendViewType::rank << " and the receive "
+    "View's rank is " << RecvViewType::rank << ".");
+
+  // Copy send buffer into local array
+  Teuchos::Array<send_value_type> localSendBuffer(count);
+  typename SendViewType::HostMirror hostSendBuffer =
+    Kokkos::create_mirror_view(sendBuffer);
+  Kokkos::deep_copy(hostSendBuffer, sendBuffer);
+  for (Ordinal i=0; i<count; ++i)
+    localSendBuffer[i] = hostSendBuffer(i);
+
+  // Copy receive buffer into local array (necessary to initialize Fad types
+  // properly)
+  Teuchos::Array<recv_value_type> localRecvBuffer(count);
+  typename RecvViewType::HostMirror hostRecvBuffer =
+    Kokkos::create_mirror_view(recvBuffer);
+  Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
+  for (Ordinal i=0; i<count; ++i)
+    localRecvBuffer[i] = hostRecvBuffer(i);
+
+  // Do reduce-all
+  reduceAll(comm, reductType, count,
+            localSendBuffer.getRawPtr(),
+            localRecvBuffer.getRawPtr());
+
+  // Copy back into original buffer
+  for (Ordinal i=0; i<count; ++i)
+    hostRecvBuffer(i) = localRecvBuffer[i];
+  Kokkos::deep_copy(recvBuffer, hostRecvBuffer);
+}
+
+template<typename Ordinal, typename Serializer,
+         typename ST, typename SL, typename SD, typename SM,
+         typename RT, typename RL, typename RD, typename RM>
+void
+reduceAll(const Comm<Ordinal>& comm,
+          const Serializer& serializer,
+          const EReductionType reductType,
+          const Ordinal count,
+          const Kokkos::View<ST,SL,SD,SM,Kokkos::Impl::ViewSpecializeSacadoFad>& sendBuffer,
+          const Kokkos::View<RT,RL,RD,RM,Kokkos::Impl::ViewSpecializeSacadoFad>& recvBuffer)
+{
+  // We can't implement reduceAll by extracting the underlying array (since we
+  // can't reduce across the derivative dimension) and we can't just extract
+  // a pointer due to ViewFad.  In principle we could handle ViewFad in the
+  // serializer, but for the time being we just copy the view's into local
+  // buffers (on the host).
+  typedef Kokkos::Impl::ViewSpecializeSacadoFad specialize;
+  typedef Kokkos::View<ST,SL,SD,SM,specialize> SendViewType;
+  typedef Kokkos::View<RT,RL,RD,RM,specialize> RecvViewType;
+  typedef typename SendViewType::value_type send_value_type;
+  typedef typename RecvViewType::value_type recv_value_type;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    SendViewType::rank > 1 || RecvViewType::rank > 1, std::invalid_argument,
+    "Teuchos::reduceAll: Both send and receive Views must have rank 1.  "
+    "The send View's rank is " << SendViewType::rank << " and the receive "
+    "View's rank is " << RecvViewType::rank << ".");
+
+  // Copy send buffer into local array
+  Teuchos::Array<send_value_type> localSendBuffer(count);
+  typename SendViewType::HostMirror hostSendBuffer =
+    Kokkos::create_mirror_view(sendBuffer);
+  Kokkos::deep_copy(hostSendBuffer, sendBuffer);
+  for (Ordinal i=0; i<count; ++i)
+    localSendBuffer[i] = hostSendBuffer(i);
+
+  // Copy receive buffer into local array (necessary to initialize Fad types
+  // properly)
+  Teuchos::Array<recv_value_type> localRecvBuffer(count);
+  typename RecvViewType::HostMirror hostRecvBuffer =
+    Kokkos::create_mirror_view(recvBuffer);
+  Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
+  for (Ordinal i=0; i<count; ++i)
+    localRecvBuffer[i] = hostRecvBuffer(i);
+
+  // Do reduce-all
+  reduceAll(comm, serializer, reductType, count,
+            localSendBuffer.getRawPtr(),
+            localRecvBuffer.getRawPtr());
+
+  // Copy back into original buffer
+  for (Ordinal i=0; i<count; ++i)
+    hostRecvBuffer(i) = localRecvBuffer[i];
+  Kokkos::deep_copy(recvBuffer, hostRecvBuffer);
+}
+
+template<typename Ordinal,
          typename T, typename L, typename D, typename M>
 void broadcast(const Comm<Ordinal>& comm,
                const int rootRank,
