@@ -201,7 +201,7 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION dot_type
   dot (const val_type& x, const val_type& y) {
-    return Kokkos::conj (y) * x;
+    return Kokkos::conj (x) * y;
   }
 };
 
@@ -220,7 +220,7 @@ struct InnerProductSpaceTraits<std::complex<T> >
     return ArithTraits<val_type>::abs (x);
   }
   static dot_type dot (const val_type& x, const val_type& y) {
-    return std::conj (y) * x;
+    return std::conj (x) * y;
   }
 };
 
