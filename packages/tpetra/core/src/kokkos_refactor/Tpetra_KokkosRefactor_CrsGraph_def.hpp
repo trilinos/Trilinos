@@ -1740,7 +1740,7 @@ namespace Tpetra {
       //We supply a workaround n as well as other code variants which produce or not produce the error
   #if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
     #define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
-    #if GCC_VERSION >= 40900
+    #if GCC_VERSION >= 490
       #define GCC_WORKAROUND
     #endif
   #endif
