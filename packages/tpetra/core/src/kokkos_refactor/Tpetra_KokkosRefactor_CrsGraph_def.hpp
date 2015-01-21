@@ -1732,13 +1732,64 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     size_type oldInd = static_cast<size_type> (rowInfo.numEntries);
+
 #ifdef HAVE_TPETRA_DEBUG
     try {
 #endif // HAVE_TPETRA_DEBUG
+      //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
+      //We supply a workaround n as well as other code variants which produce or not produce the error
+  #if defined(GCC_VERSION)
+  #if GCC_VERSION >= 40900
+      size_type nNI = static_cast<size_type>(numNewInds);
+      memcpy( &oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+      /*
+      //Original Code Fails
+      for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+          ++newInd, ++oldInd) {
+         oldRowVals[oldInd] = newRowVals[newInd];
+      }
+
+
+      //char cast variant fails
+      char* oldRowValPtr = (char*)&oldRowVals[oldInd];
+      const char* newRowValPtr = (const char*) &newRowVals[0];
+
+      for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
+         oldRowValPtr[newInd] = newRowValPtr[newInd];
+      }
+
+      //Raw ptr variant fails
+      Scalar* oldRowValPtr = &oldRowVals[oldInd];
+      Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
+
+      for(size_type newInd = 0; newInd < nNI; newInd++) {
+         oldRowValPtr[newInd] = newRowValPtr[newInd];
+      }
+
+      //memcpy works
+      for (size_type newInd = 0; newInd < nNI; newInd++) {
+         memcpy( &oldRowVals[oldInd+newInd], &newRowVals[newInd], sizeof(Scalar));
+      }
+
+      //just one loop index fails
+      for (size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowVals[oldInd+newInd] = newRowVals[newInd];
+      }
+
+      //inline increment fails
+      for (size_type newInd = 0; newInd < numNewInds;) {
+        oldRowVals[oldInd++] = newRowVals[newInd++];
+      }
+
+      */
+
+  #else // GCC Workaround above
       for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
            ++newInd, ++oldInd) {
         oldRowVals[oldInd] = newRowVals[newInd];
       }
+  #endif // GCC Workaround
+  #endif // GCC_VERSION defined
 #ifdef HAVE_TPETRA_DEBUG
     }
     catch (std::exception& e) {
