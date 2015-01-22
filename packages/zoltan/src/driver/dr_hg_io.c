@@ -1234,7 +1234,7 @@ static int process_mtxp_file(PARIO_INFO_PTR pio_info,
   int preprocessed)
 {
 ZOLTAN_ID_TYPE nedges, nvtxs, npins, numew;
-ZOLTAN_ID_TYPE eid, vid, i, j;
+ZOLTAN_ID_TYPE eid, vid, i;
 ZOLTAN_ID_TYPE myminPin=0, mymaxPin=0, myminVtx=0, mymaxVtx=0, myshare, share;
 ZOLTAN_ID_TYPE *myi, *myj, *myvno, *myeno;
 int ok, not_ok;
@@ -1301,18 +1301,18 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
       if (myrank < nDistProcs){
         share = nvtxs / nDistProcs;
         i = nvtxs - (nDistProcs * share);
-        myshare = ((myrank < i) ? share+1 : share);
+        myshare = ((myrank < (int)i) ? share+1 : share);
         myminVtx = myrank * myshare;
-        if (myrank >= i) myminVtx += i;
+        if (myrank >= (int)i) myminVtx += i;
         mymaxVtx = myminVtx + myshare - 1;
       }
     }
     if (pio_info->init_dist_pins == INITIAL_LINEAR){ /* pin distribution */
       share = npins / nprocs;
       i = npins - (nprocs * share);
-      myshare = ((myrank < i) ? share+1 : share);
+      myshare = ((myrank < (int)i) ? share+1 : share);
       myminPin = myrank * myshare;
-      if (myrank >= i) myminPin += i;
+      if (myrank >= (int)i) myminPin += i;
       mymaxPin = myminPin + myshare - 1;
     }
   }
@@ -1519,15 +1519,16 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
       }
 
       if (mine){
+        int jj;
 	myvno[nextv] = vid;
-	for (j=0; j<vdim; j++){
-	  token = get_nth_token(linestr, 1 + j, strlen(linestr), 1, (char)0);
+	for (jj=0; jj<vdim; jj++){
+	  token = get_nth_token(linestr, 1 + jj, strlen(linestr), 1, (char)0);
 	  if (!token){
 	    sprintf(cmesg,"%s\nCan't find %d vertex weights\n",linestr,vdim);
 	    Gen_Error(0, cmesg);
 	    goto failure;
 	  }
-	  myvwgt[nextv*vdim + j] = (float)atof(token);
+	  myvwgt[nextv*vdim + jj] = (float)atof(token);
 	}
 	nextv++;
       }
@@ -1563,15 +1564,16 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
       }
 
       if (mine){
+        int jj;
 	myeno[nexte] = eid;
-	for (j=0; j<edim; j++){
-	  token = get_nth_token(linestr, 1 + j, strlen(linestr), 1, (char)0);
+	for (jj=0; jj<edim; jj++){
+	  token = get_nth_token(linestr, 1 + jj, strlen(linestr), 1, (char)0);
 	  if (!token){
 	    sprintf(cmesg,"%s\nCan't find %d edge weights\n",linestr,edim);
 	    Gen_Error(0, cmesg);
 	    goto failure;
 	  }
-	  myewgt[nexte*edim + j] = (float)atof(token);
+	  myewgt[nexte*edim + jj] = (float)atof(token);
 	}
 	nexte++;
       }
@@ -1727,25 +1729,25 @@ FILE *fp=NULL;
 
   while (1){
     /* read next chunk */
-
-    rc = fread(inbuf, 1, inbufsize, fp);
-    if (rc < inbufsize){
-      if ((rc == 0) && feof(fp)) break;
+    size_t rrc;
+    rrc = fread(inbuf, 1, inbufsize, fp);
+    if (rrc < inbufsize){
+      if ((rrc == 0) && feof(fp)) break;
       if (ferror(fp)){
         status = 0;
         goto End;
       }
     }
 
-    bytes_read += rc;
+    bytes_read += rrc;
 
-    if ((bytes_read == fsize) && (inbuf[rc-1] != '\n')){
+    if ((bytes_read == fsize) && (inbuf[rrc-1] != '\n')){
       /* we assume last character in the file is new line */
-      inbuf[rc++] = '\n';
+      inbuf[rrc++] = '\n';
     }
 
     c_in = inbuf;
-    c_in_end = inbuf + rc;
+    c_in_end = inbuf + rrc;
 
     while (c_in < c_in_end){
       c_in = first_char(c_in, max_sanity);  /* skip blanks */
@@ -2080,7 +2082,7 @@ static int my_vtx(int proc,
   }
   else if (pio_info->init_dist_type == INITIAL_CYCLIC){
     /* Deal out the vertices in a random fashion */
-    mine = ((vtx % nprocs) == myrank);
+    mine = ((int)(vtx % nprocs) == myrank);
   }
   else if (pio_info->init_dist_type == INITIAL_LINEAR){
     /* First process gets first nvtxs/nprocs vertices, and so on */
@@ -2108,7 +2110,7 @@ static int my_pin(ZOLTAN_ID_TYPE eid, ZOLTAN_ID_TYPE vid, int proc,
   }
   else if (pio_info->init_dist_pins == INITIAL_CYCLIC){
     /* Deal out the pins in a random fashion */
-    mine = ((pin % nprocs) == myrank);
+    mine = ((int)(pin % nprocs) == myrank);
   }
   else if (pio_info->init_dist_pins == INITIAL_LINEAR){
     /* First process gets first npins/nprocs pins, and so on */
@@ -2118,12 +2120,12 @@ static int my_pin(ZOLTAN_ID_TYPE eid, ZOLTAN_ID_TYPE vid, int proc,
     /* Each process gets entire rows (hyperedges) of pins, no
        row is split across processes  */
 
-    mine = ((eid % nprocs) == myrank);
+    mine = ((int)(eid % nprocs) == myrank);
   }
   else if (pio_info->init_dist_pins == INITIAL_COL){
     /* Each process gets entire columns of pins, no column is split
        across processes  */
-    mine = ((vid % nprocs) == myrank);
+    mine = ((int)(vid % nprocs) == myrank);
   }
 
   return mine;
