@@ -42,8 +42,14 @@
 // @HEADER
 
 
-#include "Sacado.hpp"
+#ifndef ROL_SACADO_EQUALITYCONSTRAINT
+#define ROL_SACADO_EQUALITYCONSTRAINT
 
+#include "Sacado.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_EqualityConstraint.hpp"
+
+using namespace ROL;
 
 //! \brief ROL interface wrapper for Sacado Constraint
 template<class Real, class Constr>
@@ -270,3 +276,6 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
         (*ahuvp)[i] = (*aju_fad_rcp)[i].dx(0);             
     }
 }
+
+
+#endif

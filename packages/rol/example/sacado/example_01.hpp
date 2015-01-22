@@ -51,20 +51,9 @@
     \author Created by G. von Winckel
 **/
 
-#include <iostream>
-#include <iomanip>
 
-#include "Sacado.hpp"
 
 #include "ROL_StdVector.hpp"
-#include "ROL_Objective.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_Algorithm.hpp"
-
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
 
 using namespace ROL;
 

@@ -41,7 +41,14 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_SACADO_OBJECTIVE
+#define ROL_SACADO_OBJECTIVE
+
 #include "Sacado.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_Objective.hpp"
+
+using namespace ROL;
 
 /** \brief Generic objective wrapper class for class that uses Sacado */
 template<class Real, class Obj>
@@ -75,8 +82,6 @@ class Sacado_Objective : public Objective<Real> {
         this->hessVecAD(hv,v,x,tol);
     }
 };
-
-
 
 
 
@@ -167,3 +172,4 @@ void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<Sc
 }
 
 
+#endif 

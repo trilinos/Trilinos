@@ -54,9 +54,20 @@
     \author Created by G. von Winckel
 **/
 
+#include <iostream>
+
+#include "ROL_Sacado_Objective.hpp"
+
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_Algorithm.hpp"
+
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "example_01.hpp"
-#include "ROL_Sacado_Objective.hpp"
+
+using namespace ROL;
 
 typedef double RealT;
 

@@ -52,9 +52,24 @@
     \author Created by G. von Winckel
 **/
 
-#include "example_02.hpp"
+#include <iostream>
+
 #include "ROL_Sacado_Objective.hpp"
 #include "ROL_Sacado_EqualityConstraint.hpp"
+
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_Algorithm.hpp"
+#include "ROL_EqualityConstraint.hpp"
+#include "ROL_CompositeStepSQP.hpp"
+
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "example_02.hpp"
+
+using namespace ROL;
+
 typedef double RealT;
 
 int main(int argc, char **argv)
