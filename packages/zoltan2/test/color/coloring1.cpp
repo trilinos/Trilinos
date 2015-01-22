@@ -197,7 +197,7 @@ int main(int narg, char** arg)
   // Coloring options to test.
   //////////////////////////////////
   std::string colorMethod("FirstFit"); 
-  int balanceColors = 0; 
+  //int balanceColors = 0; 
   cmdp.setOption("color_choice", &colorMethod,
        "Color choice method: FirstFit, LeastUsed, Random, RandomFast");
   // cmdp.setOption("balance_colors", &balanceColors, 
