@@ -259,12 +259,12 @@ namespace panzer_stk_classic {
 
     // get all part vectors
     stk_classic::mesh::Part *box[6];
-    box[3] = mesh.getSideset("left");    
+    box[0] = mesh.getSideset("front");   
     box[1] = mesh.getSideset("right");    
-    box[2] = mesh.getSideset("top");        
-    box[0] = mesh.getSideset("bottom");    
-    box[5] = mesh.getSideset("front");    
-    box[4] = mesh.getSideset("back");    
+    box[2] = mesh.getSideset("back");    
+    box[3] = mesh.getSideset("left");    
+    box[4] = mesh.getSideset("bottom");  
+    box[5] = mesh.getSideset("top");     
 
     stk_classic::mesh::Part *wall = mesh.getSideset("wall");
 
