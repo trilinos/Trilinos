@@ -51,11 +51,6 @@
 #ifndef _ZOLTAN2_COORDINATEMODEL_HPP_
 #define _ZOLTAN2_COORDINATEMODEL_HPP_
 
-// disable clang warnings
-#if defined (__clang__) && !defined (__INTEL_COMPILER)
-#pragma clang system_header
-#endif
-
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_MatrixAdapter.hpp>
