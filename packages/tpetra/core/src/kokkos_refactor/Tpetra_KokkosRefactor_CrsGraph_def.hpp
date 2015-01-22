@@ -1746,7 +1746,8 @@ namespace Tpetra {
   #endif
   #ifdef GCC_WORKAROUND
       size_type nNI = static_cast<size_type>(numNewInds);
-      memcpy( &oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+      if (nNI > 0)
+        memcpy(&oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
       /*
       //Original Code Fails
       for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
