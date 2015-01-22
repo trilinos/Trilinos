@@ -115,7 +115,7 @@ namespace panzer_stk_classic {
     addSideSets(mesh);
 
     // calls Stk_MeshFactory::rebalance
-    this->rebalance(mesh);
+    //this->rebalance(mesh);
   }
 
   //! From ParameterListAcceptor
@@ -192,8 +192,8 @@ namespace panzer_stk_classic {
                                    STK_Interface &mesh) const
   {
     typedef shards::Hexahedron<8> HexTopo;
-    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
-    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
+    const CellTopologyData *ctd = shards::getCellTopologyData<HexTopo>();
+    const CellTopologyData *side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
 
     for (int blk=0;blk<NumBlocks_;++blk) {
       std::stringstream ebPostfix;
@@ -203,13 +203,14 @@ namespace panzer_stk_classic {
       mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
     }
 
-    // add sidesets 
-    mesh.addSideset("left",side_ctd);
-    mesh.addSideset("right",side_ctd);
-    mesh.addSideset("top",side_ctd);
+    mesh.addSideset("left",  side_ctd);
+    mesh.addSideset("right", side_ctd);
+    mesh.addSideset("top",   side_ctd);
     mesh.addSideset("bottom",side_ctd);
-    mesh.addSideset("front",side_ctd);
-    mesh.addSideset("back",side_ctd);
+    mesh.addSideset("front", side_ctd);
+    mesh.addSideset("back",  side_ctd);
+
+    mesh.addSideset("wall",  side_ctd);
   }
 
   void 
@@ -221,11 +222,11 @@ namespace panzer_stk_classic {
     const int dim = mesh.getDimension();
 
     // build the nodes
-    std::vector<double> coord(dim,0.0);
+    std::vector<double> coords(dim,0.0);
     for (int i=0;i<NumNodesPerProc_;++i) {
       for (int k=0;k<dim;++k)
-        coord[k] = Coords_[i*dim+k];
-      mesh.addNode(Nodes_[i], coord);
+        coords[k] = Coords_[i*dim+k];
+      mesh.addNode(Nodes_[i], coords);
     }
    
     // build the elements
@@ -257,74 +258,46 @@ namespace panzer_stk_classic {
     mesh.beginModification();
 
     // get all part vectors
-    // stk_classic::mesh::Part *left = mesh.getSideset("left");
-    // stk_classic::mesh::Part *right = mesh.getSideset("right");
-    // stk_classic::mesh::Part *top = mesh.getSideset("top");
-    // stk_classic::mesh::Part *bottom = mesh.getSideset("bottom");
-    // stk_classic::mesh::Part *front = mesh.getSideset("front");
-    // stk_classic::mesh::Part *back = mesh.getSideset("back");
+    stk_classic::mesh::Part *box[6];
+    box[3] = mesh.getSideset("left");    
+    box[1] = mesh.getSideset("right");    
+    box[2] = mesh.getSideset("top");        
+    box[0] = mesh.getSideset("bottom");    
+    box[5] = mesh.getSideset("front");    
+    box[4] = mesh.getSideset("back");    
 
-    std::vector<stk_classic::mesh::Entity*> localElmts;
-    mesh.getMyElements(localElmts);
+    stk_classic::mesh::Part *wall = mesh.getSideset("wall");
+
+    std::vector<stk_classic::mesh::Entity*> elements;
+    mesh.getMyElements(elements);
 
     // loop over elements adding sides to sidesets
-    // std::vector<stk_classic::mesh::Entity*>::const_iterator itr;
-    // for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-    //   stk_classic::mesh::Entity * element = (*itr);
-    //   stk_classic::mesh::EntityId gid = element->identifier();      
-    //   stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+    for (std::vector<stk_classic::mesh::Entity*>::const_iterator 
+           itr=elements.begin();itr!=elements.end();++itr) {
+      stk_classic::mesh::Entity *element = (*itr);
+      stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+      
+      // loop over side id checking element neighbors
+      for (std::size_t i=0;i<relations.size();++i) {
+        stk_classic::mesh::Entity *side = relations[i].entity();
+        stk_classic::mesh::PairIterRelation neighbors = side->relations(mesh.getElementRank());
 
-    //   std::size_t nx,ny,nz;
-    //   nz = (gid-1) / (totalXElems*totalYElems);
-    //   gid = (gid-1)-nz*(totalXElems*totalYElems);
-    //   ny = gid / totalXElems;
-    //   nx = gid-ny*totalXElems;
-
-    //   if(nz==0) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(4,relations)->entity();
-
-    //     // on the back
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,back);
-    //   }
-    //   if(nz+1==totalZElems) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(5,relations)->entity();
-
-    //     // on the front
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,front);
-    //   }
-
-    //   if(ny==0) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(0,relations)->entity();
-
-    //     // on the bottom 
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,bottom);
-    //   }
-    //   if(ny+1==totalYElems) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(2,relations)->entity();
-
-    //     // on the top
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,top);
-    //   }
-
-    //   if(nx==0) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(3,relations)->entity();
-
-    //     // on the left
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,left);
-    //   }
-    //   if(nx+1==totalXElems) {
-    //     stk_classic::mesh::Entity * side = getRelationByID(1,relations)->entity();
-
-    //     // on the right
-    //     if(side->owner_rank()==machRank_)
-    //       mesh.addEntityToSideset(*side,right);
-    //   }
-    // }
+        const std::size_t numNeighbors = neighbors.size();
+        if (numNeighbors == 1) {
+          if (side->owner_rank() == machRank_)
+            mesh.addEntityToSideset(*side, box[i]);
+        } 
+        else if (numNeighbors == 2) {
+          std::string neig_block_id_0 = mesh.containingBlockId(neighbors[0].entity());
+          std::string neig_block_id_1 = mesh.containingBlockId(neighbors[1].entity());
+          if ((neig_block_id_0 != neig_block_id_1) && (side->owner_rank() == machRank_)) 
+            mesh.addEntityToSideset(*side, wall);
+        } 
+        else {
+          // runtime exception
+        }
+      }
+    }
 
     mesh.endModification();
   }
