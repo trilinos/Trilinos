@@ -1,5 +1,5 @@
 
-Release notes for Trilinos v11.12 or v12 -- I haven't decided yet.
+Release notes for Trilinos v11.14 
 
 The PartitioningSolution class's interface has changed.
 -  methods getPartList and getProcList have been renamed to 
@@ -15,6 +15,10 @@ The PartitioningSolution class's interface has changed.
    by the helper function getImportList in Zoltan2_PartitioningHelpers.hpp.
 -  pointAssign and boxAssign methods have been added for some geometric 
    partitioners.
+
+New graph coloring options:
+- The parameter color_choice can be used to obtain a more balanced coloring.
+  Valid values are FirstFit, Random, RandomFast, and LeastUsed.
 
 ----------------------------------
 
