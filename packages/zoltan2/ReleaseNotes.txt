@@ -14,11 +14,17 @@ The PartitioningSolution class's interface has changed.
 -  method convertSolutionToImportList has been removed and replaced 
    by the helper function getImportList in Zoltan2_PartitioningHelpers.hpp.
 -  pointAssign and boxAssign methods have been added for some geometric 
-   partitioners.
+   partitioners.  Support is provided through MultiJagged (MJ) partitioning.
+   pointAssign returns a part number that contains a given geometric point.  
+   boxAssign returns all parts that overlap a given geometric box.
 
 New graph coloring options:
 - The parameter color_choice can be used to obtain a more balanced coloring.
   Valid values are FirstFit, Random, RandomFast, and LeastUsed.
+
+New partitioning options:
+-  Scotch interface updated to Scotch v6 or later (Tested against v6.0.3.)
+-  Interface to ParMETIS v4 or later added.  (Tested against v4.0.3.)
 
 ----------------------------------
 
