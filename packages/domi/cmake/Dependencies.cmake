@@ -40,9 +40,8 @@
 # ***********************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos TpetraClassic)
-# SET(LIB_OPTIONAL_DEP_PACKAGES Epetra Tpetra PyTrilinos)
-SET(LIB_OPTIONAL_DEP_PACKAGES Epetra TpetraCore)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
+SET(LIB_OPTIONAL_DEP_PACKAGES Epetra TpetraClassic TpetraCore)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
 SET(LIB_REQUIRED_DEP_TPLS)
