@@ -26,6 +26,9 @@ New partitioning options:
 -  Scotch interface updated to Scotch v6 or later (Tested against v6.0.3.)
 -  Interface to ParMETIS v4 or later added.  (Tested against v4.0.3.)
 
+Miscellaneous:
+-  Parameter "rectilinear_blocks" has been renamed "rectilinear".
+
 ----------------------------------
 
 Release notes for Trilinos v11.8
