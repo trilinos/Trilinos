@@ -90,7 +90,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "Clang-3.4")
+  SET_DEFAULT(COMPILER_VERSION "Clang-3.5.1")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -104,8 +104,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/llvm-3.4/bin/clang"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/llvm-3.4/bin/clang++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/llvm-3.5.1/bin/clang"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/llvm-3.5.1/bin/clang++"
       )
 
   ENDIF()
