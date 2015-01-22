@@ -217,6 +217,14 @@ struct Element_Description
                            sides with no neighboring element (e.g., along mesh
                            boundaries).  Chaco doesn't have "sides," so the 
                            ordering is irrelevent for Chaco input. */
+                        /* KDD 1/22/15:  Using ZOLTAN_ID_TYPE == unsigned int
+                           breaks the Exodus interface which uses -1 to indicate
+                           sides without neighbors.  The solution is to NOT use
+                           ZOLTAN_ID_TYPE for this field (and others); instead,
+                           type int should be used.  In general, we wouldn't 
+                           expect an application to use ZOLTAN_ID_TYPE.
+                           However, this bug is not important enough to fix at
+                           this time.  See bug 6278 and comment in dr_loadbal.c. */
   int     *adj_proc;	/* list of processors for adjacent elements */
   int     *adj_blank;   /* NULL if not blanking, else 1/0 for blanked/not */
   float   *edge_wgt;	/* edge weights for adjacent elements */

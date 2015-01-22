@@ -748,6 +748,7 @@ exit(-1);
 	return 0;
       }
     }
+
     mytime = MPI_Wtime() - stime;
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
@@ -1550,7 +1551,14 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
     for (i = 0; i < current_elem->adj_len; i++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      /* KDD 1/22/15  See bug 6278 and comment in dr_const.h.  
+       * This line is needed only for Exodus inputs which will not work correctly 
+       * with current definition of adj as ZOLTAN_ID_PTR, and it generates 
+       * compiler warnings.  If the Exodus interface is revived, this line 
+       * should again be included.
+       *
       if (current_elem->adj[i] == -1) continue;
+       */
 
       if (current_elem->adj_proc[i] == mesh->proc) {
 	local_elem = current_elem->adj[i];
@@ -1626,7 +1634,14 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   for (i = 0; i < current_elem->adj_len; i++) {
 
     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+    /* KDD 1/22/15  See bug 6278 and comment in dr_const.h.  
+     * This line is needed only for Exodus inputs which will not work correctly 
+     * with current definition of adj as ZOLTAN_ID_PTR, and it generates 
+     * compiler warnings.  If the Exodus interface is revived, this line 
+     * should again be included.
+     *
     if (current_elem->adj[i] == -1) continue;
+     */
 
     if (current_elem->adj_proc[i] == mesh->proc) {
       local_elem = current_elem->adj[i];

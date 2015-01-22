@@ -505,7 +505,7 @@ int create_a_graph(
    * x and y value as its points.  So adjacency information is easily created.
    */
 
-  ZOLTAN_ID_TYPE    i, j, nvtxs, gnvtxs, num4;
+  ZOLTAN_ID_TYPE    i, nvtxs, gnvtxs, num4;
   ZOLTAN_ID_TYPE    gid;
   long left=0, right=0;
   int    vwgt_dim=0, ewgt_dim=0;
@@ -625,16 +625,18 @@ int create_a_graph(
     if (pio_info->init_vwgt_dim == 0) 
       /* Unit weights if no weights were requested. */
       vwgts[i] = 1.0;
-    else
+    else {
+      int jj;
       srand(0);
-      for (j = 0; j < vwgt_dim; j++)  {
+      for (jj = 0; jj < vwgt_dim; jj++)  {
         /* Only assign one of the weight dimensions a weight>0. */
         /* Modify to get more complicated test cases. */
-        if (j == i%vwgt_dim)
-          vwgts[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+        if (jj == (int)(i%vwgt_dim))
+          vwgts[i*vwgt_dim+jj] = ((float) rand())/RAND_MAX;
         else
-          vwgts[i*vwgt_dim+j] = 0.0;
+          vwgts[i*vwgt_dim+jj] = 0.0;
       }
+    }
   }
 
   start = (int *)malloc(sizeof(int) * (nvtxs + 1));
