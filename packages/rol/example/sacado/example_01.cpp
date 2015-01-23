@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
     try {
 
-        Sacado_Objective<RealT,Zakharov<RealT> > obj;
+        Sacado_Objective<RealT,Zakharov> obj;
     
         int dim = 10; // Set problem dimension. 
 

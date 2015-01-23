@@ -97,11 +97,11 @@ int main(int argc, char **argv)
     int dim = 5;
     int nc = 3;
 
-    Teuchos::RCP< Sacado_Objective<RealT,Example_Objective<RealT> > > obj = 
-        Teuchos::rcp( new Sacado_Objective<RealT,Example_Objective<RealT>  > ());
+    Teuchos::RCP< Sacado_Objective<RealT,Example_Objective> > obj = 
+        Teuchos::rcp( new Sacado_Objective<RealT,Example_Objective> ());
 
-    Teuchos::RCP< Sacado_EqualityConstraint<RealT,Example_Constraint<RealT> > > constr =
-        Teuchos::rcp( new Sacado_EqualityConstraint<RealT,Example_Constraint<RealT> > (nc));
+    Teuchos::RCP< Sacado_EqualityConstraint<RealT,Example_Constraint > > constr =
+        Teuchos::rcp( new Sacado_EqualityConstraint<RealT,Example_Constraint > (nc));
 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
 

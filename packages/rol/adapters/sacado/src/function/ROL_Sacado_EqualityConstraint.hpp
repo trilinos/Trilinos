@@ -52,11 +52,11 @@
 using namespace ROL;
 
 //! \brief ROL interface wrapper for Sacado Constraint
-template<class Real, class Constr>
+template<class Real, template<class> class Constr>
 class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
 
     private:
-        Constr constr_;
+        Constr<Real> constr_;
 
         int dim_;
 
@@ -99,7 +99,7 @@ class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
 };
 
 
-template<class Real, class Constr>
+template<class Real, template<class> class Constr>
 template<class ScalarT>
 void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv, const Vector<ScalarT> &v, 
                                                              const Vector<ScalarT> &x, Real &tol) {
@@ -152,7 +152,7 @@ void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv
 
 
 
-template<class Real, class Constr>
+template<class Real, template<class> class Constr>
 template<class ScalarT>
 void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<ScalarT> &aju, const Vector<ScalarT> &u, 
                                                                     const Vector<ScalarT> &x, Real &tol) {
@@ -206,7 +206,7 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<Scala
 }
 
 
-template<class Real, class Constr>
+template<class Real, template<class> class Constr>
 template<class ScalarT>
 void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<ScalarT> &ahuv, const Vector<ScalarT> &u,
                                                                    const Vector<ScalarT> &v, const Vector<ScalarT> &x, 
@@ -260,13 +260,11 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
     u_fad_rcp->reserve(dim_);
 
      for(int j=0; j<dim_; ++j) {
-        c_fad_rcp->push_back(0);  
         u_fad_rcp->push_back((*up)[j]);
     }
 
     StdVector<FadType> x_fad(x_fad_rcp);
     StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> c_fad(c_fad_rcp);
     StdVector<FadType> aju_fad(aju_fad_rcp);
 
     // Evaluate constraint adjoint Jacobian direction

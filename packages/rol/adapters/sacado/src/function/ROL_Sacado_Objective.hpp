@@ -51,10 +51,10 @@
 using namespace ROL;
 
 /** \brief Generic objective wrapper class for class that uses Sacado */
-template<class Real, class Obj>
+template<class Real, template<class> class Obj>
 class Sacado_Objective : public Objective<Real> {
     private:
-        Obj obj_;
+        Obj<Real> obj_;
 
 
     /* Evaluate the gradient at x */
@@ -85,7 +85,7 @@ class Sacado_Objective : public Objective<Real> {
 
 
 
-template<class Real, class Obj>
+template<class Real, template<class> class Obj>
 template<class ScalarT>
 void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<ScalarT> &x, Real &tol) { 
 
@@ -124,7 +124,7 @@ void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<Sca
 
 
 
-template <class Real, class Obj>
+template <class Real, template<class> class Obj>
 template <class ScalarT>
 void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
                                             const Vector<ScalarT> &x, Real &tol ) {
