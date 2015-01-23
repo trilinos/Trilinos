@@ -19,7 +19,7 @@ coarse: params ->
 
 max levels = 10
 cycle type = V
-sa: damping factor = 1.33
+sa: damping factor = 1.333
 sa: eigenvalue estimate num iterations = 10   [unused]
 smoother: post type = RELAXATION
 smoother: pre or post = post
@@ -29,7 +29,7 @@ number of equations = 1   [default]
 smoother: post params -> 
  relaxation: type = Symmetric Gauss-Seidel   [unused]
  relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1.00   [unused]
+ relaxation: damping factor = 1   [unused]
 coarse: params -> 
  [empty list]
 
@@ -49,9 +49,9 @@ Level 1
   Matrix filtering (MueLu::FilteredAFactory)
    Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    algorithm = "classical": threshold = 0.00, blocksize = 1
+    algorithm = "classical": threshold = 0, blocksize = 1
     Detected 0 Dirichlet nodes
-    Number of dropped entries in unamalgamated matrix graph: 0/29995 (0.00%)
+    Number of dropped entries in unamalgamated matrix graph: 0/29995 (0%)
    Filtered matrix is not being constructed as no filtering is being done
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)

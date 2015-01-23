@@ -3,129 +3,144 @@ min Nodes per aggregate :               1
 min # of root nbrs already aggregated : 0
 aggregate ordering :                    natural
 =============================================================================
-Clearing old data (if any)
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
-  "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 2, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+ relaxation: type = Symmetric Gauss-Seidel
+ relaxation: sweeps = 2
+ relaxation: damping factor = 1
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-     lightweight wrap = 0
-     CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-     CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=9999
-     CoalesceDropFactory: nodeMap 9999/9999 elements
-     Detected 0 Dirichlet nodes
-    BuildAggregates (Phase - (Dirichlet))
-      aggregated : 0 (phase), 0/9999 [0.00%] (total)
-      remaining  : 9999
-      aggregates : 0 (phase), 0 (total)
-    BuildAggregates (Phase 1 (main))
-      aggregated : 9998 (phase), 9998/9999 [99.99%] (total)
-      remaining  : 1
-      aggregates : 3333 (phase), 3333 (total)
-    BuildAggregates (Phase 2 (cleanup))
-      aggregated : 1 (phase), 9999/9999 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 3333 (total)
-    BuildAggregates (Phase 3 (emergency))
-      aggregated : 0 (phase), 9999/9999 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 3333 (total)
-    BuildAggregates (Phase - (isolated))
-      aggregated : 0 (phase), 9999/9999 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 3333 (total)
-    "UC": MueLu::Aggregates{nGlobalAggregates = 3333}
+     [empty list]
+
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
+    lightweight wrap = 0   [default]
+
+   aggregation: mode = old   [default]
+   aggregation: max agg size = -1   [default]
+   aggregation: min agg size = 1   [unused]
+   aggregation: max selected neighbors = 0   [unused]
+   aggregation: ordering = natural   [unused]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   OnePt aggregate map name =    [default]
+
    Build (MueLu::CoarseMapFactory)
-   Ptent size =  9999 x 3333, nnz = 9999
-   Ptent Load balancing info
-   Ptent   # active processes: 1/1
-   Ptent   # rows per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-   Ptent   #  nnz per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Calculating max eigenvalue estimate now (max iters = 10)
-  Prolongator damping factor = 0.68 (1.33 / 1.95)
-  P size =  9999 x 3333, nnz = 16663
-  P Load balancing info
-  P   # active processes: 1/1
-  P   # rows per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  P   #  nnz per proc   : avg = 1.67e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
+
+  [empty list]
+
+ sa: damping factor = 1.33333
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
+
  Transpose P (MueLu::TransPFactory)
-  R size =  3333 x 9999, nnz = 16663
-  R Load balancing info
-  R   # active processes: 1/1
-  R   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  R   #  nnz per proc   : avg = 1.67e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ [empty list]
+
  Computing Ac (MueLu::RAPFactory)
-  Ac size =  3333 x 3333, nnz = 9997
-  Ac Load balancing info
-  Ac   # active processes: 1/1
-  Ac   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Ac   #  nnz per proc   : avg = 1.00e+04,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ transpose: use implicit = 0   [default]
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0
+
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
-  "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 2, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+ relaxation: type = Symmetric Gauss-Seidel
+ relaxation: sweeps = 2
+ relaxation: damping factor = 1
+ relaxation: zero starting solution = 1   [default]
+ relaxation: backward mode = 0   [default]
+ relaxation: use l1 = 0   [default]
+ relaxation: l1 eta = 1.5   [default]
+ relaxation: min diagonal value = 0   [default]
+ relaxation: fix tiny diagonal entries = 0   [default]
+ relaxation: check diagonal entries = 0   [default]
+ relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)
   Build (MueLu::TentativePFactory)
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
-     lightweight wrap = 0
-     CoalesceDropFactory::Build(): found blockdim=1 from strided maps. offset=0
      Build (MueLu::AmalgamationFactory)
-     CoalesceDropFactory::SetupAmalgamationData() # of amalgamated blocks=3333
-     CoalesceDropFactory: nodeMap 3333/3333 elements
-     Detected 0 Dirichlet nodes
-    BuildAggregates (Phase - (Dirichlet))
-      aggregated : 0 (phase), 0/3333 [0.00%] (total)
-      remaining  : 3333
-      aggregates : 0 (phase), 0 (total)
-    BuildAggregates (Phase 1 (main))
-      aggregated : 3332 (phase), 3332/3333 [99.97%] (total)
-      remaining  : 1
-      aggregates : 1111 (phase), 1111 (total)
-    BuildAggregates (Phase 2 (cleanup))
-      aggregated : 1 (phase), 3333/3333 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 1111 (total)
-    BuildAggregates (Phase 3 (emergency))
-      aggregated : 0 (phase), 3333/3333 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 1111 (total)
-    BuildAggregates (Phase - (isolated))
-      aggregated : 0 (phase), 3333/3333 [100.00%] (total)
-      remaining  : 0
-      aggregates : 0 (phase), 1111 (total)
-    "UC": MueLu::Aggregates{nGlobalAggregates = 1111}
+     [empty list]
+
+    aggregation: drop tol = 0   [default]
+    aggregation: Dirichlet threshold = 0   [default]
+    aggregation: drop scheme = classical   [default]
+    lightweight wrap = 0   [default]
+
+   aggregation: mode = old   [default]
+   aggregation: max agg size = -1   [default]
+   aggregation: min agg size = 1   [unused]
+   aggregation: max selected neighbors = 0   [unused]
+   aggregation: ordering = natural   [unused]
+   aggregation: enable phase 1 = 1   [default]
+   aggregation: enable phase 2a = 1   [default]
+   aggregation: enable phase 2b = 1   [default]
+   aggregation: enable phase 3 = 1   [default]
+   aggregation: preserve Dirichlet points = 0   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [unused]
+   UseUncoupledAggregationAlgorithm = 1   [default]
+   UseMaxLinkAggregationAlgorithm = 1   [default]
+   UseIsolatedNodeAggregationAlgorithm = 1   [default]
+   UseEmergencyAggregationAlgorithm = 1   [default]
+   OnePt aggregate map name =    [default]
+
    Nullspace factory (MueLu::NullspaceFactory)
+   Fine level nullspace = Nullspace
+
    Build (MueLu::CoarseMapFactory)
-   Ptent size =  3333 x 1111, nnz = 3333
-   Ptent Load balancing info
-   Ptent   # active processes: 1/1
-   Ptent   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-   Ptent   #  nnz per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Calculating max eigenvalue estimate now (max iters = 10)
-  Prolongator damping factor = 0.68 (1.33 / 1.95)
-  P size =  3333 x 1111, nnz = 5553
-  P Load balancing info
-  P   # active processes: 1/1
-  P   # rows per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  P   #  nnz per proc   : avg = 5.55e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+   Striding info = {}   [default]
+   Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
+
+  [empty list]
+
+ sa: damping factor = 1.33333
+ sa: calculate eigenvalue estimate = 0   [default]
+ sa: eigenvalue estimate num iterations = 10   [default]
+
  Transpose P (MueLu::TransPFactory)
-  R size =  1111 x 3333, nnz = 5553
-  R Load balancing info
-  R   # active processes: 1/1
-  R   # rows per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  R   #  nnz per proc   : avg = 5.55e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
+ [empty list]
+
  Computing Ac (MueLu::RAPFactory)
-  Ac size =  1111 x 1111, nnz = 3331
-  Ac Load balancing info
-  Ac   # active processes: 1/1
-  Ac   # rows per proc   : avg = 1.11e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
-  Ac   #  nnz per proc   : avg = 3.33e+03,  dev =   0.0%,  min =   +0.0%,  max =   +0.0%
- Max coarse size (<= 2000) achieved
+ transpose: use implicit = 0   [default]
+ Keep AP Pattern = 0   [default]
+ Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0
+
  Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ postsmoother ->
+  A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
+
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
