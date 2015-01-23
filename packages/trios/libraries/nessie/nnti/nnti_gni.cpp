@@ -3324,7 +3324,7 @@ NNTI_result_t NNTI_gni_wait (
         log_debug(nnti_debug_level, "wr NOT complete (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
 
         while (1) {
-            rc=progress(timeout-elapsed_time, &wr, 1);
+            rc=progress(timeout_per_call, &wr, 1);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3555,7 +3555,7 @@ NNTI_result_t NNTI_gni_waitany (
         log_debug(nnti_debug_level, "any wr NOT complete");
 
         while (1) {
-            rc=progress(timeout-elapsed_time, wr_list, wr_count);
+            rc=progress(timeout_per_call, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
@@ -3761,7 +3761,7 @@ NNTI_result_t NNTI_gni_waitall (
         log_debug(nnti_debug_level, "all work requests NOT complete");
 
         while (1) {
-            rc=progress(timeout-elapsed_time, wr_list, wr_count);
+            rc=progress(timeout_per_call, wr_list, wr_count);
 
             elapsed_time = (trios_get_time_ms() - entry_time);
 
