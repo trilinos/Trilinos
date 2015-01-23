@@ -60,7 +60,10 @@
 #include <MueLu_CoalesceDropFactory_fwd.hpp>
 #include <MueLu_CoupledAggregationFactory_fwd.hpp>
 #include <MueLu_CoupledRBMFactory_fwd.hpp>
+#include <MueLu_DirectSolver_fwd.hpp>
 #include <MueLu_GenericRFactory_fwd.hpp>
+#include <MueLu_Hierarchy_fwd.hpp>
+#include <MueLu_Ifpack2Smoother_fwd.hpp>
 #include <MueLu_PFactory_fwd.hpp>
 #include <MueLu_PgPFactory_fwd.hpp>
 #include <MueLu_RAPFactory_fwd.hpp>

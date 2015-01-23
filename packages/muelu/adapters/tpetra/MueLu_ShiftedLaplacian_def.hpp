@@ -51,7 +51,10 @@
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
+#include <MueLu_DirectSolver.hpp>
 #include <MueLu_GenericRFactory.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_Ifpack2Smoother.hpp>
 #include <MueLu_PFactory.hpp>
 #include <MueLu_PgPFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
