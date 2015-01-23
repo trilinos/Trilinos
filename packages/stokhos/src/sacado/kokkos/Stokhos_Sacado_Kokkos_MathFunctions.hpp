@@ -42,6 +42,8 @@
 #ifndef STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 #define STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 
+#include <cmath>
+
 #include "Kokkos_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
@@ -178,4 +180,4 @@ BINARYFUNC_MACRO(min)
 
 #undef BINARYFUNC_MACRO
 
-#endif // STOKHOS_STATIC_ARRAY_TRAITS_HPP
+#endif // STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
