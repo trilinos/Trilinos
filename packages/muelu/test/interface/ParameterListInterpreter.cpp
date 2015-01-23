@@ -45,6 +45,7 @@
 // @HEADER
 
 #include <cstdlib>
+#include <fstream>
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -176,8 +177,9 @@ int main(int argc, char *argv[]) {
         }
 
         std::string cmd;
-        if (k > 0 && myRank == 0) {
-          // Restore res file
+        if (myRank == 0 && std::ifstream((baseFile + ".resorig").c_str()).good()) {
+          // Original .res is present, restore it by changing extension
+          // from .resorig to .res
           cmd = "mv -f " + baseFile + ".resorig " + baseFile + ".res";
           system(cmd.c_str());
         }
@@ -203,7 +205,7 @@ int main(int argc, char *argv[]) {
           hierList.set("verbosity", "Test");
         } else if (k == 2) {
           // ML parameter list interpreter
-          paramList.set("ML output", 8);
+          paramList.set("ML output", 42);
         }
 
         try {
