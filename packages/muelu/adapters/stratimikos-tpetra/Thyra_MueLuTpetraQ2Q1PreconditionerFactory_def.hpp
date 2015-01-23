@@ -212,12 +212,12 @@ void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
   }
 
   Teuchos::RCP<dMV> coordsVel;
-  if (paramList.isType<  dMV >  >("Velcoords")) {
+  if (paramList.isType< dMV >("Velcoords")) {
     coordsVel = paramList.get<Teuchos::RCP<dMV> > ("Velcoords");
     paramList.remove("Velcoords");
   }
   Teuchos::RCP<dMV> coordsPres;
-  if (paramList.isType<dMV> >("Prescoords")) {
+  if (paramList.isType< dMV >("Prescoords")) {
     coordsPres = paramList.get<Teuchos::RCP<dMV> > ("Prescoords");
     paramList.remove("Prescoords");
   }
@@ -229,17 +229,17 @@ void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
   }
   Teko::LinearOp thA11;
   if (paramList.isType< Teko::LinearOp >("A11")) {
-    thA11 = paramList.get<  Teko::LinearOp >("A11");
+    thA11 = paramList.get< Teko::LinearOp >("A11");
     paramList.remove("A11");
   }
   Teko::LinearOp thA12;
   if (paramList.isType< Teko::LinearOp >("A12")) {
-    thA12 = paramList.get<  Teko::LinearOp >("A12");
+    thA12 = paramList.get< Teko::LinearOp >("A12");
     paramList.remove("A12");
   }
   Teko::LinearOp thA21;
   if (paramList.isType< Teko::LinearOp >("A21")) {
-    thA21 = paramList.get<  Teko::LinearOp >("A21");
+    thA21 = paramList.get< Teko::LinearOp >("A21");
     paramList.remove("A21");
   }
 
