@@ -123,7 +123,7 @@ def install_ctest(tddDashboardRootDir, tribitsDir):
   if installMasterCMake:
 
     cmnd =  sys.executable + " " \
-      + tribitsDir + "/python/download-cmake.py" \
+      + tribitsDir + "/python_utils/download-cmake.py" \
       + " --skip-detect" \
       + " --install-dir="+cmakeTddDownloadBaseDir \
       + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE
