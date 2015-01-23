@@ -111,6 +111,8 @@ namespace panzer_stk_classic {
     mesh.buildSubcells();
     mesh.buildLocalElementIDs();
 
+
+
     // now that edges are built, side and node sets can be added
     addSideSets(mesh);
 
@@ -139,10 +141,11 @@ namespace panzer_stk_classic {
     Coords_ = paramList->get<double*>("Coords");
 
     NumElementsPerProc_ = paramList->get<int>("NumElementsPerProc");
-    Elements_ = paramList->get<int*>("Elements");
 
     BlockIDs_ = paramList->get<int*>("BlockIDs");
     Element2Nodes_ = paramList->get<int*>("Element2Nodes");
+
+    OffsetToGlobalElementIDs_ = paramList->get<int>("OffsetToGlobalElementIDs");
 
     // solution fields from tramonto
     ChargeDensity_ = paramList->get<double*>("ChargeDensity");
@@ -172,10 +175,11 @@ namespace panzer_stk_classic {
       defaultParams->set<double*>("Coords",NULL);
 
       defaultParams->set<int>("NumElementsPerProc",0);
-      defaultParams->set<int*>("Elements",NULL);
 
       defaultParams->set<int*>("BlockIDs",NULL);
       defaultParams->set<int*>("Element2Nodes",NULL);
+
+      defaultParams->set<int>("OffsetToGlobalElementIDs", 0);
 
       defaultParams->set<double*>("ChargeDensity",NULL);
       defaultParams->set<double*>("ElectricPotential",NULL);
@@ -253,7 +257,7 @@ namespace panzer_stk_classic {
       stk_classic::mesh::Part *block = mesh.getElementBlockPart(block_id.str());
 
       // construct element and its nodal connectivity
-      stk_classic::mesh::EntityId elt = Elements_[i];
+      stk_classic::mesh::EntityId elt = i + OffsetToGlobalElementIDs_;
       std::vector<stk_classic::mesh::EntityId> elt2nodes(8);
 
       for (int k=0;k<8;++k)
@@ -319,28 +323,40 @@ namespace panzer_stk_classic {
   void
   CustomMeshFactory::fillSolutionFieldData(STK_Interface &mesh) const
   {
-    std::size_t offset = 0;
     for (int blk=0;blk<NumBlocks_;++blk) {
 
       std::stringstream block_id;
       block_id << "eblock-" << blk;
       
       // elements in this processor for this block
-      std::vector<stk_classic::mesh::Entity*> elements;
+      std::vector<stk_classic::mesh::Entity*> elements;    
       mesh.getMyElements(block_id.str(), elements);
+
+      // size of elements in the current block
+      std::size_t n_elements = elements.size();
       
       // build local element index
       std::vector<std::size_t> local_ids;
-      for(std::vector<stk_classic::mesh::Entity*>::const_iterator
-            itr=elements.begin();itr!=elements.end();++itr)
+      for (std::vector<stk_classic::mesh::Entity*>::const_iterator
+             itr=elements.begin();itr!=elements.end();++itr) 
         local_ids.push_back(mesh.elementLocalId(*itr));
-      
-      // struct 
-      std::size_t local_ids_size = local_ids.size();
-      FieldContainer
-        charge_density(local_ids_size, 8, &ChargeDensity_[offset]),
-        electric_potential(local_ids_size, 8, &ElectricPotential_[offset]);
-      
+
+      // re-index solution fields in the same order of local_ids
+      std::vector<double> charge_density_by_local_ids, electric_potential_by_local_ids;
+      for (std::vector<stk_classic::mesh::Entity*>::const_iterator
+             itr=elements.begin();itr!=elements.end();++itr) {
+        int q = (*itr)->identifier() - OffsetToGlobalElementIDs_;
+        for (int k=0;k<8;++k) {
+          int loc = q*8 + k;
+          charge_density_by_local_ids.push_back(ChargeDensity_[loc]);
+          electric_potential_by_local_ids.push_back(ElectricPotential_[loc]);
+        }
+      }
+
+      // wrap the buffer with a proper container
+      FieldContainer charge_density(n_elements, 8, &charge_density_by_local_ids[0]),
+        electric_potential(n_elements, 8, &electric_potential_by_local_ids[0]);
+
       // write out to stk mesh
       mesh.setSolutionFieldData("CHARGE_DENSITY",
                                 block_id.str(),
@@ -351,9 +367,6 @@ namespace panzer_stk_classic {
                                 block_id.str(),
                                 local_ids,
                                 electric_potential, 1.0);
-
-      // move data pointer to the next block
-      offset += local_ids_size*8;
     }
   }
 } // end panzer_stk
