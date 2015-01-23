@@ -60,7 +60,7 @@ namespace panzer_stk_classic {
   }
 
   //! Build the mesh object
-  Teuchos::RCP<STK_Interface> 
+  Teuchos::RCP<STK_Interface>
   CustomMeshFactory::buildMesh(stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::buildMesh()");
@@ -68,7 +68,7 @@ namespace panzer_stk_classic {
     // build all meta data
     RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
 
-    // commit meta data
+    // commit meta data; allocate field variables
     mesh->initialize(parallelMach);
 
     // build bulk data
@@ -77,7 +77,7 @@ namespace panzer_stk_classic {
     return mesh;
   }
 
-  Teuchos::RCP<STK_Interface> 
+  Teuchos::RCP<STK_Interface>
   CustomMeshFactory::buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::buildUncomittedMesh()");
@@ -88,38 +88,43 @@ namespace panzer_stk_classic {
     machSize_ = stk_classic::parallel_machine_size(parallelMach);
 
     // add blocks and side sets (global geometry setup)
-    buildMetaData(parallelMach,*mesh);
- 
+    buildMetaData(*mesh);
+
     mesh->addPeriodicBCs(periodicBCVec_);
 
     return mesh;
   }
 
-  void 
+  void
   CustomMeshFactory::completeMeshConstruction(STK_Interface &mesh,
                                               stk_classic::ParallelMachine parallelMach) const
   {
     PANZER_FUNC_TIME_MONITOR("panzer::CustomMeshFactory::completeMeshConstruction()");
 
-    if(not mesh.isInitialized())
+    if (not mesh.isInitialized())
       mesh.initialize(parallelMach);
-   
+
     // add node and element information
-    buildElements(parallelMach,mesh);
+    buildElements(mesh);
 
     // build edges and faces; fyi: addSides(mesh) builds only edges
-    mesh.buildSubcells();  
+    mesh.buildSubcells();
     mesh.buildLocalElementIDs();
+
+
 
     // now that edges are built, side and node sets can be added
     addSideSets(mesh);
+
+    // set solution fields
+    fillSolutionFieldData(mesh);
 
     // calls Stk_MeshFactory::rebalance
     //this->rebalance(mesh);
   }
 
   //! From ParameterListAcceptor
-  void 
+  void
   CustomMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> &paramList)
   {
     paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
@@ -136,17 +141,22 @@ namespace panzer_stk_classic {
     Coords_ = paramList->get<double*>("Coords");
 
     NumElementsPerProc_ = paramList->get<int>("NumElementsPerProc");
-    Elements_ = paramList->get<int*>("Elements");
 
-    BlockIDs_ = paramList->get<int*>("BlockIDs");   
-    Element2Nodes_ = paramList->get<int*>("Element2Nodes");   
+    BlockIDs_ = paramList->get<int*>("BlockIDs");
+    Element2Nodes_ = paramList->get<int*>("Element2Nodes");
+
+    OffsetToGlobalElementIDs_ = paramList->get<int>("OffsetToGlobalElementIDs");
+
+    // solution fields from tramonto
+    ChargeDensity_ = paramList->get<double*>("ChargeDensity");
+    ElectricPotential_ = paramList->get<double*>("ElectricPotential");
 
     // read in periodic boundary conditions
     parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
   }
 
   //! From ParameterListAcceptor
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList>
   CustomMeshFactory::getValidParameters() const
   {
     static RCP<Teuchos::ParameterList> defaultParams;
@@ -158,18 +168,22 @@ namespace panzer_stk_classic {
       defaultParams->set<int>("Dimension",3);
 
       defaultParams->set<int>("NumBlocks",0);
-      
+
       defaultParams->set<int>("NumNodesPerProc",0);
       defaultParams->set<int*>("Nodes",NULL);
 
       defaultParams->set<double*>("Coords",NULL);
 
       defaultParams->set<int>("NumElementsPerProc",0);
-      defaultParams->set<int*>("Elements",NULL);
 
       defaultParams->set<int*>("BlockIDs",NULL);
       defaultParams->set<int*>("Element2Nodes",NULL);
-      
+
+      defaultParams->set<int>("OffsetToGlobalElementIDs", 0);
+
+      defaultParams->set<double*>("ChargeDensity",NULL);
+      defaultParams->set<double*>("ElectricPotential",NULL);
+
       Teuchos::ParameterList &bcs = defaultParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
     }
@@ -177,7 +191,7 @@ namespace panzer_stk_classic {
     return defaultParams;
   }
 
-  void 
+  void
   CustomMeshFactory::initializeWithDefaults()
   {
     // get valid parameters
@@ -187,20 +201,22 @@ namespace panzer_stk_classic {
     setParameterList(validParams);
   }
 
-  void 
-  CustomMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach, 
-                                   STK_Interface &mesh) const
+  void
+  CustomMeshFactory::buildMetaData(STK_Interface &mesh) const
   {
     typedef shards::Hexahedron<8> HexTopo;
     const CellTopologyData *ctd = shards::getCellTopologyData<HexTopo>();
     const CellTopologyData *side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
 
     for (int blk=0;blk<NumBlocks_;++blk) {
-      std::stringstream ebPostfix;
-      ebPostfix << "-" <<  blk ;
+      std::stringstream block_id;
+      block_id << "eblock-" << blk;
 
       // add element blocks
-      mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
+      mesh.addElementBlock(block_id.str(),ctd);
+
+      mesh.addSolutionField("CHARGE_DENSITY",block_id.str());
+      mesh.addSolutionField("ELECTRIC_POTENTIAL",block_id.str());
     }
 
     mesh.addSideset("left",  side_ctd);
@@ -213,9 +229,8 @@ namespace panzer_stk_classic {
     mesh.addSideset("wall",  side_ctd);
   }
 
-  void 
-  CustomMeshFactory::buildElements(stk_classic::ParallelMachine parallelMach,
-                                   STK_Interface &mesh) const
+  void
+  CustomMeshFactory::buildElements(STK_Interface &mesh) const
   {
     mesh.beginModification();
 
@@ -228,23 +243,26 @@ namespace panzer_stk_classic {
         coords[k] = Coords_[i*dim+k];
       mesh.addNode(Nodes_[i], coords);
     }
-   
+
     // build the elements
-    for (int i=0;i<NumElementsPerProc_;++i) { 
+    std::vector<std::string> block_ids;
+    mesh.getElementBlockNames(block_ids);  
+
+    for (int i=0;i<NumElementsPerProc_;++i) {
 
       // get block by its name
-      std::stringstream block_name;
-      block_name << "eblock-" << BlockIDs_[i];
+      std::stringstream block_id;
+      block_id << "eblock-" << BlockIDs_[i];
 
-      stk_classic::mesh::Part *block = mesh.getElementBlockPart(block_name.str());
+      stk_classic::mesh::Part *block = mesh.getElementBlockPart(block_id.str());
 
       // construct element and its nodal connectivity
-      stk_classic::mesh::EntityId elt = Elements_[i];
+      stk_classic::mesh::EntityId elt = i + OffsetToGlobalElementIDs_;
       std::vector<stk_classic::mesh::EntityId> elt2nodes(8);
-     
+
       for (int k=0;k<8;++k)
         elt2nodes[k] = Element2Nodes_[i*8+k];
-     
+
       RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(elt,elt2nodes));
       mesh.addElement(ed,block);
     }
@@ -252,19 +270,19 @@ namespace panzer_stk_classic {
     mesh.endModification();
   }
 
-  void 
+  void
   CustomMeshFactory::addSideSets(STK_Interface &mesh) const
   {
     mesh.beginModification();
 
     // get all part vectors
     stk_classic::mesh::Part *box[6];
-    box[3] = mesh.getSideset("left");    
-    box[1] = mesh.getSideset("right");    
-    box[2] = mesh.getSideset("top");        
-    box[0] = mesh.getSideset("bottom");    
-    box[5] = mesh.getSideset("front");    
-    box[4] = mesh.getSideset("back");    
+    box[0] = mesh.getSideset("front");
+    box[1] = mesh.getSideset("right");
+    box[2] = mesh.getSideset("back");
+    box[3] = mesh.getSideset("left");
+    box[4] = mesh.getSideset("bottom");
+    box[5] = mesh.getSideset("top");
 
     stk_classic::mesh::Part *wall = mesh.getSideset("wall");
 
@@ -272,11 +290,11 @@ namespace panzer_stk_classic {
     mesh.getMyElements(elements);
 
     // loop over elements adding sides to sidesets
-    for (std::vector<stk_classic::mesh::Entity*>::const_iterator 
+    for (std::vector<stk_classic::mesh::Entity*>::const_iterator
            itr=elements.begin();itr!=elements.end();++itr) {
       stk_classic::mesh::Entity *element = (*itr);
       stk_classic::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
-      
+
       // loop over side id checking element neighbors
       for (std::size_t i=0;i<relations.size();++i) {
         stk_classic::mesh::Entity *side = relations[i].entity();
@@ -286,13 +304,13 @@ namespace panzer_stk_classic {
         if (numNeighbors == 1) {
           if (side->owner_rank() == machRank_)
             mesh.addEntityToSideset(*side, box[i]);
-        } 
+        }
         else if (numNeighbors == 2) {
           std::string neig_block_id_0 = mesh.containingBlockId(neighbors[0].entity());
           std::string neig_block_id_1 = mesh.containingBlockId(neighbors[1].entity());
-          if ((neig_block_id_0 != neig_block_id_1) && (side->owner_rank() == machRank_)) 
+          if ((neig_block_id_0 != neig_block_id_1) && (side->owner_rank() == machRank_))
             mesh.addEntityToSideset(*side, wall);
-        } 
+        }
         else {
           // runtime exception
         }
@@ -302,4 +320,53 @@ namespace panzer_stk_classic {
     mesh.endModification();
   }
 
+  void
+  CustomMeshFactory::fillSolutionFieldData(STK_Interface &mesh) const
+  {
+    for (int blk=0;blk<NumBlocks_;++blk) {
+
+      std::stringstream block_id;
+      block_id << "eblock-" << blk;
+      
+      // elements in this processor for this block
+      std::vector<stk_classic::mesh::Entity*> elements;    
+      mesh.getMyElements(block_id.str(), elements);
+
+      // size of elements in the current block
+      std::size_t n_elements = elements.size();
+      
+      // build local element index
+      std::vector<std::size_t> local_ids;
+      for (std::vector<stk_classic::mesh::Entity*>::const_iterator
+             itr=elements.begin();itr!=elements.end();++itr) 
+        local_ids.push_back(mesh.elementLocalId(*itr));
+
+      // re-index solution fields in the same order of local_ids
+      std::vector<double> charge_density_by_local_ids, electric_potential_by_local_ids;
+      for (std::vector<stk_classic::mesh::Entity*>::const_iterator
+             itr=elements.begin();itr!=elements.end();++itr) {
+        int q = (*itr)->identifier() - OffsetToGlobalElementIDs_;
+        for (int k=0;k<8;++k) {
+          int loc = q*8 + k;
+          charge_density_by_local_ids.push_back(ChargeDensity_[loc]);
+          electric_potential_by_local_ids.push_back(ElectricPotential_[loc]);
+        }
+      }
+
+      // wrap the buffer with a proper container
+      FieldContainer charge_density(n_elements, 8, &charge_density_by_local_ids[0]),
+        electric_potential(n_elements, 8, &electric_potential_by_local_ids[0]);
+
+      // write out to stk mesh
+      mesh.setSolutionFieldData("CHARGE_DENSITY",
+                                block_id.str(),
+                                local_ids,
+                                charge_density, 1.0);
+      
+      mesh.setSolutionFieldData("ELECTRIC_POTENTIAL",
+                                block_id.str(),
+                                local_ids,
+                                electric_potential, 1.0);
+    }
+  }
 } // end panzer_stk

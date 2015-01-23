@@ -358,15 +358,15 @@ A 3     371   1111     2.99  1
 A 4     124    370     2.98  1
 A 5      42    124     2.95  1
 
-Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94914, alpha: 2, lambdaMin: 0.974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95138, alpha: 2, lambdaMin: 0.975692}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94974, alpha: 5, lambdaMin: 0.389948}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94982, alpha: 5, lambdaMin: 0.389965}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94855, alpha: 4, lambdaMin: 0.487138}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
+Smoother (level 2) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94201, alpha: 4, lambdaMin: 0.485502}, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
 
-Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.93826, alpha: 2.99461, lambdaMin: 0.64725}, Global matrix dimensions: [371, 371], Global nnz: 1111}
+Smoother (level 3) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94976, alpha: 2.99461, lambdaMin: 0.651091}, Global matrix dimensions: [371, 371], Global nnz: 1111}
 
-Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.939, alpha: 2.99194, lambdaMin: 0.648076}, Global matrix dimensions: [124, 124], Global nnz: 370}
+Smoother (level 4) both : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94741, alpha: 2.99194, lambdaMin: 0.650887}, Global matrix dimensions: [124, 124], Global nnz: 370}
 
 Smoother (level 5) pre  : SuperLU solver interface, direct solve
 Smoother (level 5) post : no smoother

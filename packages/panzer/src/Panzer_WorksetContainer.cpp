@@ -286,8 +286,6 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
     RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
         = buildOrientationContainer<Scalar,Array>(globalIndexer_,fieldName); 
 
-    int array0_sz = basis.functional->dimension(0);
-    int array1_sz = basis.functional->dimension(1);
     IntrepidFieldContainerFactory fc_factory;
  
     // loop over worksets compute and apply orientations

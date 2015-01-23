@@ -97,6 +97,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
    return pattern;
 }
 
+#ifdef PANZER_HAVE_FEI
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 {
@@ -202,6 +203,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
    }
 }
+#endif
 
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)

@@ -262,11 +262,11 @@ namespace panzer {
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Residual>(ped);
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Dirichlet Counter",dd_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(ped);
 
 
     // run tests
@@ -514,11 +514,11 @@ namespace panzer {
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
-    panzer::GlobalEvaluationDataContainer gedc;
-    gedc.addDataObject("Dirichlet Counter",dd_loc);
-    gedc.addDataObject("Solution Gather Container",loc);
-    gedc.addDataObject("Residual Scatter Container",loc);
-    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
+    panzer::Traits::PreEvalData ped;
+    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc.addDataObject("Solution Gather Container",loc);
+    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////

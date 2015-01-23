@@ -979,12 +979,12 @@ STK_Interface::isMeshCoordField(const std::string & eBlock,
   }
 
   axis = 0;
-  for(axis=0;axis<blkItr->second.size();axis++) {
+  for(axis=0;axis<Teuchos::as<int>(blkItr->second.size());axis++) {
     if(blkItr->second[axis]==fieldName) 
       break; // found axis, break
   }
     
-  if(axis>=blkItr->second.size())
+  if(axis>=Teuchos::as<int>(blkItr->second.size()))
     return false;
  
   return true;

@@ -144,7 +144,7 @@ void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -281,7 +281,7 @@ void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, Traits,S,LO,G
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -426,7 +426,7 @@ void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************

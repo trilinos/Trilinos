@@ -125,11 +125,11 @@ preEvaluate(typename Traits::PreEvalData d)
   typedef SGEpetraLinearObjContainer SGLOC;
 
   // extract linear object container
-  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_));
+  sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.gedc.getDataObject(globalDataKey_));
  
   if(sgEpetraContainer_==Teuchos::null) {
     // extract linear object container
-    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+    Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
     sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(loc);
   }
 }

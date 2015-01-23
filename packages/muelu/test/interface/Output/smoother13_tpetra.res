@@ -157,10 +157,10 @@ A 0    9999  29995     3.00  1
 A 1    3333   9997     3.00  1
 A 2    1111   3331     3.00  1
 
-Smoother (level 0) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94914, alpha: 20, lambdaMin: 0.0974568}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
+Smoother (level 0) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.95138, alpha: 20, lambdaMin: 0.0975692}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 Smoother (level 0) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94974, alpha: 20, lambdaMin: 0.0974869}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax: 1.94982, alpha: 20, lambdaMin: 0.0974912}, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 Smoother (level 1) post : "Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
 Smoother (level 2) pre  : SuperLU solver interface, direct solve

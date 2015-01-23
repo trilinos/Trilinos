@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 
   //fm->writeGraphvizFile();
 
-  panzer::GlobalEvaluationDataContainer preEvalData;
+  panzer::Traits::PreEvalData preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);

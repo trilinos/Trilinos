@@ -50,6 +50,7 @@
 #include <vector>
 #include <set>
 
+#include "Panzer_ConfigDefs.hpp"
 #include "Panzer_DOFManagerFEI.hpp"
 
 // include some intrepid basis functions
@@ -70,6 +71,7 @@ using Teuchos::rcpFromRef;
 
 namespace panzer {
 
+#ifdef PANZER_HAVE_FEI
 TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
 {
    DOFManagerFEI<int,int> dofManager; 
@@ -120,6 +122,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
 }
+#endif
 
 
 }

@@ -158,7 +158,7 @@ void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, Tra
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
