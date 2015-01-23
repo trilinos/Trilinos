@@ -4366,6 +4366,8 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
+  require_ok_to_modify();
+
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
@@ -5358,6 +5360,8 @@ void BulkData::internal_change_entity_parts(
   const std::vector<Part*> & remove_parts,
   bool always_propagate_internal_changes )
 {
+  require_ok_to_modify();
+
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "add_parts: " << add_parts);

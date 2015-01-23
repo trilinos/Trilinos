@@ -660,20 +660,63 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
     }
   }
   else if ( bad_part ) {
-    error_log << " Parts( " ;
+    error_log << " Comparing parts from this processor(" << mesh.parallel_rank() << ") against processor (" << recv_owner_rank << ")" << std::endl;
+
+    std::set<std::string> thisProcPartNames;
+    std::set<std::string> otherProcPartNames;
 
     for ( const unsigned * k = part_ordinals.first ;
           k < part_ordinals.second ; ++k ) {
-      error_log << " \"" << mesh_parts[ *k ]->name() << "\"" ;
+        if ( mesh_parts[*k]->entity_membership_is_parallel_consistent())
+        {
+            if ( mesh_parts[*k]->name() != "{OWNS}" )
+            {
+                thisProcPartNames.insert(mesh_parts[*k]->name());
+            }
+        }
     }
-    error_log << " ) != received Parts( " ;
 
     for ( std::vector<Part*>::const_iterator
             ip =  recv_parts.begin();
           ip != recv_parts.end() ; ++ip ) {
-      error_log << " \"" << (*ip)->name() << "\"" ;
+        if ( (*ip)->entity_membership_is_parallel_consistent())
+        {
+            if ( (*ip)->name() != "{OWNS}" )
+            {
+                otherProcPartNames.insert((*ip)->name());
+            }
+        }
     }
-    error_log << " )" << std::endl ;
+
+    std::set<std::string> diff;
+
+    std::set_difference(thisProcPartNames.begin(), thisProcPartNames.end(), otherProcPartNames.begin(), otherProcPartNames.end(),
+                        std::inserter(diff, diff.begin()));
+
+    if ( !diff.empty() )
+    {
+        error_log << "\tParts on this proc, not on other proc:" << std::endl;
+        std::set<std::string>::iterator iter = diff.begin();
+        for (;iter!=diff.end();++iter)
+        {
+            error_log << "\t\t" << *iter << std::endl;
+        }
+    }
+
+    diff.clear();
+
+    std::set_difference(otherProcPartNames.begin(), otherProcPartNames.end(), thisProcPartNames.begin(), thisProcPartNames.end(),
+                        std::inserter(diff, diff.begin()));
+
+    if ( !diff.empty() )
+    {
+        error_log << "\tParts on other proc, not on this proc:" << std::endl;
+        std::set<std::string>::iterator iter = diff.begin();
+        for (;iter!=diff.end();++iter)
+        {
+            error_log << "\t\t" << *iter << std::endl;
+        }
+    }
   }
   else if ( bad_rel ) {
     error_log << " Relations(" ;
