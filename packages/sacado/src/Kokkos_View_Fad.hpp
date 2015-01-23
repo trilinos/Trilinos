@@ -234,9 +234,10 @@ public:
 private:
 
   // Restrict allocation to 'FadStaticDimension'
-  inline
+  KOKKOS_INLINE_FUNCTION
   void verify_dimension_storage_static_size() const
   {
+#if defined(SACADO_DEBUG) && ! defined(__CUDA_ARCH__)
     if ( Impl::dimension( m_offset_map , unsigned(Rank) ) % ( FadStaticDimension ? FadStaticDimension+1 : 1 ) ) {
       std::ostringstream msg ;
       msg << "Kokkos::View< FadType , ... > allocation dimension ("
@@ -246,6 +247,7 @@ private:
           << ")" ;
       Kokkos::abort( msg.str().c_str() );
     }
+#endif
   }
 
 public:
@@ -339,6 +341,7 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
   template< typename T >
+  KOKKOS_INLINE_FUNCTION
   View( T * ptr ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,

@@ -72,3 +72,5 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
     DEST_FILES   plot_fad_expr_depth.py)
 
 ENDIF()
+
+ADD_SUBDIRECTORY(fenl_assembly)
