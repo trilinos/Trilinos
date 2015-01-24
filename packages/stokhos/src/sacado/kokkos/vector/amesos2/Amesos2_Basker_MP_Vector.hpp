@@ -47,6 +47,7 @@
 
 #include "Amesos2_Basker.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Amesos2_Solver_MP_Vector.hpp"
 
 // Specialization of BASKER_ScalarTraits for MP::Vector
 template <class T> struct BASKER_ScalarTraits;
@@ -75,10 +76,7 @@ namespace Amesos2 {
   // Specialize our specialization for create_solver_with_supported_type
   // to pass the scalar type directly to Basker
   template < class ST, class LO, class GO, class NO >
-  struct create_solver_with_supported_type<
-    Basker,
-    Tpetra::CrsMatrix<Sacado::MP::Vector<ST>,LO,GO,NO>,
-    Tpetra::MultiVector<Sacado::MP::Vector<ST>,LO,GO,NO> > {
+  struct create_mp_vector_solver_impl < Basker, ST, LO, GO, NO > {
     typedef Sacado::MP::Vector<ST> SC;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;

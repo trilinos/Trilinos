@@ -505,23 +505,16 @@ namespace Amesos2 {
 
   };
 
-  // Specialization of create_solver_with_supported_type for
-  // Sacado::MP::Vector where we create MPVectorSolverAdapter wrapping
-  // each solver
   template < template <class,class> class ConcreteSolver,
              class ST, class LO, class GO, class NO >
-  struct create_solver_with_supported_type<
-    ConcreteSolver,
-    Tpetra::CrsMatrix<Sacado::MP::Vector<ST>,LO,GO,NO>,
-    Tpetra::MultiVector<Sacado::MP::Vector<ST>,LO,GO,NO> > {
+  struct create_mp_vector_solver_impl {
     typedef Sacado::MP::Vector<ST> SC;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NO> Matrix;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> Vector;
     static Teuchos::RCP<Solver<Matrix,Vector> >
     apply(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
-          Teuchos::RCP<const Vector> B )
-    {
+          Teuchos::RCP<const Vector> B ) {
       ctassert<
         Meta::is_same<
           typename MatrixTraits<Matrix>::scalar_t,
@@ -534,6 +527,17 @@ namespace Amesos2 {
       return Teuchos::rcp( new MPVectorSolverAdapter<ST,LO,GO,NO,ConcreteSolver>(A, X, B) );
     }
   };
+
+  // Specialization of create_solver_with_supported_type for
+  // Sacado::MP::Vector where we create MPVectorSolverAdapter wrapping
+  // each solver
+  template < template <class,class> class ConcreteSolver,
+             class ST, class LO, class GO, class NO >
+  struct create_solver_with_supported_type<
+    ConcreteSolver,
+    Tpetra::CrsMatrix<Sacado::MP::Vector<ST>,LO,GO,NO>,
+    Tpetra::MultiVector<Sacado::MP::Vector<ST>,LO,GO,NO> > :
+    public create_mp_vector_solver_impl<ConcreteSolver, ST, LO, GO, NO> {};
 
   // Specialization for solver_supports_scalar for Sacado::MP::Vector<Storage>
   // value == true if and only if

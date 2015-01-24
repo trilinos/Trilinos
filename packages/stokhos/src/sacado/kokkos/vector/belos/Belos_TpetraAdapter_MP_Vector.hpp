@@ -91,7 +91,7 @@ namespace Belos {
   template<class BaseScalar, class Storage, class LO, class GO, class Node>
   class MultiVecTraits<BaseScalar,
                        Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
-                                            LO,GO,Node> > {
+                                            LO,GO,Node,true> > {
     typedef typename Storage::ordinal_type s_ordinal;
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
@@ -901,7 +901,8 @@ namespace Belos {
   class MultiVecTraits<BaseScalar,
                        Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
                                             LO,GO,
-                                            Kokkos::Compat::KokkosDeviceWrapperNode<Device> > > {
+                                            Kokkos::Compat::KokkosDeviceWrapperNode<Device>,
+                                            false > > {
   public:
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
   private:
