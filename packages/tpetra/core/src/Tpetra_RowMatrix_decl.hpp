@@ -448,13 +448,40 @@ namespace Tpetra {
     add (const Scalar& alpha,
          const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Scalar& beta,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap=Teuchos::null,
-         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap=Teuchos::null,
-         const Teuchos::RCP<Teuchos::ParameterList>& params=Teuchos::null) const;
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& domainMap = Teuchos::null,
+         const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& rangeMap = Teuchos::null,
+         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
     //@}
     //! \name Implementation of Packable interface
     //@{
+  private:
+    bool
+    packRow (char* const numEntOut,
+             char* const valOut,
+             char* const indOut,
+             const size_t numEnt,
+             const LocalOrdinal lclRow) const;
 
+    // TODO (mfh 25 Jan 2015) Could just make this "protected" and let
+    // CrsMatrix use it, since it's exactly the same there.
+    void
+    allocatePackSpace (Teuchos::Array<char>& exports,
+                       size_t& totalNumEntries,
+                       const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const;
+
+    /// \brief Pack this object's data for an Import or Export.
+    ///
+    /// \warning To be called only by the default implementation of
+    ///   pack() (see below).
+    void
+    packImpl (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+              Teuchos::Array<char>& exports,
+              const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+              size_t& constantNumPackets,
+              Distributor& distor) const;
+
+
+  public:
     /// \brief Pack this object's data for an Import or Export.
     ///
     /// \warning To be called only by the packAndPrepare method of

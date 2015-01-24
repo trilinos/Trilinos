@@ -42,12 +42,13 @@
 #ifndef TPETRA_IMPORT_UTIL_HPP
 #define TPETRA_IMPORT_UTIL_HPP
 
-/*!
-  \file Tpetra_Import_Util.hpp
-  \brief Utility functions and macros designed for use with Tpetra::Import and Tpetra::Export objects.
-*/
+/// \file Tpetra_Import_Util.hpp
+/// \brief Internal functions and macros designed for use with
+///   Tpetra::Import and Tpetra::Export objects.
+/// \warning The functions in this file are implementation details of
+///   Tpetra.  We make no promises of backwards compatibility.
 
-#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_HashTable.hpp"
 #include "Tpetra_Map.hpp"
@@ -58,43 +59,47 @@
 
 namespace Tpetra {
   namespace Import_Util {
-    //! Tpetra::Import_Util::getPidGidPairs function
-    /*!  For each GID in the TargetMap, find who owns the GID in the SourceMap.
-      This works entirely from the Distributor and has no communication at all.
-
-      The routine returns (by reference) a Teuchos::Array of std::pair<int,GlobalOrdinal> which contains (PID,GID) pairs.
-      If the use_minus_one_for_local==true, any GIDs owned by this processor get -1 instead of their PID.
-    */
+    /// \brief For each GID in the TargetMap, find who owns the GID in the SourceMap.
+    ///
+    /// This only uses the Distributor and does not communicate.  It
+    /// returns (as an output argument) an array of (PID,GID) pairs.
+    /// If use_minus_one_for_local is true, any GIDs owned by this
+    /// processor get -1 instead of their PID.
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void getPidGidPairs(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array< std::pair<int,GlobalOrdinal> > & gpids, bool use_minus_one_for_local);
+    void
+    getPidGidPairs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+                    Teuchos::Array< std::pair<int,GlobalOrdinal> >& gpids,
+                    bool use_minus_one_for_local);
 
-    //! Tpetra::Import_Util::getPids function
-    /*! Like getPidGidPairs, but just gets the PIDs, ordered by the columnmap
-     */
+    //! Like getPidGidPairs, but just gets the PIDs, ordered by the column Map.
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void getPids(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array<int> &pids, bool use_minus_one_for_local);
+    void
+    getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+             Teuchos::Array<int>& pids,
+             bool use_minus_one_for_local);
 
-    //! Tpetra::Import_Util::getRemotePIDs
-    /*! Gets a list of remote PIDs from an importer in the order corresponding to the RemoteLIDs
-     */
+    /// \brief Get a list of remote PIDs from an importer in the order
+    ///   corresponding to the remote LIDs.
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void getRemotePIDs(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array<int> &RemotePIDs);
+    void
+    getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+                   Teuchos::Array<int>& RemotePIDs);
+  } // namespace Import_Util
+} // namespace Tpetra
 
-  }// end Import_Util
-}//end Tpetra
+namespace Tpetra {
+namespace Import_Util {
 
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//----------------------------------------------------------------------------
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Tpetra::Import_Util::getPidGidPairs(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array< std::pair<int,GlobalOrdinal> > & gpids, bool use_minus_one_for_local) {
-  // Put the (PID,GID) pair in member of Importer.TargetMap() in gpids.  If use_minus_one_for_local==true, put in -1 instead of MyPID.
-  const Tpetra::Distributor & D=Importer.getDistributor();
+void
+getPidGidPairs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+                Teuchos::Array< std::pair<int,GlobalOrdinal> >& gpids,
+                bool use_minus_one_for_local)
+{
+  // Put the (PID,GID) pair in member of Importer.TargetMap() in
+  // gpids.  If use_minus_one_for_local==true, put in -1 instead of
+  // MyPID.
+  const Tpetra::Distributor& D = Importer.getDistributor();
 
   LocalOrdinal ii;
   size_t  i,j,k;
@@ -130,12 +135,12 @@ void Tpetra::Import_Util::getPidGidPairs(const Tpetra::Import<LocalOrdinal,Globa
   }
 }
 
-
-
-
-//----------------------------------------------------------------------------
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Tpetra::Import_Util::getPids(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array<int> &pids, bool use_minus_one_for_local) {
+void
+getPids (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+         Teuchos::Array<int>& pids,
+         bool use_minus_one_for_local)
+{
   const Tpetra::Distributor & D=Importer.getDistributor();
 
   LocalOrdinal ii;
@@ -172,13 +177,12 @@ void Tpetra::Import_Util::getPids(const Tpetra::Import<LocalOrdinal,GlobalOrdina
   }
 }
 
-
-//----------------------------------------------------------------------------
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Tpetra::Import_Util::getRemotePIDs(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array<int> &RemotePIDs) {
-  const Tpetra::Distributor & D=Importer.getDistributor();
-
-  size_t  i,j,k;
+void
+getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
+               Teuchos::Array<int>& RemotePIDs)
+{
+  const Tpetra::Distributor& D = Importer.getDistributor();
 
   // Get the importer's data
   Teuchos::ArrayView<const LocalOrdinal> RemoteLIDs  = Importer.getRemoteLIDs();
@@ -191,18 +195,20 @@ void Tpetra::Import_Util::getRemotePIDs(const Tpetra::Import<LocalOrdinal,Global
   // Resize the outgoing data structure
   RemotePIDs.resize(Importer.getNumRemoteIDs());
 
-  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
-  // MpiDistributor so it ought to duplicate that effect.
-  for(i=0,j=0; i<NumReceives; i++){
-    int pid=ProcsFrom[i];
-    for(k=0; k<LengthsFrom[i]; k++){
-      RemotePIDs[j]=pid;
+  // Now, for each remote ID, record who actually owns it.  This loop
+  // follows the operation order in the MpiDistributor so it ought to
+  // duplicate that effect.
+  size_t i,j,k;
+  for (i = 0, j = 0; i < NumReceives; ++i) {
+    const int pid = ProcsFrom[i];
+    for (k = 0; k < LengthsFrom[i]; ++k) {
+      RemotePIDs[j] = pid;
       j++;
     }
   }
 }
 
-
-
+} // namespace Import_Util
+} // namespace Tpetra
 
 #endif // TPETRA_IMPORT_UTIL_HPP
