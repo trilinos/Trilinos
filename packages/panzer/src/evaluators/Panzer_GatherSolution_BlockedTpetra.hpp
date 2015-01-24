@@ -75,7 +75,7 @@ class BlockedDOFManager; //forward declaration
     and that the nmber of dofs is equal to the size of the solution
     names vector.
 */
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class GatherSolution_BlockedTpetra
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,

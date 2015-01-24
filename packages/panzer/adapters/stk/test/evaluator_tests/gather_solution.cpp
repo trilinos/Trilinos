@@ -84,7 +84,7 @@ using Teuchos::rcp;
 typedef double ScalarT;
 typedef int LocalOrdinalT;
 typedef int GlobalOrdinalT;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NodeT;
+typedef panzer::TpetraNodeType NodeT;
 
 typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
 typedef Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> OperatorType;

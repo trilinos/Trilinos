@@ -67,7 +67,7 @@ class BlockedDOFManager; //forward declaration
            Newton-based solve
 
 */
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class ScatterResidual_BlockedTpetra
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,

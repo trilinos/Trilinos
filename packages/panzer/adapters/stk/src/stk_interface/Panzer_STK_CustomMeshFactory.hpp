@@ -94,10 +94,10 @@ namespace panzer_stk_classic {
     double *Coords_;
 
     int NumElementsPerProc_;
-    int *Elements_;
     int *BlockIDs_;
-
     int *Element2Nodes_;
+
+    int OffsetToGlobalElementIDs_;
 
     double *ChargeDensity_;
     double *ElectricPotential_;

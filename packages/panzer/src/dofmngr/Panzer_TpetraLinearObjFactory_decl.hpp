@@ -64,14 +64,14 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
 
-#include"Kokkos_DefaultNode.hpp"
+#include"Panzer_NodeType.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
 class TpetraLinearObjFactory : public LinearObjFactory<Traits> 
                              , public ThyraObjFactory<ScalarT> {
 public:

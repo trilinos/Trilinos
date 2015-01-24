@@ -56,6 +56,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"

@@ -75,7 +75,7 @@
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
 class BlockedTpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:

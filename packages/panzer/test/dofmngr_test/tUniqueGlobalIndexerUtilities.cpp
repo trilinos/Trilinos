@@ -195,7 +195,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
    int tFieldNum = globalIndexer->getFieldNum("T");
 
    Teuchos::RCP<Tpetra::Vector<int,int,int> > reducedFieldVector 
-         = panzer::buildGhostedFieldReducedVector<short,int,KokkosClassic::DefaultNode::DefaultNodeType>(*globalIndexer);
+         = panzer::buildGhostedFieldReducedVector<short,int,panzer::TpetraNodeType>(*globalIndexer);
 
    Tpetra::Vector<int,int,int> reducedUDataVector(getFieldMap(uFieldNum,*reducedFieldVector));
    Tpetra::Vector<int,int,int> reducedTDataVector(getFieldMap(tFieldNum,*reducedFieldVector));
@@ -274,7 +274,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
    RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
-   panzer::ArrayToFieldVector<short,int,KokkosClassic::DefaultNode::DefaultNodeType> atfv(globalIndexer);
+   panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
 
    std::map<std::string,IntFieldContainer> dataU, dataT;
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_0",*globalIndexer,dataU["block_0"]);
@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
    RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
-   panzer::ArrayToFieldVector<short,int,KokkosClassic::DefaultNode::DefaultNodeType> atfv(globalIndexer);
+   panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
 
    std::map<std::string,IntFieldContainer> dataU, dataT;
    fillFieldContainer(globalIndexer->getFieldNum("U"),"block_0",*globalIndexer,dataU["block_0"]);
@@ -418,7 +418,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
    RCP<panzer::UniqueGlobalIndexer<short,int> > globalIndexer 
          = rcp(new panzer::unit_test::UniqueGlobalIndexer(myRank,numProcs));
 
-   panzer::ArrayToFieldVector<short,int,KokkosClassic::DefaultNode::DefaultNodeType> atfv(globalIndexer);
+   panzer::ArrayToFieldVector<short,int,panzer::TpetraNodeType> atfv(globalIndexer);
 
    Teuchos::RCP<const Tpetra::Map<int,int> > uMap = atfv.getFieldMap("U"); // these will be tested below!
    Teuchos::RCP<const Tpetra::Map<int,int> > tMap = atfv.getFieldMap("T");

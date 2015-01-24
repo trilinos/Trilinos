@@ -52,6 +52,7 @@
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -271,8 +272,8 @@ protected:
 
   /** Use Zoltan2 to locally reorder with RCM.
     */
-  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
-  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
+  Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
+  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,panzer::TpetraNodeType> > &);
 
   /** Using the natural ordering associated with the std::vector
     * retrieved from the connection manager
@@ -304,13 +305,13 @@ protected:
     * This map is used to construct the GIDs, and also to communicate the used
     * GIDs. (this is steps 1 and 2)
     */
-  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+  Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
   buildOverlapMapFromElements(const ElementBlockAccess & access) const; 
 
   void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                                 std::vector<std::vector< GO > > & elementGIDs,
-                                const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
-                                const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const;
+                                const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
+                                const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;

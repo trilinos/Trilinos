@@ -66,7 +66,7 @@
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 
-#include "Kokkos_DefaultNode.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 

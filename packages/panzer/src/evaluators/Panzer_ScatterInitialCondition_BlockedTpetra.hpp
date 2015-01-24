@@ -67,7 +67,7 @@ class BlockedDOFManager; //forward declaration
     Default implementation throws exceptions.  Residual specialization will be used for setting solution.
 
 */
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=panzer::TpetraNodeType>
 class ScatterInitialCondition_BlockedTpetra
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits>,

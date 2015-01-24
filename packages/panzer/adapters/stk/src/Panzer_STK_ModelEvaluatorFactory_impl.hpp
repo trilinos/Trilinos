@@ -113,7 +113,7 @@
 
 #include "EpetraExt_VectorOut.h"
 
-#include <Kokkos_DefaultNode.hpp>
+#include <Panzer_NodeType.hpp>
 
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -1544,8 +1544,8 @@ namespace panzer_stk_classic {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
-             typedef Tpetra::Map<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> Map;
-             typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> MV;
+             typedef Tpetra::Map<int,panzer::Ordinal64,panzer::TpetraNodeType> Map;
+             typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,panzer::TpetraNodeType> MV;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();
@@ -1668,13 +1668,13 @@ namespace panzer_stk_classic {
     #ifdef HAVE_MUELU
     {
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy for Epetra
-      Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuTpetra<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
     #ifdef HAVE_IFPACK2
     {
       typedef Thyra::PreconditionerFactoryBase<double> Base;
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> > Impl;
+      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,panzer::TpetraNodeType> > Impl;
 
       linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
     }

@@ -349,14 +349,16 @@ IF (Stokhos_ENABLE_EpetraExt)
           PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-        TRIBITS_ADD_TEST(
-          Linear2D_Diffusion_PCE_NOX_SG_Solvers
-          NAME "Linear2D_Diffusion_GMRES_KLR"
-          ARGS "--sg_operator_method=KL-Reduced-Matrix-Free --num_spatial_procs=1"
-          COMM serial mpi
-          NUM_MPI_PROCS 2
-          PASS_REGULAR_EXPRESSION "Example Passed!"
-          )
+        IF(Stokhos_ENABLE_Anasazi)
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_KLR"
+            ARGS "--sg_operator_method=KL-Reduced-Matrix-Free --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
+            )
+        ENDIF()
 
         IF(Stokhos_ENABLE_TriKota)
 

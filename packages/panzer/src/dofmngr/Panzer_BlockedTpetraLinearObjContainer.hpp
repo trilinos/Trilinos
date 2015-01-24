@@ -65,7 +65,7 @@ namespace panzer {
 /** Linear object container for Block operators, this
   * always assumes the matrix is square.
   */
-template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
 class BlockedTpetraLinearObjContainer : public LinearObjContainer
                                       , public ThyraObjContainer<ScalarT> {
 public:
