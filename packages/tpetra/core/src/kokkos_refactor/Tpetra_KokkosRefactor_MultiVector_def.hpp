@@ -2758,9 +2758,12 @@ namespace Tpetra {
     const size_t jj = isConstantStride () ? static_cast<size_t> (j) :
       static_cast<size_t> (whichVectors_[j]);
     const std::pair<size_t, size_t> rng (jj, jj+1);
-    return rcp (new V (this->getMap (),
+    if(view_.dimension_0()>0)
+      return rcp (new V (this->getMap (),
                        subview<dual_view_type> (view_, ALL (), rng),
                        origView_));
+    else
+      return rcp (new V (this->getMap()));
   }
 
 
