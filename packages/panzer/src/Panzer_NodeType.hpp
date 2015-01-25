@@ -14,7 +14,7 @@ namespace panzer {
   //typedef KokkosClassic::DefaultNode::DefaultNodeType TpetraNodeType;
 
   // New Tpetra default node type
-  typedef typename Tpetra::Map<>::node_type TpetraNodeType;
+  typedef Tpetra::Map<>::node_type TpetraNodeType;
 
 }
 
