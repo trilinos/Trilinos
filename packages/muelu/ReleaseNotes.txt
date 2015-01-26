@@ -5,6 +5,17 @@ Release Notes for Trilinos Package MueLu
 Trilinos 11.14:
 ---------------
 
+* Support for Amesos2 native serial direct solver "Basker".
+
+* ML parameters can be used through MueLu::CreateEpetraPreconditioner and
+  MueLu::CreateTpetraPreconditioner interfaces
+
+
+* Several bug fixes:
+    6256:  ML parameter "coarse: type" does not work in
+           MueLu::MLParameterListInterpreter
+    6255:  Multiple issues in MueLu::MLParameterListInterpreter
+
 * Explicit template instantiation (ETI) changes
 
 The new version of MueLu uses Tpetra macros for specifying the desired template
