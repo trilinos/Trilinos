@@ -48,6 +48,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_ParametrizedObjective.hpp"
+#include "ROL_SampleGenerator.hpp"
 
 namespace ROL {
 
