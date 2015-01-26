@@ -346,7 +346,7 @@ template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_decom
 {
   piv[0] = 0; piv[1] = 1; piv[2] = 2;
 
-  register double m;
+  double m;
 
 #ifndef NDEBUG
   if ( A[0] == 0.0 && A[3] == 0.0 && A[6] == 0.0 ) return 0;
