@@ -181,346 +181,90 @@ NodalBasis<Real>::NodalBasis(const int ni, const int nq) : ni_(ni),nq_(nq),
 
 
 
+template<class Functor, class Real>
+class vectorFunction {
 
-/** \brief Evaluate the following generic variable coefficient type term 
-    \f[ f_j = \left(\varphi_j^{(i)}, a(y,y',u,x)\right),\quad i=0,1 \f]
-    @param[in] y the simulation variable
-    @param[in] u the optimization variable
-    @param[in] deriv is a bool for whether to differentiate the test functions
-    @param[in] xlr is a two element vector containing the locations of the left and right ends of an element
-    @param[in] funcp the variable coefficient function which depends on \f$y,y',u,x\f$
-    @param[in] basis is a structure containing terms needed for computing numerical inner products
-    @param[out] f vector containing these inner products */
-template<class Functor, class ScalarT, class Real>
-void vectorFunction(const Vector<ScalarT> &y,
-                    const Vector<ScalarT> &u,
-                    const bool deriv, 
-                    const Real xlr[2], 
-                    Functor* funcp,
-                    Teuchos::RCP<NodalBasis<Real> > basisp,  
-                    Vector<ScalarT> &f){
+    private:
+        Real xl_;
+        Real xr_;
+        Real dx_;  
+        bool deriv_; 
+        Functor *funcp_;
+        Teuchos::RCP<NodalBasis<Real> > basisp_;
+        int ni_;
+        int nq_;  
+    public:
+        
+        vectorFunction(Real xl, Real xr, bool deriv, Functor funcp, Teuchos::RCP<NodalBasis<Real> > basisp);
 
-    int ni = basisp->ni_;
-    int nq = basisp->nq_;     
+        template<class ScalarT> 
+        void evaluate(const Vector<ScalarT> &u, const Vector<ScalarT> &z, Vector<ScalarT> &f);
 
-    Real dx = 0.5*(xlr[1]-xlr[0]); // relative length of element
+};
 
-    Teuchos::RCP<const std::vector<ScalarT> > yp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(y))).getVector();
+
+template<class Functor, class Real>
+vectorFunction<Functor,Real>::vectorFunction(Real xl, Real xr, bool deriv, Functor funcp, Teuchos::RCP<NodalBasis<Real> > basisp) :
+    xl_(xl), xr_(xr), dx_(xr-xl), deriv_(deriv), funcp_(funcp), basisp_(basisp), ni_(basisp->ni_), nq_(basisp->nq_) {
+}
+
+
+
+template<class Functor, class Real>
+template<class ScalarT>
+void vectorFunction<Functor,Real>::evaluate(const Vector<ScalarT> &u, const Vector<ScalarT> &z, Vector<ScalarT> &f) {
 
     Teuchos::RCP<const std::vector<ScalarT> > up =
         (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+
+    Teuchos::RCP<const std::vector<ScalarT> > zp =
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     Teuchos::RCP<std::vector<ScalarT> > fp =
         Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (f)).getVector());
 
     // Need AD type of x for evaluating nonlinear function
-    Teuchos::RCP<std::vector<ScalarT> > yqp   = Teuchos::rcp( new std::vector<ScalarT>(nq,0) );
-    Teuchos::RCP<std::vector<ScalarT> > y_xqp = Teuchos::rcp( new std::vector<ScalarT>(nq,0) );
-    Teuchos::RCP<std::vector<ScalarT> > uqp   = Teuchos::rcp( new std::vector<ScalarT>(nq,0) );
-    Teuchos::RCP<std::vector<ScalarT> > fqp   = Teuchos::rcp( new std::vector<ScalarT>(nq,0) );
+    Teuchos::RCP<std::vector<ScalarT> > uqp   = Teuchos::rcp( new std::vector<ScalarT>(nq_,0) );
+    Teuchos::RCP<std::vector<ScalarT> > u_xqp = Teuchos::rcp( new std::vector<ScalarT>(nq_,0) );
+    Teuchos::RCP<std::vector<ScalarT> > zqp   = Teuchos::rcp( new std::vector<ScalarT>(nq_,0) );
+    Teuchos::RCP<std::vector<ScalarT> > fqp   = Teuchos::rcp( new std::vector<ScalarT>(nq_,0) );
 
-    // Interpolate y, u, y_x from onto the quadrature grid
-    for(int i=0;i<ni;++i) {
-        for(int j=0;j<nq;++j) {
+    // Interpolate z, u, u_x from onto the quadrature grid
+    for(int i=0;i<ni_;++i) {
+        for(int j=0;j<nq_;++j) {
           
-            (*yqp)[j]   += (*basisp->Lp_)[j+nq*i]*(*yp)[i]; // y    
-            (*y_xqp)[j] += (*basisp->Dp_)[j+nq*i]*(*yp)[i]; // y'  
-            (*uqp)[j]   += (*basisp->Lp_)[j+nq*i]*(*up)[i]; // u   
+            (*zqp)[j]   += (*basisp_->Lp_)[j+nq_*i]*(*zp)[i]; // y    
+            (*u_xqp)[j] += (*basisp_->Dp_)[j+nq_*i]*(*up)[i]; // y'  
+            (*uqp)[j]   += (*basisp_->Lp_)[j+nq_*i]*(*up)[i]; // u   
         }
     }
  
-    // Evaluate a(y,y',u,x) on the quadrature grid
-    for(int j=0;j<nq;++j) {
+    // Evaluate a(u,u',z,x) on the quadrature grid
+    for(int j=0;j<nq_;++j) {
 
         // Mapped x variable
-        ScalarT xs = 0.5*(xlr[0]*(1-(*basisp->xqp_)[j])+xlr[1]*(1+(*basisp->xqp_)[j]));
-        ScalarT y_xs = (*y_xqp)[j]/dx;
-        (*fqp)[j] = (*funcp)( (*yqp)[j], y_xs, (*uqp)[j], xs);      
+        ScalarT xs = 0.5*(xl_*(1.0-(*basisp_->xqp_)[j])+xr_*(1.0+(*basisp_->xqp_)[j]));
+        ScalarT u_xs = (*u_xqp)[j]/dx_;
+        (*fqp)[j] = (*funcp_)( (*uqp)[j], u_xs, (*zqp)[j], xs);      
     } 
 
     // Integrate against all first derivatives of interpolants
-    if(deriv) {
-        for(int i=0;i<ni;++i) {
-            for(int j=0;j<nq;++j) {
-                (*fp)[i] += (*basisp->wqp_)[j]*(*fqp)[j]*(*basisp->Dp_)[j+nq*i];   
+    if(deriv_) {
+        for(int i=0;i<ni_;++i) {
+            for(int j=0;j<nq_;++j) {
+                (*fp)[i] += (*basisp_->wqp_)[j]*(*fqp)[j]*(*basisp_->Dp_)[j+nq_*i];   
             }
         } 
     }
     else { // Integrate against all interpolants 
-        for(int i=0;i<ni;++i) {
-            for(int j=0;j<nq;++j) {
-                (*fp)[i] += (*basisp->wqp_)[j]*(*fqp)[j]*(*basisp->Lp_)[j+nq*i]*dx;   
+        for(int i=0;i<ni_;++i) {
+            for(int j=0;j<nq_;++j) {
+                (*fp)[i] += (*basisp_->wqp_)[j]*(*fqp)[j]*(*basisp_->Lp_)[j+nq_*i]*dx_;   
             }
         } 
     }
+}
 
-} // End vectorFunction
-
-
-
-
-/** \brief Evaluate the action of the Jacobian block of a generic variable coefficient type term 
-    \f[ f_j = \left(\varphi_j^{(i)}, a(y,y',u,x)\right),\quad i=0,1 \f]
-    on a direction vector v.  
-    @param[in] y the simulation variable
-    @param[in] u the optimization variable
-    @param[in] deriv is a bool for whether to differentiate the test functions
-    @param[in] xlr is a two element vector containing the locations of the left and right ends of an element
-    @param[in] funcp the variable coefficient function which depends on \f$y,y',u,x\f$
-    @param[in] basisp is a pointer to a finite element object
-    @param[in] v is a direction vector
-    @param[in] blk determines whether to differentiate with respect to sim variable (0) or opt (1)
-    @param[out] jvp is the jacobian block in the v direction */
-template<class Functor,class ScalarT, class Real>
-void applyJacobianBlock(const Vector<ScalarT> &y, 
-                        const Vector<ScalarT> &u,
-                        const bool deriv,
-                        const Real xlr[2],
-                        Functor *funcp,  
-                        Teuchos::RCP<NodalBasis<Real> > basisp,
-                        const Vector<ScalarT> &v,
-                        const int blk,
-                        Vector<ScalarT> &jv) {
-
-
-   typedef Sacado::Fad::SFad<ScalarT,1> FadType;
-
-   Teuchos::RCP<const std::vector<ScalarT> > yp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(y))).getVector();
-
-   Teuchos::RCP<const std::vector<ScalarT> > up =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
-
-   Teuchos::RCP<const std::vector<ScalarT> > vp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
-
-    Teuchos::RCP<std::vector<ScalarT> > jvp =
-        Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (jv)).getVector());
-
-    int ni = yp->size();
-
-    Teuchos::RCP<std::vector<FadType> > y_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    y_fad_rcp->reserve(ni);
-
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    u_fad_rcp->reserve(ni);
-
-    Teuchos::RCP<std::vector<FadType> > v_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    v_fad_rcp->reserve(ni);
-
-    Teuchos::RCP<std::vector<FadType> > f_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    f_fad_rcp->reserve(ni);
-
-    if(blk==0) { // Differentiate with respect to simulation variable
-        for(int i=0; i<ni; ++i) {
-
-             // Call constructors on each element 
-             y_fad_rcp->push_back(FadType(1,0)); 
-             u_fad_rcp->push_back(0);
-             v_fad_rcp->push_back(0);
-             f_fad_rcp->push_back(0);
-
-             // Set values
-             (*y_fad_rcp)[i].val() = (*yp)[i];
-             (*u_fad_rcp)[i].val() = (*up)[i];
-             (*v_fad_rcp)[i].val() = (*vp)[i];
-
-             // Set directional derivative
-             (*y_fad_rcp)[i].fastAccessDx(0) = (*v_fad_rcp)[i].val();
-        }
-    }
-    else if(blk==1) { // Differentiate with respect to the optimization variable   
-        for(int i=0; i<ni; ++i) {
-
-             // Call constructors on each element 
-             y_fad_rcp->push_back(0);
-             u_fad_rcp->push_back(FadType(1,0)); 
-             v_fad_rcp->push_back(0);
-             f_fad_rcp->push_back(0);
-
-             // Set values 
-             (*y_fad_rcp)[i].val() = (*yp)[i]; 
-             (*u_fad_rcp)[i].val() = (*up)[i];
-             (*v_fad_rcp)[i].val() = (*vp)[i];
-                 
-             // Set direction derivative
-             (*u_fad_rcp)[i].fastAccessDx(0) = (*v_fad_rcp)[i].val(); 
-       }
-    }
-    else { // Undefined block index
-        TEUCHOS_TEST_FOR_EXCEPTION( (blk>1), std::invalid_argument, 
-            ">>>  ERROR in FiniteElement::applyJacobianBlock : " 
-            "block index must be 0 or 1");
-    }
-
-    StdVector<FadType> y_fad(y_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> f_fad(f_fad_rcp);
-
-    // Evaluate the vector
-    vectorFunction(y_fad,u_fad,deriv,xlr,funcp,basisp,f_fad);
-
-    // Compute its directional derivative
-    for(int i=0; i<ni; ++i) {
-        (*jvp)[i] = (*f_fad_rcp)[i].dx(0);
-    }
-} // End applyJacobianBlock
-
-
-
-/** \brief Construct the Jacobian block of a generic variable coefficient type term 
-    \f[ f_j = \left(\varphi_j^{(i)}, a(y,y',u,x)\right),\quad i=0,1 \f]
-    @param[in] y the simulation variable
-    @param[in] u the optimization variable
-    @param[in] deriv is a bool for whether to differentiate the test functions
-    @param[in] xlr is a two element vector containing the locations of the left and right ends of an element
-    @param[in] funcp the variable coefficient function which depends on \f$y,y',u,x\f$
-    @param[in] basisp is a pointer to a finite element object
-    @param[in] blk determines whether to differentiate with respect to sim variable (0) or opt (1)
-    @param[out] jac is the Jacobian block (column-stacked) */
-template<class Functor, class ScalarT, class Real>
-void buildJacobianBlock(const Vector<ScalarT> &y, 
-                        const Vector<ScalarT> &u,
-                        const bool deriv,
-                        const Real xlr[2],
-                        Functor *funcp,  
-                        Teuchos::RCP<NodalBasis<Real> > basisp,
-                        const int blk,
-                        Vector<ScalarT> &jac){
-
-   Teuchos::RCP<std::vector<ScalarT> > jacp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (jac)).getVector());
-
-   int ni  = basisp->ni_; 
-   int ni2 = jacp->size();
-
-   if(ni2!=ni*ni) { // Require at least two points 
-        TEUCHOS_TEST_FOR_EXCEPTION( (ni2!=ni*ni), 
-                                     std::invalid_argument, ">>>  ERROR in FiniteElement::buildloadVectorJacobian : " 
-                                                            "loadVectorJacobian must have ni^2 elements");
-   } 
-
-   // Canonical vector
-   Teuchos::RCP<std::vector<ScalarT> > e_fad_rcp = Teuchos::rcp(new std::vector<ScalarT>(ni,0)); 
-
-   // Storage vector
-   Teuchos::RCP<std::vector<ScalarT> > je_fad_rcp = Teuchos::rcp(new std::vector<ScalarT>(ni,0));
-
-   StdVector<ScalarT> e_fad(e_fad_rcp);
-   StdVector<ScalarT> je_fad(je_fad_rcp);
-
-   for(int i=0;i<ni;++i) {
-       if(i>0) {
-           (*e_fad_rcp)[i-1] = 0.0;
-       }
-
-       (*e_fad_rcp)[i] = 1.0;
-
-       applyJacobianBlock(y,u,deriv,xlr,funcp,basisp,e_fad,blk,je_fad);
-
-       std::copy(je_fad_rcp->begin(),je_fad_rcp->end(),jacp->begin()+i*ni);
-   }
-} // End build JacobianBlock
-
-
-
-
-/** \brief Apply a block of the constraint Hessian to vectors v1, v2 as in taking the second Gateaux derivative
-    of the equality constraint. 
-    \details \f[ \frac{\partial^2}{\partial s\partial t} c(\mathbf{x} + s \mathbf{v}_1 + t\mathbf{v}_2)\big|_{s,t=0} \f] 
-    where \f$ \mathbf{x}=(\mathbf{y},\mathbf{u}) \f$ and we are either differentiating only in 
-    optimization or simulation vector each time. That is to say that v1 and v2 are zero in the optimization
-    block and nonzero in the simulation block or vice versa.  
-    @param[in] y the simulation variable
-    @param[in] u the optimization variable
-    @param[in] deriv is a bool for whether to differentiate the test functions
-    @param[in] xlr is a two element vector containing the locations of the left and right ends of an element
-    @param[in] funcp the variable coefficient function which depends on \f$y,y',u,x\f$
-    @param[in] basisp is a pointer to a finite element object
-    @param[in] v is a direction vector
-    @param[in] blk determines whether to differentiate with respect to sim variable (0) or opt (1)
-*/
-
-template<class Functor, class ScalarT, class Real>
-void applyHessianBlock(const Vector<ScalarT> &y,
-                       const Vector<ScalarT> &u,
-                       const bool deriv,
-                       const Real xlr[2],
-                       Functor *funcp,
-                       Teuchos::RCP<NodalBasis<Real> > basisp,
-                       const Vector<ScalarT> &v1,
-                       const Vector<ScalarT> &v2,
-                       const int blk[2],
-                       Vector<ScalarT> &hv) {
-
-    typedef Sacado::Fad::SFad<Real,1> FadType;
-
-    Teuchos::RCP<const std::vector<ScalarT> > yp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(y))).getVector();
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<ScalarT> > v1p =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v1))).getVector();
-    Teuchos::RCP<const std::vector<ScalarT> > v2p =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v2))).getVector();
-
-    int ni = yp->size();
-
-    Teuchos::RCP<std::vector<ScalarT> > hvp =
-        Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (hv)).getVector());
-
-
-    Teuchos::RCP<std::vector<FadType> > y_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    y_fad_rcp->reserve(ni);
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    u_fad_rcp->reserve(ni);
-    Teuchos::RCP<std::vector<FadType> > v1_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    v1_fad_rcp->reserve(ni);
-    Teuchos::RCP<std::vector<FadType> > jv1_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    jv1_fad_rcp->reserve(ni);
-    
-    if(blk[1]==0) { // Second deriv wrt simulation variable
-        for(int i=0; i<ni; ++i) {
-            y_fad_rcp->push_back(FadType(1,(*yp)[i].val()));
-            u_fad_rcp->push_back((*up)[i].val());
-            v1_fad_rcp->push_back((*v1p)[i].val());
-            jv1_fad_rcp->push_back(0);
-        }
-        for(int i=0; i<ni; ++i) {
-            (*y_fad_rcp)[i].fastAccessDx(0) = (*v2p)[i].val();
-        }
-    }
-    else if(blk[1]==1) { // Second deriv wrt optimization variable
-        for(int i=0; i<ni; ++i) {
-            y_fad_rcp->push_back((*yp)[i].val());
-            u_fad_rcp->push_back(FadType(1,(*up)[i].val()));
-            v1_fad_rcp->push_back((*v1p)[i].val());
-            jv1_fad_rcp->push_back(0);
-        }
-        for(int i=0; i<ni; ++i) {
-            (*u_fad_rcp)[i].fastAccessDx(0) = (*v2p)[i].val();
-        }
-    }
-    else {
-        TEUCHOS_TEST_FOR_EXCEPTION( (blk[1]>1), std::invalid_argument, 
-            ">>>  ERROR in FiniteElement::applyHessianBlock : " 
-            "block index must be 0 or 1");
-
-    }
-
-    StdVector<FadType> y_fad(y_fad_rcp);
-    StdVector<FadType> u_fad(u_fad_rcp);
-    StdVector<FadType> v1_fad(v1_fad_rcp);
-    StdVector<FadType> jv1_fad(jv1_fad_rcp);
-
-    applyJacobianBlock(y_fad,u_fad,deriv,xlr,funcp,basisp,v1_fad,blk[0],jv1_fad);
-   
-    for(int i=0; i<ni; ++i) {
-        (*hvp)[i] = (*jv1_fad_rcp)[i].dx(0);
-    }
-
-} // End applyHessianBlock
 
 
 
