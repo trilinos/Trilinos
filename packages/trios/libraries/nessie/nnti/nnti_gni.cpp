@@ -8102,7 +8102,7 @@ static void config_init(nnti_gni_config_t *c)
     c->pi_ordering                  =PI_ORDERING_DEFAULT; /* DEFAULT, STRICT, RELAXED */
     c->rdma_mode                    =RDMA_MIXED;          /* FMA, BTE, MIXED, CROSSOVER */
     c->fma_bte_crossover_size       =4096;
-    c->max_timeout_ms               =-1;
+    c->max_timeout_ms               =200;
     c->queue_elements_per_connection=10;
 }
 
