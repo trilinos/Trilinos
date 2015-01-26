@@ -4366,7 +4366,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 {
   Trace_("stk::mesh::BulkData::internal_modification_end");
 
-  require_ok_to_modify();
+  //require_ok_to_modify();
 
   // The two states are MODIFIABLE and SYNCHRONiZED
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
