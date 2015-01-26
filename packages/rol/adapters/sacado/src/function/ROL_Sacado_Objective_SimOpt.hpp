@@ -112,14 +112,14 @@ class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
 template<class Real, template<class> class Obj>
 template<class ScalarT>
 void Sacado_Objective_SimOpt<Real,Obj>::gradient_1AD(Vector<ScalarT> &g, const Vector<ScalarT> &u, 
-                                                    const Vector<ScalarT> &z, Real &tol {
+                                                    const Vector<ScalarT> &z, Real &tol) {
     typedef Sacado::Fad::DFad<ScalarT> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     // Get a pointer to the gradient vector
     Teuchos::RCP<std::vector<ScalarT> > gp =
@@ -159,14 +159,14 @@ void Sacado_Objective_SimOpt<Real,Obj>::gradient_1AD(Vector<ScalarT> &g, const V
 template<class Real, template<class> class Obj>
 template<class ScalarT>
 void Sacado_Objective_SimOpt<Real,Obj>::gradient_2AD(Vector<ScalarT> &g, const Vector<ScalarT> &u, 
-                                                    const Vector<ScalarT> &z, Real &tol {
+                                                    const Vector<ScalarT> &z, Real &tol) {
     typedef Sacado::Fad::DFad<ScalarT> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     // Get a pointer to the gradient vector
     Teuchos::RCP<std::vector<ScalarT> > gp =
@@ -212,13 +212,13 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_11AD(Vector<ScalarT> &hv, const 
     typedef Sacado::Fad::SFad<ScalarT,1> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > vp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
  
     Teuchos::RCP<std::vector<ScalarT> > hvp =
         Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (hv)).getVector());
@@ -265,13 +265,13 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_12AD(Vector<ScalarT> &hv, const 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > vp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
  
     Teuchos::RCP<std::vector<ScalarT> > hvp =
         Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (hv)).getVector());
@@ -324,13 +324,13 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_21AD(Vector<ScalarT> &hv, const 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > vp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
  
     Teuchos::RCP<std::vector<ScalarT> > hvp =
         Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (hv)).getVector());
@@ -365,7 +365,7 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_21AD(Vector<ScalarT> &hv, const 
    
     FadType vdotg = 0;
 
-    for(int j=0; i<m; ++j) {
+    for(int j=0; j<m; ++j) {
         vdotg += (*vp)[j]*(*g_fad_rcp)[j];
     }
 
@@ -386,13 +386,13 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
     typedef Sacado::Fad::SFad<ScalarT,1> FadType;
 
     Teuchos::RCP<const std::vector<ScalarT> > up = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > zp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector();
 
     Teuchos::RCP<const std::vector<ScalarT> > vp = 
-        (Teuchos::dyn_cas<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
  
     Teuchos::RCP<std::vector<ScalarT> > hvp =
         Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (hv)).getVector());
@@ -426,7 +426,7 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
     this->gradient_2AD(g_fad,u_fad,z_fad,tol);
 
     for(int j=0; j<m; ++j) {
-        (*hvp)[j] = (*g_fad_rcp)[j].dx)(0); 
+        (*hvp)[j] = (*g_fad_rcp)[j].dx(0); 
     }
 
 }
