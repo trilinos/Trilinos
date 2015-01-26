@@ -934,6 +934,17 @@ bool ordered_comm(const BulkData& bulk, const Entity entity )
 }
 }
 
+void printConnectivityOfRank(BulkData& M, Entity entity, stk::topology::rank_t connectedRank, std::ostream & error_log)
+{
+    error_log << connectedRank << "-connectivity(";
+    const Entity* connectedEntities = M.begin(entity, connectedRank);
+    unsigned numConnected = M.num_connectivity(entity, connectedRank);
+    for(unsigned i=0; i<numConnected; ++i) {
+      error_log<<M.identifier(connectedEntities[i])<<" ";
+    }
+    error_log<<"), ";
+}
+
 bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, std::ostream & error_log, size_t& comm_count )
 {
   const int p_rank = M.parallel_rank();
@@ -1049,13 +1060,14 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
       result = false ;
       error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "P" << M.parallel_rank() << ": " << " entity " << M.entity_rank(entity)<< ",id="<<M.identifier(entity);
-      error_log << " details: owner(" << p_owner<<"), node-connectivity(";
-      const Entity* nodes = M.begin_nodes(entity);
-      unsigned num_nodes = M.num_nodes(entity);
-      for(unsigned i=0; i<num_nodes; ++i) {
-        error_log<<M.identifier(nodes[i])<<" ";
+      error_log << " details: owner(" << p_owner<<"), ";
+
+      for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<M.mesh_meta_data().entity_rank_count(); rank++)
+      {
+          printConnectivityOfRank(M, entity, rank, error_log);
       }
-      error_log<<"), comm(";
+
+      error_log<<"comm(";
       PairIterEntityComm ip = M.entity_comm_map(M.entity_key(entity));
       for ( ; ! ip.empty() ; ++ip ) {
         error_log << " ghost_id=" << ip->ghost_id << ":proc=" << ip->proc ;
