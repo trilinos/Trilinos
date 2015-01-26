@@ -7816,6 +7816,7 @@ static NNTI_result_t progress(
     static bool in_progress  =false;   // if true, another thread is already making progress.
     bool        made_progress=false;
     bool        interrupted  =false;
+    int8_t      wr_complete  =FALSE;
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -7838,10 +7839,11 @@ static NNTI_result_t progress(
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
-    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
-        nthread_unlock(&nnti_progress_lock);
-        goto cleanup;
-    }
+    wr_complete = is_any_wr_complete(wr_list, wr_count, &which);
+//    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
+//        nthread_unlock(&nnti_progress_lock);
+//        goto cleanup;
+//    }
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
@@ -7849,6 +7851,11 @@ static NNTI_result_t progress(
         log_debug(debug_level, "set in_progress=true");
         nthread_unlock(&nnti_progress_lock);
     } else {
+        if (wr_complete == TRUE) {
+            nthread_unlock(&nnti_progress_lock);
+            goto cleanup;
+        }
+
         // another thread is making progress.  we'll wait until they are done.
         rc=0;
         elapsed_time=0;
@@ -7893,11 +7900,14 @@ static NNTI_result_t progress(
         memset(&ev_data, 0, sizeof(gni_cq_entry_t));
         post_desc_ptr=NULL;
 
-
-        if (timeout-elapsed_time < 0) {
-        	gni_timeout=MIN_TIMEOUT;
+        if (wr_complete == TRUE) {
+            gni_timeout=0;
         } else {
-        	gni_timeout=timeout-elapsed_time;
+            if (timeout-elapsed_time < 0) {
+                gni_timeout=MIN_TIMEOUT;
+            } else {
+                gni_timeout=timeout-elapsed_time;
+            }
         }
 
         log_debug(nnti_cq_debug_level, "checking for events on any CQ (cq_count=%d ; timeout=%d)", cq_count, gni_timeout);
@@ -7974,6 +7984,11 @@ static NNTI_result_t progress(
         }
         /* case 2: timed out */
         else if ((gni_rc==GNI_RC_TIMEOUT) || (gni_rc==GNI_RC_NOT_DONE)) {
+            if (wr_complete == TRUE) {
+                nnti_rc=NNTI_OK;
+                break;
+            }
+
             elapsed_time = (trios_get_time_ms() - entry_time);
 
             /* if the caller asked for a legitimate timeout, we need to exit */
