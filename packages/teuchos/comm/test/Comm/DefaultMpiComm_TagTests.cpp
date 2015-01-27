@@ -378,7 +378,7 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   waitAll (*comm, requests (), statuses ());
 
   // Make sure the source tags are correct.
-  for (size_type k = 0; k < statuses.size (); ++k) {
+  for (size_type k = 0; k < 2; ++k) {
     TEST_EQUALITY( statuses[k]->getTag (), tag1 );
   }
 
@@ -416,7 +416,7 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   waitAll (*comm, requests (), statuses ());
 
   // Make sure the source tags are correct.
-  for (size_type k = 0; k < statuses.size (); ++k) {
+  for (size_type k = 0; k < 2; ++k) {
     TEST_EQUALITY( statuses[k]->getTag (), tag2 );
   }
 
@@ -456,7 +456,7 @@ TEUCHOS_UNIT_TEST( MpiCommTag, IrecvIsend )
   waitAll (*comm, requests (), statuses ());
 
   // Make sure the source tags are correct.
-  for (size_type k = 0; k < statuses.size (); ++k) {
+  for (size_type k = 0; k < 2; ++k) {
     TEST_EQUALITY( statuses[k]->getTag (), tag3 );
   }
 
