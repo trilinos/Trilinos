@@ -650,16 +650,6 @@ int main(int argc, char *argv[])
     nclients=nprocs-nservers;
     client_rank=rank-1;
 
-    if (argc != 6) {
-    	if (rank == 0) {
-        	fprintf(stderr, "Usage: %s <num sends> <num_gets> <get_size> <num_puts> <put_size>\n", argv[0]);
-            MPI_Barrier(MPI_COMM_WORLD);
-    	} else {
-    	    MPI_Barrier(MPI_COMM_WORLD);
-    	}
-    	MPI_Abort(MPI_COMM_WORLD, -1);
-    }
-
     if (nprocs != 2) {
     	if (rank == 0) {
         	fprintf(stderr, "%s only supports 2 ranks.\n", argv[0]);
@@ -670,7 +660,25 @@ int main(int argc, char *argv[])
     	MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-    parse_args(argc, argv);
+    if (argc == 6) {
+        parse_args(argc, argv);
+    } else if (argc == 1) {
+        // no args from user.  set some defaults.
+        num_sends=10;
+        num_gets=10;
+        get_size=1024*1024;
+        num_puts=10;
+        put_size=1024*1024;
+    } else {
+        // partial args from user.  can't do that.  abort.
+        if (rank == 0) {
+            fprintf(stderr, "Usage: %s <num sends> <num_gets> <get_size> <num_puts> <put_size>\n", argv[0]);
+            MPI_Barrier(MPI_COMM_WORLD);
+        } else {
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
     sprintf(logname, "nntiperf.%03d.log", rank);
     logger_init(LOG_ERROR, NULL);
