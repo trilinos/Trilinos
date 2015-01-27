@@ -172,6 +172,7 @@ namespace panzer {
 
     typedef struct {
       GlobalEvaluationDataContainer gedc;
+      std::string sensitivities_name;
     } PreEvalData;
     // typedef GlobalEvaluationDataContainer& PreEvalData;
 

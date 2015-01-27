@@ -60,6 +60,7 @@
 #include "Panzer_ThyraObjFactory.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_ParameterList_GlobalEvaluationData.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -602,11 +603,16 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       TEUCHOS_ASSERT(ged!=Teuchos::null);
 
       // cast to a LOCPair throwing an exception if the cast doesn't work.
-      RCP<LOCPair_GlobalEvaluationData> loc_pair_ged = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged,true);
-
-      // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
-      RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
-      th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
+      RCP<LOCPair_GlobalEvaluationData> loc_pair_ged = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+      RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged);
+      if(loc_pair_ged!=Teuchos::null) {
+        // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
+        RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
+        th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
+      }
+      else {
+        ro_ged->setUniqueVector(p);
+      }
     }
   }
   
