@@ -194,7 +194,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<Sca
     for(int i=0; i<n; ++i) {
         (*jvp)[i] = 0; 
         for(int j=0; j<n; ++j) {
-            (*jvp)[i] += (*vp)[j]*(c_fad_rcp)[i].dx(j);
+            (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j);
         }
     } 
 }
@@ -250,7 +250,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<Sca
     for(int i=0; i<n; ++i) {
         (*jvp)[i] = 0; 
         for(int j=0; j<n; ++j) {
-            (*jvp)[i] += (*vp)[j]*(c_fad_rcp)[i].dx(j);
+            (*jvp)[i] += (*vp)[j]*(*c_fad_rcp)[i].dx(j);
         }
     } 
  
@@ -308,7 +308,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vec
     FadType vdotc = 0;
 
     for(int i=0;i<n;++i) {
-        vdotc += (*c_fad_rcp)[i]*(vp)[i]; 
+        vdotc += (*c_fad_rcp)[i]*(*vp)[i]; 
     } 
 
     for(int i=0;i<n;++i) {
@@ -370,7 +370,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vec
     FadType vdotc = 0;
 
     for(int i=0;i<n;++i) {
-        vdotc += (*c_fad_rcp)[i]*(vp)[i]; 
+        vdotc += (*c_fad_rcp)[i]*(*vp)[i]; 
     } 
 
     for(int j=0;j<m;++j) {
@@ -434,10 +434,10 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_11AD(Vec
 
     this->applyJacobian_1AD(jv_fad,v_fad,u_fad,z_fad,tol);
  
-    ScalarT wjv_fad = 0;
+    FadType wjv_fad = 0;
    
     for(int i=0; i<n; ++i) {
-        wjv_fad += (*wp)[i]*(*jv_fad)[i];
+        wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
     }
 
     for(int i=0; i<n; ++i) {
@@ -502,7 +502,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_12AD(Vec
 
     this->applyJacobian_1AD(jv_fad,v_fad,u_fad,z_fad,tol);
     
-    ScalarT wjv_fad = 0;
+    FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
         wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i]; 
@@ -568,7 +568,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_21AD(Vec
 
     this->applyJacobian_2AD(jv_fad,v_fad,u_fad,z_fad,tol);
 
-    ScalarT wjv_fad = 0;
+    FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
         wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
@@ -634,7 +634,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vec
 
     this->applyJacobian_2AD(jv_fad,v_fad,u_fad,z_fad,tol);
  
-    ScalarT wjv_fad = 0;
+    FadType wjv_fad = 0;
 
     for(int i=0; i<n; ++i) {
         wjv_fad += (*wp)[i]*(*jv_fad_rcp)[i];
@@ -642,6 +642,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vec
 
     for(int j=0; j<m; ++j) {
         (*ahwvp)[j] = wjv_fad.dx(j);
+
     }
 }
 #endif
