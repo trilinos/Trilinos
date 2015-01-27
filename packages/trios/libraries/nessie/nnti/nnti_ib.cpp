@@ -6307,8 +6307,9 @@ static NNTI_result_t progress(
     log_level debug_level  =nnti_debug_level;
     log_level old_log_level=logger_get_default_level();
 
-    static bool in_progress=false;   // if true, another thread is already making progress.
-    bool made_progress=false;
+    static bool in_progress  =false;   // if true, another thread is already making progress.
+    bool        made_progress=false;
+    int8_t      wr_complete  =FALSE;
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -6326,10 +6327,9 @@ static NNTI_result_t progress(
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
-    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
-        nthread_unlock(&nnti_progress_lock);
-        goto cleanup;
-    }
+
+    wr_complete = is_any_wr_complete(wr_list, wr_count, &which);
+
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
@@ -6337,6 +6337,11 @@ static NNTI_result_t progress(
         log_debug(debug_level, "set in_progress=true");
         nthread_unlock(&nnti_progress_lock);
     } else {
+        if (wr_complete == TRUE) {
+            nthread_unlock(&nnti_progress_lock);
+            goto cleanup;
+        }
+
         // another thread is making progress.  we'll wait until they are done.
         rc=0;
         elapsed_time=0;
@@ -6443,7 +6448,7 @@ static NNTI_result_t progress(
             }
         }
 
-        if (!made_progress) {
+        if ((!made_progress) && (wr_complete == FALSE)) {
             trios_start_timer(call_time);
             rc = poll_all(/*100*/ timeout-elapsed_time);
             trios_stop_timer("progress - poll_all", call_time);
