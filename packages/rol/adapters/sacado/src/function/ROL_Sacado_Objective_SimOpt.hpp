@@ -240,7 +240,8 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_11AD(Vector<ScalarT> &hv, const 
 
     // Initialize constructor for each element of u
     for(int i=0; i<n; ++i) {
-        u_fad_rcp->push_back(FadType(n,i,(*up)[i]));
+        u_fad_rcp->push_back(FadType(1,(*up)[i]));
+        (*u_fad_rcp)[i].fastAccessDx(0) = (*vp)[i];
         g_fad_rcp->push_back(0);
     }
 
@@ -419,7 +420,8 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
 
     // Initialize constructor for each element of z
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back(FadType(m,j,(*zp)[j]));
+        z_fad_rcp->push_back(FadType(1,(*zp)[j]));
+        (*z_fad_rcp)[j].fastAccessDx(0) = (*vp)[j];
         g_fad_rcp->push_back(0);
     }
     
