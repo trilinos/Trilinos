@@ -528,10 +528,13 @@ static int tcp_write(int sock, const void *outgoing, size_t len);
 static int tcp_exchange(int sock, int is_server, void *incoming, void *outgoing, size_t len);
 static void transition_connection_to_ready(
         int sock,
+        int is_server,
         nnti_gni_connection_t *conn);
 static NNTI_result_t get_ipaddr(
         char *ipaddr,
         int maxlen);
+static int create_loopback(
+        nnti_gni_connection_t *c);
 static NNTI_result_t init_connection(
         nnti_gni_connection_t **conn,
         const int sock,
@@ -549,10 +552,10 @@ static int need_wc_mem_cq(nnti_gni_memory_handle_t *gni_mem_hdl);
 static void print_gni_conn(nnti_gni_connection_t *c);
 static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_t *conn);
 static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, nnti_gni_connection_t *conn);
-static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type);
+static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer);
 static nnti_gni_connection_t *get_conn_instance(const NNTI_instance_id instance);
 static NNTI_peer_t *get_peer_by_url(const char *url);
-static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type);
+static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer);
 static nnti_gni_connection_t *del_conn_instance(const NNTI_instance_id instance);
 static void print_peer_map(void);
 static void print_instance_map(void);
@@ -694,19 +697,14 @@ static log_level nnti_ee_debug_level;
 struct addrport_key {
     NNTI_ip_addr    addr;       /* part1 of a compound key */
     NNTI_tcp_port   port;       /* part2 of a compound key */
-    nnti_gni_connection_type_t type; /* part3 of a compound key */
 
-    // Need this operators for the hash map
+    // Need these operators for the hash map
     bool operator<(const addrport_key &key1) const {
         if (addr < key1.addr) {
             return true;
         } else if (addr == key1.addr) {
             if (port < key1.port) {
                 return true;
-            } else if (port == key1.port) {
-                if (type < key1.type) {
-                    return true;
-                }
             }
         }
         return false;
@@ -717,14 +715,11 @@ struct addrport_key {
         } else if (addr == key1.addr) {
             if (port > key1.port) {
                 return true;
-            } else if (port == key1.port) {
-                if (type > key1.type) {
-                    return true;
-                }
             }
         }
         return false;
     }
+
 };
 
 
@@ -1393,61 +1388,82 @@ NNTI_result_t NNTI_gni_connect (
     memcpy(&skin.sin_addr, host_entry->h_addr_list[0], (size_t) host_entry->h_length);
     skin.sin_port = htons(port);
 
-    elapsed_time=0;
-    timeout_per_call = MIN_TIMEOUT;
+    if (((uint32_t)skin.sin_addr.s_addr == transport_global_data.listen_addr) &&
+        ((uint32_t)skin.sin_port == transport_global_data.listen_port)) {
 
-    s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0) {
-        log_warn(nnti_debug_level, "failed to create tcp socket: errno=%d (%s)", errno, strerror(errno));
-        rc=NNTI_EIO;
-        goto cleanup;
-    }
-    trios_start_timer(call_time);
-    start_time=trios_get_time_ms();
-    while((timeout==-1) || (elapsed_time < timeout)) {
-        log_debug(nnti_debug_level, "calling connect");
-        if (connect(s, (struct sockaddr *)&skin, skin_size) == 0) {
-            log_debug(nnti_debug_level, "connected");
-            break;
-        }
-        elapsed_time=trios_get_time_ms()-start_time;
-        log_warn(nnti_debug_level, "failed to connect to server (%s:%u): errno=%d (%s)", hostname, port, errno, strerror(errno));
-        if ((timeout>0) && (elapsed_time >= timeout)) {
+        create_loopback(conn);
+
+        create_peer(
+                peer_hdl,
+                conn->peer_name,
+                conn->peer_addr,
+                conn->peer_port,
+                conn->peer_ptag,
+                conn->peer_cookie,
+                conn->peer_instance);
+
+        conn->peer=*peer_hdl;
+
+        insert_conn_peer(peer_hdl, conn);
+        insert_conn_instance(conn->peer_instance, conn);
+
+    } else {
+        elapsed_time=0;
+        timeout_per_call = MIN_TIMEOUT;
+
+        s = socket(AF_INET, SOCK_STREAM, 0);
+        if (s < 0) {
+            log_warn(nnti_debug_level, "failed to create tcp socket: errno=%d (%s)", errno, strerror(errno));
             rc=NNTI_EIO;
             goto cleanup;
         }
-        nnti_sleep(timeout_per_call);
-    }
-    trios_stop_timer("socket connect", call_time);
+        trios_start_timer(call_time);
+        start_time=trios_get_time_ms();
+        while((timeout==-1) || (elapsed_time < timeout)) {
+            log_debug(nnti_debug_level, "calling connect");
+            if (connect(s, (struct sockaddr *)&skin, skin_size) == 0) {
+                log_debug(nnti_debug_level, "connected");
+                break;
+            }
+            elapsed_time=trios_get_time_ms()-start_time;
+            log_warn(nnti_debug_level, "failed to connect to server (%s:%u): errno=%d (%s)", hostname, port, errno, strerror(errno));
+            if ((timeout>0) && (elapsed_time >= timeout)) {
+                rc=NNTI_EIO;
+                goto cleanup;
+            }
+            nnti_sleep(timeout_per_call);
+        }
+        trios_stop_timer("socket connect", call_time);
 
-    trios_start_timer(call_time);
-    rc = init_connection(&conn, s, 0);
-    trios_stop_timer("gni init connection", call_time);
-    if (conn==NULL) {
-        rc=NNTI_EIO;
-        goto cleanup;
-    }
+        trios_start_timer(call_time);
+        rc = init_connection(&conn, s, 0);
+        trios_stop_timer("gni init connection", call_time);
+        if (conn==NULL) {
+            rc=NNTI_EIO;
+            goto cleanup;
+        }
 
-    create_peer(
-            peer_hdl,
-            conn->peer_name,
-            conn->peer_addr,
-            conn->peer_port,
-            conn->peer_ptag,
-            conn->peer_cookie,
-            conn->peer_instance);
+        create_peer(
+                peer_hdl,
+                conn->peer_name,
+                conn->peer_addr,
+                conn->peer_port,
+                conn->peer_ptag,
+                conn->peer_cookie,
+                conn->peer_instance);
 
-    conn->peer=*peer_hdl;
+        conn->peer=*peer_hdl;
 
-    insert_conn_peer(peer_hdl, conn);
-    insert_conn_instance(conn->peer_instance, conn);
+        insert_conn_peer(peer_hdl, conn);
+        insert_conn_instance(conn->peer_instance, conn);
 
-    transition_connection_to_ready(s, conn);
+        transition_connection_to_ready(s, 0, conn);
 
-    if (close(s) < 0) {
-        log_warn(nnti_debug_level, "failed to close tcp socket: errno=%d (%s)", errno, strerror(errno));
-        rc=NNTI_EIO;
-        goto cleanup;
+        if (close(s) < 0) {
+            log_warn(nnti_debug_level, "failed to close tcp socket: errno=%d (%s)", errno, strerror(errno));
+            rc=NNTI_EIO;
+            goto cleanup;
+        }
     }
 
     if (logging_debug(nnti_debug_level)) {
@@ -1482,11 +1498,11 @@ NNTI_result_t NNTI_gni_disconnect (
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
 
     close_connection(conn);
 
-    del_conn_peer(peer_hdl, CLIENT_CONNECTION);
+    del_conn_peer(peer_hdl);
     del_conn_instance(conn->peer_instance);
 
     log_debug(nnti_ee_debug_level, "exit");
@@ -1936,10 +1952,7 @@ NNTI_result_t NNTI_gni_send (
     }
 
     if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
-        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
-        if (conn==NULL) {
-            conn=get_conn_peer(peer_hdl, SERVER_CONNECTION);
-        }
+        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
 
         trios_start_timer(call_time);
@@ -1947,10 +1960,7 @@ NNTI_result_t NNTI_gni_send (
         trios_stop_timer("send to request queue", call_time);
 
     } else if (dest_hdl->ops == NNTI_RECV_DST) {
-        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
-        if (conn==NULL) {
-            conn=get_conn_peer(peer_hdl, SERVER_CONNECTION);
-        }
+        nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
 
         trios_start_timer(call_time);
@@ -2037,10 +2047,7 @@ NNTI_result_t NNTI_gni_put (
 
 	gni_wr->reg_buf = src_buffer_hdl;
 
-    nnti_gni_connection_t *conn=get_conn_peer(&dest_buffer_hdl->buffer_owner, CLIENT_CONNECTION);
-    if (conn==NULL) {
-        conn=get_conn_peer(&dest_buffer_hdl->buffer_owner, SERVER_CONNECTION);
-    }
+    nnti_gni_connection_t *conn=get_conn_peer(&dest_buffer_hdl->buffer_owner);
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
@@ -2398,10 +2405,7 @@ NNTI_result_t NNTI_gni_get (
 
     gni_wr->reg_buf = dest_buffer_hdl;
 
-    nnti_gni_connection_t *conn=get_conn_peer(&src_buffer_hdl->buffer_owner, CLIENT_CONNECTION);
-    if (conn==NULL) {
-        conn=get_conn_peer(&src_buffer_hdl->buffer_owner, SERVER_CONNECTION);
-    }
+    nnti_gni_connection_t *conn=get_conn_peer(&src_buffer_hdl->buffer_owner);
     assert(conn);
     ep_hdl=conn->ep_hdl;
 
@@ -2792,7 +2796,7 @@ NNTI_result_t NNTI_gni_atomic_fop (
 
     gni_wr->reg_buf = NULL;
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
     assert(conn);
 
     gni_wr->last_op  =GNI_OP_FETCH_ADD;
@@ -2879,7 +2883,7 @@ NNTI_result_t NNTI_gni_atomic_cswap (
 
     gni_wr->reg_buf = NULL;
 
-    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl, CLIENT_CONNECTION);
+    nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
     assert(conn);
 
     gni_wr->last_op  =GNI_OP_FETCH_ADD;
@@ -5076,7 +5080,6 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, nnti_gni_connecti
 
     key.addr = peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port = peer->peer.NNTI_remote_process_t_u.gni.port;
-    key.type = conn->connection_type;
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_peer(logger_get_file(), "peer",
@@ -5111,7 +5114,7 @@ static NNTI_result_t insert_conn_instance(const NNTI_instance_id instance, nnti_
 
     return(rc);
 }
-static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type)
+static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer)
 {
     nnti_gni_connection_t *conn = NULL;
     addrport_key   key;
@@ -5124,7 +5127,6 @@ static nnti_gni_connection_t *get_conn_peer(const NNTI_peer_t *peer, nnti_gni_co
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
-    key.type=connection_type;
 
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -5190,7 +5192,7 @@ static NNTI_peer_t *get_peer_by_url(const char *url)
 
     return(NULL);
 }
-static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer, nnti_gni_connection_type_t connection_type)
+static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer)
 {
     nnti_gni_connection_t *conn=NULL;
     addrport_key    key;
@@ -5203,7 +5205,6 @@ static nnti_gni_connection_t *del_conn_peer(const NNTI_peer_t *peer, nnti_gni_co
     memset(&key, 0, sizeof(addrport_key));
     key.addr=peer->peer.NNTI_remote_process_t_u.gni.addr;
     key.port=peer->peer.NNTI_remote_process_t_u.gni.port;
-    key.type=connection_type;
 
     if (nthread_lock(&nnti_conn_peer_lock)) log_warn(nnti_debug_level, "failed to get thread lock");
     if (connections_by_peer.find(key) != connections_by_peer.end()) {
@@ -5249,8 +5250,8 @@ static void print_peer_map()
 
     conn_by_peer_iter_t i;
     for (i=connections_by_peer.begin(); i != connections_by_peer.end(); i++) {
-        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu,%llu) conn=%p",
-                (uint64_t)i->first.addr, (uint64_t)i->first.port, (uint64_t)i->first.type, i->second);
+        log_debug(nnti_debug_level, "peer_map key=(%llu,%llu) conn=%p",
+                (uint64_t)i->first.addr, (uint64_t)i->first.port, i->second);
     }
 }
 static void print_instance_map()
@@ -5849,6 +5850,7 @@ out:
 
 static void transition_connection_to_ready(
         int sock,
+        int is_server,
         nnti_gni_connection_t *conn)
 {
     int rc=NNTI_OK;
@@ -5856,8 +5858,181 @@ static void transition_connection_to_ready(
 
     trios_start_timer(callTime);
     /* final sychronization to ensure both sides have posted RTRs */
-    rc = tcp_exchange(sock, 0, &rc, &rc, sizeof(rc));
+    rc = tcp_exchange(sock, is_server, &rc, &rc, sizeof(rc));
     trios_stop_timer("transition tcp_exchange", callTime);
+}
+
+static int build_send_mbox(
+        nnti_gni_connection_t *c,
+        uint32_t               msg_maxsize)
+{
+    int rc;
+
+    nnti_gni_request_queue_handle_t *q=&transport_global_data.req_queue;
+
+    const unsigned int CACHELINE_SIZE=64;
+    unsigned int adjusted_bytes_per_mbox=0;
+
+    c->send_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+    nthread_counter_init(&c->send_mbox->mbox_index);
+
+    c->send_mbox->reg_buf = q->reg_buf;
+
+    c->send_mbox->max_credits  = config.queue_elements_per_connection;
+    c->send_mbox->msg_maxsize  = msg_maxsize;
+    c->send_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+    adjusted_bytes_per_mbox = c->send_mbox->max_credits * c->send_mbox->msg_maxsize;
+    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+    c->send_mbox->credits_addr = (uint64_t)&c->send_mbox->credits;
+    c->send_mbox->credits      = c->send_mbox->max_credits;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->send_mbox->credits,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->send_mbox->credits_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
+    }
+
+    c->send_mbox->amo_result_addr = (uint64_t)&c->send_mbox->amo_result;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->send_mbox->amo_result,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->send_mbox->amo_result_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->send_mbox->amo_result) failed: %d", rc);
+    }
+
+}
+
+static int build_recv_mbox(
+        nnti_gni_connection_t *c,
+        uint32_t               msg_maxsize)
+{
+    int rc;
+
+    nnti_gni_request_queue_handle_t *q=&transport_global_data.req_queue;
+
+    const unsigned int CACHELINE_SIZE=64;
+    unsigned int adjusted_bytes_per_mbox=0;
+
+    /*
+     * Then write the receive queue attributes to the server
+     */
+    c->recv_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
+
+    nthread_counter_init(&c->recv_mbox->mbox_index);
+
+    c->recv_mbox->reg_buf = q->reg_buf;
+
+    c->recv_mbox->max_credits  = config.queue_elements_per_connection;
+    c->recv_mbox->msg_maxsize  = msg_maxsize;
+    c->recv_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
+
+    adjusted_bytes_per_mbox = c->recv_mbox->max_credits * c->recv_mbox->msg_maxsize;
+    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
+
+    c->recv_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
+    c->recv_mbox->mbox_buf     = (char *)aligned_malloc(c->recv_mbox->mbox_bufsize);
+    c->recv_mbox->mbox_addr    = (uint64_t)c->recv_mbox->mbox_buf;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)c->recv_mbox->mbox_buf,
+            c->recv_mbox->mbox_bufsize,
+            transport_global_data.req_recv_mem_cq_hdl,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->mbox_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->mbox_buf) failed: %d", rc);
+    }
+
+    c->recv_mbox->credits_addr = (uint64_t)&c->recv_mbox->credits;
+    c->recv_mbox->credits      = c->recv_mbox->max_credits;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->recv_mbox->credits,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->credits_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->credits) failed: %d", rc);
+    }
+
+    c->recv_mbox->amo_result_addr = (uint64_t)&c->recv_mbox->amo_result;
+
+    rc=GNI_MemRegister(
+            transport_global_data.nic_hdl,
+            (uint64_t)&c->recv_mbox->amo_result,
+            sizeof(int64_t),
+            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
+            GNI_MEM_READWRITE,
+            -1,
+            &c->recv_mbox->amo_result_mem_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->amo_result) failed: %d", rc);
+    }
+}
+
+static int create_loopback(
+        nnti_gni_connection_t *c)
+{
+    int rc=0;
+
+    nnti_gni_request_queue_handle_t *q          =&transport_global_data.req_queue;
+    nnti_gni_memory_handle_t        *gni_mem_hdl=(nnti_gni_memory_handle_t *)q->reg_buf->transport_private;
+
+    c->peer_name       = strdup(transport_global_data.listen_name);
+    c->peer_addr       = (uint32_t)transport_global_data.listen_addr;
+    c->peer_port       = (uint32_t)transport_global_data.listen_port;
+    c->peer_instance   = transport_global_data.instance;
+    c->peer_alps_info  = transport_global_data.alps_info;
+    c->atomics_addr    = (uint64_t)transport_global_data.atomics;
+    c->atomics_mem_hdl = transport_global_data.atomics_mem_hdl;
+
+    build_send_mbox(c, q->reg_buf->payload_size+gni_mem_hdl->extra);
+    build_recv_mbox(c, q->reg_buf->payload_size+gni_mem_hdl->extra);
+
+    c->recv_mbox->credits_addr   =c->send_mbox->credits_addr;
+    c->recv_mbox->credits_mem_hdl=c->send_mbox->credits_mem_hdl;
+
+    c->send_mbox->mbox_addr   =c->recv_mbox->mbox_addr;
+    c->send_mbox->mbox_mem_hdl=c->recv_mbox->mbox_mem_hdl;
+
+    client_req_queue_init(c);
+    server_req_queue_add_client(c);
+
+    rc=GNI_EpCreate (c->nic_hdl, transport_global_data.ep_cq_hdl, &c->ep_hdl);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "EpCreate(c->ep_hdl) failed: %d", rc);
+        goto out;
+    }
+    rc=GNI_EpBind (c->ep_hdl, c->peer_alps_info.local_addr, c->peer_instance);
+    if (rc!=GNI_RC_SUCCESS) {
+        log_error(nnti_debug_level, "EpBind(c->ep_hdl) failed: %d", rc);
+        goto out;
+    }
+
+    log_debug(nnti_debug_level, "new connection ep_hdl(%llu)", c->ep_hdl);
+
+out:
+    return(rc);
 }
 
 static int new_client_connection(
@@ -5868,10 +6043,6 @@ static int new_client_connection(
 
     nnti_gni_request_queue_handle_t *q          =&transport_global_data.req_queue;
     nnti_gni_memory_handle_t        *gni_mem_hdl=NULL;
-
-    const unsigned int CACHELINE_SIZE=64;
-    unsigned int bytes_per_mbox=0;
-    unsigned int adjusted_bytes_per_mbox=0;
 
     /*
      * Values passed through TCP to permit Gemini connection
@@ -5945,63 +6116,8 @@ static int new_client_connection(
     c->atomics_addr    = instance_in.atomics_addr;
     c->atomics_mem_hdl = instance_in.atomics_mem_hdl;
 
-    c->send_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
 
-    nthread_counter_init(&c->send_mbox->mbox_index);
-
-    c->send_mbox->reg_buf = q->reg_buf;
-
-    c->send_mbox->max_credits  = config.queue_elements_per_connection;
-    c->send_mbox->msg_maxsize  = instance_in.server_msg_maxsize;
-    c->send_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
-
-    adjusted_bytes_per_mbox = c->send_mbox->max_credits * c->send_mbox->msg_maxsize;
-    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
-
-//    c->send_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
-//    c->send_mbox->mbox_buf     = (char *)malloc(c->send_mbox->mbox_bufsize);
-//    c->send_mbox->mbox_addr    = (uint64_t)c->send_mbox->mbox_buf;
-//
-//    rc=GNI_MemRegister(
-//            transport_global_data.nic_hdl,
-//            (uint64_t)c->send_mbox->mbox_buf,
-//            c->send_mbox->mbox_bufsize,
-//            transport_global_data.req_send_mem_cq_hdl,
-//            GNI_MEM_READWRITE,
-//            -1,
-//            &c->send_mbox->mbox_mem_hdl);
-//    if (rc!=GNI_RC_SUCCESS) {
-//        log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
-//    }
-
-    c->send_mbox->credits_addr = (uint64_t)&c->send_mbox->credits;
-    c->send_mbox->credits      = c->send_mbox->max_credits;
-
-    rc=GNI_MemRegister(
-            transport_global_data.nic_hdl,
-            (uint64_t)&c->send_mbox->credits,
-            sizeof(int64_t),
-            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-            GNI_MEM_READWRITE,
-            -1,
-            &c->send_mbox->credits_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
-    }
-
-    c->send_mbox->amo_result_addr = (uint64_t)&c->send_mbox->amo_result;
-
-    rc=GNI_MemRegister(
-            transport_global_data.nic_hdl,
-            (uint64_t)&c->send_mbox->amo_result,
-            sizeof(int64_t),
-            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-            GNI_MEM_READWRITE,
-            -1,
-            &c->send_mbox->amo_result_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "MemRegister(c->send_mbox->amo_result) failed: %d", rc);
-    }
+    build_send_mbox(c, instance_in.server_msg_maxsize);
 
     /*
      * Write the receive queue attributes to the client
@@ -6038,66 +6154,8 @@ static int new_client_connection(
      * If the client registered a receive queue (bidirectional connection)...
      */
     if (instance_out.client_has_recv_queue == 1) {
-        /*
-         * Then write the receive queue attributes to the server
-         */
-        c->recv_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
 
-        nthread_counter_init(&c->recv_mbox->mbox_index);
-
-        c->recv_mbox->reg_buf = q->reg_buf;
-
-        c->recv_mbox->max_credits  = config.queue_elements_per_connection;
-        c->recv_mbox->msg_maxsize  = instance_out.client_msg_maxsize;
-        c->recv_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
-
-        adjusted_bytes_per_mbox = c->recv_mbox->max_credits * c->recv_mbox->msg_maxsize;
-        adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
-
-        c->recv_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
-        c->recv_mbox->mbox_buf     = (char *)aligned_malloc(c->recv_mbox->mbox_bufsize);
-        c->recv_mbox->mbox_addr    = (uint64_t)c->recv_mbox->mbox_buf;
-
-        rc=GNI_MemRegister(
-                transport_global_data.nic_hdl,
-                (uint64_t)c->recv_mbox->mbox_buf,
-                c->recv_mbox->mbox_bufsize,
-                transport_global_data.req_recv_mem_cq_hdl,
-                GNI_MEM_READWRITE,
-                -1,
-                &c->recv_mbox->mbox_mem_hdl);
-        if (rc!=GNI_RC_SUCCESS) {
-            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->mbox_buf) failed: %d", rc);
-        }
-
-        c->recv_mbox->credits_addr = (uint64_t)&c->recv_mbox->credits;
-        c->recv_mbox->credits      = c->recv_mbox->max_credits;
-
-        rc=GNI_MemRegister(
-                transport_global_data.nic_hdl,
-                (uint64_t)&c->recv_mbox->credits,
-                sizeof(int64_t),
-                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-                GNI_MEM_READWRITE,
-                -1,
-                &c->recv_mbox->credits_mem_hdl);
-        if (rc!=GNI_RC_SUCCESS) {
-            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->credits) failed: %d", rc);
-        }
-
-        c->recv_mbox->amo_result_addr = (uint64_t)&c->recv_mbox->amo_result;
-
-        rc=GNI_MemRegister(
-                transport_global_data.nic_hdl,
-                (uint64_t)&c->recv_mbox->amo_result,
-                sizeof(int64_t),
-                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-                GNI_MEM_READWRITE,
-                -1,
-                &c->recv_mbox->amo_result_mem_hdl);
-        if (rc!=GNI_RC_SUCCESS) {
-            log_error(nnti_debug_level, "MemRegister(c->recv_mbox->amo_result) failed: %d", rc);
-        }
+        build_recv_mbox(c, instance_out.client_msg_maxsize);
 
         /*
          * Write the receive queue attributes to the client
@@ -6120,7 +6178,6 @@ static int new_client_connection(
         server_req_queue_add_client(c);
     }
 
-
     rc=GNI_EpCreate (c->nic_hdl, transport_global_data.ep_cq_hdl, &c->ep_hdl);
     if (rc!=GNI_RC_SUCCESS) {
         log_error(nnti_debug_level, "EpCreate(c->ep_hdl) failed: %d", rc);
@@ -6142,14 +6199,10 @@ static int new_server_connection(
         nnti_gni_connection_t *c,
         int sock)
 {
-    int rc;
+    int rc=0;
 
     nnti_gni_request_queue_handle_t *q          =&transport_global_data.req_queue;
     nnti_gni_memory_handle_t        *gni_mem_hdl=(nnti_gni_memory_handle_t *)q->reg_buf->transport_private;
-
-    const unsigned int CACHELINE_SIZE=64;
-    unsigned int bytes_per_mbox=0;
-    unsigned int adjusted_bytes_per_mbox=0;
 
     /*
      * Values passed through TCP to permit Gemini connection
@@ -6222,63 +6275,7 @@ static int new_server_connection(
     c->cdm_hdl = transport_global_data.cdm_hdl;
     c->nic_hdl = transport_global_data.nic_hdl;
 
-    c->recv_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
-
-    nthread_counter_init(&c->recv_mbox->mbox_index);
-
-    c->recv_mbox->reg_buf = q->reg_buf;
-
-    c->recv_mbox->max_credits  = config.queue_elements_per_connection;
-    c->recv_mbox->msg_maxsize  = instance_out.server_msg_maxsize;
-    c->recv_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
-
-    adjusted_bytes_per_mbox = c->recv_mbox->max_credits * c->recv_mbox->msg_maxsize;
-    adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
-
-    c->recv_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
-    c->recv_mbox->mbox_buf     = (char *)aligned_malloc(c->recv_mbox->mbox_bufsize);
-    c->recv_mbox->mbox_addr    = (uint64_t)c->recv_mbox->mbox_buf;
-
-    rc=GNI_MemRegister(
-            transport_global_data.nic_hdl,
-            (uint64_t)c->recv_mbox->mbox_buf,
-            c->recv_mbox->mbox_bufsize,
-            transport_global_data.req_recv_mem_cq_hdl,
-            GNI_MEM_READWRITE,
-            -1,
-            &c->recv_mbox->mbox_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->mbox_buf) failed: %d", rc);
-    }
-
-    c->recv_mbox->credits_addr = (uint64_t)&c->recv_mbox->credits;
-    c->recv_mbox->credits      = c->recv_mbox->max_credits;
-
-    rc=GNI_MemRegister(
-            transport_global_data.nic_hdl,
-            (uint64_t)&c->recv_mbox->credits,
-            sizeof(int64_t),
-            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-            GNI_MEM_READWRITE,
-            -1,
-            &c->recv_mbox->credits_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->credits) failed: %d", rc);
-    }
-
-    c->recv_mbox->amo_result_addr = (uint64_t)&c->recv_mbox->amo_result;
-
-    rc=GNI_MemRegister(
-            transport_global_data.nic_hdl,
-            (uint64_t)&c->recv_mbox->amo_result,
-            sizeof(int64_t),
-            NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-            GNI_MEM_READWRITE,
-            -1,
-            &c->recv_mbox->amo_result_mem_hdl);
-    if (rc!=GNI_RC_SUCCESS) {
-        log_error(nnti_debug_level, "MemRegister(c->recv_mbox->amo_result) failed: %d", rc);
-    }
+    build_recv_mbox(c, instance_out.server_msg_maxsize);
 
     /*
      * Write the receive queue attributes to the client
@@ -6304,62 +6301,8 @@ static int new_server_connection(
      * If the client registered a receive queue (bidirectional connection)...
      */
     if (instance_in.client_has_recv_queue == 1) {
-        /*
-         * Then read the receive queue attributes from the client
-         */
-        c->send_mbox = (nnti_gni_req_queue_mbox_t*)calloc(1,sizeof(nnti_gni_req_queue_mbox_t));
 
-        nthread_counter_init(&c->send_mbox->mbox_index);
-
-        c->send_mbox->reg_buf = q->reg_buf;
-
-        c->send_mbox->max_credits  = config.queue_elements_per_connection;
-        c->send_mbox->msg_maxsize  = instance_in.client_msg_maxsize;
-        c->send_mbox->wc_size      = sizeof(nnti_gni_work_completion_t);
-
-        adjusted_bytes_per_mbox = c->send_mbox->max_credits * c->send_mbox->msg_maxsize;
-        adjusted_bytes_per_mbox = ((adjusted_bytes_per_mbox + CACHELINE_SIZE - 1) / CACHELINE_SIZE) * CACHELINE_SIZE;
-
-        c->send_mbox->mbox_bufsize = adjusted_bytes_per_mbox;
-    //    c->send_mbox->mbox_buf     = (char *)malloc(c->send_mbox->mbox_bufsize);
-    //
-    //    rc=GNI_MemRegister(
-    //            transport_global_data.nic_hdl,
-    //            (uint64_t)c->send_mbox->mbox_buf,
-    //            c->send_mbox->mbox_bufsize,
-    //            transport_global_data.req_send_mem_cq_hdl,
-    //            GNI_MEM_READWRITE,
-    //            -1,
-    //            &c->send_mbox->mbox_mem_hdl);
-
-        c->send_mbox->credits_addr = (uint64_t)&c->send_mbox->credits;
-        c->send_mbox->credits      = c->send_mbox->max_credits;
-
-        rc=GNI_MemRegister(
-                transport_global_data.nic_hdl,
-                (uint64_t)&c->send_mbox->credits,
-                sizeof(int64_t),
-                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-                GNI_MEM_READWRITE,
-                -1,
-                &c->send_mbox->credits_mem_hdl);
-        if (rc!=GNI_RC_SUCCESS) {
-            log_error(nnti_debug_level, "MemRegister(c->send_mbox->credits) failed: %d", rc);
-        }
-
-        c->send_mbox->amo_result_addr = (uint64_t)&c->send_mbox->amo_result;
-
-        rc=GNI_MemRegister(
-                transport_global_data.nic_hdl,
-                (uint64_t)&c->send_mbox->amo_result,
-                sizeof(int64_t),
-                NULL /*transport_global_data.req_send_mem_cq_hdl*/,
-                GNI_MEM_READWRITE,
-                -1,
-                &c->send_mbox->amo_result_mem_hdl);
-        if (rc!=GNI_RC_SUCCESS) {
-            log_error(nnti_debug_level, "MemRegister(c->send_mbox->amo_result) failed: %d", rc);
-        }
+        build_send_mbox(c, instance_in.client_msg_maxsize);
 
         /*
          * Write the receive queue attributes to the client
@@ -6391,7 +6334,6 @@ static int new_server_connection(
          */
         client_req_queue_init(c);
     }
-
 
     rc=GNI_EpCreate (c->nic_hdl, transport_global_data.ep_cq_hdl, &c->ep_hdl);
     if (rc!=GNI_RC_SUCCESS) {
@@ -6490,12 +6432,12 @@ static int check_for_waiting_connection()
 
         conn->peer=peer;
 
-        del_conn_peer(&peer, SERVER_CONNECTION);
+        del_conn_peer(&peer);
         del_conn_instance(conn->peer_instance);
         insert_conn_peer(&peer, conn);
         insert_conn_instance(conn->peer_instance, conn);
 
-        transition_connection_to_ready(s, conn);
+        transition_connection_to_ready(s, 1, conn);
 //        nthread_unlock(&nnti_gni_lock);
 
         log_debug(nnti_debug_level, "accepted new connection from %s:%u", conn->peer_name, conn->peer_port);
@@ -7839,11 +7781,9 @@ static NNTI_result_t progress(
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
+
     wr_complete = is_any_wr_complete(wr_list, wr_count, &which);
-//    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
-//        nthread_unlock(&nnti_progress_lock);
-//        goto cleanup;
-//    }
+
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
