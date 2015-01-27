@@ -7377,11 +7377,61 @@ namespace Tpetra {
     // Currently, CrsMatrix inherits from DistObject, not
     // DistObjectKA, so the code below should be fine for the Kokkos
     // refactor version of CrsMatrix.
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MAX;
+      using Teuchos::reduceAll;
+      using std::cerr;
+      using std::endl;
+      RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      const int myRank = comm->getRank ();
+      const int numProcs = comm->getSize ();
+
+      std::ostringstream os;
+      int lclErr = 0;
+      try {
+        Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
+                                                   destMat->exports_old_,
+                                                   destMat->numExportPacketsPerLID_old_ (),
+                                                   constantNumPackets, Distor,
+                                                   SourcePids);
+      }
+      catch (std::exception& e) {
+        os << "Proc " << myRank << ": " << e.what ();
+        lclErr = 1;
+      }
+      int gblErr = 0;
+      if (! comm.is_null ()) {
+        reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      }
+      if (gblErr != 0) {
+        if (myRank == 0) {
+          cerr << "packAndPrepareWithOwningPIDs threw an exception: " << endl;
+        }
+        std::ostringstream err;
+        for (int r = 0; r < numProcs; ++r) {
+          if (r == myRank && lclErr != 0) {
+            cerr << os.str () << endl;
+          }
+          comm->barrier ();
+          comm->barrier ();
+          comm->barrier ();
+        }
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "packAndPrepareWithOwningPIDs threw an "
+          "exception.");
+      }
+    }
+
+#else
     Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
                                                destMat->exports_old_,
                                                destMat->numExportPacketsPerLID_old_ (),
                                                constantNumPackets, Distor,
                                                SourcePids);
+#endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
     //
