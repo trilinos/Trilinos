@@ -15,7 +15,6 @@ IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)
 TRIBITS_ADD_EXECUTABLE(
  Utst_superelement
  SOURCES Utst_superelement.C
- IMPORTEDLIBS Ioex
 )
 
 TRIBITS_ADD_TEST(
