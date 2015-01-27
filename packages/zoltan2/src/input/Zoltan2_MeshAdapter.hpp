@@ -53,7 +53,6 @@
 
 #include <Zoltan2_Adapter.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
@@ -253,7 +252,6 @@ public:
     return false;
   }
 
-#ifdef BASE2NDADJS
   virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
 				    MeshEntityType through,
 				    const lno_t *&offsets,
@@ -380,15 +378,11 @@ public:
       // We're done modifying the adjs matrix.
       adjsMatrix->fillComplete ();
 
-      //Create Transpose
-      Tpetra::RowMatrixTransposer<ST, LO, GO, Node> transposer(adjsMatrix);
-      RCP<sparse_matrix_type> adjsMatrixTranspose=transposer.createTranspose();
-
       // Form 2ndAdjs
       RCP<sparse_matrix_type> secondAdjs =
 	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
-      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrixTranspose,
-				     false,*secondAdjs);
+      Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
+				     true,*secondAdjs);
       Array<GO> Indices;
       Array<ST> Values;
 
@@ -427,7 +421,6 @@ public:
 
     return nadj;
   }
-#endif
 
   /*! \brief Returns the number of second adjacencies on this process.
    *
@@ -436,11 +429,8 @@ public:
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through) const {
-#ifdef BASE2NDADJS
     if (!availAdjs(sourcetarget, through))
-#endif
       return 0;
-#ifdef BASE2NDADJS
     else {
       lno_t const *offsets;
       zgid_t const *adjacencyIds;
@@ -450,7 +440,6 @@ public:
       delete [] adjacencyIds;
       return nadj;
     }
-#endif
   }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
@@ -470,17 +459,13 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-#ifdef BASE2NDADJS
     if (!availAdjs(sourcetarget, through)) {
-#endif
       offsets = NULL;
       adjacencyIds = NULL;
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-#ifdef BASE2NDADJS
     } else {
       get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
     }
-#endif
   }
 
 
