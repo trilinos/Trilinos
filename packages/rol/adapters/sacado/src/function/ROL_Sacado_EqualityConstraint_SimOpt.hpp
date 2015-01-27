@@ -55,7 +55,9 @@ using namespace ROL;
 template<class Real, template<class> class Constr>
 class Sacado_EqualityConstraint_SimOpt : public EqualityConstraint_SimOpt<Real> {
  
-    private:
+
+   
+    protected:     
         Constr<Real> constr_;
 
         template<class ScalarT>
@@ -90,9 +92,10 @@ class Sacado_EqualityConstraint_SimOpt : public EqualityConstraint_SimOpt<Real> 
         void applyAdjointHessian_22AD(Vector<ScalarT> &ahwv, const Vector<ScalarT> &w, 
                                       const Vector<ScalarT> &v, const Vector<ScalarT> &u,
                                       const Vector<ScalarT> &z, Real &tol);         
-    
-         
+ 
     public:
+        Sacado_EqualityConstraint_SimOpt() : constr_(Constr<Real>()) {}
+        Sacado_EqualityConstraint_SimOpt(Constr<Real> constr) : constr_(constr) { }
 
         void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
             constr_.value(c,u,z,tol);

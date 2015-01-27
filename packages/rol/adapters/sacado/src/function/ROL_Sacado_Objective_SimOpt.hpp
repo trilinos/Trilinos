@@ -52,7 +52,8 @@ using namespace ROL;
 
 template <class Real, template<class> class Obj>
 class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
-    private:
+
+    protected:
         Obj<Real> obj_;
 
     template<class ScalarT>
@@ -74,9 +75,12 @@ class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
     void hessVec_22AD(Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &u, const Vector<ScalarT> &z, Real &tol);
 
 
-
-
     public:
+     
+    
+    Sacado_Objective_SimOpt() : obj_(Obj<Real>()) {}
+    Sacado_Objective_SimOpt(const Obj<Real> &obj) : obj_(obj) {}    
+
     
     Real value(const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
         return obj_.value(u,z,tol);
