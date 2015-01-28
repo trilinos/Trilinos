@@ -47,7 +47,10 @@ namespace mesh {
 void fixup_ghosted_to_shared_nodes(BulkData& bulk);
 
 #ifndef STK_BUILT_IN_SIERRA // DELETE public functions between 2015-03-06 and 2015-03-25
-STK_DEPRECATED(void fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data) { impl::internal_fix_node_sharing_delete_on_2015_03_06(bulk_data); });
+STK_DEPRECATED(inline void fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data) );
+
+inline void fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data)
+{ impl::internal_fix_node_sharing_delete_on_2015_03_06(bulk_data); }
 #endif // STK_BUILT_IN_SIERRA DELETE public functions between 2015-03-06 and 2015-03-25
 
 // Helper functions:
