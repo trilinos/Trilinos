@@ -68,7 +68,8 @@ struct Perf {
   }
 };
 
-template <typename Scalar, typename Device, bool UseFad>
+template <typename Scalar, typename Device,
+          Kokkos::Example::FENL::AssemblyMethod Method>
 Perf fenl_assembly(
   const int use_print ,
   const int use_trials ,
@@ -87,12 +88,10 @@ Perf fenl_assembly(
   typedef Kokkos::Example::FENL::CrsMatrix< Scalar , Device > LocalMatrixType ;
   typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType ;
 
-  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode >
-     NodeNodeGraphType ;
+  typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode > NodeNodeGraphType ;
 
   typedef Kokkos::Example::FENL::ElementComputationConstantCoefficient CoeffFunctionType;
-  typedef Kokkos::Example::FENL::ElementComputation< FixtureType , LocalMatrixType , CoeffFunctionType, UseFad >
-    ElementComputationType ;
+  typedef Kokkos::Example::FENL::ElementComputation< FixtureType , LocalMatrixType , Method > ElementComputationType ;
 
   typedef typename ElementComputationType::vector_type VectorType ;
 
@@ -228,9 +227,19 @@ void performance_test_driver(
   const int use_print ,
   const int use_trials ,
   const int use_nodes[] ,
+  const bool use_view ,
+  const bool use_global ,
   const bool check )
 {
   std::cout.precision(8);
+  std::cout << std::endl;
+  if (use_global)
+    std::cout << "Use Global ";
+  else
+    std::cout << "Use Local ";
+  if (use_view)
+    std::cout << "View ";
+  std::cout << "Assembly ";
   std::cout << std::endl
             << "\"Grid Size\" , "
             << "\"FEM Size\" , "
@@ -241,35 +250,62 @@ void performance_test_driver(
 
   typedef Kokkos::View< double* , Device > vector_type ;
   typedef Kokkos::Example::FENL::CrsMatrix<double,Device> matrix_type;
-  vector_type analytic_residual;
-  matrix_type analytic_jacobian;
-  Perf perf_analytic =
-    fenl_assembly<double,Device,false>(
-      use_print, use_trials, use_nodes, analytic_residual, analytic_jacobian );
+  vector_type analytic_residual, fad_residual;
+  matrix_type analytic_jacobian, fad_jacobian;
+  Perf perf_analytic, perf_fad;
+  if (use_view) {
+    if (use_global) {
+      perf_analytic =
+        fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticGlobalView>(
+          use_print, use_trials, use_nodes,
+          analytic_residual, analytic_jacobian );
 
-  vector_type fad_residual;
-  matrix_type fad_jacobian;
-  Perf perf_fad =
-    fenl_assembly<double,Device,true>(
-      use_print, use_trials, use_nodes, fad_residual, fad_jacobian);
+      perf_fad =
+        fenl_assembly<double,Device,Kokkos::Example::FENL::FadGlobalView>(
+          use_print, use_trials, use_nodes,
+          fad_residual, fad_jacobian);
+    }
+    else {
+      perf_analytic =
+        fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticLocalView>(
+          use_print, use_trials, use_nodes,
+          analytic_residual, analytic_jacobian );
 
-    if (check)
-      check_assembly( analytic_residual, analytic_jacobian.coeff,
-                      fad_residual, fad_jacobian.coeff );
+      perf_fad =
+        fenl_assembly<double,Device,Kokkos::Example::FENL::FadLocalView>(
+          use_print, use_trials, use_nodes,
+          fad_residual, fad_jacobian);
+    }
+  }
+  else {
+    perf_analytic =
+      fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticLocal>(
+        use_print, use_trials, use_nodes,
+        analytic_residual, analytic_jacobian );
 
-    double s =
-      1000.0 / ( use_trials * perf_analytic.global_node_count );
-    perf_analytic.scale(s);
-    perf_fad.scale(s);
+    perf_fad =
+      fenl_assembly<double,Device,Kokkos::Example::FENL::FadLocal>(
+        use_print, use_trials, use_nodes,
+        fad_residual, fad_jacobian);
+  }
 
-    std::cout.precision(3);
-    std::cout << use_nodes[0] << " , "
-              << perf_analytic.global_node_count << " , "
-              << std::setw(2)
-              << std::scientific
-              << perf_analytic.fill_time << " , "
-              << perf_fad.fill_time << " , "
-              << std::fixed << std::setw(6)
-              << perf_fad.fill_time / perf_analytic.fill_time << " , "
-              << std::endl;
+  if (check)
+    check_assembly( analytic_residual, analytic_jacobian.coeff,
+                    fad_residual, fad_jacobian.coeff );
+
+  double s =
+    1000.0 / ( use_trials * perf_analytic.global_node_count );
+  perf_analytic.scale(s);
+  perf_fad.scale(s);
+
+  std::cout.precision(3);
+  std::cout << use_nodes[0] << " , "
+            << perf_analytic.global_node_count << " , "
+            << std::setw(2)
+            << std::scientific
+            << perf_analytic.fill_time << " , "
+            << perf_fad.fill_time << " , "
+            << std::fixed << std::setw(6)
+            << perf_fad.fill_time / perf_analytic.fill_time << " , "
+            << std::endl;
 }

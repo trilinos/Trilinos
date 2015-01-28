@@ -413,21 +413,31 @@ struct ElementComputationConstantCoefficient {
     : coeff_k( rhs.coeff_k ) {}
 };
 
-template< class FiniteElementMeshType ,
-          class SparseMatrixType ,
-          class CoeffFunctionType = ElementComputationConstantCoefficient ,
-          bool UseFad = false
-        >
-class ElementComputation ;
+// Traits class to get the value type in various kinds of arrays
+template <typename array_type>
+struct ArrayTraits;
 
+template <typename T, typename L, typename D, typename M, typename S>
+struct ArrayTraits< Kokkos::View<T,L,D,M,S> > {
+  typedef Kokkos::View<T,L,D,M,S> array_type;
+  typedef typename array_type::non_const_value_type value_type;
+};
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , class CoeffFunctionType >
-class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
-  , CrsMatrix< ScalarType , DeviceType >
-  , CoeffFunctionType
-  , false >
+template <typename T>
+struct ArrayTraits< T* > {
+  typedef T* array_type;
+  typedef T value_type;
+};
+
+template <typename T>
+struct ArrayTraits< const T* > {
+  typedef const T* array_type;
+  typedef T value_type;
+};
+
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
+class ElementComputationBase
 {
 public:
 
@@ -459,6 +469,7 @@ public:
   typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
+  typedef ElementComputationConstantCoefficient coeff_function_type;
 
   //------------------------------------
 
@@ -475,9 +486,9 @@ public:
   const vector_type         solution ;
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
-  const CoeffFunctionType   coeff_function ;
+  const coeff_function_type coeff_function ;
 
-  ElementComputation( const ElementComputation & rhs )
+  ElementComputationBase( const ElementComputationBase & rhs )
     : elem_data()
     , elem_node_ids( rhs.elem_node_ids )
     , node_coords(   rhs.node_coords )
@@ -490,14 +501,12 @@ public:
     , coeff_function( rhs.coeff_function )
     {}
 
-  // If the element->sparse_matrix graph is provided then perform atomic updates
-  // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
-  ElementComputation( const mesh_type          & arg_mesh ,
-                      const CoeffFunctionType  & arg_coeff_function ,
-                      const vector_type        & arg_solution ,
-                      const elem_graph_type    & arg_elem_graph ,
-                      const sparse_matrix_type & arg_jacobian ,
-                      const vector_type        & arg_residual )
+  ElementComputationBase( const mesh_type          & arg_mesh ,
+                          const coeff_function_type& arg_coeff_function ,
+                          const vector_type        & arg_solution ,
+                          const elem_graph_type    & arg_elem_graph ,
+                          const sparse_matrix_type & arg_jacobian ,
+                          const vector_type        & arg_residual )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -512,19 +521,6 @@ public:
 
   //------------------------------------
 
-  void apply() const
-  {
-    const size_t nelem = elem_node_ids.dimension_0();
-    parallel_for( nelem , *this );
-  }
-
-  //------------------------------------
-
-  static const unsigned FLOPS_transform_gradients =
-     /* Jacobian */           FunctionCount * TensorDim * 2 +
-     /* Inverse jacobian */   TensorDim * 6 + 6 +
-     /* Gradient transform */ FunctionCount * 15 ;
-
   KOKKOS_INLINE_FUNCTION
   double transform_gradients(
     const double grad[][ FunctionCount ] , // Gradient of bases master element
@@ -601,467 +597,964 @@ public:
     }
 
     return detJ ;
+  }
+
+  //------------------------------------
+
+  template <typename values_type, typename res_type, typename mat_type>
+  KOKKOS_INLINE_FUNCTION
+  void gatherSolution(const unsigned ielem,
+                      values_type val,
+                      unsigned node_index[],
+                      double x[], double y[], double z[],
+                      res_type res,
+                      mat_type mat) const
+  {
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = elem_node_ids( ielem , i );
+
+      node_index[i] = ni ;
+
+      x[i] = this->node_coords( ni , 0 );
+      y[i] = this->node_coords( ni , 1 );
+      z[i] = this->node_coords( ni , 2 );
+
+      val[i] = solution( ni ) ;
+      res[i] = 0 ;
+
+      for( unsigned j = 0; j < FunctionCount ; j++){
+        mat(i,j) = 0 ;
+      }
+    }
   }
 
   template <typename values_type, typename res_type, typename mat_type>
   KOKKOS_INLINE_FUNCTION
-  void contributeResidualJacobian(
-    const values_type dof_values ,
-    const double  dpsidx[] ,
-    const double  dpsidy[] ,
-    const double  dpsidz[] ,
-    const double  detJ ,
-    const scalar_type  coeff_k ,
-    const double  integ_weight ,
-    const double  bases_vals[] ,
-    res_type  elem_res ,
-    mat_type  elem_mat ) const
+  void gatherSolutionGlobal(const unsigned ielem,
+                            const values_type& val,
+                            unsigned node_index[],
+                            double x[], double y[], double z[],
+                            const res_type& res,
+                            const mat_type& mat) const
   {
-    scalar_type value_at_pt = 0 ;
-    scalar_type gradx_at_pt = 0 ;
-    scalar_type grady_at_pt = 0 ;
-    scalar_type gradz_at_pt = 0 ;
-
-    for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
-      value_at_pt += dof_values[m] * bases_vals[m] ;
-      gradx_at_pt += dof_values[m] * dpsidx[m] ;
-      grady_at_pt += dof_values[m] * dpsidy[m] ;
-      gradz_at_pt += dof_values[m] * dpsidz[m] ;
-    }
-
-    const scalar_type k_detJ_weight = coeff_k * detJ * integ_weight ;
-    const scalar_type res_val = std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
-    const scalar_type mat_val = 2.0 * value_at_pt * res_val;
-
-    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
-    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
-
-    for ( unsigned m = 0; m < FunctionCount; ++m) {
-      //scalar_type * const mat = elem_mat[m] ;
-      const double bases_val_m = bases_vals[m];
-      const double dpsidx_m    = dpsidx[m] ;
-      const double dpsidy_m    = dpsidy[m] ;
-      const double dpsidz_m    = dpsidz[m] ;
-
-      elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
-                                       dpsidy_m * grady_at_pt +
-                                       dpsidz_m * gradz_at_pt ) +
-                     res_val * bases_val_m ;
-
-      for( unsigned n = 0; n < FunctionCount; n++) {
-
-        elem_mat(m,n) /*mat[n]*/ += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
-                                    dpsidy_m * dpsidy[n] +
-                                    dpsidz_m * dpsidz[n] ) +
-                  mat_val * bases_val_m * bases_vals[n];
-      }
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const unsigned ielem ) const
-  {
-    typedef Kokkos::View<scalar_type[FunctionCount],device_type,Kokkos::MemoryUnmanaged> local_element_array_type;
-    typedef Kokkos::View<scalar_type[FunctionCount][FunctionCount],Kokkos::LayoutRight,device_type,Kokkos::MemoryUnmanaged> local_element_matrix_type;
-
-    // Gather nodal coordinates and solution vector:
-
-    double x[ FunctionCount ] ;
-    double y[ FunctionCount ] ;
-    double z[ FunctionCount ] ;
-    //scalar_type val[ FunctionCount ] ;
-    scalar_type val_data[ FunctionCount ] ;
-    local_element_array_type val(val_data, FunctionCount);
-    unsigned node_index[ ElemNodeCount ];
-
     for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
       const unsigned ni = elem_node_ids( ielem , i );
 
       node_index[i] = ni ;
 
-      x[i] = node_coords( ni , 0 );
-      y[i] = node_coords( ni , 1 );
-      z[i] = node_coords( ni , 2 );
+      x[i] = this->node_coords( ni , 0 );
+      y[i] = this->node_coords( ni , 1 );
+      z[i] = this->node_coords( ni , 2 );
 
-      val[i] = solution( ni );
-    }
+      val(ielem,i) = solution( ni ) ;
+      res(ielem,i) = 0 ;
 
-
-    //scalar_type elem_vec[ FunctionCount ] ;
-    scalar_type elem_vec_data[FunctionCount];
-    local_element_array_type elem_vec(elem_vec_data, FunctionCount);
-    //scalar_type elem_mat[ FunctionCount ][ FunctionCount ] ;
-    scalar_type elem_mat_data[FunctionCount*FunctionCount];
-    local_element_matrix_type elem_mat(elem_mat_data, FunctionCount, FunctionCount);
-
-    for( unsigned i = 0; i < FunctionCount ; i++ ) {
-      elem_vec[i] = 0 ;
       for( unsigned j = 0; j < FunctionCount ; j++){
-        //elem_mat[i][j] = 0 ;
-        elem_mat(i,j) = 0 ;
+        mat(ielem,i,j) = 0 ;
       }
     }
+  }
 
+  KOKKOS_INLINE_FUNCTION
+  void gatherSolution(const unsigned ielem,
+                      scalar_type val[],
+                      unsigned node_index[],
+                      double x[], double y[], double z[],
+                      scalar_type res[],
+                      scalar_type mat[][FunctionCount]) const
+  {
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = elem_node_ids( ielem , i );
 
-    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
-      double dpsidx[ FunctionCount ] ;
-      double dpsidy[ FunctionCount ] ;
-      double dpsidz[ FunctionCount ] ;
+      node_index[i] = ni ;
 
-      scalar_type coeff_k = 0 ;
+      x[i] = this->node_coords( ni , 0 );
+      y[i] = this->node_coords( ni , 1 );
+      z[i] = this->node_coords( ni , 2 );
 
-      {
-        double pt_x = 0 ;
-        double pt_y = 0 ;
-        double pt_z = 0 ;
+      val[i] = solution( ni ) ;
+      res[i] = 0 ;
 
-        // If function is not constant
-        // then compute physical coordinates of integration point
-        if ( ! coeff_function.is_constant ) {
-          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-            pt_x += x[j] * elem_data.values[i][j] ;
-            pt_y += y[j] * elem_data.values[i][j] ;
-            pt_z += z[j] * elem_data.values[i][j] ;
-          }
-        }
-
-        // Need to fix this for local_scalar_type!!!!!!
-        coeff_k = coeff_function(pt_x,pt_y,pt_z);
+      for( unsigned j = 0; j < FunctionCount ; j++){
+        mat[i][j] = 0 ;
       }
-
-      const double detJ =
-        transform_gradients( elem_data.gradients[i] , x , y , z ,
-                             dpsidx , dpsidy , dpsidz );
-
-      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz ,
-                                  detJ , coeff_k ,
-                                  elem_data.weights[i] ,
-                                  elem_data.values[i] ,
-                                  elem_vec , elem_mat );
     }
+  }
 
+  template <typename values_type, typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void gatherSolutionFad(const unsigned ielem,
+                         values_type val,
+                         unsigned node_index[],
+                         double x[], double y[], double z[],
+                         res_type res) const
+  {
+    typedef typename ArrayTraits<values_type>::value_type fad_scalar_type;
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = elem_node_ids( ielem , i );
+
+      node_index[i] = ni ;
+
+      x[i] = this->node_coords( ni , 0 );
+      y[i] = this->node_coords( ni , 1 );
+      z[i] = this->node_coords( ni , 2 );
+
+      val[i] = fad_scalar_type( FunctionCount, i, solution( ni ) );
+      res[i] = 0 ;
+    }
+  }
+
+  template <typename values_type, typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void gatherSolutionFadGlobal(const unsigned ielem,
+                               const values_type& val,
+                               unsigned node_index[],
+                               double x[], double y[], double z[],
+                               const res_type& res) const
+  {
+    typedef typename values_type::value_type fad_scalar_type;
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = elem_node_ids( ielem , i );
+
+      node_index[i] = ni ;
+
+      x[i] = this->node_coords( ni , 0 );
+      y[i] = this->node_coords( ni , 1 );
+      z[i] = this->node_coords( ni , 2 );
+
+      //val(ielem,i) = fad_scalar_type( FunctionCount, i, solution( ni ) );
+      val(ielem,i).val() = solution( ni );
+      val(ielem,i).fastAccessDx(i) = 1.0;
+      res(ielem,i) = 0 ;
+    }
+  }
+
+  //------------------------------------
+
+  template <typename res_type, typename mat_type>
+  KOKKOS_INLINE_FUNCTION
+  void scatterResidualView(const unsigned ielem,
+                           const unsigned node_index[],
+                           res_type res,
+                           mat_type mat) const
+  {
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
       if ( row < residual.dimension_0() ) {
-        atomic_add( & residual( row ) , elem_vec[i] );
+        atomic_add( & residual( row ) , res[i] );
 
         for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
           const unsigned entry = elem_graph( ielem , i , j );
           if ( entry != ~0u ) {
-            //atomic_add( & jacobian.coeff( entry ) , elem_mat[i][j] );
-            atomic_add( & jacobian.coeff( entry ) , elem_mat(i,j) );
+            atomic_add( & jacobian.coeff( entry ) , mat(i,j) );
           }
         }
       }
     }
   }
-}; /* ElementComputation */
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , class CoeffFunctionType >
+   template <typename res_type, typename mat_type>
+  KOKKOS_INLINE_FUNCTION
+  void scatterResidualViewGlobal(const unsigned ielem,
+                                 const unsigned node_index[],
+                                 const res_type& res,
+                                 const mat_type& mat) const
+  {
+    for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
+      const unsigned row = node_index[i] ;
+      if ( row < residual.dimension_0() ) {
+        atomic_add( & residual( row ) , res(ielem,i) );
+
+        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
+          const unsigned entry = elem_graph( ielem , i , j );
+          if ( entry != ~0u ) {
+            atomic_add( & jacobian.coeff( entry ) , mat(ielem,i,j) );
+          }
+        }
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void scatterResidual(const unsigned ielem,
+                       const unsigned node_index[],
+                       const scalar_type res[],
+                       const scalar_type mat[][FunctionCount]) const
+  {
+    for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
+      const unsigned row = node_index[i] ;
+      if ( row < residual.dimension_0() ) {
+        atomic_add( & residual( row ) , res[i] );
+
+        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
+          const unsigned entry = elem_graph( ielem , i , j );
+          if ( entry != ~0u ) {
+            atomic_add( & jacobian.coeff( entry ) , mat[i][j] );
+          }
+        }
+      }
+    }
+  }
+
+  template <typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void scatterResidualFad(const unsigned ielem,
+                          const unsigned node_index[],
+                          res_type res) const
+  {
+    for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
+      const unsigned row = node_index[i] ;
+      if ( row < residual.dimension_0() ) {
+        atomic_add( & residual( row ) , res[i].val() );
+
+        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
+          const unsigned entry = elem_graph( ielem , i , j );
+          if ( entry != ~0u ) {
+            atomic_add( & jacobian.coeff( entry ) , res[i].fastAccessDx(j) );
+          }
+        }
+      }
+    }
+  }
+
+  template <typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void scatterResidualFadGlobal(const unsigned ielem,
+                                const unsigned node_index[],
+                                const res_type& res) const
+  {
+    for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
+      const unsigned row = node_index[i] ;
+      if ( row < residual.dimension_0() ) {
+        atomic_add( & residual( row ) , res(ielem,i).val() );
+
+        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
+          const unsigned entry = elem_graph( ielem , i , j );
+          if ( entry != ~0u ) {
+            atomic_add( & jacobian.coeff( entry ) , res(ielem,i).fastAccessDx(j) );
+          }
+        }
+      }
+    }
+  }
+
+  //------------------------------------
+
+  template <typename values_type, typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void computeElementResidual(const values_type dof_values ,
+                              const double x[],
+                              const double y[],
+                              const double z[],
+                              res_type  elem_res ) const
+  {
+    typedef typename ArrayTraits<values_type>::value_type array_scalar_type;
+
+    scalar_type coeff_k = 3.456;
+    double dpsidx[ FunctionCount ] ;
+    double dpsidy[ FunctionCount ] ;
+    double dpsidz[ FunctionCount ] ;
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const double integ_weight = elem_data.weights[i];
+      const double* bases_vals = elem_data.values[i];
+
+      const double detJ =
+        transform_gradients( elem_data.gradients[i] ,
+                             x , y , z ,
+                             dpsidx , dpsidy , dpsidz );
+
+      array_scalar_type value_at_pt = 0 ;
+      array_scalar_type gradx_at_pt = 0 ;
+      array_scalar_type grady_at_pt = 0 ;
+      array_scalar_type gradz_at_pt = 0 ;
+
+      for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+        value_at_pt += dof_values[m] * bases_vals[m] ;
+        gradx_at_pt += dof_values[m] * dpsidx[m] ;
+        grady_at_pt += dof_values[m] * dpsidy[m] ;
+        gradz_at_pt += dof_values[m] * dpsidz[m] ;
+      }
+
+      const scalar_type k_detJ_weight =
+        coeff_k * detJ * integ_weight ;
+      const array_scalar_type res_val =
+        std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
+
+    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+
+      for ( unsigned m = 0; m < FunctionCount; ++m) {
+        const double bases_val_m = bases_vals[m];
+        const double dpsidx_m    = dpsidx[m] ;
+        const double dpsidy_m    = dpsidy[m] ;
+        const double dpsidz_m    = dpsidz[m] ;
+
+        elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
+                                         dpsidy_m * grady_at_pt +
+                                         dpsidz_m * gradz_at_pt ) +
+                       res_val * bases_val_m ;
+      }
+    }
+  }
+
+  template <typename values_type, typename res_type>
+  KOKKOS_INLINE_FUNCTION
+  void computeElementResidualGlobal(const unsigned ielem,
+                                    const values_type& dof_values ,
+                                    const double x[],
+                                    const double y[],
+                                    const double z[],
+                                    const res_type&  elem_res ) const
+  {
+    typedef typename values_type::value_type array_scalar_type;
+
+    scalar_type coeff_k = 3.456;
+    double dpsidx[ FunctionCount ] ;
+    double dpsidy[ FunctionCount ] ;
+    double dpsidz[ FunctionCount ] ;
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const double integ_weight = elem_data.weights[i];
+      const double* bases_vals = elem_data.values[i];
+
+      const double detJ =
+        transform_gradients( elem_data.gradients[i] ,
+                             x , y , z ,
+                             dpsidx , dpsidy , dpsidz );
+
+      array_scalar_type value_at_pt = 0 ;
+      array_scalar_type gradx_at_pt = 0 ;
+      array_scalar_type grady_at_pt = 0 ;
+      array_scalar_type gradz_at_pt = 0 ;
+
+      for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+        value_at_pt += dof_values(ielem,m) * bases_vals[m] ;
+        gradx_at_pt += dof_values(ielem,m) * dpsidx[m] ;
+        grady_at_pt += dof_values(ielem,m) * dpsidy[m] ;
+        gradz_at_pt += dof_values(ielem,m) * dpsidz[m] ;
+      }
+
+      const scalar_type k_detJ_weight =
+        coeff_k * detJ * integ_weight ;
+      const array_scalar_type res_val =
+        std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
+
+    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+
+      for ( unsigned m = 0; m < FunctionCount; ++m) {
+        const double bases_val_m = bases_vals[m];
+        const double dpsidx_m    = dpsidx[m] ;
+        const double dpsidy_m    = dpsidy[m] ;
+        const double dpsidz_m    = dpsidz[m] ;
+
+        elem_res(ielem,m) += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
+                                               dpsidy_m * grady_at_pt +
+                                               dpsidz_m * gradz_at_pt ) +
+                             res_val * bases_val_m ;
+      }
+    }
+  }
+
+  template <typename values_type, typename res_type, typename mat_type>
+  KOKKOS_INLINE_FUNCTION
+  void computeElementResidualJacobianView(const values_type dof_values ,
+                                          const double x[],
+                                          const double y[],
+                                          const double z[],
+                                          res_type  elem_res ,
+                                          mat_type  elem_mat ) const
+  {
+    scalar_type coeff_k = 3.456;
+    double dpsidx[ FunctionCount ] ;
+    double dpsidy[ FunctionCount ] ;
+    double dpsidz[ FunctionCount ] ;
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const double integ_weight = elem_data.weights[i];
+      const double* bases_vals = elem_data.values[i];
+
+      const double detJ =
+        this->transform_gradients( elem_data.gradients[i] ,
+                                   x , y , z ,
+                                   dpsidx , dpsidy , dpsidz );
+
+      scalar_type value_at_pt = 0 ;
+      scalar_type gradx_at_pt = 0 ;
+      scalar_type grady_at_pt = 0 ;
+      scalar_type gradz_at_pt = 0 ;
+
+      for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+        value_at_pt += dof_values[m] * bases_vals[m] ;
+        gradx_at_pt += dof_values[m] * dpsidx[m] ;
+        grady_at_pt += dof_values[m] * dpsidy[m] ;
+        gradz_at_pt += dof_values[m] * dpsidz[m] ;
+      }
+
+      const scalar_type k_detJ_weight =
+        coeff_k * detJ * integ_weight ;
+      const scalar_type res_val =
+        std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
+      const scalar_type mat_val =
+        2.0 * value_at_pt * res_val;
+
+      // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+      // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
+
+      for ( unsigned m = 0; m < FunctionCount; ++m) {
+        const double bases_val_m = bases_vals[m];
+        const double dpsidx_m    = dpsidx[m] ;
+        const double dpsidy_m    = dpsidy[m] ;
+        const double dpsidz_m    = dpsidz[m] ;
+
+        elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
+                                         dpsidy_m * grady_at_pt +
+                                         dpsidz_m * gradz_at_pt ) +
+                       res_val * bases_val_m ;
+
+        for( unsigned n = 0; n < FunctionCount; n++) {
+
+          elem_mat(m,n) += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
+                                             dpsidy_m * dpsidy[n] +
+                                             dpsidz_m * dpsidz[n] ) +
+                           mat_val * bases_val_m * bases_vals[n];
+        }
+      }
+    }
+  }
+
+  template <typename values_type, typename res_type, typename mat_type>
+  KOKKOS_INLINE_FUNCTION
+  void computeElementResidualJacobianViewGlobal(const unsigned ielem,
+                                                const values_type& dof_values ,
+                                                const double x[],
+                                                const double y[],
+                                                const double z[],
+                                                const res_type& elem_res ,
+                                                const mat_type& elem_mat ) const
+  {
+    scalar_type coeff_k = 3.456;
+    double dpsidx[ FunctionCount ] ;
+    double dpsidy[ FunctionCount ] ;
+    double dpsidz[ FunctionCount ] ;
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const double integ_weight = elem_data.weights[i];
+      const double* bases_vals = elem_data.values[i];
+
+      const double detJ =
+        this->transform_gradients( elem_data.gradients[i] ,
+                                   x , y , z ,
+                                   dpsidx , dpsidy , dpsidz );
+
+      scalar_type value_at_pt = 0 ;
+      scalar_type gradx_at_pt = 0 ;
+      scalar_type grady_at_pt = 0 ;
+      scalar_type gradz_at_pt = 0 ;
+
+      for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+        value_at_pt += dof_values(ielem,m) * bases_vals[m] ;
+        gradx_at_pt += dof_values(ielem,m) * dpsidx[m] ;
+        grady_at_pt += dof_values(ielem,m) * dpsidy[m] ;
+        gradz_at_pt += dof_values(ielem,m) * dpsidz[m] ;
+      }
+
+      const scalar_type k_detJ_weight =
+        coeff_k * detJ * integ_weight ;
+      const scalar_type res_val =
+        std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
+      const scalar_type mat_val =
+        2.0 * value_at_pt * res_val;
+
+      // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+      // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
+
+      for ( unsigned m = 0; m < FunctionCount; ++m) {
+        const double bases_val_m = bases_vals[m];
+        const double dpsidx_m    = dpsidx[m] ;
+        const double dpsidy_m    = dpsidy[m] ;
+        const double dpsidz_m    = dpsidz[m] ;
+
+        elem_res(ielem,m) += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
+                                               dpsidy_m * grady_at_pt +
+                                               dpsidz_m * gradz_at_pt ) +
+                             res_val * bases_val_m ;
+
+        for( unsigned n = 0; n < FunctionCount; n++) {
+
+          elem_mat(ielem,m,n) += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
+                                                   dpsidy_m * dpsidy[n] +
+                                                   dpsidz_m * dpsidz[n] ) +
+                                 mat_val * bases_val_m * bases_vals[n];
+        }
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void computeElementResidualJacobian(const scalar_type dof_values[] ,
+                                      const double x[],
+                                      const double y[],
+                                      const double z[],
+                                      scalar_type  elem_res[] ,
+                                      scalar_type  elem_mat[][FunctionCount] ) const
+  {
+    scalar_type coeff_k = 3.456;
+    double dpsidx[ FunctionCount ] ;
+    double dpsidy[ FunctionCount ] ;
+    double dpsidz[ FunctionCount ] ;
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const double integ_weight = elem_data.weights[i];
+      const double* bases_vals = elem_data.values[i];
+
+      const double detJ =
+        this->transform_gradients( elem_data.gradients[i] ,
+                                   x , y , z ,
+                                   dpsidx , dpsidy , dpsidz );
+
+      scalar_type value_at_pt = 0 ;
+      scalar_type gradx_at_pt = 0 ;
+      scalar_type grady_at_pt = 0 ;
+      scalar_type gradz_at_pt = 0 ;
+
+      for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
+        value_at_pt += dof_values[m] * bases_vals[m] ;
+        gradx_at_pt += dof_values[m] * dpsidx[m] ;
+        grady_at_pt += dof_values[m] * dpsidy[m] ;
+        gradz_at_pt += dof_values[m] * dpsidz[m] ;
+      }
+
+      const scalar_type k_detJ_weight =
+        coeff_k * detJ * integ_weight ;
+      const scalar_type res_val =
+        std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
+      const scalar_type mat_val =
+        2.0 * value_at_pt * res_val;
+
+      // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
+      // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
+
+      for ( unsigned m = 0; m < FunctionCount; ++m) {
+        scalar_type * const mat = elem_mat[m] ;
+        const double bases_val_m = bases_vals[m];
+        const double dpsidx_m    = dpsidx[m] ;
+        const double dpsidy_m    = dpsidy[m] ;
+        const double dpsidz_m    = dpsidz[m] ;
+
+        elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
+                                         dpsidy_m * grady_at_pt +
+                                         dpsidz_m * gradz_at_pt ) +
+                       res_val * bases_val_m ;
+
+        for( unsigned n = 0; n < FunctionCount; n++) {
+
+          mat[n] += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
+                                      dpsidy_m * dpsidy[n] +
+                                      dpsidz_m * dpsidz[n] ) +
+                    mat_val * bases_val_m * bases_vals[n];
+        }
+      }
+    }
+  }
+
+};
+
+enum AssemblyMethod {
+  AnalyticLocal,
+  AnalyticLocalView,
+  AnalyticGlobalView,
+  FadLocal,
+  FadLocalView,
+  FadGlobalView
+};
+
+template< class FiniteElementMeshType ,
+          class SparseMatrixType ,
+          AssemblyMethod Method
+        >
+class ElementComputation ;
+
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
-  , CrsMatrix< ScalarType , DeviceType >
-  , CoeffFunctionType
-  , true >
-{
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType > ,
+    AnalyticLocal > :
+    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                  ScalarType> {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
-  typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
 
-  //------------------------------------
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
 
-  typedef DeviceType   device_type ;
-  typedef ScalarType   scalar_type ;
+  ElementComputation(const ElementComputation& rhs) : base_type(rhs) {}
 
-  typedef CrsMatrix< ScalarType , DeviceType > sparse_matrix_type ;
-  typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
-
-  //------------------------------------
-
-  static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
-  static const unsigned TensorDim        = SpatialDim * SpatialDim ;
-  static const unsigned ElemNodeCount    = element_data_type::element_node_count ;
-  static const unsigned FunctionCount    = element_data_type::function_count ;
-  static const unsigned IntegrationCount = element_data_type::integration_count ;
-
-  //------------------------------------
-
-  typedef Sacado::Fad::SFad<scalar_type,FunctionCount> fad_scalar_type;
-
-  typedef typename mesh_type::node_coord_type node_coord_type ;
-  typedef typename mesh_type::elem_node_type elem_node_type ;
-
-  typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
-
-  //------------------------------------
-
-
-  //------------------------------------
-  // Computational data:
-
-  const element_data_type   elem_data ;
-  const elem_node_type      elem_node_ids ;
-  const node_coord_type     node_coords ;
-  const elem_graph_type     elem_graph ;
-  const vector_type         solution ;
-  const vector_type         residual ;
-  const sparse_matrix_type  jacobian ;
-  const CoeffFunctionType   coeff_function ;
-
-  ElementComputation( const ElementComputation & rhs )
-    : elem_data()
-    , elem_node_ids( rhs.elem_node_ids )
-    , node_coords(   rhs.node_coords )
-    , elem_graph(    rhs.elem_graph )
-    , solution( rhs.solution )
-    , residual( rhs.residual )
-    , jacobian( rhs.jacobian )
-    , coeff_function( rhs.coeff_function )
-    {}
-
-  // If the element->sparse_matrix graph is provided then perform atomic updates
-  // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
-  ElementComputation( const mesh_type          & arg_mesh ,
-                      const CoeffFunctionType  & arg_coeff_function ,
-                      const vector_type        & arg_solution ,
-                      const elem_graph_type    & arg_elem_graph ,
-                      const sparse_matrix_type & arg_jacobian ,
-                      const vector_type        & arg_residual )
-    : elem_data()
-    , elem_node_ids( arg_mesh.elem_node() )
-    , node_coords(   arg_mesh.node_coord() )
-    , elem_graph(    arg_elem_graph )
-    , solution( arg_solution )
-    , residual( arg_residual )
-    , jacobian( arg_jacobian )
-    , coeff_function( arg_coeff_function )
-    {}
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual) {}
 
   //------------------------------------
 
   void apply() const
   {
-    const size_t nelem = elem_node_ids.dimension_0();
+    const size_t nelem = this->elem_node_ids.dimension_0();
     parallel_for( nelem , *this );
-  }
-
-  //------------------------------------
-
-  static const unsigned FLOPS_transform_gradients =
-     /* Jacobian */           FunctionCount * TensorDim * 2 +
-     /* Inverse jacobian */   TensorDim * 6 + 6 +
-     /* Gradient transform */ FunctionCount * 15 ;
-
-  KOKKOS_INLINE_FUNCTION
-  double transform_gradients(
-    const double grad[][ FunctionCount ] , // Gradient of bases master element
-    const double x[] ,
-    const double y[] ,
-    const double z[] ,
-    double dpsidx[] ,
-    double dpsidy[] ,
-    double dpsidz[] ) const
-  {
-    enum { j11 = 0 , j12 = 1 , j13 = 2 ,
-           j21 = 3 , j22 = 4 , j23 = 5 ,
-           j31 = 6 , j32 = 7 , j33 = 8 };
-
-    // Jacobian accumulation:
-
-    double J[ TensorDim ] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
-
-    for( unsigned i = 0; i < FunctionCount ; ++i ) {
-      const double x1 = x[i] ;
-      const double x2 = y[i] ;
-      const double x3 = z[i] ;
-
-      const double g1 = grad[0][i] ;
-      const double g2 = grad[1][i] ;
-      const double g3 = grad[2][i] ;
-
-      J[j11] += g1 * x1 ;
-      J[j12] += g1 * x2 ;
-      J[j13] += g1 * x3 ;
-
-      J[j21] += g2 * x1 ;
-      J[j22] += g2 * x2 ;
-      J[j23] += g2 * x3 ;
-
-      J[j31] += g3 * x1 ;
-      J[j32] += g3 * x2 ;
-      J[j33] += g3 * x3 ;
-    }
-
-    // Inverse jacobian:
-
-    double invJ[ TensorDim ] = {
-      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
-
-      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
-
-      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
-
-    const double detJ = J[j11] * invJ[j11] +
-                       J[j21] * invJ[j12] +
-                       J[j31] * invJ[j13] ;
-
-    const double detJinv = 1.0 / detJ ;
-
-    for ( unsigned i = 0 ; i < TensorDim ; ++i ) { invJ[i] *= detJinv ; }
-
-    // Transform gradients:
-
-    for( unsigned i = 0; i < FunctionCount ; ++i ) {
-      const double g0 = grad[0][i];
-      const double g1 = grad[1][i];
-      const double g2 = grad[2][i];
-
-      dpsidx[i] = g0 * invJ[j11] + g1 * invJ[j12] + g2 * invJ[j13];
-      dpsidy[i] = g0 * invJ[j21] + g1 * invJ[j22] + g2 * invJ[j23];
-      dpsidz[i] = g0 * invJ[j31] + g1 * invJ[j32] + g2 * invJ[j33];
-    }
-
-    return detJ ;
-  }
-
-  template <typename values_type, typename res_type>
-  KOKKOS_INLINE_FUNCTION
-  void contributeResidual(
-    const values_type dof_values ,
-    const double  dpsidx[] ,
-    const double  dpsidy[] ,
-    const double  dpsidz[] ,
-    const double  detJ ,
-    const scalar_type  coeff_k ,
-    const double  integ_weight ,
-    const double  bases_vals[] ,
-    res_type  elem_res ) const
-  {
-    fad_scalar_type value_at_pt = 0 ;
-    fad_scalar_type gradx_at_pt = 0 ;
-    fad_scalar_type grady_at_pt = 0 ;
-    fad_scalar_type gradz_at_pt = 0 ;
-
-    for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
-      value_at_pt += dof_values[m] * bases_vals[m] ;
-      gradx_at_pt += dof_values[m] * dpsidx[m] ;
-      grady_at_pt += dof_values[m] * dpsidy[m] ;
-      gradz_at_pt += dof_values[m] * dpsidz[m] ;
-    }
-
-    const scalar_type k_detJ_weight = coeff_k             * detJ * integ_weight ;
-    const fad_scalar_type res_val = std::exp( value_at_pt * value_at_pt ) * detJ * integ_weight ;
-
-    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
-    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
-
-    for ( unsigned m = 0; m < FunctionCount; ++m) {
-      const double bases_val_m = bases_vals[m];
-      const double dpsidx_m    = dpsidx[m] ;
-      const double dpsidy_m    = dpsidy[m] ;
-      const double dpsidz_m    = dpsidz[m] ;
-
-      elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
-                                       dpsidy_m * grady_at_pt +
-                                       dpsidz_m * gradz_at_pt ) +
-                     res_val * bases_val_m ;
-    }
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned ielem ) const
   {
-    typedef Kokkos::View<fad_scalar_type[FunctionCount],device_type,Kokkos::MemoryUnmanaged> local_element_array_type;
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
+
+    scalar_type val[ base_type::FunctionCount ] ;
+    scalar_type elem_res[ base_type::FunctionCount ] ;
+    scalar_type elem_mat[ base_type::FunctionCount ][ base_type::FunctionCount ] ;
+
     // Gather nodal coordinates and solution vector:
+    this->gatherSolution(ielem, val, node_index, x, y, z, elem_res, elem_mat);
 
-    double x[ FunctionCount ] ;
-    double y[ FunctionCount ] ;
-    double z[ FunctionCount ] ;
-    //fad_scalar_type val[ FunctionCount ] ;
-    scalar_type val_data[(FunctionCount+1)*FunctionCount];
-    local_element_array_type val(val_data, FunctionCount, FunctionCount+1);
-    unsigned node_index[ ElemNodeCount ];
+    // Compute nodal element residual vector and Jacobian matrix
+    this->computeElementResidualJacobian( val, x, y, z, elem_res , elem_mat );
 
-    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
-      const unsigned ni = elem_node_ids( ielem , i );
+    // Scatter nodal element residual and Jacobian in global vector and matrix:
+    this->scatterResidual( ielem, node_index, elem_res, elem_mat );
+  }
+}; /* ElementComputation */
 
-      node_index[i] = ni ;
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType > ,
+    AnalyticLocalView > :
+    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                  ScalarType> {
+public:
 
-      x[i] = node_coords( ni , 0 );
-      y[i] = node_coords( ni , 1 );
-      z[i] = node_coords( ni , 2 );
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
 
-      val[i] = fad_scalar_type( FunctionCount, i, solution( ni ) );
-    }
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
 
+  ElementComputation(const ElementComputation& rhs) : base_type(rhs) {}
 
-    //fad_scalar_type elem_vec[ FunctionCount ] ;
-    scalar_type elem_vec_data[(FunctionCount+1)*FunctionCount];
-    local_element_array_type elem_vec(elem_vec_data, FunctionCount, FunctionCount+1);
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual) {}
 
-    for( unsigned i = 0; i < FunctionCount ; i++ ) {
-      elem_vec[i] = 0 ;
-    }
+  //------------------------------------
 
-    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
-      double dpsidx[ FunctionCount ] ;
-      double dpsidy[ FunctionCount ] ;
-      double dpsidz[ FunctionCount ] ;
+  void apply() const
+  {
+    const size_t nelem = this->elem_node_ids.dimension_0();
+    parallel_for( nelem , *this );
+  }
 
-      scalar_type coeff_k = 0 ;
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ) const
+  {
+    typedef Kokkos::View<scalar_type[base_type::FunctionCount],device_type,Kokkos::MemoryUnmanaged> local_element_array_type;
+    typedef Kokkos::View<scalar_type[base_type::FunctionCount][base_type::FunctionCount],Kokkos::LayoutRight,device_type,Kokkos::MemoryUnmanaged> local_element_matrix_type;
 
-      {
-        double pt_x = 0 ;
-        double pt_y = 0 ;
-        double pt_z = 0 ;
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
 
-        // If function is not constant
-        // then compute physical coordinates of integration point
-        if ( ! coeff_function.is_constant ) {
-          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-            pt_x += x[j] * elem_data.values[i][j] ;
-            pt_y += y[j] * elem_data.values[i][j] ;
-            pt_z += z[j] * elem_data.values[i][j] ;
-          }
-        }
+    scalar_type val_data[ base_type::FunctionCount ] ;
+    scalar_type elem_res_data[base_type::FunctionCount] ;
+    scalar_type elem_mat_data[base_type::FunctionCount*base_type::FunctionCount];
 
-        coeff_k = coeff_function(pt_x,pt_y,pt_z);
-      }
+    local_element_array_type val(val_data, base_type::FunctionCount);
+    local_element_array_type elem_res(elem_res_data, base_type::FunctionCount);
+    local_element_matrix_type elem_mat(elem_mat_data, base_type::FunctionCount, base_type::FunctionCount);
 
-      const double detJ =
-        transform_gradients( elem_data.gradients[i] , x , y , z ,
-                             dpsidx , dpsidy , dpsidz );
+    // Gather nodal coordinates and solution vector:
+    this->gatherSolution(ielem, val, node_index, x, y, z, elem_res, elem_mat);
 
-      contributeResidual( val , dpsidx , dpsidy , dpsidz ,
-                          detJ , coeff_k ,
-                          elem_data.weights[i] ,
-                          elem_data.values[i] ,
-                          elem_vec );
-    }
+    // Compute nodal element residual vector and Jacobian matrix
+    this->computeElementResidualJacobianView( val, x, y, z, elem_res , elem_mat );
 
-    for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
-      const unsigned row = node_index[i] ;
-      if ( row < residual.dimension_0() ) {
-        atomic_add( & residual( row ) , elem_vec[i].val() );
+    // Scatter nodal element residual and Jacobian in global vector and matrix:
+    this->scatterResidualView( ielem, node_index, elem_res, elem_mat );
+  }
+}; /* ElementComputation */
 
-        for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
-          const unsigned entry = elem_graph( ielem , i , j );
-          if ( entry != ~0u ) {
-            atomic_add( & jacobian.coeff( entry ) ,
-                        elem_vec[i].fastAccessDx(j) );
-          }
-        }
-      }
-    }
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap, typename ScalarType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType > ,
+    AnalyticGlobalView > :
+    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                  ScalarType> {
+public:
+
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
+
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
+
+  typedef Kokkos::View<scalar_type*[base_type::FunctionCount],device_type> local_element_array_type;
+    typedef Kokkos::View<scalar_type*[base_type::FunctionCount][base_type::FunctionCount],device_type> local_element_matrix_type;
+
+  local_element_array_type val;
+  local_element_array_type elem_res;
+  local_element_matrix_type elem_mat;
+
+  ElementComputation(const ElementComputation& rhs) :
+    base_type(rhs),
+    val(rhs.val),
+    elem_res(rhs.elem_res),
+    elem_mat(rhs.elem_mat) {}
+
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual),
+    val("val", this->elem_node_ids.dimension_0(),base_type::FunctionCount),
+    elem_res("elem_res", this->elem_node_ids.dimension_0(),base_type::FunctionCount),
+    elem_mat("elem_mat", this->elem_node_ids.dimension_0(),base_type::FunctionCount,base_type::FunctionCount) {}
+
+  //------------------------------------
+
+  void apply() const
+  {
+    const size_t nelem = this->elem_node_ids.dimension_0();
+    parallel_for( nelem , *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ) const
+  {
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
+
+    // Gather nodal coordinates and solution vector:
+    this->gatherSolutionGlobal(ielem, val, node_index, x, y, z, elem_res, elem_mat);
+
+    // Compute nodal element residual vector and Jacobian matrix
+    this->computeElementResidualJacobianViewGlobal( ielem, val, x, y, z, elem_res , elem_mat );
+
+    // Scatter nodal element residual and Jacobian in global vector and matrix:
+    this->scatterResidualViewGlobal( ielem, node_index, elem_res, elem_mat );
+  }
+}; /* ElementComputation */
+
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType > ,
+    FadLocal > : public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                               ScalarType> {
+public:
+
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
+
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
+  typedef Sacado::Fad::SFad<scalar_type,base_type::FunctionCount> fad_scalar_type;
+
+  ElementComputation(const ElementComputation& rhs) : base_type(rhs) {}
+
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual) {}
+
+  //------------------------------------
+
+  void apply() const
+  {
+    const size_t nelem = this->elem_node_ids.dimension_0();
+    parallel_for( nelem , *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ) const
+  {
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
+
+    fad_scalar_type val[ base_type::FunctionCount ] ;
+    fad_scalar_type elem_res[ base_type::FunctionCount ] ;
+
+    // Gather nodal coordinates and solution vector:
+    this->gatherSolutionFad( ielem, val, node_index, x, y, z, elem_res );
+
+    // Compute nodal element residual vector:
+    this->computeElementResidual( val, x, y, z, elem_res );
+
+    // Scatter nodal element residual in global vector:
+    this->scatterResidualFad( ielem, node_index, elem_res );
+  }
+}; /* ElementComputation */
+
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType > ,
+    FadLocalView > :
+    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                  ScalarType> {
+public:
+
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
+
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
+  typedef Sacado::Fad::SFad<scalar_type,base_type::FunctionCount> fad_scalar_type;
+
+  static const unsigned data_size =
+      sizeof(fad_scalar_type[base_type::FunctionCount])/sizeof(scalar_type);
+
+  ElementComputation(const ElementComputation& rhs) : base_type(rhs) {}
+
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual) {}
+
+  //------------------------------------
+
+  void apply() const
+  {
+    const size_t nelem = this->elem_node_ids.dimension_0();
+    parallel_for( nelem , *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ) const
+  {
+    typedef Kokkos::View<fad_scalar_type[base_type::FunctionCount],device_type,Kokkos::MemoryUnmanaged> local_element_array_type;
+
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
+
+    scalar_type val_data[data_size];
+    scalar_type elem_res_data[data_size];
+
+    local_element_array_type val(val_data, base_type::FunctionCount, base_type::FunctionCount+1);
+    local_element_array_type elem_res(elem_res_data, base_type::FunctionCount, base_type::FunctionCount+1);
+
+    // Gather nodal coordinates and solution vector:
+    this->gatherSolutionFad( ielem, val, node_index, x, y, z, elem_res );
+
+    // Compute nodal element residual vector:
+    this->computeElementResidual( val, x, y, z, elem_res );
+
+    // Scatter nodal element residual in global vector:
+    this->scatterResidualFad( ielem, node_index, elem_res );
+  }
+}; /* ElementComputation */
+
+template< class DeviceType , BoxElemPart::ElemOrder Order ,
+          class CoordinateMap , typename ScalarType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , DeviceType >,
+    FadGlobalView > :
+    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                  ScalarType> {
+public:
+
+  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+                                 ScalarType> base_type;
+
+  typedef typename base_type::scalar_type scalar_type;
+  typedef typename base_type::device_type device_type;
+  typedef Sacado::Fad::SFad<scalar_type,base_type::FunctionCount> fad_scalar_type;
+  typedef Kokkos::View<fad_scalar_type*[base_type::FunctionCount],device_type> local_element_array_type;
+
+  local_element_array_type val;
+  local_element_array_type elem_res;
+
+  ElementComputation(const ElementComputation& rhs) :
+    base_type(rhs),
+    val(rhs.val),
+    elem_res(rhs.elem_res) {}
+
+  ElementComputation(
+    const typename base_type::mesh_type          & arg_mesh ,
+    const typename base_type::coeff_function_type& arg_coeff_function ,
+    const typename base_type::vector_type        & arg_solution ,
+    const typename base_type::elem_graph_type    & arg_elem_graph ,
+    const typename base_type::sparse_matrix_type & arg_jacobian ,
+    const typename base_type::vector_type        & arg_residual ) :
+    base_type(arg_mesh, arg_coeff_function, arg_solution, arg_elem_graph,
+              arg_jacobian, arg_residual),
+    val("val", this->elem_node_ids.dimension_0(),base_type::FunctionCount,base_type::FunctionCount+1),
+    elem_res("elem_res", this->elem_node_ids.dimension_0(),base_type::FunctionCount,base_type::FunctionCount+1) {}
+
+  //------------------------------------
+
+  void apply() const
+  {
+    const size_t nelem = this->elem_node_ids.dimension_0();
+    parallel_for( nelem , *this );
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem ) const
+  {
+    double x[ base_type::FunctionCount ] ;
+    double y[ base_type::FunctionCount ] ;
+    double z[ base_type::FunctionCount ] ;
+    unsigned node_index[ base_type::ElemNodeCount ];
+
+    // Gather nodal coordinates and solution vector:
+    this->gatherSolutionFadGlobal( ielem, val, node_index, x, y, z, elem_res );
+
+    // Compute nodal element residual vector:
+    this->computeElementResidualGlobal( ielem, val, x, y, z, elem_res );
+
+    // Scatter nodal element residual in global vector:
+    this->scatterResidualFadGlobal( ielem, node_index, elem_res );
   }
 }; /* ElementComputation */
 

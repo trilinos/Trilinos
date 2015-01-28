@@ -77,13 +77,18 @@ int main(int argc, char *argv[])
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print debugging output");
     bool check = false;
+    CLP.setOption("check", "no-check", &check, "Check correctness");
+    bool view = false;
+    CLP.setOption("view", "no-view", &view, "Use view in assembly");
+    bool global_view = false;
+    CLP.setOption("global", "local", &global_view,
+                  "Use global/local view in assembly");
     int num_cores = num_cores_per_socket * num_sockets;
     CLP.setOption("cores", &num_cores,
                   "Number of CPU cores to use (defaults to all)");
     int num_hyper_threads = num_threads_per_core;
     CLP.setOption("hyperthreads", &num_hyper_threads,
                   "Number of hyper threads per core to use (defaults to all)");
-    CLP.setOption("check", "no-check", &check, "Check correctness");
 #ifdef KOKKOS_HAVE_PTHREAD
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
@@ -113,7 +118,8 @@ int main(int argc, char *argv[])
                 << "Threads performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, check);
+      performance_test_driver<Device>(print, nIter, use_nodes, view,
+                                      global_view, check);
 
       Kokkos::Threads::finalize();
     }
@@ -129,7 +135,8 @@ int main(int argc, char *argv[])
                 << "OpenMP performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, check);
+      performance_test_driver<Device>(print, nIter, use_nodes, view,
+                                      global_view, check);
 
       Kokkos::OpenMP::finalize();
     }
@@ -150,7 +157,8 @@ int main(int argc, char *argv[])
                 << deviceProp.name << "):"
                 << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, check);
+      performance_test_driver<Device>(print, nIter, use_nodes, view,
+                                      global_view, check);
 
       Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
