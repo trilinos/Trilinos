@@ -50,11 +50,13 @@
 
 namespace {
 
+template<class ExecutionSpace>
 struct TestMemory {
   int* data;
   int offset;
 
   typedef int value_type;
+  typedef ExecutionSpace execution_space;
 
   TestMemory(int* data_, int offset_):data(data_),offset(offset_){}
 
@@ -132,15 +134,16 @@ public:
 #ifdef KOKKOS_HAVE_CXX11
     int* data = (int*) Kokkos::malloc<MemorySpace>(100*sizeof(int));
     int sum = 0;
-    Kokkos::parallel_for(100, TestMemory(data,0));
-    Kokkos::parallel_reduce(100, TestMemory(data,0),sum);
+
+    Kokkos::parallel_for(100, TestMemory<typename Arg1::execution_space>(data,0));
+    Kokkos::parallel_reduce(100, TestMemory<typename Arg1::execution_space>(data,0),sum);
     ASSERT_TRUE(sum == 100*99/2);
 
     sum = 0;
     ASSERT_NO_THROW(data = (int*) Kokkos::realloc<MemorySpace>(data,120*sizeof(int)));
 
-    Kokkos::parallel_for(20, TestMemory(data,100));
-    Kokkos::parallel_reduce(120, TestMemory(data,0),sum);
+    Kokkos::parallel_for(20, TestMemory<typename Arg1::execution_space>(data,100));
+    Kokkos::parallel_reduce(120, TestMemory<typename Arg1::execution_space>(data,0),sum);
 
     ASSERT_TRUE(sum == 120*119/2);
 
