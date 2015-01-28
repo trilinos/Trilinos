@@ -69,7 +69,7 @@ namespace Sacado {
       //! Constructor
       KOKKOS_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
-        sz_(arg_size), stride_(arg_stride), val_(v), dx_(v+stride_.value) {}
+        sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION

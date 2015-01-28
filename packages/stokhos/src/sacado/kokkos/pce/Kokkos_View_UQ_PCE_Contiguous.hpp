@@ -239,7 +239,7 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
-  typedef Impl::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
+  typedef Sacado::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;

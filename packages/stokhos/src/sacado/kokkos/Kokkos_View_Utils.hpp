@@ -175,32 +175,6 @@ template <> struct GetSacadoSize<7> {
   }
 };
 
-template< typename T , T v , bool NonZero = ( v != T(0) ) >
-struct integral_nonzero
-{
-  // Declaration of 'static const' causes an unresolved linker symbol in debug
-  // static const T value = v ;
-  enum { value = T(v) };
-  typedef T value_type ;
-  typedef integral_nonzero<T,v> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
-};
-
-template< typename T , T zero >
-struct integral_nonzero<T,zero,false>
-{
-  T value ;
-  typedef T value_type ;
-  typedef integral_nonzero<T,0> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() : value() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
-};
-
 } // namespace Impl
 
 } // namespace Kokkos
