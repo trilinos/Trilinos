@@ -72,6 +72,19 @@ void find_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes,
   }
 }
 
+bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes)
+{
+  std::vector<Entity> elems;
+  find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
+  bool found_shell = false;
+  for (unsigned count = 0; count < elems.size(); ++count) {
+      if (mesh.bucket(elems[count]).topology().is_shell()) {
+          found_shell = true;
+      }
+  }
+  return found_shell;
+}
+
 void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
   find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);

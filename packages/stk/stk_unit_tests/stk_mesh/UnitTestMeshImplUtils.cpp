@@ -913,6 +913,70 @@ TEST(MeshImplUtils, check_no_shared_elements_or_higher_nominal)
     }
 }
 
+TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_no_nodes)
+{
+    const int spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta,MPI_COMM_WORLD);
+    EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh, 0, NULL));
+}
+
+TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshell)
+{
+    const int spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta,MPI_COMM_WORLD);
+    if (mesh.parallel_size() == 1) {
+        stk::io::StkMeshIoBroker exodus_file_reader(MPI_COMM_WORLD);
+        exodus_file_reader.set_bulk_data(mesh);
+        exodus_file_reader.add_mesh_database("generated:1x1x1|shell:X", stk::io::READ_MESH);
+        exodus_file_reader.create_input_mesh();
+        exodus_file_reader.populate_bulk_data();
+        {
+            stk::mesh::Entity shell = (*mesh.buckets(stk::topology::ELEMENT_RANK)[1])[0];
+            ASSERT_TRUE(mesh.bucket(shell).topology().is_shell());
+            stk::mesh::EntityVector nodes(4);
+            for (unsigned i=0 ; i<4 ; ++i) {
+                nodes[i] = mesh.begin_nodes(shell)[i];
+            }
+            EXPECT_TRUE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,4,&nodes[0]));
+        }
+        {
+            stk::mesh::Entity hex = (*mesh.buckets(stk::topology::ELEMENT_RANK)[0])[0];
+            ASSERT_FALSE(mesh.bucket(hex).topology().is_shell());
+            stk::mesh::EntityVector nodes(8);
+            for (unsigned i=0 ; i<8 ; ++i) {
+                nodes[i] = mesh.begin_nodes(hex)[i];
+            }
+            EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,8,&nodes[0]));
+        }
+
+    }
+}
+
+TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshellwrap)
+{
+    const int spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta,MPI_COMM_WORLD);
+    if (mesh.parallel_size() == 1) {
+        stk::io::StkMeshIoBroker exodus_file_reader(MPI_COMM_WORLD);
+        exodus_file_reader.set_bulk_data(mesh);
+        exodus_file_reader.add_mesh_database("generated:1x1x1|shell:xXyY", stk::io::READ_MESH);
+        exodus_file_reader.create_input_mesh();
+        exodus_file_reader.populate_bulk_data();
+        stk::mesh::Entity hex = (*mesh.buckets(stk::topology::ELEMENT_RANK)[0])[0];
+        ASSERT_FALSE(mesh.bucket(hex).topology().is_shell());
+        stk::mesh::EntityVector nodes(4);
+        for (unsigned i=0 ; i<4 ; ++i) {
+            nodes[i] = mesh.begin_nodes(hex)[i];
+        }
+        EXPECT_FALSE(stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,4,&nodes[0]));
+
+    }
+}
+
+
 TEST(MeshImplUtils, verify_internal_fix_node_sharing_delete_on_2015_03_06)
 {
     stk::ParallelMachine pm = MPI_COMM_WORLD;

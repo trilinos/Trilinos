@@ -52,6 +52,7 @@
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -165,38 +166,12 @@ struct create_face_impl
         unsigned smallest_permutation;
         EntityVector permuted_face_nodes(faceTopology.num_nodes());
         //if this is a shell OR these nodes are connected to a shell
-        bool is_connected_to_shell = false;
-        {
-            std::set<EntityId> shells_connected_to_all_nodes;
-            for (unsigned count=0; count<side_node_ids.size(); ++count) {
-                Entity node = mesh.get_entity(stk::topology::NODE_RANK, side_node_ids[count]);
-                Entity const * elements_on_node = mesh.begin_elements(node);
-                unsigned num_elements = mesh.num_connectivity(node, stk::topology::ELEM_RANK);
-                std::set<EntityId> shells_connected_to_node;
-                for (unsigned elem_count=0; elem_count<num_elements; ++elem_count) {
-                    if (mesh.bucket(elements_on_node[elem_count]).topology().is_shell() ) {
-                        shells_connected_to_node.insert(mesh.entity_key(elements_on_node[elem_count]).id());
-                    }
-                }
-                if (0u == count) {
-                    shells_connected_to_all_nodes = shells_connected_to_node;
-                }
-                else {
-                    std::set<EntityId> intersected_set;
-                    std::insert_iterator<std::set<EntityId> > intersected_set_iter(intersected_set, intersected_set.begin());
-                    std::set_intersection(shells_connected_to_all_nodes.begin(), shells_connected_to_all_nodes.end(),
-                                          shells_connected_to_node.begin(), shells_connected_to_node.end(),
-                                          intersected_set_iter);
-                    shells_connected_to_all_nodes = intersected_set;
-                }
-                if (0u == shells_connected_to_all_nodes.size()) {
-                    break;
-                }
-            }
-            if (0u < shells_connected_to_all_nodes.size()) {
-                is_connected_to_shell = true;
-            }
+        EntityVector side_nodes(faceTopology.num_nodes());
+        for (unsigned count=0 ; count<faceTopology.num_nodes() ; ++count) {
+            side_nodes[count] = mesh.get_entity(stk::topology::NODE_RANK,side_node_ids[count]);
         }
+        bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,faceTopology.num_nodes(),&side_nodes[0]);
+
         if (elemTopology.is_shell || is_connected_to_shell) {
 
             EntityIdVector element_node_id_vector(faceTopology.num_nodes());
