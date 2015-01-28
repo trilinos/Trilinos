@@ -240,9 +240,9 @@ TEST_F( defaultdevicetype , team_vector )
 #if defined (KOKKOS_HAVE_CXX11)
 TEST_F( defaultdevicetype , malloc )
 {
-  int* data = (int*) Kokkos::malloc<>(100*sizeof(int));
-  ASSERT_NO_THROW(data = (int*) Kokkos::realloc<>(data,120*sizeof(int)));
-  Kokkos::free<>(data);
+  int* data = (int*) Kokkos::kokkos_malloc(100*sizeof(int));
+  ASSERT_NO_THROW(data = (int*) Kokkos::kokkos_realloc(data,120*sizeof(int)));
+  Kokkos::kokkos_free(data);
 }
 #endif
 

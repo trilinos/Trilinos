@@ -114,26 +114,26 @@ namespace Kokkos {
  * leaked memory can be identified.
  */
 template< class Arg = DefaultExecutionSpace>
-void* malloc(const std::string label, size_t count) {
+void* kokkos_malloc(const std::string label, size_t count) {
   typedef typename Arg::memory_space MemorySpace;
   return MemorySpace::allocate(label,count);;
 }
 
 template< class Arg = DefaultExecutionSpace>
-void* malloc(const size_t& count) {
-  return malloc<Arg>("DefaultLabel",count);
+void* kokkos_malloc(const size_t& count) {
+  return kokkos_malloc<Arg>("DefaultLabel",count);
 }
 
 /* Free memory from a memory space.
  */
 template< class Arg = DefaultExecutionSpace>
-void free(const void* ptr) {
+void kokkos_free(const void* ptr) {
   typedef typename Arg::memory_space MemorySpace;
   MemorySpace::decrement(ptr);
 }
 
 template< class Arg = DefaultExecutionSpace>
-const void* realloc(const void* old_ptr, size_t size) {
+const void* kokkos_realloc(const void* old_ptr, size_t size) {
   typedef typename Arg::memory_space MemorySpace;
 
   //Get information about the old allocation
@@ -146,13 +146,13 @@ const void* realloc(const void* old_ptr, size_t size) {
   if (old_size == size) return old_ptr;
 
   //Do the new allocation
-  void* new_ptr = malloc<MemorySpace>(label,size);
+  void* new_ptr = kokkos_malloc<MemorySpace>(label,size);
 
   //Copy old data to the new allocation
   Impl::DeepCopy<MemorySpace,MemorySpace>(new_ptr,old_ptr,size>old_size?old_size:size);
 
   //Elliminate the old allocation
-  free<MemorySpace>(old_ptr);
+  kokkos_free<MemorySpace>(old_ptr);
 
   return new_ptr;
 }
