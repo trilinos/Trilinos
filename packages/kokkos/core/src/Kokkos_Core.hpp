@@ -107,4 +107,56 @@ void fence();
 
 }
 
+#ifdef KOKKOS_HAVE_CXX11
+namespace Kokkos {
+/* Allocate memory from a memory space.
+ * The allocation is tracked in Kokkos memory tracking system, so
+ * leaked memory can be identified.
+ */
+template< class Arg = DefaultExecutionSpace>
+void* malloc(const std::string label, size_t count) {
+  typedef typename Arg::memory_space MemorySpace;
+  return MemorySpace::allocate(label,count);;
+}
+
+template< class Arg = DefaultExecutionSpace>
+void* malloc(const size_t& count) {
+  return malloc<Arg>("DefaultLabel",count);
+}
+
+/* Free memory from a memory space.
+ */
+template< class Arg = DefaultExecutionSpace>
+void free(const void* ptr) {
+  typedef typename Arg::memory_space MemorySpace;
+  MemorySpace::decrement(ptr);
+}
+
+template< class Arg = DefaultExecutionSpace>
+const void* realloc(const void* old_ptr, size_t size) {
+  typedef typename Arg::memory_space MemorySpace;
+
+  //Get information about the old allocation
+  const void* start_ptr = MemorySpace::query_start_ptr(old_ptr);
+  const size_t old_size = MemorySpace::query_size(old_ptr);
+  const std::string label = MemorySpace::query_label(old_ptr);
+
+  if (start_ptr != old_ptr) Impl::throw_runtime_exception("Calling Kokkos::realloc<MemorySpace> is only allowed with pointers which are obtained by a call to Kokkos::malloc<MemorySpace>");
+
+  if (old_size == size) return old_ptr;
+
+  //Do the new allocation
+  void* new_ptr = malloc<MemorySpace>(label,size);
+
+  //Copy old data to the new allocation
+  Impl::DeepCopy<MemorySpace,MemorySpace>(new_ptr,old_ptr,size>old_size?old_size:size);
+
+  //Elliminate the old allocation
+  free<MemorySpace>(old_ptr);
+
+  return new_ptr;
+}
+}
+#endif
+
 #endif

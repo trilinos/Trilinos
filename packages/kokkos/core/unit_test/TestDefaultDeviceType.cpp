@@ -236,6 +236,16 @@ TEST_F( defaultdevicetype , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::DefaultExecutionSpace >(5) ) );
 }
 #endif
+
+#if defined (KOKKOS_HAVE_CXX11)
+TEST_F( defaultdevicetype , malloc )
+{
+  int* data = (int*) Kokkos::malloc<>(100*sizeof(int));
+  ASSERT_NO_THROW(data = (int*) Kokkos::realloc<>(data,120*sizeof(int)));
+  Kokkos::free<>(data);
+}
+#endif
+
 } // namespace test
 
 #endif

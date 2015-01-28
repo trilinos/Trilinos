@@ -107,6 +107,12 @@ public:
   /** \brief  Retrieve label associated with the input pointer */
   static std::string query_label( const void * );
 
+  /** \brief  Retrieve allocation size associated with the input pointer */
+  static size_t query_size( const void * p );
+
+  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
+  static void* query_start_ptr( const void * p );
+
   /*--------------------------------*/
   /** \brief  Cuda specific function to attached texture object to an allocation.
    *          Output the texture object, base pointer, and offset from the input pointer.
@@ -187,6 +193,12 @@ public:
   /** \brief  Retrieve label associated with the input pointer */
   static std::string query_label( const void * );
 
+  /** \brief  Retrieve allocation size associated with the input pointer */
+  static size_t query_size( const void * p );
+
+  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
+  static void* query_start_ptr( const void * p );
+
   /** \brief  Cuda specific function to attached texture object to an allocation.
    *          Output the texture object, base pointer, and offset from the input pointer.
    */
@@ -259,6 +271,13 @@ public:
 
   /** \brief  Retrieve label associated with the input pointer */
   static std::string query_label( const void * );
+
+  /** \brief  Retrieve allocation size associated with the input pointer */
+  static size_t query_size( const void * p );
+
+  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
+  static void* query_start_ptr( const void * p );
+
 };
 
 } // namespace Kokkos
