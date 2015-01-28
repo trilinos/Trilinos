@@ -48,7 +48,7 @@
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TopRAPFActory;
+  class TopRAPFactory;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class TopSmootherFactory;
