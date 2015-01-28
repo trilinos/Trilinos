@@ -108,6 +108,8 @@ class BoundaryValueProblem {
 };
 
 
+
+
 //! \brief Inherit and add method for applying the inverse partial constraint Jacobian and its adjoint 
 template<class Real,template<class> class BoundaryValueProblem> 
 class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValueProblem> {
@@ -150,7 +152,7 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
         lusolve(lapack_,jac,v,ijv);
     }	
 
- void applyInverseAdjointJacobian_1(Vector< Real > &iajv, const Vector< Real > &v,
+     void applyInverseAdjointJacobian_1(Vector< Real > &iajv, const Vector< Real > &v,
                                     const Vector< Real > &u, const Vector< Real > &z,  Real &tol) { 
 
         Teuchos::RCP<const std::vector<Real> > vp =
@@ -181,6 +183,37 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
         lusolve(lapack_,ajac,v,iajv);
     }	
 
+
+    void solve(Vector<Real> &u, const Vector<Real> &z, Real &tol) {
+        Teuchos::RCP<std::vector<Real> > up = 
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());    
+
+        int n = up->size();
+
+        Teuchos::RCP<std::vector<Real> > cp = Teuchos::rcp(new std::vector<Real>(n,0.0) );
+        StdVector<Real> c(cp);
+
+        // \f$ -\delta u \f$
+        Teuchos::RCP<std::vector<Real> > mdup = Teuchos::rcp(new std::vector<Real>(n,0.0) );
+        StdVector<Real> mdu(mdup);
+
+        Real res    = 1.0;
+        Real restol = 1e-7;
+        int MAXIT   = 20;
+        int iter    = 0;
+
+        // Newton's method
+        while(iter<MAXIT && res>restol) {
+            this->value(c,u,z,tol);
+            this->applyInverseJacobian_1(mdu,c,u,z,tol); 
+            mdu.scale(-1.0);
+            u.plus(mdu);
+            res = c.norm();
+        }
+
+        // Should throw exception if restol not met       
+         
+    }
 
 };
 

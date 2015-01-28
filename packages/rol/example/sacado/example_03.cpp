@@ -99,8 +99,8 @@ int main(int argc, char **argv)
       parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
       ROL::CompositeStepSQP<RealT> step(parlist);
 
-      int ni = 10;     // Number of interpolation points
-      int nq = 30;     // Number of quadrature points
+      int ni = 12;     // Number of interpolation points
+      int nq = 20;     // Number of quadrature points
 
       RealT xl = 0.0;  // Left end of domain
       RealT xr = 5.0;  // Right end of domain
@@ -182,7 +182,8 @@ int main(int argc, char **argv)
       constr.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
       constr.checkInverseJacobian_1(c,yu,u,z,true,*outStream);
       constr.checkInverseAdjointJacobian_1(c,yu,u,z,true,*outStream);
-/* 
+      constr.checkSolve(u,z,c,true,*outStream);
+ 
       // Define Status Test
       RealT gtol  = 1e-12;  // norm of gradient tolerance
       RealT ctol  = 1e-12;  // norm of constraint tolerance
@@ -191,13 +192,13 @@ int main(int argc, char **argv)
       ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
       // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(step, status, false);
+      ROL::DefaultAlgorithm<RealT> algo(step, status, true);
 
-      std::vector<std::string> output = algo.run(x,g,l,c,obj,constr,false);
+      std::vector<std::string> output = algo.run(x,g,l,c,obj,constr,true);
       for ( unsigned i = 0; i < output.size(); i++ ) {
           *outStream << output[i];
       }
-*/
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
