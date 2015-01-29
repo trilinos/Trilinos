@@ -164,6 +164,8 @@ private:
 
   std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
+  bool              softUp_;
+
   void LineSearchFactory(Teuchos::ParameterList &parlist) {
     switch(els_) {
       case LINESEARCH_ITERATIONSCALING: 
@@ -213,6 +215,9 @@ public:
     // Initialize Linesearch Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     LineSearchFactory(parlist);
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -274,6 +279,9 @@ public:
     // Initialize Linesearch Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     els_ = LINESEARCH_USERDEFINED;
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -338,6 +346,9 @@ public:
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     LineSearchFactory(parlist);
 
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
+
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
@@ -394,6 +405,9 @@ public:
     // Initialize Linesearch Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     els_ = LINESEARCH_USERDEFINED;
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -587,7 +601,9 @@ public:
     // Update iterate
     algo_state.iter++;
     x.axpy(1.0, s);
-    obj.update(x,true,algo_state.iter);
+    if ( softUp_ ) {
+      obj.update(x,true,algo_state.iter);
+    }
 
     // Compute new gradient
     if ( edesc_ == DESCENT_SECANT || 
