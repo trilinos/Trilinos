@@ -79,6 +79,13 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
+
+  enum ReturnType {
+    Converged,
+    Unconverged,
+    Undefined
+  };
+
   /*!
     @class Hierarchy
     @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.
@@ -96,6 +103,19 @@ namespace MueLu {
   class Hierarchy : public BaseClass {
 #undef MUELU_HIERARCHY_SHORT
 #include "MueLu_UseShortNames.hpp"
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType MagnitudeType;
+
+    struct ConvData {
+      ConvData()                              : maxIts_(1),       tol_(-STS::one()) { }
+      ConvData(LO maxIts)                     : maxIts_(maxIts),  tol_(-STS::one()) { }
+      ConvData(MagnitudeType tol)             : maxIts_(10000),   tol_(tol) { }
+      ConvData(std::pair<LO,MagnitudeType> p) : maxIts_(p.first), tol_(p.second) { }
+
+      LO            maxIts_;
+      MagnitudeType tol_;
+    };
 
   public:
 
@@ -154,6 +174,8 @@ namespace MueLu {
 
     int    GetNumLevels() const;
     int    GetGlobalNumLevels() const;
+
+    double GetRate() const { return rate_; }
 
     // This function is global
     double GetOperatorComplexity() const;
@@ -226,8 +248,8 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(const MultiVector& B, MultiVector& X, LO nIts = 1,
-                 bool InitialGuessIsZero = false, LO startLevel = 0);
+    ReturnType Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
+                       bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
       @brief Print matrices in the multigrid hierarchy to file.
@@ -336,6 +358,9 @@ namespace MueLu {
     bool isDumpingEnabled_;
     int  dumpLevel_;
     std::string dumpFile_;
+
+    //! Convergece rate
+    double rate_;
 
     // Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;

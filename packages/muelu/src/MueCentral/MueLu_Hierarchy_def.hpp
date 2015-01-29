@@ -72,7 +72,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy()
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
-      lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
+      lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1)
   {
     AddLevel(rcp(new Level));
   }
@@ -81,7 +81,7 @@ namespace MueLu {
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A)
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()),
-      isDumpingEnabled_(false), dumpLevel_(-1)
+      isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1)
   {
     lib_ = A->getDomainMap()->lib();
 
@@ -512,8 +512,11 @@ namespace MueLu {
   // ---------------------------------------- Iterate -------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, LO nIts,
-                                                                                  bool InitialGuessIsZero, LO startLevel) {
+  ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
+                                                                           bool InitialGuessIsZero, LO startLevel) {
+    LO            nIts = conv.maxIts_;
+    MagnitudeType tol  = conv.tol_;
+
     // These timers work as follows. "iterateTime" records total time spent in
     // iterate. "levelTime" records time on a per level basis. The label is
     // crafted to mimic the per-level messages used in Monitors. Note that a
@@ -546,22 +549,39 @@ namespace MueLu {
       // This processor does not have any data for this process on coarser
       // levels. This can only happen when there are multiple processors and
       // we use repartitioning.
-      return;
+      return Undefined;
     }
 
     // Print residual information before iterating
-    if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+    MagnitudeType prevNorm = STS::one(), curNorm = STS::one();
+    rate_ = 1.0;
+    if (startLevel == 0 && !isPreconditioner_ &&
+        (IsPrint(Statistics1) || tol > 0)) {
+      // We calculate the residual only if we want to print it out, or if we
+      // want to stop once we achive the tolerance
+      Teuchos::Array<MagnitudeType> rn;
       rn = Utils::ResidualNorm(*A, X, B);
-      GetOStream(Statistics1) << "iter:    "
-                                 << std::setiosflags(std::ios::left)
-                                 << std::setprecision(3) << 0 // iter 0
-                                 << "           residual = "
-                                 << std::setprecision(10) << rn
-                                 << std::endl;
+
+      if (tol > 0) {
+        bool passed = true;
+        for (LO k = 0; k < rn.size(); k++)
+          if (rn[k] >= tol)
+            passed = false;
+
+        if (passed)
+          return Converged;
+      }
+
+      if (IsPrint(Statistics1))
+        GetOStream(Statistics1) << "iter:    "
+            << std::setiosflags(std::ios::left)
+            << std::setprecision(3) << 0 // iter 0
+            << "           residual = "
+            << std::setprecision(10) << rn
+            << std::endl;
     }
 
-    SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+    SC one = STS::one(), zero = STS::zero();
     for (LO i = 1; i <= nIts; i++) {
 #ifdef HAVE_MUELU_DEBUG
       if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -721,17 +741,37 @@ namespace MueLu {
       }
       zeroGuess = false;
 
-      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
-        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+      if (startLevel == 0 && !isPreconditioner_ &&
+          (IsPrint(Statistics1) || tol > 0)) {
+        // We calculate the residual only if we want to print it out, or if we
+        // want to stop once we achive the tolerance
+        Teuchos::Array<MagnitudeType> rn;
         rn = Utils::ResidualNorm(*A, X, B);
-        GetOStream(Statistics1) << "iter:    "
-                                   << std::setiosflags(std::ios::left)
-                                   << std::setprecision(3) << i
-                                   << "           residual = "
-                                   << std::setprecision(10) << rn
-                                   << std::endl;
+
+        prevNorm = curNorm;
+        curNorm  = rn[0];
+        rate_ = as<double>(curNorm / prevNorm);
+
+        if (tol > 0) {
+          bool passed = true;
+          for (LO k = 0; k < rn.size(); k++)
+            if (rn[k] >= tol)
+              passed = false;
+
+          if (passed)
+            return Converged;
+        }
+
+        if (IsPrint(Statistics1))
+          GetOStream(Statistics1) << "iter:    "
+                                     << std::setiosflags(std::ios::left)
+                                     << std::setprecision(3) << i
+                                     << "           residual = "
+                                     << std::setprecision(10) << rn
+                                     << std::endl;
       }
     }
+    return (tol > 0 ? Unconverged : Undefined);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
