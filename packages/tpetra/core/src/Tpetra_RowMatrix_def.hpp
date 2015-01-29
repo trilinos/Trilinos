@@ -496,8 +496,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const LO>::size_type size_type;
-    typedef Map<LO, GO, Node> map_type;
-    const char tfecfFuncName[] = "pack: ";
+    const char tfecfFuncName[] = "packImpl: ";
 
     const size_type numExportLIDs = exportLIDs.size ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -573,6 +572,12 @@ namespace Tpetra {
       }
     }
 
+    // The point of these exceptions is to stop computation if the
+    // above checks found a bug.  If HAVE_TPETRA_DEBUG is defined,
+    // Tpetra will do extra all-reduces to check for global
+    // consistency of the error state.  Otherwise, throwing an
+    // exception here might cause deadlock, but we accept that as
+    // better than just continuing.
     TEUCHOS_TEST_FOR_EXCEPTION(
       outOfBounds, std::logic_error, "First invalid offset into 'exports' "
       "pack buffer at index i = " << firstBadIndex << ".  exportLIDs[i]: "
