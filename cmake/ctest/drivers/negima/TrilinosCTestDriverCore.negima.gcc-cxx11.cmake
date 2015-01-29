@@ -54,31 +54,67 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.clang.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the options specific to this build case
+# Platform/compiler specific options for negima using gcc
 #
 
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME OPENMPI_1.8.4_DEBUG_DEV_MueLu_ExtraTypes_EI_CLANG)
-SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 900)
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
 
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
-  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-)
+  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
 
-#
-# Set the rest of the system-specific options and run the dashboard build/test
-#
+  SET( CTEST_BUILD_FLAGS "-j12 -i" )
 
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "12" )
+
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+
+  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+
+  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DBUILD_SHARED_LIBS:BOOL=ON"
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+
+    "-DTrilinos_ENABLE_CXX11=ON"
+
+    "-DTrilinos_ENABLE_Fortran=OFF"
+
+    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
+        "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
+        "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+    )
+
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2-CXX11")
+
+  #Ensuring that MPI is on for all parallel builds that might be run.
+  IF(COMM_TYPE STREQUAL MPI)
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+         "-DTPL_ENABLE_MPI:BOOL=ON"
+         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8.4"
+       )
+
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+
+  ELSE()
+
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
+      )
+
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()
