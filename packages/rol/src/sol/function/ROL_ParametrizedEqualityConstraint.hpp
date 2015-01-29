@@ -62,7 +62,7 @@ protected:
 
 public:
   virtual ~ParametrizedEqualityConstraint(void) {}
-  void setParameter(const std::vector<Real> &param) {
+  virtual void setParameter(const std::vector<Real> &param) {
     this->param_ = param;
   }
 }; // class ParametrizedEqualityConstraint

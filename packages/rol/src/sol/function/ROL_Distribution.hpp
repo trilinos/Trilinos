@@ -433,10 +433,10 @@ private:
     Real b  = data_[0] + data_[1];
     Real c  = 0.0;
     Real fa = parabolic_cdf(a) - input;
-    Real fb = parabolic_cdf(b) - input;
+    //Real fb = parabolic_cdf(b) - input;
     Real fc = 0.0;
     Real sa = ((fa < 0.0) ? -1.0 : ((fa > 0.0) ? 1.0 : 0.0));
-    Real sb = ((fb < 0.0) ? -1.0 : ((fb > 0.0) ? 1.0 : 0.0));
+    //Real sb = ((fb < 0.0) ? -1.0 : ((fb > 0.0) ? 1.0 : 0.0));
     Real sc = 0.0;
     for (int i = 0; i < 100; i++) {
       c  = (a+b)*0.5;
@@ -446,7 +446,7 @@ private:
         break;
       }
       if ( sc == sa ) { a = c; fa = fc; sa = sc; }
-      else            { b = c; fb = fc; sb = sc; }
+      else            { b = c; } // fb = fc; sb = sc; }
     } 
     return c;
   }
@@ -474,10 +474,10 @@ private:
     Real b  = data_[0] + data_[1];
     Real c  = 0.0;
     Real fa = raisedcosine_cdf(a) - input;
-    Real fb = raisedcosine_cdf(b) - input;
+    //Real fb = raisedcosine_cdf(b) - input;
     Real fc = 0.0;
     Real sa = ((fa < 0.0) ? -1.0 : ((fa > 0.0) ? 1.0 : 0.0));
-    Real sb = ((fb < 0.0) ? -1.0 : ((fb > 0.0) ? 1.0 : 0.0));
+    //Real sb = ((fb < 0.0) ? -1.0 : ((fb > 0.0) ? 1.0 : 0.0));
     Real sc = 0.0;
     for (int i = 0; i < 100; i++) {
       c  = (a+b)*0.5;
@@ -487,7 +487,7 @@ private:
         break;
       }
       if ( sc == sa ) { a = c; fa = fc; sa = sc; }
-      else            { b = c; fb = fc; sb = sc; }
+      else            { b = c; } // fb = fc; sb = sc; }
     } 
     return c;
   }

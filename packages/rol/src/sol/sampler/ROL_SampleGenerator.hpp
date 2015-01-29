@@ -45,7 +45,6 @@
 #define ROL_SAMPLEGENERATOR_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
-#include "Epetra_Comm.h"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 
