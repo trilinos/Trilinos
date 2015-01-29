@@ -181,21 +181,22 @@ NodalBasis<Real>::NodalBasis(const int ni, const int nq) : ni_(ni),nq_(nq),
 
 
 
-template<class Functor, class Real>
-class vectorFunction {
+template<class Real,class Functor>
+class VectorFunction {
 
     private:
         Real xl_;
         Real xr_;
         Real dx_;  
         bool deriv_; 
-        Functor *funcp_;
+        Functor func_;
         Teuchos::RCP<NodalBasis<Real> > basisp_;
         int ni_;
         int nq_;  
+
     public:
         
-        vectorFunction(Real xl, Real xr, bool deriv, Functor funcp, Teuchos::RCP<NodalBasis<Real> > basisp);
+        VectorFunction(Real xl, Real xr, bool deriv, Teuchos::RCP<NodalBasis<Real> > basisp);
 
         template<class ScalarT> 
         void evaluate(const Vector<ScalarT> &u, const Vector<ScalarT> &z, Vector<ScalarT> &f);
@@ -203,16 +204,16 @@ class vectorFunction {
 };
 
 
-template<class Functor, class Real>
-vectorFunction<Functor,Real>::vectorFunction(Real xl, Real xr, bool deriv, Functor funcp, Teuchos::RCP<NodalBasis<Real> > basisp) :
-    xl_(xl), xr_(xr), dx_(xr-xl), deriv_(deriv), funcp_(funcp), basisp_(basisp), ni_(basisp->ni_), nq_(basisp->nq_) {
+template<class Real,class Functor>
+VectorFunction<Real,Functor>::VectorFunction(Real xl, Real xr, bool deriv, Teuchos::RCP<NodalBasis<Real> > basisp) : 
+    xl_(xl), xr_(xr), dx_(xr-xl), deriv_(deriv), basisp_(basisp), ni_(basisp->ni_), nq_(basisp->nq_) {
 }
 
 
 
-template<class Functor, class Real>
+template<class Real,class Functor>
 template<class ScalarT>
-void vectorFunction<Functor,Real>::evaluate(const Vector<ScalarT> &u, const Vector<ScalarT> &z, Vector<ScalarT> &f) {
+void VectorFunction<Real,Functor>::evaluate(const Vector<ScalarT> &u, const Vector<ScalarT> &z, Vector<ScalarT> &f) {
 
     Teuchos::RCP<const std::vector<ScalarT> > up =
         (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
@@ -245,7 +246,7 @@ void vectorFunction<Functor,Real>::evaluate(const Vector<ScalarT> &u, const Vect
         // Mapped x variable
         ScalarT xs = 0.5*(xl_*(1.0-(*basisp_->xqp_)[j])+xr_*(1.0+(*basisp_->xqp_)[j]));
         ScalarT u_xs = (*u_xqp)[j]/dx_;
-        (*fqp)[j] = (*funcp_)( (*uqp)[j], u_xs, (*zqp)[j], xs);      
+        (*fqp)[j] = (func_)( (*uqp)[j], u_xs, (*zqp)[j], xs);      
     } 
 
     // Integrate against all first derivatives of interpolants
@@ -264,9 +265,6 @@ void vectorFunction<Functor,Real>::evaluate(const Vector<ScalarT> &u, const Vect
         } 
     }
 }
-
-
-
 
 
 #endif

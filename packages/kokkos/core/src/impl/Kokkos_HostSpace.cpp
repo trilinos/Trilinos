@@ -264,6 +264,18 @@ std::string HostSpace::query_label( const void * p )
   return std::string( entry ? entry->label() : "<NOT ALLOCATED>" );
 }
 
+size_t HostSpace::query_size( const void * p )
+{
+  Impl::MemoryTracking<>::Entry * const entry = Impl::host_space_singleton().query(p);
+  return entry ? entry->m_alloc_size : 0;
+}
+
+void* HostSpace::query_start_ptr( const void * p )
+{
+  Impl::MemoryTracking<>::Entry * const entry = Impl::host_space_singleton().query(p);
+  return entry ? entry->m_alloc_ptr : NULL;
+}
+
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

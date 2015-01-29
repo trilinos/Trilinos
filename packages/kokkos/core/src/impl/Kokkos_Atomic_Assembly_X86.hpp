@@ -153,7 +153,7 @@ namespace Impl {
 
   inline cas128_t cas128( volatile cas128_t * ptr, cas128_t cmp,  cas128_t swap )
   {
-    bool swapped;
+    bool swapped = false;
     __asm__ __volatile__
     (
      "lock cmpxchg16b %1\n\t"
@@ -164,9 +164,8 @@ namespace Impl {
      , "+a" ( cmp.lower )
      : "c" ( swap.upper )
      , "b" ( swap.lower )
-     : "cc"
+     , "q" ( swapped )
     );
-    (void) swapped;
     return cmp;
   }
 

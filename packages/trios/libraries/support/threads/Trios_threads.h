@@ -94,6 +94,11 @@ int64_t nthread_counter_increment(
         nthread_counter_t *c);
 int64_t nthread_counter_decrement(
         nthread_counter_t *c);
+int64_t nthread_counter_read(
+        nthread_counter_t *c);
+int64_t nthread_counter_set(
+        nthread_counter_t *c,
+        int64_t            new_value);
 int     nthread_counter_fini(
         nthread_counter_t *c);
 

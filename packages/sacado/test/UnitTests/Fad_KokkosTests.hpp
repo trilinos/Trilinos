@@ -634,9 +634,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
-      h_v(i,j,0) = f.val();
       for (size_type k=0; k<fad_size; k++)
-        h_v(i,j,k+1) = f.dx(k);
+        h_v(i,j,k) = f.dx(k);
+      h_v(i,j,fad_size) = f.val();
     }
   }
   Kokkos::deep_copy(v, h_v);
@@ -678,9 +678,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
-      h_v(i,j,0) = f.val();
       for (size_type k=0; k<fad_size; k++)
-        h_v(i,j,k+1) = f.dx(k);
+        h_v(i,j,k) = f.dx(k);
+      h_v(i,j,fad_size) = f.val();
     }
   }
   Kokkos::deep_copy(v, h_v);
@@ -724,9 +724,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
-      h_v(i,j,0) = f.val();
       for (size_type k=0; k<fad_size; k++)
-        h_v(i,j,k+1) = f.dx(k);
+        h_v(i,j,k) = f.dx(k);
+      h_v(i,j,fad_size) = f.val();
     }
   }
   Kokkos::deep_copy(v, h_v);
@@ -772,9 +772,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
-      h_v(i,j,0) = f.val();
       for (size_type k=0; k<fad_size; k++)
-        h_v(i,j,k+1) = f.dx(k);
+        h_v(i,j,k) = f.dx(k);
+      h_v(i,j,fad_size) = f.val();
     }
   }
   Kokkos::deep_copy(v, h_v);

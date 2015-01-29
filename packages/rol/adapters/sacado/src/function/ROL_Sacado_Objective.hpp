@@ -53,9 +53,10 @@ using namespace ROL;
 /** \brief Generic objective wrapper class for class that uses Sacado */
 template<class Real, template<class> class Obj>
 class Sacado_Objective : public Objective<Real> {
-    private:
-        Obj<Real> obj_;
 
+     protected:
+
+        Obj<Real> obj_;
 
     /* Evaluate the gradient at x */
     template<class ScalarT> 
@@ -65,7 +66,11 @@ class Sacado_Objective : public Objective<Real> {
     template<class ScalarT> 
     void hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &x, Real &tol ); 
 
+
     public:
+
+    Sacado_Objective() : obj_(Obj<Real>()) {}
+    Sacado_Objective(const Obj<Real> &obj) : obj_(obj) {}
 
     /* Evaluate the objective function at x */
     Real value( const Vector<Real> &x, Real &tol ) {

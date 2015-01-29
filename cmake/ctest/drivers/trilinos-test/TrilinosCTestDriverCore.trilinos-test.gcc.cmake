@@ -124,8 +124,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=home/trilinos/gcc4.7.2/base/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=home/trilinos/gcc4.7.2/base/bin/gfortran"
+      "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gfortran"
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS

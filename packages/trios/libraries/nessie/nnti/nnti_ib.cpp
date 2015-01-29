@@ -119,6 +119,8 @@ typedef struct {
     bool     use_mlock;
     bool     use_memset;
 
+    bool     drop_if_full_queue;
+
 } nnti_ib_config;
 
 
@@ -1895,6 +1897,7 @@ NNTI_result_t NNTI_ib_send (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2077,6 +2080,7 @@ NNTI_result_t NNTI_ib_put (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2281,6 +2285,7 @@ NNTI_result_t NNTI_ib_get (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2464,6 +2469,7 @@ NNTI_result_t NNTI_ib_atomic_fop (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -2569,6 +2575,7 @@ NNTI_result_t NNTI_ib_atomic_cswap (
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
+    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
     trios_start_timer(call_time);
     if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -4243,6 +4250,7 @@ static NNTI_result_t post_recv_work_request(
     log_debug(nnti_debug_level, "sge_count=%d, sge_list=%p", ib_wr->sge_count, ib_wr->sge_list);
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4254,6 +4262,7 @@ static NNTI_result_t post_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4342,6 +4351,7 @@ static NNTI_result_t post_ack_recv_work_request(
     ib_wr->rq_wr.num_sge=1;
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4353,6 +4363,7 @@ static NNTI_result_t post_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4399,8 +4410,20 @@ static NNTI_result_t repost_recv_work_request(
     ib_mem_hdl=IB_MEM_HDL(wr->reg_buf);
     assert(ib_mem_hdl);
 
+    nthread_lock(&nnti_wrmap_lock);
+    wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
+    if (m_victim != wrmap.end()) {
+        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
+        wrmap.erase(m_victim);
+    }
+
     ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
     ib_wr->rq_wr.wr_id=(uint64_t)ib_wr->key;
+
+    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
+    assert(wrmap.find(ib_wr->key) == wrmap.end());
+    wrmap[ib_wr->key] = ib_wr;
+    nthread_unlock(&nnti_wrmap_lock);
 
     ib_wr->state=NNTI_IB_WR_STATE_POSTED;
 
@@ -4419,6 +4442,7 @@ static NNTI_result_t repost_recv_work_request(
     }
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4430,6 +4454,7 @@ static NNTI_result_t repost_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4440,18 +4465,6 @@ static NNTI_result_t repost_recv_work_request(
         transport_global_data.req_srq_count++;
         log_debug(nnti_debug_level, "transport_global_data.req_srq_count==%ld", transport_global_data.req_srq_count);
     }
-
-    nthread_lock(&nnti_wrmap_lock);
-    wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
-    if (m_victim != wrmap.end()) {
-        log_debug(nnti_debug_level, "erasing ib_wr=%p (key=%lx) from the wrmap", ib_wr, ib_wr->key);
-        wrmap.erase(m_victim);
-    }
-//    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
-    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
-    assert(wrmap.find(ib_wr->key) == wrmap.end());
-    wrmap[ib_wr->key] = ib_wr;
-    nthread_unlock(&nnti_wrmap_lock);
 
     log_debug(nnti_debug_level, "exit (wr=%p)", wr);
 
@@ -4493,6 +4506,7 @@ static NNTI_result_t repost_ack_recv_work_request(
     }
 
     if ((ib_wr->cq == transport_global_data.data_cq) && (transport_global_data.data_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4504,6 +4518,7 @@ static NNTI_result_t repost_ack_recv_work_request(
         log_debug(nnti_debug_level, "transport_global_data.data_srq_count==%ld", transport_global_data.data_srq_count);
     }
     if ((ib_wr->cq == transport_global_data.req_cq) && (transport_global_data.req_srq_count < (transport_global_data.srq_count/2))) {
+        log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
         ibv_rc=ibv_post_srq_recv_wrapper(srq, &ib_wr->rq_wr, &bad_wr);
         if (ibv_rc) {
             log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
@@ -4865,14 +4880,22 @@ static void transition_connection_to_ready(
 
     /* bring the two QPs up to RTR */
     trios_start_timer(callTime);
+
     min_rnr_timer=1;  /* means 0.01ms delay before sending RNR NAK */
     ack_timeout  =17; /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536s */
-    retry_count  =1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+    if (config.drop_if_full_queue) {
+        retry_count=1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+    } else {
+        retry_count=7;   /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
+    }
     transition_qp_from_reset_to_ready(conn->req_qp.qp, conn->peer_req_qpn, conn->peer_lid, min_rnr_timer, ack_timeout, retry_count);
+
+
     min_rnr_timer=31;  /* means 491.52ms delay before sending RNR NAK */
     ack_timeout  =17;  /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536s */
     retry_count  =7;   /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
     transition_qp_from_reset_to_ready(conn->data_qp.qp, conn->data_qp.peer_qpn, conn->peer_lid, min_rnr_timer, ack_timeout, retry_count);
+
     trios_stop_timer("transition_qp_from_reset_to_ready", callTime);
 
     trios_start_timer(callTime);
@@ -6284,8 +6307,9 @@ static NNTI_result_t progress(
     log_level debug_level  =nnti_debug_level;
     log_level old_log_level=logger_get_default_level();
 
-    static bool in_progress=false;   // if true, another thread is already making progress.
-    bool made_progress=false;
+    static bool in_progress  =false;   // if true, another thread is already making progress.
+    bool        made_progress=false;
+    int8_t      wr_complete  =FALSE;
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -6303,10 +6327,9 @@ static NNTI_result_t progress(
      * wait for the progress maker to finish, then everyone returns at once.
      */
     nthread_lock(&nnti_progress_lock);
-    if (is_any_wr_complete(wr_list, wr_count, &which) == TRUE) {
-        nthread_unlock(&nnti_progress_lock);
-        goto cleanup;
-    }
+
+    wr_complete = is_any_wr_complete(wr_list, wr_count, &which);
+
     if (!in_progress) {
         log_debug(debug_level, "making progress");
         // no other thread is making progress.  we'll do it.
@@ -6314,6 +6337,11 @@ static NNTI_result_t progress(
         log_debug(debug_level, "set in_progress=true");
         nthread_unlock(&nnti_progress_lock);
     } else {
+        if (wr_complete == TRUE) {
+            nthread_unlock(&nnti_progress_lock);
+            goto cleanup;
+        }
+
         // another thread is making progress.  we'll wait until they are done.
         rc=0;
         elapsed_time=0;
@@ -6386,7 +6414,12 @@ static NNTI_result_t progress(
                     ib_work_request *ib_wr=decode_work_request(&wc);
                     int min_rnr_timer=1;  /* means 0.01ms delay before sending RNR NAK */
                     int ack_timeout  =17; /* time to wait for ACK/NAK before retransmitting.  4.096us * 2^17 == 0.536ss */
-                    int retry_count  =1;  /* number of retries if no answer on primary path or if remote sends RNR NAK */
+                    int retry_count;
+                    if (config.drop_if_full_queue) {
+                        retry_count=1; /* number of retries if no answer on primary path or if remote sends RNR NAK */
+                    } else {
+                        retry_count=7; /* number of retries if no answer on primary path or if remote sends RNR NAK.  7 has special meaning of infinite retries. */
+                    }
                     transition_qp_from_error_to_ready(
                             ib_wr->conn->req_qp.qp,
                             ib_wr->conn->peer_req_qpn,
@@ -6415,7 +6448,7 @@ static NNTI_result_t progress(
             }
         }
 
-        if (!made_progress) {
+        if ((!made_progress) && (wr_complete == FALSE)) {
             trios_start_timer(call_time);
             rc = poll_all(/*100*/ timeout-elapsed_time);
             trios_stop_timer("progress - poll_all", call_time);
@@ -6523,6 +6556,7 @@ static void config_init(nnti_ib_config *c)
     c->use_rdma_target_ack = false;
     c->use_mlock           = true;
     c->use_memset          = true;
+    c->drop_if_full_queue  = false;
 }
 
 static void config_get_from_env(nnti_ib_config *c)

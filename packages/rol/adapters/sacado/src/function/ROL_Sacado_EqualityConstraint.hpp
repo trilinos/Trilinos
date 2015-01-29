@@ -55,7 +55,8 @@ using namespace ROL;
 template<class Real, template<class> class Constr>
 class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
 
-    private:
+    protected:
+
         Constr<Real> constr_;
 
         int dim_;
@@ -74,8 +75,9 @@ class Sacado_EqualityConstraint : public EqualityConstraint<Real> {
 
 
     public: 
-
+ 
     Sacado_EqualityConstraint(int dim) : dim_(dim) {}
+    Sacado_EqualityConstraint(const Constr<Real> & constr) : constr_(constr) {}
 
     void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
         constr_.value(c,x,tol);

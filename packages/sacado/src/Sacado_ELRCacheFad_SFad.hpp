@@ -103,7 +103,7 @@ namespace Sacado {
 
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
-      Expr() : val_( T(0.)), update_val_(true) { ss_array<T>::zero(dx_, Num); }
+      Expr() : val_( T(0.)) { ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with supplied value \c x
       /*!
@@ -112,7 +112,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        val_(x), update_val_(true) {
+        val_(x) {
         ss_array<T>::zero(dx_, Num);
       }
 
@@ -121,7 +121,7 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x)  : val_(x), update_val_(true) {
+      Expr(const int sz, const T & x)  : val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
           throw "ELRCacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
@@ -138,7 +138,7 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       Expr(const int sz, const int i, const T & x) :
-        val_(x), update_val_(true) {
+        val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
           throw "ELRCacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
@@ -152,7 +152,7 @@ namespace Sacado {
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr& x) : val_(x.val_), update_val_(x.update_val_) {
+      Expr(const Expr& x) : val_(x.val_) {
         //ss_array<T>::copy(x.dx_, dx_, Num);
         for (int i=0; i<Num; i++)
           dx_[i] = x.dx_[i];
@@ -161,8 +161,7 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
-        update_val_(x.updateValue()) {
+      Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
           throw "ELRCacheFad::SFad() Error:  Attempt to assign with incompatible sizes";
@@ -170,10 +169,7 @@ namespace Sacado {
 
         x.cache();
 
-        if (update_val_)
-          this->val() = x.val();
-        else
-          this->val() = T(0.);
+        this->val() = x.val();
 
         // Compute partials
         LocalAccumOp< Expr<S> > op(x);
@@ -242,11 +238,11 @@ namespace Sacado {
 
       //! Set whether this Fad object should update values
       KOKKOS_INLINE_FUNCTION
-      void setUpdateValue(bool update_val) { update_val_ = update_val; }
+      void setUpdateValue(bool update_val) { }
 
       //! Return whether this Fad object has an updated value
       KOKKOS_INLINE_FUNCTION
-      bool updateValue() const { return update_val_; }
+      bool updateValue() const { return true; }
 
       //! Cache values
       KOKKOS_INLINE_FUNCTION
@@ -378,8 +374,6 @@ namespace Sacado {
         for (int i=0; i<Num; i++)
           dx_[i] = x.dx_[i];
 
-        update_val_ = x.update_val_;
-
         return *this;
       }
 
@@ -410,9 +404,7 @@ namespace Sacado {
           dx_[i] = op.t;
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() = x.val();
+        this->val() = x.val();
 
         return *this;
       }
@@ -428,7 +420,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
-        if (update_val_) this->val() += v;
+        this->val() += v;
         return *this;
       }
 
@@ -436,7 +428,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator -= (const S& v) {
-        if (update_val_) this->val() -= v;
+        this->val() -= v;
         return *this;
       }
 
@@ -444,7 +436,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator *= (const S& v) {
-        if (update_val_) this->val() *= v;
+        this->val() *= v;
         for (int i=0; i<Num; ++i)
           dx_[i] *= v;
         return *this;
@@ -454,7 +446,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator /= (const S& v) {
-        if (update_val_) this->val() /= v;
+        this->val() /= v;
         for (int i=0; i<Num; ++i)
           dx_[i] /= v;
         return *this;
@@ -487,9 +479,7 @@ namespace Sacado {
           dx_[i] += op.t;
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() += x.val();
+        this->val() += x.val();
 
         return *this;
       }
@@ -521,9 +511,7 @@ namespace Sacado {
           dx_[i] -= op.t;
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() -= x.val();
+        this->val() -= x.val();
 
         return *this;
       }
@@ -558,9 +546,7 @@ namespace Sacado {
         }
 
         // Compute value
-        update_val_ = x.updateValue();
-        if (update_val_)
-          val_ *= xval;
+        val_ *= xval;
 
         return *this;
       }
@@ -597,9 +583,7 @@ namespace Sacado {
         }
 
         // Compute value
-        update_val_ = x.updateValue();
-        if (update_val_)
-          val_ /= xval;
+        val_ /= xval;
 
         return *this;
       }
@@ -608,14 +592,11 @@ namespace Sacado {
 
     protected:
 
-      //! Value
-      T val_;
-
       //! Derivatives
       T dx_[Num];
 
-      //! Update value
-      bool update_val_;
+      //! Value
+      T val_;
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative

@@ -142,6 +142,7 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   enum { FadStaticDimension = Sacado::StaticSize<fad_type>::value };
+  typedef Sacado::integral_nonzero< unsigned , FadStaticDimension > sacado_size_type;
 
   /* LayoutRight has stride-one storage */
   enum { FadStaticStride = ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) };
@@ -154,6 +155,7 @@ private:
   fad_value_type                             * m_ptr_on_device ;
   offset_map_type                              m_offset_map ;
   typename traits::device_type::size_type      m_storage_size ;
+  sacado_size_type                             m_sacado_size ;
   Impl::ViewDataManagement< traits >           m_management ;
 
 public:
@@ -234,9 +236,10 @@ public:
 private:
 
   // Restrict allocation to 'FadStaticDimension'
-  inline
+  KOKKOS_INLINE_FUNCTION
   void verify_dimension_storage_static_size() const
   {
+#if defined(SACADO_DEBUG) && ! defined(__CUDA_ARCH__)
     if ( Impl::dimension( m_offset_map , unsigned(Rank) ) % ( FadStaticDimension ? FadStaticDimension+1 : 1 ) ) {
       std::ostringstream msg ;
       msg << "Kokkos::View< FadType , ... > allocation dimension ("
@@ -246,6 +249,7 @@ private:
           << ")" ;
       Kokkos::abort( msg.str().c_str() );
     }
+#endif
   }
 
 public:
@@ -257,11 +261,11 @@ public:
   ~View() { m_management.decrement( m_ptr_on_device ); }
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0)
+  View() : m_ptr_on_device(0), m_sacado_size(0)
     { m_offset_map.assign(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0)
+  View( const View & rhs ) : m_ptr_on_device(0), m_sacado_size(0)
     {
       (void) Impl::ViewAssignment<
         typename traits::specialize ,
@@ -280,23 +284,21 @@ public:
   //------------------------------------
   // Construct or assign compatible view:
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0)
+  View( const View<RT,RL,RD,RM,RS> & rhs )
+    : m_ptr_on_device(0), m_sacado_size(0)
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
+        typename traits::specialize , RS >( *this , rhs );
     }
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
+  View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
+        typename traits::specialize , RS >( *this , rhs );
       return *this ;
     }
 
@@ -316,7 +318,7 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device(0), m_sacado_size(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
  
@@ -328,6 +330,7 @@ public:
       verify_dimension_storage_static_size();
 
       m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
+      m_sacado_size = m_storage_size-1;
 
       m_ptr_on_device = (fad_value_type *)
         memory_space::allocate( Alloc::label( prop ), sizeof(fad_value_type) * m_offset_map.capacity() );
@@ -341,6 +344,7 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
   template< typename T >
+  KOKKOS_INLINE_FUNCTION
   View( T * ptr ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
@@ -354,13 +358,14 @@ public:
             Impl::is_same<T,const_fad_value_type>::value
           ),
         const size_t >::type n7 = 0 )
-    : m_ptr_on_device(ptr)
+    : m_ptr_on_device(ptr), m_sacado_size(0)
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
       verify_dimension_storage_static_size();
 
       m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
+      m_sacado_size = m_storage_size-1;
 
       m_management.set_unmanaged();
     }
@@ -383,7 +388,7 @@ public:
         const unsigned n5 = 0 ,
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device(0), m_sacado_size(0)
     {
       enum { align = 8 };
       enum { mask  = align - 1 };
@@ -398,6 +403,7 @@ public:
       verify_dimension_storage_static_size();
 
       m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
+      m_sacado_size = m_storage_size-1;
 
       // Select the first argument:
       m_ptr_on_device = if_device_shmem_pointer::select(
@@ -445,7 +451,7 @@ public:
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return reference_type( m_ptr_on_device , m_storage_size-1 , 1 );
+      return reference_type( m_ptr_on_device , m_sacado_size.value , 1 );
     }
 
   //------------------------------------
@@ -462,7 +468,7 @@ public:
 
       // Strided storage with right-most index as fad dimension
       return reference_type( m_ptr_on_device + m_offset_map(i0,0) ,
-                            m_storage_size-1 ,
+                            m_sacado_size.value ,
                             m_offset_map.stride_1() );
     }
 
@@ -477,7 +483,7 @@ public:
 
       // Contiguous storage with right-most index as the fad dimension
       return reference_type( m_ptr_on_device + m_offset_map(i0,0),
-                            m_storage_size-1 , 1 );
+                            m_sacado_size.value , 1 );
     }
 
   template< typename iType0 >
@@ -509,7 +515,7 @@ public:
 
       // Strided storage with right-most index as the fad dimension
       return reference_type( m_ptr_on_device + m_offset_map(i0,i1,0) ,
-                            m_storage_size-1 ,
+                            m_sacado_size.value ,
                             m_offset_map.stride_2() );
     }
 
@@ -525,7 +531,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 >
@@ -552,7 +558,7 @@ public:
       // Strided storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
-        m_storage_size-1 ,
+        m_sacado_size.value ,
         m_offset_map.stride_3() );
     }
 
@@ -568,7 +574,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -595,7 +601,7 @@ public:
       // Strided storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
-        m_storage_size-1 ,
+        m_sacado_size.value ,
         m_offset_map.stride_4() );
     }
 
@@ -611,7 +617,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -638,7 +644,7 @@ public:
       // Strided storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
-        m_storage_size-1 ,
+        m_sacado_size.value ,
         m_offset_map.stride_5() );
     }
 
@@ -656,7 +662,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -686,7 +692,7 @@ public:
       // Strided storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
-        m_storage_size-1 ,
+        m_sacado_size.value ,
         m_offset_map.stride_6() );
     }
 
@@ -704,7 +710,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -735,7 +741,7 @@ public:
       // Strided storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
-        m_storage_size-1 ,
+        m_sacado_size.value ,
         m_offset_map.stride_7() );
     }
 
@@ -753,7 +759,7 @@ public:
       // Contiguous storage with right-most index as the fad dimension
       return reference_type(
         m_ptr_on_device + m_offset_map(i0,i1,i2,i3,i4,i5,i6,0) ,
-        m_storage_size-1 , 1 );
+        m_sacado_size.value , 1 );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -789,10 +795,15 @@ public:
   typename traits::size_type data_capacity() const
     { return sizeof(fad_value_type) * m_offset_map.capacity(); }
 
-  // Static storage size
+  // Fad storage size
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type storage_size() const
     { return m_storage_size; }
+
+  // Fad derivative size
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename traits::size_type sacado_size() const
+    { return m_sacado_size.value; }
 };
 
 /**
@@ -847,8 +858,10 @@ void deep_copy(
 {
   typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad> ViewType;
   typedef typename ViewType::fad_value_type ScalarType;
-  if (value == ScalarType(0))
-    Impl::ViewFill< typename ViewType::array_type >( view , value );
+  if (value == ScalarType(0)) {
+    typename ViewType::array_type view_array = view;
+    Impl::ViewFill< typename ViewType::array_type >( view_array , value );
+  }
   else
     Impl::ViewFill< ViewType >( view , value );
 }
@@ -874,6 +887,8 @@ create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
   size_type dims[8];
   for (size_type i=0; i<8; ++i)
     dims[i] = src.dimension(i);
+
+  // To do:  make this sacado_size() and set padding based on storage_size()
   dims[unsigned(view_type::Rank)] = src.storage_size();
 
   return host_view_type( label ,
@@ -917,6 +932,7 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_storage_size  = src.m_storage_size ;
+    dst.m_sacado_size   = src.m_sacado_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
     dst.m_management      = src.m_management ;
 
@@ -960,6 +976,7 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
     dst.m_offset_map.assign<DstRank>( length );
 
     dst.m_storage_size = src.m_storage_size ;
+    dst.m_sacado_size  = src.m_sacado_size ;
 
     dst.m_ptr_on_device = src.m_ptr_on_device + part.begin * (
       ( 0 == DstRank ? dst.m_offset_map.stride_0() :

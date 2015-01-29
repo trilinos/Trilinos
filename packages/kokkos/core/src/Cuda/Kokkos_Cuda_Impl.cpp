@@ -448,7 +448,7 @@ void CudaInternal::initialize( int cuda_device_id , int stream_count )
     //----------------------------------
 
     if ( stream_count ) {
-      m_stream = (cudaStream_t*) malloc( stream_count * sizeof(cudaStream_t) );
+      m_stream = (cudaStream_t*) ::malloc( stream_count * sizeof(cudaStream_t) );
       m_streamCount = stream_count ;
       for ( size_type i = 0 ; i < m_streamCount ; ++i ) m_stream[i] = 0 ;
     }
@@ -544,7 +544,7 @@ void CudaInternal::finalize()
         cudaStreamDestroy( m_stream[i] );
         m_stream[i] = 0 ;
       }
-      free( m_stream );
+      ::free( m_stream );
     }
 
     CudaSpace::decrement( m_scratchSpace );

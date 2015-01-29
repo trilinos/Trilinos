@@ -379,7 +379,7 @@ int nthread_counter_init(
     }
 
     if (nthread_lock(&c->lock) != 0) {
-        fprintf(logger_get_file(), "nthread_counter_increment: failed to lock the counter lock: %s\n", strerror(errno));
+        fprintf(logger_get_file(), "nthread_counter_init: failed to lock the counter lock: %s\n", strerror(errno));
         fflush(logger_get_file());
         goto cleanup;
     }
@@ -387,7 +387,7 @@ int nthread_counter_init(
     c->value = 0;
 
     if (nthread_unlock(&c->lock) != 0) {
-        fprintf(logger_get_file(), "nthread_counter_increment: failed to unlock the counter lock: %s\n", strerror(errno));
+        fprintf(logger_get_file(), "nthread_counter_init: failed to unlock the counter lock: %s\n", strerror(errno));
         fflush(logger_get_file());
     }
 
@@ -447,6 +447,58 @@ cleanup:
     return t;
 }
 
+int64_t nthread_counter_read(
+        nthread_counter_t *c)
+{
+    int64_t t=0;
+
+//    log_debug(thread_debug_level, "nthread_counter_read(STUB)");
+
+    if (nthread_lock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_read: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+        t = -1;
+        goto cleanup;
+    }
+
+    t = c->value;
+
+    if (nthread_unlock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_read: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+    }
+
+cleanup:
+    return t;
+}
+
+int64_t nthread_counter_set(
+        nthread_counter_t *c,
+        int64_t            new_value)
+{
+    int64_t t=0;
+
+//    log_debug(thread_debug_level, "nthread_counter_set(STUB)");
+
+    if (nthread_lock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_set: failed to lock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+        t = -1;
+        goto cleanup;
+    }
+
+    t = c->value;
+    c->value=new_value;
+
+    if (nthread_unlock(&c->lock) != 0) {
+        fprintf(logger_get_file(), "nthread_counter_set: failed to unlock the counter lock: %s\n", strerror(errno));
+        fflush(logger_get_file());
+    }
+
+cleanup:
+    return t;
+}
+
 int nthread_counter_fini(
         nthread_counter_t *c)
 {
@@ -454,7 +506,7 @@ int nthread_counter_fini(
 
 //    log_debug(thread_debug_level, "nthread_counter_fini(STUB)");
     if (nthread_lock(&c->lock) != 0) {
-        fprintf(logger_get_file(), "nthread_counter_decrement: failed to lock the counter lock: %s\n", strerror(errno));
+        fprintf(logger_get_file(), "nthread_counter_fini: failed to lock the counter lock: %s\n", strerror(errno));
         fflush(logger_get_file());
         goto cleanup;
     }
@@ -462,7 +514,7 @@ int nthread_counter_fini(
     c->value = 0;
 
     if (nthread_unlock(&c->lock) != 0) {
-        fprintf(logger_get_file(), "nthread_counter_decrement: failed to unlock the counter lock: %s\n", strerror(errno));
+        fprintf(logger_get_file(), "nthread_counter_fini: failed to unlock the counter lock: %s\n", strerror(errno));
         fflush(logger_get_file());
     }
 

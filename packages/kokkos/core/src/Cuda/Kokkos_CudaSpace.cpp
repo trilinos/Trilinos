@@ -223,6 +223,12 @@ public :
       return entry ? entry->label() : error ;
     }
 
+  const entry_type *query( const void * ptr ) const
+    {
+      entry_type * const entry = m_tracking.query( ptr );
+      return entry ;
+    }
+
   int count(const void * ptr) const {
     entry_type * const entry = m_tracking.query( ptr );
     return entry ? entry->count() : 0 ;
@@ -453,6 +459,18 @@ std::string CudaSpace::query_label( const void * p )
   return std::string( Impl::cuda_space_singleton().query_label(p) );
 }
 
+size_t CudaSpace::query_size( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_space_singleton().query(p);
+  return entry ? entry->m_alloc_size : 0;
+}
+
+void* CudaSpace::query_start_ptr( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_space_singleton().query(p);
+  return entry ? entry->m_alloc_ptr : NULL;
+}
+
 void CudaSpace::texture_object_attach( const void * const              arg_ptr
                                      , const unsigned                  arg_type_size
                                      , ::cudaChannelFormatDesc const & arg_desc
@@ -529,6 +547,18 @@ std::string CudaUVMSpace::query_label( const void * p )
   return std::string( Impl::cuda_uvm_space_singleton().query_label(p) );
 }
 
+size_t CudaUVMSpace::query_size( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_uvm_space_singleton().query(p);
+  return entry ? entry->m_alloc_size : 0;
+}
+
+void* CudaUVMSpace::query_start_ptr( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_uvm_space_singleton().query(p);
+  return entry ? entry->m_alloc_ptr : NULL;
+}
+
 void CudaUVMSpace::texture_object_attach( const void * const              arg_ptr
                                         , const unsigned                  arg_type_size
                                         , ::cudaChannelFormatDesc const & arg_desc
@@ -581,6 +611,18 @@ void CudaHostPinnedSpace::print_memory_view( std::ostream & oss )
 std::string CudaHostPinnedSpace::query_label( const void * p )
 {
   return std::string( Impl::cuda_host_pinned_space_singleton().query_label(p) );
+}
+
+size_t CudaHostPinnedSpace::query_size( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_host_pinned_space_singleton().query(p);
+  return entry ? entry->m_alloc_size : 0;
+}
+
+void* CudaHostPinnedSpace::query_start_ptr( const void * p )
+{
+  const Impl::CudaMemoryTracking::entry_type * const entry = Impl::cuda_host_pinned_space_singleton().query(p);
+  return entry ? entry->m_alloc_ptr : NULL;
 }
 
 } // namespace Kokkos

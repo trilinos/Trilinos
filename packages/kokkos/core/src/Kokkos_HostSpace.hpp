@@ -130,6 +130,12 @@ public:
   /** \brief  Retrieve label associated with the input pointer */
   static std::string query_label( const void * );
 
+  /** \brief  Retrieve allocation size associated with the input pointer */
+  static size_t query_size( const void * p );
+
+  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
+  static void* query_start_ptr( const void * p );
+
   /*--------------------------------*/
   /* Functions unique to the HostSpace */
 
@@ -156,6 +162,7 @@ struct DeepCopy<HostSpace,HostSpace> {
 
 } // namespace Impl
 } // namespace Kokkos
+
 
 #endif /* #define KOKKOS_HOSTSPACE_HPP */
 

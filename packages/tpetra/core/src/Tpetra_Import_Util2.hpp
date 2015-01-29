@@ -42,10 +42,10 @@
 #ifndef TPETRA_IMPORT_UTIL2_HPP
 #define TPETRA_IMPORT_UTIL2_HPP
 
-/*!
-  \file Tpetra_Import_Util.hpp
-  \brief Utility functions and macros designed for use with Tpetra::Import and Tpetra::Export objects.
-*/
+///
+/// \file Tpetra_Import_Util2.hpp
+/// \brief Utility functions for packing and unpacking sparse matrix entries.
+///
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
 #include "Tpetra_Import.hpp"
@@ -56,9 +56,10 @@
 #include <Teuchos_Array.hpp>
 #include <utility>
 
-// Tpetra::CrsMatrix uses the functions below in its implementation.  To
-// avoid a circular include issue, only include the declarations for CrsMatrix.
-// We will include the definition after the functions here have been defined.
+// Tpetra::CrsMatrix uses the functions below in its implementation.
+// To avoid a circular include issue, only include the declarations
+// for CrsMatrix.  We will include the definition after the functions
+// here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
@@ -89,7 +90,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
                               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                               size_t& constantNumPackets,
                               Distributor &distor,
-                              const Teuchos::ArrayView<int>& SourcePids);
+                              const Teuchos::ArrayView<const int>& SourcePids);
 
 /// \brief Special version of Tpetra::CrsMatrix::unpackAndCombine
 ///   that also unpacks owning process ranks.
@@ -203,40 +204,205 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
-template <typename Matrix>
-struct MatrixSerializationTraits {
-  typedef typename Matrix::impl_scalar_type impl_scalar_type;
-
-  static inline
-  size_t scalarSize (const Matrix& mat) { return sizeof (impl_scalar_type); }
-
-  static inline void
-  packBuffer (const Matrix& mat,
-              const size_t numEntries,
-              const Teuchos::ArrayView<const impl_scalar_type>& vals,
-              const Teuchos::ArrayView<char> packed_vals)
-  {
-    Teuchos::ArrayView<impl_scalar_type> packed_vals_scalar =
-      Teuchos::av_reinterpret_cast<impl_scalar_type> (packed_vals);
-    std::copy (vals.begin (), vals.begin () + numEntries,
-               packed_vals_scalar.begin());
-  }
-
-  static inline void
-  unpackScalar (const Matrix& mat,
-                const char* val_char,
-                impl_scalar_type& val)
-  {
-    val = * (reinterpret_cast<const impl_scalar_type*> (val_char));
-  }
-};
-
 } // namespace Import_Util
 } // namespace Tpetra
+
 
 //
 // Implementations
 //
+
+namespace { // (anonymous)
+
+  template<class T>
+  size_t
+  packArray (const Teuchos::ArrayView<char>& outBuf,
+             const Teuchos::ArrayView<const T>& inBuf,
+             const size_t numEnt)
+  {
+    const size_t numBytes = numEnt * sizeof (T);
+    memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+    return numBytes;
+  }
+
+  template<class T>
+  size_t
+  unpackArray (const Teuchos::ArrayView<T>& outBuf,
+               const Teuchos::ArrayView<const char>& inBuf,
+               const size_t numEnt)
+  {
+    const size_t numBytes = numEnt * sizeof (T);
+    memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+    return numBytes;
+  }
+
+  template<class T>
+  size_t
+  packValue (const Teuchos::ArrayView<char>& outBuf,
+             const T& inVal)
+  {
+    const size_t numBytes = sizeof (T);
+    memcpy (outBuf.getRawPtr (), &inVal, numBytes);
+    return numBytes;
+  }
+
+  template<class T>
+  size_t
+  unpackValue (T& outVal,
+               const Teuchos::ArrayView<const char>& inBuf)
+  {
+    const size_t numBytes = sizeof (T);
+    memcpy (&outVal, inBuf.getRawPtr (), numBytes);
+    return numBytes;
+  }
+
+  // Return the number of bytes required to pack that row's entries.
+  template<class ST, class LO, class GO>
+  size_t
+  packRowCount (const size_t numEnt)
+  {
+    if (numEnt == 0) {
+      // Empty rows always take zero bytes, to ensure sparsity.
+      return 0;
+    }
+    else {
+      // Store the number of entries as a local index (LO).
+      const size_t numEntLen = sizeof (LO);
+      const size_t gidsLen = numEnt * sizeof (GO);
+      const size_t pidsLen = numEnt * sizeof (int);
+      const size_t valsLen = numEnt * sizeof (ST);
+
+      return numEntLen + gidsLen + pidsLen + valsLen;
+    }
+  }
+
+  template<class LO>
+  size_t
+  unpackRowCount (const Teuchos::ArrayView<const char>& imports,
+                  const size_t offset,
+                  const size_t numBytes)
+  {
+    if (numBytes == 0) {
+      // Empty rows always take zero bytes, to ensure sparsity.
+      return static_cast<size_t> (0);
+    }
+    else {
+      LO numEntLO = 0;
+      memcpy (&numEntLO, imports.getRawPtr () + offset, sizeof (LO));
+      return static_cast<size_t> (numEntLO);
+    }
+  }
+
+  // Return the number of bytes packed.
+  template<class ST, class LO, class GO>
+  size_t
+  packRow (const Teuchos::ArrayView<char>& exports,
+           const size_t offset,
+           const size_t numEnt,
+           const Teuchos::ArrayView<const GO>& gidsIn,
+           const Teuchos::ArrayView<const int>& pidsIn,
+           const Teuchos::ArrayView<const ST>& valsIn)
+  {
+    using Teuchos::ArrayView;
+
+    if (numEnt == 0) {
+      // Empty rows always take zero bytes, to ensure sparsity.
+      return 0;
+    }
+
+    const size_t numEntBeg = offset;
+    const size_t numEntLen = sizeof (LO);
+    const size_t gidsBeg = numEntBeg + numEntLen;
+    const size_t gidsLen = numEnt * sizeof (GO);
+    const size_t pidsBeg = gidsBeg + gidsLen;
+    const size_t pidsLen = numEnt * sizeof (int);
+    const size_t valsBeg = pidsBeg + pidsLen;
+    const size_t valsLen = numEnt * sizeof (ST);
+
+    ArrayView<char> numEntOut = exports (numEntBeg, numEntLen);
+    ArrayView<char> gidsOut = exports (gidsBeg, gidsLen);
+    ArrayView<char> pidsOut = exports (pidsBeg, pidsLen);
+    ArrayView<char> valsOut = exports (valsBeg, valsLen);
+
+    size_t numBytesOut = 0;
+    numBytesOut += packValue<LO> (numEntOut, static_cast<LO> (numEnt));
+    numBytesOut += packArray<GO> (gidsOut, gidsIn, numEnt);
+    numBytesOut += packArray<int> (pidsOut, pidsIn, numEnt);
+    numBytesOut += packArray<ST> (valsOut, valsIn, numEnt);
+
+    const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
+      "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+      << expectedNumBytes << ".");
+
+    return numBytesOut;
+  }
+
+  // Return the number of bytes actually read / used.
+  template<class ST, class LO, class GO>
+  size_t
+  unpackRow (const Teuchos::ArrayView<GO>& gidsOut,
+             const Teuchos::ArrayView<int>& pidsOut,
+             const Teuchos::ArrayView<ST>& valsOut,
+             const Teuchos::ArrayView<const char>& imports,
+             const size_t offset,
+             const size_t numBytes,
+             const size_t numEnt)
+  {
+    using Teuchos::ArrayView;
+    if (numBytes == 0) {
+      // Rows with zero bytes always have zero entries.
+      return 0;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) <= offset, std::logic_error,
+      "unpackRow: imports.size() = " << imports.size () << " <= offset = "
+      << offset << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (imports.size ()) < offset + numBytes, std::logic_error,
+      "unpackRow: imports.size() = " << imports.size () << " < offset + "
+      "numBytes = " << (offset + numBytes) << ".");
+
+    const size_t numEntBeg = offset;
+    const size_t numEntLen = sizeof (LO);
+    const size_t gidsBeg = numEntBeg + numEntLen;
+    const size_t gidsLen = numEnt * sizeof (GO);
+    const size_t pidsBeg = gidsBeg + gidsLen;
+    const size_t pidsLen = numEnt * sizeof (int);
+    const size_t valsBeg = pidsBeg + pidsLen;
+    const size_t valsLen = numEnt * sizeof (ST);
+
+    ArrayView<const char> numEntIn = imports (numEntBeg, numEntLen);
+    ArrayView<const char> gidsIn = imports (gidsBeg, gidsLen);
+    ArrayView<const char> pidsIn = imports (pidsBeg, pidsLen);
+    ArrayView<const char> valsIn = imports (valsBeg, valsLen);
+
+    size_t numBytesOut = 0;
+    LO numEntOut;
+    numBytesOut += unpackValue<LO> (numEntOut, numEntIn);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
+      "unpackRow: Expected number of entries " << numEnt
+      << " != actual number of entries " << numEntOut << ".");
+
+    numBytesOut += unpackArray<GO> (gidsOut, gidsIn, numEnt);
+    numBytesOut += unpackArray<int> (pidsOut, pidsIn, numEnt);
+    numBytesOut += unpackArray<ST> (valsOut, valsIn, numEnt);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
+      << numBytesOut << " != numBytes = " << numBytes << ".");
+    const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
+      "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+      << expectedNumBytes << ".");
+    return numBytesOut;
+  }
+
+} // namespace (anonymous)
+
 
 namespace Tpetra {
 namespace Import_Util {
@@ -252,7 +418,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
                               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                               size_t& constantNumPackets,
                               Distributor &distor,
-                              const Teuchos::ArrayView<int>& SourcePids)
+                              const Teuchos::ArrayView<const int>& SourcePids)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -264,7 +430,6 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef MatrixSerializationTraits<matrix_type> serialization_type;
   const char prefix[] = "Tpetra::Import_Util::packAndPrepareWithOwningPIDs: ";
 
   // FIXME (mfh 03 Jan 2015) Currently, it might be the case that if a
@@ -276,10 +441,15 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     ! SourceMatrix.isLocallyIndexed (), std::invalid_argument,
     prefix << "SourceMatrix must be locally indexed.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    exportLIDs.size () != numPacketsPerLID.size (),
-    std::invalid_argument, prefix << "exportLIDs.size() = "
-    << exportLIDs.size () << "!= numPacketsPerLID.size() = "
-    << numPacketsPerLID.size() << ".");
+    SourceMatrix.getColMap ().is_null (), std::logic_error,
+    prefix << "The source matrix claims to be locally indexed, but its column "
+    "Map is null.  This should never happen.  Please report this bug to the "
+    "Tpetra developers.");
+  const size_type numExportLIDs = exportLIDs.size ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numExportLIDs != numPacketsPerLID.size (), std::invalid_argument, prefix
+    << "exportLIDs.size() = " << numExportLIDs << "!= numPacketsPerLID.size() "
+    << " = " << numPacketsPerLID.size () << ".");
   TEUCHOS_TEST_FOR_EXCEPTION(
     static_cast<size_t> (SourcePids.size ()) != SourceMatrix.getColMap ()->getNodeNumElements (),
     std::invalid_argument, prefix << "SourcePids.size() = "
@@ -287,103 +457,79 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     << "!= SourceMatrix.getColMap()->getNodeNumElements() = "
     << SourceMatrix.getColMap ()->getNodeNumElements () << ".");
 
-  // Get a reference to the matrix's row Map.
-  const map_type& rowMap = * (SourceMatrix.getRowMap ());
+  // This tells the caller that different rows may have different
+  // numbers of entries.  That is, the number of packets per LID might
+  // not be a constant.
   constantNumPackets = 0;
 
-  // Get the GIDs of the rows we want to pack.
-  Array<GO> exportGIDs (exportLIDs.size ());
-  const size_type numExportGIDs = exportGIDs.size ();
-  for (size_type i = 0; i < numExportGIDs; ++i) {
-    exportGIDs[i] = rowMap.getGlobalElement (exportLIDs[i]);
-  }
-
-  // Compute the size of a packet.  Each packet contains a matrix
-  // entry (global column index and value) and its owning process
-  // rank.
-  const size_t scalar_size = serialization_type::scalarSize (SourceMatrix);
-  const size_t sizeOfPacket = sizeof(GO) + scalar_size + sizeof(int);
-  // Record the number of packets in each row.
+  // Compute the number of bytes ("packets") per row to pack.  While
+  // we're at it, compute the total number of matrix entries to send,
+  // and the max number of entries in any of the rows we're sending.
+  size_t totalNumBytes = 0;
   size_t totalNumEntries = 0;
   size_t maxRowLength = 0;
-  for (size_type i = 0; i < exportGIDs.size(); ++i) {
-    const size_t curNumEntries = SourceMatrix.getNumEntriesInGlobalRow(exportGIDs[i]);
-    numPacketsPerLID[i] = curNumEntries * sizeOfPacket;
-    totalNumEntries += curNumEntries;
-    maxRowLength = std::max (curNumEntries, maxRowLength);
+  for (size_type i = 0; i < numExportLIDs; ++i) {
+    const LO lclRow = exportLIDs[i];
+    const size_t numEnt = SourceMatrix.getNumEntriesInLocalRow (lclRow);
+    const size_t numBytes = packRowCount<ST, LO, GO> (numEnt);
+    numPacketsPerLID[i] = numBytes;
+    totalNumBytes += numBytes;
+    totalNumEntries += numEnt;
+    maxRowLength = std::max (maxRowLength, numEnt);
   }
 
-  // Each packet contains an entry's global column index, the entry's
-  // owning process rank, and the entry's value.  We pack export data
-  // by storing packets contiguously, like this:
-  //
-  // [[inds_row0 pids_row0 vals_row0] [inds_row1 pids_row1 vals_row1] ... ]
+  // We use a "struct of arrays" approach to packing each row's
+  // entries.  All the column indices (as global indices) go first,
+  // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
-    const size_t totalNumBytes = totalNumEntries * sizeOfPacket;
-    exports.resize(totalNumBytes);
+    exports.resize (totalNumBytes);
 
-    // Current position in the 'exports' output array.
-    size_t curOffsetInBytes = 0;
+    // Current position (in bytes) in the 'exports' output array.
+    size_t offset = 0;
 
     // For each row of the matrix owned by the calling process, pack
     // that row's column indices and values into the exports array.
 
     // Locally indexed matrices always have a column Map.
     const map_type& colMap = * (SourceMatrix.getColMap ());
-    ArrayView<const LocalOrdinal> lidsView;
-    ArrayView<const Scalar> valsView;
 
     // Temporary buffers for a copy of the column gids/pids
-    Array<GO>  gids (static_cast<size_type> (maxRowLength));
-    Array<int> pids (static_cast<size_type> (maxRowLength));
+    Array<GO>  gids (maxRowLength);
+    Array<int> pids (maxRowLength);
 
     const size_type numExportLIDs = exportLIDs.size();
     for (size_type i = 0; i < numExportLIDs; i++) {
-      // Get a (locally indexed) view of the current row's data.
-      SourceMatrix.getLocalRowView (exportLIDs[i], lidsView, valsView);
+      const LO lclRow = exportLIDs[i];
+
+      // Get a locally indexed view of the current row's data.
+      ArrayView<const Scalar> valsView;
+      ArrayView<const LO> lidsView;
+      SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
+      ArrayView<const ST> valsViewST = av_reinterpret_cast<const ST> (valsView);
 
       // Convert column indices as LIDs to column indices as GIDs.
-      const size_type curNumEntries = lidsView.size ();
-      size_t curNumEntriesST = static_cast<size_t> (curNumEntries);
-      ArrayView<GO>  gidsView = gids (0, curNumEntries);
-      ArrayView<int> pidsView = pids (0, curNumEntries);
-      for (size_type k = 0; k < curNumEntries; ++k) {
+      const size_t numEnt = static_cast<size_t> (lidsView.size ());
+      ArrayView<GO>  gidsView = gids (0, numEnt);
+      ArrayView<int> pidsView = pids (0, numEnt);
+      for (size_t k = 0; k < numEnt; ++k) {
         gidsView[k] = colMap.getGlobalElement (lidsView[k]);
         pidsView[k] = SourcePids[lidsView[k]];
       }
 
-      // Views of the right places in each array so everthing looks
-      // like the right data type
-      ArrayView<char> gidsViewOutChar =
-        exports (curOffsetInBytes, curNumEntriesST*sizeof(GO));
-      ArrayView<char> pidsViewOutChar =
-        exports (curOffsetInBytes+curNumEntriesST*sizeof(GO),
-                 curNumEntriesST*sizeof(int));
-      ArrayView<char> valsViewOutChar =
-        exports (curOffsetInBytes+curNumEntriesST*(sizeof(GO)+sizeof(int)),
-                 curNumEntriesST*scalar_size);
-      ArrayView<GO> gidsViewOut  = av_reinterpret_cast<GO> (gidsViewOutChar);
-      ArrayView<int> pidsViewOut = av_reinterpret_cast<int> (pidsViewOutChar);
-
-      // Copy the row's data into the views of the exports array.
-      std::copy (gidsView.begin (), gidsView.begin () + curNumEntriesST,
-                 gidsViewOut.begin ());
-      std::copy (pidsView.begin (), pidsView.begin () + curNumEntriesST,
-                 pidsViewOut.begin ());
-      ArrayView<const ST> valsViewST = av_reinterpret_cast<const ST> (valsView);
-      serialization_type::packBuffer (SourceMatrix, curNumEntriesST, valsViewST, valsViewOutChar);
-
+      // Copy the row's data into the current spot in the exports array.
+      const size_t numBytes =
+        packRow<ST, LO, GO> (exports, offset, numEnt,
+                             gidsView, pidsView, valsViewST);
       // Keep track of how many bytes we packed.
-      curOffsetInBytes += sizeOfPacket * curNumEntries;
+      offset += numBytes;
     }
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      curOffsetInBytes != totalNumBytes, std::logic_error, prefix << "At end "
-      "of method, the final offset bytes count curOffsetInBytes=" <<
-      curOffsetInBytes << " does not equal the total number of bytes packed "
-      "totalNumBytes=" << totalNumBytes <<
-      ".  Please report this bug to the Tpetra developers.");
+      offset != totalNumBytes, std::logic_error, prefix << "At end of method, "
+      "the final offset (in bytes) " << offset << " does not equal the total "
+      "number of bytes packed " << totalNumBytes << ".  Please report this bug "
+      "to the Tpetra developers.");
 #endif //  HAVE_TPETRA_DEBUG
   }
 }
@@ -402,41 +548,50 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
                                      const ArrayView<const LocalOrdinal> &permuteFromLIDs)
 {
   typedef LocalOrdinal LO;
-  typedef typename ArrayView<const LO>::size_type size_type;
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef MatrixSerializationTraits<matrix_type> serialization_type;
+  typedef GlobalOrdinal GO;
+  typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
+  typedef typename matrix_type::impl_scalar_type ST;
+  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+  const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
+    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size () << " != "
+    "permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
+  // FIXME (mfh 26 Jan 2015) If there are no entries on the calling
+  // process, then the matrix is neither locally nor globally indexed.
+  const bool locallyIndexed = SourceMatrix.isLocallyIndexed ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! locallyIndexed, std::invalid_argument, prefix << "The input CrsMatrix "
+    "'SourceMatrix' must be locally indexed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    importLIDs.size () != numPacketsPerLID.size (), std::invalid_argument,
+    prefix << "importLIDs.size() = " << importLIDs.size () << " != "
+    "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
+
+  // Number of matrix entries to unpack (returned by this function).
   size_t nnz = 0;
 
-  // CopyAndPermuteSection
-  TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(),
-                             std::invalid_argument, "unpackAndCombineWithOwningPIDsCount: permuteToLIDs.size() = " << permuteToLIDs.size()
-                             << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
-  const bool locallyIndexed = SourceMatrix.isLocallyIndexed();
-  TEUCHOS_TEST_FOR_EXCEPTION(!locallyIndexed,std::invalid_argument, "unpackAndCombineWithOwningPIDsCount: SourceMatrix must be locally indexed.");
+  // Count entries copied directly from the source matrix without permuting.
+  for (size_t sourceLID = 0; sourceLID < numSameIDs; ++sourceLID) {
+    const LO srcLID = static_cast<LO> (sourceLID);
+    nnz += SourceMatrix.getNumEntriesInLocalRow (srcLID);
+  }
 
-  // Copy
-  const LO numSameIDs_as_LID = Teuchos::as<LO>(numSameIDs);
-  for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; sourceLID++)
-    nnz+=SourceMatrix.getNumEntriesInLocalRow(sourceLID);
+  // Count entries copied directly from the source matrix with permuting.
+  const size_type numPermuteToLIDs = permuteToLIDs.size ();
+  for (size_type p = 0; p < numPermuteToLIDs; ++p) {
+    nnz += SourceMatrix.getNumEntriesInLocalRow (permuteFromLIDs[p]);
+  }
 
-  // Permute
-  const size_t numPermuteToLIDs = Teuchos::as<size_t>(permuteToLIDs.size());
-  for (size_t p = 0; p < numPermuteToLIDs; p++)
-    nnz+=SourceMatrix.getNumEntriesInLocalRow(permuteFromLIDs[p]);
-
-  // UnpackAndCombine Section
-  TEUCHOS_TEST_FOR_EXCEPTION(importLIDs.size() != numPacketsPerLID.size(),
-                             std::invalid_argument, "unpackAndCombineWithOwningPIDsCount: importLIDs.size() = " << importLIDs.size()
-                             << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
-
-  const size_t scalar_size = serialization_type::scalarSize( SourceMatrix );
-  const size_t sizeOfPacket    = sizeof(GlobalOrdinal)  + sizeof(int) + scalar_size;
-
-  size_t curOffsetInBytes = 0;
-  for (size_type i = 0; i < importLIDs.size(); ++i) {
-    const size_t rowSize = numPacketsPerLID[i] / sizeOfPacket;
-    curOffsetInBytes += rowSize * sizeOfPacket;
-    nnz +=rowSize;
+  // Count entries received from other MPI processes.
+  size_t offset = 0;
+  const size_type numImportLIDs = importLIDs.size ();
+  for (size_type i = 0; i < numImportLIDs; ++i) {
+    const size_t numBytes = numPacketsPerLID[i];
+    const size_t numEnt = unpackRowCount<LO> (imports, offset, numBytes);
+    nnz += numEnt;
+    offset += numBytes;
   }
   return nnz;
 }
@@ -444,23 +599,23 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
 unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & SourceMatrix,
-                               const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                               const Teuchos::ArrayView<const char> &imports,
-                               const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                               size_t constantNumPackets,
-                               Distributor &distor,
-                               CombineMode combineMode,
-                               size_t numSameIDs,
-                               const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                               const ArrayView<const LocalOrdinal> &permuteFromLIDs,
+                               const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+                               const Teuchos::ArrayView<const char>& imports,
+                               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                               const size_t constantNumPackets,
+                               Distributor& distor,
+                               const CombineMode combineMode,
+                               const size_t numSameIDs,
+                               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                               const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
                                size_t TargetNumRows,
                                size_t TargetNumNonzeros,
-                               int MyTargetPID,
-                               const ArrayView<size_t> &CSR_rowptr,
-                               const ArrayView<GlobalOrdinal> &CSR_colind,
-                               const ArrayView<Scalar> &CSR_vals,
-                               const Teuchos::ArrayView<const int> &SourcePids,
-                               Teuchos::Array<int> &TargetPids)
+                               const int MyTargetPID,
+                               const Teuchos::ArrayView<size_t>& CSR_rowptr,
+                               const Teuchos::ArrayView<GlobalOrdinal>& CSR_colind,
+                               const Teuchos::ArrayView<Scalar>& CSR_vals,
+                               const Teuchos::ArrayView<const int>& SourcePids,
+                               Teuchos::Array<int>& TargetPids)
 {
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -468,23 +623,32 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type impl_scalar_type;
+  typedef typename matrix_type::impl_scalar_type ST;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef MatrixSerializationTraits<matrix_type> serialization_type;
   const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
 
-  size_t N = TargetNumRows;
-  size_t mynnz = TargetNumNonzeros;
+  const size_t N = TargetNumRows;
+  const size_t mynnz = TargetNumNonzeros;
   // In the case of reduced communicators, the SourceMatrix won't have
   // the right "MyPID", so thus we have to supply it.
-  int MyPID = MyTargetPID;
+  const int MyPID = MyTargetPID;
 
-  // Zero the rowptr
   TEUCHOS_TEST_FOR_EXCEPTION(
     TargetNumRows + 1 != static_cast<size_t> (CSR_rowptr.size ()),
     std::invalid_argument, prefix << "CSR_rowptr.size() = " <<
     CSR_rowptr.size () << "!= TargetNumRows+1 = " << TargetNumRows+1 << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
+    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size ()
+    << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+  const size_type numImportLIDs = importLIDs.size ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
+    prefix << "importLIDs.size() = " << numImportLIDs << " != "
+    "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+
+  // Zero the rowptr
   for (size_t i = 0; i< N+1; ++i) {
     CSR_rowptr[i] = 0;
   }
@@ -495,10 +659,6 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   // PermuteIDs: Still local, but reordered
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    permuteToLIDs.size () != permuteFromLIDs.size (), std::invalid_argument,
-    prefix << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
   size_t numPermuteIDs = permuteToLIDs.size ();
   for (size_t i = 0; i < numPermuteIDs; ++i) {
     CSR_rowptr[permuteToLIDs[i]] =
@@ -506,21 +666,19 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   // Setup CSR_rowptr for remotes
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    importLIDs.size () != numPacketsPerLID.size (), std::invalid_argument,
-    prefix << "importLIDs.size() = " << importLIDs.size () << "!= "
-    "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
-
-  const size_t scalar_size = serialization_type::scalarSize (SourceMatrix);
-  const size_t sizeOfPacket = sizeof(GlobalOrdinal) + sizeof(int) + scalar_size;
   const size_t totalNumBytes = imports.size ();
-  const size_t RemoteNumEntries = totalNumBytes / sizeOfPacket;
-  for (size_type k = 0; k < importLIDs.size (); ++k) {
-    const size_t rowSize = numPacketsPerLID[k] / sizeOfPacket;
-    CSR_rowptr[importLIDs[k]] += rowSize;
+  {
+    size_t offset = 0;
+    for (size_type k = 0; k < numImportLIDs; ++k) {
+      const size_t numBytes = numPacketsPerLID[k];
+      const size_t numEnt = unpackRowCount<LO> (imports, offset, numBytes);
+      CSR_rowptr[importLIDs[k]] += numEnt;
+      offset += numBytes;
+    }
   }
 
-  // If multiple procs contribute to a row;
+  // If multiple processes contribute to the same row, we may need to
+  // update row offsets.  This tracks that.
   Teuchos::Array<size_t> NewStartRow (N + 1);
 
   // Turn row length into a real CSR_rowptr
@@ -539,7 +697,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
 
   // Preseed TargetPids with -1 for local
   if (static_cast<size_t> (TargetPids.size ()) != mynnz) {
-    TargetPids.resize(mynnz);
+    TargetPids.resize (mynnz);
   }
   TargetPids.assign (mynnz, -1);
 
@@ -588,58 +746,48 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   // RemoteIDs: Loop structure following UnpackAndCombine
-  if (RemoteNumEntries > 0) {
-    // data packed as follows:
-    // [inds_row0 pids_row0 vals_row0 inds_row1 pids_row1 vals_row1 ...]
-    ArrayView<const char>   avIndsC, avPidsC, avValsC;
-    ArrayView<const GO>     avInds;
-    ArrayView<const int>    avPids;
+  if (imports.size () > 0) {
+    size_t offset = 0;
+    int lclErr = 0;
 
-    size_t curOffsetInBytes = 0;
-    for (size_t i = 0; i < static_cast<size_t> (importLIDs.size ()); ++i) {
-      const size_t rowSize = numPacketsPerLID[i] / sizeOfPacket;
-      LO ToLID     = importLIDs[i];
-      int StartRow = NewStartRow[ToLID];
-      NewStartRow[ToLID]+=rowSize;
-      if (rowSize == 0) {
+    for (size_t i = 0; i < static_cast<size_t> (numImportLIDs); ++i) {
+      const size_t numBytes = numPacketsPerLID[i];
+      if (numBytes == 0) {
+        // Empty buffer for that row means that the row is empty.
         continue;
       }
+      const size_t numEnt   = unpackRowCount<LO> (imports, offset, numBytes);
+      const LO lclRow       = importLIDs[i];
+      const size_t StartRow = NewStartRow[lclRow];
+      NewStartRow[lclRow]  += numEnt;
 
-      // Get views of the import (incoming data) buffers.
-      avIndsC = imports (curOffsetInBytes, rowSize*sizeof(GO));
-      avPidsC = imports (curOffsetInBytes+rowSize*sizeof(GO),
-                         rowSize*sizeof(int));
-      avValsC = imports (curOffsetInBytes+rowSize*(sizeof(GO)+sizeof(int)),
-                         rowSize*scalar_size);
-
-      avInds = av_reinterpret_cast<const GO> (avIndsC);
-      avPids = av_reinterpret_cast<const int> (avPidsC);
-
-      const char * avValsC_ptr = avValsC.getRawPtr ();
-
-      for (size_t j = 0; j < rowSize; ++j) {
-        // mfh 03 Jan 2015: In the Kokkos refactor version of Tpetra,
-        // Scalar and impl_scalar_type might differ.  impl_scalar_type
-        // is what the matrix uses internally.  I've made
-        // unpackScalar() (see below) use impl_scalar_type, which is
-        // why we need the reinterpret cast here.  The cast is trivial
-        // (Scalar == impl_scalar_type) for built-in "plain old data"
-        // types like double, float, and int.
-        impl_scalar_type& valOut =
-          reinterpret_cast<impl_scalar_type&> (CSR_vals[StartRow+j]);
-        serialization_type::unpackScalar (SourceMatrix, avValsC_ptr, valOut);
-        CSR_colind[StartRow + j] = avInds[j];
-        TargetPids[StartRow + j] = (avPids[j] != MyPID) ? avPids[j] : -1;
-        avValsC_ptr += scalar_size;
+      ArrayView<GO> gidsOut = CSR_colind (StartRow, numEnt);
+      ArrayView<int> pidsOut = TargetPids (StartRow, numEnt);
+      ArrayView<Scalar> valsOutS = CSR_vals (StartRow, numEnt);
+      ArrayView<ST> valsOut = av_reinterpret_cast<ST> (valsOutS);
+      const size_t numBytesOut =
+        unpackRow<ST, LO, GO> (gidsOut, pidsOut, valsOut, imports,
+                               offset, numBytes, numEnt);
+      if (numBytesOut != numBytes) {
+        lclErr = 1;
+        break;
       }
-      curOffsetInBytes += rowSize * sizeOfPacket;
+      // Correct target PIDs.
+      for (size_t j = 0; j < numEnt; ++j) {
+        const int pid = pidsOut[j];
+        pidsOut[j] = (pid != MyPID) ? pid : -1;
+      }
+      offset += numBytes;
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      curOffsetInBytes != totalNumBytes, std::logic_error, prefix << "After "
+      offset != totalNumBytes, std::logic_error, prefix << "After "
       "unpacking and counting all the imports, the final offset in bytes "
-      "curOffsetInBytes=" << curOffsetInBytes << " != total number of bytes "
-      "totalNumBytes=" << totalNumBytes << ".  "
+      << offset << " != total number of bytes " << totalNumBytes << ".  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lclErr != 0, std::logic_error, prefix << "numBytes != numBytesOut "
+      "somewhere in unpack loop.  This should never happen.  "
       "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
   }

@@ -50,6 +50,28 @@
 
 namespace {
 
+template<class ExecutionSpace>
+struct TestMemory {
+  int* data;
+  int offset;
+
+  typedef int value_type;
+  typedef ExecutionSpace execution_space;
+
+  TestMemory(int* data_, int offset_):data(data_),offset(offset_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int& i) const {
+    data[i+offset] = i+offset;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int& i, int& val) const {
+    val += data[i];
+  }
+
+};
+
 template<class Arg1>
 class TestMemorySpace {
 public:
@@ -108,6 +130,29 @@ public:
 
     count  = MemorySpace::count(invalid.ptr_on_device());
     ASSERT_TRUE(count==0);
+
+#ifdef KOKKOS_HAVE_CXX11
+    int* data = (int*) Kokkos::kokkos_malloc<MemorySpace>(100*sizeof(int));
+    int sum = 0;
+
+    Kokkos::parallel_for(100, TestMemory<typename Arg1::execution_space>(data,0));
+    Kokkos::parallel_reduce(100, TestMemory<typename Arg1::execution_space>(data,0),sum);
+    ASSERT_TRUE(sum == 100*99/2);
+
+    sum = 0;
+    ASSERT_NO_THROW(data = (int*) Kokkos::kokkos_realloc<MemorySpace>(data,120*sizeof(int)));
+
+    Kokkos::parallel_for(20, TestMemory<typename Arg1::execution_space>(data,100));
+    Kokkos::parallel_reduce(120, TestMemory<typename Arg1::execution_space>(data,0),sum);
+
+    ASSERT_TRUE(sum == 120*119/2);
+
+    int* data2 = data + 50;
+    ASSERT_ANY_THROW(data = (int*) Kokkos::kokkos_realloc<MemorySpace>(data2,140*sizeof(int)));
+
+    Kokkos::kokkos_free<MemorySpace>(data);
+#endif
+
   }
 };
 

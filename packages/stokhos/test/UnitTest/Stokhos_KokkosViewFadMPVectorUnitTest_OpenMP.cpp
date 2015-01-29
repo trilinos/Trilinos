@@ -1,12 +1,11 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,27 +34,40 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
 // ***********************************************************************
-//
 // @HEADER
-#ifndef MUELU_HIERARCHYHELPERS_FWD_HPP
-#define MUELU_HIERARCHYHELPERS_FWD_HPP
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TopRAPFactory;
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TopSmootherFactory;
+#include "Stokhos_KokkosViewFadMPVectorUnitTest.hpp"
+
+#include "Kokkos_Core.hpp"
+
+// Instantiate test for OpenMP device
+using Kokkos::OpenMP;
+VIEW_FAD_MP_VECTOR_TESTS_DEVICE( OpenMP )
+
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // Initialize threads
+  size_t num_cores =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  size_t num_hyper_threads =
+    Kokkos::hwloc::get_available_threads_per_core();
+  Kokkos::OpenMP::initialize(num_cores * num_hyper_threads);
+  //Kokkos::OpenMP::print_configuration(std::cout);
+
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  // Finish up
+  Kokkos::OpenMP::finalize();
+
+  return ret;
 }
-
-#ifndef MUELU_HIERARCHYHELPERS_SHORT
-#define MUELU_HIERARCHYHELPERS_SHORT
-#endif
-
-#endif // MUELU_HIERARCHYHELPERS_FWD_HPP

@@ -2,6 +2,73 @@
 Release Notes for Trilinos Package MueLu
 -----------------------------------------
 
+Trilinos 11.14:
+---------------
+
+* Support for Amesos2 native serial direct solver "Basker".
+
+* ML parameters can be used through MueLu::CreateEpetraPreconditioner and
+  MueLu::CreateTpetraPreconditioner interfaces
+
+
+* Several bug fixes:
+    6256:  ML parameter "coarse: type" does not work in
+           MueLu::MLParameterListInterpreter
+    6255:  Multiple issues in MueLu::MLParameterListInterpreter
+
+* Explicit template instantiation (ETI) changes
+
+The new version of MueLu uses Tpetra macros for specifying the desired template
+instantiations values (scalars, local ordinals, global ordinals and note
+types). As such, Tpetra instantiation configure options provide the necessary
+MueLu instantiations. For instance, instead of the previous option
+    -D MueLu_INST_DOUBLE_INT_LONGLONGINT=ON
+a user should write
+    -D Tpetra_INST_INT_LONG_LONG
+See Tpetra documentation for a full set of options.
+
+* New reuse feature [EXPERIMENTAL]
+
+MueLu introduced a new experimental reuse feature. A user may specify partial
+preservation of a multigrid hierarchy through the "reuse: type" option. Few
+variants have been implemented:
+
+  - "none"
+    No reuse, the preconditioner is constructed from scratch
+
+  - "emin"
+    Reuse old prolongator as an initial guess to energy minimization, and reuse
+    the prolongator pattern.
+
+  - "RP"
+    Reuse smoothed prolongator and restrictor. Smoothers and coarse grid
+    operators are recomputed.
+
+  - "RAP"
+    Recompute only the finest level smoother.
+
+  - "full"
+    Reuse full hierarchy, no changes.
+
+The current user interface is as follows:
+
+  // User constructs a hierarchy for the first time
+  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > H =
+    MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(A0, xmlFileName);
+  ...
+  // User reuses existing hierarchy for consequent steps
+  MueLu::ReuseTpetraPreconditioner(A1, *H);
+
+* Support for user-provided data [EXPERIMENTAL]
+
+  New release of MueLu allows user to provide the data for the first few levels
+  of the multigrid Hierarchy, while allowing MueLu to construct remaining
+  levels. At the minimum, user needs to provide the data for fine-level
+  operator A, prolongation operator (P), restriction operator (R) and
+  coarse-level operator (Ac). These operator are required to derive from
+  Xpetra::Operator class. This scenario is driven through a ParameterList
+  interface (see muelu/example/advanced/levelwrap for some use cases).
+
 Trilinos 11.12
 --------------
 

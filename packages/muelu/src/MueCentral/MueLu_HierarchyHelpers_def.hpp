@@ -53,6 +53,7 @@
 #include "MueLu_HierarchyManager.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_FactoryManager.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
 
@@ -225,8 +226,8 @@ namespace MueLu {
 
   // Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
   // calling AddNewLevel as appropriate.
-  template<class SC, class LO, class GO, class NO>
-  void HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
       const std::string& levelName = it->first;
 

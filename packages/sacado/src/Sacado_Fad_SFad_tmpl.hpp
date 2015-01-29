@@ -361,7 +361,9 @@ public:
  */
 template< class ValueType, class Layout, int N >
 struct AnalyzeSacadoShape< Sacado::FAD_NS::SFad< ValueType, N >, Layout >
-  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape , N+1 >::type
+  : ShapeInsert< typename AnalyzeSacadoShape< ValueType, Layout >::shape ,
+                 /*N+1*/
+                 sizeof(Sacado::FAD_NS::SFad< ValueType, N >)/sizeof(ValueType)>::type
 {
 private:
 
@@ -371,7 +373,11 @@ public:
 
   typedef ViewSpecializeSacadoFad specialize ;
 
-  typedef typename ShapeInsert< typename nested::shape , N+1 >::type shape ;
+  // Note:  In most cases M = N+1, but might not if there is padding
+  // in SFad for alignment purposes
+  static const unsigned M =
+    sizeof(Sacado::FAD_NS::SFad< ValueType, N >)/sizeof(ValueType);
+  typedef typename ShapeInsert< typename nested::shape , M >::type shape ;
 
   typedef typename nested::array_intrinsic_type         array_intrinsic_type [N+1];
   typedef typename nested::const_array_intrinsic_type   const_array_intrinsic_type [N+1] ;

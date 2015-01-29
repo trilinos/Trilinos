@@ -91,6 +91,7 @@
 
 #define MIN_TIMEOUT 1000
 
+#define MAX_RETRIES 50
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 extern nssi_config_t nssi_config;
@@ -1079,17 +1080,44 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         default:
             log_debug(debug_level, "calling NNTI_wait for request");
             /* Times out after DEFAULT_RPC_TIMEOUT */
-            do {
-                trios_start_timer(call_time);
-                rc=NNTI_wait(
-                        &req->short_request_wr,
-                        timeout,
-                        &status);
-                trios_stop_timer("NNTI_wait - send req", call_time);
-                if (status.result == NNTI_EDROPPED) {
-                    log_debug(LOG_ALL, "request dropped");
+            trios_start_timer(call_time);
+            rc=NNTI_wait(
+                    &req->short_request_wr,
+                    timeout,
+                    &status);
+            trios_stop_timer("NNTI_wait - send req", call_time);
+            if (status.result == NNTI_EDROPPED) {
+                log_debug(LOG_ALL, "request dropped");
+            }
+            while (status.result == NNTI_EDROPPED) {
+                if (retries++ < MAX_RETRIES) {
+                    trios_start_timer(call_time);
+                    rc=NNTI_send(
+                            &req->svc->svc_host,
+                            req->short_request_hdl,
+                            &req->svc->req_addr,
+                            &req->short_request_wr);
+                    trios_stop_timer("NNTI_send - resend req", call_time);
+                    if (rc != NNTI_OK) {
+                        log_error(rpc_debug_level, "failed resending short request: %s",
+                                nnti_err_str(rc));
+                        break;
+                    }
+                    trios_start_timer(call_time);
+                    rc=NNTI_wait(
+                            &req->short_request_wr,
+                            timeout,
+                            &status);
+                    trios_stop_timer("NNTI_wait - resend req", call_time);
+                    if (status.result == NNTI_EDROPPED) {
+                        log_debug(LOG_ALL, "request dropped");
+                    }
+                } else {
+                    log_error(rpc_debug_level, "retries exhausted: %s",
+                            nnti_err_str(rc));
+                    break;
                 }
-            } while((status.result == NNTI_EDROPPED) && (retries++ < 3));
+            }
             if (rc == NNTI_ETIMEDOUT) {
                 log_info(rpc_debug_level, "send request timed out");
 
@@ -1280,6 +1308,8 @@ int nssi_waitany(
 
     log_level debug_level = rpc_debug_level;
 
+    int retries=0;
+
     trios_declare_timer(call_time);
 
 
@@ -1314,6 +1344,27 @@ wait_again:
 
     *which=nnti_which;
 
+    if (status.result == NNTI_EDROPPED) {
+        if (retries++ < MAX_RETRIES) {
+            trios_start_timer(call_time);
+            rc=NNTI_send(
+                    &req_array[*which].svc->svc_host,
+                    req_array[*which].short_request_hdl,
+                    &req_array[*which].svc->req_addr,
+                    &req_array[*which].short_request_wr);
+            trios_stop_timer("NNTI_send - resend req", call_time);
+            if (rc != NNTI_OK) {
+                log_error(rpc_debug_level, "failed resending short request: %s",
+                        nnti_err_str(rc));
+                req_array[*which].status = NSSI_REQUEST_ERROR;
+            } else {
+                goto wait_again;
+            }
+        } else {
+            log_error(rpc_debug_level, "retries exhausted: %s",
+                    nnti_err_str(rc));
+        }
+    }
     if (status.result == NNTI_ETIMEDOUT) {
         log_info(debug_level, "NNTI_wait for result timed out");
         rc = status.result;
@@ -1323,6 +1374,7 @@ wait_again:
         log_info(debug_level, "NNTI_wait for result failed");
         rc = status.result;
         req_array[*which].status = NSSI_REQUEST_ERROR;
+        work_requests[*which]=NULL;
     }
 
     if (req_array[*which].status == NSSI_SENDING_REQUEST) {
@@ -1456,6 +1508,8 @@ int nssi_waitall(
 
     log_level debug_level = rpc_debug_level;
 
+    int retries=0;
+
     trios_declare_timer(call_time);
 
 
@@ -1488,7 +1542,27 @@ wait_again:
     			timeout,
     			&which,
     			&status);
-
+        if (status.result == NNTI_EDROPPED) {
+            if (retries++ < MAX_RETRIES) {
+                trios_start_timer(call_time);
+                rc=NNTI_send(
+                        &req_array[which].svc->svc_host,
+                        req_array[which].short_request_hdl,
+                        &req_array[which].svc->req_addr,
+                        &req_array[which].short_request_wr);
+                trios_stop_timer("NNTI_send - resend req", call_time);
+                if (rc != NNTI_OK) {
+                    log_error(rpc_debug_level, "failed resending short request: %s",
+                            nnti_err_str(rc));
+                    break;
+                }
+                trios_start_timer(call_time);
+                goto wait_again;
+            } else {
+                log_error(rpc_debug_level, "retries exhausted: %s",
+                        nnti_err_str(rc));
+            }
+        }
         if (status.result == NNTI_ETIMEDOUT) {
             log_info(debug_level, "work_request[%d] timed out", which);
             req_array[which].status = NSSI_REQUEST_TIMEDOUT;
@@ -1499,7 +1573,7 @@ wait_again:
             log_info(debug_level, "work_request[%d] failed", which);
             req_array[which].status = NSSI_REQUEST_ERROR;
             errors++;
-            continue;
+            goto wr_error;
         }
 
         if (req_array[which].status == NSSI_SENDING_REQUEST) {
@@ -1570,6 +1644,7 @@ wait_again:
             }
         }
 
+wr_error:
         work_requests[which] = NULL;
     }
 

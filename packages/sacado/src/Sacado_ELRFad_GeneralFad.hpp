@@ -87,7 +87,7 @@ namespace Sacado {
 
       //! Default constructor
       KOKKOS_INLINE_FUNCTION
-      GeneralFad() : Storage(T(0.)), update_val_(true) {}
+      GeneralFad() : Storage(T(0.)) {}
 
       //! Constructor with supplied value \c x
       /*!
@@ -96,7 +96,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        Storage(x), update_val_(true) {}
+        Storage(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
@@ -104,7 +104,7 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const int sz, const T & x) :
-        Storage(sz, x), update_val_(true) {}
+        Storage(sz, x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -114,25 +114,24 @@ namespace Sacado {
        */
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const int sz, const int i, const T & x) :
-        Storage(sz, x), update_val_(true) {
+        Storage(sz, x) {
         this->fastAccessDx(i)=1.;
       }
 
       //! Constructor with supplied storage \c s
       KOKKOS_INLINE_FUNCTION
-      GeneralFad(const Storage& s) : Storage(s), update_val_(true) {}
+      GeneralFad(const Storage& s) : Storage(s) {}
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const GeneralFad& x) :
-        Storage(x), update_val_(x.update_val_) {}
+        Storage(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
-        Storage(x.size(), T(0.)),
-        update_val_(x.updateValue()) {
+        Storage(x.size(), T(0.)) {
         const int sz = x.size();
         if (sz) {
 
@@ -184,8 +183,7 @@ namespace Sacado {
         }
 
         // Compute value
-        if (update_val_)
-          this->val() = x.val();
+        this->val() = x.val();
       }
 
       //! Destructor
@@ -211,11 +209,11 @@ namespace Sacado {
 
       //! Set whether this Fad object should update values
       KOKKOS_INLINE_FUNCTION
-      void setUpdateValue(bool update_val) { update_val_ = update_val; }
+      void setUpdateValue(bool update_val) {  }
 
       //! Return whether this Fad object has an updated value
       KOKKOS_INLINE_FUNCTION
-      bool updateValue() const { return update_val_; }
+      bool updateValue() const { return true; }
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
@@ -280,7 +278,6 @@ namespace Sacado {
       operator=(const GeneralFad& x) {
         // Copy value & dx_
         Storage::operator=(x);
-        update_val_ = x.update_val_;
         return *this;
       }
 
@@ -347,9 +344,7 @@ namespace Sacado {
         }
 
         // Compute value
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() = x.val();
+        this->val() = x.val();
 
         return *this;
       }
@@ -365,7 +360,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator += (const S& v) {
-        if (update_val_) this->val() += v;
+        this->val() += v;
         return *this;
       }
 
@@ -373,7 +368,7 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator -= (const S& v) {
-        if (update_val_) this->val() -= v;
+        this->val() -= v;
         return *this;
       }
 
@@ -382,7 +377,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator *= (const S& v) {
         const int sz = this->size();
-        if (update_val_) this->val() *= v;
+        this->val() *= v;
         for (int i=0; i<sz; ++i)
           this->fastAccessDx(i) *= v;
         return *this;
@@ -393,7 +388,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator /= (const S& v) {
         const int sz = this->size();
-        if (update_val_) this->val() /= v;
+        this->val() /= v;
         for (int i=0; i<sz; ++i)
           this->fastAccessDx(i) /= v;
         return *this;
@@ -421,9 +416,7 @@ namespace Sacado {
           }
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() += x.val();
+        this->val() += x.val();
 
         return *this;
       }
@@ -450,9 +443,7 @@ namespace Sacado {
           }
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() -= x.val();
+        this->val() -= x.val();
 
 
         return *this;
@@ -488,9 +479,7 @@ namespace Sacado {
           }
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() *= xval;
+        this->val() *= xval;
 
         return *this;
       }
@@ -526,9 +515,7 @@ namespace Sacado {
           }
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() /= xval;
+        this->val() /= xval;
 
         return *this;
       }
@@ -610,9 +597,7 @@ namespace Sacado {
         }
 
         // Compute value
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() += x.val();
+        this->val() += x.val();
 
         return *this;
       }
@@ -692,9 +677,7 @@ namespace Sacado {
 
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() -= x.val();
+        this->val() -= x.val();
 
         return *this;
       }
@@ -834,9 +817,7 @@ namespace Sacado {
 
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() *= xval;
+        this->val() *= xval;
 
         return *this;
       }
@@ -978,9 +959,7 @@ namespace Sacado {
 
         }
 
-        update_val_ = x.updateValue();
-        if (update_val_)
-          this->val() /= xval;
+        this->val() /= xval;
 
         return *this;
       }
@@ -988,9 +967,6 @@ namespace Sacado {
       //@}
 
     protected:
-
-      //! Update value
-      bool update_val_;
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative

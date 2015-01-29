@@ -52,7 +52,8 @@ using namespace ROL;
 
 template <class Real, template<class> class Obj>
 class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
-    private:
+
+    protected:
         Obj<Real> obj_;
 
     template<class ScalarT>
@@ -74,9 +75,12 @@ class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
     void hessVec_22AD(Vector<ScalarT> &hv, const Vector<ScalarT> &v, const Vector<ScalarT> &u, const Vector<ScalarT> &z, Real &tol);
 
 
-
-
     public:
+     
+    
+    Sacado_Objective_SimOpt() : obj_(Obj<Real>()) {}
+    Sacado_Objective_SimOpt(const Obj<Real> &obj) : obj_(obj) {}    
+
     
     Real value(const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
         return obj_.value(u,z,tol);
@@ -236,7 +240,8 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_11AD(Vector<ScalarT> &hv, const 
 
     // Initialize constructor for each element of u
     for(int i=0; i<n; ++i) {
-        u_fad_rcp->push_back(FadType(n,i,(*up)[i]));
+        u_fad_rcp->push_back(FadType(1,(*up)[i]));
+        (*u_fad_rcp)[i].fastAccessDx(0) = (*vp)[i];
         g_fad_rcp->push_back(0);
     }
 
@@ -415,7 +420,8 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
 
     // Initialize constructor for each element of z
     for(int j=0; j<m; ++j) {
-        z_fad_rcp->push_back(FadType(m,j,(*zp)[j]));
+        z_fad_rcp->push_back(FadType(1,(*zp)[j]));
+        (*z_fad_rcp)[j].fastAccessDx(0) = (*vp)[j];
         g_fad_rcp->push_back(0);
     }
     

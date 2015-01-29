@@ -6066,8 +6066,180 @@ namespace Tpetra {
       "CrsMatrix (with the same template parameters as the target object), "
       "nor a RowMatrix (with the same first four template parameters as the "
       "target object).");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      using Teuchos::reduceAll;
+      std::ostringstream msg;
+      int lclBad = 0;
+      try {
+        srcRowMat->pack (exportLIDs, exports, numPacketsPerLID,
+                         constantNumPackets, distor);
+      } catch (std::exception& e) {
+        lclBad = 1;
+        msg << e.what ();
+      }
+      int gblBad = 0;
+      const Teuchos::Comm<int>& comm = * (this->getComm ());
+      reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
+                           lclBad, Teuchos::outArg (gblBad));
+      if (gblBad != 0) {
+        const int myRank = comm.getRank ();
+        const int numProcs = comm.getSize ();
+        for (int r = 0; r < numProcs; ++r) {
+          if (r == myRank && lclBad != 0) {
+            std::ostringstream os;
+            os << "Proc " << myRank << ": " << msg.str () << std::endl;
+            std::cerr << os.str ();
+          }
+          comm.barrier ();
+          comm.barrier ();
+          comm.barrier ();
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          true, std::logic_error, "pack() threw an exception on one or "
+          "more participating processes.");
+      }
+    }
+#else
     srcRowMat->pack (exportLIDs, exports, numPacketsPerLID,
                      constantNumPackets, distor);
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class DeviceType>
+  bool
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  packRow (char* const numEntOut,
+           char* const valOut,
+           char* const indOut,
+           const size_t numEnt,
+           const LocalOrdinal lclRow) const
+  {
+    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+
+    const LO numEntLO = static_cast<LO> (numEnt);
+    memcpy (numEntOut, &numEntLO, sizeof (LO));
+    if (this->isLocallyIndexed ()) {
+      // If the matrix is locally indexed on the calling process, we
+      // have to use its column Map (which it _must_ have in this
+      // case) to convert to global indices.
+      ArrayView<const LO> indIn;
+      ArrayView<const Scalar> valIn;
+      this->getLocalRowView (lclRow, indIn, valIn);
+      const map_type& colMap = * (this->getColMap ());
+      // Copy column indices one at a time, so that we don't need
+      // temporary storage.
+      for (size_t k = 0; k < numEnt; ++k) {
+        const GO gblIndIn = colMap.getGlobalElement (indIn[k]);
+        memcpy (indOut + k * sizeof (GO), &gblIndIn, sizeof (GO));
+      }
+      memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
+    }
+    else if (this->isGloballyIndexed ()) {
+      // If the matrix is globally indexed on the calling process,
+      // then we can use the column indices directly.  However, we
+      // have to get the global row index.  The calling process must
+      // have a row Map, since otherwise it shouldn't be participating
+      // in packing operations.
+      ArrayView<const GO> indIn;
+      ArrayView<const Scalar> valIn;
+      const map_type& rowMap = * (this->getRowMap ());
+      const GO gblRow = rowMap.getGlobalElement (lclRow);
+      this->getGlobalRowView (gblRow, indIn, valIn);
+      memcpy (indOut, indIn.getRawPtr (), numEnt * sizeof (GO));
+      memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
+    }
+    else {
+      if (numEnt != 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class DeviceType>
+  bool
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  unpackRow (Scalar* const valInTmp,
+             GlobalOrdinal* const indInTmp,
+             const size_t tmpSize,
+             const char* const valIn,
+             const char* const indIn,
+             const size_t numEnt,
+             const LocalOrdinal lclRow,
+             const Tpetra::CombineMode combineMode)
+  {
+    if (tmpSize < numEnt || (numEnt != 0 && (valInTmp == NULL || indInTmp == NULL))) {
+      return false;
+    }
+    memcpy (valInTmp, valIn, numEnt * sizeof (Scalar));
+    memcpy (indInTmp, indIn, numEnt * sizeof (GlobalOrdinal));
+    const GlobalOrdinal gblRow = this->getRowMap ()->getGlobalElement (lclRow);
+    Teuchos::ArrayView<Scalar> val (valInTmp, numEnt);
+    Teuchos::ArrayView<GlobalOrdinal> ind (indInTmp, numEnt);
+    this->combineGlobalValues (gblRow, ind, val, combineMode);
+    return true;
+  }
+
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class DeviceType>
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  allocatePackSpace (Teuchos::Array<char>& exports,
+                     size_t& totalNumEntries,
+                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const
+  {
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+    //const char tfecfFuncName[] = "allocatePackSpace: ";
+    const size_type numExportLIDs = exportLIDs.size ();
+
+    // Count the total number of entries to send.
+    totalNumEntries = 0;
+    for (size_type i = 0; i < numExportLIDs; ++i) {
+      const LO lclRow = exportLIDs[i];
+      size_t curNumEntries = this->getNumEntriesInLocalRow (lclRow);
+      // FIXME (mfh 25 Jan 2015) We should actually report invalid row
+      // indices as an error.  Just consider them nonowned for now.
+      if (curNumEntries == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        curNumEntries = 0;
+      }
+      totalNumEntries += curNumEntries;
+    }
+
+    // FIXME (mfh 24 Feb 2013) This code is only correct if
+    // sizeof(Scalar) is a meaningful representation of the amount of
+    // data in a Scalar instance.  (LO and GO are always built-in
+    // integer types.)
+    //
+    // Allocate the exports array.  It does NOT need padding for
+    // alignment, since we use memcpy to write to / read from send /
+    // receive buffers.
+    const size_t allocSize =
+      static_cast<size_t> (numExportLIDs) * sizeof (LO) +
+      totalNumEntries * (sizeof (Scalar) + sizeof (GO));
+    if (static_cast<size_t> (exports.size ()) < allocSize) {
+      exports.resize (allocSize);
+    }
   }
 
   template<class Scalar,
@@ -6082,7 +6254,7 @@ namespace Tpetra {
         Teuchos::Array<char>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
         size_t& constantNumPackets,
-        Distributor &distor) const
+        Distributor& distor) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -6093,172 +6265,90 @@ namespace Tpetra {
     typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "pack: ";
 
+    const size_type numExportLIDs = exportLIDs.size ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      exportLIDs.size() != numPacketsPerLID.size(),
-      std::invalid_argument, "exportLIDs.size() = " << exportLIDs.size()
-      << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+      numExportLIDs != numPacketsPerLID.size (), std::invalid_argument,
+      "exportLIDs.size() = " << numExportLIDs << " != numPacketsPerLID.size()"
+      " = " << numPacketsPerLID.size () << ".");
 
-    // Get a reference to the matrix's row Map.
-    const map_type& rowMap = * (this->getRowMap ());
-
-    const bool locallyIndexed = this->isLocallyIndexed ();
+    // Setting this to zero tells the caller to expect a possibly
+    // different ("nonconstant") number of packets per local index
+    // (i.e., a possibly different number of entries per row).
     constantNumPackets = 0;
 
-    // Get the GIDs of the rows we want to pack.
-    Array<GO> exportGIDs (exportLIDs.size ());
-    const size_type numExportGIDs = exportGIDs.size ();
-    for (size_type i = 0; i < numExportGIDs; ++i) {
-      exportGIDs[i] = rowMap.getGlobalElement (exportLIDs[i]);
-    }
-
-    // We say "Packet" is char (really a "byte"), but the actual unit
-    // of packing is a (GID, value) pair.  The GID is the column index
-    // in that row of the sparse matrix, and the value is the value at
-    // that entry of the sparse matrix.  Thus, we have to scale
-    // numPacketsPerLID by the number of bytes in a _packed_ (GID,
-    // value) pair.  (We pack the GID and value in each pair
-    // separately, so the number of bytes in a packed pair is actually
-    // sizeof(GO) + sizeof(Scalar).)
-    //
-    // FIXME (mfh 24 Feb 2013) This code is only correct if
-    // sizeof(Scalar) is a meaningful representation of the amount of
-    // data in a Scalar instance.  (GO is always a built-in integer
-    // type.)
-    //
-    // Compute the number of packets per export LID, and accumulate
-    // the total number of packages.  While doing so, find the max
-    // number of entries in each row owned by this process; we will
-    // use that to size temporary arrays below.
-    const size_t sizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
+    // The pack buffer 'exports' enters this method possibly
+    // unallocated.  Do the first two parts of "Count, allocate, fill,
+    // compute."
     size_t totalNumEntries = 0;
-    size_t maxRowLength = 0;
-    for (size_type i = 0; i < exportGIDs.size(); ++i) {
-      const size_t curNumEntries =
-        this->getNumEntriesInGlobalRow (exportGIDs[i]);
-      numPacketsPerLID[i] = curNumEntries * sizeOfOrdValPair;
-      totalNumEntries += curNumEntries;
-      maxRowLength = std::max (curNumEntries, maxRowLength);
-    }
+    allocatePackSpace (exports, totalNumEntries, exportLIDs);
+    const size_t bufSize = static_cast<size_t> (exports.size ());
 
-    // Pack export data by interleaving rows' indices and values in
-    // the following way:
+    // Compute the number of "packets" (in this case, bytes) per
+    // export LID (in this case, local index of the row to send), and
+    // actually pack the data.
     //
-    // [inds_row0 vals_row0 inds_row1 vals_row1 ... ]
-    if (totalNumEntries > 0) {
-      // exports is an array of char (bytes), so scale the total
-      // number of entries by the number of bytes per entry (where
-      // "entry" includes both the column index and the value).
-      const size_t totalNumBytes = totalNumEntries * sizeOfOrdValPair;
-      exports.resize (totalNumBytes);
+    // FIXME (mfh 24 Feb 2013, 25 Jan 2015) This code is only correct
+    // if sizeof(Scalar) is a meaningful representation of the amount
+    // of data in a Scalar instance.  (LO and GO are always built-in
+    // integer types.)
 
-      // Current position in the 'exports' output array.
-      size_t curOffsetInBytes = 0;
+    // Variables for error reporting in the loop.
+    size_type firstBadIndex = 0; // only valid if outOfBounds == true.
+    size_t firstBadOffset = 0;   // only valid if outOfBounds == true.
+    size_t firstBadNumBytes = 0; // only valid if outOfBounds == true.
+    bool outOfBounds = false;
+    bool packErr = false;
 
-      // For each row of the matrix owned by the calling process, pack
-      // that row's column indices and values into the exports array.
-      // If the matrix is globally indexed, we can use view semantics
-      // (getGlobalRowView), which should be faster than copy
-      // semantics (getGlobalRowCopy).  Otherwise, we'll have to use
-      // copy semantics.
-      //
-      // FIXME (mfh 28 Jun 2013) This could be made a (shared-memory)
-      // parallel kernel, by using the CSR data layout to calculate
-      // positions in the output buffer.
-      if (locallyIndexed) {
-        // Locally indexed matrices always have a column Map.
-        const map_type& colMap = * (this->getColMap ());
+    char* const exportsRawPtr = exports.getRawPtr ();
+    size_t offset = 0; // current index into 'exports' array.
+    for (size_type i = 0; i < numExportLIDs; ++i) {
+      const LO lclRow = exportLIDs[i];
+      const size_t numEnt = this->getNumEntriesInLocalRow (lclRow);
 
-        // Views of the column LIDs and values in each row.  It's
-        // worth creating empty views here, because they aren't
-        // returned by getLocalRowView; that method will modify (set)
-        // them in place.
-        ArrayView<const LO> lidsView;
-        ArrayView<const Scalar> valsView;
-
-        // Temporary buffer for a copy of the column indices (as GIDs)
-        // in each row.  Import and Export operations to a CrsMatrix
-        // target currently expect GIDs, not LIDs.
-        //
-        // FIXME (mfh 30 Jun 2013) If the source and target have the
-        // same column Maps, it would make sense to pack column
-        // indices as LIDs instead of GIDs.  Packing them as GIDs is
-        // correct, but it's inefficient to convert LIDs to GIDs and
-        // then back again on receipt.  Furthermore, GIDs might be
-        // larger than LIDs, thus costing more bandwidth.
-        Array<GO> gids (static_cast<size_type> (maxRowLength));
-
-        const size_type numExportLIDs = exportLIDs.size ();
-        for (size_type i = 0; i < numExportLIDs; ++i) {
-          // Get a (locally indexed) view of the current row's data.
-          this->getLocalRowView (exportLIDs[i], lidsView, valsView);
-
-          // Convert column indices as LIDs to column indices as GIDs.
-          const size_type curNumEntries = lidsView.size ();
-          ArrayView<GO> gidsView = gids (0, curNumEntries);
-          for (size_type k = 0; k < curNumEntries; ++k) {
-            gidsView[k] = colMap.getGlobalElement (lidsView[k]);
-          }
-
-          // Get views of the spots in the exports array in which to
-          // put the indices resp. values.  The type cast makes the
-          // views look like GO resp. Scalar, when the array they are
-          // viewing is really an array of char.
-          ArrayView<char> gidsViewOutChar =
-            exports (curOffsetInBytes,
-                     static_cast<size_t> (curNumEntries) * sizeof (GO));
-          ArrayView<char> valsViewOutChar =
-            exports (curOffsetInBytes + static_cast<size_t> (curNumEntries) * sizeof (GO),
-                     static_cast<size_t> (curNumEntries) * sizeof (Scalar));
-          ArrayView<GO> gidsViewOut = av_reinterpret_cast<GO> (gidsViewOutChar);
-          ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar> (valsViewOutChar);
-
-          // Copy the row's data into the views of the exports array.
-          std::copy (gidsView.begin (),
-                     gidsView.begin () + static_cast<size_type> (curNumEntries),
-                     gidsViewOut.begin ());
-          std::copy (valsView.begin (),
-                     valsView.begin () + static_cast<size_type> (curNumEntries),
-                     valsViewOut.begin ());
-          // Keep track of how many bytes we packed.
-          curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
-        }
+      // Only pad this row if it has a nonzero number of entries.
+      if (numEnt == 0) {
+        numPacketsPerLID[i] = 0;
       }
-      else { // the matrix is globally indexed
-        ArrayView<const GO> gidsView;
-        ArrayView<const Scalar> valsView;
-
-        const size_type numExportLIDs = exportLIDs.size ();
-        for (size_type i = 0; i < numExportLIDs; ++i) {
-          // Get a view of the current row's data.
-          this->getGlobalRowView (exportGIDs[i], gidsView, valsView);
-          const size_t curNumEntries = static_cast<size_t> (gidsView.size ());
-          // Get views of the spots in the exports array in which to
-          // put the indices resp. values.  See notes and FIXME above.
-
-          ArrayView<char> gidsViewOutChar =
-            exports (curOffsetInBytes, curNumEntries * sizeof (GO));
-          ArrayView<char> valsViewOutChar =
-            exports (curOffsetInBytes + curNumEntries * sizeof (GO),
-                     curNumEntries * sizeof (Scalar));
-          ArrayView<GO> gidsViewOut = av_reinterpret_cast<GO> (gidsViewOutChar);
-          ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar> (valsViewOutChar);
-
-          // Copy the row's data into the views of the exports array.
-          std::copy (gidsView.begin (), gidsView.end (), gidsViewOut.begin ());
-          std::copy (valsView.begin (), valsView.end (), valsViewOut.begin ());
-          // Keep track of how many bytes we packed.
-          curOffsetInBytes += sizeOfOrdValPair * curNumEntries;
+      else {
+        char* const numEntBeg = exportsRawPtr + offset;
+        char* const numEntEnd = numEntBeg + sizeof (LO);
+        char* const valBeg = numEntEnd;
+        char* const valEnd = valBeg + numEnt * sizeof (Scalar);
+        char* const indBeg = valEnd;
+        const size_t numBytes = sizeof (LO) +
+          numEnt * (sizeof (Scalar) + sizeof (GO));
+        if (offset > bufSize || offset + numBytes > bufSize) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadNumBytes = numBytes;
+          outOfBounds = true;
+          break;
         }
+        packErr = ! packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
+        if (packErr) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadNumBytes = numBytes;
+          break;
+        }
+        // numPacketsPerLID[i] is the number of "packets" in the
+        // current local row i.  Packet=char (really "byte") so use
+        // the number of bytes of the packed data for that row.
+        numPacketsPerLID[i] = numBytes;
+        offset += numBytes;
       }
-
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
-        std::logic_error, "At end of method, the final offset bytes count "
-        "curOffsetInBytes=" << curOffsetInBytes << " does not equal the total "
-        "number of bytes packed totalNumBytes=" << totalNumBytes << ".  Please "
-        "report this bug to the Tpetra developers.");
-#endif //  HAVE_TPETRA_DEBUG
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      outOfBounds, std::logic_error, "First invalid offset into 'exports' "
+      "pack buffer at index i = " << firstBadIndex << ".  exportLIDs[i]: "
+      << exportLIDs[firstBadIndex] << ", bufSize: " << bufSize << ", offset: "
+      << firstBadOffset << ", numBytes: " << firstBadNumBytes << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      packErr, std::logic_error, "First error in packRow() at index i = "
+      << firstBadIndex << ".  exportLIDs[i]: " << exportLIDs[firstBadIndex]
+      << ", bufSize: " << bufSize << ", offset: " << firstBadOffset
+      << ", numBytes: " << firstBadNumBytes << ".");
   }
 
   template<class Scalar,
@@ -6345,6 +6435,7 @@ namespace Tpetra {
     }
   }
 
+
   template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal,
@@ -6357,14 +6448,87 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const char>& imports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                     size_t constantNumPackets,
-                    Distributor & /* distor */,
+                    Distributor& distor,
                     CombineMode combineMode)
   {
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "unpackAndCombine: ";
+    const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
+    const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
+    const int numValidModes = 4;
+
+    if (std::find (validModes, validModes+numValidModes, combineMode) ==
+        validModes+numValidModes) {
+      std::ostringstream os;
+      os << "Invalid combine mode.  Valid modes are {";
+      for (int k = 0; k < numValidModes; ++k) {
+        os << validModeNames[k];
+        if (k < numValidModes - 1) {
+          os << ", ";
+        }
+      }
+      os << "}.";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::invalid_argument, os.str ());
+    }
+
+    {
+      using Teuchos::reduceAll;
+      std::ostringstream msg;
+      int lclBad = 0;
+      try {
+        this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                                    constantNumPackets, distor, combineMode);
+      } catch (std::exception& e) {
+        lclBad = 1;
+        msg << e.what ();
+      }
+      int gblBad = 0;
+      const Teuchos::Comm<int>& comm = * (this->getComm ());
+      reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
+                           lclBad, Teuchos::outArg (gblBad));
+      if (gblBad != 0) {
+        const int myRank = comm.getRank ();
+        const int numProcs = comm.getSize ();
+        for (int r = 0; r < numProcs; ++r) {
+          if (r == myRank && lclBad != 0) {
+            std::ostringstream os;
+            os << "Proc " << myRank << ": " << msg.str () << std::endl;
+            std::cerr << os.str ();
+          }
+          comm.barrier ();
+          comm.barrier ();
+          comm.barrier ();
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          true, std::logic_error, "unpackAndCombineImpl() threw an "
+          "exception on one or more participating processes.");
+      }
+    }
+#else
+    this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                                constantNumPackets, distor, combineMode);
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class DeviceType>
+  void
+  CrsMatrix<
+    Scalar, LocalOrdinal, GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+                        const Teuchos::ArrayView<const char>& imports,
+                        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                        size_t constantNumPackets,
+                        Distributor & /* distor */,
+                        CombineMode combineMode)
+  {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const LO>::size_type size_type;
+    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "unpackAndCombine: ";
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -6387,76 +6551,131 @@ namespace Tpetra {
         true, std::invalid_argument, os.str ());
     }
 #endif // HAVE_TPETRA_DEBUG
+
+    const size_type numImportLIDs = importLIDs.size ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      importLIDs.size() != numPacketsPerLID.size(),
-      std::invalid_argument, "importLIDs.size() = " << importLIDs.size()
-      << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+      numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
+      "importLIDs.size() = " << numImportLIDs << "  != numPacketsPerLID.size()"
+      << " = " << numPacketsPerLID.size () << ".");
 
-    // FIXME (mfh 05 Dec 2012) Here are all the assumptions encoded in
-    // the following line of code:
-    //
-    // 1. The data (index,value) for each element are packed tightly,
-    //    with no extra space in between.
-    //
-    // 2. sizeof(Scalar) says how much data were used to represent a
-    //    Scalar in its packed form.
-    //
-    // 3. All processes and all instances of Scalar use the same
-    //    amount of data to represent a Scalar.  (GlobalOrdinal is
-    //    typically a built-in integer type, so this is generally true
-    //    for GlobalOrdinal.)
-    //
-    const size_t SizeOfOrdValPair = sizeof (GO) + sizeof (Scalar);
-    const size_t totalNumBytes = imports.size (); // * sizeof(char), i.e., 1.
-    const size_t totalNumEntries = totalNumBytes / SizeOfOrdValPair;
+    // Use for sanity check on incoming number of entries in row.
+    const LO maxPossNumEnt = this->hasColMap () ?
+      static_cast<LO> (this->getColMap ()->getNodeNumElements ()) :
+      Teuchos::OrdinalTraits<LO>::max ();
 
-    if (totalNumEntries > 0) {
-      const map_type& rowMap = * (this->getMap ());
+    size_type firstBadIndex = 0;
+    size_t firstBadOffset = 0;
+    size_t firstBadExpectedNumBytes = 0;
+    size_t firstBadNumBytes = 0;
+    LO firstBadNumEnt = 0;
+    bool outOfBounds = false;
+    bool badNumEnt = false;
+    bool wrongNumBytes = false;
+    bool unpackErr = false;
 
-      // data packed as follows:
-      // [inds_row0 vals_row0 inds_row1 vals_row1 ...]
-      ArrayView<const char> avIndsC, avValsC;
-      ArrayView<const GO> avInds;
-      ArrayView<const Scalar> avVals;
+    const size_t bufSize = static_cast<size_t> (imports.size ());
+    const char* const importsRawPtr = imports.getRawPtr ();
+    size_t offset = 0;
 
-      size_t curOffsetInBytes = 0;
-      for (size_type i = 0; i < importLIDs.size (); ++i) {
-        const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
-        // Needs to be in here in case of zero length rows.  If not,
-        // the lines following the if statement error out if the row
-        // length is zero. KLN 13/06/2011
-        //
-        // mfh 05 Dec 2012: The problem to which Kurtis refers in the
-        // above comment may no longer be an issue, since
-        // ArrayView::view() (which implements ArrayView::operator())
-        // now allows views of length zero.
-        if (rowSize == 0) {
-          continue;
+    // Temporary storage for incoming values and indices.  We need
+    // this because the receive buffer does not align storage; it's
+    // just contiguous bytes.  In order to avoid violating ANSI
+    // aliasing rules, we memcpy each incoming row's data into these
+    // temporary arrays.  We double their size every time we run out
+    // of storage.
+    Array<Scalar> valInTmp;
+    Array<GO> indInTmp;
+    for (size_type i = 0; i < numImportLIDs; ++i) {
+      const LO lclRow = importLIDs[i];
+      const size_t numBytes = numPacketsPerLID[i];
+
+      if (numBytes > 0) { // there is actually something in the row
+        const char* const numEntBeg = importsRawPtr + offset;
+        const char* const numEntEnd = numEntBeg + sizeof (LO);
+
+        // Now we know how many entries to expect in the received data
+        // for this row.
+        LO numEnt = 0;
+        memcpy (&numEnt, numEntBeg, sizeof (LO));
+
+        const char* const valBeg = numEntEnd;
+        const char* const valEnd =
+          valBeg + static_cast<size_t> (numEnt) * sizeof (Scalar);
+        const char* const indBeg = valEnd;
+        const size_t expectedNumBytes = sizeof (LO) +
+          static_cast<size_t> (numEnt) * (sizeof (Scalar) + sizeof (GO));
+
+        if (numEnt > maxPossNumEnt) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadExpectedNumBytes = expectedNumBytes;
+          firstBadNumBytes = numBytes;
+          firstBadNumEnt = numEnt;
+          badNumEnt = true;
+          break;
         }
-        const LO LID = importLIDs[i];
-        const GO myGID = rowMap.getGlobalElement (LID);
-
-        // Get views of the import (incoming data) buffers.  Again,
-        // this code assumes that sizeof(Scalar) is the number of
-        // bytes used by each Scalar.  It also assumes that
-        // Teuchos::Comm has correctly deserialized Scalar in place in
-        // avValsC.
-        avIndsC = imports (curOffsetInBytes, rowSize * sizeof (GO));
-        avValsC = imports (curOffsetInBytes + rowSize * sizeof (GO),
-                           rowSize * sizeof (Scalar));
-        avInds = av_reinterpret_cast<const GO> (avIndsC);
-        avVals = av_reinterpret_cast<const Scalar> (avValsC);
-
-        combineGlobalValues (myGID, avInds (), avVals (), combineMode);
-        curOffsetInBytes += rowSize * SizeOfOrdValPair;
+        if (expectedNumBytes > numBytes) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadExpectedNumBytes = expectedNumBytes;
+          firstBadNumBytes = numBytes;
+          firstBadNumEnt = numEnt;
+          wrongNumBytes = true;
+          break;
+        }
+        if (offset > bufSize || offset + numBytes > bufSize) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadExpectedNumBytes = expectedNumBytes;
+          firstBadNumBytes = numBytes;
+          firstBadNumEnt = numEnt;
+          outOfBounds = true;
+          break;
+        }
+        size_t tmpNumEnt = static_cast<LO> (valInTmp.size ());
+        if (tmpNumEnt < numEnt ||
+            static_cast<size_t> (indInTmp.size ()) < static_cast<size_type> (numEnt)) {
+          tmpNumEnt = std::max (static_cast<size_t> (numEnt), tmpNumEnt * 2);
+          valInTmp.resize (tmpNumEnt);
+          indInTmp.resize (tmpNumEnt);
+        }
+        unpackErr =
+          ! unpackRow (valInTmp.getRawPtr (), indInTmp.getRawPtr (), tmpNumEnt,
+                       valBeg, indBeg, numEnt, lclRow, combineMode);
+        if (unpackErr) {
+          firstBadIndex = i;
+          firstBadOffset = offset;
+          firstBadExpectedNumBytes = expectedNumBytes;
+          firstBadNumBytes = numBytes;
+          firstBadNumEnt = numEnt;
+          break;
+        }
+        offset += numBytes;
       }
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
-        std::logic_error, "After unpacking and combining all the imports, the "
-        "final offset in bytes curOffsetInBytes=" << curOffsetInBytes << " != "
-        "total number of bytes totalNumBytes=" << totalNumBytes << ".  Please "
-        "report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+    }
+
+    if (badNumEnt || wrongNumBytes || outOfBounds || unpackErr) {
+      std::ostringstream os;
+      os << "  importLIDs[i]: " << importLIDs[firstBadIndex]
+         << ", bufSize: " << bufSize
+         << ", offset: " << firstBadOffset
+         << ", numBytes: " << firstBadNumBytes
+         << ", expectedNumBytes: " << firstBadExpectedNumBytes
+         << ", numEnt: " << firstBadNumEnt
+         << ", maxPossNumEnt (could be very large; that generally means this "
+        "matrix has no column Map (yet)): " << maxPossNumEnt << ".";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        badNumEnt, std::logic_error, "At index i = " << firstBadIndex
+        << ", numEnt > maxPossNumEnt." << os.str ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        wrongNumBytes, std::logic_error, "At index i = " << firstBadIndex
+        << ", expectedNumBytes > numBytes." << os.str ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        outOfBounds, std::logic_error, "First invalid offset into 'imports' "
+        "unpack buffer at index i = " << firstBadIndex << "." << os.str ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        unpackErr, std::logic_error, "First error in unpackRow() at index i = "
+        << firstBadIndex << "." << os.str ());
     }
   }
 
@@ -7158,11 +7377,61 @@ namespace Tpetra {
     // Currently, CrsMatrix inherits from DistObject, not
     // DistObjectKA, so the code below should be fine for the Kokkos
     // refactor version of CrsMatrix.
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MAX;
+      using Teuchos::reduceAll;
+      using std::cerr;
+      using std::endl;
+      RCP<const Teuchos::Comm<int> > comm = this->getComm ();
+      const int myRank = comm->getRank ();
+      const int numProcs = comm->getSize ();
+
+      std::ostringstream os;
+      int lclErr = 0;
+      try {
+        Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
+                                                   destMat->exports_old_,
+                                                   destMat->numExportPacketsPerLID_old_ (),
+                                                   constantNumPackets, Distor,
+                                                   SourcePids);
+      }
+      catch (std::exception& e) {
+        os << "Proc " << myRank << ": " << e.what ();
+        lclErr = 1;
+      }
+      int gblErr = 0;
+      if (! comm.is_null ()) {
+        reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      }
+      if (gblErr != 0) {
+        if (myRank == 0) {
+          cerr << "packAndPrepareWithOwningPIDs threw an exception: " << endl;
+        }
+        std::ostringstream err;
+        for (int r = 0; r < numProcs; ++r) {
+          if (r == myRank && lclErr != 0) {
+            cerr << os.str () << endl;
+          }
+          comm->barrier ();
+          comm->barrier ();
+          comm->barrier ();
+        }
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "packAndPrepareWithOwningPIDs threw an "
+          "exception.");
+      }
+    }
+
+#else
     Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
                                                destMat->exports_old_,
                                                destMat->numExportPacketsPerLID_old_ (),
                                                constantNumPackets, Distor,
                                                SourcePids);
+#endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
     //

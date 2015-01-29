@@ -582,6 +582,16 @@ IF(Stokhos_ENABLE_Sacado)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewFadMPVectorUnitTest_OpenMP
+        SOURCES Stokhos_KokkosViewFadMPVectorUnitTest.hpp
+                Stokhos_KokkosViewFadMPVectorUnitTest_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
     ENDIF()
 
     IF (HAVE_TPETRA_CUDA)

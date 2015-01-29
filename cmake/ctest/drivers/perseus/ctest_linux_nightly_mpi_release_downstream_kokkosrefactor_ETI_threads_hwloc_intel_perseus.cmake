@@ -79,7 +79,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
   "-DKokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosThreadsWrapperNode"
   "-DTPL_ENABLE_Pthread=ON"
-  "-DTeptra_INST_PTHREAD=ON"
+  "-DTpetra_INST_PTHREAD=ON"
   "-DTPL_ENABLE_HWLOC:STRING=OFF"
     
   "-DAmesos_ENABLE_TESTS=OFF"
