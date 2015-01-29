@@ -568,41 +568,65 @@ void unpack_not_owned_verify_compare_closure_relations( const BulkData &        
     }
 }
 
+void fillPartListDifferences(const stk::mesh::BulkData &mesh,
+                             stk::mesh::Entity entity,
+                             const std::vector<stk::mesh::Part*> &recv_parts,
+                             std::set<std::string> &thisProcExtraParts,
+                             std::set<std::string> &otherProcExtraParts)
+{
+
+    const Bucket & bucket = mesh.bucket(entity);
+    std::pair<const unsigned *,const unsigned *> part_ordinals = bucket.superset_part_ordinals();
+    const PartVector & mesh_parts = mesh.mesh_meta_data().get_parts();
+
+    std::set<std::string> thisProcPartNames;
+    for(const unsigned * k = part_ordinals.first; k < part_ordinals.second; ++k)
+    {
+        if(mesh_parts[*k]->entity_membership_is_parallel_consistent())
+        {
+            if(mesh_parts[*k]->name() != "{OWNS}" && mesh_parts[*k]->name() != "{SHARES}")
+            {
+                thisProcPartNames.insert(mesh_parts[*k]->name());
+            }
+        }
+    }
+
+    std::set<std::string> otherProcPartNames;
+    for(std::vector<Part*>::const_iterator ip = recv_parts.begin(); ip != recv_parts.end(); ++ip)
+    {
+        if((*ip)->entity_membership_is_parallel_consistent())
+        {
+            if((*ip)->name() != "{OWNS}" && (*ip)->name() != "{SHARES}")
+            {
+                otherProcPartNames.insert((*ip)->name());
+            }
+        }
+    }
+
+    std::set_difference(thisProcPartNames.begin(),
+                        thisProcPartNames.end(),
+                        otherProcPartNames.begin(),
+                        otherProcPartNames.end(),
+                        std::inserter(thisProcExtraParts, thisProcExtraParts.begin()));
+
+    std::set_difference(otherProcPartNames.begin(),
+                        otherProcPartNames.end(),
+                        thisProcPartNames.begin(),
+                        thisProcPartNames.end(),
+                        std::inserter(otherProcExtraParts, otherProcExtraParts.begin()));
+}
+
 void unpack_not_owned_verify_compare_parts(const BulkData &  mesh,
                                            Entity            entity,
                                            PartVector const& recv_parts,
                                            bool&             bad_part)
 {
-  const MetaData & meta = MetaData::get(mesh);
-  Part * const       owns_part   = & meta.locally_owned_part();
-  Part * const       shares_part = & meta.globally_shared_part();
-
-  const Bucket & bucket = mesh.bucket(entity);
-  std::pair<const unsigned *,const unsigned *>
-    part_ordinals = bucket.superset_part_ordinals();
-
-  const unsigned * k = part_ordinals.first ;
-
-  std::vector<Part*>::const_iterator ip = recv_parts.begin();
-
-  for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
-    while ((k != part_ordinals.second) &&
-            (!meta.get_part(*k).entity_membership_is_parallel_consistent())) {
-      ++k;
-    }
-    if ( owns_part != *ip ) {
-      if ( shares_part != *ip && (*ip)->entity_membership_is_parallel_consistent() ) {
-        // All not-owned and not-shares parts must match:
-        bad_part = k == part_ordinals.second ||
-          (*ip)->mesh_meta_data_ordinal() != *k ;
-        ++k ;
-      }
-      else if ( k != part_ordinals.second &&
-                *k == shares_part->mesh_meta_data_ordinal() ) {
-        // shares-part matches
-        ++k ;
-      }
-    }
+  std::set<std::string> thisProcExtraParts;
+  std::set<std::string> otherProcExtraParts;
+  fillPartListDifferences(mesh, entity, recv_parts, thisProcExtraParts, otherProcExtraParts);
+  if(!thisProcExtraParts.empty() || !otherProcExtraParts.empty())
+  {
+      bad_part = true;
   }
 }
 
@@ -622,14 +646,9 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
 {
   const int p_rank = mesh.parallel_rank();
 
-  const MetaData & meta = MetaData::get(mesh);
-  const PartVector & mesh_parts  = meta.get_parts();
-  const Bucket & bucket = mesh.bucket(entity);
   const Ordinal bucket_ordinal = mesh.bucket_ordinal(entity);
   const EntityRank erank = mesh.entity_rank(entity);
   const EntityKey key = mesh.entity_key(entity);
-  std::pair<const unsigned *,const unsigned *>
-    part_ordinals = bucket.superset_part_ordinals();
 
   error_log << __FILE__ << ":" << __LINE__ << ": ";
   error_log << "P" << p_rank << ": " ;
@@ -675,57 +694,25 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
   else if ( bad_part ) {
     error_log << " Comparing parts from this processor(" << mesh.parallel_rank() << ") against processor (" << recv_owner_rank << ")" << std::endl;
 
-    std::set<std::string> thisProcPartNames;
-    std::set<std::string> otherProcPartNames;
+    std::set<std::string> thisProcExtraParts;
+    std::set<std::string> otherProcExtraParts;
+    fillPartListDifferences(mesh, entity, recv_parts, thisProcExtraParts, otherProcExtraParts);
 
-    for ( const unsigned * k = part_ordinals.first ;
-          k < part_ordinals.second ; ++k ) {
-        if ( mesh_parts[*k]->entity_membership_is_parallel_consistent())
-        {
-            if ( mesh_parts[*k]->name() != "{OWNS}" )
-            {
-                thisProcPartNames.insert(mesh_parts[*k]->name());
-            }
-        }
-    }
-
-    for ( std::vector<Part*>::const_iterator
-            ip =  recv_parts.begin();
-          ip != recv_parts.end() ; ++ip ) {
-        if ( (*ip)->entity_membership_is_parallel_consistent())
-        {
-            if ( (*ip)->name() != "{OWNS}" )
-            {
-                otherProcPartNames.insert((*ip)->name());
-            }
-        }
-    }
-
-    std::set<std::string> diff;
-
-    std::set_difference(thisProcPartNames.begin(), thisProcPartNames.end(), otherProcPartNames.begin(), otherProcPartNames.end(),
-                        std::inserter(diff, diff.begin()));
-
-    if ( !diff.empty() )
+    if ( !thisProcExtraParts.empty() )
     {
         error_log << "\tParts on this proc, not on other proc:" << std::endl;
-        std::set<std::string>::iterator iter = diff.begin();
-        for (;iter!=diff.end();++iter)
+        std::set<std::string>::iterator iter = thisProcExtraParts.begin();
+        for (;iter!=thisProcExtraParts.end();++iter)
         {
             error_log << "\t\t" << *iter << std::endl;
         }
     }
 
-    diff.clear();
-
-    std::set_difference(otherProcPartNames.begin(), otherProcPartNames.end(), thisProcPartNames.begin(), thisProcPartNames.end(),
-                        std::inserter(diff, diff.begin()));
-
-    if ( !diff.empty() )
+    if ( !otherProcExtraParts.empty() )
     {
         error_log << "\tParts on other proc, not on this proc:" << std::endl;
-        std::set<std::string>::iterator iter = diff.begin();
-        for (;iter!=diff.end();++iter)
+        std::set<std::string>::iterator iter = otherProcExtraParts.begin();
+        for (;iter!=otherProcExtraParts.end();++iter)
         {
             error_log << "\t\t" << *iter << std::endl;
         }
@@ -733,6 +720,7 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
   }
   else if ( bad_rel ) {
     error_log << " Relations(" ;
+    const Bucket & bucket = mesh.bucket(entity);
     for (EntityRank irank = stk::topology::BEGIN_RANK;
          irank < erank; ++irank)
     {
