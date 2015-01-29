@@ -550,7 +550,6 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
-  typedef typename matrix_type::impl_scalar_type ST;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
