@@ -5631,6 +5631,10 @@ void BulkData::internal_propagate_part_changes(
         else {
           // Shared, do not remove memberships now.
           // Wait until modification_end.
+          if ( !delParts.empty() )
+          {
+            mark_entity_and_upward_related_entities_as_modified(e_to);
+          }
           internal_change_entity_parts( e_to , addParts , emptyParts );
         }
       }

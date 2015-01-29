@@ -5856,6 +5856,169 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
     }
 }
 
+void setupDavidNobleTestCase(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::TRIANGLE_3_2D);
+  meta.declare_part("noconform", stk::topology::ELEMENT_RANK);
+
+  meta.commit();
+
+  bulk.modification_begin();
+
+  const int nodesPerElem = 3;
+  stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3}; // 1
+  stk::mesh::EntityId elem2_nodes[nodesPerElem] = {1, 4, 2}; // 2
+  stk::mesh::EntityId elem3_nodes[nodesPerElem] = {6, 1, 5}; // 3
+  stk::mesh::EntityId elem4_nodes[nodesPerElem] = {6, 4, 1}; // 4
+
+  stk::mesh::EntityId elemId1 = 1;// p0
+  stk::mesh::EntityId elemId2 = 2;// p1
+  stk::mesh::EntityId elemId3 = 3;// p2
+  stk::mesh::EntityId elemId4 = 4;// p1
+
+  if (bulk.parallel_rank() == 0)
+  {
+    stk::mesh::declare_element(bulk, block_1, elemId1, elem1_nodes);
+    stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    bulk.add_node_sharing(node1, 1);
+    bulk.add_node_sharing(node1, 2);
+    bulk.add_node_sharing(node2, 1);
+  }
+  else if (bulk.parallel_rank() == 1)
+  {
+    stk::mesh::declare_element(bulk, block_1, elemId2, elem2_nodes);
+    stk::mesh::declare_element(bulk, block_1, elemId4, elem4_nodes);
+
+    stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+    stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
+    stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+    bulk.add_node_sharing(node1, 2);
+    bulk.add_node_sharing(node6, 2);
+
+    bulk.add_node_sharing(node1, 0);
+    bulk.add_node_sharing(node2, 0);
+  }
+  else
+  {
+      stk::mesh::declare_element(bulk, block_1, elemId3, elem3_nodes);
+      stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+      stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+      bulk.add_node_sharing(node1, 0);
+      bulk.add_node_sharing(node1, 1);
+      bulk.add_node_sharing(node6, 1);
+  }
+
+  bulk.modification_end();
+}
+
+TEST(BulkData, test_change_entity_parts_on_nodes_that_are_shared_and_ghosted)
+{
+    stk::mesh::MetaData meta_data(2);
+    stk::mesh::BulkData bulk(meta_data, MPI_COMM_WORLD);
+
+    int num_procs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+
+    if ( num_procs == 3 )
+    {
+        setupDavidNobleTestCase(bulk);
+
+        {
+            stk::mesh::Part& nonConformal = *meta_data.get_part("noconform");
+            bulk.modification_begin();
+            stk::mesh::PartVector add_parts;
+            stk::mesh::PartVector rm_parts;
+            add_parts.push_back(&nonConformal);
+            stk::mesh::Entity element_3 = bulk.get_entity(stk::topology::ELEMENT_RANK, 3);
+            if (bulk.parallel_rank() == 2)
+            {
+                bulk.change_entity_parts(element_3, add_parts, rm_parts);
+            }
+
+            bulk.modification_end();
+
+            stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+            const stk::mesh::PartVector &partsNodes6 = bulk.bucket(node6).supersets();
+            bool in_nonconform_part = false;
+            for (size_t i=0;i<partsNodes6.size();++i)
+            {
+                if ( partsNodes6[i]->name() == "noconform" )
+                {
+                    in_nonconform_part = true;
+                    break;
+                }
+            }
+            EXPECT_TRUE(in_nonconform_part);
+        }
+
+        {
+            stk::mesh::Part& nonConformal = *meta_data.get_part("noconform");
+            bulk.modification_begin();
+            stk::mesh::PartVector add_parts;
+            stk::mesh::PartVector rm_parts;
+            rm_parts.push_back(&nonConformal);
+            stk::mesh::Entity element_3 = bulk.get_entity(stk::topology::ELEMENT_RANK, 3);
+            if (bulk.parallel_rank() == 2)
+            {
+                bulk.change_entity_parts(element_3, add_parts, rm_parts);
+            }
+
+            {
+                 stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+                 const stk::mesh::PartVector &partsNodes6 = bulk.bucket(node6).supersets();
+                 bool still_in_conform_part = false;
+                 for (size_t i=0;i<partsNodes6.size();++i)
+                 {
+                     if ( partsNodes6[i]->name() == "noconform" )
+                     {
+                         still_in_conform_part = true;
+                         break;
+                     }
+                 }
+                 EXPECT_TRUE(still_in_conform_part);
+            }
+
+            stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+
+            bulk.modification_end();
+
+            {
+                stk::mesh::Entity node6 = bulk.get_entity(stk::topology::NODE_RANK, 6);
+                const stk::mesh::PartVector &partsNodes6 = bulk.bucket(node6).supersets();
+                bool not_in_nonconform_part = true;
+                for (size_t i=0;i<partsNodes6.size();++i)
+                {
+                    if ( partsNodes6[i]->name() == "noconform" )
+                    {
+                        not_in_nonconform_part = false;
+                        break;
+                    }
+                }
+                EXPECT_TRUE(not_in_nonconform_part);
+            }
+
+            if (bulk.parallel_rank() == 0)
+            {
+                EXPECT_TRUE(bulk.bucket(node6).in_aura());
+            }
+            else if (bulk.parallel_rank() == 1)
+            {
+                EXPECT_TRUE(bulk.bucket(node6).owned());
+                EXPECT_TRUE(bulk.bucket(node6).shared());
+            }
+            else
+            {
+                EXPECT_TRUE(!bulk.bucket(node6).owned());
+                EXPECT_TRUE(bulk.bucket(node6).shared());
+            }
+        }
+
+    }
+}
+
 }// empty namespace
 
 
