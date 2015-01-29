@@ -119,6 +119,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Residual>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
+
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
@@ -273,6 +280,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     // get field ID from DOF manager
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
+
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Tangent>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
@@ -444,6 +458,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     // get field ID from DOF manager
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
+
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Jacobian>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
