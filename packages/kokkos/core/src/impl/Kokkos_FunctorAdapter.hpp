@@ -151,15 +151,28 @@ private:
   KOKKOS_INLINE_FUNCTION
   static VOID deduce( void (FunctorType::*)( ArgMember ) const ) {}
 
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOID deduce( void (FunctorType::*)( const ArgMember& ) const ) {}
+
   // parallel_reduce operator without a tag:
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
   static T deduce( void (FunctorType::*)( ArgMember , T & ) const ) {}
 
+  // parallel_reduce operator without a tag:
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( const ArgMember& , T & ) const ) {}
+
   // parallel_scan operator without a tag:
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
   static T deduce( void (FunctorType::*)( ArgMember , T & , bool ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( const ArgMember& , T & , bool ) const ) {}
 
   typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
 
@@ -202,6 +215,14 @@ private:
   KOKKOS_INLINE_FUNCTION
   static VOID deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
 
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOID deduce( void (FunctorType::*)( ArgTag , const ArgMember& ) const ) {}
+
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOID deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& ) const ) {}
+
   //----------------------------------------
   // parallel_reduce operator with a tag:
 
@@ -213,6 +234,14 @@ private:
   KOKKOS_INLINE_FUNCTION
   static T deduce( void (FunctorType::*)( const ArgTag & , ArgMember , T & ) const ) {}
 
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( ArgTag , const ArgMember & , T & ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( const ArgTag & , const ArgMember & , T & ) const ) {}
+
   //----------------------------------------
   // parallel_scan operator with a tag:
 
@@ -223,6 +252,14 @@ private:
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
   static T deduce( void (FunctorType::*)( const ArgTag & , ArgMember , T & , bool ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( ArgTag , const ArgMember& , T & , bool ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& , T & , bool ) const ) {}
 
   //----------------------------------------
 
