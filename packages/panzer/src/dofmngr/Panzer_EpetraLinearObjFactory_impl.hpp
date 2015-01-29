@@ -307,8 +307,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              bool zeroVectorRows) const
           
 {
-   TEUCHOS_ASSERT(!hasColProvider_); // not implemented
-
    const EpetraLinearObjContainer & e_localBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(localBCRows); 
    const EpetraLinearObjContainer & e_globalBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(globalBCRows); 
    EpetraLinearObjContainer & e_ghosted = Teuchos::dyn_cast<EpetraLinearObjContainer>(ghostedObjs); 

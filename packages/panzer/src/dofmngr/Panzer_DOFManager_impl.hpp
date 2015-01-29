@@ -672,7 +672,12 @@ int DOFManager<LO,GO>::getFieldNum(const std::string & string) const
     else
       ind++;
   }
-  return ind;
+
+  if(found)
+    return ind;
+  
+  // didn't find anything...return -1
+  return -1;
 }
 
 template <typename LO, typename GO>
