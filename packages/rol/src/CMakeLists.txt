@@ -86,6 +86,7 @@ APPEND_SET(HEADERS
   step/ROL_Bisection.hpp
   step/ROL_GoldenSection.hpp
   step/ROL_Brents.hpp
+  step/ROL_PathBasedTargetLevel.hpp
   )
 
 #

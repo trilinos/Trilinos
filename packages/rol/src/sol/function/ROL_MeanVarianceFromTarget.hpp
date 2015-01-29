@@ -126,13 +126,13 @@ public:
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
-    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p0 = 0.0, p1 = 0.0, p2 = 0.0, ch = 1.0, cg = 0.0;
+    Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p1 = 0.0, p2 = 0.0, ch = 1.0, cg = 0.0;
     for ( unsigned p = 0; p < this->order_.size(); p++ ) {
       diff = val - this->target_[p];
       pf0  = this->positiveFunction_->evaluate(diff,0);
       pf1  = this->positiveFunction_->evaluate(diff,1);
       pf2  = this->positiveFunction_->evaluate(diff,2);
-      p0   = std::pow(pf0,this->order_[p]);
+      //p0   = std::pow(pf0,this->order_[p]);
       p1   = std::pow(pf0,this->order_[p]-1.0);
       p2   = std::pow(pf0,this->order_[p]-2.0);
       cg  += this->order_[p]*this->coeff_[p]*gv*( (this->order_[p]-1.0)*p2*pf1*pf1 + p1*pf2 );

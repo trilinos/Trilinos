@@ -75,20 +75,23 @@ namespace ROL {
   template<class Real>
   struct AlgorithmState {
     int  iter;
+    int  minIter;
     int  nfval;
     int  ncval;
     int  ngrad;
     Real value;              
+    Real minValue;
     Real gnorm;
     Real cnorm;
     Real snorm;
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
-    AlgorithmState(void) : iter(0), nfval(0), ngrad(0), value(0), 
+    Teuchos::RCP<Vector<Real> > minIterVec;
+    AlgorithmState(void) : iter(0), minIter(0), nfval(0), ngrad(0), value(0), minValue(0), 
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
       snorm(std::numeric_limits<Real>::max()), 
-      iterateVec(Teuchos::null), lagmultVec(Teuchos::null) {}
+      iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
   };  
   
   /** \brief  State for step class.  Will be used for restarts.
@@ -513,6 +516,7 @@ namespace ROL {
    */
   enum ELineSearch{
     LINESEARCH_ITERATIONSCALING = 0,
+    LINESEARCH_PATHBASEDTARGETLEVEL,
     LINESEARCH_BACKTRACKING,
     LINESEARCH_BISECTION,
     LINESEARCH_GOLDENSECTION,
@@ -525,15 +529,16 @@ namespace ROL {
   inline std::string ELineSearchToString(ELineSearch ls) {
     std::string retString;
     switch(ls) {
-      case LINESEARCH_ITERATIONSCALING: retString = "Iteration Scaling";   break;
-      case LINESEARCH_BACKTRACKING:     retString = "Backtracking";        break;
-      case LINESEARCH_BISECTION:        retString = "Bisection";           break;
-      case LINESEARCH_GOLDENSECTION:    retString = "Golden Section";      break;
-      case LINESEARCH_CUBICINTERP:      retString = "Cubic Interpolation"; break;
-      case LINESEARCH_BRENTS:           retString = "Brents";              break;
-      case LINESEARCH_USERDEFINED:      retString = "User Defined";        break;
-      case LINESEARCH_LAST:             retString = "Last Type (Dummy)";   break;
-      default:                          retString = "INVALID ELineSearch";
+      case LINESEARCH_ITERATIONSCALING:     retString = "Iteration Scaling";       break;
+      case LINESEARCH_PATHBASEDTARGETLEVEL: retString = "Path-Based Target Level"; break;
+      case LINESEARCH_BACKTRACKING:         retString = "Backtracking";            break;
+      case LINESEARCH_BISECTION:            retString = "Bisection";               break;
+      case LINESEARCH_GOLDENSECTION:        retString = "Golden Section";          break;
+      case LINESEARCH_CUBICINTERP:          retString = "Cubic Interpolation";     break;
+      case LINESEARCH_BRENTS:               retString = "Brents";                  break;
+      case LINESEARCH_USERDEFINED:          retString = "User Defined";            break;
+      case LINESEARCH_LAST:                 retString = "Last Type (Dummy)";       break;
+      default:                              retString = "INVALID ELineSearch";
     }
     return retString;
   }
@@ -544,12 +549,13 @@ namespace ROL {
       \return 1 if the argument is a valid linesearch; 0 otherwise.
     */
   inline int isValidLineSearch(ELineSearch ls){
-    return( (ls == LINESEARCH_BACKTRACKING)     ||
-            (ls == LINESEARCH_ITERATIONSCALING) ||
-            (ls == LINESEARCH_BISECTION)        ||
-            (ls == LINESEARCH_GOLDENSECTION)    ||
-            (ls == LINESEARCH_CUBICINTERP)      ||
-            (ls == LINESEARCH_BRENTS)           ||
+    return( (ls == LINESEARCH_BACKTRACKING)         ||
+            (ls == LINESEARCH_ITERATIONSCALING)     ||
+            (ls == LINESEARCH_PATHBASEDTARGETLEVEL) ||
+            (ls == LINESEARCH_BISECTION)            ||
+            (ls == LINESEARCH_GOLDENSECTION)        ||
+            (ls == LINESEARCH_CUBICINTERP)          ||
+            (ls == LINESEARCH_BRENTS)               ||
             (ls == LINESEARCH_USERDEFINED)
           );
   }

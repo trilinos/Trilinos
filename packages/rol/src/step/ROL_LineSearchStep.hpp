@@ -164,6 +164,26 @@ private:
 
   std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
+  void LineSearchFactory(Teuchos::ParameterList &parlist) {
+    switch(els_) {
+      case LINESEARCH_ITERATIONSCALING: 
+        lineSearch_ = Teuchos::rcp( new IterationScaling<Real>(parlist) );     break;
+      case LINESEARCH_PATHBASEDTARGETLEVEL: 
+        lineSearch_ = Teuchos::rcp( new PathBasedTargetLevel<Real>(parlist) ); break;
+      case LINESEARCH_BACKTRACKING:
+        lineSearch_ = Teuchos::rcp( new BackTracking<Real>(parlist) );         break;
+      case LINESEARCH_BISECTION:
+        lineSearch_ = Teuchos::rcp( new Bisection<Real>(parlist) );            break;
+      case LINESEARCH_BRENTS:
+        lineSearch_ = Teuchos::rcp( new Brents<Real>(parlist) );               break;
+      case LINESEARCH_GOLDENSECTION:
+        lineSearch_ = Teuchos::rcp( new GoldenSection<Real>(parlist) );        break;
+      case LINESEARCH_CUBICINTERP:
+      default:
+        lineSearch_ = Teuchos::rcp( new CubicInterp<Real>(parlist) );          break;
+    }
+  }
+
 public:
 
   virtual ~LineSearchStep() {}
@@ -192,21 +212,7 @@ public:
      
     // Initialize Linesearch Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    switch(els_) {
-      case LINESEARCH_ITERATIONSCALING: 
-        lineSearch_ = Teuchos::rcp( new IterationScaling<Real>(parlist) ); break;
-      case LINESEARCH_BACKTRACKING:
-        lineSearch_ = Teuchos::rcp( new BackTracking<Real>(parlist) );     break;
-      case LINESEARCH_BISECTION:
-        lineSearch_ = Teuchos::rcp( new Bisection<Real>(parlist) );        break;
-      case LINESEARCH_BRENTS:
-        lineSearch_ = Teuchos::rcp( new Brents<Real>(parlist) );           break;
-      case LINESEARCH_GOLDENSECTION:
-        lineSearch_ = Teuchos::rcp( new GoldenSection<Real>(parlist) );    break;
-      case LINESEARCH_CUBICINTERP:
-      default:
-        lineSearch_ = Teuchos::rcp( new CubicInterp<Real>(parlist) );      break;
-    }
+    LineSearchFactory(parlist);
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -330,21 +336,7 @@ public:
 
     // Initialize Linesearch Object
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    switch(els_) {
-      case LINESEARCH_ITERATIONSCALING: 
-        lineSearch_ = Teuchos::rcp( new IterationScaling<Real>(parlist) ); break;
-      case LINESEARCH_BACKTRACKING:
-        lineSearch_ = Teuchos::rcp( new BackTracking<Real>(parlist) );     break;
-      case LINESEARCH_BISECTION:
-        lineSearch_ = Teuchos::rcp( new Bisection<Real>(parlist) );        break;
-      case LINESEARCH_BRENTS:
-        lineSearch_ = Teuchos::rcp( new Brents<Real>(parlist) );           break;
-      case LINESEARCH_GOLDENSECTION:
-        lineSearch_ = Teuchos::rcp( new GoldenSection<Real>(parlist) );    break;
-      case LINESEARCH_CUBICINTERP:
-      default:
-        lineSearch_ = Teuchos::rcp( new CubicInterp<Real>(parlist) );      break;
-    }
+    LineSearchFactory(parlist);
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);

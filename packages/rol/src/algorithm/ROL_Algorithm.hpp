@@ -143,10 +143,25 @@ public:
       outStream << step_->print(*state_,true);
     }
 
+    // Initialize Minimum Value and Vector
+    if ( state_->minIterVec == Teuchos::null ) {
+      state_->minIterVec = x.clone();
+      state_->minIterVec->set(x);
+      state_->minIter = state_->iter;
+      state_->minValue = state_->value;
+    }
+
     // Run Algorithm
     while (status_->check(*state_)) {
       step_->compute(*s, x, obj, con, *state_);
       step_->update(x, *s, obj, con, *state_);
+      // Store Minimal Value and Vector
+      if ( state_->minValue > state_->value ) {
+        state_->minIterVec->set(*(state_->iterateVec));
+        state_->minValue = state_->value;
+        state_->minIter = state_->iter;
+      }
+      // Update Output
       output.push_back(step_->print(*state_,printHeader_));
       if ( print ) {
         outStream << step_->print(*state_,printHeader_);

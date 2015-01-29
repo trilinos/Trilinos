@@ -277,6 +277,7 @@ public:
 }
 
 #include "ROL_IterationScaling.hpp"
+#include "ROL_PathBasedTargetLevel.hpp"
 #include "ROL_BackTracking.hpp"
 #include "ROL_CubicInterp.hpp"
 #include "ROL_Bisection.hpp"
