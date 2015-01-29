@@ -170,7 +170,7 @@ void TestViewAggregateReduction()
   Kokkos::parallel_for( count , FILL< StaticArray<long,4> , Space >(a4,b4) );
   Kokkos::parallel_for( count , FILL< StaticArray<long,10> , Space >(a10,b10) );
 
-  long r ;
+  long r = 0;
   StaticArray<long,4> r4 ;
   StaticArray<long,10> r10 ;
 
