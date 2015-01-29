@@ -315,8 +315,8 @@ public:
   inline int league_size() const { return m_league_size ; }
 
   /** \brief  Specify league size, request team size */
-  TeamPolicy( execution_space & , int league_size , int team_size_request , int vector_length_request = 1 )
-    : m_league_size( league_size )
+  TeamPolicy( execution_space & , int league_size_ , int team_size_request , int vector_length_request = 1 )
+    : m_league_size( league_size_ )
     , m_team_size( team_size_request )
     , m_vector_length ( vector_length_request )
     {
@@ -329,12 +329,12 @@ public:
         Impl::throw_runtime_exception( "Requested non-power-of-two vector length for TeamPolicy.");
 
       // Make sure league size is permissable
-      if(league_size >= int(Impl::cuda_internal_maximum_grid_count()))
+      if(league_size_ >= int(Impl::cuda_internal_maximum_grid_count()))
         Impl::throw_runtime_exception( "Requested too large league_size for TeamPolicy on Cuda execution space.");
     }
 
-  TeamPolicy( int league_size , int team_size_request , int vector_length_request = 1 )
-    : m_league_size( league_size )
+  TeamPolicy( int league_size_ , int team_size_request , int vector_length_request = 1 )
+    : m_league_size( league_size_ )
     , m_team_size( team_size_request )
     , m_vector_length ( vector_length_request )
     {
@@ -347,7 +347,7 @@ public:
         Impl::throw_runtime_exception( "Requested non-power-of-two vector length for TeamPolicy.");
 
       // Make sure league size is permissable
-      if(league_size >= int(Impl::cuda_internal_maximum_grid_count()))
+      if(league_size_ >= int(Impl::cuda_internal_maximum_grid_count()))
         Impl::throw_runtime_exception( "Requested too large league_size for TeamPolicy on Cuda execution space.");
 
     }
@@ -1585,6 +1585,290 @@ struct Vectorization<Cuda,N> {
 };
 }
 
+namespace Kokkos {
+
+namespace Impl {
+  template< class FunctorType, class ExecPolicy, class ValueType , class Tag = typename ExecPolicy::work_tag>
+  struct CudaFunctorAdapter {
+    const FunctorType f;
+    typedef ValueType value_type;
+    CudaFunctorAdapter(const FunctorType& f_):f(f_) {}
+
+    __device__ inline
+    void operator() (typename ExecPolicy::work_tag, const typename ExecPolicy::member_type& i, ValueType& val) const {
+      //Insert Static Assert with decltype on ValueType equals third argument type of FunctorType::operator()
+      f(typename ExecPolicy::work_tag(), i,val);
+    }
+  };
+
+  template< class FunctorType, class ExecPolicy, class ValueType >
+  struct CudaFunctorAdapter<FunctorType,ExecPolicy,ValueType,void> {
+    const FunctorType f;
+    typedef ValueType value_type;
+    CudaFunctorAdapter(const FunctorType& f_):f(f_) {}
+
+    __device__ inline
+    void operator() (const typename ExecPolicy::member_type& i, ValueType& val) const {
+      //Insert Static Assert with decltype on ValueType equals second argument type of FunctorType::operator()
+      f(i,val);
+    }
+
+  };
+
+  template< class FunctorType, class Enable = void>
+  struct ReduceFunctorHasInit {
+    enum {value = false};
+  };
+
+  template< class FunctorType>
+  struct ReduceFunctorHasInit<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::init ) >::type > {
+    enum {value = true};
+  };
+
+  template< class FunctorType, class Enable = void>
+  struct ReduceFunctorHasJoin {
+    enum {value = false};
+  };
+
+  template< class FunctorType>
+  struct ReduceFunctorHasJoin<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::join ) >::type > {
+    enum {value = true};
+  };
+
+  template< class FunctorType, class Enable = void>
+  struct ReduceFunctorHasFinal {
+    enum {value = false};
+  };
+
+  template< class FunctorType>
+  struct ReduceFunctorHasFinal<FunctorType, typename Impl::enable_if< 0 < sizeof( & FunctorType::final ) >::type > {
+    enum {value = true};
+  };
+
+  template< class FunctorType, bool Enable =
+      ( FunctorDeclaresValueType<FunctorType,void>::value) ||
+      ( ReduceFunctorHasInit<FunctorType>::value  ) ||
+      ( ReduceFunctorHasJoin<FunctorType>::value  ) ||
+      ( ReduceFunctorHasFinal<FunctorType>::value )
+      >
+  struct IsNonTrivialReduceFunctor {
+    enum {value = false};
+  };
+
+  template< class FunctorType>
+  struct IsNonTrivialReduceFunctor<FunctorType, true> {
+    enum {value = true};
+  };
+
+  template<class FunctorType, class ResultType, class Tag, bool Enable = IsNonTrivialReduceFunctor<FunctorType>::value >
+  struct FunctorReferenceType {
+    typedef ResultType& reference_type;
+  };
+
+  template<class FunctorType, class ResultType, class Tag>
+  struct FunctorReferenceType<FunctorType, ResultType, Tag, true> {
+    typedef typename Kokkos::Impl::FunctorValueTraits< FunctorType ,Tag >::reference_type reference_type;
+  };
+
+}
+
+// general policy and view ouput
+template< class ExecPolicy , class FunctorTypeIn , class ViewType >
+inline
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorTypeIn & functor_in
+                    , const ViewType    & result_view
+                    , typename Impl::enable_if<
+                      ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value &&
+                        Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value
+                      )>::type * = 0 )
+{
+  enum {FunctorHasValueType = Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value };
+  typedef typename Kokkos::Impl::if_c<FunctorHasValueType, FunctorTypeIn, Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,typename ViewType::value_type> >::type FunctorType;
+  FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+}
+
+// general policy and pod or array of pod output
+template< class ExecPolicy , class FunctorTypeIn , class ResultType>
+inline
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorTypeIn & functor_in
+                    , ResultType& result_ref
+                    , typename Impl::enable_if<
+                      ( ! Impl::is_view<ResultType>::value &&
+                        ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
+                        ! Impl::is_integral< ExecPolicy >::value  &&
+                          Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value )>::type * = 0 )
+{
+  typedef typename Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,ResultType> FunctorType;
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , typename ExecPolicy::work_tag >  ValueOps ;
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
+                                     >::type value_type ;
+  Kokkos::View< value_type
+              , HostSpace
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( ValueOps::pointer( result_ref )
+               , 1
+               );
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( FunctorType(functor_in) , policy , result_view );
+}
+
+// general policy and pod or array of pod output
+template< class ExecPolicy , class FunctorType>
+inline
+void parallel_reduce( const ExecPolicy  & policy
+                    , const FunctorType & functor
+                    , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type result_ref
+                    , typename Impl::enable_if<
+                      (   Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
+                        ! Impl::is_integral< ExecPolicy >::value  &&
+                          Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value )>::type * = 0 )
+{
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , typename ExecPolicy::work_tag >  ValueOps ;
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , HostSpace
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( ValueOps::pointer( result_ref )
+               , ValueTraits::value_count( functor )
+               );
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+}
+
+// integral range policy and view ouput
+template< class FunctorTypeIn , class ViewType >
+inline
+void parallel_reduce( const size_t        work_count
+                    , const FunctorTypeIn & functor_in
+                    , const ViewType    & result_view
+                    , typename Impl::enable_if<( Impl::is_view<ViewType>::value &&
+                                                 Impl::is_same<
+                          typename Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space,
+                          Kokkos::Cuda>::value
+                        )>::type * = 0 )
+{
+  enum {FunctorHasValueType = Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value };
+  typedef typename
+    Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space
+      execution_space ;
+
+  typedef RangePolicy< execution_space > ExecPolicy ;
+
+  typedef typename Kokkos::Impl::if_c<FunctorHasValueType, FunctorTypeIn, Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,typename ViewType::value_type> >::type FunctorType;
+
+  FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
+
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+}
+
+// integral range policy and pod or array of pod output
+template< class FunctorTypeIn , class ResultType>
+inline
+void parallel_reduce( const size_t        work_count
+                    , const FunctorTypeIn & functor_in
+                    , ResultType& result
+                    , typename Impl::enable_if< ! Impl::is_view<ResultType>::value &&
+                                                ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
+                                                Impl::is_same<
+                             typename Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space,
+                             Kokkos::Cuda>::value >::type * = 0 )
+{
+  typedef typename
+    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space
+      execution_space ;
+  typedef Kokkos::RangePolicy< execution_space > ExecPolicy ;
+
+  typedef Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,ResultType> FunctorType;
+
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , void >  ValueOps ;
+
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , HostSpace
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( ValueOps::pointer( result )
+               , 1
+               );
+
+  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( FunctorType(functor_in) , ExecPolicy(0,work_count) , result_view );
+}
+
+template< class FunctorType>
+inline
+void parallel_reduce( const size_t        work_count
+                    , const FunctorType & functor
+                    , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type result
+                    , typename Impl::enable_if< Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
+                                                Impl::is_same<
+                             typename Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space,
+                             Kokkos::Cuda>::value >::type * = 0 )
+{
+
+  typedef typename
+    Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
+      execution_space ;
+  typedef Kokkos::RangePolicy< execution_space > ExecPolicy ;
+
+
+
+  typedef Kokkos::Impl::FunctorValueTraits< FunctorType , void >  ValueTraits ;
+  typedef Kokkos::Impl::FunctorValueOps<    FunctorType , void >  ValueOps ;
+
+
+  // Wrap the result output request in a view to inform the implementation
+  // of the type and memory space.
+
+  typedef typename Kokkos::Impl::if_c< (ValueTraits::StaticValueSize != 0)
+                                     , typename ValueTraits::value_type
+                                     , typename ValueTraits::pointer_type
+                                     >::type value_type ;
+
+  Kokkos::View< value_type
+              , HostSpace
+              , Kokkos::MemoryUnmanaged
+              >
+    result_view( ValueOps::pointer( result )
+               , ValueTraits::value_count( functor )
+               );
+
+  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+}
+
+} // namespace Kokkos
 #endif /* defined( __CUDACC__ ) */
 
 #endif /* #ifndef KOKKOS_CUDA_PARALLEL_HPP */
