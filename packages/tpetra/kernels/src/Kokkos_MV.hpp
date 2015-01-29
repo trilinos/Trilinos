@@ -2870,7 +2870,7 @@ V_Dot (const XVector& x,
 {
   typedef V_DotFunctor<XVector, YVector> functor_type;
   functor_type f (x, y);
-  typename functor_type::value_type ret_val;
+  typename functor_type::value_type ret_val = typename functor_type::value_type();
   parallel_reduce (numRows, f, ret_val);
   return ret_val;
 }
