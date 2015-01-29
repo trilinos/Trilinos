@@ -167,7 +167,8 @@ int main(int argc, char *argv[]) {
   if (A->getBlockRowMap()->getPointMap()->isNodeGlobalElement(0)) {
     // modify the diagonal entry of the row with global-id 0
     const Ordinal ID = 0;
-    Ordinal numPtRows, numPtCols;
+    Ordinal numPtRows = 0;
+    Ordinal numPtCols = 0;
     Teuchos::ArrayRCP<Scalar> blockEntry;
     A->getGlobalBlockEntryViewNonConst(ID,ID, numPtRows,numPtCols, blockEntry);
     blockEntry[0] *= 10.0;
