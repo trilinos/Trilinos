@@ -77,6 +77,7 @@
 #include <Kokkos_Complex.hpp>
 #endif
 
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -109,6 +110,23 @@ void fence();
 
 #ifdef KOKKOS_HAVE_CXX11
 namespace Kokkos {
+
+namespace Impl {
+// should only by used by kokkos_malloc and kokkos_free
+struct MallocHelper
+{
+  static void increment_ref_count( AllocationTracker const & tracker )
+  {
+    tracker.increment_ref_count();
+  }
+
+  static void decrement_ref_count( AllocationTracker const & tracker )
+  {
+    tracker.decrement_ref_count();
+  }
+};
+} // namespace Impl
+
 /* Allocate memory from a memory space.
  * The allocation is tracked in Kokkos memory tracking system, so
  * leaked memory can be identified.
@@ -116,7 +134,9 @@ namespace Kokkos {
 template< class Arg = DefaultExecutionSpace>
 void* kokkos_malloc(const std::string label, size_t count) {
   typedef typename Arg::memory_space MemorySpace;
-  return MemorySpace::allocate(label,count);;
+  Impl::AllocationTracker tracker = MemorySpace::allocate_and_track(label,count);;
+  Impl::MallocHelper::increment_ref_count( tracker );
+  return tracker.alloc_ptr();
 }
 
 template< class Arg = DefaultExecutionSpace>
@@ -124,39 +144,32 @@ void* kokkos_malloc(const size_t& count) {
   return kokkos_malloc<Arg>("DefaultLabel",count);
 }
 
+
 /* Free memory from a memory space.
  */
 template< class Arg = DefaultExecutionSpace>
 void kokkos_free(const void* ptr) {
   typedef typename Arg::memory_space MemorySpace;
-  MemorySpace::decrement(ptr);
+  typedef typename MemorySpace::allocator allocator;
+  Impl::AllocationTracker tracker = Impl::AllocationTracker::find<allocator>(ptr);
+  if (tracker.is_valid()) {
+    Impl::MallocHelper::decrement_ref_count( tracker );
+  }
 }
+
 
 template< class Arg = DefaultExecutionSpace>
 const void* kokkos_realloc(const void* old_ptr, size_t size) {
   typedef typename Arg::memory_space MemorySpace;
+  typedef typename MemorySpace::allocator allocator;
+  Impl::AllocationTracker tracker = Impl::AllocationTracker::find<allocator>(old_ptr);
 
-  //Get information about the old allocation
-  const void* start_ptr = MemorySpace::query_start_ptr(old_ptr);
-  const size_t old_size = MemorySpace::query_size(old_ptr);
-  const std::string label = MemorySpace::query_label(old_ptr);
+  tracker.reallocate(size);
 
-  if (start_ptr != old_ptr) Impl::throw_runtime_exception("Calling Kokkos::realloc<MemorySpace> is only allowed with pointers which are obtained by a call to Kokkos::malloc<MemorySpace>");
-
-  if (old_size == size) return old_ptr;
-
-  //Do the new allocation
-  void* new_ptr = kokkos_malloc<MemorySpace>(label,size);
-
-  //Copy old data to the new allocation
-  Impl::DeepCopy<MemorySpace,MemorySpace>(new_ptr,old_ptr,size>old_size?old_size:size);
-
-  //Elliminate the old allocation
-  kokkos_free<MemorySpace>(old_ptr);
-
-  return new_ptr;
+  return tracker.alloc_ptr();
 }
-}
+
+} // namespace Kokkos
 #endif
 
 #endif

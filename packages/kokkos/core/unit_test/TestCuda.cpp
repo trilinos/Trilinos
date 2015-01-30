@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -125,7 +125,9 @@ TEST_F( cuda, spaces )
 {
   if ( Kokkos::CudaUVMSpace::available() ) {
 
-    int * uvm_ptr = (int*) Kokkos::CudaUVMSpace::allocate("uvm_ptr",sizeof(int));
+    Kokkos::Impl::AllocationTracker tracker = Kokkos::CudaUVMSpace::allocate_and_track("uvm_ptr",sizeof(int));
+
+    int * uvm_ptr = (int*) tracker.alloc_ptr();
 
     *uvm_ptr = 42 ;
 
@@ -135,7 +137,6 @@ TEST_F( cuda, spaces )
 
     EXPECT_EQ( *uvm_ptr, int(2*42) );
 
-    Kokkos::CudaUVMSpace::decrement(uvm_ptr);
   }
 }
 

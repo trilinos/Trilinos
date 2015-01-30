@@ -46,10 +46,9 @@
 #include "Sacado_MP_VectorTraits.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_AnalyzeStokhosShape.hpp"
+#include "Kokkos_AnalyzeSacadoShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
-#include "Kokkos_View_Fad.hpp"
 
 /*
  * Specialization for Kokkos::View<Sacado::MP::Vector<Storage>...>
@@ -99,9 +98,10 @@ struct MPVectorAllocation<Device, Storage, true> {
   typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
+  Kokkos::Impl::AllocationTracker m_tracker;
 
   KOKKOS_INLINE_FUNCTION
-  MPVectorAllocation() : m_scalar_ptr_on_device(0) {}
+  MPVectorAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
   template <class LabelType, class ShapeType>
@@ -110,13 +110,12 @@ struct MPVectorAllocation<Device, Storage, true> {
   allocate(const LabelType& label,
            const ShapeType& shape,
            const unsigned vector_size) {
-    m_scalar_ptr_on_device = (scalar_type *)
-      memory_space::allocate( label , sizeof(scalar_type) * Impl::cardinality_count( shape ) * vector_size );
+    m_tracker = memory_space::allocate_and_track( label , sizeof(scalar_type) * Impl::cardinality_count( shape ) * vector_size );
+    m_scalar_ptr_on_device = reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
     return reinterpret_cast<value_type*>(m_scalar_ptr_on_device);
   }
 
   // Assign scalar_type pointer to give ptr
-  KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
     m_scalar_ptr_on_device = reinterpret_cast<scalar_type*>(ptr);
   }
@@ -130,9 +129,10 @@ struct MPVectorAllocation<Device, Storage, false> {
   typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
+  Kokkos::Impl::AllocationTracker m_tracker;
 
   KOKKOS_INLINE_FUNCTION
-  MPVectorAllocation() : m_scalar_ptr_on_device(0) {}
+  MPVectorAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
   template <class LabelType, class ShapeType>
@@ -155,7 +155,8 @@ struct MPVectorAllocation<Device, Storage, false> {
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
-    char *data = (char*) memory_space::allocate( label , size );
+    m_tracker = memory_space::allocate_and_track( label, size );
+    char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
 
@@ -176,12 +177,14 @@ struct MPVectorAllocation<Device, Storage, false> {
 
   // Assign scalar_type pointer to give ptr
   // This makes BIG assumption on how the data was allocated
-  KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
-    if (ptr != 0)
+    if (ptr != 0) {
       m_scalar_ptr_on_device = ptr->coeff();
-    else
+    }
+    else {
       m_scalar_ptr_on_device = 0;
+      m_tracker.clear();
+    }
   }
 
   struct VectorInit {
@@ -265,12 +268,12 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
-  typedef Sacado::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
+  typedef Impl::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
-  typedef Impl::AnalyzeStokhosShape< typename traits::data_type,
+  typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
   typedef Impl::MPVectorAllocation<typename traits::device_type, stokhos_storage_type> allocation_type;
@@ -427,7 +430,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_management.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
@@ -457,21 +460,23 @@ public:
   //------------------------------------
   // Construct or assign compatible view:
 
-  template< class RT , class RL , class RD , class RM , class RS >
+  template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
-  View( const View<RT,RL,RD,RM,RS> & rhs )
+  View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
     : m_ptr_on_device(0)
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize , RS >( *this , rhs );
+        typename traits::specialize ,
+        typename traits::specialize >( *this , rhs );
     }
 
-  template< class RT , class RL , class RD , class RM , class RS >
+  template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
+  View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
     {
       (void) Impl::ViewAssignment<
-        typename traits::specialize , RS >( *this , rhs );
+        typename traits::specialize ,
+        typename traits::specialize >( *this , rhs );
       return *this ;
     }
 
@@ -987,6 +992,9 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type sacado_size() const
     { return m_sacado_size.value; }
+
+  Kokkos::Impl::AllocationTracker const & tracker() const
+  { return m_allocation.m_tracker; }
 };
 
 /** \brief  A deep copy between views of the same specialization, compatible type,
@@ -1040,7 +1048,7 @@ create_mirror( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src )
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.
 
-  std::string label = memory_space::query_label( src.ptr_on_device() );
+  std::string label = src.tracker().label();
   label.append("_mirror");
 
   unsigned dims[8];
@@ -1100,12 +1108,12 @@ public:
  *  This treats Sacado::MP::Vector as an array.
  */
 template< class StorageType, class Layout >
-struct AnalyzeStokhosShape< Sacado::MP::Vector< StorageType >, Layout >
+struct AnalyzeSacadoShape< Sacado::MP::Vector< StorageType >, Layout >
   : Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > // Treat as a scalar
 {
 private:
 
-  typedef AnalyzeStokhosShape< typename StorageType::value_type, Layout > nested ;
+  typedef AnalyzeSacadoShape< typename StorageType::value_type, Layout > nested ;
 
 public:
 
@@ -1168,8 +1176,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     )>::type * = 0
                   )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
@@ -1177,8 +1183,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_management    = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1228,8 +1232,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible partitioning");
     }
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     const int length = part.end - part.begin ;
 
     dst.m_offset_map.assign( src.m_offset_map );
@@ -1247,10 +1249,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
 
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1273,8 +1274,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                           ( View<DT,DL,DD,DM,specialize>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
@@ -1286,12 +1285,11 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range.first * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_stride       = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_management     = src.m_management ;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1315,18 +1313,15 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map.N0 , 0,0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size ;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1350,8 +1345,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1366,11 +1359,10 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
         src.m_ptr_on_device + src.m_offset_map(range.first,i1);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range.first,i1) * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
        dst.m_stride      = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1394,18 +1386,15 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map.N0, 1, 0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1429,8 +1418,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1447,11 +1434,10 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
         src.m_ptr_on_device + src.m_offset_map(range.first,i1);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range.first,i1) * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
        dst.m_stride      = src.m_stride ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1475,8 +1461,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1494,13 +1478,12 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_offset_map.N0 * range1.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + dst.m_offset_map.N0 * range1.first * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_management     = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1524,8 +1507,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1543,13 +1524,12 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range0.first * src.m_storage_size;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_management     = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1573,8 +1553,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1591,12 +1569,11 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map(range0.first,range1.first);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range0.first,range1.first) * src.m_storage_size;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
 
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_management     = src.m_management ;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 };
@@ -1617,8 +1594,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     if ( src.m_stride != 1 ) {
       Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible assignment");
     }
-
-    dst.m_management.decrement( dst.m_ptr_on_device );
 
     unsigned dims[8];
     dims[0] = src.m_offset_map.N0;
@@ -1645,9 +1620,9 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
-    dst.m_management      = src.m_management ;
+    dst.m_tracker = src.m_allocation.m_tracker ;
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_management      = src.m_management ;
   }
 
   //------------------------------------
@@ -1699,8 +1674,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
       Kokkos::abort("Kokkos::View< Sacado::MP::Vector ... > incompatible assignment");
     }
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     // Create flattened shape
     unsigned dims[8];
     dims[0] = src.m_offset_map.N0;
@@ -1726,40 +1699,9 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
+    dst.m_tracker = src.m_allocation.m_tracker ;
+
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
-  }
-};
-
-// Assignment of View< Fad< MP::Vector<Storage> >....> to View< MP::Vector<Stogae>...>
-template<>
-struct ViewAssignment< ViewMPVectorContiguous , ViewSpecializeSacadoFad , void >
-{
-  //------------------------------------
-  /** \brief  Compatible value and shape */
-
-  template< class ST , class SL , class SD , class SM >
-  KOKKOS_INLINE_FUNCTION
-  ViewAssignment( typename View<ST,SL,SD,SM,ViewSpecializeSacadoFad>::array_type & dst
-                , const    View<ST,SL,SD,SM,ViewSpecializeSacadoFad> & src )
-  {
-    typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>  src_type ;
-    typedef typename src_type::array_type  dst_type ;
-
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
-    dst.m_offset_map.assign( src.m_offset_map );
-    dst.m_stride = 1;
-    dst.m_ptr_on_device =
-      reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
-    dst.m_allocation.assign( dst.m_ptr_on_device );
-    if (dst.m_sacado_size.value == 0)
-      dst.m_sacado_size = global_sacado_mp_vector_size;
-    dst.m_storage_size = dst.m_sacado_size.value;
-    dst.m_management = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 };
 

@@ -52,6 +52,7 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 
+#include <impl/Kokkos_AllocationTracker.hpp>
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_FunctorAdapter.hpp>
@@ -201,7 +202,7 @@ void parallel_for( const size_t        work_count ,
     Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
       execution_space ;
   typedef RangePolicy< execution_space > policy ;
-  (void) Impl::ParallelFor< FunctorType , policy >( functor , policy(0,work_count) );
+  (void) Impl::ParallelFor< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
 }
 
 //----------------------------------------------------------------------------
@@ -248,7 +249,7 @@ void parallel_reduce( const ExecPolicy  & policy
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
 {
-  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , policy );
+  (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy );
 }
 
 // integral range policy
@@ -277,7 +278,7 @@ void parallel_reduce( const size_t        work_count
               >
     result_view ;
 
-  (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
+  (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
 // general policy and view ouput
@@ -293,7 +294,7 @@ void parallel_reduce( const ExecPolicy  & policy
 #endif
                       )>::type * = 0 )
 {
-  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
 // general policy and pod or array of pod output
@@ -333,7 +334,7 @@ void parallel_reduce( const ExecPolicy  & policy
                , ValueTraits::value_count( functor )
                );
 
-  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
 // integral range policy and view ouput
@@ -356,7 +357,7 @@ void parallel_reduce( const size_t        work_count
 
   typedef RangePolicy< execution_space > ExecPolicy ;
 
-  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+  (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , ExecPolicy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
 // integral range policy and pod or array of pod output
@@ -398,7 +399,7 @@ void parallel_reduce( const size_t        work_count
                , ValueTraits::value_count( functor )
                );
 
-  (void) Impl::ParallelReduce< FunctorType , policy >( functor , policy(0,work_count) , result_view );
+  (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
 }
 
 } // namespace Kokkos
@@ -569,7 +570,7 @@ void parallel_scan( const ExecutionPolicy & policy
                   , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
                   )
 {
-  Impl::ParallelScan< FunctorType , ExecutionPolicy > scan( functor , policy );
+  Impl::ParallelScan< FunctorType , ExecutionPolicy > scan( Impl::CopyWithoutTracking::apply(functor) , policy );
 }
 
 template< class FunctorType >
@@ -583,7 +584,7 @@ void parallel_scan( const size_t        work_count ,
 
   typedef Kokkos::RangePolicy< execution_space > policy ;
 
-  (void) Impl::ParallelScan< FunctorType , policy >( functor , policy(0,work_count) );
+  (void) Impl::ParallelScan< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
 }
 
 } // namespace Kokkos

@@ -162,7 +162,7 @@ struct ViewAssignment< ViewTile , void , void >
 
      dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.tile_begin(i_tile0,i_tile1);
 
-     dst.m_management.increment( dst.m_ptr_on_device );
+     dst.m_tracker = src.m_tracker;
    }
 };
 

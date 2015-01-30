@@ -46,6 +46,7 @@
 
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_spinwait.hpp>
+#include <impl/Kokkos_AllocationTracker.hpp>
 
 #include <Kokkos_Atomic.hpp>
 
@@ -60,11 +61,28 @@ public:
 
   enum { MAX_THREAD_COUNT = 4096 };
 
+  struct Pool
+  {
+    Pool() : m_trackers() {}
+
+    AllocationTracker m_trackers[ MAX_THREAD_COUNT ];
+
+    OpenMPexec * operator[](int i)
+    {
+      return reinterpret_cast<OpenMPexec *>(m_trackers[i].alloc_ptr());
+    }
+
+    AllocationTracker & at(int i)
+    {
+      return m_trackers[i];
+    }
+  };
+
 private:
 
   static int          m_pool_topo[ 4 ];
   static int          m_map_rank[ MAX_THREAD_COUNT ];
-  static OpenMPexec * m_pool[ MAX_THREAD_COUNT ]; // Indexed by: m_pool_rank_rev
+  static Pool         m_pool; // Indexed by: m_pool_rank_rev
 
   friend class Kokkos::OpenMP ;
 
@@ -112,7 +130,7 @@ public:
 
   ~OpenMPexec() {}
 
-  OpenMPexec( const int poolRank 
+  OpenMPexec( const int poolRank
             , const int scratch_exec_size
             , const int scratch_reduce_size
             , const int scratch_thread_size )
@@ -343,7 +361,7 @@ public:
 
         for ( int i = m_team_size ; i-- ; ) {
           type & val = *((type*) m_exec.pool_rev( m_team_base_rev + i )->scratch_thread());
-          const type offset = accum ;  
+          const type offset = accum ;
           accum += val ;
           val = offset ;
         }

@@ -51,6 +51,7 @@
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
+#include <impl/Kokkos_AllocationTracker.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -222,6 +223,7 @@ private:
   typedef Impl::TaskMember< ExecutionSpace , void , void >  TaskRoot ;
 
   future_type * m_future ;
+  Impl::AllocationTracker m_tracker;
 
   //----------------------------------------
 
@@ -252,20 +254,24 @@ public:
           TaskRoot::assign( & m_future[i].m_task , 0 );
         }
         m_future[0].m_task = 0 ;
-        MemorySpace::decrement( m_future );
       }
 #endif
     }
 
   KOKKOS_INLINE_FUNCTION
-  FutureArray() : m_future(0) {}
+  FutureArray()
+    : m_future(0)
+    , m_tracker()
+  {}
 
   inline
   FutureArray( const size_t n )
     : m_future(0)
+    , m_tracker()
     {
       if ( n ) {
-        m_future = (future_type *) MemorySpace::allocate( "FutureArray" , sizeof(future_type) * ( n + 1 ) );
+        m_tracker = MemorySpace::allocate_and_track( "FutureArray" , sizeof(future_type) * ( n + 1 ) );
+        m_future = reinterpret_cast<future_type *>( m_tracker.alloc_ptr() );
         for ( size_t i = 0 ; i <= n ; ++i ) m_future[i].m_task = 0 ;
       }
     }
@@ -273,20 +279,14 @@ public:
   KOKKOS_INLINE_FUNCTION
   FutureArray( const FutureArray & rhs )
     : m_future( rhs.m_future )
-    {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      MemorySpace::increment( m_future );
-#endif
-    }
+    , m_tracker( rhs.m_tracker )
+  {}
 
   KOKKOS_INLINE_FUNCTION
   FutureArray & operator = ( const FutureArray & rhs )
     {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      MemorySpace::decrement( m_future );
-      MemorySpace::increment( rhs.m_future );
-#endif
       m_future = rhs.m_future ;
+      m_tracker = rhs.m_tracker ;
       return *this ;
     }
 };

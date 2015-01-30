@@ -41,54 +41,78 @@
 //@HEADER
 */
 
-#include <gtest/gtest.h>
+#ifndef KOKKOS_BASIC_ALLOCATORS_HPP
+#define KOKKOS_BASIC_ALLOCATORS_HPP
 
-#include <iostream>
-#include <Kokkos_Core.hpp>
 
-/*--------------------------------------------------------------------------*/
+namespace Kokkos { namespace Impl {
 
-namespace {
-
-template<class Arg1>
-class TestMemorySpace {
+/// class UnmanagedAllocator
+/// does nothing when deallocate(ptr,size) is called
+class UnmanagedAllocator
+{
 public:
+  static const char * name() { return "Unmanaged Allocator"; }
 
-  typedef typename Arg1::memory_space MemorySpace;
-  TestMemorySpace() { run_test(); }
-
-  void run_test()
-  {
-    Kokkos::View<int* ,Arg1> invalid;
-    ASSERT_EQ(0u, invalid.tracker().ref_count() );
-
-    {
-      Kokkos::View<int* ,Arg1> a("A",10);
-
-      ASSERT_EQ(1u, a.tracker().ref_count() );
-
-      {
-        Kokkos::View<int* ,Arg1> b = a;
-        ASSERT_EQ(2u, b.tracker().ref_count() );
-
-        Kokkos::View<int* ,Arg1> D("D",10);
-        ASSERT_EQ(1u, D.tracker().ref_count() );
-
-        {
-          Kokkos::View<int* ,Arg1> E("E",10);
-          ASSERT_EQ(1u, E.tracker().ref_count() );
-        }
-
-        ASSERT_EQ(2u, b.tracker().ref_count() );
-      }
-      ASSERT_EQ(1u, a.tracker().ref_count() );
-    }
-  }
+  static void deallocate(void * /*ptr*/, size_t /*size*/) {}
 };
 
-}
 
-/*--------------------------------------------------------------------------*/
+/// class MallocAllocator
+class MallocAllocator
+{
+public:
+  static const char * name()
+  {
+    return "Malloc Allocator";
+  }
 
+  static void* allocate(size_t size);
+
+  static void deallocate(void * ptr, size_t size);
+
+  static void * reallocate(void * old_ptr, size_t old_size, size_t new_size);
+};
+
+
+/// class AlignedAllocator
+/// memory aligned to Kokkos::Impl::MEMORY_ALIGNMENT
+class AlignedAllocator
+{
+public:
+  static const char * name()
+  {
+    return "Aligned Allocator";
+  }
+
+  static void* allocate(size_t size);
+
+  static void deallocate(void * ptr, size_t size);
+
+  static void * reallocate(void * old_ptr, size_t old_size, size_t new_size);
+};
+
+
+/// class PageAlignedAllocator
+/// memory aligned to PAGE_SIZE
+class PageAlignedAllocator
+{
+public:
+  static const char * name()
+  {
+    return "Page Aligned Allocator";
+  }
+
+  static void* allocate(size_t size);
+
+  static void deallocate(void * ptr, size_t size);
+
+  static void * reallocate(void * old_ptr, size_t old_size, size_t new_size);
+};
+
+
+}} // namespace Kokkos::Impl
+
+#endif //KOKKOS_BASIC_ALLOCATORS_HPP
 
 

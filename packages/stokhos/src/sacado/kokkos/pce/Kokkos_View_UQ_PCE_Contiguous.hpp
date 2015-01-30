@@ -95,9 +95,10 @@ struct PCEAllocation {
   typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
+  Kokkos::Impl::AllocationTracker m_tracker;
 
   KOKKOS_INLINE_FUNCTION
-  PCEAllocation() : m_scalar_ptr_on_device(0) {}
+  PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
   template <class LabelType, class ShapeType, class CijkType>
@@ -121,7 +122,8 @@ struct PCEAllocation {
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
-    char *data = (char*) memory_space::allocate( label , size );
+    m_tracker = memory_space::allocate_and_track( label, size );
+    char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
 
@@ -142,12 +144,14 @@ struct PCEAllocation {
 
   // Assign scalar_type pointer to given ptr
   // This makes BIG assumption on how the data was allocated
-  KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
-    if (ptr != 0)
+    if (ptr != 0) {
       m_scalar_ptr_on_device = ptr->coeff();
-    else
+    }
+    else {
       m_scalar_ptr_on_device = 0;
+      m_tracker.clear();
+    }
   }
 
   template <class CijkType>
@@ -239,7 +243,7 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
-  typedef Sacado::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
+  typedef Impl::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
@@ -417,7 +421,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_management.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
@@ -1101,6 +1105,10 @@ public:
   KOKKOS_INLINE_FUNCTION
   bool is_allocation_contiguous() const
     { return m_is_contiguous; }
+
+  Kokkos::Impl::AllocationTracker const & tracker() const
+  { return m_allocation.m_tracker; }
+
 };
 
 namespace Impl {
@@ -1261,7 +1269,7 @@ create_mirror( const View<T,L,D,M,Impl::ViewPCEContiguous> & src )
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.
 
-  std::string label = memory_space::query_label( src.ptr_on_device() );
+  std::string label = src.tracker().label();
   label.append("_mirror");
 
   unsigned dims[8];
@@ -1389,8 +1397,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     )>::type * = 0
                   )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
@@ -1400,8 +1406,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_is_contiguous = src.m_is_contiguous;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1453,8 +1457,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     if ( !src.m_is_contiguous )
       Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't partition non-contiguous view");
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     const int length = part.end - part.begin ;
 
     dst.m_offset_map.assign( src.m_offset_map );
@@ -1474,10 +1476,9 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
     dst.m_is_contiguous = src.m_is_contiguous;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1500,8 +1501,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                           ( View<DT,DL,DD,DM,specialize>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
@@ -1513,14 +1512,13 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range.first * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_stride       = src.m_stride ;
       dst.m_cijk         = src.m_cijk ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_is_contiguous = src.m_is_contiguous;
       dst.m_management    = src.m_management ;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1544,20 +1542,17 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map.N0 , 0,0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size ;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
     dst.m_stride        = src.m_stride ;
     dst.m_cijk          = src.m_cijk ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_is_contiguous = src.m_is_contiguous;
     dst.m_management    = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1581,8 +1576,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1597,13 +1590,12 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
         src.m_ptr_on_device + src.m_offset_map(range.first,i1);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range.first,i1) * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_stride       = src.m_stride ;
       dst.m_cijk         = src.m_cijk ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_is_contiguous= src.m_is_contiguous;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1627,20 +1619,17 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map.N0, 1, 0,0,0,0,0,0);
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size;
+    dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
     dst.m_stride        = src.m_stride ;
     dst.m_cijk          = src.m_cijk ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
     dst.m_is_contiguous = src.m_is_contiguous;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------
@@ -1664,8 +1653,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1682,13 +1669,12 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
         src.m_ptr_on_device + src.m_offset_map(range.first,i1);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range.first,i1) * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_stride       = src.m_stride ;
       dst.m_cijk         = src.m_cijk ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size  = src.m_sacado_size;
       dst.m_is_contiguous= src.m_is_contiguous;
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1712,8 +1698,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1732,14 +1716,13 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_offset_map.N0 * range1.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + dst.m_offset_map.N0 * range1.first * src.m_storage_size ;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
       dst.m_is_contiguous = src.m_is_contiguous;
       dst.m_management      = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1763,7 +1746,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
@@ -1783,14 +1765,13 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + range0.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range0.first * src.m_storage_size;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
       dst.m_is_contiguous = src.m_is_contiguous;
       dst.m_management      = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 
@@ -1814,8 +1795,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
@@ -1833,6 +1812,7 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map(range0.first,range1.first);
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map(range0.first,range1.first) * src.m_storage_size;
+      dst.m_allocation.m_tracker = src.m_allocation.m_tracker ;
 
       // This is for LayoutLeft:
       dst.m_storage_size = src.m_storage_size ;
@@ -1841,8 +1821,6 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
       dst.m_management      = src.m_management ;
 
       // LayoutRight won't work with how we are currently using the stride???
-
-      dst.m_management.increment( dst.m_ptr_on_device );
     }
   }
 };
@@ -1865,8 +1843,6 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
 
     if ( !src.m_is_contiguous )
       Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
-
-    dst.m_management.decrement( dst.m_ptr_on_device );
 
     unsigned dims[8];
     dims[0] = src.m_offset_map.N0;
@@ -1893,9 +1869,9 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
-    dst.m_management      = src.m_management ;
+    dst.m_tracker = src.m_allocation.m_tracker ;
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_management = src.m_management ;
   }
 
   //------------------------------------
@@ -1949,8 +1925,6 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
     if ( !src.m_is_contiguous )
       Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     // Create flattened shape
     unsigned dims[8];
     dims[0] = src.m_offset_map.N0;
@@ -1976,9 +1950,7 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
-    dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_allocation.m_tracker ;
   }
 };
 

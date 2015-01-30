@@ -177,6 +177,15 @@ const char * atomic_query_version()
 #include "impl/Kokkos_Atomic_Fetch_Add.hpp"
 
 //----------------------------------------------------------------------------
+// Atomic fetch and sub
+//
+// template<class T>
+// T atomic_fetch_sub(volatile T* const dest, const T val)
+// { T tmp = *dest ; *dest -= val ; return tmp ; }
+
+#include "impl/Kokkos_Atomic_Fetch_Sub.hpp"
+
+//----------------------------------------------------------------------------
 // Atomic fetch and or
 //
 // template<class T>

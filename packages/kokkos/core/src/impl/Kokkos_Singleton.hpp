@@ -41,54 +41,15 @@
 //@HEADER
 */
 
-#include <gtest/gtest.h>
+#ifndef KOKKOS_SINGLETON_HPP
+#define KOKKOS_SINGLETON_HPP
 
-#include <iostream>
-#include <Kokkos_Core.hpp>
+#include <Kokkos_Macros.hpp>
+#include <cstddef>
 
-/*--------------------------------------------------------------------------*/
-
-namespace {
-
-template<class Arg1>
-class TestMemorySpace {
-public:
-
-  typedef typename Arg1::memory_space MemorySpace;
-  TestMemorySpace() { run_test(); }
-
-  void run_test()
-  {
-    Kokkos::View<int* ,Arg1> invalid;
-    ASSERT_EQ(0u, invalid.tracker().ref_count() );
-
-    {
-      Kokkos::View<int* ,Arg1> a("A",10);
-
-      ASSERT_EQ(1u, a.tracker().ref_count() );
-
-      {
-        Kokkos::View<int* ,Arg1> b = a;
-        ASSERT_EQ(2u, b.tracker().ref_count() );
-
-        Kokkos::View<int* ,Arg1> D("D",10);
-        ASSERT_EQ(1u, D.tracker().ref_count() );
-
-        {
-          Kokkos::View<int* ,Arg1> E("E",10);
-          ASSERT_EQ(1u, E.tracker().ref_count() );
-        }
-
-        ASSERT_EQ(2u, b.tracker().ref_count() );
-      }
-      ASSERT_EQ(1u, a.tracker().ref_count() );
-    }
-  }
-};
-
-}
-
-/*--------------------------------------------------------------------------*/
+namespace Kokkos { namespace Impl {
 
 
+}} // namespace Kokkos::Impl
 
+#endif // KOKKOS_SINGLETON_HPP
