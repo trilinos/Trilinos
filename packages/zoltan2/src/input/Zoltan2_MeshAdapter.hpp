@@ -335,7 +335,7 @@ public:
       }// *** element loop ***
 
       //Fill-complete adjs Graph
-      adjsGraph->fillComplete ();
+      adjsGraph->fillComplete (/*TODO:  domain map, adjsGraph->getRowMap()*/);
 
       // Construct adjs matrix.
       RCP<sparse_matrix_type> adjsMatrix =
@@ -376,7 +376,7 @@ public:
       myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
 
       // We're done modifying the adjs matrix.
-      adjsMatrix->fillComplete ();
+      adjsMatrix->fillComplete(/*TODO:  domain map, adjsMatrix->getRowMap()*/);
 
       // Form 2ndAdjs
       RCP<sparse_matrix_type> secondAdjs =
