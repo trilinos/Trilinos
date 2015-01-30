@@ -58,6 +58,8 @@
 #include "Ifpack_Utils.h" 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+
+#include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
