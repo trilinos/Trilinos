@@ -98,13 +98,13 @@ namespace NOX {
 
       //! Prints out the matrix
       bool print(std::ostream& stream) const {
-    for (int i=0; i<p; i++) {
-      stream << "[ ";
-      for (int j=0; j<q; j++)
-        stream << operator()(i,j) << " ";
-      stream << "]" << std::endl;
-    }
-    return stream;
+        for (int i=0; i<p; i++) {
+          stream << "[ ";
+          for (int j=0; j<q; j++)
+            stream << operator()(i,j) << " ";
+          stream << "]" << std::endl;
+        }
+        return ! stream.fail ();
       }
 
       //! Returns the number of rows in the matrix
