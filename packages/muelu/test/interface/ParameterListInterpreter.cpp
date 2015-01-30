@@ -111,42 +111,21 @@ int main(int argc, char *argv[]) {
     RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
     RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
-#ifdef HAVE_AMESOS2_KLU2
-    const int numLists = 4;  // run ML parameter list tests only if KLU is available
-#else
-    const int numLists = 2;  // skip tests with MLParameterListInterpreter
-#endif
-    Teuchos::ArrayRCP<std::string> fileLists[numLists];
-    std::string                    dirList  [numLists], outDir;
-    dirList[0] = "EasyParameterListInterpreter/";
-    dirList[1] = "FactoryParameterListInterpreter/";
-#ifdef HAVE_AMESOS2_KLU2
-    dirList[2] = "MLParameterListInterpreter/";
-    dirList[3] = "MLParameterListInterpreter2/";
-#endif
-    outDir     = "Output/";
+    std::string outDir = "Output/";
 
-    if (numProc == 1) {
-      // Run all xml configs in serial/single mpi mode
-      fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string(".xml"));
-      fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string(".xml"));
-#ifdef HAVE_AMESOS2_KLU2
-      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string(".xml"));
-      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string(".xml"));
+    std::vector<std::string> dirList;
+    dirList.push_back("EasyParameterListInterpreter/");
+    dirList.push_back("FactoryParameterListInterpreter/");
+#ifdef HAVE_AMESOS2_KLU2 // run ML parameter list tests only if KLU is available
+    dirList.push_back("MLParameterListInterpreter/");
+    dirList.push_back("MLParameterListInterpreter2/");
 #endif
-    } else {
-      // In addition, rerun some files in parallel mode
-      fileLists[0] = MueLuTests::TestHelpers::GetFileList(dirList[0], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
-      fileLists[1] = MueLuTests::TestHelpers::GetFileList(dirList[1], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
-#ifdef HAVE_AMESOS2_KLU2
-      fileLists[2] = MueLuTests::TestHelpers::GetFileList(dirList[2], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
-      fileLists[3] = MueLuTests::TestHelpers::GetFileList(dirList[3], std::string("_np" + Teuchos::toString(numProc) + ".xml"));
-#endif
-    }
+    int numLists = dirList.size();
 
     bool failed = false;
     for (int k = 0; k < numLists; k++) {
-      Teuchos::ArrayRCP<std::string> fileList = fileLists[k];
+      Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
+            (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
 
       for (int i = 0; i < fileList.size(); i++) {
         // Set seed

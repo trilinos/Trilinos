@@ -65,15 +65,15 @@ namespace Impl {
       return *(Scalar*) fval;
     }
     KOKKOS_INLINE_FUNCTION
-    void operator= (Scalar& value) {
-      float* const val_ptr = (float*) &value;
+    void operator= (Scalar& value_) {
+      float* const val_ptr = (float*) &value_;
       for(int i=0; i<n ; i++) {
         fval[i] = val_ptr[i];
       }
     }
     KOKKOS_INLINE_FUNCTION
-    void operator= (const Scalar& value) {
-      float* const val_ptr = (float*) &value;
+    void operator= (const Scalar& value_) {
+      float* const val_ptr = (float*) &value_;
       for(int i=0; i<n ; i++) {
         fval[i] = val_ptr[i];
       }
