@@ -687,8 +687,7 @@ public:
   STK_DEPRECATED(inline void mark_entity(Entity entity, entitySharing sharedType));
   STK_DEPRECATED(inline entitySharing is_entity_marked(Entity entity) const);
   STK_DEPRECATED(inline bool add_node_sharing_called() const);
-  STK_DEPRECATED(PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const);
-  inline PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const
+  STK_DEPRECATED(inline PairIterEntityComm entity_comm_map_shared(const EntityKey & key) const)
   { return this->internal_entity_comm_map_shared(key); }
 #endif // STK_BUILT_IN_SIERRA
 

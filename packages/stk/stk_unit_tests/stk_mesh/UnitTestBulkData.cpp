@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 
 
@@ -1693,6 +1693,22 @@ bool is_entity_key_shared(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey
     mesh.comm_shared_procs(key,shared_procs);
     return !shared_procs.empty();
 }
+
+#ifndef STK_BUILT_IN_SIERRA // DELETE this test between 2015-02-13 and 2015-03-04
+TEST(BulkData, test_entity_comm_map_shared)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  const std::string generatedMeshSpecification = "generated:1x1x4";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
+  stk::mesh::BulkData &bulk = stkMeshIoBroker.bulk_data();
+  stk::mesh::Entity node = (*bulk.buckets(stk::topology::NODE_RANK)[0])[0];
+  const stk::mesh::PairIterEntityComm & shared_comm_map = bulk.entity_comm_map_shared(bulk.entity_key(node));
+  EXPECT_TRUE( shared_comm_map.empty() );
+}
+#endif // STK_BUILT_IN_SIERRA
 
 TEST(BulkData, testParallelSideCreation)
 {
@@ -3384,24 +3400,24 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
   int other_proc = 1-myRank;
   bulk.add_node_sharing(node1,other_proc);
   bulk.add_node_sharing(node2,other_proc);
-  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node1)); 
-  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node2)); 
+  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node1));
+  EXPECT_EQ(bulk.my_orphaned_node_marking()+1,bulk.closure_count(node2));
 
   ASSERT_NO_THROW(bulk.modification_end());
 
-  if (myRank == 0) 
-  { 
-    EXPECT_EQ(1u,bulk.closure_count(node1)); 
-    EXPECT_EQ(1u,bulk.closure_count(node2)); 
-  } 
-  else 
-  { 
-    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1)); 
-    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node2)); 
+  if (myRank == 0)
+  {
+    EXPECT_EQ(1u,bulk.closure_count(node1));
+    EXPECT_EQ(1u,bulk.closure_count(node2));
+  }
+  else
+  {
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1));
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node2));
   }
 
   bulk.modification_begin();
-  if (myRank == 1) 
+  if (myRank == 1)
   {
     stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, 1, element_part);
     bulk.declare_relation(element,node1,0);
@@ -3415,7 +3431,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
   EXPECT_EQ(1u,bulk.closure_count(node2));
 
   bulk.modification_begin();
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     std::vector<Entity> element_vector;
     bulk.get_entities(stk::topology::ELEMENT_RANK, meta.universal_part(), element_vector);
@@ -3462,7 +3478,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_deletes)
 
   bulk.modification_begin();
 
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     EXPECT_TRUE(bulk.destroy_entity(node1));
     EXPECT_FALSE(bulk.is_valid(node1));
@@ -3474,7 +3490,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_deletes)
   }
   else // myRank == 1
   {
-    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_EQ(1u,bulk.closure_count(node1));
     EXPECT_TRUE(bulk.bucket(node1).owned());
     EXPECT_FALSE(bulk.bucket(node1).shared());
   }
@@ -3500,11 +3516,11 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_3pro
     bulk.add_node_sharing(node1,other_proc);
   }
   bulk.modification_end();
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     EXPECT_EQ(1u, bulk.closure_count(node1));
   }
-  else if (myRank == 1) 
+  else if (myRank == 1)
   {
     EXPECT_EQ(bulk.my_orphaned_node_marking(), bulk.closure_count(node1));
   }
@@ -3514,7 +3530,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_3pro
   }
 
   std::vector<EntityProc> new_owners;
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     new_owners.push_back(stk::mesh::EntityProc(node1,2));
   }
@@ -3527,14 +3543,14 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_3pro
   else if (myRank == 1)
   {
     node1 = bulk.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK,1));
-    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1)); 
+    EXPECT_EQ(bulk.my_orphaned_node_marking()+0,bulk.closure_count(node1));
     EXPECT_FALSE(bulk.bucket(node1).owned());
     EXPECT_TRUE(bulk.bucket(node1).shared());
   }
-  else // myRank == 2 
+  else // myRank == 2
   {
     node1 = bulk.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK,1));
-    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_EQ(1u,bulk.closure_count(node1));
     EXPECT_TRUE(bulk.bucket(node1).owned());
     EXPECT_TRUE(bulk.bucket(node1).shared());
   }
@@ -3557,7 +3573,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_2pro
   int other_proc = 1-myRank;
   bulk.add_node_sharing(node1,other_proc);
   bulk.modification_end();
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     EXPECT_EQ(1u,bulk.closure_count(node1));
   }
@@ -3567,7 +3583,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_2pro
   }
 
   std::vector<EntityProc> new_owners;
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     new_owners.push_back(stk::mesh::EntityProc(node1,1));
   }
@@ -3575,12 +3591,12 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_change_entity_owner_2pro
 
   if (myRank == 0)
   {
-    EXPECT_EQ(0, bulk.closure_count(node1)); 
+    EXPECT_EQ(0, bulk.closure_count(node1));
     EXPECT_FALSE(bulk.is_valid(node1));
   }
   else if (myRank == 1)
   {
-    EXPECT_EQ(1u,bulk.closure_count(node1)); 
+    EXPECT_EQ(1u,bulk.closure_count(node1));
     EXPECT_TRUE(bulk.bucket(node1).owned());
     EXPECT_FALSE(bulk.bucket(node1).shared());
   }
@@ -3610,7 +3626,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_adds_element)
   bulk.modification_end();
 
   bulk.modification_begin();
-  if (myRank == 0) 
+  if (myRank == 0)
   {
     stk::mesh::Entity element = bulk.declare_entity(stk::topology::ELEMENT_RANK, 1, element_part);
     bulk.declare_relation(element,node1,0);
