@@ -6,7 +6,7 @@ set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
 
 # Get the day of the week
-#execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
+execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
 IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -39,6 +39,17 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     RUN_SERIAL
     TIMEOUT_MINUTES 300
   )
+
+if(${DAYOFWEEK} MATCHES "Saturday")
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_DEBUG_DEV3
+    ctest_linux_nightly_mpi_development_debug_gcc_5.0-trunk_muir.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
+  )
+endif()
+
 ELSE()
 #release tests would go here
 ENDIF()
