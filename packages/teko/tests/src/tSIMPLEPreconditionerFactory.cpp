@@ -368,8 +368,6 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
   bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os,int use_blocking)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -510,9 +508,6 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
 
   bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os,int use_blocking)
 {
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
-
    bool status = false;
    bool allPassed = true;
    double diff = -1000.0;

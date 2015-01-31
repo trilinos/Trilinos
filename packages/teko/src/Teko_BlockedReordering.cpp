@@ -387,8 +387,6 @@ void buildNonconstFlatMultiVector(const BlockReorderManager & mgr,
                                   Array<RCP<Thyra::MultiVectorBase<double> > > & multivecs,
                                   Array<RCP<const Thyra::VectorSpaceBase<double> > > & vecspaces)
 {
-   typedef RCP<const BlockReorderManager> BRMptr;
-
    int sz = mgr.GetNumBlocks();
 
    if(sz==0) {
@@ -421,8 +419,6 @@ void buildFlatMultiVector(const BlockReorderManager & mgr,
                           Array<RCP<const Thyra::MultiVectorBase<double> > > & multivecs,
                           Array<RCP<const Thyra::VectorSpaceBase<double> > > & vecspaces)
 {
-   typedef RCP<const BlockReorderManager> BRMptr;
-
    int sz = mgr.GetNumBlocks();
 
    if(sz==0) {
@@ -502,8 +498,6 @@ void buildFlatVectorSpace(const BlockReorderManager & mgr,
                           const RCP<const Thyra::VectorSpaceBase<double> > & blkSpc,
                           Array<RCP<const Thyra::VectorSpaceBase<double> > > & vecspaces)
 {
-   typedef RCP<const BlockReorderManager> BRMptr;
-
    int sz = mgr.GetNumBlocks();
 
    if(sz==0) {

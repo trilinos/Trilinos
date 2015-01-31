@@ -174,6 +174,8 @@ int tBlockingEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
 
 bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
 {
+   using Teuchos::as;
+
    bool status = false;
    bool allPassed = true;
 
@@ -190,32 +192,22 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
    std::vector<int> & gid1 = gids[1];
    std::vector<int> & gid2 = gids[2];
 
-/*
-   std::stringstream ss;
-   ss << "indices_" << GetComm()->MyPID();
-   std::ofstream file;
-   file.open(ss.str().c_str());
-   file << "GID_0\n"; for(int i=0;i<gids[0].size();i++) file << gids[0][i] << std::endl;
-   file << "GID_1\n"; for(int i=0;i<gids[1].size();i++) file << gids[1][i] << std::endl;
-   file << "GID_2\n"; for(int i=0;i<gids[2].size();i++) file << gids[2][i] << std::endl;
-*/
-
    TEST_MSG("\n   Building sub maps");
    Blocking::MapPair map0 = Blocking::buildSubMap(gid0,*GetComm());
    Blocking::MapPair map1 = Blocking::buildSubMap(gid1,*GetComm());
    Blocking::MapPair map2 = Blocking::buildSubMap(gid2,*GetComm());
 
-   TEST_ASSERT(map0.first->NumMyElements()==gid0.size() && map0.second->NumMyElements()==gid0.size(),
+   TEST_ASSERT(map0.first->NumMyElements()==as<int>(gid0.size()) && map0.second->NumMyElements()==as<int>(gid0.size()),
          "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map0.first->NumMyElements() 
       << ", second="<< map0.second->NumMyElements()
       << ", gid="<< gid0.size());
-   TEST_ASSERT(map1.first->NumMyElements()==gid1.size() && map0.second->NumMyElements()==gid0.size(),
+   TEST_ASSERT(map1.first->NumMyElements()==as<int>(gid1.size()) && map0.second->NumMyElements()==as<int>(gid0.size()),
          "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map1.first->NumMyElements() 
       << ", second="<< map1.second->NumMyElements()
       << ", gid="<< gid1.size());
-   TEST_ASSERT(map2.first->NumMyElements()==gid2.size() && map0.second->NumMyElements()==gid0.size(),
+   TEST_ASSERT(map2.first->NumMyElements()==as<int>(gid2.size()) && map0.second->NumMyElements()==as<int>(gid0.size()),
          "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map2.first->NumMyElements() 
       << ", second="<< map2.second->NumMyElements()
@@ -286,7 +278,6 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
 
 bool tBlockingEpetra::test_one2many(int verbosity,std::ostream & os)
 {
-   bool status = false;
    bool allPassed = true;
 
    int size = 3*1000;
@@ -406,7 +397,6 @@ bool tBlockingEpetra::test_many2one(int verbosity,std::ostream & os)
 
 bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
 {
-   bool status = false;
    bool allPassed = true;
 
    int numProc = GetComm()->NumProc();
@@ -420,10 +410,11 @@ bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    std::vector<int> indices(numProc*2);
    std::vector<double> values(numProc*2);
    Epetra_CrsMatrix A(Copy,map,numProc*2,false);
-   for(int i=0;i<indices.size();i++) indices[i] = i;
+   for(std::size_t i=0;i<indices.size();i++) 
+      indices[i] = i;
  
    // build local row 0
-   for(int i=0;i<indices.size()/2;i++) {
+   for(std::size_t i=0;i<indices.size()/2;i++) {
       values[2*i+0] = (mypid+1.0)*1.0+i;
       values[2*i+1] = (mypid+1.0)*2.0+i;
    }
@@ -431,7 +422,7 @@ bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    A.InsertGlobalValues(grid,values.size(),&values[0],&indices[0]);
 
    // build local row 1
-   for(int i=0;i<indices.size()/2;i++) {
+   for(std::size_t i=0;i<indices.size()/2;i++) {
       values[2*i+0] = (mypid+1.0)*3.0+i;
       values[2*i+1] = (mypid+1.0)*4.0+i;
    }
@@ -448,21 +439,6 @@ bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    std::vector<Blocking::MapPair> mapPairs;
    mapPairs.push_back(Blocking::buildSubMap(v[0],*GetComm()));
    mapPairs.push_back(Blocking::buildSubMap(v[1],*GetComm()));
-
-/*
-   std::cout << "A Matrix = \n"; A.Print(std::cout);
-
-   GetComm()->Barrier();
-
-   std::cout << "A_00 Matrix = \n";
-   Teko::Epetra::Blocking::buildSubBlock(0,0,A,mapPairs)->Print(std::cout);
-   std::cout << "A_01 Matrix = \n";
-   Teko::Epetra::Blocking::buildSubBlock(0,1,A,mapPairs)->Print(std::cout);
-   std::cout << "A_10 Matrix = \n";
-   Teko::Epetra::Blocking::buildSubBlock(1,0,A,mapPairs)->Print(std::cout);
-   std::cout << "A_11 Matrix = \n";
-   Teko::Epetra::Blocking::buildSubBlock(1,1,A,mapPairs)->Print(std::cout);
-*/
 
    return allPassed;
 }

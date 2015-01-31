@@ -449,7 +449,6 @@ StratimikosFactory::getValidParameters() const
   using Teuchos::tuple;
   using Teuchos::implicit_cast;
   using Teuchos::rcp_implicit_cast;
-  typedef Teuchos::ParameterEntryValidator PEV;
 
   static RCP<const ParameterList> validPL;
 

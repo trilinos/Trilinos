@@ -134,8 +134,6 @@ int tLSCStabilized::runTest(int verbosity,std::ostream & stdstrm,std::ostream & 
 bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
@@ -246,8 +244,6 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
 bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
-   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
    typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
    bool status = false;
