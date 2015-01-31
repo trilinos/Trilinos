@@ -121,7 +121,7 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
     BVP_Constraint(const BoundaryValueProblem<Real> &bvp) :
         Sacado_EqualityConstraint_SimOpt<Real,BoundaryValueProblem> (bvp){}         
         
-    void applyInverseJacobian_1(Vector< Real > &ijv, const Vector< Real > &v,
+    /*void applyInverseJacobian_1(Vector< Real > &ijv, const Vector< Real > &v,
                                 const Vector< Real > &u, const Vector< Real > &z,  Real &tol) { 
 
         Teuchos::RCP<const std::vector<Real> > vp =
@@ -150,9 +150,9 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
         }               
    
         lusolve(lapack_,jac,v,ijv);
-    }	
+    }*/	
 
-     void applyInverseAdjointJacobian_1(Vector< Real > &iajv, const Vector< Real > &v,
+    /*void applyInverseAdjointJacobian_1(Vector< Real > &iajv, const Vector< Real > &v,
                                     const Vector< Real > &u, const Vector< Real > &z,  Real &tol) { 
 
         Teuchos::RCP<const std::vector<Real> > vp =
@@ -181,10 +181,10 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
         }               
    
         lusolve(lapack_,ajac,v,iajv);
-    }	
+    }*/	
 
 
-    void solve(Vector<Real> &u, const Vector<Real> &z, Real &tol) {
+    /*void solve(Vector<Real> &u, const Vector<Real> &z, Real &tol) {
         Teuchos::RCP<std::vector<Real> > up = 
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());    
 
@@ -213,7 +213,7 @@ class BVP_Constraint : public Sacado_EqualityConstraint_SimOpt<Real,BoundaryValu
 
         // Should throw exception if restol not met       
          
-    }
+    }*/
 
 };
 

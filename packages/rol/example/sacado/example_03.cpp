@@ -180,9 +180,21 @@ int main(int argc, char **argv)
       constr.checkApplyJacobian(x,y,c,true,*outStream); 
       constr.checkApplyAdjointJacobian(x,yu,c,x,true,*outStream); 
       constr.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
-      constr.checkInverseJacobian_1(c,yu,u,z,true,*outStream);
-      constr.checkInverseAdjointJacobian_1(c,yu,u,z,true,*outStream);
-      constr.checkSolve(u,z,c,true,*outStream);
+      try {
+        constr.checkInverseJacobian_1(c,yu,u,z,true,*outStream);
+      } catch (const std::logic_error &e) {
+        *outStream << e.what();
+      } 
+      try {
+        constr.checkInverseAdjointJacobian_1(c,yu,u,z,true,*outStream);
+      } catch (const std::logic_error &e) {
+        *outStream << e.what();
+      } 
+      try {
+        constr.checkSolve(u,z,c,true,*outStream);
+      } catch (const std::logic_error &e) {
+        *outStream << e.what();
+      } 
  
       // Define Status Test
       RealT gtol  = 1e-12;  // norm of gradient tolerance
@@ -192,12 +204,8 @@ int main(int argc, char **argv)
       ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
       // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(step, status, true);
-
-      std::vector<std::string> output = algo.run(x,g,l,c,obj,constr,true);
-      for ( unsigned i = 0; i < output.size(); i++ ) {
-          *outStream << output[i];
-      }
+      ROL::DefaultAlgorithm<RealT> algo(step, status, false);
+      algo.run(x,g,l,c,obj,constr,true,*outStream);
 
   }
   catch (std::logic_error err) {

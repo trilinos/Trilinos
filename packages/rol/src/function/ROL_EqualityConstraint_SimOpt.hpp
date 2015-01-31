@@ -131,7 +131,8 @@ public:
   virtual void solve(Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    u.zero();
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "The method solve is used but not implemented!\n");
   }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -239,7 +240,8 @@ public:
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
                                       Real &tol) {
-    ijv.zero();
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
   /** \brief Apply the adjoint of the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -403,7 +405,8 @@ public:
                                              const Vector<Real> &u,
                                              const Vector<Real> &z,
                                              Real &tol) {
-    iajv.zero();
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "The method applyInverseAdjointJacobian_1 is used but not implemented!\n");
   };
 
   /** \brief Apply the adjoint of the partial constraint Hessian at \f$(u,z)\f$,
@@ -653,8 +656,23 @@ public:
     const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
       Teuchos::dyn_cast<const Vector<Real> >(x));
     Teuchos::RCP<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
-    applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
-    applyInverseAdjointJacobian_1(pv, ijv->dual(), *(xs.get_1()), *(xs.get_2()), tol);
+
+    try {
+      applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
+    }
+    catch (const std::logic_error &e) {
+      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, tol);
+      return;
+    }
+
+    try {
+      applyInverseAdjointJacobian_1(pv, ijv->dual(), *(xs.get_1()), *(xs.get_2()), tol);
+    }
+    catch (const std::logic_error &e) {
+      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, tol);
+      return;
+    }
+
   }
 
 
