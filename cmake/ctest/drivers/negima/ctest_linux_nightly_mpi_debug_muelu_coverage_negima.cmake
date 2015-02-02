@@ -71,13 +71,12 @@ SET(CTEST_DO_COVERAGE_TESTING TRUE) #The quickstart says this is redundant, but 
 SET(Trilinos_PACKAGES MueLu Amesos2 Ifpack2 Teuchos Tpetra Xpetra Zoltan2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON"
-  "-DMueLu_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DMueLu_ENABLE_Experimental:BOOL=ON"
-  "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=ON"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTrilinos_ENABLE_COVERAGE_TESTING=ON"
+  "-DTPL_ENABLE_SuperLU=ON"
+  "-DMueLu_ENABLE_Experimental=ON"
+  "-DXpetra_ENABLE_Experimental=ON"
 )
 
 #

@@ -68,13 +68,13 @@ SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu Xpetra)
-#SET(EXTRA_EXCLUDE_PACKAGES Kokkos Ifpack2 ML Tpetra Stratimikos Triutils AztecOO)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_Kokkos:BOOL=OFF"
-  "-DTrilinos_ENABLE_Tpetra:BOOL=OFF"
-  "-DTrilinos_ENABLE_ML:BOOL=OFF"
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
+  "-DTrilinos_ENABLE_Kokkos=OFF"
+  "-DTrilinos_ENABLE_Tpetra=OFF"
+  "-DTrilinos_ENABLE_ML=OFF"
+  "-DTPL_ENABLE_SuperLU=ON"
 )
 
 #
