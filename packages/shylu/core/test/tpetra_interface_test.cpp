@@ -4,7 +4,7 @@
 
 #include "shylu.h"
 #include "shylu_partition_interface.hpp"
-#include "ShyLU_config.h"
+#include "ShyLUCore_config.h"
 
 //Tperta
 #ifdef HAVE_SHYLU_TPETRA

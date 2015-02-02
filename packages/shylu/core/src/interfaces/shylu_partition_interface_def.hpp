@@ -1,7 +1,7 @@
 #ifndef SHYLU_PARTITION_INTERFACE_DEF_HPP
 #define SHYLU_PARTITION_INTERFACE_DEF_HPP
 
-#include "ShyLU_config.h"
+#include "ShyLUCore_config.h"
 #include "shylu_partition_interface_decl.hpp"
 
 //#include "Zoltan2_config.h"

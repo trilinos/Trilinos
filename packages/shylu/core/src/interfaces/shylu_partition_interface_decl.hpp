@@ -1,9 +1,9 @@
-#ifndef SHYLU_DIRECTSOLVER_INTERFACE_DECL_HPP
-#define SHYLU_DIRECTSOLVER_INTERFACE_DECL_HPP
+#ifndef SHYLU_PARTITION_INTERFACE_DECL_HPP
+#define SHYLU_PARTITION_INTERFACE_DECL_HPP
 
-#include "ShyLU_config.h"
+#include "ShyLUCore_config.h"
 
-//ShyLU
+//shylu
 #include <shylu.h>
 #include <shylu_util.h>
 
@@ -12,7 +12,6 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_Vector.h>
 #include <Epetra_Map.h>
-#include <Epetra_LinearProblem.h>
 
 //Isorropia
 #include <Isorropia_config.h>
@@ -36,33 +35,40 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-//Amesos
-#include <Amesos.h>
-#include <Amesos_BaseSolver.h>
-
-#ifdef HAVE_SHYLU_AMESOS2
-#include <Amesos2.hpp>
-#endif
 
 namespace ShyLU{
 
 template <class Matrix, class Vector>
-class DirectSolverInterface
+class PartitionInterface
 {
+
 public:
-  ~DirectSolverInterface();
-  DirectSolverInterface(Matrix *inA, Teuchos::ParameterList* pList);
-  int solve(Vector* b, Vector* x);
+  ~PartitionInterface();
+  PartitionInterface(Matrix* inA, Teuchos::ParameterList* pList);
+  int partition();
+  Matrix* reorderMatrix();
+  Vector* reorderVector(Vector* x);
+
 private:
-  int solveAmesos(Vector* b, Vector *x );
-  Teuchos::ParameterList *pList;
-  Matrix *A;
-  int maxproc;
-#ifdef HAVE_SHYLU_AMESOS2
-  int solveAmesos2(Vector* b, Vector *x);
+  int partitionIsorropia();
+  Teuchos::ParameterList* pList;
+  Matrix* A;
+  ///other handlers needed by zoltan2 and isorropia
+#ifdef HAVE_SHYLU_ZOLTAN2
+  int partitionZoltan2();
+  Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> *zadapter;
+  Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<Matrix,Vector> > *zproblem;
 #endif
-}; //end class
+  Isorropia::Epetra::Partitioner *ipart;
+  Isorropia::Epetra::Redistributor *ird;
 
-}// end namespace
 
-#endif //end header if
+};
+
+}// end namespace ShyLU
+
+#endif
+
+
+
+

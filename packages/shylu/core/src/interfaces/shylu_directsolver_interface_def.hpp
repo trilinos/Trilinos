@@ -1,7 +1,7 @@
 #ifndef SHYLU_DIRECTSOLVER_INTERFACE_DEF_HPP
 #define SHYLU_DIRECTSOLVER_INTERFACE_DEF_HPP
 
-#include "ShyLU_config.h"
+#include "ShyLUCore_config.h"
 #include "shylu_directsolver_interface_decl.hpp"
 
 #include <Teuchos_XMLParameterListHelpers.hpp>

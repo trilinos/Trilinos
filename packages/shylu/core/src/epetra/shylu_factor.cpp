@@ -63,6 +63,7 @@
 
 #include "shylu.h"
 #include "shylu_util.h"
+#include <Epetra_MpiComm.h>
 #include <EpetraExt_Reindex_LinearProblem2.h>
 
 #include "Ifpack_config.h"
