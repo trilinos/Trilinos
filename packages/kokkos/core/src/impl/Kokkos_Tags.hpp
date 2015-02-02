@@ -120,8 +120,10 @@ struct is_space< C
   // If the execution space's memory space is HostSpace then use that execution space.
   // Else use the HostSpace.
   typedef
-    typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value , execution_space ,
-    HostSpace >::type
+      typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value ||
+                           Impl::is_same< typename execution_space::memory_space , CudaUVMSpace>::value ||
+                           Impl::is_same< typename execution_space::memory_space , CudaHostPinnedSpace>::value
+                          , execution_space , HostSpace >::type
       host_mirror_space ;
 };
 
