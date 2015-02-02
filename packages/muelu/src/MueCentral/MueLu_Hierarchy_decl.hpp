@@ -107,6 +107,7 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType MagnitudeType;
 
+    //! Data struct for defining stopping criteria of multigrid iteration
     struct ConvData {
       ConvData()                              : maxIts_(1),       tol_(-STS::magnitude(STS::one())) { }
       ConvData(LO maxIts)                     : maxIts_(maxIts),  tol_(-STS::magnitude(STS::one())) { }
@@ -233,7 +234,10 @@ namespace MueLu {
     void Clear(int startLevel = 0);
     void ExpertClear();
 
+    //! Returns multigrid cycle type (supports VCYCLE and WCYCLE)
     CycleType GetCycle()                 const { return Cycle_;  }
+    
+    //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
     /*!
@@ -243,10 +247,10 @@ namespace MueLu {
       the enumerated type CycleType would have to be extended.
 
       @param B right-hand side of linear problem
-      @param nIts number of multigrid cycles to perform
       @param X initial and final (approximate) solution of linear problem
+      @param ConvData struct which stores convergence criteria (maximum number of multigrid iterations or stopping tolerance)
       @param InitialGuessIsZero Indicates whether the initial guess is zero
-      @param Cycle Supports VCYCLE and WCYCLE types.
+      @param startLevel index of starting level to build multigrid hierarchy (default = 0)
     */
     ReturnType Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
                        bool InitialGuessIsZero = false, LO startLevel = 0);
