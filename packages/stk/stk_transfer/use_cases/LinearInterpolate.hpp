@@ -168,7 +168,7 @@ template <class MESHA, class MESHB> typename LinearInterpolate<MESHA,MESHB>::Ent
                                const MeshB             &ToPoints,
                                const MeshA             &FromPoints) {
 
-  typedef  std::multimap<double, typename EntityKeyMap::value_type, std::greater<double> > DIST_MAP;
+  typedef  std::multimap<double, typename EntityKeyMap::value_type, std::less<double> > DIST_MAP;
   DIST_MAP  sorted;
 
   const double *  to_coords =   ToPoints.coord(current);
