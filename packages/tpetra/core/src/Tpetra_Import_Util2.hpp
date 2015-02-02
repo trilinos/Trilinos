@@ -497,7 +497,6 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     Array<GO>  gids (maxRowLength);
     Array<int> pids (maxRowLength);
 
-    const size_type numExportLIDs = exportLIDs.size();
     for (size_type i = 0; i < numExportLIDs; i++) {
       const LO lclRow = exportLIDs[i];
 
