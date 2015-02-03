@@ -49,15 +49,20 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
+
 #include "Phalanx_FieldTag_Tag.hpp"
+
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
+
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
 #include "Panzer_CoordinatesEvaluator.hpp"
+#include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_DOF.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -156,6 +161,46 @@ buildClosureModels(const std::string& model_id,
 	  evaluators->push_back(e);
 	}
 	
+	found = true;
+      }
+      else if (plist.get<std::string>("Type") == "Distributed Parameter") {
+        // sanity check
+        TEUCHOS_ASSERT(distr_param_lof!=Teuchos::null);
+
+        // build a nodal basis
+        Teuchos::RCP<const panzer::PureBasis> nodal_basis 
+            = Teuchos::rcp(new panzer::PureBasis("HGrad",1,bases[0]->numCells(),
+                                                           bases[0]->getCellTopology()));
+
+        {
+          Teuchos::RCP<std::vector<std::string> > dof_names = Teuchos::rcp(new std::vector<std::string>);
+          dof_names->push_back(key);
+
+          ParameterList p("Gather");
+          p.set("Basis", nodal_basis);
+          p.set("DOF Names", dof_names);
+          p.set("Indexer Names", dof_names);
+          p.set("Sensitivities Name", key);
+          p.set("Disable Sensitivities", false);
+          p.set("Gather Seed Index", 0);
+          p.set("Global Data Key", key);
+    
+          RCP< PHX::Evaluator<panzer::Traits> > e = distr_param_lof->buildGatherDomain<EvalT>(p);
+
+          evaluators->push_back(e);
+        }
+
+        {
+          ParameterList p;
+          p.set("Name", key);
+          p.set("Basis", basisIRLayout(nodal_basis,*ir));
+          p.set("IR", ir);
+
+          RCP< PHX::Evaluator<panzer::Traits> > e = rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+
+          evaluators->push_back(e);
+        }
+    
 	found = true;
       }
   

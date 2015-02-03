@@ -47,14 +47,19 @@
 
 namespace panzer {
   class InputEquationSet;
+
+  template <typename> class LinearObjFactory;
 }
 
 namespace user_app {
 
   template<typename EvalT>
   class MyModelFactory : public panzer::ClosureModelFactory<EvalT> {
+    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > distr_param_lof;
 
   public:
+    void setDistributedParameterLOF(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & dpl)
+    { distr_param_lof = dpl; }
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     buildClosureModels(const std::string& model_id,
