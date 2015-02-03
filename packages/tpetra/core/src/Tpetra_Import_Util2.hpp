@@ -62,6 +62,31 @@
 // here have been defined.
 #include "Tpetra_CrsMatrix_decl.hpp"
 
+
+namespace { // (anonymous)
+
+  template<class T, class D>
+  Kokkos::View<T*, D, Kokkos::MemoryUnmanaged>
+  getNonconstView (const Teuchos::ArrayView<T>& x)
+  {
+    typedef Kokkos::View<T*, D, Kokkos::MemoryUnmanaged> view_type;
+    typedef typename view_type::size_type size_type;
+    const size_type numEnt = static_cast<size_type> (x.size ());
+    return view_type (x.getRawPtr (), numEnt);
+  }
+
+  template<class T, class D>
+  Kokkos::View<const T*, D, Kokkos::MemoryUnmanaged>
+  getConstView (const Teuchos::ArrayView<const T>& x)
+  {
+    typedef Kokkos::View<const T*, D, Kokkos::MemoryUnmanaged> view_type;
+    typedef typename view_type::size_type size_type;
+    const size_type numEnt = static_cast<size_type> (x.size ());
+    return view_type (x.getRawPtr (), numEnt);
+  }
+
+} // namespace (anonymous)
+
 namespace Tpetra {
 namespace Import_Util {
 
@@ -204,13 +229,26 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
-/// \brief Traits class for packing / unpacking data of type T.
+/// \brief Traits class for packing / unpacking data of type \c T.
 ///
 /// \tparam T The type of the data to pack / unpack.
-template<class T>
+/// \tparam D The Kokkos "device" type; where the data live.
+template<class T, class D>
 struct PackTraits {
   //! The type of data to pack or unpack.
   typedef T value_type;
+
+  //! The type of an input buffer of bytes.
+  typedef Kokkos::View<const char*, D, Kokkos::MemoryUnmanaged> input_buffer_type;
+
+  //! The type of an output buffer of bytes.
+  typedef Kokkos::View<char*, D, Kokkos::MemoryUnmanaged> output_buffer_type;
+
+  //! The type of an input array of \c T.
+  typedef Kokkos::View<const T*, D, Kokkos::MemoryUnmanaged> input_array_type;
+
+  //! The type of an output array of \c T.
+  typedef Kokkos::View<T*, D, Kokkos::MemoryUnmanaged> output_array_type;
 
   /// \brief Pack the first numEnt entries of the given input buffer
   ///   of \c T \c inBuf, into the output buffer of bytes \c outBuf.
@@ -224,15 +262,15 @@ struct PackTraits {
   ///
   /// \return The number of bytes used to pack.
   static size_t
-  packArray (const Teuchos::ArrayView<char>& outBuf,
-             const Teuchos::ArrayView<const T>& inBuf,
+  packArray (const output_buffer_type& outBuf,
+             const input_array_type& inBuf,
              const size_t numEnt)
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (inBuf.size ()) < numEnt, std::invalid_argument,
-      "PackTraits::packArray: inBuf.size() = " << inBuf.size ()
-      << " < numEnt = " << numEnt << ".");
+      static_cast<size_t> (inBuf.dimension_0 ()) < numEnt,
+      std::invalid_argument, "PackTraits::packArray: inBuf.dimension_0() = "
+      << inBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
 #endif // HAVE_TPETRA_DEBUG
 
     if (numEnt == 0) {
@@ -244,14 +282,18 @@ struct PackTraits {
       // would need to sum up the counts for all entries of inBuf.
       // That of course would suggest that we would need to memcpy
       // each entry separately.
-      const size_t numBytes = numEnt * packValueCount (inBuf[0]);
+
+      T val; // assumes that T is default constructible
+      const size_t numBytes = numEnt * packValueCount (val);
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (outBuf.size ()) < numBytes, std::invalid_argument,
-        "PackTraits::packArray: outBuf.size() = " << outBuf.size ()
-        << " < numBytes = " << numBytes << ".");
+        static_cast<size_t> (outBuf.dimension_0 ()) < numBytes,
+        std::invalid_argument, "PackTraits::packArray: outBuf.dimension_0() = "
+        << outBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
-      memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+
+      // FIXME (mfh 02 Feb 2015) This assumes UVM.
+      memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
       return numBytes;
     }
   }
@@ -268,8 +310,8 @@ struct PackTraits {
   ///
   /// \return The number of bytes unpacked (i.e., read from \c inBuf).
   static size_t
-  unpackArray (const Teuchos::ArrayView<T>& outBuf,
-               const Teuchos::ArrayView<const char>& inBuf,
+  unpackArray (const output_array_type& outBuf,
+               const input_buffer_type& inBuf,
                const size_t numEnt)
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -284,16 +326,20 @@ struct PackTraits {
     }
     else {
       // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
-      // require the same number of bytes, and that outBuf[0] requires
-      // the same number of bytes on input as on output.
-      const size_t numBytes = numEnt * packValueCount (outBuf[0]);
+      // require the same number of bytes, and that each instance
+      // requires the same number of bytes on input (possibly
+      // uninitialized) as on output.
+      T val; // assumes that T is default constructible
+      const size_t numBytes = numEnt * packValueCount (val);
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (inBuf.size ()) < numBytes, std::invalid_argument,
-        "PackTraits::unpackArray: inBuf.size() = " << inBuf.size ()
-        << " < numBytes = " << numBytes << ".");
+        static_cast<size_t> (inBuf.dimension_0 ()) < numBytes,
+        std::invalid_argument, "PackTraits::unpackArray: inBuf.dimension_0() = "
+        << inBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
-      memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+
+      // FIXME (mfh 02 Feb 2015) This assumes UVM.
+      memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
       return numBytes;
     }
   }
@@ -335,14 +381,16 @@ struct PackTraits {
   ///
   /// \return The number of bytes used to pack \c inVal.
   static size_t
-  packValue (const Teuchos::ArrayView<char>& outBuf,
+  packValue (const output_buffer_type& outBuf,
              const T& inVal)
   {
     // NOTE (mfh 02 Feb 2015) This assumes that packValueCount
     // returns the exact number of bytes required for packing, not
     // just an upper bound.
     const size_t numBytes = packValueCount (inVal);
-    memcpy (outBuf.getRawPtr (), &inVal, numBytes);
+
+    // FIXME (mfh 02 Feb 2015) This assumes UVM.
+    memcpy (outBuf.ptr_on_device (), &inVal, numBytes);
     return numBytes;
   }
 
@@ -359,13 +407,14 @@ struct PackTraits {
   /// input requires the same number of packed bytes as it should on
   /// output.
   static size_t
-  unpackValue (T& outVal,
-               const Teuchos::ArrayView<const char>& inBuf)
+  unpackValue (T& outVal, const input_buffer_type& inBuf)
   {
     // NOTE (mfh 02 Feb 2015) This assumes that outVal requires the
     // same number of bytes on input as on output.
     const size_t numBytes = packValueCount (outVal);
-    memcpy (&outVal, inBuf.getRawPtr (), numBytes);
+
+    // FIXME (mfh 02 Feb 2015) This assumes UVM.
+    memcpy (&outVal, inBuf.ptr_on_device (), numBytes);
     return numBytes;
   }
 }; // struct PackTraits
@@ -382,7 +431,7 @@ struct PackTraits {
 namespace { // (anonymous)
 
   // Return the number of bytes required to pack that row's entries.
-  template<class ST, class LO, class GO>
+  template<class ST, class LO, class GO, class D>
   size_t
   packRowCount (const size_t numEnt)
   {
@@ -399,21 +448,24 @@ namespace { // (anonymous)
       int lid;
       ST val; // This assumes that ST is default constructible.
 
-      const size_t numEntLen = PackTraits<LO>::packValueCount (numEntLO);
-      const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
-      const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (lid);
-      const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
+      const size_t numEntLen = PackTraits<LO, D>::packValueCount (numEntLO);
+      const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
+      const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (lid);
+      const size_t valsLen = numEnt * PackTraits<ST, D>::packValueCount (val);
       return numEntLen + gidsLen + pidsLen + valsLen;
     }
   }
 
-  template<class LO>
+  template<class LO, class D>
   size_t
-  unpackRowCount (const Teuchos::ArrayView<const char>& imports,
+  unpackRowCount (const typename Tpetra::Import_Util::PackTraits<LO, D>::input_buffer_type& imports,
                   const size_t offset,
                   const size_t numBytes)
   {
+    using Kokkos::subview;
     using Tpetra::Import_Util::PackTraits;
+    typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
+    typedef typename input_buffer_type::size_type size_type;
 
     if (numBytes == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
@@ -421,15 +473,16 @@ namespace { // (anonymous)
     }
     else {
       LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO>::packValueCount (numEntLO);
+      const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
         "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
         << ".");
 #endif // HAVE_TPETRA_DEBUG
-      Teuchos::ArrayView<const char> inBuf = imports (offset, theNumBytes);
-      const size_t actualNumBytes = PackTraits<LO>::unpackValue (numEntLO, inBuf);
+      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
+      input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
+      const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
@@ -441,17 +494,25 @@ namespace { // (anonymous)
   }
 
   // Return the number of bytes packed.
-  template<class ST, class LO, class GO>
+  template<class ST, class LO, class GO, class D>
   size_t
-  packRow (const Teuchos::ArrayView<char>& exports,
+  packRow (const typename Tpetra::Import_Util::PackTraits<LO, D>::output_buffer_type& exports,
            const size_t offset,
            const size_t numEnt,
-           const Teuchos::ArrayView<const GO>& gidsIn,
-           const Teuchos::ArrayView<const int>& pidsIn,
-           const Teuchos::ArrayView<const ST>& valsIn)
+           const typename Tpetra::Import_Util::PackTraits<GO, D>::input_array_type& gidsIn,
+           const typename Tpetra::Import_Util::PackTraits<int, D>::input_array_type& pidsIn,
+           const typename Tpetra::Import_Util::PackTraits<ST, D>::input_array_type& valsIn)
   {
+    using Kokkos::subview;
     using Tpetra::Import_Util::PackTraits;
-    using Teuchos::ArrayView;
+    // NOTE (mfh 02 Feb 2015) This assumes that output_buffer_type is
+    // the same, no matter what type we're packing.  It's a reasonable
+    // assumption, given that we go through the trouble of PackTraits
+    // just so that we can pack data of different types in the same
+    // buffer.
+    typedef typename PackTraits<LO, D>::output_buffer_type output_buffer_type;
+    typedef typename output_buffer_type::size_type size_type;
+    typedef typename std::pair<size_type, size_type> pair_type;
 
     if (numEnt == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
@@ -464,24 +525,24 @@ namespace { // (anonymous)
     ST val; // this assumes that ST is default constructible
 
     const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO>::packValueCount (numEntLO);
+    const size_t numEntLen = PackTraits<LO, D>::packValueCount (numEntLO);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
+    const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
     const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (pid);
+    const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (pid);
     const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
+    const size_t valsLen = numEnt * PackTraits<ST, D>::packValueCount (val);
 
-    ArrayView<char> numEntOut = exports (numEntBeg, numEntLen);
-    ArrayView<char> gidsOut = exports (gidsBeg, gidsLen);
-    ArrayView<char> pidsOut = exports (pidsBeg, pidsLen);
-    ArrayView<char> valsOut = exports (valsBeg, valsLen);
+    output_buffer_type numEntOut = subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
+    output_buffer_type gidsOut = subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
+    output_buffer_type pidsOut = subview (exports, pair_type (pidsBeg, pidsBeg + pidsLen));
+    output_buffer_type valsOut = subview (exports, pair_type (valsBeg, valsBeg + valsLen));
 
     size_t numBytesOut = 0;
-    numBytesOut += PackTraits<LO>::packValue (numEntOut, numEntLO);
-    numBytesOut += PackTraits<GO>::packArray (gidsOut, gidsIn, numEnt);
-    numBytesOut += PackTraits<int>::packArray (pidsOut, pidsIn, numEnt);
-    numBytesOut += PackTraits<ST>::packArray (valsOut, valsIn, numEnt);
+    numBytesOut += PackTraits<LO, D>::packValue (numEntOut, numEntLO);
+    numBytesOut += PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
+    numBytesOut += PackTraits<int, D>::packArray (pidsOut, pidsIn, numEnt);
+    numBytesOut += PackTraits<ST, D>::packArray (valsOut, valsIn, numEnt);
 
     const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -493,31 +554,40 @@ namespace { // (anonymous)
   }
 
   // Return the number of bytes actually read / used.
-  template<class ST, class LO, class GO>
+  template<class ST, class LO, class GO, class D>
   size_t
-  unpackRow (const Teuchos::ArrayView<GO>& gidsOut,
-             const Teuchos::ArrayView<int>& pidsOut,
-             const Teuchos::ArrayView<ST>& valsOut,
-             const Teuchos::ArrayView<const char>& imports,
+  unpackRow (const typename Tpetra::Import_Util::PackTraits<GO, D>::output_array_type& gidsOut,
+             const typename Tpetra::Import_Util::PackTraits<int, D>::output_array_type& pidsOut,
+             const typename Tpetra::Import_Util::PackTraits<ST, D>::output_array_type& valsOut,
+             const typename Tpetra::Import_Util::PackTraits<int, D>::input_buffer_type& imports,
              const size_t offset,
              const size_t numBytes,
              const size_t numEnt)
   {
+    using Kokkos::subview;
     using Tpetra::Import_Util::PackTraits;
-    using Teuchos::ArrayView;
+    // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is
+    // the same, no matter what type we're unpacking.  It's a
+    // reasonable assumption, given that we go through the trouble of
+    // PackTraits just so that we can pack data of different types in
+    // the same buffer.
+    typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
+    typedef typename input_buffer_type::size_type size_type;
+    typedef typename std::pair<size_type, size_type> pair_type;
 
     if (numBytes == 0) {
       // Rows with zero bytes always have zero entries.
       return 0;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.size ()) <= offset, std::logic_error,
-      "unpackRow: imports.size() = " << imports.size () << " <= offset = "
-      << offset << ".");
+      static_cast<size_t> (imports.dimension_0 ()) <= offset, std::logic_error,
+      "unpackRow: imports.dimension_0() = " << imports.dimension_0 () <<
+      " <= offset = " << offset << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.size ()) < offset + numBytes, std::logic_error,
-      "unpackRow: imports.size() = " << imports.size () << " < offset + "
-      "numBytes = " << (offset + numBytes) << ".");
+      static_cast<size_t> (imports.dimension_0 ()) < offset + numBytes,
+      std::logic_error, "unpackRow: imports.dimension_0() = "
+      << imports.dimension_0 () << " < offset + numBytes = "
+      << (offset + numBytes) << ".");
 
     const GO gid = 0; // packValueCount wants this
     const LO lid = 0; // packValueCount wants this
@@ -525,30 +595,30 @@ namespace { // (anonymous)
     ST val; // this assumes that ST is default constructible
 
     const size_t numEntBeg = offset;
-    const size_t numEntLen = PackTraits<LO>::packValueCount (lid);
+    const size_t numEntLen = PackTraits<LO, D>::packValueCount (lid);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
+    const size_t gidsLen = numEnt * PackTraits<GO, D>::packValueCount (gid);
     const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (pid);
+    const size_t pidsLen = numEnt * PackTraits<int, D>::packValueCount (pid);
     const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
+    const size_t valsLen = numEnt * PackTraits<ST, D>::packValueCount (val);
 
-    ArrayView<const char> numEntIn = imports (numEntBeg, numEntLen);
-    ArrayView<const char> gidsIn = imports (gidsBeg, gidsLen);
-    ArrayView<const char> pidsIn = imports (pidsBeg, pidsLen);
-    ArrayView<const char> valsIn = imports (valsBeg, valsLen);
+    input_buffer_type numEntIn = subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
+    input_buffer_type gidsIn = subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
+    input_buffer_type pidsIn = subview (imports, pair_type (pidsBeg, pidsBeg + pidsLen));
+    input_buffer_type valsIn = subview (imports, pair_type (valsBeg, valsBeg + valsLen));
 
     size_t numBytesOut = 0;
     LO numEntOut;
-    numBytesOut += PackTraits<LO>::unpackValue (numEntOut, numEntIn);
+    numBytesOut += PackTraits<LO, D>::unpackValue (numEntOut, numEntIn);
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
       "unpackRow: Expected number of entries " << numEnt
       << " != actual number of entries " << numEntOut << ".");
 
-    numBytesOut += PackTraits<GO>::unpackArray (gidsOut, gidsIn, numEnt);
-    numBytesOut += PackTraits<int>::unpackArray (pidsOut, pidsIn, numEnt);
-    numBytesOut += PackTraits<ST>::unpackArray (valsOut, valsIn, numEnt);
+    numBytesOut += PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
+    numBytesOut += PackTraits<int, D>::unpackArray (pidsOut, pidsIn, numEnt);
+    numBytesOut += PackTraits<ST, D>::unpackArray (valsOut, valsIn, numEnt);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
@@ -580,16 +650,21 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
                               Distributor &distor,
                               const Teuchos::ArrayView<const int>& SourcePids)
 {
+  using Kokkos::subview;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::RCP;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
+  typedef typename Node::device_type device_type;
+  typedef typename Kokkos::View<int*, device_type>::HostMirror::host_mirror_space HMS;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename ArrayView<const LO>::size_type size_type;
+  typedef std::pair<typename Kokkos::View<int*, HMS>::size_type,
+                    typename Kokkos::View<int*, HMS>::size_type> pair_type;
   const char prefix[] = "Tpetra::Import_Util::packAndPrepareWithOwningPIDs: ";
 
   // FIXME (mfh 03 Jan 2015) Currently, it might be the case that if a
@@ -631,7 +706,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   for (size_type i = 0; i < numExportLIDs; ++i) {
     const LO lclRow = exportLIDs[i];
     const size_t numEnt = SourceMatrix.getNumEntriesInLocalRow (lclRow);
-    const size_t numBytes = packRowCount<ST, LO, GO> (numEnt);
+    const size_t numBytes = packRowCount<ST, LO, GO, HMS> (numEnt);
     numPacketsPerLID[i] = numBytes;
     totalNumBytes += numBytes;
     totalNumEntries += numEnt;
@@ -643,6 +718,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
     exports.resize (totalNumBytes);
+    Kokkos::View<char*, HMS, Kokkos::MemoryUnmanaged> exportsK (exports.getRawPtr (), totalNumBytes);
 
     // Current position (in bytes) in the 'exports' output array.
     size_t offset = 0;
@@ -654,8 +730,8 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     const map_type& colMap = * (SourceMatrix.getColMap ());
 
     // Temporary buffers for a copy of the column gids/pids
-    Array<GO>  gids (maxRowLength);
-    Array<int> pids (maxRowLength);
+    Kokkos::View<GO*, HMS> gids ("gids", maxRowLength);
+    Kokkos::View<int*, HMS> pids ("pids", maxRowLength);
 
     for (size_type i = 0; i < numExportLIDs; i++) {
       const LO lclRow = exportLIDs[i];
@@ -664,21 +740,21 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
       ArrayView<const Scalar> valsView;
       ArrayView<const LO> lidsView;
       SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
-      ArrayView<const ST> valsViewST = av_reinterpret_cast<const ST> (valsView);
+      Kokkos::View<const ST*, HMS, Kokkos::MemoryUnmanaged> valsViewK (reinterpret_cast<const ST*> (valsView.getRawPtr ()), valsView.size ());
 
       // Convert column indices as LIDs to column indices as GIDs.
       const size_t numEnt = static_cast<size_t> (lidsView.size ());
-      ArrayView<GO>  gidsView = gids (0, numEnt);
-      ArrayView<int> pidsView = pids (0, numEnt);
+      Kokkos::View<GO*, HMS> gidsView = subview (gids, pair_type (0, numEnt));
+      Kokkos::View<int*, HMS> pidsView = subview (pids, pair_type (0, numEnt));
       for (size_t k = 0; k < numEnt; ++k) {
-        gidsView[k] = colMap.getGlobalElement (lidsView[k]);
-        pidsView[k] = SourcePids[lidsView[k]];
+        gidsView(k) = colMap.getGlobalElement (lidsView[k]);
+        pidsView(k) = SourcePids[lidsView[k]];
       }
 
       // Copy the row's data into the current spot in the exports array.
       const size_t numBytes =
-        packRow<ST, LO, GO> (exports, offset, numEnt,
-                             gidsView, pidsView, valsViewST);
+        packRow<ST, LO, GO, HMS> (exportsK, offset, numEnt,
+                                  gidsView, pidsView, valsViewK);
       // Keep track of how many bytes we packed.
       offset += numBytes;
     }
@@ -710,6 +786,8 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+  typedef typename Node::device_type device_type;
+  typedef typename Kokkos::View<int*, device_type>::HostMirror::host_mirror_space HMS;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -726,6 +804,8 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
     importLIDs.size () != numPacketsPerLID.size (), std::invalid_argument,
     prefix << "importLIDs.size() = " << importLIDs.size () << " != "
     "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
+
+  Kokkos::View<const char*, HMS, Kokkos::MemoryUnmanaged> importsK (imports.getRawPtr (), imports.size ());
 
   // Number of matrix entries to unpack (returned by this function).
   size_t nnz = 0;
@@ -747,7 +827,7 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   const size_type numImportLIDs = importLIDs.size ();
   for (size_type i = 0; i < numImportLIDs; ++i) {
     const size_t numBytes = numPacketsPerLID[i];
-    const size_t numEnt = unpackRowCount<LO> (imports, offset, numBytes);
+    const size_t numEnt = unpackRowCount<LO, HMS> (importsK, offset, numBytes);
     nnz += numEnt;
     offset += numBytes;
   }
@@ -775,15 +855,20 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
                                const Teuchos::ArrayView<const int>& SourcePids,
                                Teuchos::Array<int>& TargetPids)
 {
+  using Kokkos::subview;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_reinterpret_cast;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
+  typedef typename Node::device_type device_type;
+  typedef typename Kokkos::View<int*, device_type>::HostMirror::host_mirror_space HMS;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
+  typedef std::pair<typename Kokkos::View<int*, HMS>::size_type,
+                    typename Kokkos::View<int*, HMS>::size_type> pair_type;
   const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
 
   const size_t N = TargetNumRows;
@@ -805,6 +890,8 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
     prefix << "importLIDs.size() = " << numImportLIDs << " != "
     "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+
+  Kokkos::View<const char*, HMS, Kokkos::MemoryUnmanaged> importsK (imports.getRawPtr (), imports.size ());
 
   // Zero the rowptr
   for (size_t i = 0; i< N+1; ++i) {
@@ -829,7 +916,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     size_t offset = 0;
     for (size_type k = 0; k < numImportLIDs; ++k) {
       const size_t numBytes = numPacketsPerLID[k];
-      const size_t numEnt = unpackRowCount<LO> (imports, offset, numBytes);
+      const size_t numEnt = unpackRowCount<LO, HMS> (importsK, offset, numBytes);
       CSR_rowptr[importLIDs[k]] += numEnt;
       offset += numBytes;
     }
@@ -914,18 +1001,19 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
         // Empty buffer for that row means that the row is empty.
         continue;
       }
-      const size_t numEnt   = unpackRowCount<LO> (imports, offset, numBytes);
+      const size_t numEnt   = unpackRowCount<LO, HMS> (importsK, offset, numBytes);
       const LO lclRow       = importLIDs[i];
       const size_t StartRow = NewStartRow[lclRow];
       NewStartRow[lclRow]  += numEnt;
 
-      ArrayView<GO> gidsOut = CSR_colind (StartRow, numEnt);
-      ArrayView<int> pidsOut = TargetPids (StartRow, numEnt);
+      Kokkos::View<GO*, HMS, Kokkos::MemoryUnmanaged> gidsOut = getNonconstView<GO, HMS> (CSR_colind (StartRow, numEnt));
+      Kokkos::View<int*, HMS, Kokkos::MemoryUnmanaged> pidsOut = getNonconstView<int, HMS> (TargetPids (StartRow, numEnt));
       ArrayView<Scalar> valsOutS = CSR_vals (StartRow, numEnt);
-      ArrayView<ST> valsOut = av_reinterpret_cast<ST> (valsOutS);
+      Kokkos::View<ST*, HMS, Kokkos::MemoryUnmanaged> valsOut = getNonconstView<ST, HMS> (av_reinterpret_cast<ST> (valsOutS));
+
       const size_t numBytesOut =
-        unpackRow<ST, LO, GO> (gidsOut, pidsOut, valsOut, imports,
-                               offset, numBytes, numEnt);
+        unpackRow<ST, LO, GO, HMS> (gidsOut, pidsOut, valsOut, importsK,
+                                    offset, numBytes, numEnt);
       if (numBytesOut != numBytes) {
         lclErr = 1;
         break;
