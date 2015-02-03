@@ -204,6 +204,173 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
                                       Teuchos::Array<int> &remotePids,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
+/// \brief Traits class for packing / unpacking data of type T.
+///
+/// \tparam T The type of the data to pack / unpack.
+template<class T>
+struct PackTraits {
+  //! The type of data to pack or unpack.
+  typedef T value_type;
+
+  /// \brief Pack the first numEnt entries of the given input buffer
+  ///   of \c T \c inBuf, into the output buffer of bytes \c outBuf.
+  ///
+  /// \param outBuf [out] Output buffer of bytes (\c char).  Must
+  ///   have enough space to hold the packed version of the first
+  ///   <tt>numEnt</tt> entries of <tt>inBuf</tt>.
+  /// \param inBuf [in] Input buffer of \c T.  Must have at least
+  ///   <tt>numEnt</tt> entries.
+  /// \param numEnt [in] Number of entries to pack.
+  ///
+  /// \return The number of bytes used to pack.
+  static size_t
+  packArray (const Teuchos::ArrayView<char>& outBuf,
+             const Teuchos::ArrayView<const T>& inBuf,
+             const size_t numEnt)
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (inBuf.size ()) < numEnt, std::invalid_argument,
+      "PackTraits::packArray: inBuf.size() = " << inBuf.size ()
+      << " < numEnt = " << numEnt << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+    if (numEnt == 0) {
+      return 0;
+    }
+    else {
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
+      // require the same number of bytes.  To generalize this, we
+      // would need to sum up the counts for all entries of inBuf.
+      // That of course would suggest that we would need to memcpy
+      // each entry separately.
+      const size_t numBytes = numEnt * packValueCount (inBuf[0]);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (outBuf.size ()) < numBytes, std::invalid_argument,
+        "PackTraits::packArray: outBuf.size() = " << outBuf.size ()
+        << " < numBytes = " << numBytes << ".");
+#endif // HAVE_TPETRA_DEBUG
+      memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+      return numBytes;
+    }
+  }
+
+  /// \brief Unpack \c numEnt entries of \c T from the given input
+  ///   buffer of bytes, to the given output buffer of \c T.
+  ///
+  /// \tparam T The type of the entries of the output buffer.
+  ///
+  /// \param outBuf [in] Output buffer of \c T.  Must have at least
+  ///   <tt>numEnt</tt> entries.
+  /// \param inBuf [out] Input buffer of bytes (\c char).
+  /// \param numEnt [in] Number of entries to unpack.
+  ///
+  /// \return The number of bytes unpacked (i.e., read from \c inBuf).
+  static size_t
+  unpackArray (const Teuchos::ArrayView<T>& outBuf,
+               const Teuchos::ArrayView<const char>& inBuf,
+               const size_t numEnt)
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (outBuf.size ()) < numEnt, std::invalid_argument,
+      "PackTraits::unpackArray: outBuf.size() = " << outBuf.size ()
+      << " < numEnt = " << numEnt << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+    if (numEnt == 0) {
+      return static_cast<size_t> (0);
+    }
+    else {
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
+      // require the same number of bytes, and that outBuf[0] requires
+      // the same number of bytes on input as on output.
+      const size_t numBytes = numEnt * packValueCount (outBuf[0]);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (inBuf.size ()) < numBytes, std::invalid_argument,
+        "PackTraits::unpackArray: inBuf.size() = " << inBuf.size ()
+        << " < numBytes = " << numBytes << ".");
+#endif // HAVE_TPETRA_DEBUG
+      memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
+      return numBytes;
+    }
+  }
+
+  /// \brief Number of bytes required to pack or unpack the given
+  ///   value of type \c T.
+  ///
+  /// \param inVal The input value (see discussion below).
+  ///
+  /// \return The number of bytes required to pack \c inVal.
+  ///
+  /// Currently, this function returns the <i>exact</i> amount of
+  /// bytes, not an upper bound.  Thus, one can use this function to
+  /// predict offsets.  That assumes packing without padding for
+  /// (e.g.,) alignment to something bigger than <tt>sizeof(char) =
+  /// 1</tt>.  At some point, we may need to extend this to be an
+  /// upper bound, rather than an exact value.  Compare to
+  /// MPI_PACK_SIZE, which only claims to offer an upper bound.  In
+  /// that case, one may not use this function to predict offsets
+  /// for unpacking; like MPI_UNPACK, one would need to start at the
+  /// beginning of the packed array and unpack sequentially.
+  ///
+  /// We currently assume that all objects of type \c T require the
+  /// same number of bytes.  Nevertheless, we require an instance of
+  /// \c T, in case we want to relax this assumption in the future.
+  /// That's why the brief description of this function says "the
+  /// given value of type \c T."
+  static size_t
+  packValueCount (const T& /* inVal */)
+  {
+    return sizeof (T);
+  }
+
+  /// \brief Pack the given value of type T into the given output
+  ///   buffer of bytes (\c char).
+  ///
+  /// \param outBuf [out] Output buffer of bytes.
+  /// \param inVal [in] Input value to pack.
+  ///
+  /// \return The number of bytes used to pack \c inVal.
+  static size_t
+  packValue (const Teuchos::ArrayView<char>& outBuf,
+             const T& inVal)
+  {
+    // NOTE (mfh 02 Feb 2015) This assumes that packValueCount
+    // returns the exact number of bytes required for packing, not
+    // just an upper bound.
+    const size_t numBytes = packValueCount (inVal);
+    memcpy (outBuf.getRawPtr (), &inVal, numBytes);
+    return numBytes;
+  }
+
+  /// \brief Unpack the given value from the given output buffer.
+  ///
+  /// \param outVal [in/out] On output: The unpacked value.
+  /// \param inBuf [in] The buffer of packed data from which to unpack
+  ///   the output value.
+  ///
+  /// \return The number of bytes unpacked from \c inBuf.
+  ///
+  /// We assume that the number of bytes required to pack \c outVal
+  /// does not depend on the unpacked data.  That is, \c outVal on
+  /// input requires the same number of packed bytes as it should on
+  /// output.
+  static size_t
+  unpackValue (T& outVal,
+               const Teuchos::ArrayView<const char>& inBuf)
+  {
+    // NOTE (mfh 02 Feb 2015) This assumes that outVal requires the
+    // same number of bytes on input as on output.
+    const size_t numBytes = packValueCount (outVal);
+    memcpy (&outVal, inBuf.getRawPtr (), numBytes);
+    return numBytes;
+  }
+}; // struct PackTraits
+
+
 } // namespace Import_Util
 } // namespace Tpetra
 
@@ -214,64 +381,28 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 
 namespace { // (anonymous)
 
-  template<class T>
-  size_t
-  packArray (const Teuchos::ArrayView<char>& outBuf,
-             const Teuchos::ArrayView<const T>& inBuf,
-             const size_t numEnt)
-  {
-    const size_t numBytes = numEnt * sizeof (T);
-    memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
-    return numBytes;
-  }
-
-  template<class T>
-  size_t
-  unpackArray (const Teuchos::ArrayView<T>& outBuf,
-               const Teuchos::ArrayView<const char>& inBuf,
-               const size_t numEnt)
-  {
-    const size_t numBytes = numEnt * sizeof (T);
-    memcpy (outBuf.getRawPtr (), inBuf.getRawPtr (), numBytes);
-    return numBytes;
-  }
-
-  template<class T>
-  size_t
-  packValue (const Teuchos::ArrayView<char>& outBuf,
-             const T& inVal)
-  {
-    const size_t numBytes = sizeof (T);
-    memcpy (outBuf.getRawPtr (), &inVal, numBytes);
-    return numBytes;
-  }
-
-  template<class T>
-  size_t
-  unpackValue (T& outVal,
-               const Teuchos::ArrayView<const char>& inBuf)
-  {
-    const size_t numBytes = sizeof (T);
-    memcpy (&outVal, inBuf.getRawPtr (), numBytes);
-    return numBytes;
-  }
-
   // Return the number of bytes required to pack that row's entries.
   template<class ST, class LO, class GO>
   size_t
   packRowCount (const size_t numEnt)
   {
+    using Tpetra::Import_Util::PackTraits;
+
     if (numEnt == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
       return 0;
     }
     else {
-      // Store the number of entries as a local index (LO).
-      const size_t numEntLen = sizeof (LO);
-      const size_t gidsLen = numEnt * sizeof (GO);
-      const size_t pidsLen = numEnt * sizeof (int);
-      const size_t valsLen = numEnt * sizeof (ST);
+      // We store the number of entries as a local index (LO).
+      LO numEntLO = 0; // packValueCount wants this.
+      GO gid;
+      int lid;
+      ST val; // This assumes that ST is default constructible.
 
+      const size_t numEntLen = PackTraits<LO>::packValueCount (numEntLO);
+      const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
+      const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (lid);
+      const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
       return numEntLen + gidsLen + pidsLen + valsLen;
     }
   }
@@ -282,13 +413,29 @@ namespace { // (anonymous)
                   const size_t offset,
                   const size_t numBytes)
   {
+    using Tpetra::Import_Util::PackTraits;
+
     if (numBytes == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
       return static_cast<size_t> (0);
     }
     else {
       LO numEntLO = 0;
-      memcpy (&numEntLO, imports.getRawPtr () + offset, sizeof (LO));
+      const size_t theNumBytes = PackTraits<LO>::packValueCount (numEntLO);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
+        "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
+        << ".");
+#endif // HAVE_TPETRA_DEBUG
+      Teuchos::ArrayView<const char> inBuf = imports (offset, theNumBytes);
+      const size_t actualNumBytes = PackTraits<LO>::unpackValue (numEntLO, inBuf);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
+        "actualNumBytes = " << actualNumBytes << " < numBytes = " << numBytes
+        << ".");
+#endif // HAVE_TPETRA_DEBUG
       return static_cast<size_t> (numEntLO);
     }
   }
@@ -303,6 +450,7 @@ namespace { // (anonymous)
            const Teuchos::ArrayView<const int>& pidsIn,
            const Teuchos::ArrayView<const ST>& valsIn)
   {
+    using Tpetra::Import_Util::PackTraits;
     using Teuchos::ArrayView;
 
     if (numEnt == 0) {
@@ -310,14 +458,19 @@ namespace { // (anonymous)
       return 0;
     }
 
+    const GO gid = 0; // packValueCount wants this
+    const LO numEntLO = static_cast<size_t> (numEnt);
+    const int pid = 0; // packValueCount wants this
+    ST val; // this assumes that ST is default constructible
+
     const size_t numEntBeg = offset;
-    const size_t numEntLen = sizeof (LO);
+    const size_t numEntLen = PackTraits<LO>::packValueCount (numEntLO);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * sizeof (GO);
+    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
     const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * sizeof (int);
+    const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (pid);
     const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * sizeof (ST);
+    const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
 
     ArrayView<char> numEntOut = exports (numEntBeg, numEntLen);
     ArrayView<char> gidsOut = exports (gidsBeg, gidsLen);
@@ -325,10 +478,10 @@ namespace { // (anonymous)
     ArrayView<char> valsOut = exports (valsBeg, valsLen);
 
     size_t numBytesOut = 0;
-    numBytesOut += packValue<LO> (numEntOut, static_cast<LO> (numEnt));
-    numBytesOut += packArray<GO> (gidsOut, gidsIn, numEnt);
-    numBytesOut += packArray<int> (pidsOut, pidsIn, numEnt);
-    numBytesOut += packArray<ST> (valsOut, valsIn, numEnt);
+    numBytesOut += PackTraits<LO>::packValue (numEntOut, numEntLO);
+    numBytesOut += PackTraits<GO>::packArray (gidsOut, gidsIn, numEnt);
+    numBytesOut += PackTraits<int>::packArray (pidsOut, pidsIn, numEnt);
+    numBytesOut += PackTraits<ST>::packArray (valsOut, valsIn, numEnt);
 
     const size_t expectedNumBytes = numEntLen + gidsLen + pidsLen + valsLen;
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -350,7 +503,9 @@ namespace { // (anonymous)
              const size_t numBytes,
              const size_t numEnt)
   {
+    using Tpetra::Import_Util::PackTraits;
     using Teuchos::ArrayView;
+
     if (numBytes == 0) {
       // Rows with zero bytes always have zero entries.
       return 0;
@@ -364,14 +519,19 @@ namespace { // (anonymous)
       "unpackRow: imports.size() = " << imports.size () << " < offset + "
       "numBytes = " << (offset + numBytes) << ".");
 
+    const GO gid = 0; // packValueCount wants this
+    const LO lid = 0; // packValueCount wants this
+    const int pid = 0; // packValueCount wants this
+    ST val; // this assumes that ST is default constructible
+
     const size_t numEntBeg = offset;
-    const size_t numEntLen = sizeof (LO);
+    const size_t numEntLen = PackTraits<LO>::packValueCount (lid);
     const size_t gidsBeg = numEntBeg + numEntLen;
-    const size_t gidsLen = numEnt * sizeof (GO);
+    const size_t gidsLen = numEnt * PackTraits<GO>::packValueCount (gid);
     const size_t pidsBeg = gidsBeg + gidsLen;
-    const size_t pidsLen = numEnt * sizeof (int);
+    const size_t pidsLen = numEnt * PackTraits<int>::packValueCount (pid);
     const size_t valsBeg = pidsBeg + pidsLen;
-    const size_t valsLen = numEnt * sizeof (ST);
+    const size_t valsLen = numEnt * PackTraits<ST>::packValueCount (val);
 
     ArrayView<const char> numEntIn = imports (numEntBeg, numEntLen);
     ArrayView<const char> gidsIn = imports (gidsBeg, gidsLen);
@@ -380,15 +540,15 @@ namespace { // (anonymous)
 
     size_t numBytesOut = 0;
     LO numEntOut;
-    numBytesOut += unpackValue<LO> (numEntOut, numEntIn);
+    numBytesOut += PackTraits<LO>::unpackValue (numEntOut, numEntIn);
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
       "unpackRow: Expected number of entries " << numEnt
       << " != actual number of entries " << numEntOut << ".");
 
-    numBytesOut += unpackArray<GO> (gidsOut, gidsIn, numEnt);
-    numBytesOut += unpackArray<int> (pidsOut, pidsIn, numEnt);
-    numBytesOut += unpackArray<ST> (valsOut, valsIn, numEnt);
+    numBytesOut += PackTraits<GO>::unpackArray (gidsOut, gidsIn, numEnt);
+    numBytesOut += PackTraits<int>::unpackArray (pidsOut, pidsIn, numEnt);
+    numBytesOut += PackTraits<ST>::unpackArray (valsOut, valsIn, numEnt);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
