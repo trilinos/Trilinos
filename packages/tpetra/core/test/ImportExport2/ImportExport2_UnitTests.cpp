@@ -78,11 +78,14 @@ namespace {
   using Teuchos::includesVerbLevel;
   using Teuchos::OrdinalTraits;
   using Teuchos::OSTab;
+  using Teuchos::outArg;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::reduceAll;
   using Teuchos::ScalarTraits;
   using Teuchos::tuple;
 
@@ -100,6 +103,7 @@ namespace {
   using Tpetra::REPLACE;
   using Tpetra::StaticProfile;
 
+  using std::cerr;
   using std::cout;
   using std::ostream_iterator;
   using std::endl;
@@ -218,7 +222,6 @@ namespace {
       return;
     }
 
-
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = verbose ? VERB_EXTREME : VERB_NONE;
     const bool doPrint = includesVerbLevel (verbLevel, VERB_EXTREME, true);
@@ -227,9 +230,12 @@ namespace {
     }
     OSTab tab (rcpFromRef (out)); // Add one tab level
 
+    std::ostringstream err;
+    int lclErr = 0;
+
     //Create a Map that is evenly-distributed, and another that has all
     //elements on proc 0.
-    {
+    try {
       const int tgt_num_local_elements = 3;
       const int src_num_local_elements =
         (myImageID == 0 ? numImages*tgt_num_local_elements : 0);
@@ -285,68 +291,104 @@ namespace {
         TEST_EQUALITY(rowview.size(), 1);
         TEST_EQUALITY(rowview[0], row);
       }
+    } catch (std::exception& e) {
+      err << "Proc " << myImageID << ": " << e.what ();
+      lclErr = 1;
+    }
+
+    int gblErr = 0;
+    reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    if (gblErr != 0) {
+      for (int r = 0; r < numImages; ++r) {
+        if (r == myImageID) {
+          cerr << err.str () << endl;
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
     }
 
     // For the next test, we need an even number of processes.
     // Skip this test otherwise.
-    if (numImages%2 == 0) {
-      // Create Maps that are distributed differently but have the
-      // same global number of elements. The source map will have 3
-      // elements on even-numbered processes and 5 on odd-numbered
-      // processes. The target map will have 4 elements on each
-      // process.
-      Ordinal src_num_local = 5;
-      if (myImageID % 2 == 0) {
-        src_num_local = 3;
-      }
-      Ordinal tgt_num_local = 4;
-
-      RCP<const Map<Ordinal> > src_map =
-        createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
-      RCP<const Map<Ordinal> > tgt_map =
-        createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
-
-      RCP<CrsGraph<Ordinal> > src_graph =
-        rcp (new CrsGraph<Ordinal> (src_map, 24, DynamicProfile,
-                                    getCrsGraphParameterList ()));
-      RCP<CrsGraph<Ordinal> > tgt_graph =
-        rcp (new CrsGraph<Ordinal> (tgt_map, 24, DynamicProfile,
-                                    getCrsGraphParameterList ()));
-
-      // This time make src_graph be a full lower-triangular graph.
-      // Each row of column indices will have length 'globalrow'+1,
-      // and contain column indices 0 .. 'globalrow'.
-      Array<Ordinal> cols(1);
-      for (Ordinal globalrow = src_map->getMinGlobalIndex ();
-           globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
-        cols.resize(globalrow+1);
-        for (Ordinal col = 0; col < globalrow+1; ++col) {
-          cols[col] = col;
+    try {
+      if (numImages%2 == 0) {
+        // Create Maps that are distributed differently but have the
+        // same global number of elements. The source map will have 3
+        // elements on even-numbered processes and 5 on odd-numbered
+        // processes. The target map will have 4 elements on each
+        // process.
+        Ordinal src_num_local = 5;
+        if (myImageID % 2 == 0) {
+          src_num_local = 3;
         }
-        src_graph->insertGlobalIndices (globalrow, cols ());
-      }
+        Ordinal tgt_num_local = 4;
 
-      Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
-      tgt_graph->doImport (*src_graph, importer, INSERT);
+        RCP<const Map<Ordinal> > src_map =
+          createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
+        RCP<const Map<Ordinal> > tgt_map =
+          createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
 
-      src_graph->fillComplete ();
-      tgt_graph->fillComplete ();
+        RCP<CrsGraph<Ordinal> > src_graph =
+          rcp (new CrsGraph<Ordinal> (src_map, 24, DynamicProfile,
+                                      getCrsGraphParameterList ()));
+        RCP<CrsGraph<Ordinal> > tgt_graph =
+          rcp (new CrsGraph<Ordinal> (tgt_map, 24, DynamicProfile,
+                                      getCrsGraphParameterList ()));
 
-      // Loop through tgt_graph and make sure that each row has length
-      // globalrow+1 and has the correct contents.
-      RCP<const Map<Ordinal> > colmap = tgt_graph->getColMap ();
+        // This time make src_graph be a full lower-triangular graph.
+        // Each row of column indices will have length 'globalrow'+1,
+        // and contain column indices 0 .. 'globalrow'.
+        Array<Ordinal> cols(1);
+        for (Ordinal globalrow = src_map->getMinGlobalIndex ();
+             globalrow <= src_map->getMaxGlobalIndex (); ++globalrow) {
+          cols.resize(globalrow+1);
+          for (Ordinal col = 0; col < globalrow+1; ++col) {
+            cols[col] = col;
+          }
+          src_graph->insertGlobalIndices (globalrow, cols ());
+        }
 
-      for (Ordinal globalrow = tgt_map->getMinGlobalIndex ();
-           globalrow <= tgt_map->getMaxGlobalIndex ();
-           ++globalrow) {
-        Ordinal localrow = tgt_map->getLocalElement (globalrow);
-        ArrayView<const Ordinal> rowview;
-        tgt_graph->getLocalRowView (localrow, rowview);
-        TEST_EQUALITY(rowview.size(), globalrow+1);
-        for (Ordinal j = 0; j < globalrow+1; ++j) {
-          TEST_EQUALITY(colmap->getGlobalElement(rowview[j]), j);
+        Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
+        tgt_graph->doImport (*src_graph, importer, INSERT);
+
+        src_graph->fillComplete ();
+        tgt_graph->fillComplete ();
+
+        // Loop through tgt_graph and make sure that each row has length
+        // globalrow+1 and has the correct contents.
+        RCP<const Map<Ordinal> > colmap = tgt_graph->getColMap ();
+
+        for (Ordinal globalrow = tgt_map->getMinGlobalIndex ();
+             globalrow <= tgt_map->getMaxGlobalIndex ();
+             ++globalrow) {
+          Ordinal localrow = tgt_map->getLocalElement (globalrow);
+          ArrayView<const Ordinal> rowview;
+          tgt_graph->getLocalRowView (localrow, rowview);
+          TEST_EQUALITY(rowview.size(), globalrow+1);
+          for (Ordinal j = 0; j < globalrow+1; ++j) {
+            TEST_EQUALITY(colmap->getGlobalElement(rowview[j]), j);
+          }
         }
       }
+    } catch (std::exception& e) {
+      err << "Proc " << myImageID << ": " << e.what ();
+      lclErr = 1;
+    }
+
+    gblErr = 0;
+    reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    if (gblErr != 0) {
+      for (int r = 0; r < numImages; ++r) {
+        if (r == myImageID) {
+          cerr << err.str () << endl;
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
     }
   }
 
@@ -368,9 +410,13 @@ namespace {
       return;
     }
 
+    std::ostringstream err;
+    int lclErr = 0;
+    int gblErr = 0;
+
     // First test: Import from a source Map that has all elements on
     // process 0, to a target Map that is evenly distributed.
-    {
+    try {
       const Ordinal tgt_num_local_elements = 3;
       const Ordinal src_num_local_elements =
         (myImageID == 0) ? numImages*tgt_num_local_elements : 0;
@@ -497,69 +543,101 @@ namespace {
           TEUCHOS_TEST_FLOATING_EQUALITY(tgtRowVals[k], tgt2RowVals[k], tol, out, success);
         } // for each entry in the current row
       } // for each row in the matrix
-    } // end of the first test
+    } catch (std::exception& e) { // end of the first test
+      err << "Proc " << myImageID << ": " << e.what ();
+      lclErr = 1;
+    }
 
+    reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    if (gblErr != 0) {
+      for (int r = 0; r < numImages; ++r) {
+        if (r == myImageID) {
+          cerr << err.str () << endl;
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+    }
 
     // For the next test, we need an even number of processes:
-    if (numImages%2 == 0) {
-      // Create Maps that are distributed differently but have the
-      // same global number of elements. The source-map will have 3
-      // elements on even-numbered processes and 5 on odd-numbered
-      // processes. The target-map will have 4 elements on each
-      // process.
-      const Ordinal src_num_local = (myImageID%2 == 0 ? 3 : 5);
-      const Ordinal tgt_num_local = 4;
+    try {
+      if (numImages%2 == 0) {
+        // Create Maps that are distributed differently but have the
+        // same global number of elements. The source-map will have 3
+        // elements on even-numbered processes and 5 on odd-numbered
+        // processes. The target-map will have 4 elements on each
+        // process.
+        const Ordinal src_num_local = (myImageID%2 == 0 ? 3 : 5);
+        const Ordinal tgt_num_local = 4;
 
-      RCP<const Map<Ordinal> > src_map =
-        createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
-      RCP<const Map<Ordinal> > tgt_map =
-        createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
+        RCP<const Map<Ordinal> > src_map =
+          createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
+        RCP<const Map<Ordinal> > tgt_map =
+          createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
 
-      RCP<CrsMatrix<Scalar,Ordinal> > src_mat =
-        rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, crsMatPlist));
-      RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat =
-        rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, crsMatPlist));
+        RCP<CrsMatrix<Scalar,Ordinal> > src_mat =
+          rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, crsMatPlist));
+        RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat =
+          rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, crsMatPlist));
 
-      // This time make src_mat a full lower-triangular matrix.  Each
-      // row of column-indices will have length 'globalrow', and
-      // contain column-indices 0 .. 'globalrow'-1
-      Array<Ordinal> cols(1);
-      Array<Scalar>  vals(1);
-      for (Ordinal globalrow = src_map->getMinGlobalIndex();
-           globalrow <= src_map->getMaxGlobalIndex();
-           ++globalrow) {
-        if (globalrow > 0) {
-          cols.resize(globalrow);
-          vals.resize(globalrow);
-          for (Ordinal col=0; col<globalrow; ++col) {
-            cols[col] = as<Ordinal>(col);
-            vals[col] = as<Scalar>(col);
+        // This time make src_mat a full lower-triangular matrix.  Each
+        // row of column-indices will have length 'globalrow', and
+        // contain column-indices 0 .. 'globalrow'-1
+        Array<Ordinal> cols(1);
+        Array<Scalar>  vals(1);
+        for (Ordinal globalrow = src_map->getMinGlobalIndex();
+             globalrow <= src_map->getMaxGlobalIndex();
+             ++globalrow) {
+          if (globalrow > 0) {
+            cols.resize(globalrow);
+            vals.resize(globalrow);
+            for (Ordinal col=0; col<globalrow; ++col) {
+              cols[col] = as<Ordinal>(col);
+              vals[col] = as<Scalar>(col);
+            }
+            src_mat->insertGlobalValues (globalrow, cols (), vals ());
           }
-          src_mat->insertGlobalValues (globalrow, cols (), vals ());
+        }
+
+        Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
+        tgt_mat->doImport(*src_mat, importer, Tpetra::INSERT);
+        tgt_mat->fillComplete();
+
+        // now we're going to loop through tgt_mat and make sure that
+        // each row has length 'globalrow' and has the correct contents:
+        const Teuchos::RCP<const Map<Ordinal> > colmap = tgt_mat->getColMap();
+
+        for (Ordinal globalrow=tgt_map->getMinGlobalIndex(); globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
+          Ordinal localrow = tgt_map->getLocalElement(globalrow);
+          ArrayView<const Ordinal> rowinds;
+          ArrayView<const Scalar> rowvals;
+          tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
+          TEST_EQUALITY(rowinds.size(), globalrow);
+          TEST_EQUALITY(rowvals.size(), globalrow);
+          for (Teuchos_Ordinal j=0; j<rowinds.size(); ++j) {
+            TEST_EQUALITY( colmap->getGlobalElement(rowinds[j]), as<Ordinal>(j) );
+            TEST_EQUALITY( rowvals[j], as<Scalar>(j)  );
+          }
         }
       }
+    } catch (std::exception& e) {
+      err << "Proc " << myImageID << ": " << e.what ();
+      lclErr = 1;
+    }
 
-      Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
-      tgt_mat->doImport(*src_mat, importer, Tpetra::INSERT);
-      tgt_mat->fillComplete();
-
-      // now we're going to loop through tgt_mat and make sure that
-      // each row has length 'globalrow' and has the correct contents:
-      const Teuchos::RCP<const Map<Ordinal> > colmap = tgt_mat->getColMap();
-
-      for (Ordinal globalrow=tgt_map->getMinGlobalIndex(); globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow)
-      {
-        Ordinal localrow = tgt_map->getLocalElement(globalrow);
-        ArrayView<const Ordinal> rowinds;
-        ArrayView<const Scalar> rowvals;
-        tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
-        TEST_EQUALITY(rowinds.size(), globalrow);
-        TEST_EQUALITY(rowvals.size(), globalrow);
-        for (Teuchos_Ordinal j=0; j<rowinds.size(); ++j) {
-          TEST_EQUALITY( colmap->getGlobalElement(rowinds[j]), as<Ordinal>(j) );
-          TEST_EQUALITY( rowvals[j], as<Scalar>(j)  );
+    reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    if (gblErr != 0) {
+      for (int r = 0; r < numImages; ++r) {
+        if (r == myImageID) {
+          cerr << err.str () << endl;
         }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
     }
   }
 
@@ -1019,143 +1097,213 @@ void build_remote_only_map(const RCP<const ImportType> & Import, RCP<MapType> & 
 }
 
 
-// ===============================================================================
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )  {
-   RCP<const Comm<int> > Comm = getDefaultComm();
-   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
-   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
-   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
-   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
-   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )
+{
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
 
-   RCP<CrsMatrixType> A, B, C;
-   RCP<const MapType> Map1, Map2;
-   RCP<MapType> Map3;
+  RCP<CrsMatrixType> A, B, C;
+  RCP<const MapType> Map1, Map2;
+  RCP<MapType> Map3;
 
-   RCP<ImportType> Import1;
-   RCP<ExportType> Export1;
-   int MyPID = Comm->getRank();
-   double diff;
-   int total_err=0;
-   MagType diff_tol = 1e4*Teuchos::ScalarTraits<Scalar>::eps();
+  RCP<ImportType> Import1;
+  RCP<ExportType> Export1;
+  int MyPID = Comm->getRank();
+  double diff;
+  int total_err=0;
+  MagType diff_tol = 1e4*Teuchos::ScalarTraits<Scalar>::eps();
+  Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
 
-   Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
-   build_test_matrix<CrsMatrixType>(Comm,A);
+  std::ostringstream err;
+  int lclErr = 0;
+  int gblErr = 0;
 
-   /////////////////////////////////////////////////////////
-   // Test #1: Tridiagonal Matrix; Migrate to Proc 0
-   /////////////////////////////////////////////////////////
-   {
-     global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+  try {
+    build_test_matrix<CrsMatrixType> (Comm, A);
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
 
-     // New map with all on Proc1
-     if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
-     else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
-     // Execute fused import
-     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
-     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
-     diff=test_with_matvec<CrsMatrixType>(*A,*B);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
+  /////////////////////////////////////////////////////////
+  // Test #1: Tridiagonal Matrix; Migrate to Proc 0
+  /////////////////////////////////////////////////////////
+  try {
+    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
 
-     // Execute fused export
-     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
-     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
-     diff=test_with_matvec<CrsMatrixType>(*A,*B);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedExport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
+    // New map with all on Proc1
+    if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
+    else Map1 = rcp(new MapType(num_global,(size_t)0,0,Comm));
 
-     Comm->barrier ();
-   }
+    // Execute fused import
+    Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
 
-   /////////////////////////////////////////////////////////
-   // Test #2: Tridiagonal Matrix; Locally Reversed Map
-   /////////////////////////////////////////////////////////
-   {
-     size_t num_local = A->getRowMap()->getNodeNumElements();
+    // Execute fused export
+    Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedExport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
 
-     Teuchos::Array<Ordinal> MyGIDs(num_local);
-     for(size_t i=0; i<num_local; i++)
-       MyGIDs[i] = A->getRowMap()->getGlobalElement(num_local-i-1);
+    Comm->barrier ();
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
 
-     Map1 = rcp(new MapType(INVALID,MyGIDs(),0,Comm));
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
-     // Execute fused import
-     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
-     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
-     diff=test_with_matvec<CrsMatrixType>(*A,*B);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedImport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
+  /////////////////////////////////////////////////////////
+  // Test #2: Tridiagonal Matrix; Locally Reversed Map
+  /////////////////////////////////////////////////////////
+  try {
+    size_t num_local = A->getRowMap()->getNodeNumElements();
 
-     // Execute fused export
-     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
-     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
-     diff=test_with_matvec<CrsMatrixType>(*A,*B);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
-   }
+    Teuchos::Array<Ordinal> MyGIDs(num_local);
+    for(size_t i=0; i<num_local; i++)
+      MyGIDs[i] = A->getRowMap()->getGlobalElement(num_local-i-1);
 
-   /////////////////////////////////////////////////////////
-   // Test #3: Tridiagonal Matrix; Globally Reversed Map
-   /////////////////////////////////////////////////////////
+    Map1 = rcp(new MapType(INVALID,MyGIDs(),0,Comm));
 
-   // Skipped.
+    // Execute fused import
+    Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedImport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+
+    // Execute fused export
+    Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+    diff=test_with_matvec<CrsMatrixType>(*A,*B);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedExport: Test #2 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
+
+  /////////////////////////////////////////////////////////
+  // Test #3: Tridiagonal Matrix; Globally Reversed Map
+  /////////////////////////////////////////////////////////
+
+  // Skipped.
 
 
-   /////////////////////////////////////////////////////////
-   // Test #4: Tridiagonal Matrix; MMM style halo import
-   /////////////////////////////////////////////////////////
-   {
-     // Assume we always own the diagonal
-     size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
-     Teuchos::Array<Ordinal> MyGIDs(num_local);
+  /////////////////////////////////////////////////////////
+  // Test #4: Tridiagonal Matrix; MMM style halo import
+  /////////////////////////////////////////////////////////
+  try {
+    // Assume we always own the diagonal
+    size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
+    Teuchos::Array<Ordinal> MyGIDs(num_local);
 
-     size_t idx=0;
-     for(Ordinal i=0; (size_t)i<A->getNodeNumCols(); i++)
-       if(A->getRowMap()->getLocalElement(A->getColMap()->getGlobalElement(i)) == INVALID){
-         MyGIDs[idx] = A->getColMap()->getGlobalElement(i);
-         idx++;
-       }
+    size_t idx=0;
+    for(Ordinal i=0; (size_t)i<A->getNodeNumCols(); i++)
+      if(A->getRowMap()->getLocalElement(A->getColMap()->getGlobalElement(i)) == INVALID){
+        MyGIDs[idx] = A->getColMap()->getGlobalElement(i);
+        idx++;
+      }
 
-     // New map & importer
-     Map1=rcp(new MapType(INVALID,MyGIDs.view(0,idx),0,Comm));
-     Import1 = rcp(new ImportType(A->getRowMap(),Map1));
+    // New map & importer
+    Map1=rcp(new MapType(INVALID,MyGIDs.view(0,idx),0,Comm));
+    Import1 = rcp(new ImportType(A->getRowMap(),Map1));
 
-     // Build unfused matrix to compare
-     C = rcp(new CrsMatrixType(Map1,0));
-     build_matrix_unfused_import<CrsMatrixType,ImportType>(*A,*Import1,C);
+    // Build unfused matrix to compare
+    C = rcp(new CrsMatrixType(Map1,0));
+    build_matrix_unfused_import<CrsMatrixType,ImportType>(*A,*Import1,C);
 
-     // Execute fused import
-     B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
-     diff=test_with_matvec<CrsMatrixType>(*B,*C);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedImport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
+    // Execute fused import
+    B = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Import1);
+    diff=test_with_matvec<CrsMatrixType>(*B,*C);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedImport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
 
-     // Execute fused export
-     Export1 = rcp(new ExportType(A->getRowMap(),Map1));
-     B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
-     diff=test_with_matvec<CrsMatrixType>(*B,*C);
-     if(diff > diff_tol) {
-       if(MyPID==0) cout<<"FusedExport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
-       total_err--;
-     }
-   }
+    // Execute fused export
+    Export1 = rcp(new ExportType(A->getRowMap(),Map1));
+    B = Tpetra::exportAndFillCompleteCrsMatrix<CrsMatrixType>(A,*Export1);
+    diff=test_with_matvec<CrsMatrixType>(*B,*C);
+    if(diff > diff_tol) {
+      if(MyPID==0) cout<<"FusedExport: Test #4 FAILED with norm diff = "<<diff<<"."<<endl;
+      total_err--;
+    }
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
   /////////////////////////////////////////////////////////
   // Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps
   /////////////////////////////////////////////////////////
-  {
+  try {
     // New map with all on Proc 0 / 2
     build_test_map(A->getRowMap(),Map3);
 
@@ -1176,12 +1324,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
       if(MyPID==0) cout<<"FusedExport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
   }
 
   /////////////////////////////////////////////////////////
   // Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm
   /////////////////////////////////////////////////////////
-  {
+  try {
     // New map with all on Proc 0 / 2
     build_test_map(A->getRowMap(),Map3);
 
@@ -1208,14 +1372,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
       if(MyPID==0) cout<<"FusedExport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
-
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
   }
 
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
   /////////////////////////////////////////////////////////
   // Test 7: Tridiagonal Matrix; Migrate to Proc 0, Reverse Mode
   /////////////////////////////////////////////////////////
-  {
+  try {
     global_size_t num_global = A->getRowMap()->getGlobalNumElements();
 
     // New map with all on Proc1
@@ -1245,13 +1423,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
       if(MyPID==0) cout<<"FusedExport: Test #7 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
 
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
   }
 
   /////////////////////////////////////////////////////////
   // Test #8: Diagonal matrix w/ overlapping entries
   /////////////////////////////////////////////////////////
-  {
+  try {
     build_test_matrix_with_row_overlap<CrsMatrixType>(Comm,A);
 
     Teuchos::ArrayRCP< const size_t > rowptr;
@@ -1280,7 +1473,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
       if(MyPID==0) cout<<"FusedExport: Test #8 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
+  } catch (std::exception& e) {
+    err << "Proc " << MyPID << ": " << e.what ();
+    lclErr = 1;
+  }
 
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == MyPID) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
   }
 
   TEST_EQUALITY(total_err,0);
@@ -1845,16 +2053,39 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
   RCP<MapType> Map0;
   RCP<const ImportType> Import0,ImportTemp;
 
+  const int myRank = Comm->getRank ();
   int total_err=0;
   int test_err=0;
 
+  std::ostringstream err;
+  int lclErr = 0;
+  int gblErr = 0;
+
   // Build sample matrix
-  build_test_matrix_wideband<CrsMatrixType>(Comm,A);
+  try {
+    build_test_matrix_wideband<CrsMatrixType>(Comm,A);
+  } catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
   /////////////////////////////////////////////////////////
   // Test #1: Tentative P, no rebalance
   /////////////////////////////////////////////////////////
-  {
+  try {
     // Build tentative prolongator
     build_test_prolongator<CrsMatrixType>(A,P);
 
@@ -1876,12 +2107,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
     Tpetra::MatrixMatrix::Multiply(*R,false,*AP,false,*RAP);
 
     total_err+=test_err;
+  } catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
   }
 
   /////////////////////////////////////////////////////////
   // Test #2: SaP, plus rebalancing
   /////////////////////////////////////////////////////////
-  {
+  try {
     // Build tentative prolongator
     build_test_prolongator<CrsMatrixType>(A,Ptent);
 
@@ -1914,8 +2161,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, MueLuStyle, Ordinal, Scala
     // Rebalance R
     R = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrixType>(R,*Import0,Teuchos::null,Import0->getTargetMap(),Teuchos::null);
 
-
     total_err+=test_err;
+  }
+  catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
   }
 
   TEST_EQUALITY(total_err,0);
@@ -1935,11 +2198,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
   RCP<const ImportType> Import1, Import2;
   RCP<VectorType> SourceVector, TargetVector, TestVector;
   RCP<MapType> Map0;
+  const int myRank = Comm->getRank ();
   int total_err=0;
   int test_err=0;
 
+  std::ostringstream err;
+  int lclErr = 0;
+  int gblErr = 0;
+
   // Build the sample matrix
-  build_test_matrix<CrsMatrixType>(Comm,A);
+  try {
+    build_test_matrix<CrsMatrixType>(Comm,A);
+  } catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
   // Grab its importer
   Import1 = A->getGraph()->getImporter();
@@ -1948,7 +2234,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
   if(Comm->getSize()==1) { TEST_EQUALITY(0,0); return;}
 
   // Build the remote-only map
-  build_remote_only_map<ImportType,MapType>(Import1,Map0);
+  try {
+    build_remote_only_map<ImportType,MapType>(Import1,Map0);
+  } catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
+  }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
 
   // Vectors
   SourceVector = rcp(new VectorType(Import1->getSourceMap()));
@@ -1958,7 +2262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
   /////////////////////////////////////////////////////////
   // Test #1: Import & Compare
   /////////////////////////////////////////////////////////
-  {
+  try {
     // Import reference vector
     Teuchos::ScalarTraits< double >::seedrandom(24601);
     SourceVector->randomize();
@@ -1976,12 +2280,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RemoteOnlyImport, Basic, Ordinal )  {
     double diff=0;
     size_t NumComps = Map0->getNodeNumElements();
     for(size_t i=0; i < NumComps; i++) {
-      size_t j = (size_t) Import1->getTargetMap()->getLocalElement(Map0->getGlobalElement((Ordinal)i));
-      diff += std::abs( view1[j] - view2[i] );
+      const size_t j = (size_t) Import1->getTargetMap ()->getLocalElement (Map0->getGlobalElement ((Ordinal) i));
+      diff += std::abs (view1[j] - view2[i]);
     }
     test_err = (diff > 1e-10) ? 1 : 0;
     total_err+=test_err;
+  } catch (std::exception& e) {
+    err << "Proc " << myRank << ": " << e.what ();
+    lclErr = 1;
   }
+
+  reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
+  if (gblErr != 0) {
+    for (int r = 0; r < Comm->getSize (); ++r) {
+      if (r == myRank) {
+        cerr << err.str () << endl;
+      }
+      Comm->barrier ();
+      Comm->barrier ();
+      Comm->barrier ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+  }
+
   TEST_EQUALITY(total_err,0);
 }
 
