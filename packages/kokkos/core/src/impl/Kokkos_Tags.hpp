@@ -47,6 +47,7 @@
 #define KOKKOS_TAGS_HPP
 
 #include <impl/Kokkos_Traits.hpp>
+#include <Kokkos_Core_fwd.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -120,9 +121,11 @@ struct is_space< C
   // If the execution space's memory space is HostSpace then use that execution space.
   // Else use the HostSpace.
   typedef
-      typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value ||
-                           Impl::is_same< typename execution_space::memory_space , CudaUVMSpace>::value ||
-                           Impl::is_same< typename execution_space::memory_space , CudaHostPinnedSpace>::value
+      typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value
+#ifdef KOKKOS_HAVE_CUDA
+                        || Impl::is_same< typename execution_space::memory_space , CudaUVMSpace>::value
+                        || Impl::is_same< typename execution_space::memory_space , CudaHostPinnedSpace>::value
+#endif
                           , execution_space , HostSpace >::type
       host_mirror_space ;
 };
