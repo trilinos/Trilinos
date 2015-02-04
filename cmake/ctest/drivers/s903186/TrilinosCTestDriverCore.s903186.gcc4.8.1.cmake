@@ -68,9 +68,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+  SET( CTEST_BUILD_FLAGS "-j7 -i" )
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "7" )
 
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
   
@@ -83,18 +83,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/trilinos/tpl/gcc/boost-1.49.0"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    "-DMesquite_ENABLE_TESTS:BOOL=ON"
-    "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
-    "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
-    "-DSuperLU_INCLUDE_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/SRC"
-    "-DSuperLU_LIBRARY_DIRS:PATH=/Users/trilinos/tpl/gcc/SuperLU_4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     "-DTPL_ENABLE_Matio=OFF"
-    "-DTPL_ENABLE_SuperLU=ON"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.2")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.1")
   
   IF (COMM_TYPE STREQUAL MPI)
     SET(TPL_ENABLE_MPI ON)
@@ -102,16 +95,16 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/trilinos/compilers/gcc/openmpi_1.6.5_gcc_4.8.2"
+      "-DMPI_BASE_DIR:PATH=/Volumes/SnowLeopardOSX/Users/trilinos/openmpi_1.6.5_gcc_4.8.1/"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/trilinos/compilers/gcc/4.8.2/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/gfortran"
       )
   
   ENDIF()

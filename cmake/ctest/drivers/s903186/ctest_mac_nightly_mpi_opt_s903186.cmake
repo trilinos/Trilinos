@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc4.8.2.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc4.8.1.cmake")
 
 #
 # Set the options specific to this build case
@@ -71,10 +71,10 @@ SET(EXTRA_EXCLUDE_PACKAGES Zoltan PyTrilinos)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
-  "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
-  "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
-  "-DHDF5_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
+  "-DNetcdf_LIBRARY_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
+  "-DNetcdf_INCLUDE_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
+  "-DHDF5_LIBRARY_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"
+  "-DHDF5_INCLUDE_DIRS=/Volumes/SnowLeopardOSX/Users/trilinos/tpl/gcc/phdf5-1.8.6/include"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   )
 
