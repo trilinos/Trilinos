@@ -79,6 +79,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Piro Stratimikos Rythmos Zoltan2 Panzer PyTrilinos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_CXX11=OFF"
   "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/g++"
   "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/gcc"
   "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.6.0/bin/gfortran"
