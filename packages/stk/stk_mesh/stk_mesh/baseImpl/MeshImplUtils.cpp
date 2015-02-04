@@ -927,8 +927,6 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
         for ( size_t kk = 0 ; kk < comm.size() ; ++kk ) {
-          ThrowRequireMsg( !(comm[kk].ghost_id == 1 && comm[kk].proc == share_proc ) ,
-                           "error - shouldn't have shared and aura, only shared and custom ghost");
           if ( comm[kk].ghost_id > 1 && comm[kk].proc == share_proc ) {
             ++ghost_count ;
           }
@@ -1127,6 +1125,8 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
 {
   bool result = true;
 
+  std::vector<int> sharing_procs;
+  std::vector<int> aura_procs;
   for ( EntityCommListInfoVector::const_iterator
         i =  M.comm_list().begin() ;
         i != M.comm_list().end() ; ++i ) {
@@ -1152,6 +1152,28 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
       error_log << i->key.id();
       error_log << " ERROR: out of sync owners, in comm-info " << i->owner << ", in entity " << M.parallel_owner_rank(i->entity) << std::endl ;
       result = false ;
+    }
+
+    M.comm_procs(M.shared_ghosting(), i->key, sharing_procs);
+    M.comm_procs(M.aura_ghosting(), i->key, aura_procs);
+    std::sort(sharing_procs.begin(), sharing_procs.end());
+    std::sort(aura_procs.begin(), aura_procs.end());
+    std::vector<int> shared_and_aura_procs;
+    std::back_insert_iterator<std::vector<int> > intersect_itr(shared_and_aura_procs);
+    std::set_intersection(sharing_procs.begin(), sharing_procs.end(),
+                          aura_procs.begin(), aura_procs.end(),
+                          intersect_itr);
+    if (!shared_and_aura_procs.empty())
+    {
+        error_log << __FILE__ << ":" << __LINE__ << ": ";
+        error_log << i->key;
+        error_log << " ERROR:in comm-info owner-proc is " << i->owner << ", shared and aura with same procs:"<< std::endl <<"    ";
+        for(size_t j=0; j<shared_and_aura_procs.size(); ++j)
+        {
+            error_log <<shared_and_aura_procs[j]<<" ";
+        }
+        error_log << std::endl;
+        result = false;
     }
   }
 
@@ -1195,19 +1217,19 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 bool comm_mesh_verify_parallel_consistency(
   BulkData & M , std::ostream & error_log )
 {
-  int result = 1 ;
+  int verified_ok = 1 ;
 
   // Verify consistency of parallel attributes
 
-  result = verify_parallel_attributes( M , error_log );
+  verified_ok = verify_parallel_attributes( M , error_log );
 
   if (M.parallel_size() > 1) {
-    all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+    all_reduce( M.parallel() , ReduceMin<1>( & verified_ok ) );
   }
 
   // Verify entities against owner.
 
-  if ( result ) {
+  if ( verified_ok ) {
     CommAll all( M.parallel() );
 
     pack_owned_verify( all , M );
@@ -1218,14 +1240,14 @@ bool comm_mesh_verify_parallel_consistency(
 
     all.communicate();
 
-    result = unpack_not_owned_verify( all , M , error_log );
+    verified_ok = unpack_not_owned_verify( all , M , error_log );
 
     if (M.parallel_size() > 1) {
-      all_reduce( M.parallel() , ReduceMin<1>( & result ) );
+      all_reduce( M.parallel() , ReduceMin<1>( & verified_ok ) );
     }
   }
 
-  return result == 1 ;
+  return verified_ok == 1 ;
 }
 
 
