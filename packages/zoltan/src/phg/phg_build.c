@@ -1144,7 +1144,7 @@ int myStart_vtx, nextStart_vtx;      /* Each proc in column sends info about
                                         nextStart_vtx is the first vertex
                                         sent by the next proc in the column. */
 
-ZOLTAN_COMM_OBJ *plan;               /* Plan for communicating input part
+ZOLTAN_COMM_OBJ *plan = NULL;        /* Plan for communicating input part
                                         info to procs owning corresponding
                                         repartition vertices and edges. */
 int *proclist = NULL;                /* Buffers to send/recv input part info */
