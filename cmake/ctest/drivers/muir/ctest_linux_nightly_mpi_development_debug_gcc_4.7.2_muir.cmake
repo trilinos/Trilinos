@@ -64,7 +64,7 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME MPI_DEBUG_DEV)
 SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/lib:/home/trilinos/compilers/gcc/support_libs/mpfr-3.1.2/lib:/home/trilinos/compilers/gcc/support_libs/gmp-5.1.1/lib:/home/trilinos/compilers/gcc/4.7.2/lib64:$ENV{LD_LIBRARY_PATH}")
-SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
