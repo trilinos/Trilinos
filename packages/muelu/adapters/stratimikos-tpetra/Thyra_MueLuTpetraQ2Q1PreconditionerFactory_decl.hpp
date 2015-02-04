@@ -126,7 +126,7 @@ private:
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm, int maxLevels, const ParameterList paramList,
            const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &,
            const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &,
-           const Teuchos::ArrayRCP<LocalOrdinal> &, const Teko::LinearOp & , const Teko::LinearOp & , const Teko::LinearOp &) const;
+           const Teuchos::ArrayRCP<LocalOrdinal> &, const Teko::LinearOp & , const Teko::LinearOp & , const Teko::LinearOp & , const Teko::LinearOp &) const;
 
   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
   FilterMatrix(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A, Scalar dropTol) const;
