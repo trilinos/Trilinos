@@ -435,5 +435,58 @@ void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields)
   parallel_op<MIN>(mesh, fields);
 }
 
+//
+//  Determine the number of items each other process will send to the current processor
+//
+std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
+  const int msg_tag = 10240;
+  int num_procs = sendSizeArray.size();
+  int my_proc;
+  MPI_Comm_rank(mpi_communicator, &my_proc);
+  std::vector<int> receiveSizeArray(num_procs, 0);
+  //
+  //  Determine the total number of messages every processor will receive
+  //
+  std::vector<int> local_number_to_receive(num_procs, 0);
+  std::vector<int> global_number_to_receive(num_procs, 0);
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(sendSizeArray[iproc] > 0) local_number_to_receive[iproc] = 1;
+  }
+  MPI_Allreduce(&local_number_to_receive[0], &global_number_to_receive[0], num_procs, MPI_INT, MPI_SUM, mpi_communicator);
+  MPI_Barrier(mpi_communicator);
+  //
+  //  Now each processor knows how many messages it will recive, but does not know the message lengths or where
+  //  the messages will be recived from.  Need to extract this information.
+  //  Post a recieve for each expected message.
+  //
+  std::vector<MPI_Request> recv_handles(num_procs);
+  int num_to_recv = global_number_to_receive[my_proc];
+  std::vector<int> recv_size_buffers(num_to_recv);
+  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
+    int *recv_buffer = &(recv_size_buffers[imsg]);
+    MPI_Irecv(recv_buffer, 1, MPI_INT, MPI_ANY_SOURCE,
+              msg_tag, mpi_communicator, &recv_handles[imsg]);
+  }
+  MPI_Barrier(mpi_communicator);
+  //
+  //  Send message lengths
+  //
+  for(int iproc = 0; iproc < num_procs; ++iproc) {
+    if(sendSizeArray[iproc] > 0) {
+      int send_length = sendSizeArray[iproc];
+      MPI_Send(&send_length, 1, MPI_INT, iproc, msg_tag, mpi_communicator);
+    }
+  }
+  //
+  //  Get each message and place the length in the proper place in the length array
+  //
+  for(int imsg = 0; imsg < num_to_recv; ++imsg) {
+    MPI_Status status;
+    MPI_Wait(&recv_handles[imsg], &status);
+    receiveSizeArray[status.MPI_SOURCE] = recv_size_buffers[imsg];
+  }
+
+  return receiveSizeArray;
+}
 } // namespace mesh
 } // namespace stk
