@@ -639,20 +639,26 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
   if (size > hg->nEdge) {
       Zoltan_Multifree(__FILE__, __LINE__, 2, &lhash, &listproc);
       if (!(lhash=(unsigned int *) ZOLTAN_MALLOC(size * sizeof(unsigned int)))
-          || !(listproc=(int *) ZOLTAN_MALLOC(size * sizeof(int))))
+          || !(listproc=(int *) ZOLTAN_MALLOC(size * sizeof(int)))){
+          Zoltan_Comm_Destroy (&plan);
           MEMORY_ERROR;
+      }
   }
   Zoltan_Comm_Do(plan, PLAN_TAG+11, (char *) hash, sizeof(unsigned int), (char *) lhash);
   ZOLTAN_FREE(&hash); /* we don't need it anymore */
 
   /* now local sizes */
-  if (!(ahindex = (int *)  ZOLTAN_MALLOC((1+size) * sizeof(int))))
-    MEMORY_ERROR;
+  if (!(ahindex = (int *)  ZOLTAN_MALLOC((1+size) * sizeof(int)))) {
+      Zoltan_Comm_Destroy (&plan);
+      MEMORY_ERROR;
+  }
   if (size && (
        !(ip      = (int *)  ZOLTAN_MALLOC(size * sizeof(int)))
     || !(hsize =   (int *)  ZOLTAN_MALLOC(size * sizeof(int)))       
-    || !(c_ewgt  = (float *)ZOLTAN_MALLOC(size * sizeof(float)*c_hg->EdgeWeightDim)))) 
+    || !(c_ewgt  = (float *)ZOLTAN_MALLOC(size * sizeof(float)*c_hg->EdgeWeightDim)))) {
+      Zoltan_Comm_Destroy (&plan);
       MEMORY_ERROR;
+  }
 
   Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) hlsize, sizeof(int), (char *) ip);
   /* now ewgt  */
@@ -661,8 +667,10 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
   /* now vertices of hyperedges */
 
   Zoltan_Comm_Resize(plan, hlsize, PLAN_TAG+13, &idx);
-  if (idx && !(ahvertex = (int *) ZOLTAN_MALLOC(idx * sizeof(int))))
+  if (idx && !(ahvertex = (int *) ZOLTAN_MALLOC(idx * sizeof(int)))){
+      Zoltan_Comm_Destroy (&plan);
       MEMORY_ERROR;
+  }
 
   Zoltan_Comm_Do(plan, PLAN_TAG+14, (char *) c_hg->hvertex, sizeof(int), (char *) ahvertex);
   Zoltan_Comm_Destroy (&plan);

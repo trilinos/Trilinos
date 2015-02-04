@@ -237,7 +237,7 @@ char *yo = "push";
 
    if (to_add_ptr[list] >= to_add_dim[list]-1) {
       to_add_dim[list] *= 2;
-      to_add[list] = (int *) ZOLTAN_REALLOC(to_add[list], sizeof(int *)*to_add_dim[list]);
+      to_add[list] = (int *) ZOLTAN_REALLOC(to_add[list], sizeof(int)*to_add_dim[list]);
       if (to_add[list] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return(ZOLTAN_MEMERR);

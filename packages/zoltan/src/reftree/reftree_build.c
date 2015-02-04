@@ -1925,6 +1925,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -1947,6 +1948,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -1969,6 +1971,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -2002,6 +2005,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -2032,6 +2036,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -2058,6 +2063,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+3)*ngid_ent]);
     }
+    ZOLTAN_FREE(&shared);
     return(ZOLTAN_WARN);
   }
 
@@ -2097,7 +2103,7 @@ int i,j,found,ord[8],vert,count[27],lvertices[64],ecoord[8][3],vcoord[27][3];
 int nshare, nshare2, nshare4, nshare100, nshare010, share2[3];
 int element[2][2][2]={{{0,0},{0,0}},{{0,0},{0,0}}};
 int elem100,elem010,elem001,vertex[3][3][3];
-ZOLTAN_ID_PTR lvertices_gid;
+ZOLTAN_ID_PTR lvertices_gid = NULL;
 char *yo = "order_hex3d_oct";
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 
@@ -2543,6 +2549,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
       ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
                         &vertices[(vert1[i]+7)*ngid_ent]);
     }
+    ZOLTAN_FREE(&lvertices_gid);
     return(ZOLTAN_WARN);
   }
   }
@@ -2553,6 +2560,7 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
   for (i=0; i<8; i++) {
     order[ord[i]] = i;
   }
+  ZOLTAN_FREE(&lvertices_gid);
 
   return(ZOLTAN_OK);
 
@@ -2942,7 +2950,7 @@ char *yo = "alloc_reftree_nodes";
                                             &ins,
                                             &outs,
                                             &float_mem,
-                                            &node);
+                                            node);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }

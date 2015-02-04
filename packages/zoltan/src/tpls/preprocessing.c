@@ -529,8 +529,6 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
   int ierr = ZOLTAN_OK;
   int i,j;
 
-  vwgt_new = (weighttype *)ZOLTAN_MALLOC((gr->obj_wgt_dim+1)*gr->num_obj
-                                            * sizeof(weighttype));
   if ((!strcasecmp(add_obj_weight, "UNIT")) ||
       (!strcasecmp(add_obj_weight, "VERTICES"))){
     add_type = 1;
@@ -546,6 +544,8 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
     add_type = 0;
   }
   if (add_type){
+    vwgt_new = (weighttype *)ZOLTAN_MALLOC((gr->obj_wgt_dim+1)*gr->num_obj
+                                            * sizeof(weighttype));
     if (prt != NULL) {
       /* update part_sizes array */
       ierr = Zoltan_LB_Add_Part_Sizes_Weight(zz,
@@ -1099,7 +1099,7 @@ int ierr = ZOLTAN_OK;
     *new_part_sizes = (realtype *) ZOLTAN_MALLOC(new_part_dim
                                                * zz->LB.Num_Global_Parts
                                                * sizeof(realtype));
-    if (!new_part_sizes) {
+    if (!(*new_part_sizes)) {
       ierr = ZOLTAN_MEMERR;
       goto End;
     }

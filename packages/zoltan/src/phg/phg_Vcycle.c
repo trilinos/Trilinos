@@ -247,7 +247,7 @@ int Zoltan_PHG_Partition (
   short refine = 0;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int reset_geometric_matching = 0;
-  char reset_geometric_string[4];
+  char reset_geometric_string[MAX_PARAM_STRING_LEN];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -670,6 +670,7 @@ Refine:
 
 	if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
 	  ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Zoltan_Comm_Create failed.");
+          ZOLTAN_FREE(&sendbuf);
 	  goto End;
 	}
 
@@ -776,6 +777,7 @@ double Zoltan_PHG_Compute_NetCut(
     if (hg->nEdge && 
        !(allparts = (int*) ZOLTAN_CALLOC(hgc->nProc_x*hg->nEdge,sizeof(int)))) {
       ZOLTAN_PRINT_ERROR (hgc->myProc, yo, "Memory error.");
+      ZOLTAN_FREE(&netpart);
       return ZOLTAN_MEMERR;
     }
 
@@ -881,7 +883,7 @@ double Zoltan_PHG_Compute_ConCut(
                     if (nparts>1)
                         cut +=  ((nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0));
                     else if (nparts==0) {
-                        char msg[80];
+                        char msg[160];
                         sprintf(msg, "Vertices of hyperedge %d has not been assigned to a valid part(s) or it has no vertices!\n", i);
                         ZOLTAN_PRINT_ERROR(hgc->myProc, yo, msg);
                         *ierr = ZOLTAN_FATAL;
@@ -922,7 +924,7 @@ double Zoltan_PHG_Compute_Balance (
   char *yo = "Zoltan_PHG_Compute_Balance";
   int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   
-  if (!hg || !hg->comm || !hg->comm->row_comm)  {
+  if (!hg->comm || !hg->comm->row_comm)  {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to compute balance");
     return 1.0;
   }  

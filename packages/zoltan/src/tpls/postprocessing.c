@@ -329,22 +329,26 @@ Zoltan_Postprocess_Partition (ZZ *zz,
     part->num_exp = nsend;
     if (nsend > 0) {
       if (!Zoltan_Special_Malloc(zz,(void **)part->exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
+        ZOLTAN_FREE(&newproc);
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       if (!Zoltan_Special_Malloc(zz,(void **)part->exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
 	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+        ZOLTAN_FREE(&newproc);
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       if (!Zoltan_Special_Malloc(zz,(void **)part->exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
 	Zoltan_Special_Free(zz,(void **)part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
 	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+        ZOLTAN_FREE(&newproc);
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       if (!Zoltan_Special_Malloc(zz,(void **)part->exp_part,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
 	Zoltan_Special_Free(zz,(void **)part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
 	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-	  Zoltan_Special_Free(zz,(void **)part->exp_procs,ZOLTAN_SPECIAL_MALLOC_INT);
-	  ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+	Zoltan_Special_Free(zz,(void **)part->exp_procs,ZOLTAN_SPECIAL_MALLOC_INT);
+        ZOLTAN_FREE(&newproc);
+	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       j = 0;
       for (i=0; i<gr->num_obj; i++){
@@ -738,7 +742,10 @@ int tag = 24542;
   if (nrecv){
     recv_gno = (indextype *) ZOLTAN_MALLOC(nrecv * sizeof(indextype));
     send_int = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
-    if (!recv_gno || !send_int){
+    if (!recv_gno || !send_int) {
+      Zoltan_Comm_Destroy(&plan);
+      ZOLTAN_FREE(&recv_gno);
+      ZOLTAN_FREE(&send_int);
       return ZOLTAN_MEMERR;
     }
   }

@@ -76,12 +76,6 @@ int Zoltan_Order_Create(ZOS **order_info, ZZ *zz)
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (zz == NULL){
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Pointer to Zoltan struct is NULL");
-    ierr = ZOLTAN_FATAL;
-    return (ierr);
-  }
-
   *order_info = (ZOS *) ZOLTAN_MALLOC (sizeof(ZOS));
   if (!(*order_info)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Not enough memory");

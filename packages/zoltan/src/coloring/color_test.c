@@ -332,6 +332,8 @@ KDDKDDKDD(zz->Proc, "COLORTEST DONE");
       ierr = ZOLTAN_OK;
 
   Zoltan_ZG_Free (&graph);
+  ZOLTAN_FREE(&local_GNOs);
+  ZOLTAN_FREE(&global_GNOs);
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
   ZOLTAN_FREE(&requested_GNOs);

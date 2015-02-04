@@ -1219,7 +1219,6 @@ EndReporting:
        goto End;
     }
   }
-  ZOLTAN_FREE(&dindx);
 
   if (gen_tree) {
     int *displ, *recvcount;
@@ -1232,6 +1231,8 @@ EndReporting:
     displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int));
     if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ZOLTAN_FREE(&displ);
+      ZOLTAN_FREE(&treetmp);
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -1294,6 +1295,7 @@ End:
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
+  ZOLTAN_FREE(&dindx);
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&coord);
   ZOLTAN_FREE(&wgts);
@@ -1849,6 +1851,10 @@ static int serial_rcb(
   }
 End:
 
+  if (!one_cut_dir){   /* Needed here only if got to End on error condition */
+    ZOLTAN_FREE(&dotmark0);
+    ZOLTAN_FREE(&dotmark_best);
+  }
   return ierr;
 }
 

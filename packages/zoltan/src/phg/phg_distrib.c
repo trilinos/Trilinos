@@ -439,6 +439,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     }
 
  End:
+    Zoltan_Comm_Destroy(&plan);  /* Needed if goto End on error condition */
+
     Zoltan_Multifree(__FILE__, __LINE__, 10,
                      &proclist, &sendbuf, &pins, &cnt,
                      &vno, &nno, &dist_x, &dist_y, &vsn, &nsn
@@ -532,11 +534,11 @@ int Zoltan_PHG_Redistribute(
     ierr |= Zoltan_PHG_Redistribute_Hypergraph(zz, hgp, ohg, lo, 
                                                v2Col, n2Row, ncomm, 
                                                nhg, vmap, vdest);
+End:
+
     Zoltan_Multifree(__FILE__, __LINE__, 2,
                      &v2Col, &n2Row);
 
-End:
-    
     return ierr;
 }
 

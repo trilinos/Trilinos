@@ -796,6 +796,8 @@ double *gpartWgt = NULL;
   gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
 
   if (numParts && (!lpartWgt || !gpartWgt)){
+    ZOLTAN_FREE(&lpartWgt);
+    ZOLTAN_FREE(&gpartWgt);
     ZOLTAN_PRINT_ERROR(zz->Proc, "partition_stats", "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }

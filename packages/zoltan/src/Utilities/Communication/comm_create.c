@@ -251,10 +251,9 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     /* Now change nsends to count only non-self messages */
     nsends -= self_msg;
 
-    ZOLTAN_FREE(&starts);
-
-
 Mem_Err:
+
+    ZOLTAN_FREE(&starts);
 
     /* Determine how many messages & what length I'll receive. */
     comm_flag = Zoltan_Comm_Invert_Map(lengths_to, procs_to, nsends, self_msg,
@@ -282,7 +281,8 @@ Mem_Err:
 	ZOLTAN_FREE(&procs_to);
 	ZOLTAN_FREE(&starts_to);
 	ZOLTAN_FREE(&lengths_to);
-	ZOLTAN_FREE(&starts);
+	ZOLTAN_FREE(&lengths_from);
+	ZOLTAN_FREE(&procs_from);
 	return(comm_flag);
     }
 

@@ -366,8 +366,8 @@ KDDKDDKDD(zz->Proc, "    CommPlan Create");
     msg_tag--;
     Zoltan_Comm_Do(plan, msg_tag, (char *) wgtarray, outmat->mtx.pinwgtdim*sizeof(float),
 		   (char *) tmpwgtarray);
-    ZOLTAN_FREE(&wgtarray);
   }
+  ZOLTAN_FREE(&wgtarray);
   Zoltan_Comm_Destroy(&plan);
 
   /* Unpack the non-zeros received. */
@@ -402,6 +402,7 @@ KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Permute");
 
 KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Permute done");
  End:
+  Zoltan_Comm_Destroy(&plan);  /* Needed here only if got to End on error */
   ZOLTAN_FREE(&perm_y);
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendbuf);

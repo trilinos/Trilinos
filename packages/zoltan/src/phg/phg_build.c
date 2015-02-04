@@ -847,15 +847,16 @@ End:
     Zoltan_PHG_Free_Hypergraph_Data(zhg);
   }
 
-  ZOLTAN_FREE(&edgeSize);
-  ZOLTAN_FREE(&edgeGNO);
-  ZOLTAN_FREE(&edgeWeight);
-  ZOLTAN_FREE(&pinGNO);
-  ZOLTAN_FREE(&pinProcs);
-
   Zoltan_Comm_Destroy(&plan);
 
-  Zoltan_Multifree(__FILE__, __LINE__, 9, 
+  Zoltan_Multifree(__FILE__, __LINE__, 17, 
+    &edgeSize,
+    &edgeGNO,
+    &edgeWeight,
+    &pinGNO,
+    &pinProcs,
+    &fixedGIDs,
+    &fixedPart,
     &proclist,
     &sendbuf,
     &nonzeros,
@@ -967,17 +968,12 @@ intptr_t iptr;                   /* an int the size of a pointer */
     Zoltan_Map_Destroy(zz, &map);
   }
 
-  ZOLTAN_FREE(&recvpins);
-
   /* Send partition info back to requesting processor */
   pin_parts = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
   if (npins && !pin_parts) MEMORY_ERROR;
 
   Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, sizeof(int), NULL, (char *) pin_parts);
 
-  ZOLTAN_FREE(&outparts);
-
-  Zoltan_Comm_Destroy(&plan);
 
   /* Compute the cut metrics using received partition info.
    *
@@ -1001,6 +997,9 @@ intptr_t iptr;                   /* an int the size of a pointer */
 
 End:
 
+  Zoltan_Comm_Destroy(&plan);
+  ZOLTAN_FREE(&recvpins);
+  ZOLTAN_FREE(&outparts);
   ZOLTAN_FREE(&pin_parts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1625,6 +1624,7 @@ End:
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendgno);
   ZOLTAN_FREE(&recvgno);
+  Zoltan_Comm_Destroy(&plan);
 
 #ifndef REPART_FASTER_METHOD
   ZOLTAN_FREE(&sendpart);
@@ -1839,12 +1839,16 @@ MPI_Datatype zoltan_gno_mpi_type;
 
     if ((nremove && (!goEdgeGNO || !goEdgeSize)) ||
         (nremove_size && (!goPinGNO||!goPinProc))) {
+      Zoltan_Multifree(__FILE__, __LINE__, 4,
+                       &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc);
       MEMORY_ERROR;
     }
 
     goEdgeWeight = (float *)ZOLTAN_MALLOC(sizeof(float) * nremove * ew_dim);
 
     if (nremove && ew_dim && !goEdgeWeight){
+      Zoltan_Multifree(__FILE__, __LINE__, 4,
+                       &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc);
       MEMORY_ERROR;
     }
   }
@@ -1855,12 +1859,20 @@ MPI_Datatype zoltan_gno_mpi_type;
   keepPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep_size);
 
   if (!keepEdgeGNO || !keepEdgeSize || !keepPinGNO || !keepPinProc){
+    Zoltan_Multifree(__FILE__, __LINE__, 9,
+                     &goEdgeGNO, &goEdgeSize, &goPintGNO, &goPinProc,
+                     &goEdgeWeight,
+                     &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
   }
 
   keepEdgeWeight = (float *)ZOLTAN_MALLOC(sizeof(float) * nkeep * ew_dim);
 
   if (ew_dim && !keepEdgeWeight){
+    Zoltan_Multifree(__FILE__, __LINE__, 9,
+                     &goEdgeGNO, &goEdgeSize, &goPintGNO, &goPinProc, 
+                     &goEdgeWeight,
+                     &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
   }
 

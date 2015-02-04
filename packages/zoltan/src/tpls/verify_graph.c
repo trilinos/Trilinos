@@ -449,6 +449,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
               (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
+      Zoltan_Comm_Destroy(&comm_plan);
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
     }
     else {

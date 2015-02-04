@@ -240,10 +240,14 @@ void Zoltan_evals3(
         if (fabs(H[i][j]) > xmax)
            xmax = fabs(H[i][j]);
 
-     if (xmax != 0)
+     if (xmax != 0.0)
         for (i = 0; i < 3; i++)
            for (j = 0; j < 3; j++)
               mat[i][j] = H[i][j] / xmax;
+     else
+        for (i = 0; i < 3; i++)
+           for (j = 0; j < 3; j++)
+              mat[i][j] = H[i][j];
 
      a1 = -(mat[0][0] + mat[1][1] + mat[2][2]);
      a2 = (mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]) +

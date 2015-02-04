@@ -708,13 +708,13 @@ MPI_Comm local_comm;
   proclower = 0;
   local_comm = zz->Communicator;
 
+  for (j=0; j<dim; j++){
+    min[j] = DBL_MAX;
+    max[j] = DBL_MIN;
+  }
+
   if (aa){
     /* special case - eigenvectors are axis aligned */
-
-    for (j=0; j<dim; j++){
-      min[j] = DBL_MAX;
-      max[j] = DBL_MIN;
-    }
 
     for (i=0, c = coords; i<num_obj; i++, c += dim){
       for (j=0; j<dim; j++){
@@ -749,7 +749,7 @@ MPI_Comm local_comm;
 
       if (j){
         if (val < min[i]) min[i] = val;
-        else if (val > max[i]) max[i] = val;
+        if (val > max[i]) max[i] = val;
       }
       else{
         min[i] = max[i] = val;

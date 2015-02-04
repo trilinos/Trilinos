@@ -702,13 +702,13 @@ static int refine_fm2 (ZZ *zz,
     }
 
     if (hgc->myProc_y==rootRank) { /* only root needs mark, adj, gain and heaps*/
+        Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
+        Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
         if (hg->nVtx &&
             (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
              || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
              || !(gain  = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))))
             MEMORY_ERROR;
-        Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
-        Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
     }
 
     /* Initial calculation of the local pin distribution (sigma in UVC's papers)  */
@@ -1093,13 +1093,14 @@ static int refine_fm2 (ZZ *zz,
     if (detail_timing)         
         ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfiso, hgc->Communicator);            
 #endif
+ End:    
+
     if (hgc->myProc_y==rootRank) { /* only root needs mark, adj, gain and heaps*/        
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
         Zoltan_Heap_Free(&heap[0]);
         Zoltan_Heap_Free(&heap[1]);        
     }
     
- End:    
     Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
 
     if (do_timing) 

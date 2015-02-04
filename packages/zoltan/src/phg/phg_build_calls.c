@@ -1315,6 +1315,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
 End:
 
+  Zoltan_Comm_Destroy(&plan);
+
   ZOLTAN_FREE(&sendGnoBuf);
   ZOLTAN_FREE(&recvGnoBuf);
   ZOLTAN_FREE(&sendIdBuf);
@@ -1771,6 +1773,7 @@ int *numEdges = NULL;
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_Get_Num_Edges_Per_Obj");
+    ZOLTAN_FREE(&numEdges);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
@@ -1784,8 +1787,8 @@ int *numEdges = NULL;
   gewgts = (float *)ZOLTAN_MALLOC(sizeof(float) * ew_dim * sumNumEntries);
 
   if (!nbor_gids || !nbor_procs || (ew_dim && !gewgts)){
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &nbor_gids, &nbor_procs, &gewgts);
-    ZOLTAN_FREE(&num_nbors);
+    Zoltan_Multifree(__FILE__, __LINE__, 4,
+                     &numEdges, &nbor_gids, &nbor_procs, &gewgts);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
@@ -1798,8 +1801,8 @@ int *numEdges = NULL;
 
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in edge list query function");
-      Zoltan_Multifree(__FILE__, __LINE__, 3, &nbor_gids, &nbor_procs, &gewgts);
-      ZOLTAN_FREE(&numEdges);
+      Zoltan_Multifree(__FILE__, __LINE__, 4,
+                       &numEdges, &nbor_gids, &nbor_procs, &gewgts);
       goto End;
     }
   }
@@ -1818,8 +1821,8 @@ int *numEdges = NULL;
 
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in edge list query function");
-        Zoltan_Multifree(__FILE__,__LINE__,3,&nbor_gids,&nbor_procs,&gewgts);
-        ZOLTAN_FREE(&num_nbors);
+        Zoltan_Multifree(__FILE__, __LINE__, 4,
+                         &numEdges, &nbor_gids, &nbor_procs, &gewgts);
         goto End;
       }
 

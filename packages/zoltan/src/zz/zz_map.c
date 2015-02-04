@@ -135,12 +135,15 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
 
     top = (ZOLTAN_ENTRY *)ZOLTAN_CALLOC(num_entries, sizeof(ZOLTAN_ENTRY));
     if (!top){
+      ZOLTAN_FREE(&map);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
       return NULL;
     }
     if (store_keys) {
       keys = (char *)ZOLTAN_CALLOC(num_entries, num_bytes);
       if (!keys) {
+        ZOLTAN_FREE(&top);
+        ZOLTAN_FREE(&map);
 	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
 	return NULL;
       }
@@ -168,6 +171,9 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
   entries = (ZOLTAN_ENTRY **)ZOLTAN_CALLOC(hash_range_max+1, sizeof(ZOLTAN_ENTRY*));
 
   if (!entries){
+    ZOLTAN_FREE(&top);
+    ZOLTAN_FREE(&map);
+    ZOLTAN_FREE(&keys);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
     return NULL;
   }
@@ -334,8 +340,10 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, char *key, intptr_t datain, int
     if (map->copyKeys){
       if(map->dynamicEntries) {
 	element->key = (char *)ZOLTAN_MALLOC(map->key_size);
-	if (!element->key)
+	if (!element->key) {
+          ZOLTAN_FREE(&element);
 	  return ZOLTAN_MEMERR;
+        }
       }
       else
 	element->key = (char *)map->keys + (map->entry_count * map->key_size);

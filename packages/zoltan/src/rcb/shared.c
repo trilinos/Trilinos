@@ -1011,12 +1011,11 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
   }
 
-  ierr = Zoltan_Comm_Destroy(&cobj);
-
   *dotnum = dotnew;
 
 End:
 
+  Zoltan_Comm_Destroy(&cobj);
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&reorder);
 
@@ -1759,6 +1758,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
 
     if (numParts && (!lpartWgt || !gpartWgt)){
+      Zoltan_Multifree(__FILE__, __LINE__, 2, &lpartWgt, &gpartWgt);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return;
     }

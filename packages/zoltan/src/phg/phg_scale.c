@@ -84,6 +84,8 @@ static char *yo = "Zoltan_PHG_Scale_Edges";
     return ZOLTAN_OK;
   if (!(size  = (int *) ZOLTAN_MALLOC (sizeof(int) * hg->nEdge)) ||
       !(lsize = (int *) ZOLTAN_MALLOC (sizeof(int) * hg->nEdge)) ){
+    ZOLTAN_FREE(&size);
+    ZOLTAN_FREE(&lsize);
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Out of memory");
     return ZOLTAN_MEMERR;
   }

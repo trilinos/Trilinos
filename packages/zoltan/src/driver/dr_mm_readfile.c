@@ -542,8 +542,8 @@ End:
       /* Set hypergraph to be empty. */
       *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
       *global_nPins = 0;
-      safe_free((void **)(void *) &index);
-      safe_free((void **)(void *) &vertex);
+      safe_free((void **)(void *) index);
+      safe_free((void **)(void *) vertex);
     }
     safe_free((void **)(void *) &myIJV);
     safe_free((void **)(void *) &myVals);
