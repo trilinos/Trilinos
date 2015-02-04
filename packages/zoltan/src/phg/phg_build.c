@@ -1860,7 +1860,7 @@ MPI_Datatype zoltan_gno_mpi_type;
 
   if (!keepEdgeGNO || !keepEdgeSize || !keepPinGNO || !keepPinProc){
     Zoltan_Multifree(__FILE__, __LINE__, 9,
-                     &goEdgeGNO, &goEdgeSize, &goPintGNO, &goPinProc,
+                     &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc,
                      &goEdgeWeight,
                      &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
@@ -1870,7 +1870,7 @@ MPI_Datatype zoltan_gno_mpi_type;
 
   if (ew_dim && !keepEdgeWeight){
     Zoltan_Multifree(__FILE__, __LINE__, 9,
-                     &goEdgeGNO, &goEdgeSize, &goPintGNO, &goPinProc, 
+                     &goEdgeGNO, &goEdgeSize, &goPinGNO, &goPinProc, 
                      &goEdgeWeight,
                      &keepEdgeGNO, &keepEdgeSize, &keepPinGNO, &keepPinProc);
     MEMORY_ERROR;
