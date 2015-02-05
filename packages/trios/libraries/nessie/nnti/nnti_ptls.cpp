@@ -3154,7 +3154,6 @@ static void create_status(
     portals_memory_handle *ptl_mem_hdl=NULL;
     portals_work_request  *ptl_wr      =NULL;
 
-    memset(status, 0, sizeof(NNTI_status_t));
     status->op     = wr->ops;
     status->result = (NNTI_result_t)nnti_rc;
     if (nnti_rc==NNTI_OK) {
@@ -3166,7 +3165,6 @@ static void create_status(
         status->start  = (uint64_t)ptl_wr->last_event.md.start;
         status->offset = ptl_wr->last_event.offset;
         status->length = ptl_wr->last_event.mlength;
-        status->result = (NNTI_result_t)nnti_rc;
         switch (ptl_wr->last_op) {
             case PTL_OP_PUT_INITIATOR:
             case PTL_OP_GET_TARGET:
