@@ -102,34 +102,25 @@ uint32_t num_puts;
 uint32_t put_size;
 
 
-static int buffer_pack(void *input, void **output, int32_t *output_size, xdrproc_t pack_func)
+static int buffer_pack(void *input, char **output, uint64_t *output_size)
 {
-	XDR pack_xdrs;
-
-	*output_size = xdr_sizeof(pack_func, input);
-	*output=malloc(*output_size);
-    xdrmem_create(&pack_xdrs, (caddr_t)*output, *output_size, XDR_ENCODE);
-    pack_func(&pack_xdrs, input);
+    NNTI_dt_sizeof(&trans_hdl, input, output_size);
+    *output=(char*)malloc(*output_size);
+    NNTI_dt_pack(&trans_hdl, input, *output, *output_size);
 
     return(0);
 }
 
-static int buffer_pack_free(void *input, int32_t input_size, xdrproc_t free_func)
+static int buffer_free(void *input)
 {
-	XDR free_xdrs;
-
-    xdrmem_create(&free_xdrs, (caddr_t)input, input_size, XDR_FREE);
-    free_func(&free_xdrs, input);
+    NNTI_dt_free(&trans_hdl, input);
 
     return(0);
 }
 
-static int buffer_unpack(void *input, int32_t input_size, void *output, xdrproc_t unpack_func)
+static int buffer_unpack(char *input, uint64_t input_size, void *output)
 {
-	XDR unpack_xdrs;
-
-    xdrmem_create(&unpack_xdrs, (caddr_t)input, input_size, XDR_DECODE);
-    unpack_func(&unpack_xdrs, output);
+    NNTI_dt_unpack(&trans_hdl, output, input, input_size);
 
     return(0);
 }
@@ -140,8 +131,8 @@ void client(void) {
     NNTI_status_t send_status;
     NNTI_status_t client_ack_status;
     char    *c_ptr;
-    void    *packed=NULL;
-    int32_t  packed_size=0;
+    char     *packed=NULL;
+    uint64_t  packed_size=0;
 
     double op_timer;
 
@@ -173,7 +164,7 @@ void client(void) {
     /*
      * Phase 1 - exchange buffer handles
      */
-    buffer_pack(&client_ack_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&client_ack_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -181,8 +172,6 @@ void client(void) {
 
     // send the server the recv_mr so it can send back it's ack_mr
     memcpy(send_buf, packed, packed_size);
-
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
 
     NNTI_create_work_request(&client_ack_mr, &client_ack_wr);
 
@@ -207,21 +196,21 @@ void client(void) {
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &server_ack_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &server_ack_mr);
 
     memcpy(&packed_size, ptr, sizeof(packed_size));
     ptr += sizeof(packed_size);
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &get_src_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &get_src_mr);
 
     memcpy(&packed_size, ptr, sizeof(packed_size));
     ptr += sizeof(packed_size);
     memcpy(packed, ptr, packed_size);
     ptr += packed_size;
 
-    buffer_unpack(packed, packed_size, &put_dst_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(packed, packed_size, &put_dst_mr);
 
     NNTI_destroy_work_request(&client_ack_wr);
 
@@ -442,6 +431,10 @@ void client(void) {
     free(get_wr);
     free(put_wr);
 
+    buffer_free(&server_ack_mr);
+    buffer_free(&get_src_mr);
+    buffer_free(&put_dst_mr);
+
     NNTI_free(&send_mr);
     NNTI_free(&client_ack_mr);
     NNTI_free(&get_dst_mr);
@@ -457,8 +450,8 @@ void server(void)
     NNTI_status_t send_status;
     NNTI_status_t server_ack_status;
     char *c_ptr;
-    void    *packed=NULL;
-    int32_t  packed_size=0;
+    char     *packed=NULL;
+    uint64_t  packed_size=0;
 
 
     int num_elements=nclients+(4*nclients*num_sends);
@@ -491,7 +484,7 @@ void server(void)
     NNTI_wait(&queue_wr, -1, &queue_status);
 
     c_ptr=(char*)queue_status.start+queue_status.offset;
-    buffer_unpack(c_ptr, queue_status.length, &client_ack_mr, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_unpack(c_ptr, queue_status.length, &client_ack_mr);
 
     NNTI_destroy_work_request(&queue_wr);
 
@@ -499,7 +492,7 @@ void server(void)
 //            "received client ack hdl", &client_ack_mr);
 
     // send our server_ack_mr, get_src_mr and put_dst_mr back to the client
-    buffer_pack(&server_ack_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&server_ack_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -511,9 +504,9 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
-    buffer_pack(&get_src_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&get_src_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -524,9 +517,9 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
-    buffer_pack(&put_dst_mr, &packed, &packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    buffer_pack(&put_dst_mr, &packed, &packed_size);
     if (packed_size > NNTI_REQUEST_BUFFER_SIZE) {
         log_error(nntiperf_debug_level, "buffer_pack() says encoded NNTI_buffer_t is larger than NNTI_REQUEST_BUFFER_SIZE");
     	MPI_Abort(MPI_COMM_WORLD, -10);
@@ -537,7 +530,7 @@ void server(void)
     memcpy(ptr, packed, packed_size);
     ptr += packed_size;
 
-    buffer_pack_free(packed, packed_size, (xdrproc_t)&xdr_NNTI_buffer_t);
+    free(packed);
 
     rc=NNTI_send(&queue_status.src, &send_mr, &client_ack_mr, &send_wr[0]);
     if (rc != NNTI_OK) {
@@ -607,6 +600,8 @@ void server(void)
     MPI_Barrier(MPI_COMM_WORLD);
 
     free(send_wr);
+
+    buffer_free(&client_ack_mr);
 
     NNTI_free(&queue_mr);
     NNTI_free(&send_mr);
