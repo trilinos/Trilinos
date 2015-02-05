@@ -82,13 +82,29 @@ LOCA.MultiContinuation supports the following classes:
         docstring = %loca_multicontinuation_docstring) MultiContinuation
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+
+// NOX-Epetra includes
+#ifdef HAVE_NOX_EPETRA
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.hpp"
+#endif
+
+// NOX-PETSc includes
+#include "NOX_Abstract_Vector.H"
+#ifdef HAVE_NOX_PETSC
+#include "NOX_Petsc_Vector.H"
+#endif
 
 // LOCA includes
 #include "LOCA.H"
@@ -98,14 +114,10 @@ LOCA.MultiContinuation supports the following classes:
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.hpp"
-%}
+#ifdef HAVE_NOX_PETSC
+%include "petsc4py/petsc4py.i"
 #endif
 
 // Standard exception handling

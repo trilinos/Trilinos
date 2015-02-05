@@ -71,11 +71,28 @@ and classes:
         docstring = %loca_hopf_docstring) __init__
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_Teuchos_Util.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
+// NOX-Epetra includes
+#ifdef HAVE_NOX_EPETRA
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.hpp"
+#endif
+
+// NOX-PETSc includes
+#include "NOX_Abstract_Vector.H"
+#ifdef HAVE_NOX_PETSC
+#include "NOX_Petsc_Vector.H"
 #endif
 
 // LOCA includes
@@ -88,14 +105,10 @@ and classes:
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.hpp"
-%}
+#ifdef HAVE_NOX_PETSC
+%include "petsc4py/petsc4py.i"
 #endif
 
 // Standard exception handling

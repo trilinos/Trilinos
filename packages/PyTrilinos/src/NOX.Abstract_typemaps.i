@@ -46,14 +46,15 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "Epetra_NumPyVector.hpp"
+
 // NOX includes
 #include "NOX_Abstract_Vector.H"
 #ifdef HAVE_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
-
-// PyTrilinos includes
-#include "Epetra_NumPyVector.hpp"
 %}
 
 #ifdef HAVE_NOX_PETSC
