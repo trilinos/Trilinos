@@ -310,7 +310,8 @@ NNTI_result_t NNTI_init (
     }
 #endif
 
-    trans_hdl->id = trans_id;
+    trans_hdl->datatype = NNTI_dt_transport;
+    trans_hdl->id       = trans_id;
 
     rc = available_transports[trans_id].ops.nnti_init_fn(
             trans_id,
@@ -361,13 +362,6 @@ NNTI_result_t NNTI_get_url (
  * Parse <tt>url</tt> in a transport specific way.  Perform any transport specific
  * actions necessary to begin communication with this peer.
  *
-// * If the peer is found and responds
-// * to a ping, a handle will be allocated and assigned to the pointer.  This
-// * handle should be used to move data to/from the peer.
- *
- * Connectionless transport: parse and populate
- * Connected transport: parse, connection and populate
- *
  */
 NNTI_result_t NNTI_connect (
         const NNTI_transport_t *trans_hdl,
@@ -387,6 +381,8 @@ NNTI_result_t NNTI_connect (
                 peer_hdl);
     }
 
+    peer_hdl->datatype = NNTI_dt_peer;
+
     return(rc);
 }
 
@@ -396,6 +392,7 @@ NNTI_result_t NNTI_connect (
  *
  * Perform any transport specific actions necessary to end communication with
  * this peer.
+ *
  */
 NNTI_result_t NNTI_disconnect (
         const NNTI_transport_t *trans_hdl,
@@ -442,6 +439,8 @@ NNTI_result_t NNTI_alloc (
                 ops,
                 reg_buf);
     }
+
+    reg_buf->datatype = NNTI_dt_buffer;
 
     return(rc);
 }
@@ -494,7 +493,7 @@ NNTI_result_t NNTI_register_memory (
     } else {
         if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
             log_error(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types require the use of NNTI_alloc().");
-            return(NNTI_EINVAL);
+            rc=NNTI_EINVAL;
         } else {
             rc = available_transports[trans_hdl->id].ops.nnti_register_memory_fn(
                     trans_hdl,
@@ -505,6 +504,8 @@ NNTI_result_t NNTI_register_memory (
                     reg_buf);
         }
     }
+
+    reg_buf->datatype = NNTI_dt_buffer;
 
     return(rc);
 }
@@ -535,7 +536,7 @@ NNTI_result_t NNTI_register_segments (
     } else {
         if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
             log_error(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types cannot be segmented.");
-            return(NNTI_EINVAL);
+            rc=NNTI_EINVAL;
         } else {
             rc = available_transports[trans_hdl->id].ops.nnti_register_segments_fn(
                     trans_hdl,
@@ -546,6 +547,8 @@ NNTI_result_t NNTI_register_segments (
                     reg_buf);
         }
     }
+
+    reg_buf->datatype = NNTI_dt_buffer;
 
     return(rc);
 }
@@ -568,6 +571,209 @@ NNTI_result_t NNTI_unregister_memory (
     } else {
         rc = available_transports[reg_buf->transport_id].ops.nnti_unregister_memory_fn(
                 reg_buf);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Calculate the number of bytes required to store an encoded NNTI datatype.
+ *
+ */
+NNTI_result_t NNTI_dt_sizeof (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        uint64_t               *packed_len)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        xdrproc_t sizeof_fn;
+        NNTI_datatype_t *dt=(NNTI_datatype_t*)nnti_dt;
+
+        switch (*dt) {
+            case NNTI_dt_transport:
+                sizeof_fn=(xdrproc_t)&xdr_NNTI_transport_t;
+                break;
+            case NNTI_dt_peer:
+                sizeof_fn=(xdrproc_t)&xdr_NNTI_peer_t;
+                break;
+            case NNTI_dt_buffer:
+                sizeof_fn=(xdrproc_t)&xdr_NNTI_buffer_t;
+                break;
+            case NNTI_dt_work_request:
+                sizeof_fn=(xdrproc_t)&xdr_NNTI_work_request_t;
+                break;
+            case NNTI_dt_status:
+                sizeof_fn=(xdrproc_t)&xdr_NNTI_status_t;
+                break;
+        }
+        *packed_len = xdr_sizeof(sizeof_fn, nnti_dt);
+        *packed_len += sizeof(NNTI_datatype_t);
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Encode an NNTI datatype into an array of bytes.
+ *
+ */
+NNTI_result_t NNTI_dt_pack (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        char                   *packed_buf,
+        uint64_t                packed_buflen)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        XDR       encode_xdrs;
+        xdrproc_t encode_fn;
+        NNTI_datatype_t *dt=(NNTI_datatype_t*)nnti_dt;
+
+        switch (*dt) {
+            case NNTI_dt_transport:
+                encode_fn=(xdrproc_t)&xdr_NNTI_transport_t;
+                break;
+            case NNTI_dt_peer:
+                encode_fn=(xdrproc_t)&xdr_NNTI_peer_t;
+                break;
+            case NNTI_dt_buffer:
+                encode_fn=(xdrproc_t)&xdr_NNTI_buffer_t;
+                break;
+            case NNTI_dt_work_request:
+                encode_fn=(xdrproc_t)&xdr_NNTI_work_request_t;
+                break;
+            case NNTI_dt_status:
+                encode_fn=(xdrproc_t)&xdr_NNTI_status_t;
+                break;
+        }
+
+        *(NNTI_datatype_t*)packed_buf = *dt;
+
+        packed_buf += sizeof(NNTI_datatype_t);
+        packed_buflen -= sizeof(NNTI_datatype_t);
+
+        xdrmem_create(
+                &encode_xdrs,
+                packed_buf,
+                packed_buflen,
+                XDR_ENCODE);
+
+        if (!encode_fn(&encode_xdrs, nnti_dt)) {
+            log_fatal(nnti_debug_level,"packing failed");
+            return NNTI_EENCODE;
+        }
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Decode an array of bytes into an NNTI datatype.
+ *
+ */
+NNTI_result_t NNTI_dt_unpack (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        char                   *packed_buf,
+        uint64_t                packed_buflen)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        XDR       decode_xdrs;
+        xdrproc_t decode_fn;
+        NNTI_datatype_t *dt=(NNTI_datatype_t*)packed_buf;
+        uint64_t dt_size;
+
+        switch (*dt) {
+            case NNTI_dt_transport:
+                decode_fn=(xdrproc_t)&xdr_NNTI_transport_t;
+                dt_size=sizeof(NNTI_transport_t);
+                break;
+            case NNTI_dt_peer:
+                decode_fn=(xdrproc_t)&xdr_NNTI_peer_t;
+                dt_size=sizeof(NNTI_peer_t);
+                break;
+            case NNTI_dt_buffer:
+                decode_fn=(xdrproc_t)&xdr_NNTI_buffer_t;
+                dt_size=sizeof(NNTI_buffer_t);
+                break;
+            case NNTI_dt_work_request:
+                decode_fn=(xdrproc_t)&xdr_NNTI_work_request_t;
+                dt_size=sizeof(NNTI_work_request_t);
+                break;
+            case NNTI_dt_status:
+                decode_fn=(xdrproc_t)&xdr_NNTI_status_t;
+                dt_size=sizeof(NNTI_status_t);
+                break;
+        }
+
+        packed_buf += sizeof(NNTI_datatype_t);
+        packed_buflen -= sizeof(NNTI_datatype_t);
+
+        memset(nnti_dt, 0, dt_size);
+        xdrmem_create(
+                &decode_xdrs,
+                packed_buf,
+                packed_buflen,
+                XDR_DECODE);
+        if (!decode_fn(&decode_xdrs, nnti_dt)) {
+            log_fatal(nnti_debug_level,"unpacking failed");
+            return NNTI_EDECODE;
+        }
+    }
+
+    return(rc);
+}
+
+
+/**
+ * @brief Free a variable size NNTI datatype that was unpacked with NNTI_dt_unpack().
+ *
+ */
+NNTI_result_t NNTI_dt_free (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    if (available_transports[trans_hdl->id].initialized==0) {
+        rc=NNTI_ENOTINIT;
+    } else {
+        xdrproc_t free_fn;
+        NNTI_datatype_t *dt=(NNTI_datatype_t*)nnti_dt;
+
+        switch (*dt) {
+            case NNTI_dt_transport:
+                free_fn=(xdrproc_t)&xdr_NNTI_transport_t;
+                break;
+            case NNTI_dt_peer:
+                free_fn=(xdrproc_t)&xdr_NNTI_peer_t;
+                break;
+            case NNTI_dt_buffer:
+                free_fn=(xdrproc_t)&xdr_NNTI_buffer_t;
+                break;
+            case NNTI_dt_work_request:
+                free_fn=(xdrproc_t)&xdr_NNTI_work_request_t;
+                break;
+            case NNTI_dt_status:
+                free_fn=(xdrproc_t)&xdr_NNTI_status_t;
+                break;
+        }
+
+        xdr_free(free_fn, nnti_dt);
     }
 
     return(rc);
@@ -598,6 +804,8 @@ NNTI_result_t NNTI_send (
                 dest_hdl,
                 wr);
     }
+
+    wr->datatype = NNTI_dt_work_request;
 
     return(rc);
 }
@@ -632,6 +840,8 @@ NNTI_result_t NNTI_put (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -665,13 +875,14 @@ NNTI_result_t NNTI_get (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
 
 /**
  * @brief Transfer data to a peer.
- *
  *
  */
 NNTI_result_t NNTI_scatter (
@@ -694,13 +905,14 @@ NNTI_result_t NNTI_scatter (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
 
 /**
  * @brief Transfer data from a peer.
- *
  *
  */
 NNTI_result_t NNTI_gather (
@@ -722,6 +934,8 @@ NNTI_result_t NNTI_gather (
                 dest_buffer_hdl,
                 wr);
     }
+
+    wr->datatype = NNTI_dt_work_request;
 
     return(rc);
 }
@@ -793,6 +1007,8 @@ NNTI_result_t NNTI_atomic_fop (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -821,6 +1037,8 @@ NNTI_result_t NNTI_atomic_cswap (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -844,6 +1062,8 @@ NNTI_result_t NNTI_create_work_request (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -865,6 +1085,8 @@ NNTI_result_t NNTI_clear_work_request (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -885,6 +1107,8 @@ NNTI_result_t NNTI_destroy_work_request (
                 wr);
     }
 
+    wr->datatype = NNTI_dt_work_request;
+
     return(rc);
 }
 
@@ -903,6 +1127,8 @@ NNTI_result_t NNTI_cancel (
     } else {
         rc = available_transports[wr->transport_id].ops.nnti_cancel_fn(wr);
     }
+
+    wr->datatype = NNTI_dt_work_request;
 
     return(rc);
 }
@@ -935,6 +1161,12 @@ NNTI_result_t NNTI_cancelall (
             rc = available_transports[id].ops.nnti_cancelall_fn(
                     wr_list,
                     wr_count);
+        }
+    }
+
+    for (i=0;i<wr_count;i++) {
+        if (wr_list[i]) {
+            wr_list[i]->datatype = NNTI_dt_work_request;
         }
     }
 
@@ -987,6 +1219,8 @@ NNTI_result_t NNTI_wait (
                 status);
     }
 
+    status->datatype = NNTI_dt_status;
+
     return(rc);
 }
 
@@ -1002,6 +1236,7 @@ NNTI_result_t NNTI_wait (
  * Caveats:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ *
  */
 NNTI_result_t NNTI_waitany (
         NNTI_work_request_t **wr_list,
@@ -1035,6 +1270,8 @@ NNTI_result_t NNTI_waitany (
         }
     }
 
+    status->datatype = NNTI_dt_status;
+
     return(rc);
 }
 
@@ -1050,6 +1287,7 @@ NNTI_result_t NNTI_waitany (
  * Caveats:
  *   1) All buffers in buf_list must be registered with the same transport.
  *   2) You can't wait on the receive queue and RDMA buffers in the same call.  Will probably be fixed in the future.
+ *
  */
 NNTI_result_t NNTI_waitall (
         NNTI_work_request_t **wr_list,
@@ -1078,6 +1316,12 @@ NNTI_result_t NNTI_waitall (
                     wr_count,
                     timeout,
                     status);
+        }
+    }
+
+    for (i=0;i<wr_count;i++) {
+        if (status[i]) {
+            status[i]->datatype = NNTI_dt_status;
         }
     }
 
