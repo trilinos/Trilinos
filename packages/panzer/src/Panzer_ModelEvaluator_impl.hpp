@@ -586,8 +586,12 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Set input parameters
   for (int i=0; i<inArgs.Np(); i++) {
+    
     RCP<const Thyra::VectorBase<Scalar> > p = inArgs.get_p(i);
+
     if ( p!=Teuchos::null && !parameters_.are_distributed[i]) {
+      // non distributed parameters
+
       Teuchos::ArrayRCP<const Scalar> p_data;
       rcp_dynamic_cast<const Thyra::SpmdVectorBase<Scalar> >(p,true)->getLocalData(Teuchos::ptrFromRef(p_data));
 
@@ -597,6 +601,8 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       }
     }
     else if ( p!=Teuchos::null && parameters_.are_distributed[i]) {
+      // distributed parameters
+
       std::string key = (*parameters_.names[i])[0];
       RCP<GlobalEvaluationData> ged = distrParamGlobalEvaluationData_.getDataObject(key);
 
@@ -611,6 +617,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         th_ged->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(p));
       }
       else {
+        TEUCHOS_ASSERT(ro_ged!=Teuchos::null);
         ro_ged->setUniqueVector(p);
       }
     }

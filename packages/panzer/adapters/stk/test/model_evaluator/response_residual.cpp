@@ -144,7 +144,8 @@ namespace panzer {
     double alpha = 1.3, beta = 0.2;
 
     RCP<ThyraObjFactory<double> > th_param_lof = rcp_dynamic_cast<ThyraObjFactory<double> >(ap.param_lof);
-    RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraRangeSpace());
+    RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
+    std::cout << Teuchos::describe(*param_density,Teuchos::VERB_MEDIUM) << std::endl;
     Thyra::assign(param_density.ptr(),3.7);
     {
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
@@ -155,7 +156,7 @@ namespace panzer {
       bool build_transient_support = true;
 
       RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
-      me->addDistributedParameter("DENSITY",th_param_lof->getThyraRangeSpace(),ap.param_ged,param_density);
+      me->addDistributedParameter("DENSITY",th_param_lof->getThyraDomainSpace(),ap.param_ged,param_density);
 
       x = Thyra::createMember(*me->get_x_space());
       x_dot = Thyra::createMember(*me->get_x_space());
@@ -358,7 +359,7 @@ namespace panzer {
     Teuchos::RCP<EpetraVector_ReadOnly_GlobalEvaluationData> resp_param_ged =
       Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(*ap.param_ged));
 
-    RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraRangeSpace());
+    RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
     Thyra::assign(param_density.ptr(),3.7);
     resp_param_ged->setUniqueVector(param_density);
 
