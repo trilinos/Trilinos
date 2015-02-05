@@ -56,7 +56,7 @@
 
 #include <iostream>
 
-#include "ROL_Sacado_Objective.hpp"
+#include "example_01d.hpp"
 
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -65,7 +65,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "example_01.hpp"
 
 using namespace ROL;
 
@@ -90,13 +89,19 @@ int main(int argc, char **argv)
 
     try {
 
-        Sacado_Objective<RealT,Zakharov> obj;
-    
+        typedef Sacado::Fad::SFad<RealT,1> FadType;
+        typedef Sacado::Fad::DFad<FadType> FadFadType; 
+
+        Zakharov<FadFadType> zakharov;
+        auto obj = Teuchos::rcp(new ObjectiveAD<RealT>(zakharov));        
+ 
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
+        auto parlist = Teuchos::rcp(new Teuchos::ParameterList());
+
         std::string paramfile = "parameters.xml";
+
         Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
 
         // Define Step
@@ -112,7 +117,7 @@ int main(int argc, char **argv)
         DefaultAlgorithm<RealT> algo(step,status,false);
 
         // Iteration Vector
-        Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+        auto x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
         // Set Initial Guess
         for (int i=0; i<dim; i++) {
             (*x_rcp)[i]   = 2;
@@ -121,13 +126,13 @@ int main(int argc, char **argv)
         StdVector<RealT> x(x_rcp);
 
         // Run Algorithm
-        std::vector<std::string> output = algo.run(x, obj, false);
+        std::vector<std::string> output = algo.run(x, *obj, false);
         for ( unsigned i = 0; i < output.size(); i++ ) {
             std::cout << output[i];
         }
 
         // Get True Solution
-        Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+        auto xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
         StdVector<RealT> xtrue(xtrue_rcp);
 
         
