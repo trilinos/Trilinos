@@ -218,7 +218,8 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   if(!countersInitialized_) {
     localCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
-    globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    // globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    globalCounter_ = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
     summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     countersInitialized_ = true;
   }
