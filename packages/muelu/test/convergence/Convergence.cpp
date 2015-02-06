@@ -326,7 +326,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           X->putScalar(zero);
         }
 
-        const int    maxIts = 100;
+        const int    maxIts = 1000;
         const double tol    = 1e-12;
 
         H->IsPreconditioner(isPrec);
