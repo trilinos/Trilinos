@@ -134,7 +134,7 @@ int Zoltan_ParMetis(
   double pmv3_itr = 0.0;
   realtype itr = 0.0;
   indextype options[MAX_PARMETIS_OPTIONS];
-  char alg[MAX_PARAM_STRING_LEN+1];
+  char alg[MAX_PARAM_STRING_LEN];
 
 #ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* don't risk letting external packages */
@@ -579,7 +579,7 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_ID_PTR       l_lids = NULL;
 
   indextype options[MAX_PARMETIS_OPTIONS];
-  char alg[MAX_PARAM_STRING_LEN+1];
+  char alg[MAX_PARAM_STRING_LEN];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 

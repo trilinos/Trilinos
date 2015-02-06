@@ -83,10 +83,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local,
   int diag;
   int *diagarray=NULL;
   Zoltan_matrix_options opt;
-  char symmetrization[MAX_PARAM_STRING_LEN+1];
-  char bipartite_type[MAX_PARAM_STRING_LEN+1];
-  char weigth_type[MAX_PARAM_STRING_LEN+1];
-  char matrix_build_type[MAX_PARAM_STRING_LEN+1];
+  char symmetrization[MAX_PARAM_STRING_LEN];
+  char bipartite_type[MAX_PARAM_STRING_LEN];
+  char weigth_type[MAX_PARAM_STRING_LEN];
+  char matrix_build_type[MAX_PARAM_STRING_LEN];
   int graph_fast_build_base;
   int bipartite = 0;
 #ifdef CC_TIMERS

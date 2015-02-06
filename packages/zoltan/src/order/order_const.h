@@ -75,8 +75,8 @@ struct Zoltan_Order_Struct {
   ZOLTAN_ID_PTR gidrank;
   int *iperm;
   int  start_index;
-  char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
-  char order_type[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
+  char method[MAX_PARAM_STRING_LEN]; /* Ordering method used */
+  char order_type[MAX_PARAM_STRING_LEN]; /* Ordering method used */
 
   /* Elimination Tree */
   int nbr_blocks;               /* Out: number of ordering blocks */
@@ -100,7 +100,7 @@ typedef struct Zoltan_Order_Struct ZOS;
  */
 
 struct Zoltan_Order_Options {
-  char method[MAX_PARAM_STRING_LEN+1];	   /* In: Ordering method. */
+  char method[MAX_PARAM_STRING_LEN];	   /* In: Ordering method. */
   int start_index;		/* In: Permutations start at 0 or 1? */
   int use_order_info;		/* In: Put order info into ZOS? */
   int return_args;		/* Out: What return arguments were computed? */

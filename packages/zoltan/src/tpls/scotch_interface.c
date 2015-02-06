@@ -136,8 +136,8 @@ int Zoltan_Scotch_Order(
   int use_timers = 0;
   double times[5];
 
-  char alg[MAX_PARAM_STRING_LEN+1];
-  char graph_type[MAX_PARAM_STRING_LEN+1];
+  char alg[MAX_PARAM_STRING_LEN];
+  char graph_type[MAX_PARAM_STRING_LEN];
   char *strat = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -616,8 +616,8 @@ int Zoltan_Scotch(
   int get_times = 0;
   double times[5];
 
-  char alg[MAX_PARAM_STRING_LEN+1];
-  char graph_type[MAX_PARAM_STRING_LEN+1];
+  char alg[MAX_PARAM_STRING_LEN];
+  char graph_type[MAX_PARAM_STRING_LEN];
   char *strat = NULL;
   weighttype * goal_sizes=NULL;
   weighttype velosum=0;
@@ -858,8 +858,8 @@ int Zoltan_Scotch(
 static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char *graph_type, char **strat)
 {
   static char * yo = "Zoltan_Scotch_Bind_Param";
-  char stratsmall[MAX_PARAM_STRING_LEN+1];
-  char stratfilename[MAX_PARAM_STRING_LEN+1];
+  char stratsmall[MAX_PARAM_STRING_LEN];
+  char stratfilename[MAX_PARAM_STRING_LEN];
 
   *strat = NULL;
   stratsmall[0] = stratfilename[0] = '\0';

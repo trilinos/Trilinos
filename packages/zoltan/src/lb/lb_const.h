@@ -191,7 +191,7 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  char Approach[MAX_PARAM_STRING_LEN+1];              
+  char Approach[MAX_PARAM_STRING_LEN];              
                                   /*  String describing load balance approach. */
   float *Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance

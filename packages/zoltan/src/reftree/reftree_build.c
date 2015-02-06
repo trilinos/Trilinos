@@ -248,7 +248,7 @@ int num_geom = 0;          /* number of dimensions in the geometry */
    * Bind parameters, set default values, and set user values.
    */
 
-  initpath_method = (char *)ZOLTAN_MALLOC(sizeof(char)*(MAX_PARAM_STRING_LEN+1));
+  initpath_method = (char *)ZOLTAN_MALLOC(sizeof(char)*(MAX_PARAM_STRING_LEN));
   Zoltan_Bind_Param(REFTREE_params, "REFTREE_INITPATH", (void *) initpath_method);
   strcpy(initpath_method, DEFAULT_INITPATH);
   Zoltan_Bind_Param(REFTREE_params, "REFTREE_HASH_SIZE", (void *) &hashsize);

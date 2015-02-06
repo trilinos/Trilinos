@@ -137,7 +137,7 @@ int Zoltan_Preprocess_Graph(
   ZOLTAN_GNO_TYPE *sum, nobj;
   MPI_Datatype zoltan_gno_mpi_type;
 
-  char add_obj_weight[MAX_PARAM_STRING_LEN+1];
+  char add_obj_weight[MAX_PARAM_STRING_LEN];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
