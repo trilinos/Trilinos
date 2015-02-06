@@ -1,4 +1,5 @@
 
+TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh_fixtures)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
 
 IF ( TPL_ENABLE_BoostLib )
