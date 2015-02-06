@@ -135,6 +135,8 @@ extern "C" {
 
 #ifdef HAVE_PURIFY
 #define ZOLTAN_PURIFY
+#define strcmp Zoltan_strcmp
+#define strncmp Zoltan_strncmp
 #define strcasecmp Zoltan_strcasecmp
 #define strncasecmp Zoltan_strncasecmp
 #endif

@@ -576,14 +576,44 @@ size_t mask;
 /*****************************************************************************/
 #ifdef ZOLTAN_PURIFY
 
-/* Purify has a bug in strcasecmp and strncasecmp;
+/* Purify has a bug in strcmp, strncmp, strcasecmp and strncasecmp;
  * for now, we provide a work-around for purify builds. */
+
+int Zoltan_strcmp(const char *s1, const char *s2)
+{
+  size_t len1 = strlen(s1), len2 = strlen(s2);
+  size_t minlen = (len1 < len2 ? len1 : len2);
+  size_t i;
+
+  /* Compare minlen characters */
+  for (i = 0; i < minlen; i++) {
+    if (s1[i] < s2[i]) return -1;
+    if (s1[i] > s2[i]) return 1;
+  }
+  /* Same up to minlen */
+  if (len1 < len2) return -1;
+  if (len1 > len2) return 1;
+  return 0;
+}
+
+int Zoltan_strncmp(const char *s1, const char *s2, size_t n)
+{
+  size_t i;
+
+  /* Compare minlen characters */
+  for (i = 0; i < n; i++) {
+    if (s1[i] < s2[i]) return -1;
+    if (s1[i] > s2[i]) return 1;
+  }
+  return 0;
+}
 
 int Zoltan_strcasecmp(const char *s1, const char *s2)
 {
   char *t1, *t2;
-  int len1 = strlen(s1), len2 = strlen(s2);
-  int i;
+  size_t len1 = strlen(s1), len2 = strlen(s2);
+  size_t i;
+  int rc;
   t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
@@ -592,16 +622,17 @@ int Zoltan_strcasecmp(const char *s1, const char *s2)
     if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
   for (i = 0; i < len2; i++)
     if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
-  i = strcmp(t1, t2);
+  rc = Zoltan_strcmp(t1, t2);
   ZOLTAN_FREE(&t1);
-  return i;
+  return rc;
 }
 
 int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n)
 {
   char *t1, *t2;
-  int len1 = strlen(s1), len2 = strlen(s2);
-  int i;
+  size_t len1 = strlen(s1), len2 = strlen(s2);
+  size_t i;
+  int rc;
   t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
@@ -610,9 +641,9 @@ int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n)
     if (t1[i] >= 'A' && t1[i] <= 'Z') t1[i] = t1[i] - 'A' + 'a';
   for (i = 0; i < len2; i++)
     if (t2[i] >= 'A' && t2[i] <= 'Z') t2[i] = t2[i] - 'A' + 'a';
-  i = strncmp(t1, t2, n);
+  rc = Zoltan_strncmp(t1, t2, n);
   ZOLTAN_FREE(&t1);
-  return i;
+  return rc;
 }
 
 #endif /* ZOLTAN_PURIFY */
