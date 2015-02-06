@@ -1187,11 +1187,6 @@ static double eval_cut_quality(
   int i;
   static char *yo = "eval_cut_quality";
 
-  if ((!scalelo) || (!scalehi))
-    ZOLTAN_PRINT_ERROR(-1, yo, "Input scalelo/hi is NULL");
-  if ((!weightlo) || (!weighthi))
-    ZOLTAN_PRINT_ERROR(-1, yo, "Input weightlo/hi is NULL");
-
   for (i=0; i<nwgts; i++)
      temp[i] = MAX(scalelo[i]*weightlo[i], scalehi[i]*weighthi[i]);
 

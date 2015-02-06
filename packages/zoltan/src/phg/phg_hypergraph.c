@@ -613,7 +613,7 @@ int p;
   int num_lid = zz->Num_LID;
   char *yo = "Zoltan_HG_HGraph_Print";
 
-  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
+  if (hg != &zoltan_hg->HG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
     return;
   }

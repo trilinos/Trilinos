@@ -1456,6 +1456,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    if (size != NULL) {
      err = Zoltan_Comm_Resize (plan, size, tag+1, recsize);
      if (err != ZOLTAN_OK) {
+       Zoltan_Comm_Destroy(&plan);
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed to resize plan");
        return err;
      }
@@ -1467,6 +1468,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    /* realloc rec buffer if necessary */  
    if (*recsize > *nRec)  {   
      if (!(*rec = (char*) ZOLTAN_REALLOC (*rec, *recsize * sizeof(char)))){
+       Zoltan_Comm_Destroy(&plan);
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error");
        return ZOLTAN_MEMERR;
      }
@@ -1476,6 +1478,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    /* send messages from send buffer to destinations */      
    err = Zoltan_Comm_Do (plan, tag+2, (char*) send, scale * sizeof(char), (char*) *rec);
    if (err != ZOLTAN_OK)  {
+     Zoltan_Comm_Destroy(&plan);
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed in Comm_Do");
      return err;
    }
