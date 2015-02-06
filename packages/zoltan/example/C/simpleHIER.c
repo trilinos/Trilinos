@@ -260,6 +260,7 @@ MPI_Barrier(MPI_COMM_WORLD);
       free(myGraph.nborProc);
     }
   }
+  if (myGraph.numMyVertices) free(parts);
 
   return 0;
 }
@@ -452,9 +453,6 @@ static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, i
 int partAssign[25], allPartAssign[25];
 int i, j, part, cuts, prevPart=-1;
 float imbal, localImbal, sum;
-int *partCount;
-
-  partCount = (int *)calloc(sizeof(int), nparts);
 
   memset(partAssign, 0, sizeof(int) * 25);
 
@@ -465,6 +463,9 @@ int *partCount;
   MPI_Reduce(partAssign, allPartAssign, 25, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if (myProc == 0){
+    int *partCount;
+
+    partCount = (int *)calloc(sizeof(int), nparts);
 
     cuts = 0;
 

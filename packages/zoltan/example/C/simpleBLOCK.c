@@ -208,6 +208,10 @@ int main(int argc, char *argv[])
                       &exportProcs, &exportToPart);
 
   Zoltan_Destroy(&zz);
+  if (myData.numMyObjects) {
+    free(parts);
+    free(myData.myGlobalIDs);
+  }
 
   MPI_Finalize();
 

@@ -257,6 +257,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   if (hg.numMyVertices > 0){
+    free(parts);
     free(hg.vtxGID);
   }
   if (hg.numMyHEdges > 0){
