@@ -1574,7 +1574,8 @@ static int serial_rcb(
   double weighthi[RB_MAX_WGTS];      /* weight in upper half */
   double weightlo_best[RB_MAX_WGTS]; /* temp weightlo */
   double weighthi_best[RB_MAX_WGTS]; /* temp weighthi */
-  int set0, set1, breakflag, one_cut_dir;
+  int set0, set1, breakflag; 
+  int one_cut_dir=1;
   struct rcb_box tmpbox;
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
