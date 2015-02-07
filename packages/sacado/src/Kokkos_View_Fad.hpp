@@ -858,11 +858,7 @@ void deep_copy(
   const typename View<T,L,D,M,Impl::ViewSpecializeSacadoFad>::fad_value_type& value )
 {
   typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad> ViewType;
-  typedef typename ViewType::fad_value_type ScalarType;
-  if (value == ScalarType(0))
-    Impl::ViewFill< typename ViewType::array_type >( view , value );
-  else
-    Impl::ViewFill< ViewType >( view , value );
+  Impl::ViewFill< ViewType >( view , value );
 }
 
 template< class T , class L , class D , class M >

@@ -583,6 +583,7 @@ namespace { // (anonymous)
       const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
       input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
       const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
+      (void)actualNumBytes;
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
@@ -1029,8 +1030,8 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   typedef typename matrix_type::impl_scalar_type ST;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef std::pair<typename Kokkos::View<int*, HMS>::size_type,
-                    typename Kokkos::View<int*, HMS>::size_type> pair_type;
+  //typedef std::pair<typename Kokkos::View<int*, HMS>::size_type,
+  //                  typename Kokkos::View<int*, HMS>::size_type> pair_type;
   const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
 
   const size_t N = TargetNumRows;
@@ -1075,6 +1076,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
 
   // Setup CSR_rowptr for remotes
   const size_t totalNumBytes = imports.size ();
+  (void)totalNumBytes;
   {
     size_t offset = 0;
     for (size_type k = 0; k < numImportLIDs; ++k) {
@@ -1190,7 +1192,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   // RemoteIDs: Loop structure following UnpackAndCombine
   if (imports.size () > 0) {
     size_t offset = 0;
-    int lclErr = 0;
+    int lclErr = 0;  (void)lclErr;
 
     for (size_t i = 0; i < static_cast<size_t> (numImportLIDs); ++i) {
       const size_t numBytes = numPacketsPerLID[i];

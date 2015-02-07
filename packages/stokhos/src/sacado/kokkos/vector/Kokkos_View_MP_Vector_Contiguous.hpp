@@ -42,6 +42,7 @@
 #ifndef KOKKOS_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 #define KOKKOS_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
 
@@ -116,8 +117,10 @@ struct MPVectorAllocation<Device, Storage, true> {
   }
 
   // Assign scalar_type pointer to give ptr
-  void assign(value_type * ptr) {
-    m_scalar_ptr_on_device = reinterpret_cast<scalar_type*>(ptr);
+  template <typename T>
+  void assign(T * ptr) {
+    m_scalar_ptr_on_device = (scalar_type*)ptr;
+    m_tracker.clear();
   }
 
 };
@@ -132,7 +135,7 @@ struct MPVectorAllocation<Device, Storage, false> {
   Kokkos::Impl::AllocationTracker m_tracker;
 
   KOKKOS_INLINE_FUNCTION
-  MPVectorAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
+  MPVectorAllocation() : m_scalar_ptr_on_device(), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
   template <class LabelType, class ShapeType>
@@ -177,9 +180,11 @@ struct MPVectorAllocation<Device, Storage, false> {
 
   // Assign scalar_type pointer to give ptr
   // This makes BIG assumption on how the data was allocated
-  void assign(value_type * ptr) {
+  template <typename T>
+  void assign(T * ptr) {
     if (ptr != 0) {
-      m_scalar_ptr_on_device = ptr->coeff();
+      m_scalar_ptr_on_device = ((value_type *)ptr)->coeff();
+      m_tracker.clear();
     }
     else {
       m_scalar_ptr_on_device = 0;
@@ -1043,7 +1048,7 @@ create_mirror( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src )
 {
   typedef View<T,L,D,M,Impl::ViewMPVectorContiguous> view_type ;
   typedef typename view_type::HostMirror             host_view_type ;
-  typedef typename view_type::memory_space           memory_space ;
+  //typedef typename view_type::memory_space           memory_space ;
 
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.

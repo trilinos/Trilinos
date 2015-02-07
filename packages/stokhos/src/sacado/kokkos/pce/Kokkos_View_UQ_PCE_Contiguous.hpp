@@ -42,6 +42,7 @@
 #ifndef KOKKOS_VIEW_UQ_PCE_CONTIGUOUS_HPP
 #define KOKKOS_VIEW_UQ_PCE_CONTIGUOUS_HPP
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_UQ_PCE.hpp"
 #include "Sacado_UQ_PCE_Traits.hpp"
 
@@ -243,7 +244,8 @@ private:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
-  typedef Impl::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
+
+  typedef Sacado::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
@@ -1264,7 +1266,7 @@ create_mirror( const View<T,L,D,M,Impl::ViewPCEContiguous> & src )
 {
   typedef View<T,L,D,M,Impl::ViewPCEContiguous> view_type ;
   typedef typename view_type::HostMirror        host_view_type ;
-  typedef typename view_type::memory_space      memory_space ;
+  //typedef typename view_type::memory_space      memory_space ;
 
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.

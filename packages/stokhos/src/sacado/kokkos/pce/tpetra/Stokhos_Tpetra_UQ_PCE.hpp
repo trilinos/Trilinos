@@ -145,14 +145,14 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
   typedef Kokkos::View<const value_type*, D, Kokkos::MemoryUnmanaged> input_array_type;
   typedef Kokkos::View<value_type*, D, Kokkos::MemoryUnmanaged> output_array_type;
 
-  static size_t numValuesPerScalar (const T& x) {
+  static size_t numValuesPerScalar (const S& x) {
     return x.size ();
   }
 
-  static Kokkos::View<T*, D>
-  allocateArray (const T& x, const size_t numEnt, const std::string& label = "")
+  static Kokkos::View<S*, D>
+  allocateArray (const S& x, const size_t numEnt, const std::string& label = "")
   {
-    typedef Kokkos::View<T*, D> view_type;
+    typedef Kokkos::View<S*, D> view_type;
     typedef typename view_type::size_type size_type;
 
     const size_type numVals = numValuesPerScalar (x);
