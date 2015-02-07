@@ -1,40 +1,38 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
 // dfad_sfc_example
 //
-//  usage: 
+//  usage:
 //     dfad_sfc_example
 //
-//  output:  
+//  output:
 //     Uses the scalar flop counter to count the flops for a derivative
 //     of a simple function using DFad
 
@@ -53,8 +51,8 @@ ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
 
 // The analytic derivative of func(a,b,c) with respect to a and b
 template <typename ScalarT>
-void func_deriv(const ScalarT& a, const ScalarT& b, const ScalarT& c, 
-		ScalarT& drda, ScalarT& drdb)
+void func_deriv(const ScalarT& a, const ScalarT& b, const ScalarT& c,
+                ScalarT& drda, ScalarT& drdb)
 {
   drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2.))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
@@ -96,9 +94,9 @@ int main(int argc, char **argv)
   SFC::printCounters(std::cout);
 
   // Compute function and derivative with AD
-  FAD_SFC afad(num_deriv, 0, a); 
-  FAD_SFC bfad(num_deriv, 1, b); 
-  FAD_SFC cfad(c);               
+  FAD_SFC afad(num_deriv, 0, SFC(a));
+  FAD_SFC bfad(num_deriv, 1, SFC(b));
+  FAD_SFC cfad(c);
   SFC::resetCounters();
   FAD_SFC rfad = func(afad, bfad, cfad);
   SFC::finalizeCounters();
@@ -121,14 +119,14 @@ int main(int argc, char **argv)
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
   std::cout << "\nValues/derivatives of computation" << std::endl
-	    << "    r =  " << r << " (original) == " << std::setw(w) << r_ad
-	    << " (AD) Error = " << std::setw(w) << r - r_ad << std::endl
-	    << "dr/da = " << std::setw(w) << drda << " (analytic) == " 
-	    << std::setw(w) << drda_ad << " (AD) Error = " << std::setw(w) 
-	    << drda - drda_ad << std::endl
-	    << "dr/db = " << std::setw(w) << drdb << " (analytic) == " 
-	    << std::setw(w) << drdb_ad << " (AD) Error = " << std::setw(w) 
-	    << drdb - drdb_ad << std::endl;
+            << "    r =  " << r << " (original) == " << std::setw(w) << r_ad
+            << " (AD) Error = " << std::setw(w) << r - r_ad << std::endl
+            << "dr/da = " << std::setw(w) << drda << " (analytic) == "
+            << std::setw(w) << drda_ad << " (AD) Error = " << std::setw(w)
+            << drda - drda_ad << std::endl
+            << "dr/db = " << std::setw(w) << drdb << " (analytic) == "
+            << std::setw(w) << drdb_ad << " (AD) Error = " << std::setw(w)
+            << drdb - drdb_ad << std::endl;
 
   double tol = 1.0e-14;
   Sacado::FlopCounterPack::FlopCounts fc = SFC::getCounters();
