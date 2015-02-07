@@ -51,7 +51,6 @@
 // Kokkos includes
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_Core.hpp"
-#if defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT)
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "KokkosCompat_View.hpp"
@@ -93,10 +92,8 @@ namespace Kokkos {
     }
   }
 }
-#endif
 
 // Kokkos-Linalg
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
 #include "Kokkos_MV_UQ_PCE.hpp"
@@ -104,7 +101,6 @@ namespace Kokkos {
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Kokkos_TeuchosCommAdapters_UQ_PCE.hpp"
 #include "Kokkos_Random_UQ_PCE.hpp"
-#endif
 
 namespace Stokhos {
 
@@ -120,66 +116,172 @@ struct DeviceForNode2 {
 #endif // defined(KOKKOS_HAVE_SERIAL)
 };
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 template <typename Device>
 struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
   typedef Device type;
 };
-#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 }
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Tpetra_Import_Util2.hpp"
+
 namespace Tpetra {
-  namespace Import_Util {
-    template <typename S, typename LO, typename GO, typename D>
-    struct MatrixSerializationTraits<
-      CrsMatrix< Sacado::UQ::PCE<S>,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> > > {
-      typedef Sacado::UQ::PCE<S> Scalar;
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<D> Node;
-      typedef CrsMatrix<Scalar,LO,GO,Node> Matrix;
+namespace Import_Util {
 
-      typedef typename Scalar::value_type scalar_value;
+/// \brief Partial specialization of PackTraits for Sacado's PCE UQ type.
+///
+/// \tparam S The underlying scalar type in the PCE UQ type.
+/// \tparam D The Kokkos "device" type.
+template<typename S, typename D>
+struct PackTraits< Sacado::UQ::PCE<S>, D > {
+  typedef Sacado::UQ::PCE<S> value_type;
 
-      static inline
-      size_t scalarSize( const Matrix& mat ) {
-        const size_t pce_size = mat.getLocalMatrix().values.sacado_size();
-        return pce_size *sizeof(scalar_value);
-      }
+  /// \brief Whether the number of bytes required to pack one instance
+  ///   of \c value_type is fixed at compile time.
+  static const bool compileTimeSize = false;
 
-      static inline
-      void packBuffer( const Matrix& mat,
-                       const size_t numEntries,
-                       const Teuchos::ArrayView<const Scalar>& vals,
-                       const Teuchos::ArrayView<char> packed_vals ) {
-        if (numEntries == 0) return;
-        const size_t pce_size = mat.getLocalMatrix().values.sacado_size();
-        const scalar_value* pce_vals_beg = vals[0].coeff();
-        const scalar_value* pce_vals_end = vals[numEntries-1].coeff()+pce_size;
-        const bool is_contiguous =
-          ( pce_vals_end == pce_vals_beg + numEntries*pce_size );
-        TEUCHOS_TEST_FOR_EXCEPTION( !is_contiguous, std::logic_error,
-                                    "PCE array is not contiguous!" );
-        scalar_value* packed_vals_scalar =
-          reinterpret_cast<scalar_value*>(packed_vals.getRawPtr());
-        std::copy( pce_vals_beg, pce_vals_end, packed_vals_scalar );
-      }
+  typedef Kokkos::View<const char*, D, Kokkos::MemoryUnmanaged> input_buffer_type;
+  typedef Kokkos::View<char*, D, Kokkos::MemoryUnmanaged> output_buffer_type;
+  typedef Kokkos::View<const value_type*, D, Kokkos::MemoryUnmanaged> input_array_type;
+  typedef Kokkos::View<value_type*, D, Kokkos::MemoryUnmanaged> output_array_type;
 
-      static inline
-      void unpackScalar( const Matrix& mat,
-                         const char * val_char,
-                         Scalar& val ) {
-        const size_t pce_size = mat.getLocalMatrix().values.sacado_size();
-        scalar_value* pce_vals =
-          const_cast<scalar_value*>(reinterpret_cast<const scalar_value*>(val_char));
-        val = Scalar( mat.getLocalMatrix().values.cijk(), pce_size, pce_vals,
-                      false );
-      }
-    };
+  static size_t numValuesPerScalar (const T& x) {
+    return x.size ();
   }
-}
 
-#endif
+  static Kokkos::View<T*, D>
+  allocateArray (const T& x, const size_t numEnt, const std::string& label = "")
+  {
+    typedef Kokkos::View<T*, D> view_type;
+    typedef typename view_type::size_type size_type;
+
+    const size_type numVals = numValuesPerScalar (x);
+    return view_type (label, static_cast<size_type> (numEnt), numVals);
+  }
+
+  static size_t
+  packArray (const output_buffer_type& outBuf,
+             const input_array_type& inBuf,
+             const size_t numEnt)
+  {
+    typedef typename value_type::value_type SVT; // "scalar value type"
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (inBuf.dimension_0 ()) < numEnt,
+      std::invalid_argument, "PackTraits::packArray: inBuf.dimension_0() = "
+      << inBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+    if (numEnt == 0) {
+      return 0;
+    }
+    else {
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
+      // value_type require the same number of bytes.  To generalize
+      // this, we would need to sum up the counts for all entries of
+      // inBuf.  That of course would suggest that we would need to
+      // memcpy each entry separately.
+      //
+      // We can't just default construct an instance of value_type,
+      // because value_type's size is run-time dependent.  However, we
+      // require that all entries of the input array have the correct
+      // size, so it suffices to ask the first entry of the input
+      // array for its size.
+      const size_t numBytes = numEnt * packValueCount (inBuf(0));
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (outBuf.dimension_0 ()) < numBytes,
+        std::invalid_argument, "PackTraits::packArray: outBuf.dimension_0() = "
+        << outBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
+      // hand, reinterpret_cast may break aliasing and/or alignment
+      // rules.
+      const SVT* inBufRaw = inBuf(0).coeff ();
+      memcpy (outBuf.ptr_on_device (), inBufRaw, numBytes);
+      return numBytes;
+    }
+  }
+
+  static size_t
+  unpackArray (const output_array_type& outBuf,
+               const input_buffer_type& inBuf,
+               const size_t numEnt)
+  {
+    typedef typename value_type::value_type SVT; // "scalar value type"
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (outBuf.dimension_0 ()) < numEnt, std::invalid_argument,
+      "PackTraits::unpackArray: outBuf.dimension_0 () = " << outBuf.dimension_0 ()
+      << " < numEnt = " << numEnt << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+    if (numEnt == 0) {
+      return static_cast<size_t> (0);
+    }
+    else {
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
+      // value_type require the same number of bytes.  To generalize
+      // this, we would need to sum up the counts for all entries of
+      // outBuf.  That of course would suggest that we would need to
+      // memcpy each entry separately.
+      //
+      // We can't just default construct an instance of value_type,
+      // because if value_type's size is run-time dependent, a
+      // default-constructed value_type might not have the right size.
+      // However, we require that all entries of the output array have
+      // the correct size, so it suffices to look at the first entry.
+      const size_t numBytes = numEnt * packValueCount (outBuf(0));
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        static_cast<size_t> (inBuf.dimension_0 ()) < numBytes,
+        std::invalid_argument, "PackTraits::unpackArray: inBuf.dimension_0() = "
+        << inBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
+      // hand, reinterpret_cast may break aliasing and/or alignment
+      // rules.
+      const SVT* outBufRaw = outBuf(0).coeff ();
+      memcpy (outBufRaw, inBuf.ptr_on_device (), numBytes);
+      return numBytes;
+    }
+  }
+
+  static size_t
+  packValueCount (const value_type& inVal)
+  {
+    typedef typename value_type::value_type SVT; // "scalar value type"
+    // NOTE (mfh 06 Feb 2015) It might be reasonable to assume that
+    // SVT is default constructible, and that all SVT instances have
+    // the same size.  On the other hand, the latter might not be true
+    // if Stokhos allows nesting of PCE types.  It's safer just to ask
+    // inVal for its (zeroth) value.
+    return inVal.size () * PackTraits<SVT, D>::packValueCount (inVal.val ());
+  }
+
+  static size_t
+  packValue (const output_buffer_type& outBuf,
+             const value_type& inVal)
+  {
+    const size_t numBytes = packValueCount (inVal);
+    memcpy (outBuf.ptr_on_device (), inVal.coeff (), numBytes);
+    return numBytes;
+  }
+
+  static size_t
+  unpackValue (value_type& outVal, const input_buffer_type& inBuf)
+  {
+    const size_t numBytes = packValueCount (outVal);
+    memcpy (outVal.coeff (), inBuf.ptr_on_device (), numBytes);
+    return numBytes;
+  }
+}; // struct PackTraits
+
+} // namespace Import_Util
+} // namespace Tpetra
 
 #endif // STOKHOS_TPETRA_UQ_PCE_HPP
