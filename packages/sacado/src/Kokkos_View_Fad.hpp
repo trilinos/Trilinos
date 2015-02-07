@@ -155,6 +155,7 @@ private:
   offset_map_type                              m_offset_map ;
   typename traits::device_type::size_type      m_storage_size ;
   Impl::ViewDataManagement< traits >           m_management ;
+  Impl::AllocationTracker                      m_tracker ;
 
 public:
 
@@ -254,14 +255,18 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_management.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0)
+  View()
+    : m_ptr_on_device()
+    , m_tracker()
     { m_offset_map.assign(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0)
+  View( const View & rhs )
+    : m_ptr_on_device()
+    , m_tracker()
     {
       (void) Impl::ViewAssignment<
         typename traits::specialize ,
@@ -283,7 +288,8 @@ public:
   template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
+    , m_tracker()
     {
       (void) Impl::ViewAssignment<
         typename traits::specialize ,
@@ -316,7 +322,8 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
+    , m_tracker()
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
@@ -329,8 +336,9 @@ public:
 
       m_storage_size  = Impl::dimension( m_offset_map , unsigned(Rank) );
 
-      m_ptr_on_device = (fad_value_type *)
-        memory_space::allocate( Alloc::label( prop ), sizeof(fad_value_type) * m_offset_map.capacity() );
+      m_tracker =
+        memory_space::allocate_and_track( Alloc::label( prop ), sizeof(fad_value_type) * m_offset_map.capacity() );
+      m_ptr_on_device = (fad_value_type *) m_tracker.alloc_ptr() ;
 
       (void) Kokkos::Impl::ViewDefaultConstruct
         < typename traits::execution_space , fad_value_type , Alloc::Initialize >
@@ -355,6 +363,7 @@ public:
           ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
+    , m_tracker()
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
@@ -383,7 +392,8 @@ public:
         const unsigned n5 = 0 ,
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
+    , m_tracker()
     {
       enum { align = 8 };
       enum { mask  = align - 1 };
@@ -793,6 +803,8 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type storage_size() const
     { return m_storage_size; }
+
+  Impl::AllocationTracker const& tracker() const { return m_tracker; }
 };
 
 /**
@@ -862,7 +874,7 @@ create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
 {
   typedef View<T,L,D,M,Impl::ViewSpecializeSacadoFad>  view_type ;
   typedef typename view_type::HostMirror    host_view_type ;
-  typedef typename view_type::memory_space  memory_space ;
+  //typedef typename view_type::memory_space  memory_space ;
   typedef typename view_type::size_type     size_type ;
 
   // 'view' is managed therefore we can allocate a
@@ -912,15 +924,13 @@ struct ViewAssignment< ViewSpecializeSacadoFad , ViewSpecializeSacadoFad , void 
                     )>::type * = 0
                   )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
 
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
     dst.m_management      = src.m_management ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker       = src.m_tracker ;
   }
 
   //------------------------------------
@@ -988,15 +998,13 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
     typedef View<ST,SL,SD,SM,ViewSpecializeSacadoFad>  src_type ;
     typedef typename src_type::array_type  dst_type ;
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
     dst.m_management = src.m_management ;
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker ;
   }
 };
 
