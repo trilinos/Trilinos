@@ -60,12 +60,14 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      StaticStorage(const int sz, const T & x) : val_(x), sz_(sz) {
+      StaticStorage(const int sz, const T & x, const bool zero_out = true) :
+        val_(x), sz_(sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
           throw "StaticStorage::StaticStorage() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
-        ss_array<T>::zero(dx_, sz_);
+        if (zero_out)
+          ss_array<T>::zero(dx_, sz_);
       }
 
       //! Copy constructor

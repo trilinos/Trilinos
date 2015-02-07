@@ -101,8 +101,8 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      SLFad(const int sz, const ValueT & x) :
-        ExprType(sz,x) {}
+      SLFad(const int sz, const ValueT & x, const bool zero_out = true) :
+        ExprType(sz,x,zero_out) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!

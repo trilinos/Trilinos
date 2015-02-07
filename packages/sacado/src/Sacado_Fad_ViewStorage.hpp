@@ -63,7 +63,7 @@ namespace Sacado {
 
       //! Constructor with size \c sz (needed to satisfy interface)
       KOKKOS_INLINE_FUNCTION
-      ViewStorage(const int sz, const T & x) :
+      ViewStorage(const int sz, const T & x, const bool zero_out = true) :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor

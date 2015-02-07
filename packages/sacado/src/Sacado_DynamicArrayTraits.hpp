@@ -68,6 +68,19 @@ namespace Sacado {
       }
     }
 
+    //! Get memory for new array of length \c sz
+    KOKKOS_INLINE_FUNCTION
+    static T* get(int sz) {
+      if (sz > 0) {
+        T* m = my_alloc(sz);
+        T* p = m;
+        for (int i=0; i<sz; ++i)
+          new (p++) T();
+        return m;
+      }
+      return NULL;
+    }
+
     //! Get memory for new array of length \c sz and fill with zeros
     KOKKOS_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
@@ -186,6 +199,16 @@ namespace Sacado {
         operator delete((void*) m);
 #endif
       }
+    }
+
+    //! Get memory for new array of length \c sz
+    KOKKOS_INLINE_FUNCTION
+    static T* get(int sz) {
+      if (sz > 0) {
+        T* m = my_alloc(sz);
+        return m;
+      }
+      return NULL;
     }
 
     //! Get memory for new array of length \c sz and fill with zeros

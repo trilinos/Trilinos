@@ -95,8 +95,8 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      SimpleFad(const int sz, const ValueT& x) :
-        GeneralFadType(sz,x) {}
+      SimpleFad(const int sz, const ValueT& x, const bool zero_out = true) :
+        GeneralFadType(sz,x,zero_out) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!

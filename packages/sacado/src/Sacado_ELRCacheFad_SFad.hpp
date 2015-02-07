@@ -121,13 +121,14 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      Expr(const int sz, const T & x)  : val_(x) {
+      Expr(const int sz, const T & x, const bool zero_out = true)  : val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
           throw "ELRCacheFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
 #endif
 
-        ss_array<T>::zero(dx_, Num);
+        if (zero_out)
+          ss_array<T>::zero(dx_, Num);
       }
 
       //! Constructor with size \c sz, index \c i, and value \c x

@@ -57,9 +57,12 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      VectorDynamicStorage(const int sz, const T & x) :
+      VectorDynamicStorage(const int sz, const T & x, const bool zero_out = true) :
         v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
-        dx_ = ds_array<U>::get_and_fill(sz_);
+        if (zero_out)
+          dx_ = ds_array<U>::get_and_fill(sz_);
+        else
+          dx_ = ds_array<U>::get(sz_);
       }
 
       //! Constructor with supplied memory

@@ -48,6 +48,19 @@ namespace Sacado {
     template <typename T, bool isScalar = IsScalarType<T>::value>
     struct mp_array {
 
+      //! Get memory for new array of length \c sz
+      static inline T* get(int sz, MemPool* pool) {
+        if (sz) {
+          T* m = static_cast<T*>(pool->alloc());
+          T* p = m;
+          for (int i=0; i<sz; ++i)
+            new (p++) T();
+          return m;
+        }
+        else
+          return NULL;
+      }
+
       //! Get memory for new array of length \c sz and fill with zeros
       static inline T* get_and_fill(int sz, MemPool* pool) {
         if (sz) {
@@ -104,6 +117,16 @@ namespace Sacado {
      */
     template <typename T>
     struct mp_array<T,true> {
+
+      //! Get memory for new array of length \c sz
+      static inline T* get(int sz, MemPool* pool) {
+        if (sz) {
+          T* m = static_cast<T*>(pool->alloc());
+          return m;
+        }
+        else
+          return NULL;
+      }
 
       //! Get memory for new array of length \c sz and fill with zeros
       static inline T* get_and_fill(int sz, MemPool* pool) {
@@ -166,9 +189,12 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz, const T & x) :
+      MemPoolStorage(const int sz, const T & x, const bool zero_out = true) :
         val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
-        dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
+        if (zero_out)
+          dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
+        else
+          dx_ = mp_array<T>::get(sz_, myPool_);
       }
 
       //! Copy constructor
