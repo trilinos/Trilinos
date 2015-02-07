@@ -245,7 +245,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
       // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
       // hand, reinterpret_cast may break aliasing and/or alignment
       // rules.
-      const SVT* outBufRaw = outBuf(0).coeff ();
+      SVT* outBufRaw = outBuf(0).coeff ();
       memcpy (outBufRaw, inBuf.ptr_on_device (), numBytes);
       return numBytes;
     }

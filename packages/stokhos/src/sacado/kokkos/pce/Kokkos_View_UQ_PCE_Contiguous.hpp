@@ -89,9 +89,13 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < class Device, class Storage >
-struct PCEAllocation {
+template < typename PCEType >
+struct PCEAllocation;
+
+template < class Storage >
+struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
+  typedef typename Storage::device_type Device;
   typedef typename Storage::value_type scalar_type;
   typedef typename Device::memory_space memory_space;
 
@@ -175,6 +179,41 @@ struct PCEAllocation {
   };
 };
 
+template < class Storage >
+struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
+  typedef Sacado::UQ::PCE<Storage> value_type;
+  typedef typename Storage::value_type scalar_type;
+
+  const scalar_type * m_scalar_ptr_on_device;
+  Kokkos::Impl::AllocationTracker m_tracker;
+
+  KOKKOS_INLINE_FUNCTION
+  PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
+
+  template <typename pce_type>
+  KOKKOS_INLINE_FUNCTION
+  PCEAllocation& operator=(const PCEAllocation<pce_type>& rhs) {
+    m_scalar_ptr_on_device = rhs.m_scalar_ptr_on_device;
+    m_tracker = rhs.m_tracker;
+    return *this;
+  }
+
+  // Allocate scalar_type and value_type arrays
+  template <class LabelType, class ShapeType, class CijkType>
+  inline
+  value_type*
+  allocate(const LabelType& label,
+           const ShapeType& shape,
+           const CijkType& cijk,
+           const unsigned pce_size) {}
+
+  // Assign scalar_type pointer to given ptr
+  // This makes BIG assumption on how the data was allocated
+  void assign(const value_type * ptr) {
+    m_scalar_ptr_on_device = ptr->coeff();
+  }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -253,7 +292,7 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::PCEAllocation<typename traits::device_type, stokhos_storage_type> allocation_type;
+  typedef Impl::PCEAllocation<typename traits::value_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
