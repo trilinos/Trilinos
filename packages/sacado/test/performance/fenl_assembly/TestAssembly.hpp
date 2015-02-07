@@ -69,6 +69,7 @@ struct Perf {
 };
 
 template <typename Scalar, typename Device,
+          Kokkos::Example::BoxElemPart::ElemOrder Order,
           Kokkos::Example::FENL::AssemblyMethod Method>
 Perf fenl_assembly(
   const int use_print ,
@@ -83,14 +84,13 @@ Perf fenl_assembly(
   using Teuchos::arrayView;
   using Teuchos::ParameterList;
 
-  typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemLinear > FixtureType ;
+  typedef Kokkos::Example::BoxElemFixture< Device , Order > FixtureType ;
 
   typedef Kokkos::Example::FENL::CrsMatrix< Scalar , Device > LocalMatrixType ;
   typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType ;
 
   typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode > NodeNodeGraphType ;
 
-  typedef Kokkos::Example::FENL::ElementComputationConstantCoefficient CoeffFunctionType;
   typedef Kokkos::Example::FENL::ElementComputation< FixtureType , LocalMatrixType , Method > ElementComputationType ;
 
   typedef typename ElementComputationType::vector_type VectorType ;
@@ -141,9 +141,7 @@ Perf fenl_assembly(
     residual = VectorType( "residual" , fixture.node_count_owned() );
 
     // Create element computation functor
-    CoeffFunctionType diffusion_coefficient( 1.0 );
-    const ElementComputationType elemcomp( fixture , diffusion_coefficient ,
-                                           solution ,
+    const ElementComputationType elemcomp( fixture , solution ,
                                            mesh_to_graph.elem_graph ,
                                            jacobian , residual );
 
@@ -171,13 +169,36 @@ Perf fenl_assembly(
   return perf_stats ;
 }
 
+template<class ValueType>
+bool compareValues(const ValueType& a1,
+                   const std::string& a1_name,
+                   const ValueType&a2,
+                   const std::string& a2_name,
+                   const ValueType& rel_tol, const ValueType& abs_tol,
+                   Teuchos::FancyOStream& out)
+{
+  bool success = true;
+
+  ValueType err = std::abs(a1 - a2);
+  ValueType tol = abs_tol + rel_tol*std::max(std::abs(a1),std::abs(a2));
+  if (err  > tol) {
+    out << "\nError, relErr(" << a1_name <<","
+        << a2_name << ") = relErr(" << a1 <<"," << a2 <<") = "
+        << err << " <= tol = " << tol << ": failed!\n";
+    success = false;
+  }
+
+  return success;
+}
+
 template <typename VectorType, typename MatrixType>
 bool check_assembly(const VectorType& analytic_residual,
                     const MatrixType& analytic_jacobian,
                     const VectorType& fad_residual,
-                    const MatrixType& fad_jacobian)
+                    const MatrixType& fad_jacobian,
+                    const std::string& test_name)
 {
-  const double tol = 1e-10;
+  const double tol = 1e-14;
   bool success = true;
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -191,13 +212,23 @@ bool check_assembly(const VectorType& analytic_residual,
   Kokkos::deep_copy( host_analytic_residual, analytic_residual );
   Kokkos::deep_copy( host_fad_residual, fad_residual );
 
-  TEUCHOS_TEST_EQUALITY( host_analytic_residual.dimension_0(),
-                         host_fad_residual.dimension_0(), fbuf, success );
+  fbuf << test_name << ":" << std::endl;
 
-  const size_t num_node = host_analytic_residual.dimension_0();
-  for (size_t i=0; i<num_node; ++i) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(
-      host_analytic_residual(i), host_fad_residual(i), tol, fbuf, success );
+  if (host_analytic_residual.dimension_0() != host_fad_residual.dimension_0()) {
+    fbuf << "Analytic residual dimension "
+         << host_analytic_residual.dimension_0()
+         << " does not match Fad residual dimension "
+         << host_fad_residual.dimension_0() << std::endl;
+    success = false;
+  }
+  else {
+    const size_t num_node = host_analytic_residual.dimension_0();
+    for (size_t i=0; i<num_node; ++i) {
+      success = success && compareValues(
+        host_analytic_residual(i), "analytic residual",
+        host_fad_residual(i), "Fad residual",
+        tol, tol, fbuf );
+    }
   }
 
   typename MatrixType::HostMirror host_analytic_jacobian =
@@ -207,13 +238,21 @@ bool check_assembly(const VectorType& analytic_residual,
   Kokkos::deep_copy( host_analytic_jacobian, analytic_jacobian );
   Kokkos::deep_copy( host_fad_jacobian, fad_jacobian );
 
-  TEUCHOS_TEST_EQUALITY( host_analytic_jacobian.dimension_0(),
-                         host_fad_jacobian.dimension_0(), fbuf, success );
-
-  const size_t num_entry = host_analytic_jacobian.dimension_0();
-  for (size_t i=0; i<num_entry; ++i) {
-    TEUCHOS_TEST_FLOATING_EQUALITY(
-      host_analytic_jacobian(i), host_fad_jacobian(i), tol, fbuf, success );
+  if (host_analytic_jacobian.dimension_0() != host_fad_jacobian.dimension_0()) {
+    fbuf << "Analytic Jacobian dimension "
+         << host_analytic_jacobian.dimension_0()
+         << " does not match Fad Jacobian dimension "
+         << host_fad_jacobian.dimension_0() << std::endl;
+    success = false;
+  }
+  else {
+    const size_t num_entry = host_analytic_jacobian.dimension_0();
+    for (size_t i=0; i<num_entry; ++i) {
+      success = success && compareValues(
+        host_analytic_jacobian(i), "analytic Jacobian",
+        host_fad_jacobian(i), "Fad Jacobian",
+        tol, tol, fbuf );
+    }
   }
 
   if (!success)
@@ -226,86 +265,110 @@ template <class Device>
 void performance_test_driver(
   const int use_print ,
   const int use_trials ,
-  const int use_nodes[] ,
-  const bool use_view ,
-  const bool use_global ,
+  const int n_begin ,
+  const int n_end ,
+  const int n_step ,
+  const bool quadratic ,
   const bool check )
 {
+  using Kokkos::Example::BoxElemPart;
+  using Kokkos::Example::FENL::Analytic;
+  using Kokkos::Example::FENL::FadElement;
+  using Kokkos::Example::FENL::FadElementOptimized;
+  using Kokkos::Example::FENL::FadQuadPoint;
+
   std::cout.precision(8);
-  std::cout << std::endl;
-  if (use_global)
-    std::cout << "Use Global ";
-  else
-    std::cout << "Use Local ";
-  if (use_view)
-    std::cout << "View ";
-  std::cout << "Assembly ";
   std::cout << std::endl
             << "\"Grid Size\" , "
             << "\"FEM Size\" , "
             << "\"Analytic Fill Time\" , "
-            << "\"Fad Fill Time\" , "
-            << "\"Fad Fill Slowdown\" , "
+            << "\"Fad Element Fill Slowdown\" , "
+            << "\"Fad Optimized Element Fill Slowdown\" , "
+            << "\"Fad QP Fill Slowdown\" , "
             << std::endl;
 
   typedef Kokkos::View< double* , Device > vector_type ;
   typedef Kokkos::Example::FENL::CrsMatrix<double,Device> matrix_type;
-  vector_type analytic_residual, fad_residual;
-  matrix_type analytic_jacobian, fad_jacobian;
-  Perf perf_analytic, perf_fad;
-  if (use_view) {
-    if (use_global) {
+  vector_type analytic_residual, fad_residual, fad_opt_residual,
+    fad_qp_residual;
+  matrix_type analytic_jacobian, fad_jacobian, fad_opt_jacobian,
+    fad_qp_jacobian;
+
+  for (int n=n_begin; n<=n_end; n+=n_step) {
+    const int use_nodes[] = { n, n, n };
+    Perf perf_analytic, perf_fad, perf_fad_opt, perf_fad_qp;
+
+    if (quadratic) {
       perf_analytic =
-        fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticGlobalView>(
+        fenl_assembly<double,Device,BoxElemPart::ElemQuadratic,Analytic>(
           use_print, use_trials, use_nodes,
           analytic_residual, analytic_jacobian );
 
       perf_fad =
-        fenl_assembly<double,Device,Kokkos::Example::FENL::FadGlobalView>(
+        fenl_assembly<double,Device,BoxElemPart::ElemQuadratic,FadElement>(
           use_print, use_trials, use_nodes,
           fad_residual, fad_jacobian);
+
+      perf_fad_opt =
+        fenl_assembly<double,Device,BoxElemPart::ElemQuadratic,FadElementOptimized>(
+          use_print, use_trials, use_nodes,
+          fad_opt_residual, fad_opt_jacobian);
+
+      perf_fad_qp =
+        fenl_assembly<double,Device,BoxElemPart::ElemQuadratic,FadQuadPoint>(
+          use_print, use_trials, use_nodes,
+          fad_qp_residual, fad_qp_jacobian);
     }
     else {
       perf_analytic =
-        fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticLocalView>(
+        fenl_assembly<double,Device,BoxElemPart::ElemLinear,Analytic>(
           use_print, use_trials, use_nodes,
           analytic_residual, analytic_jacobian );
 
       perf_fad =
-        fenl_assembly<double,Device,Kokkos::Example::FENL::FadLocalView>(
+        fenl_assembly<double,Device,BoxElemPart::ElemLinear,FadElement>(
           use_print, use_trials, use_nodes,
           fad_residual, fad_jacobian);
+
+      perf_fad_opt =
+        fenl_assembly<double,Device,BoxElemPart::ElemLinear,FadElementOptimized>(
+          use_print, use_trials, use_nodes,
+          fad_opt_residual, fad_opt_jacobian);
+
+      perf_fad_qp =
+        fenl_assembly<double,Device,BoxElemPart::ElemLinear,FadQuadPoint>(
+          use_print, use_trials, use_nodes,
+          fad_qp_residual, fad_qp_jacobian);
     }
+    if (check) {
+      check_assembly( analytic_residual, analytic_jacobian.coeff,
+                      fad_residual, fad_jacobian.coeff,
+                      "Fad" );
+      check_assembly( analytic_residual, analytic_jacobian.coeff,
+                      fad_opt_residual, fad_opt_jacobian.coeff,
+                      "Optimized Fad" );
+      check_assembly( analytic_residual, analytic_jacobian.coeff,
+                      fad_qp_residual, fad_qp_jacobian.coeff,
+                      "QP Fad" );
+    }
+
+    double s =
+      1000.0 / ( use_trials * perf_analytic.global_elem_count );
+    perf_analytic.scale(s);
+    perf_fad.scale(s);
+    perf_fad_opt.scale(s);
+    perf_fad_qp.scale(s);
+
+    std::cout.precision(3);
+    std::cout << n << " , "
+              << perf_analytic.global_node_count << " , "
+              << std::setw(2)
+              << std::scientific
+              << perf_analytic.fill_time << " , "
+              << std::fixed << std::setw(6)
+              << perf_fad.fill_time / perf_analytic.fill_time << " , "
+              << perf_fad_opt.fill_time / perf_analytic.fill_time << " , "
+              << perf_fad_qp.fill_time / perf_analytic.fill_time << " , "
+              << std::endl;
   }
-  else {
-    perf_analytic =
-      fenl_assembly<double,Device,Kokkos::Example::FENL::AnalyticLocal>(
-        use_print, use_trials, use_nodes,
-        analytic_residual, analytic_jacobian );
-
-    perf_fad =
-      fenl_assembly<double,Device,Kokkos::Example::FENL::FadLocal>(
-        use_print, use_trials, use_nodes,
-        fad_residual, fad_jacobian);
-  }
-
-  if (check)
-    check_assembly( analytic_residual, analytic_jacobian.coeff,
-                    fad_residual, fad_jacobian.coeff );
-
-  double s =
-    1000.0 / ( use_trials * perf_analytic.global_node_count );
-  perf_analytic.scale(s);
-  perf_fad.scale(s);
-
-  std::cout.precision(3);
-  std::cout << use_nodes[0] << " , "
-            << perf_analytic.global_node_count << " , "
-            << std::setw(2)
-            << std::scientific
-            << perf_analytic.fill_time << " , "
-            << perf_fad.fill_time << " , "
-            << std::fixed << std::setw(6)
-            << perf_fad.fill_time / perf_analytic.fill_time << " , "
-            << std::endl;
 }

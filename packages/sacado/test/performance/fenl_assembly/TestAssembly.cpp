@@ -70,19 +70,22 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor CLP;
     CLP.setDocString(
       "This test performance of MP::Vector FEM assembly.\n");
-    int nGrid = 32;
-    CLP.setOption("n", &nGrid, "Number of mesh points in the each direction");
+    int nGrid = 0;
+    CLP.setOption("n", &nGrid, "Number of mesh points in each direction.  Set to zero to use a range");
+    int nGridBegin = 8;
+    CLP.setOption("n-begin", &nGridBegin, "Beginning number of mesh points in each direction.");
+    int nGridEnd = 48;
+    CLP.setOption("n-end", &nGridEnd, "Ending number of mesh points in each direction.");
+    int nGridStep = 8;
+    CLP.setOption("n-step", &nGridStep, "Increment in number of mesh points in each direction.");
     int nIter = 10;
     CLP.setOption("ni", &nIter, "Number of assembly iterations");
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print debugging output");
     bool check = false;
     CLP.setOption("check", "no-check", &check, "Check correctness");
-    bool view = false;
-    CLP.setOption("view", "no-view", &view, "Use view in assembly");
-    bool global_view = false;
-    CLP.setOption("global", "local", &global_view,
-                  "Use global/local view in assembly");
+    bool quadratic = false;
+    CLP.setOption("quadratic", "linear", &quadratic, "Use quadratic basis functions");
     int num_cores = num_cores_per_socket * num_sockets;
     CLP.setOption("cores", &num_cores,
                   "Number of CPU cores to use (defaults to all)");
@@ -105,8 +108,10 @@ int main(int argc, char *argv[])
 #endif
     CLP.parse( argc, argv );
 
-    int use_nodes[3];
-    use_nodes[0] = nGrid; use_nodes[1] = nGrid; use_nodes[2] = nGrid;
+    if (nGrid > 0) {
+      nGridBegin = nGrid;
+      nGridEnd = nGrid;
+    }
 
 #ifdef KOKKOS_HAVE_PTHREAD
     if (threads) {
@@ -118,8 +123,8 @@ int main(int argc, char *argv[])
                 << "Threads performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, view,
-                                      global_view, check);
+      performance_test_driver<Device>(
+        print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
       Kokkos::Threads::finalize();
     }
@@ -135,8 +140,8 @@ int main(int argc, char *argv[])
                 << "OpenMP performance with " << num_cores*num_hyper_threads
                 << " threads:" << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, view,
-                                      global_view, check);
+      performance_test_driver<Device>(
+        print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
       Kokkos::OpenMP::finalize();
     }
@@ -157,8 +162,8 @@ int main(int argc, char *argv[])
                 << deviceProp.name << "):"
                 << std::endl;
 
-      performance_test_driver<Device>(print, nIter, use_nodes, view,
-                                      global_view, check);
+      performance_test_driver<Device>(
+        print, nIter, nGridBegin, nGridEnd, nGridStep, quadratic, check);
 
       Kokkos::HostSpace::execution_space::finalize();
       Kokkos::Cuda::finalize();
