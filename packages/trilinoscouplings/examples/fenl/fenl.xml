@@ -1,0 +1,71 @@
+<ParameterList>
+
+  <Parameter name="Max Nonlinear Iterations" type="int" value="10"/>
+  <Parameter name="Nonlinear Solver Tolerance" type="double" value="1e-7"/>
+
+  <!-- For built-in CG solver and defaults for Belos -->
+  <Parameter name="Max Linear Iterations" type="int" value="2000"/>
+  <Parameter name="Linear Solver Tolerance" type="double" value="1e-7"/>
+
+  <ParameterList name="Belos">
+    <Parameter name="Belos Solver" type="string" value="CG"/>
+    <Parameter name="Maximum Iterations" type="int" value="200"/>
+    <Parameter name="Convergence Tolerance" type="double" value="1e-7"/>
+    <!--
+    <Parameter name="Output Frequency" type="int" value="10"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    -->
+  </ParameterList>
+
+  <ParameterList name="MueLu">
+    <Parameter name="verbosity" type="string" value="none"/>
+    <Parameter name="number of equations" type="int" value="1"/>
+    <Parameter name="coarse: max size" type="int" value="500"/>
+    <Parameter name="multigrid algorithm" type="string" value="sa"/>
+
+    <!-- ===========  AGGREGATION  =========== -->
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop scheme" type="string" value="classical"/>
+    <!-- <Parameter name="aggregation: drop tol" type="double" value="0.1"/> -->
+
+    <!-- ===========  SMOOTHING  =========== -->
+    <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="chebyshev: degree" type="int" value="2"/>
+      <Parameter name="chebyshev: ratio eigenvalue" type="double" value="7"/>
+      <Parameter name="chebyshev: min eigenvalue" type="double" value="1.0"/>
+      <Parameter name="chebyshev: zero starting solution" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- ===========  REPARTITIONING  =========== -->
+    <Parameter name="repartition: enable" type="bool" value="false"/>
+    <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min rows per proc" type="int" value="800"/>
+    <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+    <Parameter name="repartition: remap parts" type="bool" value="false"/>
+
+    <!-- ===========  COARSE GRID SOLVER  =========== -->
+    <!--Parameter name="coarse: type" type="string" value="BASKER"/-->
+
+    <!-- block to enable ILU(1) with overlap 1 as coarse grid solver -->
+    <!--
+       <Parameter name="coarse: type" type="string" value="SCHWARZ"/>
+       <ParameterList    name="coarse: params">
+         <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
+         <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
+         <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
+
+         <Parameter name="subdomain solver name"             type="string" value="RILUK"/>
+         <ParameterList name="subdomain solver parameters">
+           <Parameter name= "fact: iluk level-of-fill"         type="int"    value="1"/>
+           <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
+           <Parameter name= "fact: relative threshold"         type="double" value="1."/>
+           <Parameter name= "fact: relax value"                type="double" value="0."/>
+         </ParameterList>
+       </ParameterList>
+       -->
+
+  </ParameterList>
+</ParameterList>

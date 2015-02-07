@@ -58,6 +58,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
@@ -112,6 +113,7 @@ belos_solve(
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())
@@ -120,7 +122,9 @@ belos_solve(
   typedef Tpetra::MultiVector<SV,LO,GO,N> VectorType;
   typedef typename VectorType::dot_type BelosScalarType;
   typedef Belos::LinearProblem<BelosScalarType, VectorType, OperatorType> ProblemType;
-  typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> SolverType;
+  typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> CGSolverType;
+  typedef Belos::PseudoBlockGmresSolMgr<BelosScalarType, VectorType, OperatorType> GmresSolverType;
+  typedef Belos::SolverManager<BelosScalarType, VectorType, OperatorType> SolverType;
   typedef SGPreconditioner<SM,LO,GO,N> PreconditionerType;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -131,8 +135,7 @@ belos_solve(
     Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x");
   Teuchos::RCP<Teuchos::Time> time_prec_apply =
     Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x");
-  Teuchos::RCP<Teuchos::Time> time_total =
-    Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockCGSolMgr total solve time");
+  Teuchos::RCP<Teuchos::Time> time_total;
   Teuchos::RCP<Teuchos::Time> time_prec_setup =
     Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
 
@@ -151,25 +154,22 @@ belos_solve(
       Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x->getMap(), node_coords.dimension_1()));
     fill_coords(node_coords, coords->getDualView().d_view);
 
-    std::string xmlFileName="muelu.xml";
+    RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
     if (use_mean_based) {
       preconditioner =
         Teuchos::rcp(new MeanBasedPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, xmlFileName, coords);
+      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
     }
     else {
       preconditioner =
         Teuchos::rcp(new MueLuPreconditioner<SM, LO, GO, N>());
-      precOp = preconditioner->setupPreconditioner(A, xmlFileName, coords);
+      precOp = preconditioner->setupPreconditioner(A, mueluParams, coords);
     }
   }
 
   //--------------------------------
   // Set up linear solver
-  RCP<ParameterList> belosParams = Teuchos::parameterList();
-  // Read in any params from xml file
-  Teuchos::updateParametersFromXmlFileAndBroadcast(
-    "belos.xml", belosParams.ptr(),*A->getComm());
+  RCP<ParameterList> belosParams = Teuchos::sublist(fenlParams, "Belos");
 
   if (!(belosParams->isParameter("Convergence Tolerance")))
     belosParams->set("Convergence Tolerance", tolerance);
@@ -179,7 +179,25 @@ belos_solve(
     belosParams->set("Output Frequency", 1);
 
   RCP<ProblemType> problem = rcp(new ProblemType(A, x, b));
-  RCP<SolverType> solver = rcp(new SolverType(problem, belosParams));
+
+  std::string belos_solver = belosParams->get("Belos Solver", "CG");
+  RCP<SolverType> solver;
+  if (belos_solver == "CG" ||
+      belos_solver == "cg") {
+    time_total =
+      Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockCGSolMgr total solve time");
+    solver = rcp(new CGSolverType(problem, belosParams));
+  }
+  else if (belos_solver == "GMRES" ||
+           belos_solver == "Gmres" ||
+           belos_solver == "gmres") {
+    time_total =
+      Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockGmresSolMgr total solve time");
+    solver = rcp(new GmresSolverType(problem, belosParams));
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "Invalid solver " << belos_solver);
 
   if (use_muelu || use_mean_based){
      problem->setRightPrec(precOp);

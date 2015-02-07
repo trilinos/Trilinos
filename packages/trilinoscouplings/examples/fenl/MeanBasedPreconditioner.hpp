@@ -174,7 +174,7 @@ namespace Example {
     Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
     setupPreconditioner(
       const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
-      const std::string& xmlFileName,
+      const Teuchos::RCP<Teuchos::ParameterList>& precParams,
       const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
     {
       using Teuchos::ArrayView;
@@ -211,7 +211,7 @@ namespace Example {
 
       Teuchos::RCP< PreconditionerType > mueluPreconditioner;
       mueluPreconditioner =
-        MueLu::CreateTpetraPreconditioner(M,xmlFileName,coords);
+        MueLu::CreateTpetraPreconditioner(M,*precParams,coords);
       return mueluPreconditioner;
     };
 

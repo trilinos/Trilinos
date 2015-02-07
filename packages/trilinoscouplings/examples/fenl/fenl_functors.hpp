@@ -449,6 +449,8 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const CoeffFunctionType   coeff_function ;
+  const double              coeff_source ;
+  const double              coeff_advection ;
   const Kokkos::DeviceConfig dev_config ;
 
   ElementComputation( const ElementComputation & rhs )
@@ -462,6 +464,8 @@ public:
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
     , coeff_function( rhs.coeff_function )
+    , coeff_source( rhs.coeff_source )
+    , coeff_advection( rhs.coeff_advection )
     , dev_config( rhs.dev_config )
     {}
 
@@ -469,6 +473,8 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const double             & arg_coeff_source ,
+                      const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
@@ -486,6 +492,8 @@ public:
     , residual( arg_residual )
     , jacobian( arg_jacobian )
     , coeff_function( arg_coeff_function )
+    , coeff_source( arg_coeff_source )
+    , coeff_advection( arg_coeff_advection )
     , dev_config( arg_dev_config )
     {}
 
@@ -508,20 +516,15 @@ public:
 
   //------------------------------------
 
-  static const unsigned FLOPS_transform_gradients =
-     /* Jacobian */           FunctionCount * TensorDim * 2 +
-     /* Inverse jacobian */   TensorDim * 6 + 6 +
-     /* Gradient transform */ FunctionCount * 15 ;
-
   KOKKOS_INLINE_FUNCTION
-  float transform_gradients(
-    const float grad[][ FunctionCount ] , // Gradient of bases master element
+  double transform_gradients(
+    const double grad[][ FunctionCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ,
-    float dpsidx[] ,
-    float dpsidy[] ,
-    float dpsidz[] ) const
+    double dpsidx[] ,
+    double dpsidy[] ,
+    double dpsidz[] ) const
   {
     enum { j11 = 0 , j12 = 1 , j13 = 2 ,
            j21 = 3 , j22 = 4 , j23 = 5 ,
@@ -536,9 +539,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -555,33 +558,33 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
-    const float detJinv = 1.0 / detJ ;
+    const double detJinv = 1.0 / detJ ;
 
     for ( unsigned i = 0 ; i < TensorDim ; ++i ) { invJ[i] *= detJinv ; }
 
     // Transform gradients:
 
     for( unsigned i = 0; i < FunctionCount ; ++i ) {
-      const float g0 = grad[0][i];
-      const float g1 = grad[1][i];
-      const float g2 = grad[2][i];
+      const double g0 = grad[0][i];
+      const double g1 = grad[1][i];
+      const double g2 = grad[2][i];
 
       dpsidx[i] = g0 * invJ[j11] + g1 * invJ[j12] + g2 * invJ[j13];
       dpsidy[i] = g0 * invJ[j21] + g1 * invJ[j22] + g2 * invJ[j23];
@@ -594,13 +597,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
     const local_scalar_type dof_values[] ,
-    const float  dpsidx[] ,
-    const float  dpsidy[] ,
-    const float  dpsidz[] ,
-    const float  detJ ,
+    const double  dpsidx[] ,
+    const double  dpsidy[] ,
+    const double  dpsidz[] ,
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ,
     const local_scalar_type  coeff_k ,
-    const float  integ_weight ,
-    const float  bases_vals[] ,
+    const double  coeff_src ,
+    const double  advection[] ,
     local_scalar_type  elem_res[] ,
     local_scalar_type  elem_mat[][ FunctionCount ] ) const
   {
@@ -616,31 +621,41 @@ public:
       gradz_at_pt += dof_values[m] * dpsidz[m] ;
     }
 
-    const local_scalar_type k_detJ_weight = coeff_k             * detJ * integ_weight ;
-    const local_scalar_type res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
-    const local_scalar_type mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
+    const double detJ_weight = detJ * integ_weight;
 
-    // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
-    // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
+    const local_scalar_type source_term =
+      coeff_src * value_at_pt * value_at_pt;
+    const local_scalar_type source_deriv =
+      2.0 * coeff_src * value_at_pt;
+
+    const local_scalar_type advection_term =
+      advection[0]*gradx_at_pt +
+      advection[1]*grady_at_pt +
+      advection[2]*gradz_at_pt;
 
     for ( unsigned m = 0; m < FunctionCount; ++m) {
       local_scalar_type * const mat = elem_mat[m] ;
-      const float bases_val_m = bases_vals[m];
-      const float dpsidx_m    = dpsidx[m] ;
-      const float dpsidy_m    = dpsidy[m] ;
-      const float dpsidz_m    = dpsidz[m] ;
+      const double bases_val_m = bases_vals[m];
+      const double dpsidx_m    = dpsidx[m] ;
+      const double dpsidy_m    = dpsidy[m] ;
+      const double dpsidz_m    = dpsidz[m] ;
 
-      elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
-                                       dpsidy_m * grady_at_pt +
-                                       dpsidz_m * gradz_at_pt ) +
-                     res_val * bases_val_m ;
+      elem_res[m] +=
+        detJ_weight * ( coeff_k * ( dpsidx_m * gradx_at_pt +
+                                    dpsidy_m * grady_at_pt +
+                                    dpsidz_m * gradz_at_pt ) +
+                        ( advection_term  + source_term ) * bases_val_m ) ;
 
       for( unsigned n = 0; n < FunctionCount; n++) {
 
-        mat[n] += k_detJ_weight * ( dpsidx_m * dpsidx[n] +
-                                    dpsidy_m * dpsidy[n] +
-                                    dpsidz_m * dpsidz[n] ) +
-                  mat_val * bases_val_m * bases_vals[n];
+        mat[n] +=
+          detJ_weight * ( coeff_k * ( dpsidx_m * dpsidx[n] +
+                                      dpsidy_m * dpsidy[n] +
+                                      dpsidz_m * dpsidz[n] ) +
+                          ( advection[0] * dpsidx[n] +
+                            advection[1] * dpsidy[n] +
+                            advection[2] * dpsidz[n] +
+                            source_deriv * bases_vals[n] ) * bases_val_m );
       }
     }
   }
@@ -710,60 +725,36 @@ public:
       }
     }
 
+    // advection = [ 1 , 1 , 1 ] * coeff_advection
+    double advection[] = { coeff_advection ,
+                           coeff_advection ,
+                           coeff_advection };
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
-      float dpsidx[ FunctionCount ] ;
-      float dpsidy[ FunctionCount ] ;
-      float dpsidz[ FunctionCount ] ;
+      double dpsidx[ FunctionCount ] ;
+      double dpsidy[ FunctionCount ] ;
+      double dpsidz[ FunctionCount ] ;
 
-      local_scalar_type coeff_k = 0 ;
-
-      {
-        double pt_x = 0 ;
-        double pt_y = 0 ;
-        double pt_z = 0 ;
-
-        // If function is not constant
-        // then compute physical coordinates of integration point
-        if ( ! coeff_function.is_constant ) {
-          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-            pt_x += x[j] * elem_data.values[i][j] ;
-            pt_y += y[j] * elem_data.values[i][j] ;
-            pt_z += z[j] * elem_data.values[i][j] ;
-          }
-        }
-
-        // Need to fix this for local_scalar_type!!!!!!
-        coeff_k = coeff_function(pt_x,pt_y,pt_z,ensemble_rank);
-      }
-
-      const float detJ =
+      const double detJ =
         transform_gradients( elem_data.gradients[i] , x , y , z ,
                              dpsidx , dpsidy , dpsidz );
 
-      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz ,
-                                  detJ , coeff_k ,
-                                  elem_data.weights[i] ,
-                                  elem_data.values[i] ,
+      // Compute physical coordinates of integration point
+      double pt[] = { 0 , 0 , 0 } ;
+      for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
+        pt[0] += x[j] * elem_data.values[i][j] ;
+        pt[1] += y[j] * elem_data.values[i][j] ;
+        pt[2] += z[j] * elem_data.values[i][j] ;
+      }
+
+      // Evaluate diffusion coefficient
+      local_scalar_type coeff_k = coeff_function(pt, ensemble_rank);
+
+      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz , detJ ,
+                                  elem_data.weights[i] , elem_data.values[i] ,
+                                  coeff_k , coeff_source , advection ,
                                   elem_vec , elem_mat );
     }
-
-#if 0
-    if ( 1 == ielem ) {
-      printf("ElemResidual { %f %f %f %f %f %f %f %f }\n",
-             elem_vec[0], elem_vec[1], elem_vec[2], elem_vec[3],
-             elem_vec[4], elem_vec[5], elem_vec[6], elem_vec[7]);
-
-      printf("ElemJacobian {\n");
-
-      for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
-        printf("  { %f %f %f %f %f %f %f %f }\n",
-               elem_mat[j][0], elem_mat[j][1], elem_mat[j][2], elem_mat[j][3],
-               elem_mat[j][4], elem_mat[j][5], elem_mat[j][6], elem_mat[j][7]);
-      }
-      printf("}\n");
-    }
-#endif
 
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
@@ -998,8 +989,8 @@ public:
   //------------------------------------
 
    KOKKOS_INLINE_FUNCTION
-  float compute_detJ(
-    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+  double compute_detJ(
+    const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ) const
@@ -1017,9 +1008,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -1036,20 +1027,20 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
@@ -1059,9 +1050,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   value_type contributeResponse(
     const value_type dof_values[] ,
-    const float  detJ ,
-    const float  integ_weight ,
-    const float  bases_vals[] ) const
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
@@ -1099,7 +1090,7 @@ public:
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
 
-      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+      const double detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
 
       response += contributeResponse( val , detJ , elem_data.weights[i] ,
                                       elem_data.values[i] );
@@ -1128,13 +1119,6 @@ public:
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos  */
-
-//----------------------------------------------------------------------------
-
-/* A Cuda-specific specialization for the element computation functor. */
-#if defined( __CUDACC__ )
-// #include <NonlinearElement_Cuda.hpp>
-#endif
 
 //----------------------------------------------------------------------------
 

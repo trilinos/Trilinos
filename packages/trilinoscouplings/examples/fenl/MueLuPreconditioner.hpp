@@ -68,8 +68,15 @@ namespace Example {
     Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
     setupPreconditioner(
       const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-      const std::string& xmlFileName,
-      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords);
+      const Teuchos::RCP<Teuchos::ParameterList>& mueluParams,
+      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
+    {
+      typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
+      Teuchos::RCP<PreconditionerType> mueluPreconditioner;
+      mueluPreconditioner =
+        MueLu::CreateTpetraPreconditioner(A,*mueluParams,coords);
+      return mueluPreconditioner;
+    }
 
   private:
 
@@ -84,19 +91,5 @@ namespace Example {
 
 }
 }
-
-template<class S, class LO, class GO, class N>
-Teuchos::RCP<Tpetra::Operator<S,LO,GO,N> >
-Kokkos::Example::MueLuPreconditioner<S,LO,GO,N>::
-setupPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N> >& A,
-                    const std::string& xmlFileName,
-                    const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
-{
-  typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
-  Teuchos::RCP<PreconditionerType> mueluPreconditioner;
-  mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName,coords);
-  return mueluPreconditioner;
-}
-
 
 #endif // STOKHOS_MUELU_PRECONDITIONER_HPP

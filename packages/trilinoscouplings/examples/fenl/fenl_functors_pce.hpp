@@ -121,8 +121,8 @@ public:
   //------------------------------------
 
    KOKKOS_INLINE_FUNCTION
-  float compute_detJ(
-    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+  double compute_detJ(
+    const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ) const
@@ -140,9 +140,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -159,20 +159,20 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
@@ -182,9 +182,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   scalar_type contributeResponse(
     const scalar_type dof_values[] ,
-    const float  detJ ,
-    const float  integ_weight ,
-    const float  bases_vals[] ) const
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
@@ -224,7 +224,7 @@ public:
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
 
-      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+      const double detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
 
       response_pce += contributeResponse( val , detJ , elem_data.weights[i] ,
                                           elem_data.values[i] );
@@ -644,18 +644,18 @@ template< typename DeviceType ,
           typename StorageType ,
           typename OrdinalType ,
           typename MemoryTraits ,
-          typename SizeType >
+          typename SizeType ,
+          class CoeffFunctionType>
 class ElementComputation<
   Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
   Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , DeviceType , MemoryTraits , SizeType >,
-  ElementComputationKLCoefficient< Sacado::UQ::PCE<StorageType>, typename StorageType::value_type, DeviceType> >
+  CoeffFunctionType >
 {
 public:
 
   typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
   typedef Sacado::UQ::PCE<StorageType> ScalarType;
-  typedef ElementComputationKLCoefficient< ScalarType, typename StorageType::value_type, DeviceType> CoeffFunctionType;
 
   //------------------------------------
 
@@ -674,7 +674,7 @@ public:
   static const int EnsembleSize = 32;
   typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,DeviceType> ensemble_storage_type;
   typedef Sacado::MP::Vector<ensemble_storage_type> ensemble_scalar_type;
-  typedef ElementComputationKLCoefficient< ensemble_scalar_type, scalar_value_type, DeviceType > scalar_coeff_function_type;
+  typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
     Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
     Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , DeviceType , MemoryTraits , SizeType >,
@@ -720,6 +720,8 @@ public:
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
+                      const double             & arg_coeff_source ,
+                      const double             & arg_coeff_advection ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
@@ -738,6 +740,8 @@ public:
                                     arg_coeff_function.m_num_rv )
     , scalar_element_computation( arg_mesh,
                                   scalar_diffusion_coefficient,
+                                  arg_coeff_source,
+                                  arg_coeff_advection,
                                   scalar_solution,
                                   arg_elem_graph,
                                   scalar_jacobian,

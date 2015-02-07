@@ -16,72 +16,78 @@ enum clp_return_type {CLP_HELP=0,
       CLP_OK};
 
 struct CMD {
-  int CMD_USE_THREADS;
-  int CMD_USE_OPENMP;
-  int CMD_USE_NUMA;
-  int CMD_USE_CORE_PER_NUMA;
-  bool CMD_USE_CUDA;
-  int CMD_USE_CUDA_DEV;
-  int CMD_USE_NGPUS;
-  int CMD_USE_FIXTURE_X;
-  int CMD_USE_FIXTURE_Y;
-  int CMD_USE_FIXTURE_Z;
-  int CMD_USE_FIXTURE_BEGIN;
-  int CMD_USE_FIXTURE_END;
-  bool CMD_USE_FIXTURE_QUADRATIC;
-  bool CMD_USE_ATOMIC;
-  int CMD_USE_TRIALS;
-  bool CMD_USE_BELOS;
-  bool CMD_USE_MUELU;
-  bool CMD_USE_MEANBASED;
-  bool CMD_USE_UQ;
-  int CMD_USE_UQ_FAKE;
-  int CMD_USE_UQ_DIM;
-  int CMD_USE_UQ_ORDER;
-  double CMD_USE_MEAN;
-  double CMD_USE_VAR;
-  double CMD_USE_COR;
-  bool CMD_USE_SPARSE;
-  int CMD_USE_UQ_ENSEMBLE;
-  bool CMD_VTUNE;
-  bool CMD_VERBOSE;
-  bool CMD_PRINT;
-  bool CMD_SUMMARIZE;
-  int CMD_ECHO;
-  int CMD_ERROR;
-  int CMD_COUNT;
+  int USE_THREADS;
+  int USE_OPENMP;
+  int USE_NUMA;
+  int USE_CORE_PER_NUMA;
+  bool USE_CUDA;
+  int USE_CUDA_DEV;
+  int USE_NGPUS;
+  int USE_FIXTURE_X;
+  int USE_FIXTURE_Y;
+  int USE_FIXTURE_Z;
+  bool USE_FIXTURE_QUADRATIC;
+  bool USE_ATOMIC;
+  int USE_TRIALS;
+  std::string USE_FENL_XML_FILE;
+  bool USE_BELOS;
+  bool USE_MUELU;
+  bool USE_MEANBASED;
+  bool USE_UQ;
+  int USE_UQ_FAKE;
+  int USE_UQ_DIM;
+  int USE_UQ_ORDER;
+  double USE_DIFF_COEFF_LINEAR;
+  double USE_DIFF_COEFF_CONSTANT;
+  double USE_MEAN;
+  double USE_VAR;
+  double USE_COR;
+  double USE_COEFF_SRC;
+  double USE_COEFF_ADV;
+  bool USE_SPARSE;
+  int USE_UQ_ENSEMBLE;
+  bool VTUNE;
+  bool VERBOSE;
+  bool PRINT;
+  bool SUMMARIZE;
+  int ECHO;
+  int ERROR;
+  int COUNT;
 
-  CMD() : CMD_USE_THREADS(0),
-          CMD_USE_OPENMP(0),
-          CMD_USE_NUMA(0),
-          CMD_USE_CORE_PER_NUMA(0),
-          CMD_USE_CUDA(false),
-          CMD_USE_CUDA_DEV(-1),
-          CMD_USE_NGPUS(1),
-          CMD_USE_FIXTURE_X(2),
-          CMD_USE_FIXTURE_Y(2),
-          CMD_USE_FIXTURE_Z(2),
-          CMD_USE_FIXTURE_BEGIN(0),
-          CMD_USE_FIXTURE_END(0),
-          CMD_USE_FIXTURE_QUADRATIC(false),
-          CMD_USE_ATOMIC(false),
-          CMD_USE_TRIALS(1),
-          CMD_USE_BELOS(false),
-          CMD_USE_MUELU(false),
-          CMD_USE_MEANBASED(false),
-          CMD_USE_UQ(false),
-          CMD_USE_UQ_FAKE(0),
-          CMD_USE_UQ_DIM(3),
-          CMD_USE_UQ_ORDER(2),
-          CMD_USE_MEAN(1),
-          CMD_USE_VAR(0.1),
-          CMD_USE_COR(0.25),
-          CMD_USE_SPARSE(false),
-          CMD_USE_UQ_ENSEMBLE(0),
-          CMD_VTUNE(false),
-          CMD_VERBOSE(false),
-          CMD_PRINT(false),
-          CMD_SUMMARIZE(false)
+  CMD() : USE_THREADS(0),
+          USE_OPENMP(0),
+          USE_NUMA(0),
+          USE_CORE_PER_NUMA(0),
+          USE_CUDA(false),
+          USE_CUDA_DEV(-1),
+          USE_NGPUS(1),
+          USE_FIXTURE_X(2),
+          USE_FIXTURE_Y(2),
+          USE_FIXTURE_Z(2),
+          USE_FIXTURE_QUADRATIC(false),
+          USE_ATOMIC(false),
+          USE_TRIALS(1),
+          USE_FENL_XML_FILE("fenl.xml"),
+          USE_BELOS(false),
+          USE_MUELU(false),
+          USE_MEANBASED(false),
+          USE_UQ(false),
+          USE_UQ_FAKE(0),
+          USE_UQ_DIM(3),
+          USE_UQ_ORDER(2),
+          USE_DIFF_COEFF_LINEAR(0.0),
+          USE_DIFF_COEFF_CONSTANT(1.0),
+          USE_MEAN(1),
+          USE_VAR(0.1),
+          USE_COR(0.25),
+          USE_COEFF_SRC(1.0),
+          USE_COEFF_ADV(0.0),
+          USE_SPARSE(false),
+          USE_UQ_ENSEMBLE(0),
+          VTUNE(false),
+          VERBOSE(false),
+          PRINT(false),
+          SUMMARIZE(false)
     {}
 };
 
@@ -94,24 +100,24 @@ Teuchos::RCP<NodeType>
 createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
   Teuchos::ParameterList params;
   params.set("Verbose", 0);
-  if ( cmd.CMD_USE_THREADS  )
-    params.set("Num Threads", cmd.CMD_USE_THREADS);
-  else if ( cmd.CMD_USE_OPENMP  )
-    params.set("Num Threads", cmd.CMD_USE_OPENMP);
-  if ( cmd.CMD_USE_NUMA  && cmd.CMD_USE_CORE_PER_NUMA  ) {
-    params.set("Num NUMA", cmd.CMD_USE_NUMA );
-    params.set("Num CoresPerNUMA", cmd.CMD_USE_CORE_PER_NUMA );
+  if ( cmd.USE_THREADS  )
+    params.set("Num Threads", cmd.USE_THREADS);
+  else if ( cmd.USE_OPENMP  )
+    params.set("Num Threads", cmd.USE_OPENMP);
+  if ( cmd.USE_NUMA  && cmd.USE_CORE_PER_NUMA  ) {
+    params.set("Num NUMA", cmd.USE_NUMA );
+    params.set("Num CoresPerNUMA", cmd.USE_CORE_PER_NUMA );
   }
-  if ( cmd.CMD_USE_CUDA  )
-    params.set("Device", cmd.CMD_USE_CUDA_DEV  );
+  if ( cmd.USE_CUDA  )
+    params.set("Device", cmd.USE_CUDA_DEV  );
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
-  if ( cmd.CMD_VERBOSE ) {
+  if ( cmd.VERBOSE ) {
     typedef typename NodeType::device_type Device;
     if (comm.getRank() == 0)
       Device::print_configuration(std::cout);
     std::cout.flush();
-    if ( cmd.CMD_USE_CUDA  ) {
+    if ( cmd.USE_CUDA  ) {
       for (int i=0; i<comm.getSize(); ++i) {
         comm.barrier();
         comm.barrier();
@@ -119,7 +125,7 @@ createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
         if ( i == comm.getRank() ) {
           std::cout << "MPI rank " << comm.getRank()
                     << " attached to CUDA device "
-                    << cmd.CMD_USE_CUDA_DEV  << std::endl;
+                    << cmd.USE_CUDA_DEV  << std::endl;
           std::cout.flush();
         }
         comm.barrier();

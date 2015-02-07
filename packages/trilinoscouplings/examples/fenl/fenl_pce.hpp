@@ -39,17 +39,19 @@
 // ************************************************************************
 */
 
-#include <fenl_ensemble_macros.hpp>
-#include <Kokkos_Core.hpp>
+#include "Stokhos_Tpetra_UQ_PCE.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
-namespace Kokkos {
-namespace Example {
-namespace FENL {
-
-#if defined (HAVE_TPETRA_INST_PTHREAD)
-INST_DEVICE_HOST( Threads )
+#if defined( HAVE_STOKHOS_BELOS )
+#include "Belos_TpetraAdapter_UQ_PCE.hpp"
 #endif
 
-}
-}
-}
+#if defined( HAVE_STOKHOS_MUELU )
+#include "Stokhos_MueLu_UQ_PCE.hpp"
+#endif
+
+#include <Kokkos_Core.hpp>
+#include <HexElement.hpp>
+#include <fenl.hpp>
+#include <fenl_functors_pce.hpp>
+#include <fenl_impl.hpp>

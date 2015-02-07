@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -62,9 +62,9 @@ namespace Example {
  */
 struct MapGridUnitCube {
 
-  const float m_a ;
-  const float m_b ;
-  const float m_c ;
+  const double m_a ;
+  const double m_b ;
+  const double m_c ;
   const size_t m_max_x ;
   const size_t m_max_y ;
   const size_t m_max_z ;
@@ -72,9 +72,9 @@ struct MapGridUnitCube {
   MapGridUnitCube( const size_t grid_max_x ,
                    const size_t grid_max_y ,
                    const size_t grid_max_z ,
-                   const float bubble_x ,
-                   const float bubble_y ,
-                   const float bubble_z )
+                   const double bubble_x ,
+                   const double bubble_y ,
+                   const double bubble_z )
     : m_a( bubble_x )
     , m_b( bubble_y )
     , m_c( bubble_z )
@@ -97,7 +97,7 @@ struct MapGridUnitCube {
       const double x = double(grid_x) / double(m_max_x);
       const double y = double(grid_y) / double(m_max_y);
       const double z = double(grid_z) / double(m_max_z);
-    
+
       coord_x = x + x * x * ( x - 1 ) * ( x - 1 ) * m_a ;
       coord_y = y + y * y * ( y - 1 ) * ( y - 1 ) * m_b ;
       coord_z = z + z * z * ( z - 1 ) * ( z - 1 ) * m_c ;
@@ -235,7 +235,7 @@ public:
       m_recv_node     = rhs.m_recv_node ;
       m_send_node     = rhs.m_send_node ;
       m_send_node_id  = rhs.m_send_node_id ;
-     
+
       for ( int i = 0 ; i < ElemNode ; ++i ) {
         m_elem_node_local[i][0] = rhs.m_elem_node_local[i][0] ;
         m_elem_node_local[i][1] = rhs.m_elem_node_local[i][1] ;
@@ -251,9 +251,9 @@ public:
                   const size_t elem_nx ,
                   const size_t elem_ny ,
                   const size_t elem_nz ,
-                  const float bubble_x = 1.1f ,
-                  const float bubble_y = 1.2f ,
-                  const float bubble_z = 1.3f )
+                  const double bubble_x = 1.1 ,
+                  const double bubble_y = 1.2 ,
+                  const double bubble_z = 1.3 )
   : m_box_part( Order , decompose , global_size , global_rank , elem_nx , elem_ny , elem_nz )
   , m_coord_map( m_box_part.global_coord_max(0) ,
                  m_box_part.global_coord_max(1) ,
@@ -279,7 +279,7 @@ public:
       }
     }
 
-    const size_t nwork = 
+    const size_t nwork =
       std::max( m_recv_node.dimension_0() ,
       std::max( m_send_node.dimension_0() ,
       std::max( m_send_node_id.dimension_0() ,
@@ -352,4 +352,3 @@ public:
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_EXAMPLE_BOXELEMFIXTURE_HPP */
-

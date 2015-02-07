@@ -6,7 +6,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <fenl.hpp>
+#include <fenl_ensemble.hpp>
 #include <fenl_utils.hpp>
 
 //----------------------------------------------------------------------------
@@ -42,8 +42,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
   typedef Stokhos::Quadrature<int,double> quadrature;
-  const int dim = cmd.CMD_USE_UQ_DIM ;
-  const int order = cmd.CMD_USE_UQ_ORDER ;
+  const int dim = cmd.USE_UQ_DIM ;
+  const int order = cmd.USE_UQ_ORDER ;
   Array< RCP<const one_d_basis> > bases(dim);
   for (int i=0; i<dim; i++)
     bases[i] = rcp(new legendre_basis(order, true));
@@ -53,10 +53,10 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Array<double> quad_weights;
   Array< Array<double> > quad_points;
   Array< Array<double> > quad_values;
-  if ( cmd.CMD_USE_UQ_FAKE > 0 ) {
-    // Create fake UQ problem of size cmd.CMD_USE_UQ_FAKE, initializing
+  if ( cmd.USE_UQ_FAKE > 0 ) {
+    // Create fake UQ problem of size cmd.USE_UQ_FAKE, initializing
     // points, weights, values to 0
-    num_quad_points = cmd.CMD_USE_UQ_FAKE;
+    num_quad_points = cmd.USE_UQ_FAKE;
     quad_weights.resize(num_quad_points);
     quad_points.resize(num_quad_points);
     quad_values.resize(num_quad_points);
@@ -66,7 +66,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     }
   }
   else {
-    if ( cmd.CMD_USE_SPARSE  ) {
+    if ( cmd.USE_SPARSE  ) {
       Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
       quad =
         rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
@@ -84,23 +84,22 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
 
-  using Kokkos::Example::FENL::TrivialManufacturedSolution;
   using Kokkos::Example::FENL::ElementComputationKLCoefficient;
+  using Kokkos::Example::FENL::ExponentialKLCoefficient;
   using Kokkos::Example::BoxElemPart;
   using Kokkos::Example::FENL::fenl;
   using Kokkos::Example::FENL::Perf;
 
   const double bc_lower_value = 1 ;
   const double bc_upper_value = 2 ;
-  const TrivialManufacturedSolution manufactured_solution;
 
-  const double kl_mean = cmd.CMD_USE_MEAN;
-  const double kl_variance = cmd.CMD_USE_VAR;
-  const double kl_correlation = cmd.CMD_USE_COR;
+  const double kl_mean = cmd.USE_MEAN;
+  const double kl_variance = cmd.USE_VAR;
+  const double kl_correlation = cmd.USE_COR;
 
-  int nelem[3] = { cmd.CMD_USE_FIXTURE_X,
-                   cmd.CMD_USE_FIXTURE_Y,
-                   cmd.CMD_USE_FIXTURE_Z};
+  int nelem[3] = { cmd.USE_FIXTURE_X,
+                   cmd.USE_FIXTURE_Y,
+                   cmd.USE_FIXTURE_Z};
   Perf perf_total;
   perf_total.uq_count = num_quad_points;
 
@@ -110,7 +109,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   // Compute PCE of response propagating blocks of quadrature
   // points at a time
-  if ( cmd.CMD_USE_UQ_ENSEMBLE > 0 ) {
+  if ( cmd.USE_UQ_ENSEMBLE > 0 ) {
 
     typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> Storage;
     typedef Sacado::MP::Vector<Storage> Scalar;
@@ -118,7 +117,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     // Set global vector size -- this is mandatory
     Kokkos::global_sacado_mp_vector_size = VectorSize;
 
-    typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+    //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+    typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
     typedef typename RV::HostMirror HRV;
@@ -147,12 +147,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       Scalar response = 0;
       Perf perf =
         fenl< Scalar , Device , BoxElemPart::ElemLinear >
-        ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
-          cmd.CMD_USE_MEANBASED ,
-          nelem , diffusion_coefficient , manufactured_solution ,
-          bc_lower_value , bc_upper_value ,
-          false , response);
+        ( comm , node , cmd.USE_FENL_XML_FILE ,
+          cmd.PRINT , cmd.USE_TRIALS ,
+          cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
+          cmd.USE_MEANBASED ,
+          nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+          cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+          response);
 
       perf.newton_iter_count *= VectorSize;
       perf.cg_iter_count *= VectorSize;
@@ -162,7 +163,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf.fill_graph_entries *= VectorSize;
       perf.sort_graph_entries *= VectorSize;
       perf.fill_element_graph *= VectorSize;
-      perf_total.increment(perf, !cmd.CMD_USE_BELOS);
+      perf_total.increment(perf, !cmd.USE_BELOS);
 
       // Sum response into integral computing response PCE coefficients
       for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j) {
@@ -180,7 +181,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   else {
 
     typedef double Scalar;
-    typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+    //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+    typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
     typedef typename RV::HostMirror HRV;
@@ -199,14 +201,15 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       Scalar response = 0;
       Perf perf =
         fenl< Scalar , Device , BoxElemPart::ElemLinear >
-        ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-          cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
-          cmd.CMD_USE_MEANBASED ,
-          nelem , diffusion_coefficient , manufactured_solution ,
-          bc_lower_value , bc_upper_value ,
-          false , response);
+        ( comm , node , cmd.USE_FENL_XML_FILE ,
+          cmd.PRINT , cmd.USE_TRIALS ,
+          cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
+          cmd.USE_MEANBASED ,
+          nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+          cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+          response);
 
-      perf_total.increment(perf, !cmd.CMD_USE_BELOS);
+      perf_total.increment(perf, !cmd.USE_BELOS);
 
       // Sum response into integral computing response PCE coefficients
       double r = response;
@@ -227,7 +230,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     print_perf_value( std::cout , cmd , widths , perf_total );
   }
 
-  if ( cmd.CMD_SUMMARIZE  ) {
+  if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
   }
 
@@ -256,29 +259,29 @@ int main( int argc , char ** argv )
   else if (rv==CLP_ERROR)
     return(EXIT_FAILURE);
 
-  if ( cmdline.CMD_VTUNE  ) {
+  if ( cmdline.VTUNE  ) {
     connect_vtune(comm->getRank());
   }
 
-  if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
+  if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
 #if defined( HAVE_TPETRA_INST_PTHREAD )
-    if ( cmdline.CMD_USE_THREADS ) {
+    if ( cmdline.USE_THREADS ) {
 #if defined(__MIC__)
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
-           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Threads >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
       else
         std::cout << "Invalid ensemble size!" << std::endl;
 #else
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
-           cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 4 )
         run< Kokkos::Threads ,  4 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Threads , 16 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
       else
         std::cout << "Invalid ensemble size!" << std::endl;
@@ -287,22 +290,22 @@ int main( int argc , char ** argv )
 #endif
 
 #if defined( HAVE_TPETRA_INST_OPENMP )
-    if ( cmdline.CMD_USE_OPENMP ) {
+    if ( cmdline.USE_OPENMP ) {
 #if defined(__MIC__)
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
-           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::OpenMP , 32 >( comm , cmdline );
       else
         std::cout << "Invalid ensemble size!" << std::endl;
 #else
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
-           cmdline.CMD_USE_UQ_ENSEMBLE == 4 )
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 4 )
         run< Kokkos::OpenMP ,  4 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::OpenMP , 32 >( comm , cmdline );
       else
         std::cout << "Invalid ensemble size!" << std::endl;
@@ -311,11 +314,11 @@ int main( int argc , char ** argv )
 #endif
 
 #if defined( HAVE_TPETRA_INST_CUDA )
-    if ( cmdline.CMD_USE_CUDA ) {
-      if ( cmdline.CMD_USE_UQ_ENSEMBLE == 0 ||
-           cmdline.CMD_USE_UQ_ENSEMBLE == 16 )
+    if ( cmdline.USE_CUDA ) {
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Cuda , 16 >( comm , cmdline );
-      else if ( cmdline.CMD_USE_UQ_ENSEMBLE == 32 )
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Cuda , 32 >( comm , cmdline );
       else
         std::cout << "Invalid ensemble size!" << std::endl;
@@ -326,5 +329,5 @@ int main( int argc , char ** argv )
 
   //--------------------------------------------------------------------------
 
-  return cmdline.CMD_ERROR ? -1 : 0 ;
+  return cmdline.ERROR ? -1 : 0 ;
 }

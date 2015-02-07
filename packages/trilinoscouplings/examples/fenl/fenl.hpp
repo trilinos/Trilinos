@@ -196,159 +196,20 @@ struct CreateDeviceConfigs {
 };
 
 //----------------------------------------------------------------------------
-
-template < class Scalar, class Device , BoxElemPart::ElemOrder ElemOrder,
-           class CoeffFunctionType , class ManufacturedSolutionType >
-Perf fenl(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const Teuchos::RCP< Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int use_belos ,
-  const int use_muelu ,
-  const int use_mean_based ,
-  const int use_nodes[] ,
-  const CoeffFunctionType& coeff_function ,
-  const ManufacturedSolutionType& manufactured_solution ,
-  const double bc_lower_value ,
-  const double bc_upper_value ,
-  const bool check_solution ,
-  Scalar& response,
-  const QuadratureData<Device>& qd = QuadratureData<Device>() );
-
-//----------------------------------------------------------------------------
-// Manufactured Solutions
-//----------------------------------------------------------------------------
-
-class ManufacturedSolution {
-public:
-
-  // Manufactured solution for one dimensional nonlinear PDE
-  //
-  //  -K T_zz + T^2 = 0 ; T(zmin) = T_zmin ; T(zmax) = T_zmax
-  //
-  //  Has an analytic solution of the form:
-  //
-  //    T(z) = ( a ( z - zmin ) + b )^(-2) where K = 1 / ( 6 a^2 )
-  //
-  //  Given T_0 and T_L compute K for this analytic solution.
-  //
-  //  Two analytic solutions:
-  //
-  //    Solution with singularity:
-  //    , a( ( 1.0 / sqrt(T_zmax) + 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
-  //    , b( -1.0 / sqrt(T_zmin) )
-  //
-  //    Solution without singularity:
-  //    , a( ( 1.0 / sqrt(T_zmax) - 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
-  //    , b( 1.0 / sqrt(T_zmin) )
-
-  const double zmin ;
-  const double zmax ;
-  const double T_zmin ;
-  const double T_zmax ;
-  const double a ;
-  const double b ;
-  const double K ;
-
-  ManufacturedSolution( const double arg_zmin ,
-                        const double arg_zmax ,
-                        const double arg_T_zmin ,
-                        const double arg_T_zmax )
-    : zmin( arg_zmin )
-    , zmax( arg_zmax )
-    , T_zmin( arg_T_zmin )
-    , T_zmax( arg_T_zmax )
-    , a( ( 1.0 / sqrt(T_zmax) - 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
-    , b( 1.0 / sqrt(T_zmin) )
-    , K( 1.0 / ( 6.0 * a * a ) )
-    {}
-
-  double operator()( const double z ) const
-  {
-    const double tmp = a * ( z - zmin ) + b ;
-    return 1.0 / ( tmp * tmp );
-  }
-
-  template <typename FixtureType>
-  void print( std::ostream& os , const FixtureType& fixture ) const {
-    os << "Manufactured solution"
-       << " a[" << a << "]"
-       << " b[" << b << "]"
-       << " K[" << K << "]"
-       << " {" ;
-    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
-      os << " " << (*this)( fixture.node_coord( inode , 2 ) );
-    }
-    os << " }" << std::endl ;
-  }
-
-  template < typename FixtureType , typename SolutionType >
-  double compute_error( const FixtureType& fixture ,
-                        const SolutionType& solution ) const {
-    typedef typename SolutionType::value_type Scalar;
-    typedef Kokkos::Details::ArithTraits<Scalar> KAT;
-    typedef typename KAT::mag_type Magnitude;
-
-    const typename FixtureType::node_coord_type::HostMirror
-      h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
-
-    const typename SolutionType::HostMirror
-      h_nodal_solution = Kokkos::create_mirror_view( solution );
-
-    Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
-    Kokkos::deep_copy( h_nodal_solution , solution );
-
-    double error_max = 0 ;
-    for ( unsigned inode = 0 ; inode < fixture.node_count_owned() ; ++inode ) {
-      const double answer = (*this)( h_node_coord( inode , 2 ) );
-      const Magnitude error =
-        KAT::abs( ( h_nodal_solution(inode) - answer ) / answer );
-      if ( error_max < error ) { error_max = error ; }
-    }
-
-    return  error_max;
-  }
-};
-
-//----------------------------------------------------------------------------
-
-class TrivialManufacturedSolution {
-public:
-
-  // A trivial manufactured solution that doesn't do anything
-
-  TrivialManufacturedSolution() {}
-
-  template <typename FixtureType>
-  void print( std::ostream& os , const FixtureType& fixture ) const {}
-
-  template < typename FixtureType , typename SolutionType >
-  double compute_error( const FixtureType& fixture ,
-                        const SolutionType& solution ) const {
-    return 0.0;
-  }
-};
-
-//----------------------------------------------------------------------------
 // Diffusion coefficients
 //----------------------------------------------------------------------------
 
+// Constant
 struct ElementComputationConstantCoefficient {
   enum { is_constant = true };
 
-  const float coeff_k ;
+  const double coeff_k ;
 
   KOKKOS_INLINE_FUNCTION
-  float operator()( double /* x */
-                  , double /* y */
-                  , double /* z */
-                  , unsigned ensemble_rank
-                  ) const
+  double operator()( const double point[], unsigned ensemble_rank ) const
     { return coeff_k ; }
 
-  ElementComputationConstantCoefficient( const float val )
+  ElementComputationConstantCoefficient( const double val )
     : coeff_k( val ) {}
 
   ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
@@ -357,6 +218,26 @@ struct ElementComputationConstantCoefficient {
 
 //----------------------------------------------------------------------------
 
+// Linear
+struct ElementComputationLinearCoefficient {
+  enum { is_constant = false };
+
+  const double a, b ;
+
+  KOKKOS_INLINE_FUNCTION
+  double operator()( const double point[], unsigned ensemble_rank ) const
+    { return a*point[0] + b ; }
+
+  ElementComputationLinearCoefficient( const double a_, const double b_ )
+    : a(a_), b(b_) {}
+
+  ElementComputationLinearCoefficient( const ElementComputationLinearCoefficient & rhs )
+    : a(rhs.a), b(rhs.b) {}
+};
+
+//----------------------------------------------------------------------------
+
+// KL-like expansion from Webster & Gunzburger
 template < typename Scalar, typename MeshScalar, typename Device >
 class ElementComputationKLCoefficient {
 public:
@@ -383,7 +264,31 @@ public:
   ElementComputationKLCoefficient( const MeshScalar mean ,
                                    const MeshScalar variance ,
                                    const MeshScalar correlation_length ,
-                                   const size_type num_rv );
+                                   const size_type num_rv ) :
+    m_mean( mean ),
+    m_variance( variance ),
+    m_corr_len( correlation_length ),
+    m_num_rv( num_rv ),
+    m_rv( "KL Random Variables", m_num_rv ),
+    m_eig( "KL Eigenvalues", m_num_rv ),
+    m_pi( 4.0*std::atan(1.0) )
+  {
+    typename EigenView::HostMirror host_eig =
+      Kokkos::create_mirror_view( m_eig );
+
+    const MeshScalar a = std::sqrt( std::sqrt(m_pi)*m_corr_len );
+
+    if (m_num_rv > 0)
+      host_eig(0) = a / std::sqrt( MeshScalar(2) );
+
+    for ( size_type i=1; i<m_num_rv; ++i ) {
+      const MeshScalar b = (i+1)/2;  // floor((i+1)/2)
+      const MeshScalar c = b * m_pi * m_corr_len;
+      host_eig(i) = a * std::exp( -c*c / MeshScalar(8) );
+    }
+
+    Kokkos::deep_copy( m_eig , host_eig );
+  }
 
   ElementComputationKLCoefficient( const ElementComputationKLCoefficient & rhs )
     : m_mean( rhs.m_mean ) ,
@@ -401,15 +306,14 @@ public:
   RandomVariableView getRandomVariables() const { return m_rv; }
 
   KOKKOS_INLINE_FUNCTION
-  local_scalar_type operator() ( const MeshScalar x,
-                                 const MeshScalar y,
-                                 const MeshScalar z,
+  local_scalar_type operator() ( const MeshScalar point[],
                                  const size_type  ensemble_rank ) const
   {
     local_rv_view_type local_rv =
       local_rv_view_traits::create_local_view(m_rv, ensemble_rank);
 
     local_scalar_type val = 0.0;
+    MeshScalar x = point[0];
     if (m_num_rv > 0)
       val += m_eig(0) * local_rv(0);
     for ( size_type i=1; i<m_num_rv; i+=2 ) {
@@ -430,5 +334,103 @@ public:
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+
+#include "TrilinosCouplings_config.h"
+#ifdef HAVE_TRILINOSCOUPLINGS_STOKHOS
+
+#include "Stokhos_KL_ExponentialRandomField.hpp"
+
+namespace Kokkos {
+namespace Example {
+namespace FENL {
+
+// Exponential KL from Stokhos
+template < typename Scalar, typename MeshScalar, typename Device >
+class ExponentialKLCoefficient {
+public:
+
+  // Turn into a meta-function class usable with Sacado::mpl::apply
+  template <typename T1, typename T2 = MeshScalar, typename T3 = Device>
+  struct apply {
+    typedef ExponentialKLCoefficient<T1,T2,T3> type;
+  };
+
+  enum { is_constant = false };
+  typedef Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device> RandomVariableView;
+  typedef typename RandomVariableView::size_type            size_type;
+
+  typedef LocalViewTraits< RandomVariableView >           local_rv_view_traits;
+  typedef typename local_rv_view_traits::local_view_type  local_rv_view_type;
+  typedef typename local_rv_view_traits::local_value_type local_scalar_type;
+  typedef Stokhos::KL::ExponentialRandomField<MeshScalar, Device> rf_type;
+
+  rf_type m_rf;                   // Exponential random field
+  const MeshScalar m_mean;        // Mean of random field
+  const MeshScalar m_variance;    // Variance of random field
+  const MeshScalar m_corr_len;    // Correlation length of random field
+  const size_type m_num_rv;       // Number of random variables
+  RandomVariableView m_rv;        // KL random variables
+
+public:
+
+  ExponentialKLCoefficient(
+    const MeshScalar mean ,
+    const MeshScalar variance ,
+    const MeshScalar correlation_length ,
+    const size_type num_rv ) :
+    m_mean( mean ),
+    m_variance( variance ),
+    m_corr_len( correlation_length ),
+    m_num_rv( num_rv ),
+    m_rv( "KL Random Variables", m_num_rv )
+  {
+    Teuchos::ParameterList solverParams;
+    solverParams.set("Number of KL Terms", int(num_rv));
+    solverParams.set("Mean", mean);
+    solverParams.set("Standard Deviation", std::sqrt(variance));
+    int ndim = 3;
+    Teuchos::Array<double> domain_upper(ndim, 1.0), domain_lower(ndim, 0.0),
+      correlation_lengths(ndim, correlation_length);
+    solverParams.set("Domain Upper Bounds", domain_upper);
+    solverParams.set("Domain Lower Bounds", domain_lower);
+    solverParams.set("Correlation Lengths", correlation_lengths);
+
+    m_rf = rf_type(solverParams);
+  }
+
+  ExponentialKLCoefficient( const ExponentialKLCoefficient & rhs ) :
+    m_rf( rhs.m_rf ) ,
+    m_mean( rhs.m_mean ) ,
+    m_variance( rhs.m_variance ) ,
+    m_corr_len( rhs.m_corr_len ) ,
+    m_num_rv( rhs.m_num_rv ) ,
+    m_rv( rhs.m_rv ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void setRandomVariables( const RandomVariableView& rv) { m_rv = rv; }
+
+  KOKKOS_INLINE_FUNCTION
+  RandomVariableView getRandomVariables() const { return m_rv; }
+
+  KOKKOS_INLINE_FUNCTION
+  local_scalar_type operator() ( const MeshScalar point[],
+                                 const size_type  ensemble_rank ) const
+  {
+    local_rv_view_type local_rv =
+      local_rv_view_traits::create_local_view(m_rv, ensemble_rank);
+
+    local_scalar_type val = m_rf.evaluate(point, local_rv);
+
+    return val;
+  }
+};
+
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos */
+
+#endif
 
 #endif /* #ifndef KOKKOS_EXAMPLE_FENL_HPP */

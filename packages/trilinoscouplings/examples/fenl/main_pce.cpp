@@ -6,7 +6,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <fenl.hpp>
+#include <fenl_pce.hpp>
 #include <fenl_utils.hpp>
 
 //----------------------------------------------------------------------------
@@ -44,8 +44,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
   typedef Stokhos::Sparse3Tensor<int,double> Cijk;
   typedef Stokhos::Quadrature<int,double> quadrature;
-  const int dim = cmd.CMD_USE_UQ_DIM;
-  const int order = cmd.CMD_USE_UQ_ORDER ;
+  const int dim = cmd.USE_UQ_DIM;
+  const int order = cmd.USE_UQ_ORDER ;
   Array< RCP<const one_d_basis> > bases(dim);
   for (int i=0; i<dim; i++)
     bases[i] = rcp(new legendre_basis(order, true));
@@ -60,7 +60,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   // Create quadrature data used by assembly
   RCP<const quadrature> quad;
-  if ( cmd.CMD_USE_SPARSE  ) {
+  if ( cmd.USE_SPARSE  ) {
     Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
     quad =
       rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
@@ -118,25 +118,25 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
 
-  using Kokkos::Example::FENL::TrivialManufacturedSolution;
   using Kokkos::Example::FENL::ElementComputationKLCoefficient;
+  using Kokkos::Example::FENL::ExponentialKLCoefficient;
   using Kokkos::Example::BoxElemPart;
   using Kokkos::Example::FENL::fenl;
   using Kokkos::Example::FENL::Perf;
 
   const double bc_lower_value = 1 ;
   const double bc_upper_value = 2 ;
-  const TrivialManufacturedSolution manufactured_solution;
 
-  int nelem[3] = { cmd.CMD_USE_FIXTURE_X  ,
-                   cmd.CMD_USE_FIXTURE_Y  ,
-                   cmd.CMD_USE_FIXTURE_Z  };
+  int nelem[3] = { cmd.USE_FIXTURE_X  ,
+                   cmd.USE_FIXTURE_Y  ,
+                   cmd.USE_FIXTURE_Z  };
 
   // Create KL diffusion coefficient
-  const double kl_mean = cmd.CMD_USE_MEAN;
-  const double kl_variance = cmd.CMD_USE_VAR;
-  const double kl_correlation = cmd.CMD_USE_COR;
-  typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+  const double kl_mean = cmd.USE_MEAN;
+  const double kl_variance = cmd.USE_VAR;
+  const double kl_correlation = cmd.USE_COR;
+  //typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
+  typedef ExponentialKLCoefficient< Scalar, double, Device > KL;
   KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
   typedef typename KL::RandomVariableView RV;
   typedef typename RV::HostMirror HRV;
@@ -163,22 +163,24 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   // Compute stochastic response using stochastic Galerkin method
   Scalar response = 0;
   Perf perf;
-  if ( cmd.CMD_USE_FIXTURE_QUADRATIC  )
+  if ( cmd.USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-      ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
-        cmd.CMD_USE_MEANBASED ,
-        nelem , diffusion_coefficient , manufactured_solution ,
-        bc_lower_value , bc_upper_value ,
-        false , response, qd );
+      ( comm , node , cmd.USE_FENL_XML_FILE ,
+        cmd.PRINT , cmd.USE_TRIALS ,
+        cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
+        cmd.USE_MEANBASED ,
+        nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+        response, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-      ( comm , node , cmd.CMD_PRINT , cmd.CMD_USE_TRIALS ,
-        cmd.CMD_USE_ATOMIC , cmd.CMD_USE_BELOS , cmd.CMD_USE_MUELU ,
-        cmd.CMD_USE_MEANBASED ,
-        nelem , diffusion_coefficient , manufactured_solution ,
-        bc_lower_value , bc_upper_value ,
-        false , response , qd );
+      ( comm , node , cmd.USE_FENL_XML_FILE ,
+        cmd.PRINT , cmd.USE_TRIALS ,
+        cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
+        cmd.USE_MEANBASED ,
+        nelem , diffusion_coefficient , cmd.USE_COEFF_SRC ,
+        cmd.USE_COEFF_ADV , bc_lower_value , bc_upper_value ,
+        response , qd );
 
   // std::cout << "newton count = " << perf.newton_iter_count
   //           << " cg count = " << perf.cg_iter_count << std::endl;
@@ -202,7 +204,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     print_perf_value( std::cout , cmd , widths , perf );
   }
 
-  if ( cmd.CMD_SUMMARIZE  ) {
+  if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
   }
 
@@ -228,7 +230,7 @@ int main( int argc , char ** argv )
   clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
 
   // Print a warning if we are using the non-mean-based preconditioner
-  if (cmdline.CMD_USE_MUELU && !cmdline.CMD_USE_MEANBASED &&
+  if (cmdline.USE_MUELU && !cmdline.USE_MEANBASED &&
       comm->getRank() == 0) {
     std::cout << "Warning:  The non-mean-based preconditioner for PCE is "
               << "not correctly applying the inverse diagonal in the smoother."
@@ -240,26 +242,26 @@ int main( int argc , char ** argv )
   else if (rv==CLP_ERROR)
     return(EXIT_FAILURE);
 
-  if ( cmdline.CMD_VTUNE  ) {
+  if ( cmdline.VTUNE  ) {
     connect_vtune(comm->getRank());
   }
 
-  if ( ! cmdline.CMD_ERROR  && ! cmdline.CMD_ECHO  ) {
+  if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
 #if defined( HAVE_TPETRA_INST_PTHREAD )
-    if ( cmdline.CMD_USE_THREADS ) {
+    if ( cmdline.USE_THREADS ) {
       run< Kokkos::Threads >( comm , cmdline );
     }
 #endif
 
 #if defined( HAVE_TPETRA_INST_OPENMP )
-    if ( cmdline.CMD_USE_OPENMP ) {
+    if ( cmdline.USE_OPENMP ) {
       run< Kokkos::OpenMP >( comm , cmdline );
     }
 #endif
 
 #if defined( HAVE_TPETRA_INST_CUDA )
-    if ( cmdline.CMD_USE_CUDA ) {
+    if ( cmdline.USE_CUDA ) {
       run< Kokkos::Cuda >( comm , cmdline );
     }
 #endif
@@ -268,5 +270,5 @@ int main( int argc , char ** argv )
 
   //--------------------------------------------------------------------------
 
-  return cmdline.CMD_ERROR  ? -1 : 0 ;
+  return cmdline.ERROR  ? -1 : 0 ;
 }

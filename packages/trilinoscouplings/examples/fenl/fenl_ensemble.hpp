@@ -60,6 +60,7 @@
 
 
 #include <fenl.hpp>
+#include <fenl_impl.hpp>
 
 namespace Kokkos {
 namespace Example {
