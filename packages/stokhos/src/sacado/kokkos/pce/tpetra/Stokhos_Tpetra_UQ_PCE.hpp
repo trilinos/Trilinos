@@ -123,10 +123,10 @@ struct DeviceForNode2< Kokkos::Compat::KokkosDeviceWrapperNode<Device> > {
 
 }
 
-#include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 
 namespace Tpetra {
-namespace Import_Util {
+namespace Details {
 
 /// \brief Partial specialization of PackTraits for Sacado's PCE UQ type.
 ///
@@ -281,7 +281,7 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
   }
 }; // struct PackTraits
 
-} // namespace Import_Util
+} // namespace Details
 } // namespace Tpetra
 
 #endif // STOKHOS_TPETRA_UQ_PCE_HPP
