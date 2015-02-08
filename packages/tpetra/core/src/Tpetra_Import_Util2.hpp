@@ -803,8 +803,6 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   // Setup CSR_rowptr for remotes
-  const size_t totalNumBytes = imports.size ();
-  (void)totalNumBytes;
   {
     size_t offset = 0;
     for (size_type k = 0; k < numImportLIDs; ++k) {
@@ -961,9 +959,9 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      offset != totalNumBytes, std::logic_error, prefix << "After "
+      offset != imports.size (), std::logic_error, prefix << "After "
       "unpacking and counting all the imports, the final offset in bytes "
-      << offset << " != total number of bytes " << totalNumBytes << ".  "
+      << offset << " != imports.size() = " << imports.size () << ".  "
       "Please report this bug to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       lclErr != 0, std::logic_error, prefix << "numBytes != numBytesOut "
