@@ -11,6 +11,8 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURC
 # Test of HIER_ASSIST option of hierarchical partitioning
 #
 
+IF (NOT ${PACKAGE_NAME}_ENABLE_PURIFY)
+
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS AND ${PACKAGE_NAME}_ENABLE_Scotch)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH_P_S
@@ -48,17 +50,19 @@ ELSEIF (${PACKAGE_NAME}_ENABLE_Scotch)
       "--topology=2,2,2 --size=10000 --graph_package=scotch"
   )
 
-ELSE()
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stressTestGRAPH
-    SOURCES stressTestGRAPH.c 
-    COMM mpi 
-    NUM_MPI_PROCS 8
-    ARGS
-      "--topology=2,4 --size=10000"
-      "--topology=2,2,2 --size=10000"
-    )
 ENDIF()
+
+ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  stressTestGRAPH
+  SOURCES stressTestGRAPH.c 
+  COMM mpi 
+  NUM_MPI_PROCS 8
+  ARGS
+    "--topology=2,4 --size=10000"
+    "--topology=2,2,2 --size=10000"
+)
 
 
 #=============================================
