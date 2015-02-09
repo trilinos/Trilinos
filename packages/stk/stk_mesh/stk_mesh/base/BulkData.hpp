@@ -500,6 +500,8 @@ public:
   /** \brief  Vector of all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
+  size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
+
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
   PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)

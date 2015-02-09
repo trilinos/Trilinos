@@ -166,3 +166,24 @@ TEST(UnitTestGhostParts, Custom1)
   EXPECT_EQ(expected_num_elems_for_custom_ghosting, counted_elements);
 }
 //-END
+
+TEST(UnitTestAura, test_num_communicated_entities)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs == 2) {
+      stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+      const std::string generatedMeshSpecification = "generated:1x1x4";
+      stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+      stkMeshIoBroker.create_input_mesh();
+      stkMeshIoBroker.populate_bulk_data();
+
+      stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
+      size_t num_comm_entities = stkMeshBulkData.get_num_communicated_entities();
+
+      const size_t expected_num_comm_entities = 14;
+      EXPECT_EQ(expected_num_comm_entities, num_comm_entities);
+  }
+}
