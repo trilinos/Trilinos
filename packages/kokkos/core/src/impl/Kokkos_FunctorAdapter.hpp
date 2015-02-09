@@ -144,16 +144,16 @@ struct FunctorValueTraits< FunctorType
 {
 private:
 
-  struct VOID {};
+  struct VOIDTAG {};
 
   // parallel_for operator without a tag:
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( ArgMember ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( ArgMember ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( const ArgMember& ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( const ArgMember& ) const ) {}
 
   // parallel_reduce operator without a tag:
   template< class ArgMember , class T >
@@ -176,7 +176,7 @@ private:
 
   typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
 
-  enum { IS_VOID = Impl::is_same<VOID,ValueType>::value };
+  enum { IS_VOID = Impl::is_same<VOIDTAG,ValueType>::value };
 
 public:
 
@@ -205,23 +205,23 @@ private:
   //----------------------------------------
   // parallel_for operator with a tag:
 
-  struct VOID {}; // to allow valid sizeof(ValueType)
+  struct VOIDTAG {}; // to allow valid sizeof(ValueType)
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( ArgTag , ArgMember ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( ArgTag , ArgMember ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( ArgTag , const ArgMember& ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( ArgTag , const ArgMember& ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOID deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& ) const ) {}
+  static VOIDTAG deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& ) const ) {}
 
   //----------------------------------------
   // parallel_reduce operator with a tag:
@@ -265,7 +265,7 @@ private:
 
   typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
 
-  enum { IS_VOID = Impl::is_same<VOID,ValueType>::value };
+  enum { IS_VOID = Impl::is_same<VOIDTAG,ValueType>::value };
 
 public:
 

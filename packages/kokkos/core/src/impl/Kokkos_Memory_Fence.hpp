@@ -43,7 +43,6 @@
 
 #if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE )
 #define KOKKOS_MEMORY_FENCE
-
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
@@ -60,7 +59,8 @@ void memory_fence()
   _mm_mfence();
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )
   #pragma omp flush
-
+#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
+  MemoryBarrier();
 #else
  #error "Error: memory_fence() not defined"
 #endif
