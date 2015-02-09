@@ -139,7 +139,7 @@ public:
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
-                MemoryTraits<RandomAccess> > t_dev_const_randomread ;
+                MemoryRandomAccess > t_dev_const_randomread ;
 
   /// \typedef t_host_const_randomread
   /// \brief The type of a const, random-access View host mirror of

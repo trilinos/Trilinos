@@ -156,7 +156,7 @@ namespace MueLu {
     void CompDistances     (const Matrix& A, LO start, int numDist, std::vector<LO>& dist1, std::vector<LO>& dist2,
                             std::vector<LO>& dist3, std::vector<LO>& dist4) const;
     void CreateCrsPointers (const Matrix& A, ArrayRCP<const size_t>& ia, ArrayRCP<const LO>& ja) const;
-    void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const;
+    void CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LO offset) const;
 
     void DumpStatus(const std::vector<char>& status, bool pressureMode, const std::string& filename) const;
     void DumpCoords(const MultiVector&       coords, const std::string& filename) const;
@@ -170,6 +170,7 @@ namespace MueLu {
 
     RCP<const FactoryBase> rcpThis = rcpFromRef(*this);
     validParamList->set< RCP<const FactoryBase> >("CoordinatesVelocity",     rcpThis, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("AForPat",                 rcpThis, "Generating factory for Apattern");
     validParamList->set< RCP<const FactoryBase> >("CoordinatesPressure",     rcpThis, "Generating factory of the coordinates");
     validParamList->set< RCP<const FactoryBase> >("p2vMap",                  rcpThis, "Mapping of pressure coords to u-velocity coords");
 
@@ -194,6 +195,8 @@ namespace MueLu {
         // FIXME: this is never executed due to GetLevelID() check above.
         if (fineLevel.GetLevelID() == 0)
           Input(fineLevel, "p2vMap");
+
+        Input(fineLevel, "AForPat");
       }
     }
   }
@@ -208,6 +211,9 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<Matrix> AForPat;
+    RCP<Matrix> Amalg;
+    RCP<MultiVector> AmalgCoords;
 
     Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
 
@@ -222,45 +228,133 @@ namespace MueLu {
     } else {
       if (fineLevel.GetLevelID() == 0) coords = fineLevel.Get< RCP<MultiVector> >("CoordinatesVelocity", NoFactory::get());
       else                             coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesVelocity");
+      if (fineLevel.GetLevelID() == 0) AForPat= fineLevel.Get< RCP<Matrix> >("AForPat", NoFactory::get());
+      else                             AForPat= Get< RCP<Matrix> >(fineLevel, "AForPat");
     }
     const int NDim = coords->getNumVectors();
+int p;
 
     Array<LO> userCpts;
     if (!pressureMode) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!coarseLevel.IsAvailable("PressureCpoints"), Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(!coarseLevel.IsAvailable("PresCptsAndMids"), Exceptions::RuntimeError,
                                  "Pressure points are not available");
 
-      userCpts = coarseLevel.Get<Array<LO> >("PressureCpoints");
+      userCpts = coarseLevel.Get<Array<LO> >("PresCptsAndMids");
       GetOStream(Runtime1) << "Found stored pressure C-points: " << userCpts.size() << " " << userCpts << std::endl;
-
-      // Unamalgamate
-      int p = userCpts.size();
-      userCpts.resize(2*p);
-      if (fineLevel.GetLevelID() == 0){
-        Array<LO> p2vMap = fineLevel.Get< Array<LO> >("p2vMap", NoFactory::get());
-
-        for (int k = p-1; k >= 0; k--) {
-          userCpts[2*k+0] = p2vMap[userCpts[k]];
-          userCpts[2*k+1] = userCpts[2*k+0] + 1;
-        }
-
-      } else {
-        // For coarse level, by construction first 2q velocity points
-        // correspond to q pressure points
-        for (int k = p-1; k >= 0; k--) {
-          userCpts[2*k+0] = 2*userCpts[k];
-          userCpts[2*k+1] = userCpts[2*k+0] + 1;
-        }
-      }
     }
-
-    GetOStream(Runtime1) << "# user C-points: " << userCpts.size() << std::endl;
 
     RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
 
     std::vector<char> status(N, UNASSIGNED);
 
-    FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevel.GetLevelID());
+    if (pressureMode)
+       FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevel.GetLevelID());
+    else {
+       // Do all the coarsening/pattern stuff on amalgamated velocities.
+       // We need to guarantee that all velocity dofs are treated identically
+       // This means that we must amalgmate AForPat and the velocity coordinates
+
+      std::vector<GO> gNodeIds(N/2);
+      for (size_t k = 0; k < N/2 ; k++) gNodeIds[k] = k;
+
+      Teuchos::RCP<Map> nodeMap = MapFactory::Build(AForPat->getRowMap()->lib(), N/2, gNodeIds, 0, AForPat->getRowMap()->getComm());
+
+      Amalg= rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,Node>(nodeMap,nodeMap,30));
+      RCP<CrsMatrix> AmalgCrs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(Amalg)->getCrsMatrix();
+
+      for(LO row=0; row<Teuchos::as<LO>(AForPat->getRowMap()->getNodeNumElements()); row += 2) {
+
+         GO grid = AForPat->getRowMap()->getGlobalElement(row);
+         GO currentId = grid/2;
+
+         size_t nnz = AForPat->getNumEntriesInLocalRow(row);
+         Teuchos::ArrayView<const LO> indices;
+         Teuchos::ArrayView<const SC> vals;
+         AForPat->getLocalRowView(row, indices, vals);
+
+         // Count the number of even numbered columns in this row
+         LO realnnz = 0;
+         for(LO col=0; col<Teuchos::as<LO>(nnz); col++)
+            if (  (indices[col]%2) == 0) realnnz++;
+
+         Teuchos::Array<GO>  cnodeIds(realnnz, 0);
+         Teuchos::Array<SC>  ones(realnnz, 1.0); //Pattern has all 1's
+
+         realnnz = 0;
+         for(LO col=0; col<Teuchos::as<LO>(nnz); col++) {
+            if ((indices[col]%2) == 0) {
+               GO gcid = AForPat->getColMap()->getGlobalElement(indices[col]);
+               cnodeIds[realnnz++] = gcid/2;
+            }
+         }
+         if(realnnz > 0 )
+            AmalgCrs->insertGlobalValues(currentId, cnodeIds,ones);
+
+      } // for(LO row=0; ...
+      AmalgCrs->fillComplete(nodeMap,nodeMap);
+
+      // On the finest level, we must map userCpts (which corresponds to
+      // pressure cpts and pressure mid-points) to the velocity variables
+      //
+      // Note: on coarser levels the lower numbered velocity dofs correspond
+      // to points that are co-located with pressures and the two numberings
+      // are identical so no translation is needed.
+      if (fineLevel.GetLevelID() == 0){
+        ArrayRCP<LO> p2vMap = fineLevel.Get< ArrayRCP<LO> >("p2vMap", NoFactory::get());
+        p = userCpts.size();
+        for (int k = p-1; k >= 0; k--) userCpts[k] = p2vMap[userCpts[k]]/2;
+      }
+
+      // Now amalgmate the velocity coordinates. Currently, hardwired for 2D
+
+      p = userCpts.size();
+      AmalgCoords= Xpetra::MultiVectorFactory<SC,LO,GO,Node>::Build(nodeMap, 2);
+
+      ArrayRCP<SC> Coord_view = coords->getDataNonConst(0);
+      ArrayRCP<SC> Amalg_view = AmalgCoords->getDataNonConst(0);
+      for (size_t k = 0; k < Amalg->getRowMap()->getNodeNumElements(); k++)
+         Amalg_view[k] = Coord_view[2*k];
+
+      Coord_view = coords->getDataNonConst(1);
+      Amalg_view = AmalgCoords->getDataNonConst(1);
+      for (size_t k = 0; k < Amalg->getRowMap()->getNodeNumElements(); k++)
+         Amalg_view[k] = Coord_view[2*k];
+
+      // Now determine velocity Cpoints for amalgamated system
+
+      FindDist4Cpts(*Amalg, *AmalgCoords, userCpts, status, *myCpts, fineLevel.GetLevelID());
+
+      // Unamalgamate myCpts and status
+
+      RCP<MyCptList>      UnAmalgMyCpts  = rcp(new MyCptList(N, 30));
+      Array<LO>&          unAmalgCList   = UnAmalgMyCpts->getCList();
+      std::vector<short>& unAmalgNumCpts = UnAmalgMyCpts->getNumCpts();
+      std::vector<short>&   amalgNumCpts = myCpts->getNumCpts();
+
+      p = userCpts.size();
+      userCpts.resize(2*p);
+
+      for (int k = p-1; k >= 0; k--) {
+         userCpts[2*k  ] = 2*userCpts[k  ];
+         userCpts[2*k+1] =   userCpts[2*k] + 1;
+      }
+      for (int i = 0; i < userCpts.size(); i++)
+         unAmalgCList.push_back(userCpts[i]);
+
+      for (Xpetra::global_size_t i = 0; i < N/2; i++) {
+         status[N-2*i-1] = status[N/2-i-1];
+         status[N-2*i-2] = status[N/2-i-1];
+
+         for (int j = 0; j < amalgNumCpts[i]; j++) {
+            (*UnAmalgMyCpts)(2*i  )[j] =  2*(*myCpts)(i)[j];
+            (*UnAmalgMyCpts)(2*i+1)[j] = (2*(*myCpts)(i)[j])+1;
+         }
+         unAmalgNumCpts[2*i  ] = amalgNumCpts[i];
+         unAmalgNumCpts[2*i+1] = amalgNumCpts[i];
+      }
+      myCpts = UnAmalgMyCpts;
+    }
+
 
     const bool doStatusOutput = pL.get<bool>("dump status");
     if (doStatusOutput) {
@@ -285,8 +379,10 @@ namespace MueLu {
     }
 
     // Beef up any pattern which seems pretty limited
-    if (pL.get<bool>("phase2"))
-      PhaseTwoPattern(*A, *coords, status, *myCpts);
+    if (pL.get<bool>("phase2")) {
+       if (pressureMode) PhaseTwoPattern(*A, *coords, status, *myCpts);
+       else  PhaseTwoPattern(*AForPat, *coords, status, *myCpts);
+    }
 
     if (doStatusOutput) {
       const Array<LO>&    Cptlist = myCpts->getCList();
@@ -310,7 +406,8 @@ namespace MueLu {
     }
 
     RCP<Matrix> P;
-    CptDepends2Pattern(*A, *myCpts, P);
+    if (pressureMode) CptDepends2Pattern(*A, *myCpts, P, 999999);  // hardwired hack, pressure gids must not overlap with velocity gids
+    else CptDepends2Pattern(*AForPat, *myCpts, P, 0);
 
     // Construct coarse map
     RCP<const Map>   coarseMap       = P->getDomainMap();
@@ -335,8 +432,12 @@ namespace MueLu {
     Set(fineLevel,   "CoarseMap",   coarseMap);
     if (pressureMode)
       Set(coarseLevel, "CoordinatesPressure", coarseCoords);
-    else
+    else {
       Set(coarseLevel, "CoordinatesVelocity", coarseCoords);
+      RCP<Matrix> AP = Utils::Multiply(*AForPat, false, *P, false, GetOStream(Statistics2), true, true);
+      RCP<Matrix> RAP= Utils::Multiply(*P, true, *AP, false, GetOStream(Statistics2), true, true);
+      Set(coarseLevel, "AForPat", RAP);
+    }
     Set(coarseLevel, "Nullspace",   coarseNullspace);
 
     if (pressureMode) Utils::Write("Pp.mm", *P);
@@ -346,8 +447,7 @@ namespace MueLu {
     if (pressureMode) {
       Array<LO> velCptlist = Cptlist;
       FindMidPoints(*A, *coords, velCptlist, *myCpts);
-
-      coarseLevel.Set<Array<LO> >("PressureCpoints", velCptlist, NoFactory::get());
+      coarseLevel.Set<Array<LO> >("PresCptsAndMids", velCptlist, NoFactory::get());
     }
   }
 
@@ -583,7 +683,15 @@ namespace MueLu {
           SC distance = distance2(coords1D, newCpt, j);
 
           // Harmonic average new distance with old distance
-          coordDist[j] = (coordDist[j]*distance) / (coordDist[j] + distance);
+          // There should really be a '2' in front of this expression. This
+          // is actually a bug in the code. However, if I put a '2', I don't
+          // get the perfect coarsening for a uniform mesh ... so I'm leaving
+          // if for now without the 2.
+//          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+SC kkk = 10.;
+if (coordDist[j] > distance)
+          coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]*(kkk-1)+ distance);
+          coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]        + distance*(kkk-1));
         }
 
         // Mark all unassigned dist4 points as CANDIDATE and compress
@@ -617,6 +725,7 @@ namespace MueLu {
         dumpStatus = false;
         for (size_t k = 0; k < numCandidates; k++) {
           LO j = candidateList[k];
+
           if (status[j] == CANDIDATE) { candidateList[numOldCandidates++] = j; }
           if (status[j] == TWOTIMER ) {
             status[j] = CANDIDATE;
@@ -634,7 +743,7 @@ namespace MueLu {
         std::vector<double> ddtemp(numNewCandidates);
         for (size_t k = 0; k < numNewCandidates; k++) {
           LO j = dist4[k];
-          ddtemp[k] = -coordDist[j] - 1e-4*(ia[j+1]-ia[j]) + 1e-10*(j+1);
+          ddtemp[k] = -coordDist[j] - .01*(ia[j+1]-ia[j]) + 1e-10*(j+1);
         }
         Muelu_az_dsort2(ddtemp, dist4);
         MergeSort(candidateList, numOldCandidates, dist4, coordDist, ia);
@@ -1165,12 +1274,12 @@ namespace MueLu {
   // Convert information in Cptlist, myCpts into a sparsity pattern matrix
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P) const {
+  CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LocalOrdinal Offset) const {
     RCP<const Map> rowMap = A.getRowMap();
     size_t numRows = myCpts.getNodeNumRows();
 
     const Array<LO>& Cptlist = myCpts.getCList();
-    RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase(), rowMap->getComm());
+    RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase()+Offset, rowMap->getComm());
 
     P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> Pcrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
@@ -1194,6 +1303,9 @@ namespace MueLu {
 
     SC one = Teuchos::ScalarTraits<SC>::one();
 
+    // Build up the prolongator sparsity pattern and the initial
+    // guess used for Emin (which must have row sums equal to one)
+
     ia[0] = 0;
     size_t nnzCount = 0;
     for (size_t i = 0; i < numRows; i++) {
@@ -1201,7 +1313,7 @@ namespace MueLu {
 
       for (int j = 0; j < numCpts[i]; j++) {
         ja [nnzCount] = coarseCmap[cpts[j]];
-        val[nnzCount] = one;
+        val[nnzCount] = one/((SC) numCpts[i]);
         nnzCount++;
       }
       // NOTE: we could theoretically sort here
@@ -1650,9 +1762,11 @@ namespace MueLu {
         int ii = oldCandidates[i];
         int jj = newCandidates[j];
 
-        // Just to match matlab, I added 1e-10*ii to break ties
-        if (coordDist[ii] + .0001*(ia[ii+1]-ia[ii]) - 1.e-10*(ii+1) <
-            coordDist[jj] + .0001*(ia[jj+1]-ia[jj]) - 1.e-10*(jj+1))
+        // Must match code above. There is something arbitrary and
+        // crappy about the current weighting.
+
+        if (coordDist[ii] + .01*(ia[ii+1]-ia[ii]) - 1.e-10*(ii+1) <
+            coordDist[jj] + .01*(ia[jj+1]-ia[jj]) - 1.e-10*(jj+1))
           oldCandidates[k--] = oldCandidates[i--];
 
         else

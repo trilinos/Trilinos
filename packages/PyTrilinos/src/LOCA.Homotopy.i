@@ -70,7 +70,23 @@ the following classes:
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
+
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
 #include "PyTrilinos_Teuchos_Util.hpp"
+
+// NOX-Epetra includes
+#ifdef HAVE_NOX_EPETRA
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#include "Epetra_NumPyVector.hpp"
+#endif
+
+// NOX-PETSc includes
+#include "NOX_Abstract_Vector.H"
+#ifdef HAVE_NOX_PETSC
+#include "NOX_Petsc_Vector.H"
+#endif
 
 // LOCA includes
 #include "LOCA.H"
@@ -80,14 +96,10 @@ the following classes:
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
-%{
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.hpp"
-%}
+#ifdef HAVE_NOX_PETSC
+%include "petsc4py/petsc4py.i"
 #endif
 
 // Exception handling

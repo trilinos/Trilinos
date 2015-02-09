@@ -4996,7 +4996,6 @@ static void create_status(
 {
     nnti_gni_connection_t    *conn       =NULL;
 
-    memset(status, 0, sizeof(NNTI_status_t));
     status->op = wr->ops;
     if (is_wr_complete(gni_wr)) {
         status->result = wr->result;

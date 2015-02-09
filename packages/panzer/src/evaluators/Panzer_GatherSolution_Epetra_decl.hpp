@@ -59,8 +59,6 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
-class EpetraLinearObjContainer;
-
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
 
@@ -124,7 +122,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };
@@ -173,7 +171,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };
@@ -218,13 +216,16 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
-  bool disableSensitivities_;
+  bool disableSensitivities_;     // This disables sensitivities absolutely
+  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+  bool applySensitivities_;       // This is a local variable that is used by evaluateFields
+                                  // to turn on/off a certain set of sensitivities
   std::string globalDataKey_; // what global data does this fill?
   int gatherSeedIndex_; // what gather seed in the workset to use
                         // if less than zero then use alpha or beta
                         // as appropriate
 
-  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+  Teuchos::RCP<Epetra_Vector> x_;
 
   GatherSolution_Epetra();
 };

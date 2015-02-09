@@ -45,8 +45,10 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Atomic.hpp>
-namespace Kokkos {
-namespace Impl {
+
+namespace Kokkos { namespace Impl {
+
+class AllocationTracker;
 
 //The following tag is used to prevent an implicit call of the constructor when trying
 //to assign a literal 0 int ( = 0 );
@@ -391,7 +393,14 @@ public:
   typename ViewTraits::value_type* ptr;
 
   KOKKOS_INLINE_FUNCTION
-  AtomicViewDataHandle(typename ViewTraits::value_type* ptr_):ptr(ptr_){}
+  AtomicViewDataHandle()
+    : ptr(NULL)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  AtomicViewDataHandle(typename ViewTraits::value_type* ptr_)
+    :ptr(ptr_)
+  {}
 
   template<class iType>
   KOKKOS_INLINE_FUNCTION
@@ -428,10 +437,10 @@ class ViewDataHandle<
   >::type >
 {
 private:
-//  typedef typename if_c<(sizeof(typename ViewTraits::const_value_type)==4) || 
-//                        (sizeof(typename ViewTraits::const_value_type)==8), 
-//                         int, Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars >::type 
-//                   atomic_view_possible; 
+//  typedef typename if_c<(sizeof(typename ViewTraits::const_value_type)==4) ||
+//                        (sizeof(typename ViewTraits::const_value_type)==8),
+//                         int, Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars >::type
+//                   atomic_view_possible;
   typedef typename Kokkos_Atomic_is_only_allowed_with_32bit_and_64bit_scalars<sizeof(typename ViewTraits::const_value_type)>::type enable_atomic_type;
   typedef ViewDataHandle self_type;
 
@@ -440,9 +449,14 @@ public:
 
   typedef Impl::AtomicViewDataHandle<ViewTraits> handle_type;
   typedef Impl::AtomicDataElement<ViewTraits>    return_type;
+
+  KOKKOS_INLINE_FUNCTION
+  static handle_type create_handle( typename ViewTraits::value_type * arg_data_ptr, AllocationTracker const & /*arg_tracker*/ )
+  {
+    return handle_type(arg_data_ptr);
+  }
 };
 
-}
-}
+}} // namespace Kokkos::Impl
 
 #endif

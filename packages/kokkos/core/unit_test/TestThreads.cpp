@@ -55,7 +55,6 @@
 
 #include <TestViewImpl.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 #include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>

@@ -307,8 +307,6 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              bool zeroVectorRows) const
           
 {
-   TEUCHOS_ASSERT(!hasColProvider_); // not implemented
-
    const EpetraLinearObjContainer & e_localBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(localBCRows); 
    const EpetraLinearObjContainer & e_globalBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(globalBCRows); 
    EpetraLinearObjContainer & e_ghosted = Teuchos::dyn_cast<EpetraLinearObjContainer>(ghostedObjs); 
@@ -406,8 +404,14 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraDomainSpace() const
 {
-   if(domainSpace_ == Teuchos::null)
-      domainSpace_ = Thyra::create_VectorSpace(getMap());
+   if(domainSpace_ == Teuchos::null) {
+     // in the first case, range is domain, 
+     // in the second domain must be constructed
+     if(!hasColProvider_)
+        domainSpace_ = getThyraRangeSpace();
+     else
+        domainSpace_ = Thyra::create_VectorSpace(getColMap());
+   }
 
    return domainSpace_;
 }

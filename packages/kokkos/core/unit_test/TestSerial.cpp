@@ -54,7 +54,6 @@
 
 #include <TestViewImpl.hpp>
 
-#include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
 #include <TestViewSubview.hpp>
 #include <TestAtomic.hpp>
@@ -81,10 +80,6 @@ protected:
   static void SetUpTestCase() {}
   static void TearDownTestCase() {}
 };
-
-TEST_F( serial, memory_tracking) {
-  TestMemoryTracking();
-}
 
 TEST_F( serial, view_impl) {
   test_view_impl< Kokkos::Serial >();

@@ -93,6 +93,7 @@ void panzer::evaluateInitialCondition(WorksetContainer & wkstContainer,
 {   
   panzer::Traits::PreEvalData ped;
   ped.gedc.addDataObject("Scatter IC Container",loc);
+  ped.sensitivities_name = "";
 
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
       itr!=phx_ic_field_managers.end();++itr) {

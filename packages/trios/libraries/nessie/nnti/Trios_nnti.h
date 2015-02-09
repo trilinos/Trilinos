@@ -195,6 +195,59 @@ NNTI_result_t NNTI_unregister_memory (
         NNTI_buffer_t *reg_buf);
 
 /**
+ * @brief Calculate the number of bytes required to store an encoded NNTI data structure.
+ *
+ * \param[in]  trans_hdl   A handle to the configured transport.
+ * \param[in]  nnti_dt     The NNTI data structure cast to void*.
+ * \param[out] packed_len  The number of bytes required to store the encoded data structure.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_dt_sizeof (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        uint64_t               *packed_len);
+
+/**
+ * @brief Encode an NNTI data structure into an array of bytes.
+ *
+ * \param[in]  trans_hdl      A handle to the configured transport.
+ * \param[in]  nnti_dt        The NNTI data structure cast to void*.
+ * \param[in]  packed_buf     A array of bytes to store the encoded data structure.
+ * \param[in]  packed_buflen  The length of packed_buf.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_dt_pack (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        char                   *packed_buf,
+        const uint64_t          packed_buflen);
+
+/**
+ * @brief Decode an array of bytes into an NNTI datatype.
+ *
+ * \param[in]  trans_hdl      A handle to the configured transport.
+ * \param[in]  nnti_dt        The NNTI data structure cast to void*.
+ * \param[in]  packed_buf     A array of bytes containing the encoded data structure.
+ * \param[out] packed_len     The number of encoded bytes.
+ * \return A result code (NNTI_OK or an error)
+ */
+NNTI_result_t NNTI_dt_unpack (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt,
+        char                   *packed_buf,
+        uint64_t                packed_buflen);
+
+/**
+ * @brief Free a variable size NNTI datatype that was unpacked with NNTI_dt_unpack().
+ *
+ * \param[in]  trans_hdl      A handle to the configured transport.
+ * \param[in]  nnti_dt        The NNTI data structure cast to void*.
+ */
+NNTI_result_t NNTI_dt_free (
+        const NNTI_transport_t *trans_hdl,
+        void                   *nnti_dt);
+
+/**
  * @brief Send a message to a peer.
  *
  * \param[in] peer_hdl  The peer to send the message to.

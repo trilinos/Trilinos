@@ -154,6 +154,11 @@ public:
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
+   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
    { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,GlobalOrdinalT> >(blockProvider_)); }
 

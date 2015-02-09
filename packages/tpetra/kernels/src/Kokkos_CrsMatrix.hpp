@@ -1414,33 +1414,33 @@ struct MV_MultiplyFunctor {
       if (y.dimension_1() != numVecs) {
         std::ostringstream msg;
         msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and x do not match\n";
-        msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-            << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-            << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-            << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-            << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+        msg << "\t Labels are: y(" << y.tracker().label() << ") b("
+            << betav.tracker().label() << ") a("
+            << alphav.tracker().label() << ") x("
+            << A.values.tracker().label() << ") x("
+            << x.tracker().label() << ")\n";
         msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") x(" << x.dimension_0() << "," << x.dimension_1() << ")\n";
         Impl::throw_runtime_exception( msg.str() );
       }
       if (numRows > y.dimension_0()) {
         std::ostringstream msg;
         msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of y and A do not match\n";
-        msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-            << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-            << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-            << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-            << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+        msg << "\t Labels are: y(" << y.tracker().label() << ") b("
+            << betav.tracker().label() << ") a("
+            << alphav.tracker().label() << ") x("
+            << A.values.tracker().label() << ") x("
+            << x.tracker().label() << ")\n";
         msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") A(" << A.numRows() << "," << A.numCols() << ")\n";
         Impl::throw_runtime_exception( msg.str() );
       }
       if (numCols > x.dimension_0()) {
         std::ostringstream msg;
         msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of x and A do not match\n";
-        msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-            << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-            << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-            << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-            << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+        msg << "\t Labels are: y(" << y.tracker().label() << ") b("
+            << betav.tracker().label() << ") a("
+            << alphav.tracker().label() << ") x("
+            << A.values.tracker().label() << ") x("
+            << x.tracker().label() << ")\n";
         msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") A(" << A.numRows() << "," << A.numCols() << ")\n";
         Impl::throw_runtime_exception( msg.str() );
       }
@@ -1448,11 +1448,11 @@ struct MV_MultiplyFunctor {
         if (betav.dimension_0()!=numVecs) {
           std::ostringstream msg;
           msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and b do not match\n";
-          msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-              << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-              << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-              << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-              << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+          msg << "\t Labels are: y(" << y.tracker().label() << ") b("
+              << betav.tracker().label() << ") a("
+              << alphav.tracker().label() << ") x("
+              << A.values.tracker().label() << ") x("
+              << x.tracker().label() << ")\n";
           msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
           Impl::throw_runtime_exception( msg.str() );
         }
@@ -1461,11 +1461,11 @@ struct MV_MultiplyFunctor {
         if(alphav.dimension_0()!=numVecs) {
           std::ostringstream msg;
           msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of x and b do not match\n";
-          msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-              << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-              << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-              << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-              << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+          msg << "\t Labels are: y(" << y.tracker().label() << ") b("
+              << betav.tracker().label() << ") a("
+              << alphav.tracker().label() << ") x("
+              << A.values.tracker().label() << ") x("
+              << x.tracker().label() << ")\n";
           msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
           Impl::throw_runtime_exception( msg.str() );
         }

@@ -236,12 +236,16 @@
   #define KOKKOS_HAVE_PRAGMA_VECTOR 1
   #define KOKKOS_HAVE_PRAGMA_SIMD 1
 
-  #if ( 1200 <= KOKKOS_COMPILER_INTEL ) && ! defined( KOKKOS_ENABLE_ASM )
+#if ( 1200 <= KOKKOS_COMPILER_INTEL ) && ! defined( KOKKOS_ENABLE_ASM ) && ! defined( _WIN32 )
     #define KOKKOS_ENABLE_ASM 1
   #endif
 
   #if ( 1200 <= KOKKOS_COMPILER_INTEL ) && ! defined( KOKKOS_FORCEINLINE_FUNCTION )
-    #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+    #if !defined (_WIN32)
+      #define KOKKOS_FORCEINLINE_FUNCTION  inline __attribute__((always_inline))
+    #else
+      #define KOKKOS_FORCEINLINE_FUNCTION inline
+    #endif
   #endif
 
   #if defined( __MIC__ )
@@ -334,40 +338,6 @@
   #if defined(__CUDA_ARCH__ )
     #define KOKKOS_HAVE_PRAGMA_UNROLL 1
   #endif
-
-#endif
-
-/*--------------------------------------------------------------------------*/
-/* Select compiler dependent interface for atomics */
-
-#if ! defined( KOKKOS_ATOMICS_USE_CUDA ) || \
-    ! defined( KOKKOS_ATOMICS_USE_GNU ) || \
-    ! defined( KOKKOS_ATOMICS_USE_INTEL ) || \
-    ! defined( KOKKOS_ATOMICS_USE_OPENMP31 )
-
-/* Atomic selection is not pre-defined, choose from language and compiler. */
-
-#if defined( __CUDA_ARCH__ ) && defined (KOKKOS_HAVE_CUDA)
-
-  #define KOKKOS_ATOMICS_USE_CUDA
-
-#elif defined( KOKKOS_COMPILER_GNU ) || defined( KOKKOS_COMPILER_CLANG )
-
-  #define KOKKOS_ATOMICS_USE_GNU
-
-#elif defined( KOKKOS_COMPILER_INTEL ) || defined( KOKKOS_COMPILER_CRAYC )
-
-  #define KOKKOS_ATOMICS_USE_INTEL
-
-#elif defined( _OPENMP ) && ( 201107 <= _OPENMP )
-
-  #define KOKKOS_ATOMICS_USE_OMP31
-
-#else
-
-  #error "Compiler does not support atomic operations"
-
-#endif
 
 #endif
 

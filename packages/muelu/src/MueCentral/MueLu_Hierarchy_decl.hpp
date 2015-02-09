@@ -176,7 +176,7 @@ namespace MueLu {
     int    GetNumLevels() const;
     int    GetGlobalNumLevels() const;
 
-    double GetRate() const { return rate_; }
+    MagnitudeType GetRate() const { return rate_; }
 
     // This function is global
     double GetOperatorComplexity() const;
@@ -364,7 +364,7 @@ namespace MueLu {
     std::string dumpFile_;
 
     //! Convergece rate
-    double rate_;
+    MagnitudeType rate_;
 
     // Level managers used during the Setup
     Array<RCP<const FactoryManagerBase> > levelManagers_;

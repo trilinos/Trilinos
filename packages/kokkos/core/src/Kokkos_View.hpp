@@ -484,6 +484,7 @@ private:
   typename view_data_management::handle_type  m_ptr_on_device ;
   offset_map_type                             m_offset_map ;
   view_data_management                        m_management ;
+  Impl::AllocationTracker                     m_tracker ;
 
   //----------------------------------------
 
@@ -537,21 +538,22 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View()
-    { m_management.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
   View()
-    : m_ptr_on_device((typename traits::value_type*) NULL)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     { m_offset_map.assign(0, 0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs )
-    : m_ptr_on_device((typename traits::value_type*) NULL)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       (void) Impl::ViewAssignment<
          typename traits::specialize ,
@@ -573,9 +575,10 @@ public:
   template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,RS> & rhs )
-    : m_ptr_on_device((typename traits::value_type*) NULL)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       (void) Impl::ViewAssignment<
          typename traits::specialize , RS >( *this , rhs );
@@ -617,9 +620,10 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 ,
         const size_t n8 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
@@ -627,7 +631,8 @@ public:
       if(Alloc::AllowPadding)
         m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map );
+      m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map, m_tracker );
+
     }
 
   template< class AllocationProperties >
@@ -637,9 +642,10 @@ public:
         // Impl::ViewAllocProp::size_type exists when the traits and allocation properties
         // are valid for allocating viewed memory.
         const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
@@ -647,7 +653,7 @@ public:
       if(Alloc::AllowPadding)
         m_offset_map.set_padding();
 
-      m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map );
+      m_ptr_on_device = view_data_management::template allocate< Alloc::Initialize >( Alloc::label(prop) , m_offset_map, m_tracker );
 
       m_management.set_noncontiguous();
     }
@@ -671,6 +677,7 @@ public:
     : m_ptr_on_device(ptr)
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
       m_management.set_unmanaged();
@@ -684,9 +691,59 @@ public:
     : m_ptr_on_device(ptr)
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       m_offset_map.assign( layout );
       m_management.set_unmanaged();
+      m_management.set_noncontiguous();
+    }
+
+
+
+  //------------------------------------
+  // Assign a View from an AllocationTracker,
+  // The allocator used must be compatiable with the memory space of the view
+  // No alignment padding is performed.
+  // TODO: Should these allow padding??? DJS 01/15/15
+  explicit KOKKOS_INLINE_FUNCTION
+  View( Impl::AllocationTracker const &arg_tracker ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 ,
+        const size_t n8 = 0 )
+    : m_ptr_on_device(reinterpret_cast<typename traits::value_type*>(arg_tracker.alloc_ptr()))
+    , m_offset_map()
+    , m_management()
+    , m_tracker(arg_tracker)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
+
+      const size_t req_size = m_offset_map.capacity() * sizeof(typename traits::value_type);
+      if ( m_tracker.alloc_size() < req_size ) {
+        Impl::throw_runtime_exception("Error: tracker.alloc_size() < req_size");
+      }
+    }
+
+  explicit KOKKOS_INLINE_FUNCTION
+  View( Impl::AllocationTracker const & arg_tracker
+      , typename traits::array_layout const & layout )
+    : m_ptr_on_device(reinterpret_cast<typename traits::value_type*>(arg_tracker.alloc_ptr()))
+    , m_offset_map()
+    , m_management()
+    , m_tracker(arg_tracker)
+    {
+      m_offset_map.assign( layout );
+
+      const size_t req_size = m_offset_map.capacity() * sizeof(typename traits::value_type);
+      if ( m_tracker.alloc_size() < req_size ) {
+        Impl::throw_runtime_exception("Error: tracker.alloc_size() < req_size");
+      }
+
       m_management.set_noncontiguous();
     }
 
@@ -798,9 +855,10 @@ public:
         const unsigned n5 = 0 ,
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       typedef typename traits::value_type  value_type_ ;
 
@@ -822,9 +880,10 @@ public:
   explicit KOKKOS_INLINE_FUNCTION
   View( typename if_scratch_memory_constructor::type space ,
         typename traits::array_layout const & layout)
-    : m_ptr_on_device(0)
+    : m_ptr_on_device()
     , m_offset_map()
     , m_management()
+    , m_tracker()
     {
       typedef typename traits::value_type  value_type_ ;
 
@@ -1183,6 +1242,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   bool is_contiguous() const
   { return m_management.is_contiguous(); }
+
+  const Impl::AllocationTracker & tracker() const { return m_tracker; }
 };
 
 } /* namespace Kokkos */
@@ -1398,12 +1459,11 @@ create_mirror( const View<T,L,D,M,S> & src )
 {
   typedef View<T,L,D,M,S>                  view_type ;
   typedef typename view_type::HostMirror    host_view_type ;
-  typedef typename view_type::memory_space  memory_space ;
 
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.
 
-  std::string label = memory_space::query_label( src.ptr_on_device() );
+  std::string label = src.tracker().label();
   label.append("_mirror");
 
   return host_view_type( label ,
@@ -1455,9 +1515,8 @@ void resize( View<T,L,D,M,S> & v ,
              const size_t n7 = 0 )
 {
   typedef View<T,L,D,M,S> view_type ;
-  typedef typename view_type::memory_space memory_space ;
 
-  const std::string label = memory_space::query_label( v.ptr_on_device() );
+  const std::string label = v.tracker().label();
 
   view_type v_resized( label, n0, n1, n2, n3, n4, n5, n6, n7 );
 
@@ -1480,10 +1539,9 @@ void realloc( View<T,L,D,M,S> & v ,
               const size_t n7 = 0 )
 {
   typedef View<T,L,D,M,S> view_type ;
-  typedef typename view_type::memory_space memory_space ;
 
   // Query the current label and reuse it.
-  const std::string label = memory_space::query_label( v.ptr_on_device() );
+  const std::string label = v.tracker().label();
 
   v = view_type(); // deallocate first, if the only view to memory.
   v = view_type( label, n0, n1, n2, n3, n4, n5, n6, n7 );

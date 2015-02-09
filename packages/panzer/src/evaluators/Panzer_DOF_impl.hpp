@@ -249,10 +249,15 @@ DOF(const Teuchos::ParameterList & p) :
 
   if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
     offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
-    accelerate_jacobian = true;  // short cut for identity matrix
+    accelerate_jacobian_enabled = true;  // short cut for identity matrix
+
+    // get the sensitivities name that is valid for accelerated jacobians
+    sensitivities_name = true;
+    if (p.isType<std::string>("Sensitivities Name"))
+      sensitivities_name = p.get<std::string>("Sensitivities Name");
   }
   else
-    accelerate_jacobian = false; // don't short cut for identity matrix
+    accelerate_jacobian_enabled = false; // don't short cut for identity matrix
 
   // swap between scalar basis value, or vector basis value
   if(basis->isScalarBasis())
@@ -283,6 +288,19 @@ postRegistrationSetup(typename Traits::SetupData sd,
   this->utils.setFieldData(dof_ip,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+}
+
+// **********************************************************************
+template<typename Traits>
+void DOF<panzer::Traits::Jacobian, Traits>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+  // if sensitivities were requrested for this field enable accelerated
+  // jacobian calculations
+  accelerate_jacobian = false;
+  if(accelerate_jacobian_enabled && d.sensitivities_name==sensitivities_name) {
+    accelerate_jacobian = true;
+  }
 }
 
 //**********************************************************************

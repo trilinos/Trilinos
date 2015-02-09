@@ -49,6 +49,7 @@
 #include <utility>
 #include <impl/Kokkos_spinwait.hpp>
 #include <impl/Kokkos_FunctorAdapter.hpp>
+#include <impl/Kokkos_AllocationTracker.hpp>
 
 #include <Kokkos_Atomic.hpp>
 
@@ -101,7 +102,7 @@ private:
 
   ThreadsExec * const * m_pool_base ; ///< Base for pool fan-in
 
-  void        * m_scratch ;
+  Impl::AllocationTracker m_scratch ;
   int           m_scratch_reduce_end ;
   int           m_scratch_thread_end ;
   int           m_pool_rank ;
@@ -131,8 +132,8 @@ public:
   static int get_thread_count();
   static ThreadsExec * get_thread( const int init_thread_rank );
 
-  inline void * reduce_memory() const { return ((unsigned char *) m_scratch ); }
-  KOKKOS_INLINE_FUNCTION  void * scratch_memory() const { return ((unsigned char *) m_scratch ) + m_scratch_reduce_end ; }
+  inline void * reduce_memory() const { return reinterpret_cast<unsigned char *>(m_scratch.alloc_ptr()); }
+  KOKKOS_INLINE_FUNCTION  void * scratch_memory() const { return reinterpret_cast<unsigned char *>(m_scratch.alloc_ptr()) + m_scratch_reduce_end ; }
 
   static void driver(void);
 
@@ -398,7 +399,7 @@ private:
   inline
   void set_team_shared()
     { new( & m_team_shared ) space( ((char *) (*m_team_base)->scratch_memory()) + TEAM_REDUCE_SIZE , m_team_shared_size ); }
-  
+
   // Fan-in and wait until the matching fan-out is called.
   // The root thread which does not wait will return true.
   // All other threads will return false during the fan-out.
@@ -645,7 +646,7 @@ public:
 
   template< class Arg0 , class Arg1 >
   ThreadsExecTeamMember( Impl::ThreadsExec & exec
-                       , const TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > & team 
+                       , const TeamPolicy< Arg0 , Arg1 , Kokkos::Threads > & team
                        , const int shared_size )
     : m_exec( exec )
     , m_team_shared(0,0)
@@ -755,7 +756,7 @@ private:
   int m_team_alloc ;
 
   inline
-  void init( const int league_size_request 
+  void init( const int league_size_request
            , const int team_size_request )
    {
       const int pool_size  = execution_space::thread_pool_size(0);
@@ -779,7 +780,7 @@ private:
 public:
 
   //! Tag this class as a kokkos execution policy
-  typedef TeamPolicy       execution_policy ; 
+  typedef TeamPolicy       execution_policy ;
   typedef Kokkos::Threads  execution_space ;
 
   typedef typename

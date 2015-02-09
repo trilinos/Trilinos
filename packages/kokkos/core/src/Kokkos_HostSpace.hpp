@@ -50,8 +50,11 @@
 
 #include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+
+#include <impl/Kokkos_AllocationTracker.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Error.hpp>
+#include <impl/Kokkos_BasicAllocators.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -89,56 +92,22 @@ public:
 #  error "At least one of the following host execution spaces must be defined: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads.  You might be seeing this message if you disabled the Kokkos::Serial device explicitly using the Kokkos_ENABLE_Serial:BOOL=OFF CMake option, but did not enable any of the other host execution space devices."
 #endif
 
+#if defined( KOKKOS_USE_PAGE_ALIGNED_HOST_MEMORY )
+  typedef Impl::PageAlignedAllocator allocator ;
+#else
+  typedef Impl::AlignedAllocator allocator ;
+#endif
+
   /** \brief  Allocate a contiguous block of memory.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
    *  allocation gives it a reference count of one.
-   *
-   *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string & label , const size_t size );
-
-  /** \brief  Increment the reference count of the block of memory
-   *          in which the input pointer resides.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void increment( const void * );
-
-  /** \brief  Decrement the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count falls to zero the memory is deallocated.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void decrement( const void * );
-
-  /** \brief  Get the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count is zero the memory region is not tracked.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static int count( const void * );
-
-  /*--------------------------------*/
-
-  /** \brief  Print all tracked memory to the output stream. */
-  static void print_memory_view( std::ostream & );
-
-  /** \brief  Retrieve label associated with the input pointer */
-  static std::string query_label( const void * );
-
-  /** \brief  Retrieve allocation size associated with the input pointer */
-  static size_t query_size( const void * p );
-
-  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
-  static void* query_start_ptr( const void * p );
+  static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
 
   /*--------------------------------*/
   /* Functions unique to the HostSpace */
-
   static int in_parallel();
 
   static void register_in_parallel( int (*)() );

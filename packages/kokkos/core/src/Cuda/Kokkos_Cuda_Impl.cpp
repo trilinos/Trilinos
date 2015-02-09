@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,6 +50,7 @@
 #ifdef KOKKOS_HAVE_CUDA
 
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
+#include <impl/Kokkos_AllocationTracker.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -220,6 +221,11 @@ private:
   CudaInternal( const CudaInternal & );
   CudaInternal & operator = ( const CudaInternal & );
 
+  AllocationTracker m_scratchFlagsTracker;
+  AllocationTracker m_scratchSpaceTracker;
+  AllocationTracker m_scratchUnifiedTracker;
+
+
 public:
 
   typedef Cuda::size_type size_type ;
@@ -258,7 +264,7 @@ public:
     : m_cudaDev( -1 )
     , m_cudaArch( -1 )
     , m_maxWarpCount( 0 )
-    , m_maxBlock( 0 ) 
+    , m_maxBlock( 0 )
     , m_maxSharedWords( 0 )
     , m_scratchSpaceCount( 0 )
     , m_scratchFlagsCount( 0 )
@@ -297,7 +303,7 @@ void CudaInternal::print_configuration( std::ostream & s ) const
     s << "Kokkos::Cuda[ " << i << " ] "
       << dev_info.m_cudaProp[i].name
       << " capability " << dev_info.m_cudaProp[i].major << "." << dev_info.m_cudaProp[i].minor
-      << ", Total Global Memory: " << human_memory_size(dev_info.m_cudaProp[i].totalGlobalMem) 
+      << ", Total Global Memory: " << human_memory_size(dev_info.m_cudaProp[i].totalGlobalMem)
       << ", Shared Memory per Block: " << human_memory_size(dev_info.m_cudaProp[i].sharedMemPerBlock);
     if ( m_cudaDev == i ) s << " : Selected" ;
     s << std::endl ;
@@ -487,12 +493,11 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 {
   if ( verify_is_initialized("scratch_flags") && m_scratchFlagsCount * sizeScratchGrain < size ) {
 
-    CudaSpace::decrement( m_scratchFlags );
-  
+
     m_scratchFlagsCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
-    m_scratchFlags = (size_type *)
-      CudaSpace::allocate( std::string("InternalScratchFlags") , sizeof( ScratchGrain ) * m_scratchFlagsCount );
+    m_scratchFlagsTracker = CudaSpace::allocate_and_track( std::string("InternalScratchFlags") , sizeof( ScratchGrain ) * m_scratchFlagsCount );
+    m_scratchFlags = reinterpret_cast<size_type *>(m_scratchFlagsTracker.alloc_ptr());
 
     CUDA_SAFE_CALL( cudaMemset( m_scratchFlags , 0 , m_scratchFlagsCount * sizeScratchGrain ) );
   }
@@ -505,12 +510,11 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 {
   if ( verify_is_initialized("scratch_space") && m_scratchSpaceCount * sizeScratchGrain < size ) {
 
-    CudaSpace::decrement( m_scratchSpace );
-  
     m_scratchSpaceCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
-    m_scratchSpace = (size_type *)
-      CudaSpace::allocate( std::string("InternalScratchSpace") , sizeof( ScratchGrain ) * m_scratchSpaceCount );
+    m_scratchSpaceTracker = CudaSpace::allocate_and_track( std::string("InternalScratchSpace") , sizeof( ScratchGrain ) * m_scratchSpaceCount );
+    m_scratchSpace = reinterpret_cast<size_type *>(m_scratchSpaceTracker.alloc_ptr());
+
   }
 
   return m_scratchSpace ;
@@ -522,12 +526,10 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
   if ( verify_is_initialized("scratch_unified") &&
        m_scratchUnifiedSupported && m_scratchUnifiedCount * sizeScratchGrain < size ) {
 
-    CudaHostPinnedSpace::decrement( m_scratchUnified );
-
     m_scratchUnifiedCount = ( size + sizeScratchGrain - 1 ) / sizeScratchGrain ;
 
-    m_scratchUnified = (size_type *)
-      CudaHostPinnedSpace::allocate( std::string("InternalScratchUnified") , sizeof( ScratchGrain ) * m_scratchUnifiedCount );
+    m_scratchUnifiedTracker = CudaHostPinnedSpace::allocate_and_track( std::string("InternalScratchUnified") , sizeof( ScratchGrain ) * m_scratchUnifiedCount );
+    m_scratchUnified = reinterpret_cast<size_type *>( m_scratchUnifiedTracker.alloc_ptr() );
   }
 
   return m_scratchUnified ;
@@ -547,13 +549,13 @@ void CudaInternal::finalize()
       ::free( m_stream );
     }
 
-    CudaSpace::decrement( m_scratchSpace );
-    CudaSpace::decrement( m_scratchFlags );
-    CudaHostPinnedSpace::decrement( m_scratchUnified );
-  
+    m_scratchSpaceTracker.clear();
+    m_scratchFlagsTracker.clear();
+    m_scratchUnifiedTracker.clear();
+
     m_cudaDev             = -1 ;
     m_maxWarpCount        = 0 ;
-    m_maxBlock            = 0 ; 
+    m_maxBlock            = 0 ;
     m_maxSharedWords      = 0 ;
     m_scratchSpaceCount   = 0 ;
     m_scratchFlagsCount   = 0 ;
@@ -659,7 +661,7 @@ bool Cuda::sleep() { return false ; }
 bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
-{ 
+{
   Kokkos::Impl::cuda_device_synchronize();
 }
 

@@ -52,7 +52,11 @@
 
 #include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_HostSpace.hpp>
+
+#include <impl/Kokkos_AllocationTracker.hpp>
+
 #include <Cuda/Kokkos_Cuda_abort.hpp>
+#include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -68,62 +72,25 @@ public:
   typedef Kokkos::Cuda          execution_space ;
   typedef unsigned int          size_type ;
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device.
+  typedef Impl::CudaMallocAllocator allocator;
+
+  /** \brief  Allocate a contiguous block of memory.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
    *  allocation gives it a reference count of one.
-   *
-   *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string & label , const size_t size );
+  static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
 
-  /** \brief  Increment the reference count of the block of memory
-   *          in which the input pointer resides.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void increment( const void * );
-
-  /** \brief  Decrement the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count falls to zero the memory is deallocated.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void decrement( const void * );
-
-  /** \brief  Get the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count is zero the memory region is not tracked.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static int count( const void * );
-
-  /** \brief  Print all tracked memory to the output stream. */
-  static void print_memory_view( std::ostream & );
-
-  /** \brief  Retrieve label associated with the input pointer */
-  static std::string query_label( const void * );
-
-  /** \brief  Retrieve allocation size associated with the input pointer */
-  static size_t query_size( const void * p );
-
-  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
-  static void* query_start_ptr( const void * p );
 
   /*--------------------------------*/
   /** \brief  Cuda specific function to attached texture object to an allocation.
    *          Output the texture object, base pointer, and offset from the input pointer.
    */
 #if defined( __CUDACC__ )
-  static void texture_object_attach( const void            * const arg_ptr
-                                   , const unsigned                arg_type_size
-                                   , ::cudaChannelFormatDesc const & arg_desc
-                                   , ::cudaTextureObject_t * const arg_tex_obj
-                                   , void const           ** const arg_alloc_ptr
-                                   , int                   * const arg_offset
+  static void texture_object_attach(  Impl::AllocationTracker const & tracker
+                                    , unsigned type_size
+                                    , ::cudaChannelFormatDesc const & desc
                                    );
 #endif
 
@@ -154,61 +121,24 @@ public:
   /** \brief  If UVM capability is available */
   static bool available();
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device.
+  typedef Impl::CudaUVMAllocator allocator;
+
+  /** \brief  Allocate a contiguous block of memory.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
    *  allocation gives it a reference count of one.
-   *
-   *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string & label , const size_t size );
+  static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
 
-  /** \brief  Increment the reference count of the block of memory
-   *          in which the input pointer resides.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void increment( const void * );
-
-  /** \brief  Decrement the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count falls to zero the memory is deallocated.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void decrement( const void * );
-
-  /** \brief  Get the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count is zero the memory region is not tracked.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static int count( const void * );
-
-  /** \brief  Print all tracked memory to the output stream. */
-  static void print_memory_view( std::ostream & );
-
-  /** \brief  Retrieve label associated with the input pointer */
-  static std::string query_label( const void * );
-
-  /** \brief  Retrieve allocation size associated with the input pointer */
-  static size_t query_size( const void * p );
-
-  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
-  static void* query_start_ptr( const void * p );
 
   /** \brief  Cuda specific function to attached texture object to an allocation.
    *          Output the texture object, base pointer, and offset from the input pointer.
    */
 #if defined( __CUDACC__ )
-  static void texture_object_attach( const void            * const arg_ptr
-                                   , const unsigned                arg_type_size
-                                   , ::cudaChannelFormatDesc const & arg_desc
-                                   , ::cudaTextureObject_t * const arg_tex_obj
-                                   , void const           ** const arg_alloc_ptr
-                                   , int                   * const arg_offset
+  static void texture_object_attach(  Impl::AllocationTracker const & tracker
+                                    , unsigned type_size
+                                    , ::cudaChannelFormatDesc const & desc
                                    );
 #endif
 };
@@ -233,50 +163,15 @@ public:
   /** \brief  Memory is in HostSpace so use the HostSpace::execution_space */
   typedef HostSpace::execution_space  execution_space ;
 
-  /** \brief  Allocate a contiguous block of memory on the Cuda device.
+  typedef Impl::CudaHostAllocator allocator ;
+
+  /** \brief  Allocate a contiguous block of memory.
    *
    *  The input label is associated with the block of memory.
    *  The block of memory is tracked via reference counting where
    *  allocation gives it a reference count of one.
-   *
-   *  Allocation may only occur on the master thread of the process.
    */
-  static void * allocate( const std::string & label , const size_t size );
-
-  /** \brief  Increment the reference count of the block of memory
-   *          in which the input pointer resides.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void increment( const void * );
-
-  /** \brief  Get the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count is zero the memory region is not tracked.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static int count( const void * );
-
-  /** \brief  Decrement the reference count of the block of memory
-   *          in which the input pointer resides.  If the reference
-   *          count falls to zero the memory is deallocated.
-   *
-   *          Reference counting only occurs on the master thread.
-   */
-  static void decrement( const void * );
-
-  /** \brief  Print all tracked memory to the output stream. */
-  static void print_memory_view( std::ostream & );
-
-  /** \brief  Retrieve label associated with the input pointer */
-  static std::string query_label( const void * );
-
-  /** \brief  Retrieve allocation size associated with the input pointer */
-  static size_t query_size( const void * p );
-
-  /** \brief  Retrieve start ptr of allocation associated with the input pointer */
-  static void* query_start_ptr( const void * p );
+  static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
 
 };
 

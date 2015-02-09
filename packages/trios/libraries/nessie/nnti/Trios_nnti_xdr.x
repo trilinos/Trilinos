@@ -94,6 +94,15 @@ const NNTI_REQUEST_BUFFER_SIZE=1216;
 const NNTI_RESULT_BUFFER_SIZE=1216;
 
 
+enum NNTI_datatype_t {
+    NNTI_dt_transport    = 1111,
+    NNTI_dt_peer         = 1112,
+    NNTI_dt_buffer       = 1113,
+    NNTI_dt_work_request = 1114,
+    NNTI_dt_status       = 1115
+};
+
+
 /**
  * @brief Enumerator of the transport mechanisms supported by NNTI.
  *
@@ -189,7 +198,13 @@ enum NNTI_result_t {
     NNTI_EAGAIN,
 
     /** @brief The request could not be delivered. */
-    NNTI_EDROPPED
+    NNTI_EDROPPED,
+    
+    /** @brief Error unpacking an NNTI data structure. */
+    NNTI_EDECODE,
+
+    /** @brief Error packing an NNTI data structure. */
+    NNTI_EENCODE
 
 };
 
@@ -432,6 +447,8 @@ union NNTI_remote_process_t {
  * Use this handle to move data to/from the process.
  */
 struct NNTI_peer_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief string encoding of a process on the network */
     opaque url[NNTI_URL_LEN];
 
@@ -716,6 +733,8 @@ enum NNTI_buf_ops_t {
  *  a peer needs to put/get this buffer.
  */
 struct NNTI_buffer_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief the transport where this buffer is registered */
     NNTI_transport_id_t transport_id;
 
@@ -745,6 +764,8 @@ struct NNTI_buffer_t {
  *
  */
 struct NNTI_work_request_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief the transport where this buffer is registered */
     NNTI_transport_id_t transport_id;
 
@@ -788,6 +809,8 @@ struct NNTI_transport_header_t {
  * unsuccessful, then the remaining fields are undefined.
  */
 struct NNTI_status_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief The operation performed on the buffer. */
     NNTI_buf_ops_t op;
     /** @brief The result code for this operation. */
@@ -813,6 +836,8 @@ struct NNTI_status_t {
  * @brief The external representation of a configured transport.
  */
 struct NNTI_transport_t {
+    NNTI_datatype_t datatype;
+    
     /** @brief The transport id. */
     NNTI_transport_id_t  id;
     /** @brief A reference to my process that can be sent to a peer so the peer can contact me. */

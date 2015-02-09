@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
 
     std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
     double      tol          = 1e-12;          clp.setOption("tol",      &tol,           "solver convergence tolerance");
-    int         n            = 9;              clp.setOption("n",        &n,             "problem size (1D)");
-    int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
+    int         n            = 17;              clp.setOption("n",        &n,             "problem size (1D)");
+    int         maxLevels    = 4;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
     std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
 
     switch (clp.parse(argc, argv)) {
@@ -188,17 +188,18 @@ int main(int argc, char *argv[]) {
     typedef Thyra::TpetraVectorSpace<SC,LO,GO,NO> THTP_Vs;
     RCP<NO>    node =Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
-    RCP<TP_Op> A11=Reader<TP_Crs>::readSparseFile("Q2Q1_9x9_A.mm", comm,node);
-    RCP<TP_Op> A21=Reader<TP_Crs>::readSparseFile("Q2Q1_9x9_B.mm", comm,node);
-    RCP<TP_Op> A12=Reader<TP_Crs>::readSparseFile("Q2Q1_9x9_Bt.mm",comm,node);
+    RCP<TP_Op> A11=Reader<TP_Crs>::readSparseFile("Q2Q1_17x17_A.mm", comm,node);
+    RCP<TP_Op> A21=Reader<TP_Crs>::readSparseFile("Q2Q1_17x17_B.mm", comm,node);
+    RCP<TP_Op> A12=Reader<TP_Crs>::readSparseFile("Q2Q1_17x17_Bt.mm",comm,node);
+    RCP<TP_Op> A119Pt=Reader<TP_Crs>::readSparseFile("Q2Q1_17x17_AForPat.mm",comm,node);
 
     RCP<const TP_Map > cmap = A11->getRangeMap();
 
-    RCP<TP_Mv > Vcoords=Reader<TP_Crs>::readDenseFile("VelCoords9x9.mm",comm,node,cmap);
-    RCP<TP_Mv > Pcoords=Reader<TP_Crs>::readDenseFile("PresCoords9x9.mm",comm,node,cmap);
+    RCP<TP_Mv > Vcoords=Reader<TP_Crs>::readDenseFile("VelCoords17x17.mm",comm,node,cmap);
+    RCP<TP_Mv > Pcoords=Reader<TP_Crs>::readDenseFile("PresCoords17x17.mm",comm,node,cmap);
 
 
-    Teuchos::ArrayRCP<const SC> slop =Utils2::ReadMultiVector("p2vMap9x9.mm",
+    Teuchos::ArrayRCP<const SC> slop =Utils2::ReadMultiVector("p2vMap17x17.mm",
                              Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
     Teuchos::ArrayRCP<LO> p2vMap(n*n);
     for (int i = 0; i < n*n; i++)  p2vMap[i] = (LO) slop[i];
@@ -216,6 +217,7 @@ int main(int argc, char *argv[]) {
     Teko::LinearOp thA11 = Thyra::tpetraLinearOp<double>(range11,domain11,A11);
     Teko::LinearOp thA12 = Thyra::tpetraLinearOp<double>(range12,domain12,A12);
     Teko::LinearOp thA21 = Thyra::tpetraLinearOp<double>(range21,domain21,A21);
+    Teko::LinearOp thA11_9Pt = Thyra::tpetraLinearOp<double>(range11,domain11,A119Pt);
 
     // Bang together the parameter list. Right now, all the MueLu details is
     // hardwired in the MueLu-TpetraQ2Q1 classes. We probably want to switch
@@ -244,6 +246,7 @@ int main(int argc, char *argv[]) {
     Q2Q1List.set("A11"   ,   thA11);
     Q2Q1List.set("A12"   ,   thA12);
     Q2Q1List.set("A21"   ,   thA21);
+    Q2Q1List.set("A11_9Pt"   ,thA11_9Pt);
 
     // Stratimikos vodou
     
@@ -270,7 +273,7 @@ int main(int argc, char *argv[]) {
     RCP<const TP_Map > FullMap= Utils::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, NumEle, comm)));
 
     RCP<TP_Op> BigMatrix =Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile(
-                "BigA9x9.mm", FullMap,FullMap,FullMap,FullMap, true,true,false);
+                "BigA17x17.mm", FullMap,FullMap,FullMap,FullMap, true,true,false);
 
     const RCP<Thyra::LinearOpBase<SC> > ThBigA = Thyra::createLinearOp(BigMatrix);
     Thyra::initializeOp<SC>(*lowsFactory, ThBigA, nsA.ptr());

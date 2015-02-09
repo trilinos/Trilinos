@@ -181,6 +181,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     p.set("Basis", basis_it->second.first);
     p.set("DOF Names", basis_it->second.second);
     p.set("Indexer Names", basis_it->second.second);
+    p.set("Sensitivities Name", "");
     p.set("Disable Sensitivities", false);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);

@@ -71,47 +71,51 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
 
+namespace PyTrilinos
+{
+
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TEUCHOS
 PyObject *
-PyTrilinos::convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv)
+convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv)
 {
   // SWIG initialization
   static swig_type_info * swig_ENMV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >*");
   //
   // Convert to PyTrilinos::Epetra_NumPyMultiVector
-  const Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector > *enmv = new
-    Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >
-    (new PyTrilinos::Epetra_NumPyMultiVector(View, **emv));
+  const Teuchos::RCP< Epetra_NumPyMultiVector > *enmv = new
+    Teuchos::RCP< Epetra_NumPyMultiVector >
+    (new Epetra_NumPyMultiVector(View, **emv));
   return SWIG_NewPointerObj((void*)enmv, swig_ENMV_ptr, 1);
 }
 PyObject *
-PyTrilinos::convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *cemv)
+convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *cemv)
 {
   // SWIG initialization
   static swig_type_info * swig_ENMV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >*");
   //
   // Convert to PyTrilinos::Epetra_NumPyMultiVector
-  const Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector > *enmv = new
-    Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >
-    (new PyTrilinos::Epetra_NumPyMultiVector(View, **cemv));
+  const Teuchos::RCP< Epetra_NumPyMultiVector > *enmv = new
+    Teuchos::RCP< Epetra_NumPyMultiVector >
+    (new Epetra_NumPyMultiVector(View, **cemv));
   return SWIG_NewPointerObj((void*)enmv, swig_ENMV_ptr, 1);
 }
 
 #else
 
 PyObject *
-PyTrilinos::convertEpetraMultiVectorToPython(const Epetra_MultiVector *emv)
+convertEpetraMultiVectorToPython(const Epetra_MultiVector *emv)
 {
   // SWIG initialization
-  static swig_type_info * swig_ENMV_ptr = SWIG_TypeQuery("PyTrilinos::Epetra_NumPyMultiVector *");
+  static swig_type_info * swig_ENMV_ptr =
+    SWIG_TypeQuery("PyTrilinos::Epetra_NumPyMultiVector *");
   //
   // Convert to PyTrilinos::Epetra_NumPyMultiVector
-  const PyTrilinos::Epetra_NumPyMultiVector *enmv =
-    new PyTrilinos::Epetra_NumPyMultiVector(View, *emv);
+  const Epetra_NumPyMultiVector *enmv =
+    new Epetra_NumPyMultiVector(View, *emv);
   return SWIG_NewPointerObj((void*)enmv, swig_ENMV_ptr, 1);
 }
 #endif
@@ -120,40 +124,41 @@ PyTrilinos::convertEpetraMultiVectorToPython(const Epetra_MultiVector *emv)
 
 #ifdef HAVE_TEUCHOS
 PyObject *
-PyTrilinos::convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev)
+convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev)
 {
   // SWIG initialization
   static swig_type_info * swig_ENV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >*");
   //
   // Convert to PyTrilinos::Epetra_NumPyVector
-  const Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *env = new
-    Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(new PyTrilinos::Epetra_NumPyVector(View, **ev));
+  const Teuchos::RCP< Epetra_NumPyVector > *env = new
+    Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View, **ev));
   return SWIG_NewPointerObj((void*)env, swig_ENV_ptr, 1);
 }
 
 PyObject *
-PyTrilinos::convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
+convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
 {
   // SWIG initialization
   static swig_type_info * swig_ENV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >*");
   //
   // Convert to PyTrilinos::Epetra_NumPyVector
-  const Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *env = new
-    Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(new PyTrilinos::Epetra_NumPyVector(View, **cev));
+  const Teuchos::RCP< Epetra_NumPyVector > *env = new
+    Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View, **cev));
   return SWIG_NewPointerObj((void*)env, swig_ENV_ptr, 1);
 }
 
 #else
 
 PyObject *
-PyTrilinos::convertEpetraVectorToPython(const Epetra_Vector *emv)
+convertEpetraVectorToPython(const Epetra_Vector *emv)
 {
   // SWIG initialization
-  static swig_type_info * swig_ENV_ptr = SWIG_TypeQuery("PyTrilinos::Epetra_NumPyVector *");
+  static swig_type_info * swig_ENV_ptr =
+    SWIG_TypeQuery("PyTrilinos::Epetra_NumPyVector *");
   //
-  const PyTrilinos::Epetra_NumPyVector *enmv = new PyTrilinos::Epetra_NumPyVector(View, *emv);
+  const Epetra_NumPyVector *enmv = new Epetra_NumPyVector(View, *emv);
   return SWIG_NewPointerObj((void*)enmv, swig_ENV_ptr, 1);
 }
 
@@ -164,21 +169,33 @@ PyTrilinos::convertEpetraVectorToPython(const Epetra_Vector *emv)
 #ifdef HAVE_TEUCHOS
 
 PyObject *
-PyTrilinos::convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo)
+convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo)
 {
   // SWIG initialization
-  static swig_type_info *swig_EO_ptr   = SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator        >*");
-  //static swig_type_info *swig_EFCO_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FastCrsOperator >*");
-  static swig_type_info *swig_EIO_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_InvOperator     >*");
-  static swig_type_info *swig_ERM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_RowMatrix       >*");
-  static swig_type_info *swig_EBRM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_BasicRowMatrix  >*");
-  static swig_type_info *swig_ECM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_CrsMatrix       >*");
-  //static swig_type_info *swig_EMM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_MsrMatrix       >*");
-  static swig_type_info *swig_EVM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrMatrix       >*");
-  static swig_type_info *swig_EVRM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrRowMatrix    >*");
-  static swig_type_info *swig_EFVM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FEVbrMatrix     >*");
-  static swig_type_info *swig_EFCM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FECrsMatrix     >*");
-  static swig_type_info *swig_EJM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_JadMatrix       >*");
+  static swig_type_info *swig_EO_ptr   =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator        >*");
+  // static swig_type_info *swig_EFCO_ptr =
+  //   SWIG_TypeQuery("Teuchos::RCP< Epetra_FastCrsOperator >*");
+  static swig_type_info *swig_EIO_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_InvOperator     >*");
+  static swig_type_info *swig_ERM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_RowMatrix       >*");
+  static swig_type_info *swig_EBRM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_BasicRowMatrix  >*");
+  static swig_type_info *swig_ECM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_CrsMatrix       >*");
+  // static swig_type_info *swig_EMM_ptr  =
+  //   SWIG_TypeQuery("Teuchos::RCP< Epetra_MsrMatrix       >*");
+  static swig_type_info *swig_EVM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrMatrix       >*");
+  static swig_type_info *swig_EVRM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrRowMatrix    >*");
+  static swig_type_info *swig_EFVM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_FEVbrMatrix     >*");
+  static swig_type_info *swig_EFCM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_FECrsMatrix     >*");
+  static swig_type_info *swig_EJM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_JadMatrix       >*");
   //
   // Attempt to downcast to Epetra_VbrRowMatrix
   Teuchos::RCP< Epetra_VbrRowMatrix > *evrm = new
@@ -253,21 +270,33 @@ PyTrilinos::convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > 
 }
 
 PyObject *
-PyTrilinos::convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *ceo)
+convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *ceo)
 {
   // SWIG initialization
-  static swig_type_info *swig_EO_ptr   = SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator        >*");
-  //static swig_type_info *swig_EFCO_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FastCrsOperator >*");
-  static swig_type_info *swig_EIO_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_InvOperator     >*");
-  static swig_type_info *swig_ERM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_RowMatrix       >*");
-  static swig_type_info *swig_EBRM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_BasicRowMatrix  >*");
-  static swig_type_info *swig_ECM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_CrsMatrix       >*");
-  //static swig_type_info *swig_EMM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_MsrMatrix       >*");
-  static swig_type_info *swig_EVM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrMatrix       >*");
-  static swig_type_info *swig_EVRM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrRowMatrix    >*");
-  static swig_type_info *swig_EFVM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FEVbrMatrix     >*");
-  static swig_type_info *swig_EFCM_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_FECrsMatrix     >*");
-  static swig_type_info *swig_EJM_ptr  = SWIG_TypeQuery("Teuchos::RCP< Epetra_JadMatrix       >*");
+  static swig_type_info *swig_EO_ptr   =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator        >*");
+  // static swig_type_info *swig_EFCO_ptr =
+  //   SWIG_TypeQuery("Teuchos::RCP< Epetra_FastCrsOperator >*");
+  static swig_type_info *swig_EIO_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_InvOperator     >*");
+  static swig_type_info *swig_ERM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_RowMatrix       >*");
+  static swig_type_info *swig_EBRM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_BasicRowMatrix  >*");
+  static swig_type_info *swig_ECM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_CrsMatrix       >*");
+  // static swig_type_info *swig_EMM_ptr  =
+  //   SWIG_TypeQuery("Teuchos::RCP< Epetra_MsrMatrix       >*");
+  static swig_type_info *swig_EVM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrMatrix       >*");
+  static swig_type_info *swig_EVRM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_VbrRowMatrix    >*");
+  static swig_type_info *swig_EFVM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_FEVbrMatrix     >*");
+  static swig_type_info *swig_EFCM_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_FECrsMatrix     >*");
+  static swig_type_info *swig_EJM_ptr  =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_JadMatrix       >*");
   //
   // Cast const-ness away
   Teuchos::RCP< Epetra_Operator > *eo = new
@@ -346,7 +375,8 @@ PyTrilinos::convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Opera
 #else
 
 PyObject *
-PyTrilinos::convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags)
+convertEpetraOperatorToPython(const Epetra_Operator * eo,
+                              int cnvt_flags)
 {
   // SWIG initialization
   static swig_type_info * swig_EO_ptr   = SWIG_TypeQuery("Epetra_Operator        *");
@@ -417,7 +447,7 @@ PyTrilinos::convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_f
 #ifdef HAVE_TEUCHOS
 
 Teuchos::RCP< const Epetra_Map >
-PyTrilinos::getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
+getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
 {
   const Epetra_Map * em_ptr  = dynamic_cast< const Epetra_Map* >(&ebm);
   if (!em_ptr)
@@ -431,15 +461,23 @@ PyTrilinos::getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Vector >
-PyTrilinos::getEpetraVectorObjectAttr(PyObject * object, CONST char * name)
+getEpetraVectorObjectAttr(PyObject   * object,
+                          CONST char * name)
 {
-  static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
+  static swig_type_info * swig_EV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
   void * argp;
   PyObject * value = PyObject_GetAttrString(object, name);
   int newmem = 0;
-  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EV_ptr, 0, &newmem)))
+  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value,
+                                                    &argp,
+                                                    swig_EV_ptr,
+                                                    0,
+                                                    &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type Epetra.Vector", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not of type Epetra.Vector",
+                 name);
     Py_DECREF(value);
     throw PythonException();
   }
@@ -454,15 +492,19 @@ PyTrilinos::getEpetraVectorObjectAttr(PyObject * object, CONST char * name)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< const Epetra_Vector >
-PyTrilinos::getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name)
+getConstEpetraVectorObjectAttr(PyObject   * object,
+                               CONST char * name)
 {
-  static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
+  static swig_type_info * swig_EV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
   void * argp;
   PyObject * value = PyObject_GetAttrString(object, name);
   int newmem = 0;
   if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EV_ptr, 0, &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type Epetra.Vector", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not of type Epetra.Vector",
+                 name);
     Py_DECREF(value);
     throw PythonException();
   }
@@ -477,9 +519,12 @@ PyTrilinos::getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< const Epetra_Vector >
-PyTrilinos::getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * name, int i)
+getConstEpetraVectorItemObjectAttr(PyObject   * object,
+                                   CONST char * name,
+                                   int          i)
 {
-  static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
+  static swig_type_info * swig_EV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
   void * argp;
   PyObject * tuple = getTupleObjectAttr(object, name);
   PyObject * item  = PyTuple_GetItem(tuple, i);
@@ -488,7 +533,9 @@ PyTrilinos::getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * n
   int newmem = 0;
   if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(item, &argp, swig_EV_ptr, 0, &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not tuple of type Epetra.Vector", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not tuple of type Epetra.Vector",
+                 name);
     Py_DECREF(item);
     throw PythonException();
   }
@@ -503,15 +550,19 @@ PyTrilinos::getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * n
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_MultiVector >
-PyTrilinos::getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
+getEpetraMultiVectorObjectAttr(PyObject   * object,
+                               CONST char * name)
 {
-  static swig_type_info * swig_EMV_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
+  static swig_type_info * swig_EMV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
   void * argp;
   PyObject * value = PyObject_GetAttrString(object, name);
   int newmem = 0;
   if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EMV_ptr, 0, &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type Epetra.MultiVector", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not of type Epetra.MultiVector",
+                 name);
     Py_DECREF(value);
     throw PythonException();
   }
@@ -526,15 +577,19 @@ PyTrilinos::getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< const Epetra_MultiVector >
-PyTrilinos::getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
+getConstEpetraMultiVectorObjectAttr(PyObject * object,
+                                    CONST char * name)
 {
-  static swig_type_info * swig_EMV_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
+  static swig_type_info * swig_EMV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
   void * argp;
   PyObject * value = PyObject_GetAttrString(object, name);
   int newmem = 0;
   if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EMV_ptr, 0, &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type Epetra.MultiVector", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not of type Epetra.MultiVector",
+                 name);
     Py_DECREF(value);
     throw PythonException();
   }
@@ -549,15 +604,23 @@ PyTrilinos::getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * 
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Operator >
-PyTrilinos::getEpetraOperatorObjectAttr(PyObject * object, CONST char * name)
+getEpetraOperatorObjectAttr(PyObject   * object,
+                            CONST char * name)
 {
-  static swig_type_info * swig_EO_ptr = SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator > *");
+  static swig_type_info * swig_EO_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_Operator > *");
   void * argp;
   PyObject * value = PyObject_GetAttrString(object, name);
   int newmem = 0;
-  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EO_ptr, 0, &newmem)))
+  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value,
+                                                    &argp,
+                                                    swig_EO_ptr,
+                                                    0,
+                                                    &newmem)))
   {
-    PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type Epetra.Operator", name);
+    PyErr_Format(PyExc_TypeError,
+                 "Attribute '%s' is not of type Epetra.Operator",
+                 name);
     Py_DECREF(value);
     throw PythonException();
   }
@@ -572,3 +635,224 @@ PyTrilinos::getEpetraOperatorObjectAttr(PyObject * object, CONST char * name)
 ////////////////////////////////////////////////////////////////////////
 
 #endif   // HAVE_TEUCHOS
+
+////////////////////////////////////////////////////////////////////////
+
+PyObject *
+convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
+                               int   extraDim)
+{
+  // Initialization
+  PyObject * dim_data    = NULL;
+  PyObject * dim_dict    = NULL;
+  PyObject * indices     = NULL;
+  npy_intp   dims        = 1;
+  int        currentDim  = 0;
+
+  // Get the Epetra_Comm
+  const Epetra_Comm & comm = ebm.Comm();
+
+  // Get the number of dimensions.  The vector data constitutes one
+  // dimension.  If the extraDim is greater than one, then that
+  // constitutes a second possible dimension.  If there is a constant
+  // element size and that size is greater than one, then that
+  // constitutes a third possible dimension.  If the element size is
+  // variable, throw an exception, as PyTrilinos and the DistArray
+  // Protocol do not handle that case.
+  Py_ssize_t ndim     = 1;
+  long       elemSize = 1;
+  if (extraDim > 1) ndim += 1;
+  if (ebm.ConstantElementSize())
+  {
+    if (ebm.ElementSize() > 1)
+    {
+      ndim += 1;
+      elemSize = ebm.ElementSize();
+    }
+  }
+  else
+  {
+    PyErr_SetString(PyExc_ValueError,
+                    "The given Epetra_BLockMap has variable element sizes, "
+                    "which is not currently supported by PyTrilinos for the "
+                    "DistArray Protocol.");
+    goto fail;
+  }
+
+  // Allocate the dim_data return object, which is a tuple of length
+  // ndim
+  dim_data = PyTuple_New(ndim);
+  if (!dim_data) goto fail;
+
+  // If we have an extra dimension argument grreater than one, then
+  // define a dimension associated with the multiple vectors
+  if (extraDim > 1)
+  {
+    dim_dict = PyDict_New();
+    if (!dim_dict) goto fail;
+    if (PyDict_SetItemString(dim_dict,
+                             "dist_type",
+                             PyString_FromString("n")) == -1) goto fail;
+
+    if (PyDict_SetItemString(dim_dict,
+                             "size",
+                             PyInt_FromLong(extraDim)) == -1) goto fail;
+    // This function steals a reference from dim_dict
+    PyTuple_SET_ITEM(dim_data, currentDim, dim_dict);
+    currentDim += 1;
+  }
+
+  // If we have a constant element size greater than one, then define
+  // a dimension associated with the element size
+  if (elemSize > 1)
+  {
+    dim_dict = PyDict_New();
+    if (!dim_dict) goto fail;
+    if (PyDict_SetItemString(dim_dict,
+                             "dist_type",
+                             PyString_FromString("n")) == -1) goto fail;
+
+    if (PyDict_SetItemString(dim_dict,
+                             "size",
+                             PyInt_FromLong(elemSize)) == -1) goto fail;
+    // This function steals a reference from dim_dict
+    PyTuple_SET_ITEM(dim_data, currentDim, dim_dict);
+    currentDim += 1;
+  }
+
+  // Allocate the dimension data dictionary for the distributed points
+  // and assign the common key values
+  dim_dict = PyDict_New();
+  if (!dim_dict) goto fail;
+  if (PyDict_SetItemString(dim_dict,
+                           "size",
+                           PyInt_FromLong(ebm.NumMyElements())) == -1) goto fail;
+  if (PyDict_SetItemString(dim_dict,
+                           "proc_grid_size",
+                           PyInt_FromLong(comm.NumProc())) == -1) goto fail;
+  if (PyDict_SetItemString(dim_dict,
+                           "proc_grid_rank",
+                           PyInt_FromLong(comm.MyPID())) == -1) goto fail;
+
+  // Determine the type of the dimension data, either block "b" or
+  // unstructured "u", set the "dist_type" key and other keys required
+  // according to dist_type.
+  if (ebm.LinearMap())
+  {
+    // LinearMap == true corresponds to DistArray Protocol dist_type
+    // == "b" (block)
+    if (PyDict_SetItemString(dim_dict,
+                             "dist_type",
+                             PyString_FromString("b")) == -1) goto fail;
+    if (PyDict_SetItemString(dim_dict,
+                             "start",
+                             PyInt_FromLong(ebm.MinMyGID64())) == -1) goto fail;
+    if (PyDict_SetItemString(dim_dict,
+                             "stop",
+                             PyInt_FromLong(ebm.MaxMyGID64())) == -1) goto fail;
+  }
+  else
+  {
+    // LinearMap == false corresponds to DistArray Protocol dist_type
+    // == "u" (unstructured)
+    if (PyDict_SetItemString(dim_dict,
+                             "dist_type",
+                             PyString_FromString("u")) == -1) goto fail;
+    dims    = ebm.NumMyElements();
+    indices = PyArray_SimpleNewFromData(1,
+                                        &dims,
+                                        NPY_LONG,
+                                        (void*)ebm.MyGlobalElements64());
+    if (!indices) goto fail;
+    if (PyDict_SetItemString(dim_dict,
+                             "indices",
+                             indices) == -1) goto fail;
+    Py_DECREF(indices);
+    indices = NULL;
+  }
+
+  // Put the dimension dictionary into the dim_data tuple
+  PyTuple_SET_ITEM(dim_data, currentDim, dim_dict);
+
+  // Return the dim_data tuple
+  return dim_data;
+
+  // Error handling
+  fail:
+  Py_XDECREF(dim_data);
+  Py_XDECREF(dim_dict);
+  Py_XDECREF(indices);
+  return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+PyObject *
+convertEpetraMultiVectorToDAP(const Epetra_MultiVector & emv)
+{
+  // Initialization
+  PyObject   * dap      = NULL;
+  PyObject   * dim_data = NULL;
+  PyObject   * dim_dict = NULL;
+  PyObject   * size     = NULL;
+  PyObject   * buffer   = NULL;
+  Py_ssize_t   ndim     = 1;
+  npy_intp     dims[3];
+
+  // Get the underlying Epetra_BlockMap
+  const Epetra_BlockMap & ebm = emv.Map();
+
+  // Allocate the DistArray Protocol object and set the version key
+  // value
+  dap = PyDict_New();
+  if (!dap) goto fail;
+  if (PyDict_SetItemString(dap,
+                           "__version__",
+                           PyString_FromString("0.9.0")) == -1) goto fail;
+
+  // Get the Dimension Data and the number of dimensions.  If the
+  // underlying Epetra_BlockMap has variable element sizes, an error
+  // will be detected here.
+  dim_data = convertEpetraBlockMapToDimData(ebm,
+                                            emv.NumVectors());
+  if (!dim_data) goto fail;
+  ndim = PyTuple_Size(dim_data);
+
+  // Assign the Dimension Data key value.
+  if (PyDict_SetItemString(dap,
+                           "dim_data",
+                           dim_data) == -1) goto fail;
+
+  // Extract the buffer dimensions from the Dimension Data, construct
+  // the buffer and assign the buffer key value
+  for (Py_ssize_t i = 0; i < ndim; ++i)
+  {
+    dim_dict = PyTuple_GetItem(dim_data, i);
+    if (!dim_dict) goto fail;
+    size = PyDict_GetItemString(dim_dict, "size");
+    if (!size) goto fail;
+    dims[i] = PyInt_AsLong(size);
+    if (PyErr_Occurred()) goto fail;
+  }
+  buffer = PyArray_SimpleNewFromData(ndim,
+                                     dims,
+                                     NPY_DOUBLE,
+                                     (void*)emv[0]);
+  if (!buffer) goto fail;
+  if (PyDict_SetItemString(dap,
+                           "buffer",
+                           buffer) == -1) goto fail;
+
+  // Return the DistArray Protocol object
+  return dap;
+
+  // Error handling
+  fail:
+  Py_XDECREF(dap);
+  Py_XDECREF(dim_data);
+  Py_XDECREF(dim_dict);
+  Py_XDECREF(buffer);
+  return NULL;
+}
+
+}  // Namespace PyTrilinos

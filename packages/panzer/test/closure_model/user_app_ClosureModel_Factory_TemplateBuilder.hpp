@@ -53,13 +53,20 @@
 namespace user_app {
 
   class MyModelFactory_TemplateBuilder {
+    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > distr_param_lof;
 
   public:
+
+    void setDistributedParameterLOF(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & dpl)
+    { distr_param_lof = dpl; }
     
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
-      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
-			   (new user_app::MyModelFactory<EvalT>) );
+      Teuchos::RCP<user_app::MyModelFactory<EvalT> > closure_factory =
+          Teuchos::rcp(new user_app::MyModelFactory<EvalT>) ;
+      closure_factory->setDistributedParameterLOF(distr_param_lof);
+
+      return Teuchos::rcp_static_cast<panzer::ClosureModelFactoryBase>(closure_factory);
     }
     
   };

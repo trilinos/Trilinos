@@ -71,7 +71,9 @@
 #include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
-
+#if defined(_WIN32)
+#define KOKKOS_ATOMICS_USE_WINDOWS
+#else
 #if defined( __CUDA_ARCH__ )
 
 // Compiling NVIDIA device code, must use Cuda atomics:
@@ -107,6 +109,7 @@
 #endif
 
 #endif /* Not pre-selected atomic implementation */
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -125,8 +128,9 @@ KOKKOS_INLINE_FUNCTION
 void atomic_decrement(volatile T* a);
 }
 
-
+#if ! defined(_WIN32)
 #include<impl/Kokkos_Atomic_Assembly_X86.hpp>
+#endif
 
 namespace Kokkos {
 
@@ -142,11 +146,16 @@ const char * atomic_query_version()
   return "KOKKOS_ATOMICS_USE_INTEL" ;
 #elif defined( KOKKOS_ATOMICS_USE_OMP31 )
   return "KOKKOS_ATOMICS_USE_OMP31" ;
+#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
+  return "KOKKOS_ATOMICS_USE_WINDOWS";
 #endif
 }
 
 } // namespace Kokkos
 
+#ifdef _WIN32
+#include "impl/Kokkos_Atomic_Windows.hpp"
+#else
 //#include "impl/Kokkos_Atomic_Assembly_X86.hpp"
 
 //----------------------------------------------------------------------------
@@ -177,6 +186,15 @@ const char * atomic_query_version()
 #include "impl/Kokkos_Atomic_Fetch_Add.hpp"
 
 //----------------------------------------------------------------------------
+// Atomic fetch and sub
+//
+// template<class T>
+// T atomic_fetch_sub(volatile T* const dest, const T val)
+// { T tmp = *dest ; *dest -= val ; return tmp ; }
+
+#include "impl/Kokkos_Atomic_Fetch_Sub.hpp"
+
+//----------------------------------------------------------------------------
 // Atomic fetch and or
 //
 // template<class T>
@@ -193,6 +211,7 @@ const char * atomic_query_version()
 // { T tmp = *dest ; *dest = tmp & val ; return tmp ; }
 
 #include "impl/Kokkos_Atomic_Fetch_And.hpp"
+#endif /*Not _WIN32*/
 
 //----------------------------------------------------------------------------
 // Memory fence
@@ -213,8 +232,9 @@ const char * atomic_query_version()
 
 #include "impl/Kokkos_Volatile_Load.hpp"
 
+#ifndef _WIN32
 #include "impl/Kokkos_Atomic_Generic.hpp"
-
+#endif
 //----------------------------------------------------------------------------
 // This atomic-style macro should be an inlined function, not a macro
 

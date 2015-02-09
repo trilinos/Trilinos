@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -118,6 +119,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Residual>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
+
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
@@ -130,14 +138,38 @@ template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-   // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
 
-   if(epetraContainer_==Teuchos::null) {
+  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+
+  // try to extract linear object container
+  {
+    RCP<EpetraLinearObjContainer> epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null) {
+      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
-   }
+      epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+    }
+
+    if(epetraContainer!=Teuchos::null) {
+      if (useTimeDerivativeSolutionVector_)
+        x_ = epetraContainer->get_dxdt();
+      else
+        x_ = epetraContainer->get_x(); 
+
+      return; // epetraContainer was found
+    }
+  }
+
+  // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
+  {
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+  }
 }
 
 // **********************************************************************
@@ -151,16 +183,20 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
+/*
    Teuchos::RCP<Epetra_Vector> x;
    if (useTimeDerivativeSolutionVector_)
      x = epetraContainer_->get_dxdt();
    else
      x = epetraContainer_->get_x(); 
+*/
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
+
+   Epetra_Vector & x = *x_;
  
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
@@ -177,7 +213,7 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = (*x)[lid];
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
          }
       }
    }
@@ -245,6 +281,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Tangent>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
+
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
@@ -257,14 +300,38 @@ template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-   // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
 
-   if(epetraContainer_==Teuchos::null) {
+  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+
+  // try to extract linear object container
+  {
+    RCP<EpetraLinearObjContainer> epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null) {
+      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
-   }
+      epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+    }
+
+    if(epetraContainer!=Teuchos::null) {
+      if (useTimeDerivativeSolutionVector_)
+        x_ = epetraContainer->get_dxdt();
+      else
+        x_ = epetraContainer->get_x(); 
+
+      return; // epetraContainer was found
+    }
+  }
+
+  // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
+  {
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+  }
 }
 
 // **********************************************************************
@@ -278,16 +345,12 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<Epetra_Vector> x;
-   if (useTimeDerivativeSolutionVector_)
-     x = epetraContainer_->get_dxdt();
-   else
-     x = epetraContainer_->get_x(); 
- 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
+
+   Epetra_Vector & x = *x_;
  
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
@@ -304,7 +367,7 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = (*x)[lid];
+            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
          }
       }
    }
@@ -322,6 +385,7 @@ GatherSolution_Epetra(
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
   , disableSensitivities_(false)
+  , sensitivitiesName_("")
   , globalDataKey_("Solution Gather Container")
   , gatherSeedIndex_(-1)
 { 
@@ -359,6 +423,10 @@ GatherSolution_Epetra(
      gatherSeedIndex_ = p.get<int>("Gather Seed Index");
   }
 
+  if (p.isType<std::string>("Sensitivities Name")) {
+     sensitivitiesName_ = p.get<std::string>("Sensitivities Name");
+  }
+
   // figure out what the first active name is
   std::string firstName = "<none>";
   if(names.size()>0)
@@ -370,7 +438,7 @@ GatherSolution_Epetra(
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+") ";
     this->setName(n);
   }
 }
@@ -391,6 +459,13 @@ postRegistrationSetup(typename Traits::SetupData d,
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
+    // this is the error return code, raise the alarm
+    if(fieldIds_[fd]==-1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                                 "GatherSolution_Epetra<Jacobian>: Could not find field \"" + fieldName + "\" in the global indexer. ");
+         // wouldn't it be nice to print more information???
+    }
+
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
@@ -403,14 +478,51 @@ template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-   // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_));
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
 
-   if(epetraContainer_==Teuchos::null) {
+  // manage sensitivities
+  ////////////////////////////////////////////////////////////
+  if(!disableSensitivities_) {
+    if(d.sensitivities_name==sensitivitiesName_)
+      applySensitivities_ = true;
+    else
+      applySensitivities_ = false;
+  } 
+  else 
+    applySensitivities_ = false;
+
+  ////////////////////////////////////////////////////////////
+
+  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+
+  // try to extract linear object container
+  {
+    RCP<EpetraLinearObjContainer> epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null) {
+      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
-      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
-   }
+      epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+    }
+
+    if(epetraContainer!=Teuchos::null) {
+      if (useTimeDerivativeSolutionVector_)
+        x_ = epetraContainer->get_dxdt();
+      else
+        x_ = epetraContainer->get_x(); 
+
+      return; // epetraContainer was found
+    }
+  }
+
+  // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
+  {
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+  }
 }
 
 // **********************************************************************
@@ -422,28 +534,28 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<Epetra_Vector> x;
    double seed_value = 0.0;
-   if (useTimeDerivativeSolutionVector_ && gatherSeedIndex_<0) {
-     x = epetraContainer_->get_dxdt();
-     seed_value = workset.alpha;
+   if(applySensitivities_) {
+     if (useTimeDerivativeSolutionVector_ && gatherSeedIndex_<0) {
+       seed_value = workset.alpha;
+     }
+     else if (gatherSeedIndex_<0) {
+       seed_value = workset.beta;
+     }
+     else if(!useTimeDerivativeSolutionVector_) {
+       seed_value = workset.gather_seeds[gatherSeedIndex_];
+     }
+     else {
+       TEUCHOS_ASSERT(false);
+     }
    }
-   else if (gatherSeedIndex_<0) {
-     x = epetraContainer_->get_x();
-     seed_value = workset.beta;
-   }
-   else if(!useTimeDerivativeSolutionVector_) {
-     x = epetraContainer_->get_x();
-     seed_value = workset.gather_seeds[gatherSeedIndex_];
-   }
-   else {
-     TEUCHOS_ASSERT(false);
-   }
+
+   Epetra_Vector & x = *x_;
 
    // turn off sensitivies: this may be faster if we don't expand the term
    // but I suspect not because anywhere it is used the full complement of
    // sensitivies will be needed anyway.
-   if(disableSensitivities_)
+   if(!applySensitivities_)
       seed_value = 0.0;
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -464,14 +576,14 @@ evaluateFields(typename Traits::EvalData workset)
 
          const std::vector<int> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
-         if(disableSensitivities_) {
+         if(!applySensitivities_) {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
              int lid = LIDs[offset];
 
              // set the value and seed the FAD object
-             field(worksetCellIndex,basis) = (*x)[lid];
+             field(worksetCellIndex,basis) = x[lid];
            }
          }
          else {
@@ -482,7 +594,7 @@ evaluateFields(typename Traits::EvalData workset)
 
              // set the value and seed the FAD object
              ScalarT & dest = field(worksetCellIndex,basis);
-             dest = ScalarT(LIDs.size(), (*x)[lid]);
+             dest = ScalarT(LIDs.size(), x[lid]);
              dest.fastAccessDx(offset) = seed_value;
            }
          }

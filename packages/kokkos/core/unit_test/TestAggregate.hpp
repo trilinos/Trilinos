@@ -261,13 +261,11 @@ struct ViewAssignment< Test::EmbedArray , Test::EmbedArray , void >
                     )>::type * = 0
                   )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker;
   }
 };
 
@@ -283,13 +281,11 @@ struct ViewAssignment< ViewDefault , Test::EmbedArray , void >
                 , const View<ST,SL,SD,SM,Test::EmbedArray> & src
                 )
   {
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst.m_offset_map.assign( src.m_offset_map );
 
     dst.m_ptr_on_device = src.m_ptr_on_device ;
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker;
   }
 };
 
@@ -331,6 +327,7 @@ private:
   typename traits::value_type::value_type * m_ptr_on_device ;
   offset_map_type                           m_offset_map ;
   view_data_management                      m_management ;
+  Impl::AllocationTracker                   m_tracker ;
 
 public:
 
@@ -390,19 +387,27 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_management.decrement( m_ptr_on_device ); }
+  ~View() {}
 
   KOKKOS_INLINE_FUNCTION
-  View() : m_ptr_on_device(0)
-    { m_offset_map.assing(0,0,0,0,0,0,0,0); }
+  View()
+    : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  { m_offset_map.assing(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0)
-    {
-      (void) Impl::ViewAssignment<
-        typename traits::specialize ,
-        typename traits::specialize >( *this , rhs );
-    }
+  View( const View & rhs )
+    : m_ptr_on_device(0)
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    (void) Impl::ViewAssignment<
+      typename traits::specialize ,
+      typename traits::specialize >( *this , rhs );
+  }
 
   KOKKOS_INLINE_FUNCTION
   View & operator = ( const View & rhs )
@@ -420,10 +425,13 @@ public:
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,RS> & rhs )
     : m_ptr_on_device(0)
-    {
-      (void) Impl::ViewAssignment<
-        typename traits::specialize , RS >( *this , rhs );
-    }
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    (void) Impl::ViewAssignment<
+      typename traits::specialize , RS >( *this , rhs );
+  }
 
   template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
@@ -449,21 +457,24 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
 
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::value_type::value_type   scalar_type ;
+    typedef typename traits::memory_space  memory_space ;
+    typedef typename traits::value_type::value_type   scalar_type ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-      m_offset_map.set_padding();
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_offset_map.set_padding();
 
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( Alloc::label( prop ) , sizeof(scalar_type) * m_offset_map.capacity() );
+    m_tracker = memory_space::allocate_and_track( Alloc::label( prop ), sizeof(scalar_type) * m_offset_map.capacity() );
 
-      (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
-        ( m_ptr_on_device , m_offset_map.capacity() );
-    }
+    m_ptr_on_device = reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
+
+    (void) Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >( m_ptr_on_device , m_offset_map.capacity() );
+  }
 
   //------------------------------------
   // Assign an unmanaged View from pointer, can be called in functors.
@@ -484,11 +495,14 @@ public:
         const size_t n6 = 0 ,
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
-
-      m_ptr_on_device = if_user_pointer_constructor::select( ptr );
-    }
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_ptr_on_device = if_user_pointer_constructor::select( ptr );
+    m_management.set_unmanaged();
+  }
 
   //------------------------------------
   // Assign unmanaged View to portion of Device shared memory
@@ -509,23 +523,26 @@ public:
         const unsigned n6 = 0 ,
         const unsigned n7 = 0 )
     : m_ptr_on_device(0)
-    {
-      typedef typename traits::value_type::value_type   scalar_type ;
+    , m_offset_map()
+    , m_management()
+    , m_tracker()
+  {
+    typedef typename traits::value_type::value_type   scalar_type ;
 
-      enum { align = 8 };
-      enum { mask  = align - 1 };
+    enum { align = 8 };
+    enum { mask  = align - 1 };
 
-      typedef Impl::if_c< ! traits::is_managed ,
-                          scalar_type * ,
-                          Impl::ViewError::device_shmem_constructor_requires_unmanaged >
-        if_device_shmem_pointer ;
+    typedef Impl::if_c< ! traits::is_managed ,
+                        scalar_type * ,
+                        Impl::ViewError::device_shmem_constructor_requires_unmanaged >
+      if_device_shmem_pointer ;
 
-      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+    m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
 
-      // Select the first argument:
-      m_ptr_on_device = if_device_shmem_pointer::select(
-       (scalar_type *) dev.get_shmem( unsigned( sizeof(scalar_type) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
-    }
+    // Select the first argument:
+    m_ptr_on_device = if_device_shmem_pointer::select(
+     (scalar_type *) dev.get_shmem( unsigned( sizeof(scalar_type) * m_offset_map.capacity() + unsigned(mask) ) & ~unsigned(mask) ) );
+  }
 
   static inline
   unsigned shmem_size( const unsigned n0 = 0 ,

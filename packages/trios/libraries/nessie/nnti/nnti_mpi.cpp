@@ -3532,11 +3532,8 @@ static void create_status(
 {
     log_debug(nnti_debug_level, "enter");
 
-    memset(status, 0, sizeof(NNTI_status_t));
-
     status->op    =wr->ops;
     status->result=(NNTI_result_t)nnti_rc;
-
     if (nnti_rc==NNTI_OK) {
         if (mpi_wr->reg_buf) {
         	status->start =mpi_wr->reg_buf->payload;

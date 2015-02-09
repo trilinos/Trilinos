@@ -56,7 +56,7 @@
 
 #include <iostream>
 
-#include "ROL_Sacado_Objective.hpp"
+#include "example_01c.hpp"
 
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -65,7 +65,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "example_01.hpp"
 
 using namespace ROL;
 
@@ -90,8 +89,13 @@ int main(int argc, char **argv)
 
     try {
 
-        Sacado_Objective<RealT,Zakharov> obj;
-    
+        typedef Sacado::Fad::SFad<RealT,1> FadType;
+        typedef Sacado::Fad::DFad<FadType> FadFadType; 
+
+        Teuchos::RCP<Objective<FadFadType> > zakharov = Teuchos::rcp(new Zakharov<FadFadType>);
+        Teuchos::RCP<Objective<FadType> > zak_grad = Teuchos::rcp(new GradientEnabler<FadType>(zakharov));
+        HessianEnabler<RealT> obj(zak_grad); 
+
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file

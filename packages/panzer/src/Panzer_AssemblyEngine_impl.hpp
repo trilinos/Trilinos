@@ -171,6 +171,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
   panzer::Traits::PreEvalData ped;
   ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
   ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  ped.sensitivities_name = in.sensitivities_name;
   in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // Loop over volume field managers
@@ -217,7 +218,8 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   if(!countersInitialized_) {
     localCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
-    globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    // globalCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
+    globalCounter_ = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
     summedGhostedCounter_ = m_lin_obj_factory->buildPrimitiveGhostedLinearObjContainer();
     countersInitialized_ = true;
   }
@@ -287,6 +289,7 @@ evaluateBCs(const panzer::BCType bc_type,
   ped.gedc.addDataObject("Dirichlet Counter",preEval_loc);
   ped.gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
   ped.gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
+  ped.sensitivities_name = in.sensitivities_name;
   in.fillGlobalEvaluationDataContainer(ped.gedc);
 
   // this helps work around issues when constructing a mass

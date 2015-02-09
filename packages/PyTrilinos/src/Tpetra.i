@@ -168,6 +168,8 @@ template< class T > RCP< T > rcp(T* p, bool owns_mem = true);
 template< class T > RCP< T > rcpFromRef(T& r);
 template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
+%include "KokkosCore_config.h"
+%include "Kokkos_Macros.hpp"
 %include "TpetraCore_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
@@ -335,7 +337,7 @@ Map = Map_default
 // Tpetra Transfer support //
 /////////////////////////////
 // If I do a %include "Tpetra_Details_Transfer.hpp", SWIG aborts with
-// a trap 6.  Yhis appears to be related to the template parameters of
+// a trap 6.  This appears to be related to the template parameters of
 // class Tpetra::Details::Transfer using absolute namespaces
 // ::Tpetra::Map<>::... as default parameters.  I reproduce the
 // Transfer class here without the absolute namespace defaults.  This
@@ -406,6 +408,7 @@ Import = Import_default
 ///////////////////////////////
 %ignore Tpetra::removeEmptyProcessesInPlace;
 %include "Tpetra_DistObject_decl.hpp"
+%include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
 
 ////////////////////////////////
 // Tpetra MultiVector support //
@@ -436,6 +439,7 @@ Import = Import_default
 }
 %feature("notabstract") Tpetra::MultiVector;
 %include "Tpetra_MultiVector_decl.hpp"
+%include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 
 ///////////////////////////
 // Tpetra Vector support //
@@ -445,6 +449,7 @@ Import = Import_default
 %warnfilter(302) Tpetra::createVectorFromView;
 %feature("notabstract") Tpetra::Vector;
 %include "Tpetra_Vector_decl.hpp"
+%include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 
 /////////////////////////////////////
 // Explicit template instantiation //
@@ -453,7 +458,7 @@ Import = Import_default
     %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
     %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >)
     %template(CLASS ## _ ## SCALAR_NAME)
-        Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
+        Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode, true >;
 %enddef
 
 %define %tpetra_scalars( SCALAR, SCALAR_NAME)

@@ -135,7 +135,7 @@ void ThreadsExec::driver(void)
 
 ThreadsExec::ThreadsExec()
   : m_pool_base(0)
-  , m_scratch(0)
+  , m_scratch()
   , m_scratch_reduce_end(0)
   , m_scratch_thread_end(0)
   , m_pool_rank(0)
@@ -189,7 +189,7 @@ ThreadsExec::~ThreadsExec()
   const unsigned entry = m_pool_size - ( m_pool_rank + 1 );
 
   m_pool_base   = 0 ;
-  m_scratch     = 0 ;
+  m_scratch.clear();
   m_scratch_reduce_end = 0 ;
   m_scratch_thread_end = 0 ;
   m_pool_rank     = 0 ;
@@ -402,10 +402,7 @@ void * ThreadsExec::root_reduce_scratch()
 
 void ThreadsExec::execute_resize_scratch( ThreadsExec & exec , const void * )
 {
-  if ( exec.m_scratch ) {
-    HostSpace::decrement( exec.m_scratch );
-    exec.m_scratch = 0 ;
-  }
+  exec.m_scratch.clear();
 
   exec.m_scratch_reduce_end = s_threads_process.m_scratch_reduce_end ;
   exec.m_scratch_thread_end = s_threads_process.m_scratch_thread_end ;
@@ -413,9 +410,9 @@ void ThreadsExec::execute_resize_scratch( ThreadsExec & exec , const void * )
   if ( s_threads_process.m_scratch_thread_end ) {
 
     exec.m_scratch =
-      HostSpace::allocate( "thread_scratch" , s_threads_process.m_scratch_thread_end );
+      HostSpace::allocate_and_track( "thread_scratch" , s_threads_process.m_scratch_thread_end );
 
-    unsigned * ptr = (unsigned *)( exec.m_scratch );
+    unsigned * ptr = reinterpret_cast<unsigned *>( exec.m_scratch.alloc_ptr() );
     unsigned * const end = ptr + s_threads_process.m_scratch_thread_end / sizeof(unsigned);
 
     // touch on this thread
@@ -452,7 +449,7 @@ void * ThreadsExec::resize_scratch( size_t reduce_size , size_t thread_size )
     s_threads_process.m_scratch = s_threads_exec[0]->m_scratch ;
   }
 
-  return s_threads_process.m_scratch ;
+  return s_threads_process.m_scratch.alloc_ptr() ;
 }
 
 //----------------------------------------------------------------------------

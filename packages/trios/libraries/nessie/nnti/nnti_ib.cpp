@@ -4708,7 +4708,6 @@ static void create_status(
 
     trios_start_timer(total_time);
 
-    memset(status, 0, sizeof(NNTI_status_t));
     status->op     = wr->ops;
     if (is_wr_complete(ib_wr)) {
         status->result = wr->result;

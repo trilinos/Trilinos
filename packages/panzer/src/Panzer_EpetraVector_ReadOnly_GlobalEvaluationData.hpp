@@ -67,6 +67,9 @@ public:
    EpetraVector_ReadOnly_GlobalEvaluationData()
       : isInitialized_(false) { }
 
+   EpetraVector_ReadOnly_GlobalEvaluationData(const EpetraVector_ReadOnly_GlobalEvaluationData & src)
+      : isInitialized_(false) { initialize(src.importer_,src.ghostedMap_,src.uniqueMap_); }
+
    /** Initialize this object with some Epetra communication objects. This method
      * must be called before an object of this type can be used.
      *

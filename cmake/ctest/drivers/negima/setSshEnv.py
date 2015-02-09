@@ -25,7 +25,7 @@ userid = pwd.getpwuid(os.getuid())[0]
 [status,charlist] = commands.getstatusoutput(socketCommand + " -xl | grep -o '/tmp/ssh-[[:alnum:]]*/agent.[[:digit:]]*'")
 # convert raw characters into list
 agentList = [s.strip() for s in charlist.splitlines()]
-
+keyFound  = 0
 for agent in agentList:
   # See if this is your agent by checking ownership of root of lock directory
   # Check only the root, because if it's not yours, you can't see down into it.
@@ -43,5 +43,10 @@ for agent in agentList:
     # Check whether this key's fingerprint matches the desired key's
     for key in keyList:
       if key == keyFingerprint:
+        keyFound = 1
         print "export SSH_AUTH_SOCK=" + agent
         break
+
+# if no key matches, just use the last agent found
+if keyFound == 0:
+  print "export SSH_AUTH_SOCK=" + agent

@@ -155,6 +155,13 @@ public:
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
+   { if(colGidProvider_!=Teuchos::null)
+       return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(colGidProvider_));
+     return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
    { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
 

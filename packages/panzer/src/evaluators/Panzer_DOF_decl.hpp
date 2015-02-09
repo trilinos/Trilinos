@@ -93,6 +93,8 @@ public:
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm);
 
+  void preEvaluate(typename Traits::PreEvalData d);
+
   void evaluateFields(typename Traits::EvalData d);
 
 private:
@@ -105,8 +107,11 @@ private:
   std::string basis_name;
   std::size_t basis_index;
 
+  bool accelerate_jacobian_enabled;
   bool accelerate_jacobian;
   std::vector<int> offsets;
+  std::string sensitivities_name; // This sets which gather operations have sensitivities
+                                  // and thus which DOF operations can use accelerated jacobians
 
   bool is_vector_basis;
 };

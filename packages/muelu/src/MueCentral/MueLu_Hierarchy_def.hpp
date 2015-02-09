@@ -750,7 +750,7 @@ namespace MueLu {
 
         prevNorm = curNorm;
         curNorm  = rn[0];
-        rate_ = as<double>(curNorm / prevNorm);
+        rate_ = as<MagnitudeType>(curNorm / prevNorm);
 
         if (tol > 0) {
           bool passed = true;

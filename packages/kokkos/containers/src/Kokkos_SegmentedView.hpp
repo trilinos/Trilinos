@@ -309,8 +309,8 @@ public:
 
   ~SegmentedView() {
     if (traits::execution_space::in_parallel()) return;
-    int count = traits::memory_space::count(segments_.ptr_on_device());
-    if(count == 1) {
+    size_t ref_count = segments_.tracker().ref_count();
+    if(ref_count == 1u) {
       Kokkos::fence();
       typename Kokkos::View<int,typename traits::execution_space>::HostMirror h_nviews("h_nviews");
       Kokkos::deep_copy(h_nviews,nsegments_);
