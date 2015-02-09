@@ -5135,6 +5135,11 @@ void BulkData::internal_resolve_send_ghost_membership()
     // StkTransitionBulkData derived class in Framework.
 }
 
+bool BulkData::should_sort_buckets_by_first_entity_identifier() const
+{
+    return false;
+}
+
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {

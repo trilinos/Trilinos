@@ -303,6 +303,28 @@ namespace {
 
 inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
+struct bucket_less_by_first_entity_identifier
+{
+    bool operator()(const Bucket* first, const Bucket* second) const
+    {
+        if (first->size() == 0)
+        {
+            return true;
+        }
+        else if (second->size() == 0)
+        {
+            return false;
+        }
+        else
+        {
+            const stk::mesh::BulkData& mesh = first->mesh();
+            stk::mesh::EntityId firstId = mesh.identifier((*first)[0]);
+            stk::mesh::EntityId secondId = mesh.identifier((*second)[0]);
+            return firstId < secondId;
+       }
+    }
+};
+
 }
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
@@ -354,6 +376,11 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
     new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
     size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
     partitions.resize(new_size);
+  }
+
+  if(m_mesh.should_sort_buckets_by_first_entity_identifier())
+  {
+      std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
   }
 
   sync_bucket_ids(rank);
