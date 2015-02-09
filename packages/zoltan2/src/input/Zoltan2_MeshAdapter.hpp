@@ -249,6 +249,9 @@ public:
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
 			    MeshEntityType through) const {
+    if (availAdjs(sourcetarget, through)) {
+      return true;
+    }
     return false;
   }
 
