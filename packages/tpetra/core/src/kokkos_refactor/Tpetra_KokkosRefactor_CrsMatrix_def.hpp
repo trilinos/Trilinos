@@ -6633,8 +6633,8 @@ namespace Tpetra {
           break;
         }
         size_t tmpNumEnt = static_cast<LO> (valInTmp.size ());
-        if (tmpNumEnt < numEnt ||
-            static_cast<size_t> (indInTmp.size ()) < static_cast<size_type> (numEnt)) {
+        if (tmpNumEnt < static_cast<size_t> (numEnt) ||
+            static_cast<size_t> (indInTmp.size ()) < static_cast<size_t> (numEnt)) {
           tmpNumEnt = std::max (static_cast<size_t> (numEnt), tmpNumEnt * 2);
           valInTmp.resize (tmpNumEnt);
           indInTmp.resize (tmpNumEnt);
