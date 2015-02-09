@@ -8,8 +8,6 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")
 
-message("bmp: tpetra = ${Trilinos_ENABLE_Tpetra}")
-message("bmp: kokkos = ${Trilinos_ENABLE_Kokkos}")
   SET(TPL_ENABLE_MPI OFF CACHE BOOL "Enable MPI support.")
 
   ADVANCED_SET(Trilinos_DATA_DIR  NOTFOUND
