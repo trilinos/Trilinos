@@ -597,28 +597,23 @@ EndReporting:
    }
    else if (*num_export > 0) {
       /* allocate storage for export information and fill in data */
-      if (zz->Num_GID > 0) {
-         err = Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
-          ZOLTAN_SPECIAL_MALLOC_GID);
-         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-            ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids");
-         }
+      if (!Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_GID))
+         ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids");
 
       if (zz->Num_LID > 0) {
-         err = Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
-          ZOLTAN_SPECIAL_MALLOC_LID);
-         if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+         if (!Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
+                                     ZOLTAN_SPECIAL_MALLOC_LID)){
             ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc local ids");
+            }
          }
 
-      err = Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_INT);
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+      if (!Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_INT))
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc export proc list");
 
-      err = Zoltan_Special_Malloc (zz, (void**) export_to_parts, *num_export,
-       ZOLTAN_SPECIAL_MALLOC_INT);
-      if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+      if (!Zoltan_Special_Malloc (zz, (void**) export_to_parts, *num_export,
+                                  ZOLTAN_SPECIAL_MALLOC_INT))
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc export part list");
 
       /* Fill in export arrays */
@@ -670,6 +665,13 @@ EndReporting:
 
 End:
 
+   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+      Zoltan_Special_Free(zz, (void **)export_gids, ZOLTAN_SPECIAL_MALLOC_GID);
+      Zoltan_Special_Free(zz, (void **)export_lids, ZOLTAN_SPECIAL_MALLOC_LID);
+      Zoltan_Special_Free(zz, (void **)export_procs, ZOLTAN_SPECIAL_MALLOC_INT);
+      Zoltan_Special_Free(zz, (void **)export_to_parts,
+                          ZOLTAN_SPECIAL_MALLOC_INT);
+      }
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,
     &parts, &tsum);
