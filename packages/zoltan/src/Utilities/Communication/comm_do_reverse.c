@@ -166,7 +166,7 @@ int      *sizes)		/* variable size of objects (if not NULL) */
 
     comm_flag =Zoltan_Comm_Resize(plan->plan_reverse,sizes,tag,&sum_recv_sizes);
 
-    if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
+    if (comm_flag != ZOLTAN_OK) {
 	return(comm_flag);
     }
 
@@ -194,7 +194,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
    */
   status = create_reverse_plan(plan, tag, sizes);
 
-  if (status == ZOLTAN_OK || status == ZOLTAN_WARN){
+  if (status == ZOLTAN_OK){
 
     if (plan->plan_reverse->maxed_recvs){
   
@@ -209,7 +209,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
        */
       status = Zoltan_Comm_Do_Post(plan->plan_reverse, tag, send_data, nbytes, recv_data);
     
-      if (status == ZOLTAN_OK || status == ZOLTAN_WARN){
+      if (status == ZOLTAN_OK){
         status = Zoltan_Comm_Do_Wait (plan->plan_reverse, tag, send_data, nbytes, recv_data);
       }
     }
@@ -238,7 +238,7 @@ char     *recv_data)            /* array of data I'll own after reverse comm */
    */
   comm_flag = create_reverse_plan(plan, tag, sizes);
 
-  if (comm_flag == ZOLTAN_OK || comm_flag == ZOLTAN_WARN){
+  if (comm_flag == ZOLTAN_OK){
 
     /* post the receives of plan->plan_reverse
      */
@@ -246,7 +246,7 @@ char     *recv_data)            /* array of data I'll own after reverse comm */
                 recv_data);
   }
 
-  if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN){
+  if (comm_flag != ZOLTAN_OK){
     free_reverse_plan(plan);
   }
 

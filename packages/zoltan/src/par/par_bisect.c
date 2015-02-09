@@ -1185,7 +1185,6 @@ static double eval_cut_quality(
 {
   double temp[MAX_BISECT_WGTS];
   int i;
-  static char *yo = "eval_cut_quality";
 
   for (i=0; i<nwgts; i++)
      temp[i] = MAX(scalelo[i]*weightlo[i], scalehi[i]*weighthi[i]);

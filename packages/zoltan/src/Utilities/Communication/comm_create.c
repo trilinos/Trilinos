@@ -272,7 +272,7 @@ Mem_Err:
         }
     }
     
-    if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
+    if (comm_flag != ZOLTAN_OK) {
         if (comm_flag == ZOLTAN_MEMERR) {
 	    ZOLTAN_COMM_ERROR("Out of memory", yo, my_proc);
 	}

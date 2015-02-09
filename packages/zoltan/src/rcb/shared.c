@@ -747,7 +747,7 @@ End:
 /*****************************************************************************/
 
 #define COMM_DO_ERROR \
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) { \
+    { \
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do."); \
       goto End; \
     } \
@@ -851,7 +851,7 @@ int Zoltan_RB_Send_Dots_less_memory(
   ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm,
                             message_tag, &incoming);
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+  if (ierr != ZOLTAN_OK) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Create.");
     goto End;
   }
@@ -944,7 +944,7 @@ int Zoltan_RB_Send_Dots_less_memory(
     }
   }
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+  if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
 
   if (use_ids){
 
@@ -952,7 +952,7 @@ int Zoltan_RB_Send_Dots_less_memory(
     ierr = send_receive_ids(*gidpt, num_gid_entries, outgoing, *dotnum, sendbuf,
                     firstStaying, reorder, *dotmark, set, cobj, message_tag++);
 
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+    if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
 
     if (num_lid_entries){
 
@@ -961,7 +961,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                               sendbuf, firstStaying, reorder, *dotmark, set,
                               cobj, message_tag++);
 
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+      if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
     }
   }
 
@@ -974,7 +974,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                                 firstStaying, reorder, *dotmark, set,
                                 cobj, message_tag++);
   
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+    if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
   }
 
   /***** Send/receive process owning the dot *****/
@@ -983,7 +983,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                            firstStaying, reorder, *dotmark, set,
                            cobj, message_tag++);
   
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+  if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
 
   /***** Send/receive dot's original part *****/
 
@@ -991,7 +991,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                            firstStaying, reorder, *dotmark, set,
                            cobj, message_tag++);
   
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+  if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
 
   /***** Send/receive dot's new part *****/
 
@@ -999,7 +999,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                            firstStaying, reorder, *dotmark, set,
                            cobj, message_tag++);
   
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+  if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
 
   /***** Send/receive dot's migration size *****/
 
@@ -1008,7 +1008,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                              firstStaying, reorder, *dotmark, set,
                              cobj, message_tag++);
   
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+    if (ierr != ZOLTAN_OK) COMM_DO_ERROR;
   }
 
   *dotnum = dotnew;

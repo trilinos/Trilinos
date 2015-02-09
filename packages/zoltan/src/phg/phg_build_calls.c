@@ -256,7 +256,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     ierr = Zoltan_Comm_Create(&plan, zhg->nObj, myObjs.vtxHash, comm, msg_tag, &myHshVtxs.size);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -275,14 +275,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->objGID, gid_chars, (char *)myHshVtxs.vtxGID);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->objGNO, sizeof(ZOLTAN_GNO_TYPE), (char *)myHshVtxs.vtxGNO);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -291,7 +291,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
             NULL, NULL, NULL, NULL, NULL, myHshVtxs.vtxOwner,
             NULL);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -353,7 +353,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Create(&plan, myPins.nHedges, myPins.edgeHash, comm, msg_tag, &nRequests);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -379,7 +379,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendIdBuf, sizeof(ZOLTAN_ID_TYPE) * cnt, (char *)recvIdBuf);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -475,14 +475,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Resize(plan, myPins.esizes, msg_tag, &cnt);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)myPins.pinGID, gid_chars, (char *)pin_gid_buf);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -530,7 +530,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Create(&plan, zhg->nPins, myHshEdges.pinHash, comm, msg_tag, &nRequests);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -545,7 +545,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)myHshEdges.pinGID, gid_chars, (char *)gid_buf);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -570,7 +570,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendGnoBuf, 
                      sizeof(ZOLTAN_GNO_TYPE) * 2, NULL, (char *)recvGnoBuf);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -599,7 +599,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       msg_tag--;
       ierr = Zoltan_Comm_Create(&plan, zhg->nPins, zhg->Pin_Procs, comm, msg_tag, &nRequests);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
         goto End;
       }
 
@@ -611,7 +611,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       msg_tag--;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->pinGNO, sizeof(ZOLTAN_GNO_TYPE), (char *)recvGnoBuf);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
         goto End;
       }
 
@@ -685,7 +685,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       msg_tag--;
       ierr = Zoltan_Comm_Create(&plan, myEWs.size, myEWs.edgeHash, comm, msg_tag, &nRequests);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
         goto End;
       }
 
@@ -699,14 +699,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       msg_tag--;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)myEWs.edgeGID, gid_chars, (char *)gid_requests);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
         goto End;
       }
 
       msg_tag--;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)myEWs.wgt, cnt, (char *)gid_weights);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
         goto End;
       }
 
@@ -785,7 +785,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Create(&plan, zhg->nPins, zhg->Pin_Procs, comm, msg_tag, &nRequests);
   
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
   
@@ -799,7 +799,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)myPins.pinGID, gid_chars, (char *)gid_buf);
   
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -827,7 +827,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendGnoBuf, sizeof(ZOLTAN_GNO_TYPE),
                   NULL, (char *)zhg->pinGNO);
   
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -930,7 +930,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Create(&plan, cnt, procBuf, comm, msg_tag, &nRequests);
   
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -946,7 +946,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)sendGnoBuf, sizeof(ZOLTAN_GNO_TYPE) * 2, (char *)recvGnoBuf);
   
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -1000,7 +1000,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendFloatBuf, sizeof(float) * ew_dim,
                       NULL, (char *)recvFloatBuf);
       
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
         ZOLTAN_FREE(&sendFloatBuf);

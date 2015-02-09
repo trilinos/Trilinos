@@ -1751,13 +1751,13 @@ int Zoltan_Hier(
 
     ierr = Zoltan_LB_Free_Part(&hier_import_gids, &hier_import_lids,
                                &hier_import_procs, &hier_import_to_part);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Free_Part returned error.");
     }
 
     ierr = Zoltan_LB_Free_Part(&hier_export_gids, &hier_export_lids,
                                &hier_export_procs, &hier_export_to_part);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Free_Part returned error.");
     }
 

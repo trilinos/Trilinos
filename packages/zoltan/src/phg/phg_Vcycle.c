@@ -668,7 +668,7 @@ Refine:
 				 finer->vdest, hgc->Communicator, COMM_TAG+2,
 				 &size);
 
-	if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+	if (err != ZOLTAN_OK) {
 	  ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Zoltan_Comm_Create failed.");
           ZOLTAN_FREE(&sendbuf);
 	  goto End;

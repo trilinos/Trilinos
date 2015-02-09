@@ -533,7 +533,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), zhg->nObj, proclist, 
                               zz->Communicator, msg_tag, &nrecv);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
     zhg->nRecv_GNOs = nrecv;
@@ -546,7 +546,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     msg_tag++;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
   }
@@ -614,7 +614,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->Input_Parts,
                           sizeof(int), (char *) *input_parts);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -622,7 +622,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objWeight,
                           sizeof(float) * dim, (char *) phg->vwgt);
 
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    if (ierr != ZOLTAN_OK){
       goto End;
     }
 
@@ -631,7 +631,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->coor,
 			    sizeof(double) * phg->nDim, (char *) phg->coor);
 
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      if (ierr != ZOLTAN_OK){
 	goto End;
       }
     }
@@ -640,7 +640,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
        msg_tag++;
        ierr = Zoltan_Comm_Do (zhg->VtxPlan, msg_tag, (char*) zhg->fixed,
          sizeof(int), (char*) phg->fixed_part);
-       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN))
+       if (ierr != ZOLTAN_OK)
          goto End;         
     }
        
@@ -732,7 +732,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         ierr = Zoltan_Comm_Create(&plan, nLocalEdges, proclist, 
                                   zz->Communicator, msg_tag, &nrecv); 
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -754,7 +754,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         msg_tag++;
         ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -762,7 +762,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeWeight, 
                               dim*sizeof(float), (char *) gid_weights);
   
-        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+        if (ierr != ZOLTAN_OK){
           goto End;
         }
   
@@ -1268,7 +1268,7 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL; /* Distribution of repartition edges
       /* Use zhg->VtxPlan */
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, 25232, (char *) zhg->AppObjSizes, 
                             sizeof(int), (char *) objsize);
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      if (ierr != ZOLTAN_OK){
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do.");
         goto End;
       }
