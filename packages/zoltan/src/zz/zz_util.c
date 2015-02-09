@@ -614,7 +614,7 @@ int Zoltan_strcasecmp(const char *s1, const char *s2)
   size_t len1 = strlen(s1), len2 = strlen(s2);
   size_t i;
   int rc;
-  t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
+  t1 = (char *) ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
   strcpy(t2, s2);
@@ -633,7 +633,7 @@ int Zoltan_strncasecmp(const char *s1, const char *s2, size_t n)
   size_t len1 = strlen(s1), len2 = strlen(s2);
   size_t i;
   int rc;
-  t1 = ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
+  t1 = (char *) ZOLTAN_MALLOC((len1+len2+2)*sizeof(char));
   t2 = t1 + len1 + 1;
   strcpy(t1, s1);
   strcpy(t2, s2);
