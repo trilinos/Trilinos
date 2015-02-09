@@ -768,6 +768,7 @@ protected: //functions
 
   void internal_resolve_ghosted_modify_delete();
   void internal_resolve_shared_membership();
+  void internal_resolve_parallel_create();
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new );
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   virtual void internal_resolve_send_ghost_membership();
@@ -944,8 +945,6 @@ private: //functions
   void internal_establish_new_owner(stk::mesh::Entity entity);
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
-
-  void internal_resolve_parallel_create();
 
   void internal_basic_part_check(const Part* part,
                                  const unsigned ent_rank,

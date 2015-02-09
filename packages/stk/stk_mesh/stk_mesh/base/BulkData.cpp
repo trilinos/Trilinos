@@ -3381,6 +3381,12 @@ void comm_sync_send_recv(
             MetaData::get(mesh).entity_rank_name(entity_key.rank()) <<
             "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
+// Manoj: the following helps make tests pass for Aria, but the error is up stream related
+// to grabbing the wrong entities.
+//        if ( !mesh.in_shared(entity_key,proc) )
+//        {
+//            entitiesToGhostOntoOtherProcessors.insert( tmp );
+//        }
         entitiesToGhostOntoOtherProcessors.insert( tmp );
       }
       else if ( mesh.is_valid(e) ) {
@@ -4387,6 +4393,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 
     // Resolve creation of entities: discover sharing and set unique ownership.
     internal_resolve_parallel_create();
+
+    // Manoj: consider adding check_sharing_comm_maps here which is currently
+    // in BulkDataTester in UnitTestModificationEnd.cpp
 
     // Resolve part membership for shared entities.
     // This occurs after resolving creation so created and shared

@@ -57,6 +57,8 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
+#include <stk_util/parallel/CommSparse.hpp>
+
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
 
@@ -115,6 +117,11 @@ public:
         this->internal_resolve_ghosted_modify_delete();
     }
 
+    void my_internal_resolve_parallel_create()
+    {
+        this->internal_resolve_parallel_create();
+    }
+
     void my_update_comm_list_based_on_changes_in_comm_map()
     {
         this->update_comm_list_based_on_changes_in_comm_map();
@@ -170,6 +177,124 @@ public:
         set_state(entity,entity_state);
     }
 
+    void check_sharing_comm_maps()
+    {
+        stk::CommSparse comm(parallel());
+
+        for(int phase = 0; phase < 2; ++phase)
+        {
+            for(stk::mesh::EntityCommListInfoVector::const_iterator i = this->comm_list().begin(); i != this->comm_list().end(); ++i)
+            {
+                for(stk::mesh::PairIterEntityComm ec = this->entity_comm_map(i->key); !ec.empty(); ++ec)
+                {
+                    int type = ec->ghost_id;
+                    if ( type == 0 )
+                    {
+                        std::vector<int> sharingProcs;
+                        this->comm_shared_procs(i->key, sharingProcs);
+                        // pack shared info
+                        int owner = -1;
+                        if(bucket_ptr(i->entity) != 0)
+                        {
+                            owner = parallel_owner_rank(i->entity);
+                        }
+
+                        comm.send_buffer(ec->proc).pack<stk::mesh::EntityKey>(i->key).pack<int>(type).pack<int>(owner);
+                        comm.send_buffer(ec->proc).pack<size_t>(sharingProcs.size());
+                        for (size_t proc=0;proc<sharingProcs.size();++proc)
+                        {
+                            comm.send_buffer(ec->proc).pack<int>(sharingProcs[proc]);
+                        }
+                    }
+                }
+            }
+
+            if(phase == 0)
+            {
+                comm.allocate_buffers();
+            }
+            else
+            {
+                comm.communicate();
+            }
+        }
+
+        // unpack
+
+        std::ostringstream os;
+        bool anyErrors = false;
+
+        for(int i = 0; i < parallel_size(); ++i)
+        {
+            if ( i != parallel_rank() )
+            {
+                stk::mesh::EntityKey key;
+                int type = -1;
+                int from = -1;
+                int owner = -1;
+                while(comm.recv_buffer(i).remaining())
+                {
+                    from = i;
+                    comm.recv_buffer(from).unpack<stk::mesh::EntityKey>(key).unpack<int>(type).unpack<int>(owner);
+
+                    size_t numSharingProcs = 0;
+                    comm.recv_buffer(from).unpack<size_t>(numSharingProcs);
+                    std::vector<int> sharingProcs(numSharingProcs);
+                    for (size_t proc=0;proc<numSharingProcs;++proc)
+                    {
+                        comm.recv_buffer(from).unpack<int>(sharingProcs[proc]);
+                    }
+
+                    std::vector<int> localSharingProcs;
+                    this->comm_shared_procs(key, localSharingProcs);
+
+                    std::sort(localSharingProcs.begin(), localSharingProcs.end());
+                    std::sort(sharingProcs.begin(), sharingProcs.end());
+                    size_t maxNum = localSharingProcs.size() + sharingProcs.size();
+                    std::vector<int> unsharedProcs(maxNum);
+                    std::vector<int>::iterator iter = std::set_symmetric_difference( localSharingProcs.begin(), localSharingProcs.end(),
+                            sharingProcs.begin(), sharingProcs.end(), unsharedProcs.begin());
+
+                    size_t numUnshared = iter - unsharedProcs.begin();
+                    unsharedProcs.resize(numUnshared);
+
+                    int counter = 0;
+                    {
+                        for (size_t i=0;i<numUnshared;++i)
+                        {
+                            std::vector<int>::iterator iter = std::find(sharingProcs.begin(), sharingProcs.end(), unsharedProcs[i]);
+                            if ( iter != sharingProcs.end() && *iter != parallel_rank() )
+                            {
+                                if ( counter == 0 )
+                                {
+                                    os << "Error in sharing between procs for entity " << key.id() << " with rank " << key.rank()  << "  between procs: " << this->parallel_rank() << " and " << from << std::endl;
+                                    counter++;
+                                }
+                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[i] << " from other proc: "
+                                        << from << " but not from this proc: " << parallel_rank() << std::endl;
+                                anyErrors = true;
+                            }
+
+                            iter = std::find(localSharingProcs.begin(), localSharingProcs.end(), unsharedProcs[i]);
+                            if ( iter != localSharingProcs.end() && *iter != from )
+                            {
+                                if ( counter == 0 )
+                                {
+                                    os << "Error in sharing between procs for entity " << key.id() << " with rank " << key.rank()  << "  between procs: " << this->parallel_rank() << " and " << from << std::endl;
+                                    counter++;
+                                }
+                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[i] << " from this proc: "
+                                        << parallel_rank() << " but not from other proc: " << from << std::endl;
+                                anyErrors = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ThrowRequireMsg(!anyErrors, os.str());
+    }
 };
 
 void populateBulkDataWithFile(const std::string& exodusFileName, MPI_Comm communicator, stk::mesh::BulkData& bulkData);
@@ -944,6 +1069,48 @@ TEST(BulkDataModificationEnd, create_edges_with_min_map)
         stk::mesh::create_edges(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().universal_part(), &edge_part);
 
         checkThatMeshIsParallelConsistent(stkMeshBulkData);
+    }
+}
+
+TEST(BulkDataModificationEnd, test_invalid_add_node_sharing)
+{
+    // this is to reproduce error seen by Steve Kennon, ticket #12829
+    int numProcs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+    if ( numProcs == 3 )
+    {
+        int myProcId = -1;
+        MPI_Comm_rank(MPI_COMM_WORLD, &myProcId);
+
+        const unsigned spatial_dim = 3;
+        stk::mesh::MetaData meta_data(spatial_dim);
+        stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
+        meta_data.commit();
+        BulkDataTester mesh(meta_data, MPI_COMM_WORLD);
+        mesh.modification_begin();
+
+        stk::mesh::Entity node1 = mesh.declare_entity(stk::topology::NODE_RANK, 1, node_part);
+
+        if ( myProcId == 2 )
+        {
+            mesh.add_node_sharing(node1, 0);
+            mesh.add_node_sharing(node1, 1);
+        }
+        else if ( myProcId == 1)
+        {
+            mesh.add_node_sharing(node1, 2);
+        }
+        else if ( myProcId == 0 )
+        {
+            mesh.add_node_sharing(node1, 2);
+        }
+
+        mesh.my_internal_resolve_shared_modify_delete();
+        mesh.my_internal_resolve_ghosted_modify_delete();
+        mesh.my_update_comm_list_based_on_changes_in_comm_map();
+        mesh.my_internal_resolve_parallel_create();
+        EXPECT_THROW(mesh.check_sharing_comm_maps(), std::logic_error);
     }
 }
 
