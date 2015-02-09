@@ -284,6 +284,9 @@ public:
       zgid_t const *Ids=NULL;
       getIDsViewOf(sourcetarget, Ids);
 
+      zgid_t const *throughIds=NULL;
+      getIDsViewOf(through, throughIds);
+
       int LocalNumIDs = getLocalNumOf(sourcetarget);
       int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
@@ -292,19 +295,30 @@ public:
       /***********************************************************************/
 
       Array<GO> sourcetargetGIDs;
+      Array<GO> throughGIDs;
       RCP<const map_type> sourcetargetMapG;
+      RCP<const map_type> throughMapG;
 
       // count owned nodes
       int LocalNumOfNodes = getLocalNumOf(through);
       
       // Build a list of the global sourcetarget ids...
-      sourcetargetGIDs.resize (LocalNumOfNodes);
-      for (int i = 0; i < LocalNumOfNodes; ++i) {
+      sourcetargetGIDs.resize (LocalNumIDs);
+      for (int i = 0; i < LocalNumIDs; ++i) {
 	sourcetargetGIDs[i] = as<GO> (Ids[i]);
+      }
+
+      //Build a list of the global through ids...
+      throughGIDs.resize (LocalNumOfNodes);
+      for (int i = 0; i < LocalNumOfNodes; ++i) {
+	throughGIDs[i] = as<GO> (throughIds[i]);
       }
 
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp (new map_type (-1, sourcetargetGIDs (), 0, comm));
+
+      //Generate Map for through.
+      throughMapG = rcp (new map_type (-1, throughGIDs (), 0 , comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -338,7 +352,7 @@ public:
       }// *** element loop ***
 
       //Fill-complete adjs Graph
-      adjsGraph->fillComplete (/*TODO:  domain map, adjsGraph->getRowMap()*/);
+      adjsGraph->fillComplete (throughMapG, adjsGraph->getRowMap());
 
       // Construct adjs matrix.
       RCP<sparse_matrix_type> adjsMatrix =
@@ -379,7 +393,7 @@ public:
       myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
 
       // We're done modifying the adjs matrix.
-      adjsMatrix->fillComplete(/*TODO:  domain map, adjsMatrix->getRowMap()*/);
+      adjsMatrix->fillComplete(throughMapG, adjsMatrix->getRowMap());
 
       // Form 2ndAdjs
       RCP<sparse_matrix_type> secondAdjs =
