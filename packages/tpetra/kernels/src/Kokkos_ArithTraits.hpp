@@ -561,18 +561,12 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
-#ifdef __APPLE__
-    return std::isinf (x);
-#else
+    using std::isinf;
     return isinf (x);
-#endif // __APPLE__
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
-#ifdef __APPLE__
-    return std::isnan (x);
-#else
+    using std::isnan;
     return isnan (x);
-#endif // __APPLE__
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const float x) {
     return ::fabs (x);
@@ -700,18 +694,12 @@ public:
   static const bool is_complex = true;
 
   static bool isInf (const std::complex<RealFloatType>& x) {
-#if defined(__CUDACC__) || defined(_CRAYC)
+    using std::isinf;
     return isinf (real (x)) || isinf (imag (x));
-#else
-    return std::isinf (real (x)) || std::isinf (imag (x));
-#endif // __CUDACC__
   }
   static bool isNan (const std::complex<RealFloatType>& x) {
-#if defined(__CUDACC__) || defined(_CRAYC)
+    using std::isnan;
     return isnan (real (x)) || isnan (imag (x));
-#else
-    return std::isnan (real (x)) || std::isnan (imag (x));
-#endif // __CUDACC__
   }
   static mag_type abs (const std::complex<RealFloatType>& x) {
     return std::abs (x);
@@ -835,18 +823,12 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
-#ifdef __APPLE__
-    return std::isinf (x);
-#else
+    using std::isinf;
     return isinf (x);
-#endif // __APPLE__
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
-#ifdef __APPLE__
-    return std::isnan (x);
-#else
+    using std::isnan;
     return isnan (x);
-#endif // __APPLE__
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return ::fabs (x);
@@ -973,18 +955,12 @@ public:
   static const bool is_complex = false;
 
   static bool isInf (const val_type& x) {
-#if defined(__CUDACC__) || defined(_CRAYC)
+    using std::isinf;
     return isinf (x);
-#else
-    return std::isinf (x);
-#endif // __CUDACC__
   }
   static bool isNan (const val_type& x) {
-#if defined(__CUDACC__) || defined(_CRAYC)
+    using std::isnan;
     return isnan (x);
-#else
-    return std::isnan (x);
-#endif // __CUDACC__
   }
   static mag_type abs (const val_type& x) {
     return ::fabsl (x);
