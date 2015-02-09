@@ -561,11 +561,15 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
+    #ifndef __CUDA_ARCH__
     using std::isinf;
+    #endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
+    #ifndef __CUDA_ARCH__
     using std::isnan;
+    #endif
     return isnan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const float x) {
@@ -694,11 +698,15 @@ public:
   static const bool is_complex = true;
 
   static bool isInf (const std::complex<RealFloatType>& x) {
+    #ifndef __CUDA_ARCH__
     using std::isinf;
+    #endif
     return isinf (real (x)) || isinf (imag (x));
   }
   static bool isNan (const std::complex<RealFloatType>& x) {
+    #ifndef __CUDA_ARCH__
     using std::isnan;
+    #endif
     return isnan (real (x)) || isnan (imag (x));
   }
   static mag_type abs (const std::complex<RealFloatType>& x) {
@@ -823,11 +831,15 @@ public:
   static const bool is_complex = false;
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+    #ifndef __CUDA_ARCH__
     using std::isinf;
+    #endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+    #ifndef __CUDA_ARCH__
     using std::isnan;
+    #endif
     return isnan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -955,11 +967,15 @@ public:
   static const bool is_complex = false;
 
   static bool isInf (const val_type& x) {
+    #ifndef __CUDA_ARCH__
     using std::isinf;
+    #endif
     return isinf (x);
   }
   static bool isNan (const val_type& x) {
+    #ifndef __CUDA_ARCH__
     using std::isnan;
+    #endif
     return isnan (x);
   }
   static mag_type abs (const val_type& x) {
