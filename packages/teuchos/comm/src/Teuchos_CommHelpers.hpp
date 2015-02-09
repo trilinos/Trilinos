@@ -1092,10 +1092,17 @@ void ANDValueReductionOp<Ordinal,Packet>::reduce(
 namespace Teuchos {
 
 
-// Not for the general user to use! I am returning a raw ReducionOp* pointer
+// Not for the general user to use! I am returning a raw ReductionOp* pointer
 // to avoid the overhead of using RCP. However, given the use case
 // this is just fine since I can just use std::auto_ptr to make sure things
 // are deleted correctly.
+//
+// NOTE (mfh 08 Feb 2015) std::auto_ptr has been deprecated in C++11.
+// I could either replace it with std::unique_ptr, or just call 'new'
+// and 'delete' manually.  The former is less error prone, but
+// requires checking a macro for whether C++11 is actually enabled.
+// Thus, I've chosen (for now) to rewrite all the code that uses
+// std::auto_ptr, so that it allocates and deletes manually.
 template<typename Ordinal, typename Packet>
 ValueTypeReductionOp<Ordinal,Packet>*
 createOp (const EReductionType reductType)
@@ -1420,9 +1427,17 @@ void Teuchos::reduceAll(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  reduceAll(comm,*reductOp,count,sendBuffer,globalReducts);
+
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    reduceAll(comm,*reductOp,count,sendBuffer,globalReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 
@@ -2094,9 +2109,17 @@ void Teuchos::reduceAll(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  reduceAll(comm,serializer,*reductOp,count,sendBuffer,globalReducts);
+
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    reduceAll(comm,serializer,*reductOp,count,sendBuffer,globalReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 
@@ -2160,11 +2183,17 @@ void Teuchos::reduceAllAndScatter(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  reduceAllAndScatter(
-    comm, *reductOp, sendCount, sendBuffer, recvCounts, myGlobalReducts
-    );
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    reduceAllAndScatter (comm, *reductOp, sendCount, sendBuffer,
+                         recvCounts, myGlobalReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 
@@ -2242,12 +2271,18 @@ void Teuchos::reduceAllAndScatter(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  reduceAllAndScatter(
-    comm, serializer, *reductOp, sendCount, sendBuffer, recvCounts,
-    myGlobalReducts
-    );
+
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    reduceAllAndScatter (comm, serializer, *reductOp, sendCount,
+                         sendBuffer, recvCounts, myGlobalReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 
@@ -2286,9 +2321,17 @@ void Teuchos::scan(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  scan(comm,*reductOp,count,sendBuffer,scanReducts);
+
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    scan(comm,*reductOp,count,sendBuffer,scanReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 
@@ -2351,9 +2394,17 @@ void Teuchos::scan(
     <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
-  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
-    reductOp(createOp<Ordinal,Packet>(reductType));
-  scan(comm,serializer,*reductOp,count,sendBuffer,scanReducts);
+
+  ValueTypeReductionOp<Ordinal,Packet>* reductOp =
+    createOp<Ordinal, Packet> (reductType);
+  try {
+    scan(comm,serializer,*reductOp,count,sendBuffer,scanReducts);
+  }
+  catch (std::exception& e) {
+    delete reductOp;
+    throw e;
+  }
+  delete reductOp;
 }
 
 template<typename Ordinal, typename Packet>
