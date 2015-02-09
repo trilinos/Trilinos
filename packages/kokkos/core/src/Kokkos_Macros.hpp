@@ -341,45 +341,6 @@
 
 #endif
 
-///*--------------------------------------------------------------------------*/
-///* Select compiler dependent interface for atomics *//
-//
-//#if ! defined( KOKKOS_ATOMICS_USE_CUDA ) || \
-//    ! defined( KOKKOS_ATOMICS_USE_GNU ) || \
-//    ! defined( KOKKOS_ATOMICS_USE_INTEL ) || \
-//    ! defined( KOKKOS_ATOMICS_USE_OPENMP31 )
-//
-///* Atomic selection is not pre-defined, choose from language and compiler. */
-//
-//#if defined( __CUDA_ARCH__ ) && defined (KOKKOS_HAVE_CUDA)
-//
-//  #define KOKKOS_ATOMICS_USE_CUDA
-//
-//#elif defined( KOKKOS_COMPILER_GNU ) || defined( KOKKOS_COMPILER_CLANG )
-//
-//  #define KOKKOS_ATOMICS_USE_GNU
-//
-//#elif defined( KOKKOS_COMPILER_INTEL ) || defined( KOKKOS_COMPILER_CRAYC )
-//
-//  #define KOKKOS_ATOMICS_USE_INTEL
-//
-//#elif defined( _OPENMP ) && ( 201107 <= _OPENMP )
-//
-//  #define KOKKOS_ATOMICS_USE_OMP31
-//
-//#elif defined( _WIN32 )
-//
-//  #define KOKKS_ATOMICS_USE_WINDOWS
-//
-//#else
-//
-//  #error "Compiler does not support atomic operations"
-//
-//#endif
-//
-//#endif
-
-
 //----------------------------------------------------------------------------
 /** Define function marking macros if compiler specific macros are undefined: */
 
