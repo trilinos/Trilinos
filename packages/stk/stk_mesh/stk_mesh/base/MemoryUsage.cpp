@@ -44,7 +44,6 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
 

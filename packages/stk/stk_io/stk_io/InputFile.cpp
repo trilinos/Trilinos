@@ -62,7 +62,6 @@
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 

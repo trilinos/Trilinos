@@ -47,7 +47,7 @@
 #include "stk_io/MeshField.hpp"         // for MeshField, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_mesh/base/Types.hpp"      // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
 namespace {

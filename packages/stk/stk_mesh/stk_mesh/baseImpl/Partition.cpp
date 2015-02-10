@@ -42,7 +42,6 @@
 #include "stk_mesh/base/Trace.hpp"      // for DiagIf, DiagIfWatching, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { namespace mesh { class FieldBase; } }

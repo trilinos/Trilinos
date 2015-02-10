@@ -91,6 +91,7 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
  */
 
 class MetaData ;  // Meta-data description of a mesh
+class FieldBase;
 
 /** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
@@ -98,11 +99,11 @@ class MetaData ;  // Meta-data description of a mesh
 typedef std::vector< Part * > PartVector;
 typedef std::vector< Bucket * > BucketVector;
 typedef std::vector< const Part * > ConstPartVector;
+typedef std::vector< FieldBase * > FieldVector;
 typedef std::vector< unsigned > OrdinalVector;
 typedef std::vector< unsigned > PermutationIndexVector;
 typedef std::vector<Entity> EntityVector;
 
-class FieldBase;
 
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
