@@ -85,20 +85,20 @@ public:
 
   /** Return the number of \b local elements of a given color.
 
-      \param color The wanted color.
+      \param theColor The wanted color.
 
       \return The number of \b local of the asked color.
 
       \sa Isorropia::Operator::numElemsWithProperty()
    */
-  virtual int numElemsWithColor(int color) const
-  { return numElemsWithProperty(color); }
+  virtual int numElemsWithColor(int theColor) const
+  { return numElemsWithProperty(theColor); }
 
 
   /** Fill user-allocated list (of length len) with the
    *  local element ids for LOCAL elements of the given color.
 
-      \param color the wanted color
+      \param theColor the wanted color
 
       \param elementList an array to receive local elements of the given color
 
@@ -106,10 +106,10 @@ public:
 
       \sa Isorropia::Operator::elemsWithProperty()
    */
-  virtual void elemsWithColor(int color,
-			      int* elementList,
-			      int len) const {
-    return elemsWithProperty(color, elementList, len);}
+  virtual void elemsWithColor(int theColor,
+                              int* elementList,
+                              int len) const {
+    return elemsWithProperty(theColor, elementList, len);}
 
   /** Give access of the color assignments array that is owned by the current
       processor.
@@ -125,7 +125,7 @@ public:
       \sa Isorropia::Operator::extractPropertiesView()
    */
   virtual int extractColorsView(int& size,
-			       const int*& array) const {
+                               const int*& array) const {
     return extractPropertiesView(size, array);
   }
 
@@ -145,8 +145,8 @@ public:
       \sa Isorropia::Operator::extractPropertiesCopy()
    */
   virtual int extractColorsCopy(int len,
-			       int& size,
-			       int* array) const {
+                               int& size,
+                               int* array) const {
     return extractPropertiesCopy(len, size, array);
   }
 
