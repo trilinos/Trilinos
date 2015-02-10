@@ -27,7 +27,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     Convergence
     SOURCES Convergence.cpp ../unit_tests/MueLu_TestHelpers.cpp
     COMM serial mpi
-    DEPLIBS muelu xpetra
     )
 
 ENDIF()
