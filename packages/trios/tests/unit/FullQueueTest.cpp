@@ -263,7 +263,7 @@ void client(void) {
         send_status_list[i]=&send_status[i];
     }
     for (int i=0;i<QUEUE_SIZE;i++) {
-        rc=NNTI_wait(&send_wr[1], 1000, &send_status[0]);
+        rc=NNTI_wait(&send_wr[i], 1000, &send_status[0]);
         if (rc == NNTI_ETIMEDOUT) {
             timeout_count++;
         } else {
