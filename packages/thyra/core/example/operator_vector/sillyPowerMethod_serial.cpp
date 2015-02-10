@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -68,8 +68,8 @@ bool runPowerMethodExample(
   using Teuchos::OSTab;
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType    ScalarMag;
-  
+  //typedef typename ST::magnitudeType    ScalarMag; //unused
+
   bool success = true;
   bool result;
 
@@ -131,7 +131,7 @@ bool runPowerMethodExample(
     if(!result) success = false;
     *out << "\nEstimate of dominate eigenvalue lambda = " << lambda << std::endl;
   }
-  
+
   return success;
 
 } // end runPowerMethodExample()
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
   using Teuchos::as;
   using Teuchos::CommandLineProcessor;
- 
+
   bool success = true;
   bool result;
 
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
     //
     // Read in command-line options
     //
-    
+
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     TEUCHOS_TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
     int maxNumIters = static_cast<int>(maxItersDimFactor*dim);
-    
+
 #if defined(HAVE_THYRA_FLOAT)
     // Run using float
     result = runPowerMethodExample<float>(
@@ -204,14 +204,14 @@ int main(int argc, char *argv[])
     if(!result) success = false;
 
 #ifdef HAVE_THYRA_COMPLEX
-    
+
 #if defined(HAVE_THYRA_FLOAT)
     // Run using std::complex<float>
     result = runPowerMethodExample<std::complex<float> >(
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
 #endif
-    
+
     // Run using std::complex<double>
     result = runPowerMethodExample<std::complex<double> >(
       dim, maxNumIters, tolerance, dumpAll);
@@ -220,33 +220,33 @@ int main(int argc, char *argv[])
 #endif // HAVE_THYRA_COMPLEX
 
 #ifdef HAVE_TEUCHOS_GNU_MP
-    
+
     // Run using mpf_class
     result = runPowerMethodExample<mpf_class >(
       dim, maxNumIters, tolerance, dumpAll);
     if(!result) success = false;
 
 #ifdef HAVE_THYRA_COMPLEX
-    
+
     // Run using std::complex<mpf_class>
     //result = runPowerMethodExample<std::complex<mpf_class> >(
     //  dim, maxNumIters, tolerance, dumpAll);
     //if(!result) success = false;
     //The above commented-out code throws a floating-point exception?
- 
+
 #endif // HAVE_THYRA_COMPLEX
 
 
 #endif // HAVE_TEUCHOS_GNU_MP
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success)
-  
+
   if (success)
     *out << "\nCongratulations! All of the tests checked out!\n";
   else
     *out << "\nOh no! At least one of the tests failed!\n";
-  
+
   return success ? 0 : 1;
 
 } // end main()
