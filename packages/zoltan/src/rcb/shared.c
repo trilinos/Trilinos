@@ -793,7 +793,7 @@ int Zoltan_RB_Send_Dots_less_memory(
 
   char *yo = "Zoltan_RB_Send_Dots_less_memory";
   int dotnew;                       /* # of new dots after send/recv */
-  int startIncoming, incoming;               /* message exchange counters */
+  int incoming;               /* message exchange counters */
   int bufsize;
   char *sendbuf = NULL;
   int message_tag = 32760;          /* message tag */
@@ -804,14 +804,8 @@ int Zoltan_RB_Send_Dots_less_memory(
   int *reorder=NULL;
   ZOLTAN_COMM_OBJ *cobj = NULL;     /* pointer for communication object */
   ZOLTAN_GNO_TYPE verify[4];
-  int num_dim;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
-  num_dim = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
-  if (ierr != ZOLTAN_OK){
-    goto End;
-  }
 
   /* Re-order the data to be sent so that data per proc is contiguous.  This
    * saves memory in Zoltan_Comm_*. The proc_list input array is reordered here.
@@ -824,8 +818,6 @@ int Zoltan_RB_Send_Dots_less_memory(
     }
   
     firstStaying = *dotnum;       /* location of first dot that is staying */
-    startIncoming = *dotnum - outgoing; 
-                            /* location of first incoming dot in new array */
   
     for (i=0,j=0; i < *dotnum; i++){
       if ((*dotmark)[i] != set) {  /* going */
@@ -841,7 +833,6 @@ int Zoltan_RB_Send_Dots_less_memory(
   }
   else{
     firstStaying = 0;
-    startIncoming = *dotnum;
   }
 
   /* Create comm object

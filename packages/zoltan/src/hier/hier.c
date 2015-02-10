@@ -390,7 +390,6 @@ static int final_migrate(
 {
   ZOLTAN_COMM_OBJ *plan=NULL;
   ZOLTAN_ID_TYPE *importList=NULL;
-  ZOLTAN_GNO_TYPE *gnoList = NULL;
   int i, nImports, numGno, next, tag, ierr;
   MPI_Comm comm = hpp->hier_comm;
 
@@ -426,7 +425,6 @@ static int final_migrate(
    */
 
   numGno = hpp->num_obj + nImports - num_export;
-  gnoList = NULL;
   next=0;
 
   if (numGno){
@@ -1243,7 +1241,7 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(
   int *ierr)
 {
   HierPartParams *hpp = (HierPartParams *)data;
-  int i, j, k, idx, nedges;
+  int i, j, k, idx;
   int *out_proc;
   ZOLTAN_ID_TYPE *out_gid;
   float *out_weight, *wgts;
@@ -1256,8 +1254,6 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(
 
   for (i=0; i < num_obj; i++){
     idx = local_id[i];
-
-    nedges = hpp->xadj[idx+1] - hpp->xadj[idx];
 
     for (j= hpp->xadj[idx]; j < hpp->xadj[idx+1]; j++){
       *out_proc++ = hpp->adjproc[j];

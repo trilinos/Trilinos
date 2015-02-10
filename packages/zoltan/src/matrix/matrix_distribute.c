@@ -212,7 +212,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   static char *yo = "Zoltan_Matrix2d_Distribute";
   int ierr = ZOLTAN_OK;
   int nProc_x, nProc_y;
-  int myProc_x, myProc_y;
+  int myProc_y;
   int i, j, cnt;
   int *proclist = NULL;
   Zoltan_Arc *nonzeros= NULL, *sendbuf= NULL;
@@ -222,7 +222,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int msg_tag = 1021982;
   ZOLTAN_COMM_OBJ *plan;
   MPI_Comm communicator = MPI_COMM_NULL;
-  int nProc;
   ZOLTAN_GNO_TYPE *yGNO = NULL;
   ZOLTAN_GNO_TYPE *pinGNO = NULL;
   ZOLTAN_GNO_TYPE tmp_gno;
@@ -246,11 +245,9 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   }
 
   communicator = outmat->comm->Communicator;
-  nProc = outmat->comm->nProc;
 
   nProc_x = outmat->comm->nProc_x;
   nProc_y = outmat->comm->nProc_y;
-  myProc_x = outmat->comm->myProc_x;
   myProc_y = outmat->comm->myProc_y;
 
 KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Remove_Duplicates");

@@ -126,8 +126,6 @@ ZOLTAN_GNO_TYPE gnos[2];
 ZOLTAN_GNO_TYPE tmpgno;
 MPI_Datatype zoltan_gno_mpi_type;
 
-int gno_size_for_dd;
-
 ZOLTAN_ID_PTR fromID, toID;
 
 zoltan_objects       myObjs;
@@ -157,8 +155,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
    */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
-  gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
   /* initialize temporary search structures */
 
@@ -431,6 +427,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
 #ifdef CEDRIC_2D_PARTITIONS
     if (hgp->keep_tree) {
+      int gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
       ZOLTAN_GNO_TYPE offset;
       ZOLTAN_GNO_TYPE *egno = NULL;
       MPI_Scan(&zhg->nHedges, &offset, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);

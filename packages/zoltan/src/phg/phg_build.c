@@ -1446,18 +1446,15 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL; /* Distribution of repartition edges
       ZOLTAN_GNO_TYPE vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
       int rEdge_lno; /* local index of repartition edge */
       ZOLTAN_GNO_TYPE rVtx_gno;  /* global repartition vertex number */
-      int rVtx_lno;  /* local index of repartition vertex */
   
 #ifdef REPART_FASTER_METHOD
       vtx_gno = recvgno[NSEND*i];
       rEdge_lno = (int)(vtx_gno - firstRepartEdge);
       rVtx_gno = recvgno[NSEND*i+1];
-      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
 #else
       vtx_gno = recvgno[i];
       rEdge_lno = (int)(vtx_gno - firstRepartEdge);
       rVtx_gno = recvpart[i];
-      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
 #endif
 
       if (rVtx_gno >= firstRepartVtx && rVtx_gno < firstRepartVtx+nRepartVtx) {

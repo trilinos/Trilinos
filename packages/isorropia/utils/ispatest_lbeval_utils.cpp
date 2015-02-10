@@ -524,9 +524,9 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
       
     }
 #ifdef HAVE_MPI
-    int rc = MPI_Reduce(colLocal, colTotals, ncols, MPI_INT, MPI_SUM, i, mcomm);
+    MPI_Reduce(colLocal, colTotals, ncols, MPI_INT, MPI_SUM, i, mcomm);
     if (totalHEWeights > 0){
-      rc = MPI_Reduce(localWeights, colWeights, ncols, MPI_DOUBLE, MPI_SUM, i, mcomm);
+      MPI_Reduce(localWeights, colWeights, ncols, MPI_DOUBLE, MPI_SUM, i, mcomm);
     }
     // TODO handle possible MPI error
 #else

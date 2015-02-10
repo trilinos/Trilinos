@@ -369,23 +369,10 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 {
   static char *yo = "Zoltan_Matrix_Construct_CSR";
   int *tmparray=NULL;
-  WgtFctPtr wgtfct;
   int ierr = ZOLTAN_OK;
   int i;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
-  switch (outmat->opts.pinwgtop) {
-  case MAX_WEIGHT:
-    wgtfct = &wgtFctMax;
-    break;
-  case CMP_WEIGHT:
-    wgtfct = &wgtFctCmp;
-    break;
-  case ADD_WEIGHT:
-  default:
-    wgtfct = &wgtFctAdd;
-  }
 
   tmparray = (int*)ZOLTAN_CALLOC(outmat->nY, sizeof(int));
 

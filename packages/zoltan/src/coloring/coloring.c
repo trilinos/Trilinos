@@ -517,7 +517,7 @@ KDDKDDKDD(zz->Proc, "Coloring Done");
 /* fills the visit array with the n first vertices of xadj using the
    Largest Degree First ordering. The algorithm used to compute this
    ordering is a stable count sort. */
-static void LargestDegreeFirstOrdering(
+static int LargestDegreeFirstOrdering(
     ZZ  *zz, 
     int *visit, /*Out*/
     int *xadj,
@@ -554,10 +554,11 @@ static void LargestDegreeFirstOrdering(
     
 End:
     ZOLTAN_FREE(&cnt);
+    return ierr;
 }
 
 
-static void SmallestDegreeLastOrdering(
+static int SmallestDegreeLastOrdering(
     ZZ  *zz, 
     int *visit, /*Out*/
     int *xadj,
@@ -591,6 +592,7 @@ static void SmallestDegreeLastOrdering(
   }
 End:
   Zoltan_Bucket_Free(&bs);		
+  return ierr;
 }
 
 
