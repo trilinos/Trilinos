@@ -2,8 +2,8 @@
 Trilinos Configure, Build, Test, and Install Quick Reference Guide
 ==================================================================
 
-:Author: Roscoe A. Bartlett
-:Contact: bartlett.roscoe@gmail.com
+:Author: Roscoe A. Bartlett (bartlettra@orn.gov)
+:Contact: trilinos-framework@software.sandia.gov
 
 :Abstract: This document contains quick reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
 
