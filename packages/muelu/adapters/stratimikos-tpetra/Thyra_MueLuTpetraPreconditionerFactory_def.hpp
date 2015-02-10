@@ -70,13 +70,15 @@
 namespace Thyra {
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ParameterList;
 
 
   // Constructors/initializers/accessors
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MueLuTpetraPreconditionerFactory()
+  MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MueLuTpetraPreconditionerFactory() :
+      paramList_(rcp(new ParameterList()))
   {}
 
   // Overridden from PreconditionerFactoryBase
@@ -106,22 +108,13 @@ namespace Thyra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
-    // Check precondition
+  initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    using Teuchos::rcp_dynamic_cast;
 
+    // Check precondition
     TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
     TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
     TEUCHOS_ASSERT(prec);
-
-    Teuchos::Time totalTimer(""), timer("");
-    totalTimer.start(true);
-
-    const RCP<Teuchos::FancyOStream> out = this->getOStream();
-    const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-    Teuchos::OSTab tab(out);
-    if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
-      *out << "\nEntering Thyra::MueLuTpetraPreconditionerFactory::initializePrec(...) ...\n";
-    }
 
     // Retrieve wrapped concrete Tpetra matrix from FwdOp
 
@@ -129,7 +122,7 @@ namespace Thyra {
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
     typedef Thyra::TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraTpetraLinOp;
-    const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
+    const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraTpetraFwdOp));
 
     typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraLinOp;
@@ -137,18 +130,13 @@ namespace Thyra {
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMat;
-    const Teuchos::RCP<const TpetraCrsMat> tpetraFwdCrsMat = Teuchos::rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
+    const Teuchos::RCP<const TpetraCrsMat> tpetraFwdCrsMat = rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdCrsMat));
 
     // Retrieve concrete preconditioner object
 
-    const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec =
-        Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar> *>(prec));
+    const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar> *>(prec));
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
-
-    if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW))
-      *out << "\nCreating a new MueLu::TpetraOperator object...\n";
-    timer.start(true);
 
     // Workaround since MueLu interface does not accept const matrix as input
     const Teuchos::RCP<TpetraCrsMat> tpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<TpetraCrsMat>(tpetraFwdCrsMat);
@@ -156,61 +144,63 @@ namespace Thyra {
     // Create and compute the initial preconditioner
 
     // Create a copy, as we may remove some things from the list
-    Teuchos::ParameterList paramList = *paramList_;
+    ParameterList paramList = *paramList_;
 
-    //Tpetra does not instantiate on Scalar=float by default, so we must check for this
-    //FIXME This will still break if LO != int or GO != int
+    // Tpetra does not instantiate on Scalar=float by default, so we must check for this
+    // FIXME This will still break if LO != int or GO != int
 # if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
     typedef Tpetra::MultiVector<float, LocalOrdinal, GlobalOrdinal, Node> fMV;
-    Teuchos::RCP<fMV> floatCoords;
+    RCP<fMV> floatCoords;
 # endif
     typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMV;
-    Teuchos::RCP<dMV> doubleCoords;
-    if (paramList.isType<Teuchos::RCP<dMV> >("Coordinates")) {
-      doubleCoords = paramList.get<Teuchos::RCP<dMV> >("Coordinates");
+    RCP<dMV> doubleCoords;
+    if (paramList.isType<RCP<dMV> >("Coordinates")) {
+      doubleCoords = paramList.get<RCP<dMV> >("Coordinates");
       paramList.remove("Coordinates");
     }
 # if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
-    else if (paramList.isType<Teuchos::RCP<fMV> >("Coordinates")) {
-      floatCoords = paramList.get<Teuchos::RCP<fMV> >("Coordinates");
+    else if (paramList.isType<RCP<fMV> >("Coordinates")) {
+      floatCoords = paramList.get<RCP<fMV> >("Coordinates");
       paramList.remove("Coordinates");
-      doubleCoords = Teuchos::rcp(new dMV(floatCoords->getMap(),floatCoords->getNumVectors()));
-      deep_copy(*doubleCoords,*floatCoords);
+      doubleCoords = rcp(new dMV(floatCoords->getMap(), floatCoords->getNumVectors()));
+      deep_copy(*doubleCoords, *floatCoords);
     }
 # endif
 
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    Teuchos::RCP<MV> null_space;
-    if (paramList.isType<Teuchos::RCP<MV> >("Nullspace")) {
-      null_space = paramList.get<Teuchos::RCP<MV> >("Nullspace");
+    RCP<MV> null_space;
+    if (paramList.isType<RCP<MV> >("Nullspace")) {
+      null_space = paramList.get<RCP<MV> >("Nullspace");
       paramList.remove("Nullspace");
     }
 
     typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
-    const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
 
-    timer.stop();
-    if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
-      Teuchos::OSTab(out).o() << "> Creation time = " << timer.totalElapsedTime() << " sec\n";
-    }
+    // Get the EpetraLinearOp object that is used to implement the preconditoner linear op
+    RCP<ThyraTpetraLinOp> tpetra_precOp = rcp_dynamic_cast<ThyraTpetraLinOp>(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
 
-    const Teuchos::RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(Teuchos::RCP<TpetraLinOp>(mueluPrecOp));
+    // Get the embedded MueLu::TpetraOperator object if it exists
+    RCP<MueLuOperator> muelu_precOp;
+    if (tpetra_precOp.get())
+      muelu_precOp = rcp_dynamic_cast<MueLuOperator>(tpetra_precOp->getTpetraOperator(), true);
+
+    // Do the magic (init/setup/reuse)
+    // FIXME: the check for starting over needs more work
+    // For instance, what should happen if a user called the first setup with
+    // one parameter list, and the second setup with a different one?
+    const bool startingOver = (muelu_precOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
+    if (startingOver)
+      muelu_precOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
+    else
+      MueLu::ReuseTpetraPreconditioner(tpetraFwdCrsMatNonConst, *muelu_precOp);
+
+    const RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(muelu_precOp));
     defaultPrec->initializeUnspecified(thyraPrecOp);
-
-    totalTimer.stop();
-    if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
-      *out << "\nTotal time in Thyra::MueLuTpetraPreconditionerFactory::initializePrec(...) = " << totalTimer.totalElapsedTime() << " sec\n";
-    }
-
-    if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
-      *out << "\nLeaving Thyra::MueLuTpetraPreconditionerFactory::initializePrec(...) ...\n";
-    }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  uninitializePrec(PreconditionerBase<Scalar>* prec, Teuchos::RCP<const LinearOpSourceBase<Scalar> >* fwdOp, ESupportSolveUse* supportSolveUse) const {
+  uninitializePrec(PreconditionerBase<Scalar>* prec, RCP<const LinearOpSourceBase<Scalar> >* fwdOp, ESupportSolveUse* supportSolveUse) const {
     TEUCHOS_ASSERT(prec);
 
     // Retrieve concrete preconditioner object
@@ -233,7 +223,7 @@ namespace Thyra {
 
   // Overridden from ParameterListAcceptor
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameterList(Teuchos::RCP<ParameterList> const& paramList) {
+  void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameterList(RCP<ParameterList> const& paramList) {
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
     paramList_ = paramList;
   }
@@ -245,7 +235,7 @@ namespace Thyra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<ParameterList> MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unsetParameterList() {
-    Teuchos::RCP<ParameterList> savedParamList = paramList_;
+    RCP<ParameterList> savedParamList = paramList_;
     paramList_ = Teuchos::null;
     return savedParamList;
   }
@@ -260,7 +250,7 @@ namespace Thyra {
     static RCP<const ParameterList> validPL;
 
     if (Teuchos::is_null(validPL))
-      validPL = Teuchos::rcp(new ParameterList());
+      validPL = rcp(new ParameterList());
 
     return validPL;
   }
