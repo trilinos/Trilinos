@@ -1553,6 +1553,14 @@ myaztecParams = m_smootherAztecParams;
             break;
         } //switch(ne)
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
         if ( (*MySubSmType == "MLS") || (*MySubSmType == "Chebyshev"))
         {
           // --------------------------------------
@@ -1655,6 +1663,9 @@ myaztecParams = m_smootherAztecParams;
             <<"Only Chebyshev (or MLS), SGS, ILU, IC, ILUT, and ICT" << std::endl
             << "are supported as Hiptmair subsmoothers ... not "
             << *MySubSmType << std::endl;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
       } //for (enum nodeOrEdge ne=NODE; ne!=DONE ...
 

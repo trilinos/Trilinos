@@ -2396,6 +2396,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       int logical_level = LevelID_[NumLevels_-1];
       void *edge_smoother = 0, *nodal_smoother = 0;
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
+#endif
       double omega;
       char subsmDetails[80];
       // only MLS and SGS are currently supported
@@ -2449,6 +2457,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       ML_Smoother_Arglist_Delete(&nodal_args_);
       ML_Smoother_Arglist_Delete(&edge_args_);
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   } else if( CoarseSolution == "SuperLU" )
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
