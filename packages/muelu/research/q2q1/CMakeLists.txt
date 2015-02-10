@@ -12,12 +12,14 @@ IF (${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Teko)
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Q2Q1_cp
       SOURCE_FILES driver.xml status.py
-      Q2Q1_9x9_A.mm     Q2Q1_9x9_B.mm   Q2Q1_9x9_Bt.mm                              BigA9x9.mm
-      Q2Q1_17x17_A.mm   Q2Q1_17x17_B.mm Q2Q1_17x17_Bt.mm    Q2Q1_17x17_AForPat.mm   BigA17x17.mm
-      p2vMap9x9.mm      PresCoords9x9.mm    VelCoords9x9.mm
-      p2vMap17x17.mm    PresCoords17x17.mm  VelCoords17x17.mm
-      Q2Q1_9x9_A.dat    Q2Q1_9x9_B.dat
-      Q2Q1_17x17_A.dat  Q2Q1_17x17_B.dat
+
+      Q2Q1_9x9_A.mm         Q2Q1_9x9_B.mm               Q2Q1_9x9_Bt.mm                                  Q2Q1_9x9_BigA.mm
+      Q2Q1_9x9_A.dat        Q2Q1_9x9_B.dat
+      Q2Q1_9x9_p2vMap.mm    Q2Q1_9x9_PresCoords.mm      Q2Q1_9x9_VelCoords.mm
+
+      Q2Q1_17x17_A.mm       Q2Q1_17x17_B.mm             Q2Q1_17x17_Bt.mm        Q2Q1_17x17_AForPat.mm   Q2Q1_17x17_BigA.mm
+      Q2Q1_17x17_A.dat      Q2Q1_17x17_B.dat
+      Q2Q1_17x17_p2vMap.mm  Q2Q1_17x17_PresCoords.mm    Q2Q1_17x17_VelCoords.mm
       )
   ENDIF()
 

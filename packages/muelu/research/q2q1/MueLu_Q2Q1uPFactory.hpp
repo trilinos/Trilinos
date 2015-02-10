@@ -73,7 +73,7 @@ namespace MueLu {
 
   public:
     MyCptList_(int n, int nnzPerRow) {
-      TEUCHOS_TEST_FOR_EXCEPTION(nnzPerRow <= 0, Exceptions::RuntimeError, "Why nnzPerRow is " << nnzPerRow << "?");
+      TEUCHOS_TEST_FOR_EXCEPTION(nnzPerRow <= 0, Exceptions::RuntimeError, "Why is nnzPerRow " << nnzPerRow << "?");
 
       nnzPerRow_ = nnzPerRow;
       storage_.resize(n * nnzPerRow);
@@ -94,22 +94,22 @@ namespace MueLu {
     const LO*                 operator()(int i) const { return list_[i];     }
 
   private:
-    std::vector<LO*>    list_;         // list[k] gives the Cpoints that interpolate to the kth fine point
-                                       // These CPOINTs are given as fine grid indices
-    std::vector<short>  numCpts_;
-    Teuchos::Array<LO>  cptlist_;
-    int                 nnzPerRow_;    // Max number of Cpoints per row in order for a row to use storage_
-    std::vector<LO>     storage_;      // Large data array used to store most CPOINT information
+    std::vector<LO*>    list_;          // list[k] gives the CPOINTs that interpolate to the k-th fine point
+                                        // These CPOINTs are given as fine grid *local* indices
+    std::vector<short>  numCpts_;       // Number of CPOINTs for each point
+    Teuchos::Array<LO>  cptlist_;       // List of CPOINTs for each point
+    int                 nnzPerRow_;     // Max number of CPOINTs per row in order for a row to use storage_
+    std::vector<LO>     storage_;       // Large data array used to store most CPOINT information
   };
 
 
-  template <class Scalar = Xpetra::Matrix<>::scalar_type,
-            class LocalOrdinal = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
+  template <class Scalar        = Xpetra::Matrix<>::scalar_type,
+            class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+            class Node          = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class Q2Q1uPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
-  typedef MyCptList_<LocalOrdinal> MyCptList;
+    typedef MyCptList_<LocalOrdinal> MyCptList;
 
   private:
     enum Status {
@@ -185,18 +185,18 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
-    if (fineLevel.GetLevelID()) {
-      const ParameterList& pL = GetParameterList();
-      if (pL.get<std::string>("mode") == "pressure") {
-        Input(fineLevel, "CoordinatesPressure");
+    const ParameterList& pL = GetParameterList();
+    bool pressureMode = (pL.get<std::string>("mode") == "pressure");
 
+    // NOTE: we cannot simply do Input(fineLevel, "CoordinatePressure", as in
+    // valid parameter list we specified *this as the generating factory
+    if (fineLevel.GetLevelID()) {
+      if (pressureMode) {
+        Input(fineLevel, "CoordinatesPressure");
       } else {
         Input(fineLevel, "CoordinatesVelocity");
-        // FIXME: this is never executed due to GetLevelID() check above.
-        if (fineLevel.GetLevelID() == 0)
-          Input(fineLevel, "p2vMap");
-
         Input(fineLevel, "AForPat");
+        Input(fineLevel, "p2vMap");
       }
     }
   }
@@ -210,88 +210,106 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
-    RCP<Matrix> AForPat;
-    RCP<Matrix> Amalg;
-    RCP<MultiVector> AmalgCoords;
-
-    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
+    typedef Teuchos::ScalarTraits<SC> STS;
 
     const ParameterList& pL = GetParameterList();
     bool pressureMode = (pL.get<std::string>("mode") == "pressure");
     GetOStream(Runtime0) << (pressureMode ? "Pressure" : "Velocity") << " mode" << std::endl;
 
-    RCP<MultiVector> coords;
-    if (pressureMode) {
-      if (fineLevel.GetLevelID() == 0) coords = fineLevel.Get< RCP<MultiVector> >("CoordinatesPressure", NoFactory::get());
-      else                             coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesPressure");
-    } else {
-      if (fineLevel.GetLevelID() == 0) coords = fineLevel.Get< RCP<MultiVector> >("CoordinatesVelocity", NoFactory::get());
-      else                             coords = Get< RCP<MultiVector> >(fineLevel, "CoordinatesVelocity");
-      if (fineLevel.GetLevelID() == 0) AForPat= fineLevel.Get< RCP<Matrix> >("AForPat", NoFactory::get());
-      else                             AForPat= Get< RCP<Matrix> >(fineLevel, "AForPat");
-    }
-    const int NDim = coords->getNumVectors();
-int p;
+    bool fineLevelID = fineLevel.GetLevelID();
 
-    Array<LO> userCpts;
-    if (!pressureMode) {
+    RCP<Matrix>           A = Get< RCP<Matrix> >(fineLevel, "A");
+    Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
+
+    RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
+    std::vector<char> status(N, UNASSIGNED);
+
+    RCP<MultiVector> coords;
+    RCP<Matrix>      AForPat;
+    int NDim = -1;
+    if (pressureMode) {
+      if (fineLevelID == 0) coords  = fineLevel.Get< RCP<MultiVector> > ("CoordinatesPressure", NoFactory::get());
+      else                  coords  = Get< RCP<MultiVector> >(fineLevel, "CoordinatesPressure");
+      NDim = coords->getNumVectors();
+
+      Array<LO> userCpts; // pressure does not reuse any CPOINTs
+      FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevelID);
+
+    } else {
+      // Do all the coarsening/pattern stuff on amalgamated velocities.
+      // We need to guarantee that all velocity dofs are treated identically
+      // This means that we must amalgmate AForPat and the velocity coordinates
+      if (fineLevelID == 0) coords  = fineLevel.Get< RCP<MultiVector> > ("CoordinatesVelocity", NoFactory::get());
+      else                  coords  = Get< RCP<MultiVector> >(fineLevel, "CoordinatesVelocity");
+      if (fineLevelID == 0) AForPat = fineLevel.Get< RCP<Matrix> >      ("AForPat",             NoFactory::get());
+      else                  AForPat = Get< RCP<Matrix> >     (fineLevel, "AForPat");
+      NDim = coords->getNumVectors();
+
       TEUCHOS_TEST_FOR_EXCEPTION(!coarseLevel.IsAvailable("PresCptsAndMids"), Exceptions::RuntimeError,
                                  "Pressure points are not available");
 
-      userCpts = coarseLevel.Get<Array<LO> >("PresCptsAndMids");
+      Array<LO> userCpts = coarseLevel.Get<Array<LO> >("PresCptsAndMids");
       GetOStream(Runtime1) << "Found stored pressure C-points: " << userCpts.size() << " " << userCpts << std::endl;
-    }
 
-    RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
+      TEUCHOS_TEST_FOR_EXCEPTION(N % NDim, Exceptions::RuntimeError, "Number of velocity DOFs is odd");
+      Xpetra::global_size_t NN = N/NDim;
 
-    std::vector<char> status(N, UNASSIGNED);
+      std::vector<GO> gNodeIds(NN);
+      for (size_t k = 0; k < NN; k++)
+        gNodeIds[k] = k;
 
-    if (pressureMode)
-       FindDist4Cpts(*A, *coords, userCpts, status, *myCpts, fineLevel.GetLevelID());
-    else {
-       // Do all the coarsening/pattern stuff on amalgamated velocities.
-       // We need to guarantee that all velocity dofs are treated identically
-       // This means that we must amalgmate AForPat and the velocity coordinates
+      RCP<Map> nodeMap = MapFactory::Build(AForPat->getRowMap()->lib(), NN, gNodeIds, 0, AForPat->getRowMap()->getComm());
 
-      std::vector<GO> gNodeIds(N/2);
-      for (size_t k = 0; k < N/2 ; k++) gNodeIds[k] = k;
+      // FIXME: remove magic number 30
+      RCP<Matrix>    amalgA     = MatrixFactory::Build(nodeMap, nodeMap, 30);
+      RCP<CrsMatrix> amalgA_crs = rcp_dynamic_cast<CrsMatrixWrap>(amalgA)->getCrsMatrix();
 
-      Teuchos::RCP<Map> nodeMap = MapFactory::Build(AForPat->getRowMap()->lib(), N/2, gNodeIds, 0, AForPat->getRowMap()->getComm());
+      // FIXME: this should be written similar to CoalesceDropFactory Merge
+      for (LO row = 0; row < as<LO>(AForPat->getRowMap()->getNodeNumElements()); row += NDim) {
+        GO grid = AForPat->getRowMap()->getGlobalElement(row);
+        GO currentId = grid/NDim;
 
-      Amalg= rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,Node>(nodeMap,nodeMap,30));
-      RCP<CrsMatrix> AmalgCrs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(Amalg)->getCrsMatrix();
+        Teuchos::ArrayView<const LO> inds;
+        Teuchos::ArrayView<const SC> vals;
+        AForPat->getLocalRowView(row, inds, vals);
 
-      for(LO row=0; row<Teuchos::as<LO>(AForPat->getRowMap()->getNodeNumElements()); row += 2) {
+        size_t nnz = inds.size();
 
-         GO grid = AForPat->getRowMap()->getGlobalElement(row);
-         GO currentId = grid/2;
+        // Count the number of nonzero block columns in this row
+        // NOTE: this assumes that blocks are dense, i.e. that if one column is
+        // nonzero, then all columns in the same block are nonzeros
+        LO realnnz = 0;
+        for (LO col = 0; col < Teuchos::as<LO>(nnz); col++)
+          if (inds[col] % NDim == 0)
+            realnnz++;
 
-         size_t nnz = AForPat->getNumEntriesInLocalRow(row);
-         Teuchos::ArrayView<const LO> indices;
-         Teuchos::ArrayView<const SC> vals;
-         AForPat->getLocalRowView(row, indices, vals);
+        if (realnnz == 0)
+          continue;
 
-         // Count the number of even numbered columns in this row
-         LO realnnz = 0;
-         for(LO col=0; col<Teuchos::as<LO>(nnz); col++)
-            if (  (indices[col]%2) == 0) realnnz++;
+        Teuchos::Array<GO>  cnodeIds(realnnz, 0);
+        Teuchos::Array<SC>  ones(realnnz, STS::one()); //Pattern has all 1's
 
-         Teuchos::Array<GO>  cnodeIds(realnnz, 0);
-         Teuchos::Array<SC>  ones(realnnz, 1.0); //Pattern has all 1's
+        realnnz = 0;
+        for (LO col = 0; col < Teuchos::as<LO>(nnz); col++) {
+          if (inds[col] % NDim == 0) {
+            GO gcid = AForPat->getColMap()->getGlobalElement(inds[col]);
+            cnodeIds[realnnz++] = gcid/NDim;
+          }
+        }
+        amalgA_crs->insertGlobalValues(currentId, cnodeIds, ones);
+      }
+      amalgA_crs->fillComplete(nodeMap, nodeMap);
 
-         realnnz = 0;
-         for(LO col=0; col<Teuchos::as<LO>(nnz); col++) {
-            if ((indices[col]%2) == 0) {
-               GO gcid = AForPat->getColMap()->getGlobalElement(indices[col]);
-               cnodeIds[realnnz++] = gcid/2;
-            }
-         }
-         if(realnnz > 0 )
-            AmalgCrs->insertGlobalValues(currentId, cnodeIds,ones);
+      // Amalgmate the velocity coordinates
+      // NOTE: This assumes that the original coords vector contains duplicated (x NDim) degrees of freedom
+      RCP<MultiVector> amalgCoords = Xpetra::MultiVectorFactory<SC,LO,GO,Node>::Build(nodeMap, NDim);
 
-      } // for(LO row=0; ...
-      AmalgCrs->fillComplete(nodeMap,nodeMap);
+      for (int j = 0; j < NDim; j++) {
+        ArrayRCP<SC> coordView      = coords     ->getDataNonConst(j);
+        ArrayRCP<SC> amalgCoordView = amalgCoords->getDataNonConst(j);
+        for (size_t k = 0; k < NN; k++)
+          amalgCoordView[k] = coordView[k*NDim];
+      }
 
       // On the finest level, we must map userCpts (which corresponds to
       // pressure cpts and pressure mid-points) to the velocity variables
@@ -299,62 +317,42 @@ int p;
       // Note: on coarser levels the lower numbered velocity dofs correspond
       // to points that are co-located with pressures and the two numberings
       // are identical so no translation is needed.
-      if (fineLevel.GetLevelID() == 0){
+      if (fineLevelID == 0) {
         ArrayRCP<LO> p2vMap = fineLevel.Get< ArrayRCP<LO> >("p2vMap", NoFactory::get());
-        p = userCpts.size();
-        for (int k = p-1; k >= 0; k--) userCpts[k] = p2vMap[userCpts[k]]/2;
+
+        for (int k = 0; k < userCpts.size(); k++)
+          userCpts[k] = p2vMap[userCpts[k]]/NDim;
       }
 
-      // Now amalgmate the velocity coordinates. Currently, hardwired for 2D
+      // Now determine velocity CPOINTs for amalgamated system
+      RCP<MyCptList>    amalgCpts  = rcp(new MyCptList(NN, 30));
+      std::vector<char> amalgStatus(NN, UNASSIGNED);
 
-      p = userCpts.size();
-      AmalgCoords= Xpetra::MultiVectorFactory<SC,LO,GO,Node>::Build(nodeMap, 2);
+      FindDist4Cpts(*amalgA, *amalgCoords, userCpts, amalgStatus, *amalgCpts, fineLevelID);
 
-      ArrayRCP<SC> Coord_view = coords->getDataNonConst(0);
-      ArrayRCP<SC> Amalg_view = AmalgCoords->getDataNonConst(0);
-      for (size_t k = 0; k < Amalg->getRowMap()->getNodeNumElements(); k++)
-         Amalg_view[k] = Coord_view[2*k];
+      int p = userCpts.size();
 
-      Coord_view = coords->getDataNonConst(1);
-      Amalg_view = AmalgCoords->getDataNonConst(1);
-      for (size_t k = 0; k < Amalg->getRowMap()->getNodeNumElements(); k++)
-         Amalg_view[k] = Coord_view[2*k];
+      // Unamalgamate data
+      Array<LO>&          Cptlist      = myCpts   ->getCList();
+      std::vector<short>& numCpts      = myCpts   ->getNumCpts();
+      std::vector<short>& amalgNumCpts = amalgCpts->getNumCpts();
 
-      // Now determine velocity Cpoints for amalgamated system
-
-      FindDist4Cpts(*Amalg, *AmalgCoords, userCpts, status, *myCpts, fineLevel.GetLevelID());
-
-      // Unamalgamate myCpts and status
-
-      RCP<MyCptList>      UnAmalgMyCpts  = rcp(new MyCptList(N, 30));
-      Array<LO>&          unAmalgCList   = UnAmalgMyCpts->getCList();
-      std::vector<short>& unAmalgNumCpts = UnAmalgMyCpts->getNumCpts();
-      std::vector<short>&   amalgNumCpts = myCpts->getNumCpts();
-
-      p = userCpts.size();
-      userCpts.resize(2*p);
-
-      for (int k = p-1; k >= 0; k--) {
-         userCpts[2*k  ] = 2*userCpts[k  ];
-         userCpts[2*k+1] =   userCpts[2*k] + 1;
+      Cptlist.resize(p*NDim);
+      for (int k = 0; k < p; k++) {
+        Cptlist[k*NDim] = userCpts[k] * NDim;
+        for (int j = 1; j < NDim; j++)
+          Cptlist[k*NDim+j] = Cptlist[k*NDim] + j;
       }
-      for (int i = 0; i < userCpts.size(); i++)
-         unAmalgCList.push_back(userCpts[i]);
 
-      for (Xpetra::global_size_t i = 0; i < N/2; i++) {
-         status[N-2*i-1] = status[N/2-i-1];
-         status[N-2*i-2] = status[N/2-i-1];
-
-         for (int j = 0; j < amalgNumCpts[i]; j++) {
-            (*UnAmalgMyCpts)(2*i  )[j] =  2*(*myCpts)(i)[j];
-            (*UnAmalgMyCpts)(2*i+1)[j] = (2*(*myCpts)(i)[j])+1;
-         }
-         unAmalgNumCpts[2*i  ] = amalgNumCpts[i];
-         unAmalgNumCpts[2*i+1] = amalgNumCpts[i];
+      for (Xpetra::global_size_t i = 0; i < NN; i++) {
+        for (int j = 0; j < NDim; j++) {
+          status [N-1-(i*NDim+j)] = amalgStatus [NN-1-(i)];
+          numCpts[i*NDim+j]       = amalgNumCpts[i];
+          for (int k = 0; k < amalgNumCpts[i]; k++)
+            (*myCpts)(i*NDim+j)[k] = (*amalgCpts)(i)[k]*NDim + j;
+        }
       }
-      myCpts = UnAmalgMyCpts;
     }
-
 
     const bool doStatusOutput = pL.get<bool>("dump status");
     if (doStatusOutput) {
@@ -380,8 +378,8 @@ int p;
 
     // Beef up any pattern which seems pretty limited
     if (pL.get<bool>("phase2")) {
-       if (pressureMode) PhaseTwoPattern(*A, *coords, status, *myCpts);
-       else  PhaseTwoPattern(*AForPat, *coords, status, *myCpts);
+      if (pressureMode) PhaseTwoPattern(*A,       *coords, status, *myCpts);
+      else              PhaseTwoPattern(*AForPat, *coords, status, *myCpts);
     }
 
     if (doStatusOutput) {
@@ -406,21 +404,25 @@ int p;
     }
 
     RCP<Matrix> P;
-    if (pressureMode) CptDepends2Pattern(*A, *myCpts, P, 999999);  // hardwired hack, pressure gids must not overlap with velocity gids
-    else CptDepends2Pattern(*AForPat, *myCpts, P, 0);
+    // FIXME :hardwired hack, pressure gids must not overlap with velocity gids
+    if (pressureMode) CptDepends2Pattern(*A,       *myCpts, P, 999999);
+    else              CptDepends2Pattern(*AForPat, *myCpts, P, 0);
+
+    if (pressureMode) Utils::Write("Pp.mm", *P);
+    else              Utils::Write("Pv.mm", *P);
 
     // Construct coarse map
-    RCP<const Map>   coarseMap       = P->getDomainMap();
+    RCP<const Map> coarseMap = P->getDomainMap();
 
     // Construct coarse nullspace
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, 1);
-    coarseNullspace->putScalar(1.0);
+    coarseNullspace->putScalar(STS::one());
 
     // Construct coarse coordinates
     const Array<LO>& Cptlist = myCpts->getCList();
     RCP<MultiVector> coarseCoords    = MultiVectorFactory::Build(coarseMap, NDim);
     for (int k = 0; k < NDim; k++) {
-      ArrayRCP<const SC> coords1D       = coords->getData(k);
+      ArrayRCP<const SC> coords1D       = coords      ->getData(k);
       ArrayRCP<SC>       coarseCoords1D = coarseCoords->getDataNonConst(k);
 
       for (int i = 0; i < coarseCoords1D.size(); i++)
@@ -430,18 +432,17 @@ int p;
     // Level Set
     Set(coarseLevel, "P",           P);
     Set(fineLevel,   "CoarseMap",   coarseMap);
-    if (pressureMode)
+    if (pressureMode) {
       Set(coarseLevel, "CoordinatesPressure", coarseCoords);
-    else {
+
+    } else {
       Set(coarseLevel, "CoordinatesVelocity", coarseCoords);
-      RCP<Matrix> AP = Utils::Multiply(*AForPat, false, *P, false, GetOStream(Statistics2), true, true);
-      RCP<Matrix> RAP= Utils::Multiply(*P, true, *AP, false, GetOStream(Statistics2), true, true);
+      // FIXME: why does coarse pattern matrix look like?
+      RCP<Matrix> AP  = Utils::Multiply(*AForPat, false, *P, false, GetOStream(Statistics2), true, true);
+      RCP<Matrix> RAP = Utils::Multiply(*P,       true, *AP, false, GetOStream(Statistics2), true, true);
       Set(coarseLevel, "AForPat", RAP);
     }
     Set(coarseLevel, "Nullspace",   coarseNullspace);
-
-    if (pressureMode) Utils::Write("Pp.mm", *P);
-    else              Utils::Write("Pv.mm", *P);
 
     // Compute data for velocity
     if (pressureMode) {
@@ -492,11 +493,11 @@ int p;
 
   // Initial fill Cptlist with a set of distance 4 points (during phase one).
   // Additional Cpts are then determined looking for large gaps between the
-  // phase one Cpts. Candidate additional Cpts corresponds to phase one Fpoints
+  // phase one Cpts. Candidate additional Cpts corresponds to phase one FPOINTs
   // that have only 1 or 2 Cpts within a graph distance of 3 and are generally
   // far (via graph or coordinate distances) from existing Cpts. We also define
   // a sparsity pattern. An initial pattern is computed which basically
-  // includes all Fpoints within a distance 3 from a Cpt. Additional entries
+  // includes all FPOINTs within a distance 3 from a Cpt. Additional entries
   // are added to the initial sparsity pattern via PhaseTwoPattern(). These
   // points correspond to Fpoints that only interpolate from 2 or less Cpts,
   // are also far from existing Cpoints, and where the orientation of the
@@ -536,7 +537,7 @@ int p;
     // coordDist is an attempt to measure an average distance from a given
     // point to all the CPOINTs that it depends on. The averages are harmonic, so
     // basically the initial large coordDist will be averaged away with the 1st
-    // harmnoic average. The initial big value computed here is
+    // harmonic average. The initial big value computed here is
     //     (Max(x)-Min(x))^2 + (Max(y)-Min(y))^2 + (Max(z)-Min(z))^2
     SC big = zero;
     for (int i = 0; i < NDim; i++) {
@@ -545,48 +546,47 @@ int p;
 
       big += ((dmax - dmin)*(dmax - dmin));
     }
+    // FIXME: what is this magic number 10000?
     std::vector<SC> coordDist(numRows, 10000*big);
 
     const ParameterList& pL = GetParameterList();
     const bool doStatusOutput = pL.get<bool>("dump status");
     const bool pressureMode   = (pL.get<std::string>("mode") == "pressure");
 
-    // Set all Dirichlet points as Fpoints
+    // Set all Dirichlet points as Fpoints FIXME: why FPOINTs?
     // However, if a Dirichlet point is in userCpts, it will be added to the
     // Cpt list later
     for (size_t i = 0; i < numRows; i++)
       if (ia[i+1] - ia[i] == 1)
         status[i] = FPOINT;
 
-    // userCpts have already been fixed to be Cpoints so we want to first mark
+    // userCpts have already been fixed to be CPOINTs so we want to first mark
     // them appropriately, and put them first in the CPOINT list, but still go
     // through loops below to update distances and FPOINTs. Initialization is
     // done here so that these points do not end up with more than 1 nnz in the
     // associated sparsity pattern row.
+    TEUCHOS_TEST_FOR_EXCEPTION(myCpts.getCList().size(), Exceptions::RuntimeError, "myCpts in FindDist4Points must be uninitialized");
     Array<LO>& Cptlist = myCpts.getCList();
     for (int i = 0; i < userCpts.size(); i++) {
       status[userCpts[i]] = CPOINT_U;
       Cptlist.push_back(userCpts[i]);
     }
 
-    std::vector<char> distIncrement(numRows, 0);
-    std::vector<int>  cumGraphDist (numRows, 0);
+    std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
+    int dumpCount = 0;
+    if (doStatusOutput) {
+      DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
+      DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-A");
+    }
 
     std::vector<short>& numCpts = myCpts.getNumCpts();
 
-    std::string st = std::string("status-l") + toString(levelID) + (pressureMode ? "-p-" : "-v-");
-
-    int userCcount = 0;
-    size_t numCandidates = 0;
-    std::vector<LO> candidateList(numRows, 0);
-
     // Determine CPOINTs
-    int dumpCount = 0;
-    if (doStatusOutput) {
-      DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-A");
-      DumpCoords(coords, "coord-l" + toString(levelID) + (pressureMode ? "-p" : "-v"));
-    }
-
+    int    userCcount    = 0;
+    size_t numCandidates = 0;
+    std::vector<char> distIncrement(numRows, 0);
+    std::vector<int>  cumGraphDist (numRows, 0);
+    std::vector<LO>   candidateList(numRows, 0);
     size_t i = 0;
     while (i < numRows) {
       LO newCpt = -1;
@@ -601,6 +601,7 @@ int p;
         newCpt = userCpts[userCcount++];
 
       // Check for possible CPOINT on candidate list
+      // FIXME: Could CANDIDATE list contain non-CANDIDATE statuses?
       while ((newCpt == -1) && (numCandidates > 0)) {
         if (status[candidateList[numCandidates-1]] <= CANDIDATE) {
           newCpt         = candidateList[numCandidates-1];
@@ -610,6 +611,7 @@ int p;
             DumpStatus(status, pressureMode, st + i2s(dumpCount++) + "-B");
         }
         numCandidates--;
+        // FIXME: Why is there no i++ here?
       }
 
       // If no new CPOINT identified in candidate list, check the unassigned list
@@ -628,6 +630,7 @@ int p;
       // newly found CPOINT
       if (newCpt != -1) {
         std::vector<LO> dist1, dist2, dist3, dist4;
+        // FIXME: Should CompDistances automatically exclude other CPOINTs?
         CompDistances(A, newCpt, 4, dist1, dist2, dist3, dist4);
 
         // Make sure that the only CPOINT in dist3 is newCpt. All others should be excluded.
@@ -639,11 +642,12 @@ int p;
         }
         dist3.resize(numDist3);
 
-        // Update FPOINT list to include UNASSIGNED or CANDIDATE neighbors
+        // UNASSIGNED or CANDIDATE distance 3 and closer neighbors are put into FPOINT list
+        // FIXME: why not put TWOTIMER there too?
         bool dumpStatus = false;
         for (size_t k = 0; k < dist3.size(); k++) {
           LO j = dist3[k];
-          if (status[j] <= CANDIDATE) {
+          if (status[j] == UNASSIGNED || status[j] == CANDIDATE) {
             status[j] = FPOINT;
             dumpStatus = true;
           }
@@ -661,6 +665,7 @@ int p;
 
         // Update cumGraphDist
         // NOTE: order matters as dist2 is contained within dist3, etc.
+        // FIXME: Do dist2 and dist1 contain CPOINTs?
         for (size_t k = 0; k < dist3.size(); k++) distIncrement[dist3[k]] = 3;
         for (size_t k = 0; k < dist2.size(); k++) distIncrement[dist2[k]] = 2;
         for (size_t k = 0; k < dist1.size(); k++) distIncrement[dist1[k]] = 1;
@@ -687,10 +692,10 @@ int p;
           // is actually a bug in the code. However, if I put a '2', I don't
           // get the perfect coarsening for a uniform mesh ... so I'm leaving
           // if for now without the 2.
-//          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
-SC kkk = 10.;
-if (coordDist[j] > distance)
-          coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]*(kkk-1)+ distance);
+          //          coordDist[j] = 2*(coordDist[j]*distance) / (coordDist[j] + distance);
+          SC kkk = 10.;
+          if (coordDist[j] > distance)
+            coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]*(kkk-1)+ distance);
           coordDist[j] = (kkk*coordDist[j]*distance)/(coordDist[j]        + distance*(kkk-1));
         }
 
@@ -1274,12 +1279,13 @@ if (coordDist[j] > distance)
   // Convert information in Cptlist, myCpts into a sparsity pattern matrix
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LocalOrdinal Offset) const {
+  CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LocalOrdinal offset) const {
     RCP<const Map> rowMap = A.getRowMap();
     size_t numRows = myCpts.getNodeNumRows();
 
+    // FIXME: how does offset play here?
     const Array<LO>& Cptlist = myCpts.getCList();
-    RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase()+Offset, rowMap->getComm());
+    RCP<const Map> coarseMap = MapFactory::Build(rowMap->lib(), Cptlist.size(), rowMap->getIndexBase() + offset, rowMap->getComm());
 
     P = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> Pcrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();

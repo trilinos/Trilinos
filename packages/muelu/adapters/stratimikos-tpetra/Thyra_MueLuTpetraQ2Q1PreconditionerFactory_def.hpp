@@ -50,512 +50,380 @@
 
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp"
 
-#include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_TpetraLinearOp.hpp"
-#include "Thyra_TpetraThyraWrappers.hpp"
+#include <Thyra_DefaultPreconditioner.hpp>
+#include <Thyra_TpetraLinearOp.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
 
-#include "MueLu_TpetraOperator.hpp"
-#include "MueLu_CreateTpetraPreconditioner.hpp"
-#include <MueLu_FilteredAFactory.hpp>
-#include <MueLu.hpp>
-#include <MueLu_Level.hpp>
-#include <MueLu_BaseClass.hpp>
-#include "MueLu_CoalesceDropFactory_decl.hpp"
-#include <MueLu_BlockedPFactory.hpp>
-#include "MueLu_GenericRFactory.hpp"
-#include <MueLu_BlockedRAPFactory.hpp>
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_BlockedDirectSolver.hpp"
-#include <MueLu_SubBlockAFactory.hpp>
-#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
-#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
-#include <MueLu_PatternFactory.hpp>
-#include <MueLu_EminPFactory.hpp>
-#include <MueLu_ConstraintFactory.hpp>
-#include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include <MueLu_SmootherFactory.hpp>
+#include <Teuchos_Ptr.hpp>
+#include <Teuchos_TestForException.hpp>
+#include <Teuchos_Assert.hpp>
+#include <Teuchos_Time.hpp>
+#include <Teuchos_FancyOStream.hpp>
+#include <Teuchos_VerbosityLevel.hpp>
 
-#include "Xpetra_Matrix.hpp"
+#include <Teko_Utilities.hpp>
+
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#include "Teuchos_Ptr.hpp"
-#include "Teuchos_TestForException.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_VerbosityLevel.hpp"
-#include "Teko_Utilities.hpp"
+#include "MueLu.hpp"
+
+#include "MueLu_BaseClass.hpp"
+#include "MueLu_BlockedDirectSolver.hpp"
+#include "MueLu_BlockedPFactory.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
+#include "MueLu_CoalesceDropFactory_decl.hpp"
+#include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_CreateTpetraPreconditioner.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_EminPFactory.hpp"
+#include "MueLu_FilteredAFactory.hpp"
+#include "MueLu_GenericRFactory.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
+#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_SubBlockAFactory.hpp"
+#include "MueLu_TpetraOperator.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 
 #include <string>
 
 namespace Thyra {
 
-
-using Teuchos::RCP;
-using Teuchos::ParameterList;
-
-
-// Constructors/initializers/accessors
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MueLuTpetraQ2Q1PreconditionerFactory()
-{}
-
-
-// Overridden from PreconditionerFactoryBase
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(
-  const LinearOpSourceBase<Scalar> &fwdOpSrc
-  ) const
-{
-  const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
-
-  typedef Thyra::TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraTpetraLinOp;
-  const RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
-
-  typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraLinOp;
-  const RCP<const TpetraLinOp> tpetraFwdOp = Teuchos::nonnull(thyraTpetraFwdOp) ? thyraTpetraFwdOp->getConstTpetraOperator() : Teuchos::null;
-
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMat;
-  const RCP<const TpetraCrsMat> tpetraFwdCrsMat = Teuchos::rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
-
-  return Teuchos::nonnull(tpetraFwdCrsMat);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<PreconditionerBase<Scalar> >
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const
-{
-  return Teuchos::rcp(new DefaultPreconditioner<Scalar>);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializePrec(
-  const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  PreconditionerBase<Scalar> *prec,
-  const ESupportSolveUse supportSolveUse
-  ) const
-{
-  // Check precondition
-
-  TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
-  TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
-  TEUCHOS_ASSERT(prec);
-
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
-
-  const RCP<Teuchos::FancyOStream> out = this->getOStream();
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
-    *out << "\nEntering Thyra::MueLuTpetraQ2Q1PreconditionerFactory::initializePrec(...) ...\n";
-  }
-
-  // Retrieve wrapped concrete Tpetra matrix from FwdOp
-
-  const Teuchos::RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc->getOp();
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
-
-  typedef Thyra::TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraTpetraLinOp;
-  const Teuchos::RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = Teuchos::rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraTpetraFwdOp));
-
-  typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraLinOp;
-  const Teuchos::RCP<const TpetraLinOp> tpetraFwdOp = thyraTpetraFwdOp->getConstTpetraOperator();
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
-
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMat;
-  const Teuchos::RCP<const TpetraCrsMat> tpetraFwdCrsMat = Teuchos::rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdCrsMat));
-
-  // Retrieve concrete preconditioner object
-
-  const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec =
-    Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar> *>(prec));
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
-
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
-    *out << "\nCreating a new MueLu::TpetraOperator object...\n";
-  }
-  timer.start(true);
-
-  // Workaround since MueLu interface does not accept const matrix as input
-  const Teuchos::RCP<TpetraCrsMat> tpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<TpetraCrsMat>(tpetraFwdCrsMat);
-
-  // Create and compute the initial preconditioner
-
-  // Create a copy, as we may remove some things from the list
-  Teuchos::ParameterList paramList = *paramList_;
-
-  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  Teuchos::RCP<MV> coords;
-  if (paramList.isType<Teuchos::RCP<MV> >("Coordinates")) {
-    coords = paramList.get<Teuchos::RCP<MV> >("Coordinates");
-    paramList.remove("Coordinates");
-  }
-
-  Teuchos::RCP<MV> null_space;
-  if (paramList.isType<Teuchos::RCP<MV> >("Nullspace")) {
-    null_space = paramList.get<Teuchos::RCP<MV> >("Nullspace");
-    paramList.remove("Nullspace");
-  }
-
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coordsVel;
-  if (paramList.isType<  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >  >("Velcoords")) {
-    coordsVel = paramList.get<Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > ("Velcoords");
-    paramList.remove("Velcoords");
-  }
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coordsPres;
-  if (paramList.isType<  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >  >("Prescoords")) {
-    coordsPres = paramList.get<Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > ("Prescoords");
-    paramList.remove("Prescoords");
-  }
-
-  Teuchos::ArrayRCP<LocalOrdinal> p2vMap;
-  if (paramList.isType< Teuchos::ArrayRCP<LocalOrdinal> >("p2vMap")) {
-    p2vMap = paramList.get< Teuchos::ArrayRCP<LocalOrdinal> > ("p2vMap");
-    paramList.remove("p2vMap");
-  }
-  Teko::LinearOp thA11;
-  if (paramList.isType< Teko::LinearOp >("A11")) {
-    thA11 = paramList.get<  Teko::LinearOp >("A11");
-    paramList.remove("A11");
-  }
-  Teko::LinearOp thA12;
-  if (paramList.isType< Teko::LinearOp >("A12")) {
-    thA12 = paramList.get<  Teko::LinearOp >("A12");
-    paramList.remove("A12");
-  }
-  Teko::LinearOp thA21;
-  if (paramList.isType< Teko::LinearOp >("A21")) {
-    thA21 = paramList.get<  Teko::LinearOp >("A21");
-    paramList.remove("A21");
-  }
-  Teko::LinearOp thA11_9Pt;
-  if (paramList.isType< Teko::LinearOp >("A11_9Pt")) {
-    thA11_9Pt = paramList.get<  Teko::LinearOp >("A11_9Pt");
-    paramList.remove("A11_9Pt");
-  }
-
-  Teuchos::RCP<MueLu::Hierarchy <Scalar,LocalOrdinal,GlobalOrdinal,Node> > HH = Teuchos::rcp(new MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
-
-  const RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-  typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
-  const Teuchos::RCP<MueLuOperator> mueluPrecOp = Q2Q1MkPrecond(HH, comm, 3, paramList , coordsVel, coordsPres, p2vMap, thA11, thA12, thA21,thA11_9Pt);
-
-  timer.stop();
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
-    Teuchos::OSTab(out).o() << "> Creation time = " << timer.totalElapsedTime() << " sec\n";
-  }
-
-  const Teuchos::RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(Teuchos::RCP<TpetraLinOp>(mueluPrecOp));
-  defaultPrec->initializeUnspecified(thyraPrecOp);
-
-  totalTimer.stop();
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
-    *out << "\nTotal time in Thyra::MueLuTpetraQ2Q1PreconditionerFactory::initializePrec(...) = " << totalTimer.totalElapsedTime() << " sec\n";
-  }
-
-  if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
-    *out << "\nLeaving Thyra::MueLuTpetraQ2Q1PreconditionerFactory::initializePrec(...) ...\n";
-  }
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::uninitializePrec(
-  PreconditionerBase<Scalar> *prec,
-  Teuchos::RCP<const LinearOpSourceBase<Scalar> > *fwdOp,
-  ESupportSolveUse *supportSolveUse
-  ) const
-{
-  // Check precondition
-
-  TEUCHOS_ASSERT(prec);
-
-  // Retrieve concrete preconditioner object
-
-  const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec =
-    Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar> *>(prec));
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
-
-  if (fwdOp) {
-    // TODO: Implement properly instead of returning default value
-    *fwdOp = Teuchos::null;
-  }
-
-  if (supportSolveUse) {
-    // TODO: Implement properly instead of returning default value
-    *supportSolveUse = Thyra::SUPPORT_SOLVE_UNSPECIFIED;
-  }
-
-  defaultPrec->uninitialize();
-}
-
-
-// Overridden from ParameterListAcceptor
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameterList(
-  Teuchos::RCP<ParameterList> const& paramList
-  )
-{
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
-  paramList_ = paramList;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<ParameterList>
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstParameterList()
-{
-  return paramList_;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<ParameterList>
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unsetParameterList()
-{
-  Teuchos::RCP<ParameterList> savedParamList = paramList_;
-  paramList_ = Teuchos::null;
-  return savedParamList;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList>
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getParameterList() const
-{
-  return paramList_;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList>
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getValidParameters() const
-{
-  static RCP<const ParameterList> validPL;
-
-  if (Teuchos::is_null(validPL)) {
-    validPL = Teuchos::rcp(new ParameterList());
-  }
-
-  return validPL;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Q2Q1MkPrecond(
-           Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & HH,
-     const Teuchos::RCP<const Teuchos::Comm<int> > &comm, int maxLevels, const ParameterList paramList,
-     const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & coordsVel,
-     const Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & coordsPres,
-     const Teuchos::ArrayRCP<LocalOrdinal> & p2vMap,
-     const Teko::LinearOp & thA11, const Teko::LinearOp & thA12, const Teko::LinearOp & thA21, const Teko::LinearOp & thA11_9Pt) const
-{
+#define MUELU_GPD(name, type, defaultValue) \
+  (paramList.isParameter(#name) ? paramList.get<type>(#name) : defaultValue)
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ParameterList;
-  using Teuchos::Array;
+  using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::ArrayView;
+  using Teuchos::ArrayRCP;
   using Teuchos::as;
+  using Teuchos::Array;
+
+  // Constructors/initializers/accessors
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MueLuTpetraQ2Q1PreconditionerFactory() {}
 
 
-  typedef Scalar          SC;
-  typedef LocalOrdinal    LO;
-  typedef GlobalOrdinal   GO;
-  typedef Node            NO;
+  // Overridden from PreconditionerFactoryBase
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const {
+    typedef Thyra ::TpetraLinearOp<SC,LO,GO,NO> ThyraTpetraLinOp;
+    typedef Tpetra::Operator      <SC,LO,GO,NO> TpetraLinOp;
+    typedef Tpetra::CrsMatrix     <SC,LO,GO,NO> TpetraCrsMat;
 
-  typedef Tpetra::CrsMatrix<Scalar,int,int> TP_Crs;
-  typedef Tpetra::Operator<Scalar,int,int> TP_Op;
-  typedef Xpetra::Matrix<SC, LO, GO, NO>   Matrix;
-  typedef Xpetra::CrsMatrix<SC,LO,GO,NO>   CrsMatrix;
-  typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>        MUtils;
+    const RCP<const LinearOpBase<SC> > fwdOp            = fwdOpSrc.getOp();
+    const RCP<const ThyraTpetraLinOp>  thyraTpetraFwdOp = rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
+    const RCP<const TpetraLinOp>       tpetraFwdOp      = Teuchos::nonnull(thyraTpetraFwdOp) ? thyraTpetraFwdOp->getConstTpetraOperator() : Teuchos::null;
+    const RCP<const TpetraCrsMat>      tpetraFwdCrsMat  = rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
 
-   // Pull out Tpetra matrices
+    return Teuchos::nonnull(tpetraFwdCrsMat);
+  }
 
-   RCP<Thyra::LinearOpBase<double> > ThNonConstA11 = Teuchos::rcp_const_cast< Thyra::LinearOpBase<double> >(thA11);
-   RCP<Thyra::LinearOpBase<double> > ThNonConstA21 = Teuchos::rcp_const_cast< Thyra::LinearOpBase<double> >(thA21);
-   RCP<Thyra::LinearOpBase<double> > ThNonConstA12 = Teuchos::rcp_const_cast< Thyra::LinearOpBase<double> >(thA12);
-   RCP<Thyra::LinearOpBase<double> > ThNonConstA11_9Pt = Teuchos::rcp_const_cast< Thyra::LinearOpBase<double> >(thA11_9Pt);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<PreconditionerBase<Scalar> >
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const {
+    return rcp(new DefaultPreconditioner<SC>);
+  }
 
-   RCP<TP_Op>  TpetA11   = Thyra::TpetraOperatorVectorExtraction<Scalar,int>::getTpetraOperator(ThNonConstA11);
-   RCP<TP_Op>  TpetA21   = Thyra::TpetraOperatorVectorExtraction<Scalar,int>::getTpetraOperator(ThNonConstA21);
-   RCP<TP_Op>  TpetA12   = Thyra::TpetraOperatorVectorExtraction<Scalar,int>::getTpetraOperator(ThNonConstA12);
-   RCP<TP_Op>  TpetA11_9Pt   = Thyra::TpetraOperatorVectorExtraction<Scalar,int>::getTpetraOperator(ThNonConstA11_9Pt);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  initializePrec(const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc, PreconditionerBase<Scalar> *prec, const ESupportSolveUse supportSolveUse) const {
+    // Check precondition
+    TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
+    TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
+    TEUCHOS_ASSERT(prec);
 
-   RCP<TP_Crs> TpetCrsA11= rcp_dynamic_cast<TP_Crs>(TpetA11);
-   RCP<TP_Crs> TpetCrsA21= rcp_dynamic_cast<TP_Crs>(TpetA21);
-   RCP<TP_Crs> TpetCrsA12= rcp_dynamic_cast<TP_Crs>(TpetA12);
-   RCP<TP_Crs> TpetCrsA11_9Pt = rcp_dynamic_cast<TP_Crs>(TpetA11_9Pt);
+    // Retrieve wrapped concrete Tpetra matrix from FwdOp
+    const RCP<const LinearOpBase<SC> > fwdOp = fwdOpSrc->getOp();
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
-   RCP<Matrix> A_11      = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11);
-   RCP<Matrix> XpetA21   = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA21); //Needs map modification
-   RCP<Matrix> XpetA12   = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA12); //Needs map modification
-   RCP<Matrix> A_11_9Pt  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11_9Pt);
+    typedef Thyra::TpetraLinearOp<SC,LO,GO,NO> ThyraTpetraLinOp;
+    const RCP<const ThyraTpetraLinOp> thyraTpetraFwdOp = rcp_dynamic_cast<const ThyraTpetraLinOp>(fwdOp);
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraTpetraFwdOp));
 
-   //  Create new A21 with map so that the global indices of the RowMap starts
-   //  from nv+1 (where nv is the number of rows in the A11 block)
+    typedef Tpetra::Operator<SC,LO,GO,NO> TpetraLinOp;
+    const RCP<const TpetraLinOp> tpetraFwdOp = thyraTpetraFwdOp->getConstTpetraOperator();
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
-   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > RangeMapBlk2= XpetA21->getRangeMap();
-   Xpetra::global_size_t                                         NRowsBlk2= RangeMapBlk2->getNodeNumElements();
-   Teuchos::ArrayView<const GO>                           RangeEntriesBlk2= RangeMapBlk2->getNodeElementList();
-   Teuchos::ArrayView<const GO>                          MyGlobalCols = XpetA21->getColMap()->getNodeElementList();
+    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> TpetraCrsMat;
+    const RCP<const TpetraCrsMat> tpetraFwdCrsMat = rcp_dynamic_cast<const TpetraCrsMat>(tpetraFwdOp);
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdCrsMat));
 
-   int  nv = A_11->getRangeMap()->getNodeNumElements();
-   Teuchos::Array<GO> newGlobalRows(NRowsBlk2, 0.0);
-   for (Xpetra::global_size_t i = 0; i < NRowsBlk2; i++) newGlobalRows[i] = RangeEntriesBlk2[i] + nv;
+    // Retrieve concrete preconditioner object
+    const Teuchos::Ptr<DefaultPreconditioner<SC> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<SC> *>(prec));
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > newRangeMapBlk2 =
-          rcp( new Xpetra::TpetraMap<LO,GO>(NRowsBlk2,newGlobalRows,RangeMapBlk2->getIndexBase(), comm));
+    // Workaround since MueLu interface does not accept const matrix as input
+    const RCP<TpetraCrsMat> tpetraFwdCrsMatNonConst = rcp_const_cast<TpetraCrsMat>(tpetraFwdCrsMat);
 
-   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >DomainMapBlk2= XpetA12->getDomainMap();
-   Xpetra::global_size_t                                         NColsBlk2= DomainMapBlk2->getNodeNumElements();
-                                                                      // maybe should be column map???
-   Teuchos::ArrayView<const GO>                          DomainEntriesBlk2= DomainMapBlk2->getNodeElementList();
-   Teuchos::ArrayView<const GO>                          MyGlobalRows = XpetA12->getRowMap()->getNodeElementList();
+    // Create and compute the initial preconditioner
 
-   Teuchos::Array<GO> newGlobalCols(NColsBlk2, 0.0);
-   for (Xpetra::global_size_t i = 0; i < NColsBlk2; i++) newGlobalCols[i] = DomainEntriesBlk2[i] + nv;
+    // Create a copy, as we may remove some things from the list
+    ParameterList paramList = *paramList_;
 
-   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > newDomainMapBlk2 =
-          rcp( new Xpetra::TpetraMap<LO,GO>(NColsBlk2,newGlobalCols,DomainMapBlk2->getIndexBase(), comm));
+    typedef Tpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+    RCP<MultiVector> coords, nullspace, velCoords, presCoords;
+    ArrayRCP<LO>     p2vMap;
+    Teko::LinearOp   thA11, thA12, thA21, thA11_9Pt;
+    if (paramList.isType<RCP<MultiVector> >("Coordinates")) { coords     = paramList.get<RCP<MultiVector> >("Coordinates"); paramList.remove("Coordinates"); }
+    if (paramList.isType<RCP<MultiVector> >("Nullspace"))   { nullspace  = paramList.get<RCP<MultiVector> >("Nullspace");   paramList.remove("Nullspace"); }
+    if (paramList.isType<RCP<MultiVector> >("Velcoords"))   { velCoords  = paramList.get<RCP<MultiVector> >("Velcoords");   paramList.remove("Velcoords"); }
+    if (paramList.isType<RCP<MultiVector> >("Prescoords"))  { presCoords = paramList.get<RCP<MultiVector> >("Prescoords");  paramList.remove("Prescoords"); }
+    if (paramList.isType<ArrayRCP<LO> >    ("p2vMap"))      { p2vMap     = paramList.get<ArrayRCP<LO> >    ("p2vMap");      paramList.remove("p2vMap"); }
+    if (paramList.isType<Teko::LinearOp>   ("A11"))         { thA11      = paramList.get<Teko::LinearOp>   ("A11");         paramList.remove("A11"); }
+    if (paramList.isType<Teko::LinearOp>   ("A12"))         { thA12      = paramList.get<Teko::LinearOp>   ("A12");         paramList.remove("A12"); }
+    if (paramList.isType<Teko::LinearOp>   ("A21"))         { thA21      = paramList.get<Teko::LinearOp>   ("A21");         paramList.remove("A21"); }
+    if (paramList.isType<Teko::LinearOp>   ("A11_9Pt"))     { thA11_9Pt  = paramList.get<Teko::LinearOp>   ("A11_9Pt");     paramList.remove("A11_9Pt"); }
 
+    typedef MueLu::TpetraOperator<SC,LO,GO,NO> MueLuOperator;
+    const RCP<MueLuOperator> mueluPrecOp = Q2Q1MkPrecond(paramList, velCoords, presCoords, p2vMap, thA11, thA12, thA21, thA11_9Pt);
 
+    const RCP<LinearOpBase<SC> > thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(mueluPrecOp));
+    defaultPrec->initializeUnspecified(thyraPrecOp);
+  }
 
-   RCP<Matrix> A_21  = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,Node>(newRangeMapBlk2,
-                                          XpetA21->getDomainMap(),XpetA21->getNodeMaxNumRowEntries()));
-   RCP<CrsMatrix> A21Crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_21)->getCrsMatrix();
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  uninitializePrec(PreconditionerBase<Scalar> *prec, RCP<const LinearOpSourceBase<Scalar> >* fwdOp, ESupportSolveUse* supportSolveUse) const {
+    // Check precondition
+    TEUCHOS_ASSERT(prec);
 
-   RCP<Matrix> A_22  = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,Node>(newRangeMapBlk2,newDomainMapBlk2,nv));
-   RCP<CrsMatrix> A22Crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_22)->getCrsMatrix();
+    // Retrieve concrete preconditioner object
+    const Teuchos::Ptr<DefaultPreconditioner<SC> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<SC> *>(prec));
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-   Teuchos::Array<SC>     tval(1, 1.0e-9);
-   Teuchos::ArrayView<const SC> ttval = tval;
-
-   for (LO row = 0; row < Teuchos::as<LO>(XpetA21->getRowMap()->getNodeNumElements()); ++row) {
-      size_t nnnz = XpetA21->getNumEntriesInLocalRow(row);
-      Teuchos::ArrayView<const LO> indices;
-      Teuchos::ArrayView<const SC> vals;
-      Teuchos::Array<GO>     newInds(nnnz, 0);
-      XpetA21->getLocalRowView(row, indices, vals);
-      for (LO colID = 0; colID < Teuchos::as<LO>(nnnz); colID++)
-         newInds[colID] = MyGlobalCols[indices[colID]];
-      A21Crs->insertGlobalValues(newGlobalRows[row],newInds,vals);
-      Teuchos::Array<LO>   tind(1, newGlobalRows[row]);
-      Teuchos::ArrayView<const LO> ttind = tind;
-      A22Crs->insertGlobalValues(newGlobalRows[row],ttind, ttval); // newGlobalRows[row],value);
+    if (fwdOp) {
+      // TODO: Implement properly instead of returning default value
+      *fwdOp = Teuchos::null;
     }
-    A21Crs->fillComplete(XpetA21->getDomainMap(),newRangeMapBlk2);
-    A22Crs->fillComplete(newDomainMapBlk2,newRangeMapBlk2);
 
-#ifdef out
-   // This code would be cheaper than the above code, but it did not do the
-   // proper thing with empty columns. I'm leaving it here as it might be
-   // useful if fixed up.
-
-   Teuchos::ArrayRCP<const size_t>  OrigRowPtr;   Teuchos::ArrayRCP<size_t>  NewRowPtr;
-   Teuchos::ArrayRCP<const LO>     OrigColumns;   Teuchos::ArrayRCP<LO>      NewColumns;
-   Teuchos::ArrayRCP<const SC>      OrigValues;   Teuchos::ArrayRCP<SC>      NewValues;
-
-   RCP<CrsMatrix> OrigCrs = rcp_dynamic_cast<CrsMatrixWrap>(XpetA21)->getCrsMatrix();
-   OrigCrs->getAllValues(OrigRowPtr, OrigColumns, OrigValues);
-   RCP<Matrix>    Bad21   = rcp(new CrsMatrixWrap(newRangeMapBlk2, XpetA21->getDomainMap(), 0, Xpetra::StaticProfile));
-   RCP<CrsMatrix> Bad21Crs= rcp_dynamic_cast<CrsMatrixWrap>(Bad21)->getCrsMatrix();
-   size_t nnz = XpetA21->getNodeNumEntries();
-
-   Bad21Crs->allocateAllValues(nnz,  NewRowPtr, NewColumns, NewValues);
-   for (size_t ii = 0; ii <= NRowsBlk2; ii++) NewRowPtr[ii] = OrigRowPtr[ii];
-   for (size_t ii = 0; ii <  nnz  ; ii++) NewColumns[ii]= OrigColumns[ii];
-   for (size_t ii = 0; ii <  nnz  ; ii++) NewValues[ii] = OrigValues[ii];
-   Bad21Crs->setAllValues(NewRowPtr, NewColumns, NewValues);
-   Bad21Crs->expertStaticFillComplete(XpetA21->getColMap(),newRangeMapBlk2);
-#endif
-
-   //  Create new A12 with map so that the global indices of the ColMap starts
-   //  from nv+1 (where nv is the number of rows in the A11 block)
-
-
-   RCP<Matrix> A_12  = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,Node>(XpetA12->getRangeMap(),newDomainMapBlk2,XpetA12->getNodeMaxNumRowEntries()));
-   RCP<CrsMatrix> A12Crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_12)->getCrsMatrix();
-
-   for (LO row = 0; row < Teuchos::as<LO>(XpetA12->getRowMap()->getNodeNumElements()); ++row) {
-      size_t nnnz = XpetA12->getNumEntriesInLocalRow(row);
-      Teuchos::ArrayView<const LO> indices;
-      Teuchos::ArrayView<const SC> vals;
-      Teuchos::Array<GO>     newInds(nnnz, 0);
-      XpetA12->getLocalRowView(row, indices, vals);
-      for (LO colID = 0; colID < Teuchos::as<LO>(nnnz); colID++)
-         newInds[colID] = newGlobalCols[indices[colID]];
-      A12Crs->insertGlobalValues(MyGlobalRows[row],newInds,vals);
+    if (supportSolveUse) {
+      // TODO: Implement properly instead of returning default value
+      *supportSolveUse = Thyra::SUPPORT_SOLVE_UNSPECIFIED;
     }
-    A12Crs->fillComplete(newDomainMapBlk2,XpetA12->getRangeMap());
 
-//    RCP<Matrix>    A_22     = Teuchos::null;
+    defaultPrec->uninitialize();
+  }
 
-    RCP<CrsMatrix> A_11_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_11)->getCrsMatrix();
-    RCP<CrsMatrix> A_12_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_12)->getCrsMatrix();
-    RCP<CrsMatrix> A_21_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_21)->getCrsMatrix();
-    RCP<CrsMatrix> A_22_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_22)->getCrsMatrix();
-    RCP<CrsMatrix> A_11_crs_9Pt = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(A_11_9Pt)->getCrsMatrix();
-//    RCP<CrsMatrix> A_22_crs = Teuchos::null;
+
+  // Overridden from ParameterListAcceptor
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameterList(const RCP<ParameterList>& paramList) {
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));
+    paramList_ = paramList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<ParameterList>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstParameterList() {
+    return paramList_;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<ParameterList>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unsetParameterList() {
+    RCP<ParameterList> savedParamList = paramList_;
+    paramList_ = Teuchos::null;
+    return savedParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getParameterList() const {
+    return paramList_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList>
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getValidParameters() const {
+    static RCP<const ParameterList> validPL;
+
+    if (validPL.is_null())
+      validPL = rcp(new ParameterList());
+
+    return validPL;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  Q2Q1MkPrecond(const ParameterList& paramList,
+                const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& velCoords,
+                const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& presCoords,
+                const ArrayRCP<LocalOrdinal>& p2vMap,
+                const Teko::LinearOp& thA11, const Teko::LinearOp& thA12, const Teko::LinearOp& thA21, const Teko::LinearOp& thA11_9Pt) const
+  {
+    using Teuchos::null;
+
+    typedef Tpetra::CrsMatrix           <SC,int,int>  TP_Crs;
+    typedef Tpetra::Operator            <SC,int,int>  TP_Op;
+
+    typedef Xpetra::BlockedCrsMatrix    <SC,LO,GO,NO> BlockedCrsMatrix;
+    typedef Xpetra::CrsMatrix           <SC,LO,GO,NO> CrsMatrix;
+    typedef Xpetra::CrsMatrixWrap       <SC,LO,GO,NO> CrsMatrixWrap;
+    typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
+    typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
+    typedef Xpetra::Map                 <LO,GO,NO>    Map;
+    typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
+    typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
+    typedef Xpetra::MapFactory          <LO,GO,NO>    MapFactory;
+    typedef Xpetra::Matrix              <SC,LO,GO,NO> Matrix;
+    typedef Xpetra::MatrixFactory       <SC,LO,GO,NO> MatrixFactory;
+    typedef Xpetra::StridedMapFactory   <LO,GO,NO>    StridedMapFactory;
+
+    typedef MueLu::BlockedDirectSolver  <SC,LO,GO,NO> BlockedDirectSolver;
+    typedef MueLu::Hierarchy            <SC,LO,GO,NO> Hierarchy;
+    typedef MueLu::SmootherFactory      <SC,LO,GO,NO> SmootherFactory;
+    typedef MueLu::SmootherPrototype    <SC,LO,GO,NO> SmootherPrototype;
+    typedef MueLu::TrilinosSmoother     <SC,LO,GO,NO> TrilinosSmoother;
+    typedef MueLu::Utils                <SC,LO,GO,NO> Utils;
+
+    const RCP<const Teuchos::Comm<int> > comm = velCoords->getMap()->getComm();
+
+    // Pull out Tpetra matrices
+    RCP<Thyra::LinearOpBase<double> > ThNonConstA11     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11);
+    RCP<Thyra::LinearOpBase<double> > ThNonConstA21     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA21);
+    RCP<Thyra::LinearOpBase<double> > ThNonConstA12     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA12);
+    RCP<Thyra::LinearOpBase<double> > ThNonConstA11_9Pt = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11_9Pt);
+
+    RCP<TP_Op>  TpetA11     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA11);
+    RCP<TP_Op>  TpetA21     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA21);
+    RCP<TP_Op>  TpetA12     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA12);
+    RCP<TP_Op>  TpetA11_9Pt = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA11_9Pt);
+
+    RCP<TP_Crs> TpetCrsA11      = rcp_dynamic_cast<TP_Crs>(TpetA11);
+    RCP<TP_Crs> TpetCrsA21      = rcp_dynamic_cast<TP_Crs>(TpetA21);
+    RCP<TP_Crs> TpetCrsA12      = rcp_dynamic_cast<TP_Crs>(TpetA12);
+    RCP<TP_Crs> TpetCrsA11_9Pt  = rcp_dynamic_cast<TP_Crs>(TpetA11_9Pt);
+
+    RCP<Matrix> A_11      = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11);
+    RCP<Matrix> tmp_A_21  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA21); // needs map modification
+    RCP<Matrix> tmp_A_12  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA12); // needs map modification
+    RCP<Matrix> A_11_9Pt  = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11_9Pt);
+
+    Xpetra::global_size_t numVel  =     A_11->getRowMap()->getNodeNumElements();
+    Xpetra::global_size_t numPres = tmp_A_21->getRowMap()->getNodeNumElements();
+
+    // Create new A21 with map so that the global indices of the row map starts
+    // from numVel+1 (where numVel is the number of rows in the A11 block)
+    RCP<const Map>          domainMap2  = tmp_A_12->getDomainMap();
+    RCP<const Map>          rangeMap2   = tmp_A_21->getRangeMap();
+    Xpetra::global_size_t   numRows2    = rangeMap2->getNodeNumElements();
+    Xpetra::global_size_t   numCols2    = domainMap2->getNodeNumElements();
+    ArrayView<const GO>     rangeElem2  = rangeMap2->getNodeElementList();
+    ArrayView<const GO>     domainElem2 = domainMap2->getNodeElementList();
+    ArrayView<const GO>     rowElem1    = tmp_A_12->getRowMap()->getNodeElementList();
+    ArrayView<const GO>     colElem1    = tmp_A_21->getColMap()->getNodeElementList();
+
+    Xpetra::UnderlyingLib lib = domainMap2->lib();
+    GO indexBase = domainMap2->getIndexBase();
+
+    Array<GO> newRowElem2(numRows2, 0);
+    for (Xpetra::global_size_t i = 0; i < numRows2; i++)
+      newRowElem2[i] = numVel + rangeElem2[i];
+
+    RCP<const Map> newRangeMap2 = MapFactory::Build(lib, numRows2, newRowElem2, indexBase, comm);
+
+    // maybe should be column map???
+    Array<GO> newColElem2(numCols2, 0);
+    for (Xpetra::global_size_t i = 0; i < numCols2; i++)
+      newColElem2[i] = numVel + domainElem2[i];
+
+    RCP<const Map> newDomainMap2 = MapFactory::Build(lib, numCols2, newColElem2, indexBase, comm);
+
+    RCP<Matrix>    A_12         = MatrixFactory::Build(tmp_A_12->getRangeMap(), newDomainMap2,            tmp_A_12->getNodeMaxNumRowEntries());
+    RCP<Matrix>    A_21         = MatrixFactory::Build(newRangeMap2,            tmp_A_21->getDomainMap(), tmp_A_21->getNodeMaxNumRowEntries());
+    RCP<Matrix>    A_22         = MatrixFactory::Build(newRangeMap2,            newDomainMap2,            1);
+
+    RCP<CrsMatrix> A_11_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_11)    ->getCrsMatrix();
+    RCP<CrsMatrix> A_12_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_12)    ->getCrsMatrix();
+    RCP<CrsMatrix> A_21_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_21)    ->getCrsMatrix();
+    RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
+    RCP<CrsMatrix> A_11_crs_9Pt = rcp_dynamic_cast<CrsMatrixWrap>(A_11_9Pt)->getCrsMatrix();
+
+    Array<SC> smallVal(1, 1.0e-9);
+
+    // FIXME: could this be sped up using expertStaticFillComplete?
+    // There was an attempt on doing it, but it did not do the proper thing
+    // with empty columns. See git history
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    for (LO row = 0; row < as<LO>(numRows2); ++row) {
+      tmp_A_21->getLocalRowView(row, inds, vals);
+
+      size_t nnz = inds.size();
+      Array<GO> newInds(nnz, 0);
+      for (LO colID = 0; colID < as<LO>(nnz); colID++)
+        newInds[colID] = colElem1[inds[colID]];
+
+      A_21_crs->insertGlobalValues(newRowElem2[row], newInds,                        vals);
+      A_22_crs->insertGlobalValues(newRowElem2[row], Array<LO>(1, newRowElem2[row]), smallVal);
+    }
+    A_21_crs->fillComplete(tmp_A_21->getDomainMap(), newRangeMap2);
+    A_22_crs->fillComplete(newDomainMap2,            newRangeMap2);
+
+    // Create new A12 with map so that the global indices of the ColMap starts
+    // from numVel+1 (where numVel is the number of rows in the A11 block)
+    for (LO row = 0; row < as<LO>(tmp_A_12->getRowMap()->getNodeNumElements()); ++row) {
+      tmp_A_12->getLocalRowView(row, inds, vals);
+
+      size_t nnz = inds.size();
+      Array<GO> newInds(nnz, 0);
+      for (LO colID = 0; colID < as<LO>(nnz); colID++)
+        newInds[colID] = newColElem2[inds[colID]];
+
+      A_12_crs->insertGlobalValues(rowElem1[row], newInds, vals);
+    }
+    A_12_crs->fillComplete(newDomainMap2, tmp_A_12->getRangeMap());
 
     // =========================================================================
     // Preconditioner construction - I (block)
     // =========================================================================
-
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
     out.setOutputToRootOnly(0);
-    RCP<Matrix> BBt = MUtils::Multiply(*A_21, false, *A_12, false, out);
+    RCP<Matrix> BBt = Utils::Multiply(*A_21, false, *A_12, false, out);
 
+    // FIXME: why do we have a magic number here?
     SC dropTol = 0.06;
     RCP<Matrix> filteredA = FilterMatrix(*A_11, dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  dropTol);
 
-    RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(filteredA)->getCrsMatrix();
+    RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix();
     RCP<CrsMatrix> fA_12_crs = Teuchos::null;
     RCP<CrsMatrix> fA_21_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,Node> >(filteredB)->getCrsMatrix();
-    std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > partMaps(2);
+    RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB)->getCrsMatrix();
 
     // Build the large filtered matrix which requires strided maps
-
-    Xpetra::global_size_t  NumVel = A12Crs->getRangeMap()->getNodeNumElements();
-    Xpetra::global_size_t NumPres = A21Crs->getRangeMap()->getNodeNumElements();
-
-    const GO indexBase = 0;
     std::vector<size_t> stridingInfo(1, 1);
     int stridedBlockId = -1;
 
-    Teuchos::Array<GO> elementList(NumVel+NumPres); // Not RCP ...  does this get cleared ?
-    Teuchos::Array<GO> VelList = A12Crs->getRangeMap()->getNodeElementList();
-    Teuchos::Array<GO> PresList= A21Crs->getRangeMap()->getNodeElementList();
+    Array<GO> elementList(numVel+numPres); // Not RCP ...  does this get cleared ?
+    Array<GO> velElem  = A_12_crs->getRangeMap()->getNodeElementList();
+    Array<GO> presElem = A_21_crs->getRangeMap()->getNodeElementList();
 
-    for (Xpetra::global_size_t i =    0  ; i < NumVel;         i++) elementList[i] = VelList[i];
-    for (Xpetra::global_size_t i = NumVel; i < NumVel+NumPres; i++) elementList[i] = PresList[i-NumVel];
-    RCP<Xpetra::Map<LO,GO,Node> > fullMap = Xpetra::StridedMapFactory<LO,GO>::Build(Xpetra::UseTpetra, NumVel+NumPres, elementList(), indexBase, stridingInfo, comm);
+    for (Xpetra::global_size_t i =    0  ; i < numVel;         i++) elementList[i] = velElem[i];
+    for (Xpetra::global_size_t i = numVel; i < numVel+numPres; i++) elementList[i] = presElem[i-numVel];
+    RCP<const Map> fullMap = StridedMapFactory::Build(Xpetra::UseTpetra, numVel+numPres, elementList(), indexBase, stridingInfo, comm);
 
-    partMaps[0] = Xpetra::StridedMapFactory<LO,GO>::Build(Xpetra::UseTpetra,NumVel,VelList,indexBase,stridingInfo,comm);
-    partMaps[1] = Xpetra::StridedMapFactory<LO,GO>::Build(Xpetra::UseTpetra, NumPres, PresList, indexBase,
-                                           stridingInfo, comm, stridedBlockId, NumVel);
-    Teuchos::RCP<const Xpetra::MapExtractor<SC,LO,GO,Node> > mapExtractor = Xpetra::MapExtractorFactory<SC,LO,GO,Node>::Build(fullMap, partMaps);
-    RCP<Xpetra::BlockedCrsMatrix<SC,LO,GO,Node> > fA = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<SC,LO,GO,Node>(mapExtractor, mapExtractor, 10));
+    std::vector<RCP<const Map> > partMaps(2);
+    partMaps[0] = StridedMapFactory::Build(Xpetra::UseTpetra, numVel,  velElem,  indexBase, stridingInfo, comm);
+    partMaps[1] = StridedMapFactory::Build(Xpetra::UseTpetra, numPres, presElem, indexBase, stridingInfo, comm, stridedBlockId, numVel);
+
+    // Map extractors are necessary for Xpetra's block operators
+    RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(fullMap, partMaps);
+    RCP<BlockedCrsMatrix> fA = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
     fA->setMatrix(0, 0, fA_11_crs);
     fA->setMatrix(0, 1, fA_12_crs);
     fA->setMatrix(1, 0, fA_21_crs);
@@ -565,18 +433,17 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Q2
     // -------------------------------------------------------------------------
     // Preconditioner construction - I.a (filtered hierarchy)
     // -------------------------------------------------------------------------
-    MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>  M;
-    SetDependencyTree(M);
+    MueLu::FactoryManager<SC,LO,GO,NO> M;
+    SetDependencyTree(M, paramList);
 
-    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
-    HH = Teuchos::rcp(new Hierarchy);
-    RCP<MueLu::Level> finestLevel = HH->GetLevel(0);
+    RCP<Hierarchy> H = rcp(new Hierarchy);
+    RCP<MueLu::Level> finestLevel = H->GetLevel(0);
     finestLevel->Set("A",                     rcp_dynamic_cast<Matrix>(fA));
     finestLevel->Set("p2vMap",                p2vMap);
-    finestLevel->Set("CoordinatesVelocity",   Xpetra::toXpetra(coordsVel));
-    finestLevel->Set("CoordinatesPressure",   Xpetra::toXpetra(coordsPres));
-    finestLevel->Set("AForPat",   A_11_9Pt);
-    HH->SetMaxCoarseSize(1);
+    finestLevel->Set("CoordinatesVelocity",   Xpetra::toXpetra(velCoords));
+    finestLevel->Set("CoordinatesPressure",   Xpetra::toXpetra(presCoords));
+    finestLevel->Set("AForPat",               A_11_9Pt);
+    H->SetMaxCoarseSize(MUELU_GPD("coarse: max size", int, 1));
 
     // The first invocation of Setup() builds the hierarchy using the filtered
     // matrix. This build includes the grid transfers but not the creation of the
@@ -584,25 +451,21 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Q2
     // NOTE: we need to indicate what should be kept from the first invocation
     // for the second invocation, which then focuses on building the smoothers
     // for the unfiltered matrix.
-    HH->Keep("P",     M.GetFactory("P")    .get());
-    HH->Keep("R",     M.GetFactory("R")    .get());
-    HH->Keep("Ptent", M.GetFactory("Ptent").get());
-    HH->Setup(M, 0, maxLevels);
-//RCP<MueLu::Level> nextLevel = HH->GetLevel(1);
-//RCP<Matrix> P = nextLevel->Get< RCP<Matrix> >("P");
-//MueLu::Utils<SC,LO,GO,NO>::Write("PP",*P);
-// RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel, "A");
+    H->Keep("P",     M.GetFactory("P")    .get());
+    H->Keep("R",     M.GetFactory("R")    .get());
+    H->Keep("Ptent", M.GetFactory("Ptent").get());
+    H->Setup(M, 0, MUELU_GPD("max levels", int, 3));
 
     // -------------------------------------------------------------------------
     // Preconditioner construction - I.b (Vanka smoothers for unfiltered matrix)
     // -------------------------------------------------------------------------
     // Set up Vanka smoothing via a combination of Schwarz and block relaxation.
-    Teuchos::ParameterList schwarzList;
-    schwarzList.set("schwarz: overlap level",                 Teuchos::as<int>(0));
+    ParameterList schwarzList;
+    schwarzList.set("schwarz: overlap level",                 as<int>(0));
     schwarzList.set("schwarz: zero starting solution",        false);
     schwarzList.set("subdomain solver name",                  "Block_Relaxation");
 
-    Teuchos::ParameterList& innerSolverList = schwarzList.sublist("subdomain solver parameters");
+    ParameterList& innerSolverList = schwarzList.sublist("subdomain solver parameters");
     innerSolverList.set("partitioner: type",                  "user");
     innerSolverList.set("partitioner: overlap",               as<int>(1));
     innerSolverList.set("relaxation: type",                   "Gauss-Seidel");
@@ -612,55 +475,50 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Q2
     // innerSolverList.set("relaxation: backward mode",true);  NOT SUPPORTED YET
 
     std::string ifpackType = "SCHWARZ";
-    typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> SmootherPrototype;
-    typedef MueLu::TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node> TrilinosSmoother;
-    typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> SmootherFactory;
 
-    Teuchos::RCP<SmootherPrototype> smootherPrototype = Teuchos::rcp(new TrilinosSmoother(ifpackType, schwarzList));
-    M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
+    RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
+    M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
 
-typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
-
-    RCP<SmootherPrototype> coarseSolverPrototype = Teuchos::rcp( new BlockedDirectSolver() );
-    RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
-//    M.SetFactory("CoarseSolver", coarseSolverFact);
+    RCP<SmootherPrototype> coarseSolverPrototype = rcp(new BlockedDirectSolver());
+    RCP<SmootherFactory>   coarseSolverFact      = rcp(new SmootherFactory(coarseSolverPrototype, Teuchos::null));
+    //    M.SetFactory("CoarseSolver", coarseSolverFact);
     M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
-
 
 #ifdef HAVE_MUELU_DEBUG
     M.ResetDebugData();
 #endif
 
-    RCP<Xpetra::BlockedCrsMatrix<SC,LO,GO,Node> > A = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<SC,LO,GO,Node>(mapExtractor, mapExtractor, 10));
+    RCP<BlockedCrsMatrix> A = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
     A->setMatrix(0, 0, A_11_crs);
     A->setMatrix(0, 1, A_12_crs);
     A->setMatrix(1, 0, A_21_crs);
     A->setMatrix(1, 1, A_22_crs);
     A->fillComplete();
 
-    HH->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
+    H->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
 
-    HH->Setup(M, 0, HH->GetNumLevels());
+    H->Setup(M, 0, H->GetNumLevels());
 
-    return rcp(new MueLu::TpetraOperator<SC,LO,GO,Node>(HH));
-}
+    return rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+  }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-FilterMatrix(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A, Scalar dropTol) const {
-
-    using Teuchos::RCP;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>   Matrix;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  FilterMatrix(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Scalar dropTol) const {
+    typedef Xpetra::Matrix<SC,LO,GO,NO>             Matrix;
+    typedef MueLu::FilteredAFactory<SC,LO,GO,NO>    FilteredAFactory;
+    typedef MueLu::CoalesceDropFactory<SC,LO,GO,NO> CoalesceDropFactory;
+    typedef MueLu::FactoryManager<SC,LO,GO,NO>      FactoryManager;
 
     MueLu::Level level;
     level.SetLevelID(1);
     level.Set<RCP<Matrix> >("A", rcpFromRef(A));
 
-    MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>  M;
+    FactoryManager M;
     level.SetFactoryManager(rcpFromRef(M));
 
-    RCP<MueLu::CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> > dropFactory = Teuchos::rcp(new MueLu::CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ());
+    RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
     ParameterList dropParams = *(dropFactory->GetValidParameterList());
     dropParams.set("lightweight wrap",          true);
     dropParams.set("aggregation: drop scheme",  "classical");
@@ -671,14 +529,15 @@ FilterMatrix(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A, Scal
     M.SetFactory("Graph",     dropFactory);
     M.SetFactory("Filtering", dropFactory);
 
-    RCP<MueLu::FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> > filterFactory = rcp(new MueLu::FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ());
+    RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
     ParameterList filterParams = *(filterFactory->GetValidParameterList());
+    // We need a graph that has proper structure in it. Therefore, we need to
+    // drop older pattern, i.e. not to reuse it
     filterParams.set("filtered matrix: reuse graph", false);
     filterFactory->SetParameterList(filterParams);
     filterFactory->SetFactory("Graph", dropFactory);
 
     // Build
-
     level.Request("A", filterFactory.get());
     filterFactory->Build(level);
 
@@ -687,25 +546,24 @@ FilterMatrix(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & A, Scal
 
     return filteredA;
   }
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-SetDependencyTree(MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & M) const {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
 
-typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedPFactory;
-typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
-typedef MueLu::BlockedRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedRAPFactory;
-typedef MueLu::SmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SmootherFactory;
-typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedDirectSolver;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  SetDependencyTree(MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>& M, const ParameterList& paramList) const {
+    typedef MueLu::BlockedPFactory      <SC,LO,GO,NO> BlockedPFactory;
+    typedef MueLu::GenericRFactory      <SC,LO,GO,NO> GenericRFactory;
+    typedef MueLu::BlockedRAPFactory    <SC,LO,GO,NO> BlockedRAPFactory;
+    typedef MueLu::SmootherFactory      <SC,LO,GO,NO> SmootherFactory;
+    typedef MueLu::BlockedDirectSolver  <SC,LO,GO,NO> BlockedDirectSolver;
+    typedef MueLu::FactoryManager       <SC,LO,GO,NO> FactoryManager;
 
-
-    RCP<MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> > M11 = rcp(new MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
-    SetBlockDependencyTree(*M11, 0, 0, "velocity");
-
-    RCP<MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> > M22 = rcp(new MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
-    SetBlockDependencyTree(*M22, 1, 1, "pressure");
+    // Pressure and velocity dependency trees are identical. The only
+    // difference is that pressure has to go first, so that velocity can use
+    // some of pressure data
+    RCP<FactoryManager> M11 = rcp(new FactoryManager()), M22 = rcp(new FactoryManager());
+    SetBlockDependencyTree(*M11, 0, 0, "velocity", paramList);
+    SetBlockDependencyTree(*M22, 1, 1, "pressure", paramList);
 
     RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());
     ParameterList pParamList = *(PFact->GetValidParameterList());
@@ -724,31 +582,24 @@ typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> Block
     AcFact->SetFactory("R", RFact);
     M.SetFactory("A", AcFact);
 
-    M.SetFactory("Smoother",     Teuchos::null);
+    // Smoothers will be set later
+    M.SetFactory("Smoother", Teuchos::null);
+
+    RCP<MueLu::Factory> coarseFact = rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
+    // M.SetFactory("CoarseSolver", coarseFact);
     M.SetFactory("CoarseSolver", Teuchos::null);
+  }
 
-    RCP<MueLu::Factory> coarseFact =rcp(new SmootherFactory(rcp(new BlockedDirectSolver()), Teuchos::null));
-
-//M.SetFactory("CoarseSolver", coarseFact);
-    M.SetFactory("CoarseSolver", Teuchos::null);
-
-
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void
-MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-SetBlockDependencyTree(MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node> & M, LocalOrdinal row, LocalOrdinal col, const std::string& mode)  const {
-
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    typedef MueLu::Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1PFactory;
-    typedef MueLu::Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> Q2Q1uPFactory;
-    typedef MueLu::SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node > SubBlockAFactory;
-    typedef MueLu::PatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node > PatternFactory;
-    typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ConstraintFactory;
-    typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> EminPFactory;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  SetBlockDependencyTree(MueLu::FactoryManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>& M, LocalOrdinal row, LocalOrdinal col, const std::string& mode, const ParameterList& paramList) const {
+    typedef MueLu::ConstraintFactory <SC,LO,GO,NO> ConstraintFactory;
+    typedef MueLu::EminPFactory      <SC,LO,GO,NO> EminPFactory;
+    typedef MueLu::PatternFactory    <SC,LO,GO,NO> PatternFactory;
+    typedef MueLu::Q2Q1PFactory      <SC,LO,GO,NO> Q2Q1PFactory;
+    typedef MueLu::Q2Q1uPFactory     <SC,LO,GO,NO> Q2Q1uPFactory;
+    typedef MueLu::SubBlockAFactory  <SC,LO,GO,NO> SubBlockAFactory;
 
     RCP<SubBlockAFactory> AFact = rcp(new SubBlockAFactory());
     AFact->SetFactory  ("A",         MueLu::NoFactory::getRCP());
@@ -758,16 +609,19 @@ SetBlockDependencyTree(MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal
 
     RCP<MueLu::Factory> Q2Q1Fact;
 
-    bool xSSTRUCTURED = false;
+    const bool isStructured = false;
 
-    if (xSSTRUCTURED) {
+    if (isStructured) {
       Q2Q1Fact = rcp(new Q2Q1PFactory);
 
     } else {
       Q2Q1Fact = rcp(new Q2Q1uPFactory);
       ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
       q2q1ParamList.set("mode", mode);
-      // q2q1ParamList.set("phase2", false);
+      if (paramList.isParameter("dump status"))
+        q2q1ParamList.set("dump status", paramList.get<bool>("dump status"));
+      if (paramList.isParameter("phase2"))
+        q2q1ParamList.set("phase2", paramList.get<bool>("phase2"));
       Q2Q1Fact->SetParameterList(q2q1ParamList);
     }
     Q2Q1Fact->SetFactory("A", AFact);
@@ -775,7 +629,9 @@ SetBlockDependencyTree(MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal
 
     RCP<PatternFactory> patternFact = rcp(new PatternFactory);
     ParameterList patternParams = *(patternFact->GetValidParameterList());
-    patternParams.set("emin: pattern order", 0);
+    // Our prolongator constructs the exact pattern we are going to use,
+    // therefore we do not expand it
+    patternParams.set("emin: pattern order", MUELU_GPD("emin: pattern order", int, 0));
     patternFact->SetParameterList(patternParams);
     patternFact->SetFactory("A", AFact);
     patternFact->SetFactory("P", Q2Q1Fact);
@@ -790,20 +646,15 @@ SetBlockDependencyTree(MueLu::FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal
     EminPFact->SetFactory("Constraint", CFact);
     EminPFact->SetFactory("P",          Q2Q1Fact);
     M.SetFactory("P", EminPFact);
+  }
 
-}
+  // Public functions overridden from Teuchos::Describable
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const {
+    return "Thyra::MueLuTpetraQ2Q1PreconditionerFactory";
+  }
 
-
-
-
-
-// Public functions overridden from Teuchos::Describable
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::string MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
-{
-  return "Thyra::MueLuTpetraQ2Q1PreconditionerFactory";
-}
+#undef MUELU_GPD
 
 } // namespace Thyra
 
