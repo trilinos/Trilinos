@@ -130,8 +130,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk) :
-        cijk_(cijk), s_(cijk_.dimension()) {}
+      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal) :
+        cijk_(cijkVal), s_(cijk_.dimension()) {}
 
       //! Constructor with Cijk \c cijk and specified size \c sz
       /*!
@@ -139,8 +139,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk,
-          ordinal_type sz) : cijk_(cijk), s_(sz) {}
+      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal,
+          ordinal_type sz) : cijk_(cijkVal), s_(sz) {}
 
       //! View constructor
       /*!
@@ -149,9 +149,9 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk,
+      PCE(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal,
           ordinal_type sz, pointer v, bool owned) :
-        cijk_(cijk), s_(sz,v,owned) {}
+        cijk_(cijkVal), s_(sz,v,owned) {}
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
@@ -223,8 +223,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk) {
-        cijk_ = cijk;
+      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal) {
+        cijk_ = cijkVal;
         s_.resize(cijk_.dimension());
       }
 
@@ -234,8 +234,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk) volatile {
-        cijk_ = cijk;
+      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal) volatile {
+        cijk_ = cijkVal;
         s_.resize(cijk_.dimension());
       }
 
@@ -245,8 +245,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk, ordinal_type sz) {
-        cijk_ = cijk;
+      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal, ordinal_type sz) {
+        cijk_ = cijkVal;
         s_.resize(sz);
       }
 
@@ -256,8 +256,8 @@ namespace Sacado {
        */
       template <typename M>
       KOKKOS_INLINE_FUNCTION
-      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijk, ordinal_type sz) volatile {
-        cijk_ = cijk;
+      void reset(const Stokhos::CrsProductTensor<value_type, device_type, M>& cijkVal, ordinal_type sz) volatile {
+        cijk_ = cijkVal;
         s_.resize(sz);
       }
 
@@ -728,7 +728,7 @@ namespace Sacado {
       Storage s_;
 
     private:
-  
+
       //PCE division using CG with diagonal preconditioning
 //      KOKKOS_INLINE_FUNCTION
 //      void CG_divide(const PCE& a, const PCE& b, PCE& c);
@@ -1111,7 +1111,7 @@ namespace Sacado {
       PCEPartition( const iType0 & i0 , const iType1 & i1 ) :
         begin(i0), end(i1) {}
     };
-   
+
 /*   template <typename Storage>
    KOKKOS_INLINE_FUNCTION
    void
@@ -1123,14 +1123,14 @@ namespace Sacado {
      const ordinal_type size = c.size();
      //Needed scalars
      value_type alpha, beta, rTz, rTz_old, resid;
-     
-     //Needed temporary PCEs 
+
+     //Needed temporary PCEs
      PCE<Storage> r(a.cijk(),size);
      PCE<Storage> p(a.cijk(),size);
      PCE<Storage> bp(a.cijk(),size);
      PCE<Storage> z(a.cijk(),size);
- 
-     //compute residual = a - b*c 
+
+     //compute residual = a - b*c
      r =  a - b*c;
      z = r/b.coeff(0);
      p = z;
@@ -1140,7 +1140,7 @@ namespace Sacado {
      ordinal_type k = 0;
      value_type tol = 1e-6;
      while ( resid > tol && k < 100){
-       //Compute b*p 
+       //Compute b*p
        bp = b*p;
 
        //Compute alpha = <r,z>/<p,b*p>

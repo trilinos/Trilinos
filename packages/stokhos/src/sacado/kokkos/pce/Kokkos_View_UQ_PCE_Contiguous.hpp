@@ -556,7 +556,7 @@ public:
   template< class AllocationProperties >
   explicit inline
   View( const AllocationProperties & prop ,
-        const cijk_type & cijk ,
+        const cijk_type & cijkVal ,
         const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -571,7 +571,7 @@ public:
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
-      m_cijk = cijk;
+      m_cijk = cijkVal;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
       if (m_storage_size == 0)
@@ -629,7 +629,7 @@ public:
   template< class AllocationProperties , typename iType >
   explicit inline
   View( const AllocationProperties & prop ,
-        const cijk_type & cijk ,
+        const cijk_type & cijkVal ,
         const iType * const n ,
         const typename Impl::ViewAllocProp< traits , AllocationProperties >::size_type = 0 )
     : m_ptr_on_device(0)
@@ -646,7 +646,7 @@ public:
       const size_t n7 = Rank >= 7 ? n[7] : 0 ;
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
-      m_cijk = cijk;
+      m_cijk = cijkVal;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
       if (m_storage_size == 0)
@@ -699,7 +699,7 @@ public:
 
   template< typename T >
   View( T * ptr ,
-        const cijk_type & cijk ,
+        const cijk_type & cijkVal ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -716,7 +716,7 @@ public:
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
-      m_cijk = cijk;
+      m_cijk = cijkVal;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
       if (m_storage_size == 0)
