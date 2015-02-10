@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -86,7 +86,7 @@ bool run_linear_op_with_solve_tests(
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  //typedef typename ST::magnitudeType ScalarMag;
 
   out
     << "\n***"
@@ -110,7 +110,7 @@ bool run_linear_op_with_solve_tests(
       *Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>(),
       M );
 
-  RCP<const Thyra::LinearOpWithSolveBase<Scalar> > 
+  RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
     M_lows = M_lows_nonconst;
 
   out << "\nD) Test the LOB interface of M_lows ...\n";
@@ -160,28 +160,28 @@ bool run_linear_op_with_solve_tests(
 
     {
       OSTab tab2(out);
-      
+
       out << "\nG.1.a) Test that we can extract the underlying const M_lows ...\n";
       {
         OSTab tab3(out);
         TEST_EQUALITY( M_lows,
           rcp_dynamic_cast<const Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj,true)->getOp() );
       }
-      
+
       out << "\nG.1.b) Testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
         OSTab tab3(out);
         const bool result = linearOpTester.check(*M_lows_adj, inOutArg(out));
         if(!result) success = false;
       }
-      
+
       out << "\nG.1.c) Testing LOWSB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
         OSTab tab3(out);
         const bool result = linearOpWithSolveTester.check(*M_lows_adj, &out);
         if(!result) success = false;
       }
-      
+
       out << "\nG.1.d) Testing that M_lows_adj is the adjoint of M (M_adj) ...\n";
       const RCP<const LinearOpBase<Scalar> > M_adj = Thyra::adjoint<Scalar>(M);
       {
@@ -198,7 +198,7 @@ bool run_linear_op_with_solve_tests(
 
     {
       OSTab tab3(out);
-      
+
       out << "\nG.2.a) Test that we can extract the underlying non-const and const M_lows ...\n";
       {
         OSTab tab4(out);
@@ -207,7 +207,7 @@ bool run_linear_op_with_solve_tests(
         TEST_EQUALITY( M_lows_nonconst,
           rcp_dynamic_cast<Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj_nonconst,true)->getNonconstOp() );
       }
-      
+
       out << "\nG.2.b) Only testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj_nonconst ...\n";
       {
         OSTab tab4(out);
@@ -215,9 +215,9 @@ bool run_linear_op_with_solve_tests(
         if(!result) success = false;
       }
     }
-    
+
   }
-  
+
   return success;
 
 }
@@ -298,8 +298,8 @@ int main( int argc, char* argv[] )
   if(success)
     *out << "\nAll of the tests seem to have run successfully!\n";
   else
-    *out << "\nOh no! at least one of the test failed!\n";	
-  
+    *out << "\nOh no! at least one of the test failed!\n";
+
   return success ? 0 : 1;
 
 }
