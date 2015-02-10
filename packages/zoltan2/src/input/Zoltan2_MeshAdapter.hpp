@@ -410,7 +410,7 @@ public:
       lno_t *start = new lno_t [LocalNumIDs+1];
       // FIXME (mfh 09 Feb 2015) This probably should be a vector of
       // GO, not a vector of int.
-      std::vector<int> adj;
+      std::vector<GO> adj;
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
         start[localElement] = nadj;
