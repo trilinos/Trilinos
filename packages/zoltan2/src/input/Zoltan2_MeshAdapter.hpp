@@ -56,11 +56,11 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 
 namespace Zoltan2 {
-  
-  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or 
+
+  /*!  \brief Enumerate entity types for meshes:  Regions, Faces, Edges, or
    *                                              Vertices
    */
-  
+
 enum MeshEntityType {
   MESH_REGION,
   MESH_FACE,
@@ -126,27 +126,27 @@ public:
   typedef Tpetra::Export<LO, GO, Node>         export_type;
   typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
 #endif
-  
+
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
-  
+
   /*! \brief Destructor
    */
   virtual ~MeshAdapter() {};
-  
+
   // Default MeshEntityType is MESH_REGION with MESH_FACE-based adjacencies and
   // second adjacencies and coordinates
   MeshAdapter() : primaryEntityType(MESH_REGION),
                   adjacencyEntityType(MESH_FACE),
-		  secondAdjacencyEntityType(MESH_FACE) {};
-  
+                  secondAdjacencyEntityType(MESH_FACE) {};
+
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
-  
+
   /*! \brief Returns the number of mesh entities on this process.
    */
   virtual size_t getLocalNumOf(MeshEntityType etype) const = 0;
-  
-  
+
+
   /*! \brief Provide a pointer to this process' identifiers.
       \param Ids will on return point to the list of the global Ids for this
        process.
@@ -161,12 +161,12 @@ public:
    *   are equally weighted.
    */
   virtual int getNumWeightsPerOf(MeshEntityType etype) const { return 0; }
-  
+
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
       \param weights on return will contain a list of the weights for the
-               number specified.  
+               number specified.
 
       \param stride on return will indicate the stride of the weights list.
 
@@ -193,7 +193,7 @@ public:
    *    information if it is present.
    */
   virtual int getDimension() const { return 0; }
-  
+
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
       \param stride  describes the layout of the coordinate values in
@@ -205,7 +205,7 @@ public:
          being provided in the coords list.
   */
   virtual void getCoordinatesViewOf(MeshEntityType etype,
-    const scalar_t *&coords, int &stride, int coordDim) const 
+    const scalar_t *&coords, int &stride, int coordDim) const
   {
     coords = NULL;
     stride = 0;
@@ -237,7 +237,7 @@ public:
          Ids for each entity.
   */
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const zgid_t *& adjacencyIds) const 
+     const lno_t *&offsets, const zgid_t *& adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -247,8 +247,8 @@ public:
 
   /*! \brief Returns whether a second adjacency combination is available.
    */
-  virtual bool avail2ndAdjs(MeshEntityType sourcetarget, 
-			    MeshEntityType through) const {
+  virtual bool avail2ndAdjs(MeshEntityType sourcetarget,
+                            MeshEntityType through) const {
     if (availAdjs(sourcetarget, through)) {
       return true;
     }
@@ -256,10 +256,13 @@ public:
   }
 
   virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
-				    MeshEntityType through,
-				    const lno_t *&offsets,
-				    const zgid_t *&adjacencyIds) const
+                                    MeshEntityType through,
+                                    const lno_t *&offsets,
+                                    const zgid_t *&adjacencyIds) const
   {
+    typedef Tpetra::global_size_t GST;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
     if (availAdjs(sourcetarget, through)) {
@@ -273,7 +276,7 @@ public:
       // Get the default communicator and Kokkos Node instance
       // TODO:  Default communicator may not be correct here
       RCP<const Comm<int> > comm =
-	DefaultPlatform::getDefaultPlatform ().getComm ();
+        DefaultPlatform::getDefaultPlatform ().getComm ();
 
       // Get node-element connectivity
 
@@ -301,24 +304,24 @@ public:
 
       // count owned nodes
       int LocalNumOfNodes = getLocalNumOf(through);
-      
+
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
       for (int i = 0; i < LocalNumIDs; ++i) {
-	sourcetargetGIDs[i] = as<GO> (Ids[i]);
+        sourcetargetGIDs[i] = as<GO> (Ids[i]);
       }
 
       //Build a list of the global through ids...
       throughGIDs.resize (LocalNumOfNodes);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	throughGIDs[i] = as<GO> (throughIds[i]);
+        throughGIDs[i] = as<GO> (throughIds[i]);
       }
 
       //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp (new map_type (-1, sourcetargetGIDs (), 0, comm));
+      sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 0, comm));
 
       //Generate Map for through.
-      throughMapG = rcp (new map_type (-1, throughGIDs (), 0 , comm));
+      throughMapG = rcp (new map_type (INVALID, throughGIDs (), 0 , comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -331,24 +334,24 @@ public:
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
 
-	//globalRow for Tpetra Graph
-	global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
+        //globalRow for Tpetra Graph
+        global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
 
-	int NumAdjs;
-	if (localElement + 1 < LocalNumIDs) {
-	  NumAdjs = offsets[localElement+1];
-	} else {
-	  NumAdjs = LocalNumAdjs;
-	}
+        int NumAdjs;
+        if (localElement + 1 < LocalNumIDs) {
+          NumAdjs = offsets[localElement+1];
+        } else {
+          NumAdjs = LocalNumAdjs;
+        }
 
-	for (int j = offsets[localElement]; j < NumAdjs; ++j) {
-	  int globalCol = as<int> (adjacencyIds[j]);
-	  //create ArrayView globalCol object for Tpetra
-	  ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol,1);
-	  
-	  //Update Tpetra adjs Graph
-	  adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
-	}// *** node loop ***
+        for (int j = offsets[localElement]; j < NumAdjs; ++j) {
+          int globalCol = as<int> (adjacencyIds[j]);
+          //create ArrayView globalCol object for Tpetra
+          ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+          //Update Tpetra adjs Graph
+          adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
+        }// *** node loop ***
       }// *** element loop ***
 
       //Fill-complete adjs Graph
@@ -356,35 +359,35 @@ public:
 
       // Construct adjs matrix.
       RCP<sparse_matrix_type> adjsMatrix =
-	rcp (new sparse_matrix_type (adjsGraph.getConst ()));
+        rcp (new sparse_matrix_type (adjsGraph.getConst ()));
 
       adjsMatrix->setAllToScalar (STS::zero ());
 
       // Find the local column numbers
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
-	rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
-			   Tpetra::GloballyDistributed));
+        rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
+                           Tpetra::GloballyDistributed));
 
       // Create the exporter from this process' column Map to the global
       // 1-1 column map. (???)
       RCP<const export_type> bdyExporter =
-	rcp (new export_type (ColMap, globalMap));
+        rcp (new export_type (ColMap, globalMap));
       // Create a vector of global column indices to which we will export
       RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
-	rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+        rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
       // Create a vector of local column indices from which we will export
       RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
-	rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
+        rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
       myColsToZeroT->putScalar (0);
 
       // Set to 1 all local columns corresponding to the local rows specified.
       for (int i = 0; i < LocalNumIDs; ++i) {
-	const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
-	const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
-	// Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
-	// Epetra has a separate Epetra_IntVector class for ints.
-	myColsToZeroT->replaceLocalValue (localCol, 1);
+        const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
+        const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
+        // Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
+        // Epetra has a separate Epetra_IntVector class for ints.
+        myColsToZeroT->replaceLocalValue (localCol, 1);
       }
 
       // Export to the global column map.
@@ -397,30 +400,32 @@ public:
 
       // Form 2ndAdjs
       RCP<sparse_matrix_type> secondAdjs =
-	rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+        rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
       Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
-				     true,*secondAdjs);
+                                     true,*secondAdjs);
       Array<GO> Indices;
       Array<ST> Values;
 
       /* Allocate memory necessary for the adjacency */
       lno_t *start = new lno_t [LocalNumIDs+1];
+      // FIXME (mfh 09 Feb 2015) This probably should be a vector of
+      // GO, not a vector of int.
       std::vector<int> adj;
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
-	start[localElement] = nadj;
-	const GO globalRow = Ids[localElement];
-	size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
-	Indices.resize (NumEntries);
-	Values.resize (NumEntries);
-	secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+        start[localElement] = nadj;
+        const GO globalRow = Ids[localElement];
+        size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
+        Indices.resize (NumEntries);
+        Values.resize (NumEntries);
+        secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
-	for (size_t j = 0; j < NumEntries; ++j) {
-	  if(globalRow != Indices[j]) {
-	    adj.push_back(Indices[j]);
-	    nadj++;;
-	  }
-	}
+        for (size_t j = 0; j < NumEntries; ++j) {
+          if(globalRow != Indices[j]) {
+            adj.push_back(Indices[j]);
+            nadj++;;
+          }
+        }
       }
 
       Ids = NULL;
@@ -429,7 +434,7 @@ public:
       zgid_t *adj_ = new zgid_t [nadj];
 
       for (size_t i=0; i < nadj; i++) {
-	adj_[i] = adj[i];
+        adj_[i] = adj[i];
       }
 
       offsets = start;
@@ -452,7 +457,7 @@ public:
       lno_t const *offsets;
       zgid_t const *adjacencyIds;
       size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
-				       adjacencyIds);
+                                       adjacencyIds);
       delete [] offsets;
       delete [] adjacencyIds;
       return nadj;
@@ -543,7 +548,7 @@ public:
   inline enum MeshEntityType getSecondAdjacencyEntityType() const {
     return this->secondAdjacencyEntityType;
   }
-  
+
   /*! \brief Sets the primary, adjacency, and second adjacency entity types.
    *  Called by algorithm based on parameter values in parameter list from
    *  application.  Also sets primaryEntityType, adjacencyEntityType, and
@@ -553,67 +558,67 @@ public:
    *  VJL:  Maybe
    */
   void setEntityTypes(std::string ptypestr, std::string atypestr,
-		      std::string satypestr) {
+                      std::string satypestr) {
 
     if (ptypestr != atypestr && ptypestr != satypestr) {
       if (ptypestr == "region")
-	this->primaryEntityType = MESH_REGION;
+        this->primaryEntityType = MESH_REGION;
       else if (ptypestr == "face")
-	this->primaryEntityType = MESH_FACE;
+        this->primaryEntityType = MESH_FACE;
       else if (ptypestr == "edge")
-	this->primaryEntityType = MESH_EDGE;
+        this->primaryEntityType = MESH_EDGE;
       else if (ptypestr == "vertex")
-	this->primaryEntityType = MESH_VERTEX;
+        this->primaryEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << ptypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << ptypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
-      
+
       if (atypestr == "region")
-	this->adjacencyEntityType = MESH_REGION;
+        this->adjacencyEntityType = MESH_REGION;
       else if (atypestr == "face")
-	this->adjacencyEntityType = MESH_FACE;
+        this->adjacencyEntityType = MESH_FACE;
       else if (atypestr == "edge")
-	this->adjacencyEntityType = MESH_EDGE;
+        this->adjacencyEntityType = MESH_EDGE;
       else if (atypestr == "vertex")
-	this->adjacencyEntityType = MESH_VERTEX;
+        this->adjacencyEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << atypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << atypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
-      
+
       if (satypestr == "region")
-	this->secondAdjacencyEntityType = MESH_REGION;
+        this->secondAdjacencyEntityType = MESH_REGION;
       else if (satypestr == "face")
-	this->secondAdjacencyEntityType = MESH_FACE;
+        this->secondAdjacencyEntityType = MESH_FACE;
       else if (satypestr == "edge")
-	this->secondAdjacencyEntityType = MESH_EDGE;
+        this->secondAdjacencyEntityType = MESH_EDGE;
       else if (satypestr == "vertex")
-	this->secondAdjacencyEntityType = MESH_VERTEX;
+        this->secondAdjacencyEntityType = MESH_VERTEX;
       else {
-	std::ostringstream emsg;
-	emsg << __FILE__ << "," << __LINE__
-	     << " error:  Invalid MeshEntityType " << satypestr << std::endl;
-	emsg << "Valid values: region  face  edge  vertex" << std::endl;
-	throw std::runtime_error(emsg.str());
+        std::ostringstream emsg;
+        emsg << __FILE__ << "," << __LINE__
+             << " error:  Invalid MeshEntityType " << satypestr << std::endl;
+        emsg << "Valid values: region  face  edge  vertex" << std::endl;
+        throw std::runtime_error(emsg.str());
       }
     }
     else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-	   << " error:  PrimaryEntityType " << ptypestr
-	   << " matches AdjacencyEntityType " << atypestr
-	   << " or SecondAdjacencyEntityType " << satypestr << std::endl;
+           << " error:  PrimaryEntityType " << ptypestr
+           << " matches AdjacencyEntityType " << atypestr
+           << " or SecondAdjacencyEntityType " << satypestr << std::endl;
       throw std::runtime_error(emsg.str());
     }
   }
-  
+
   /*! \brief Optional method allowing the idx-th weight of entity type etype
    *  to be set as the number of neighbors (the degree) of the entity
    *  Default is false; user can change in his MeshAdapter implementation.
@@ -628,20 +633,20 @@ public:
   size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
   }
-  
+
   void getIDsView(const zgid_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
-  
+
   int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
-  
+
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
 
-  void getCoordinatesView(const scalar_t *&coords, int &stride, 
+  void getCoordinatesView(const scalar_t *&coords, int &stride,
                           int coordDim) const
   {
     getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
@@ -658,12 +663,12 @@ private:
                                          // colored, matched, etc.
   enum MeshEntityType adjacencyEntityType; // Entity type defining first-order
                                            // adjacencies; adjacencies are of
-                                           // this type.  
+                                           // this type.
   enum MeshEntityType secondAdjacencyEntityType; // Bridge entity type
                                                  // defining second-order
                                                  // adjacencies.
 };
-  
+
 }  //namespace Zoltan2
 
 #endif
