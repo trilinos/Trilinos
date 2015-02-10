@@ -34,7 +34,7 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_util/diag/String.hpp>     // for Identifier, String
-#include <stk_util/environment/Demangle.hpp>  // for demangle
+#include <stk_util/diag/StringUtil.hpp> // for demangle
 #include <stk_util/util/Writer.hpp>     // for operator<<, Writer
 #include "stk_util/parallel/MPI.hpp"    // for Loc, TempLoc
 
@@ -49,7 +49,7 @@ operator<<(
   const std::type_info &        t)
 {
   if (dout.shouldPrint())
-    dout << stk::demangle(t.name());
+    dout << sierra::demangle(t.name());
   return dout;
 }
 
