@@ -3761,11 +3761,13 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 #if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
   {
@@ -3905,11 +3907,13 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 #if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (nodal_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
   {
@@ -3994,11 +3998,13 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 #if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-pedantic"
+#endif
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
   {
@@ -7362,6 +7368,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 #if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-pedantic"
+#endif
    if (smoother == (void *) ML_Gen_Smoother_Cheby || smoother == (void *) ML_Gen_Smoother_MLS) {
 
 
@@ -7516,6 +7523,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");
      exit(1);
    }
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
    return 0;
