@@ -439,7 +439,7 @@ KLU_numeric<Entry, Int> *KLU_factor         /* returns NULL if error, or a valid
 )
 {
     Int n, nzoff, nblocks, maxblock, k, ok = TRUE ;
-    Int *R ;
+
     KLU_numeric<Entry, Int> *Numeric ;
     size_t n1, nzoff1, s, b6, n3 ;
 
@@ -466,7 +466,7 @@ KLU_numeric<Entry, Int> *KLU_factor         /* returns NULL if error, or a valid
     nzoff = Symbolic->nzoff ;
     nblocks = Symbolic->nblocks ;
     maxblock = Symbolic->maxblock ;
-    R = Symbolic->R ;
+
     PRINTF (("KLU_factor:  n %d nzoff %d nblocks %d maxblock %d\n",
         n, nzoff, nblocks, maxblock)) ;
 

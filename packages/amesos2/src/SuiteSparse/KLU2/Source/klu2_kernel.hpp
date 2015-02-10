@@ -582,6 +582,9 @@ static void prune
 
     /* check to see if any column of L can be pruned */
     GET_POINTER (LU, Uip, Ulen, Ui, Ux, k, ulen) ;
+
+    // Try not to warn about Ux never being used
+    (void) Ux;
     for (p = 0 ; p < ulen ; p++)
     {
         j = Ui [p] ;
