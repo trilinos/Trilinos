@@ -6632,7 +6632,7 @@ namespace Tpetra {
           outOfBounds = true;
           break;
         }
-        size_t tmpNumEnt = static_cast<LO> (valInTmp.size ());
+        size_t tmpNumEnt = static_cast<size_t> (valInTmp.size ());
         if (tmpNumEnt < static_cast<size_t> (numEnt) ||
             static_cast<size_t> (indInTmp.size ()) < static_cast<size_t> (numEnt)) {
           tmpNumEnt = std::max (static_cast<size_t> (numEnt), tmpNumEnt * 2);
