@@ -2,8 +2,8 @@
 Trilinos Configure, Build, Test, and Install Quick Reference Guide
 ==================================================================
 
-:Author: Roscoe A. Bartlett
-:Contact: bartlett.roscoe@gmail.com
+:Author: Roscoe A. Bartlett (bartlettra@orn.gov)
+:Contact: trilinos-framework@software.sandia.gov
 
 :Abstract: This document contains quick reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
 
@@ -655,6 +655,32 @@ cache variable::
   -D Trilinos_CXX11_FLAGS="<compiler flags>"
 
 
+Enabling explicit template instantiation for C++
+------------------------------------------------
+
+To enable explicit template instantiation for C++ code for packages that
+support it, configure with::
+
+  -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION=ON
+
+When ``OFF``, all packages that have templated C++ code will use implicit
+template instantiation.
+
+Explicit template instantiation can be enabled (``ON``) or disabled (``OFF``)
+for individual packages with::
+
+
+  -D <TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION=[ON|OFF]
+
+The default value for ``<TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION`` is
+set by ``Trilinos_ENABLE_EXPLICIT_INSTANTIATION``.
+
+For packages that support it, explicit template instantation can massively
+reduce the compile times for the C++ code involved.  To see what packages
+support explicit instantation just search the CMakeCache.txt file for varibles
+with ``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
+
+
 Disabling the Fortran compiler and all Fortran code
 ---------------------------------------------------
 
@@ -956,7 +982,7 @@ are just a convenience to make it easier to specify the location of the
 libraries.
 
 In order to allow a TPL that normally requires one or more libraries to ignore
-the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES``, for example::
+the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
   -D BLAS_LIBRARY_NAMES=""
 
@@ -982,6 +1008,12 @@ WARNING: Do *not* try to hack the system and set::
 
 This is not compatible with proper CMake usage and it not guaranteed
 to be supported.
+
+If all the parts of a TPL are not found on an initial configure, then one can
+change the variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``,
+and/or ``<TPLNAME>_LIBRARY_DIRS``.  One can do this over and over until the
+TPL is found. By reconfiguring, one avoid a complete configure from scrath
+which saves time.
 
 
 Disabling support for a Third-Party Library (TPL)
@@ -1244,7 +1276,7 @@ timeouts for the individual tests that have their own timeout set (through the
 ``TIMEOUT`` argument for each individual test) can be scaled by a constant
 factor ``<testTimeoutScaleFactor>`` by configuring with::
 
-  -D Trilinos_SCALE_TEST_TIMEOUT_TESTING_TIMEOUT=<testTimeoutScaleFactor>
+  -D Trilinos_SCALE_TEST_TIMEOUT=<testTimeoutScaleFactor>
 
 Here, ``<testTimeoutScaleFactor>`` can be an integral number like ``5`` or can
 be fractional number like ``1.5``.
@@ -1807,7 +1839,7 @@ directory, do::
 
   $ ctest -T memcheck -L <TRIBITS_PACKAGE>
 
-To run valgrind on a specific test, from the **base** project directory, do:
+To run valgrind on a specific test, from the **base** project directory, do::
 
   $ ctest -T memcheck -R ^<FULL_TEST_NAME>$
 
