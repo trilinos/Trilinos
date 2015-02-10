@@ -43,9 +43,6 @@
 
 #include "Teuchos_StandardDependencies.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#ifdef HAVE_TEUCHOS_QT
-  #include <QDir>
-#endif
 
 
 namespace Teuchos{
