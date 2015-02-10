@@ -3754,11 +3754,20 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* Get maximum eigenvalue for damping parameter. */
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     dataptr->omega = *dbl_arg1;
@@ -3893,11 +3902,16 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->ntimes = 1;
    dataptr->sm_nodal->omega = 1.0;
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
   if ( (nodal_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(nodal_args, 1);
     dataptr->omega = *dbl_arg1;
@@ -3977,11 +3991,16 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* Get maximum eigenvalue for damping parameter. */
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
   if ( (edge_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockJacobi) ||
        (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) )
+#pragma GCC diagnostic pop
+#endif
   {
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1))
@@ -7340,6 +7359,9 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 40600
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-pedantic"
    if (smoother == (void *) ML_Gen_Smoother_Cheby || smoother == (void *) ML_Gen_Smoother_MLS) {
 
 
@@ -7494,6 +7516,8 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");
      exit(1);
    }
+#pragma GCC diagnostic pop
+#endif
    return 0;
 }
 
