@@ -77,6 +77,7 @@ namespace Impl {
 __device__ inline
 void cuda_abort( const char * const message )
 {
+#ifndef __APPLE__
   const char empty[] = "" ;
 
   __assertfail( (const void *) message ,
@@ -84,6 +85,7 @@ void cuda_abort( const char * const message )
                 (unsigned int) 0 ,
                 (const void *) empty ,
                 sizeof(char) );
+#endif
 }
 
 } // namespace Impl

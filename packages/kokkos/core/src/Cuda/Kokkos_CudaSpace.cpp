@@ -177,7 +177,7 @@ void CudaUVMSpace::texture_object_attach(  Impl::AllocationTracker const & track
 
 bool CudaUVMSpace::available()
 {
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && !defined(__APPLE__)
   enum { UVM_available = true };
 #else
   enum { UVM_available = false };
