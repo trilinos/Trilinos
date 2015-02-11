@@ -144,7 +144,7 @@ public:
 
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
-//KDD  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+  //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
 
   /*! \brief Returns the number of mesh entities on this process.
    */
@@ -323,14 +323,15 @@ public:
 
 // KDD SHOULD 0 below be global_min(Ids[i])?
       //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 0, comm));
-
+      sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 1, comm));
+      fprintf(stderr,"sourcetargetMapG->getGlocalElement(Ids[0])=%d\n",
+	      sourcetargetMapG->getGlobalElement(Ids[0]));
 // KDD SHOULD 0 below be global_min(throughIds[i])?
 // KDD throughGIDs' entries will not be unique across processors.  Think should use first constructor on web page.
 // KDD but then need global number of unique entities of type through.  Think that isn't readily available.
 // KDD      throughMapG = rcp (new map_type (getGlobalNumOf(through), whatever_the_index_base_should_be, comm));
       //Generate Map for through.
-      throughMapG = rcp (new map_type (INVALID, throughGIDs (), 0 , comm));
+      throughMapG = rcp (new map_type (INVALID, throughGIDs (), 1 , comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -354,11 +355,10 @@ public:
         }
 
         for (int j = offsets[localElement]; j < NumAdjs; ++j) {
-// KDD should this be global ordinal instead of int?
 // KDD can we insert all adjacencies at once instead of one at a time (since they are contiguous in adjacencyIds)?
-          int globalCol = as<int> (adjacencyIds[j]);
+          GO globalCol = as<GO> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
-          ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol,1);
+          ArrayView<GO> globalColAV = Teuchos::arrayView (&globalCol,1);
 
           //Update Tpetra adjs Graph
           adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
@@ -419,8 +419,6 @@ public:
 
       /* Allocate memory necessary for the adjacency */
       lno_t *start = new lno_t [LocalNumIDs+1];
-      // FIXME (mfh 09 Feb 2015) This probably should be a vector of
-      // GO, not a vector of int.
       std::vector<GO> adj;
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
