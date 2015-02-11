@@ -251,7 +251,7 @@ public:
   }
 
 private:
-  int dimension_, num_nodes_, num_elem_;
+  int dimension_, num_nodes_global_, num_nodes_, num_elem_;
   zgid_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   double *coords_, *Acoords_;
@@ -439,9 +439,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   int nprocs = comm.getSize();
 
   if (nprocs > 1) {
-    int neid = 0, num_nodes_global, num_elems_global, num_elem_blks_global;
+    int neid = 0, num_elems_global, num_elem_blks_global;
     int num_node_sets_global, num_side_sets_global;
-    error += im_ne_get_init_global(neid,&num_nodes_global,&num_elems_global,
+    error += im_ne_get_init_global(neid, &num_nodes_global_, &num_elems_global,
 				   &num_elem_blks_global,&num_node_sets_global,
 				   &num_side_sets_global);
 
