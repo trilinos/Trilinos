@@ -89,13 +89,12 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < typename PCEType >
+template < typename PCEType, typename Device>
 struct PCEAllocation;
 
-template < class Storage >
-struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
+template < typename Storage, typename Device >
+struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   typedef Sacado::UQ::PCE<Storage> value_type;
-  typedef typename Storage::device_type Device;
   typedef typename Storage::value_type scalar_type;
   typedef typename Device::memory_space memory_space;
 
@@ -179,8 +178,8 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   };
 };
 
-template < class Storage >
-struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
+template < typename Storage, typename Device >
+struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
 
@@ -192,7 +191,7 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
 
   template <typename pce_type>
   KOKKOS_INLINE_FUNCTION
-  PCEAllocation& operator=(const PCEAllocation<pce_type>& rhs) {
+  PCEAllocation& operator=(const PCEAllocation<pce_type,Device>& rhs) {
     m_scalar_ptr_on_device = rhs.m_scalar_ptr_on_device;
     m_tracker = rhs.m_tracker;
     return *this;
@@ -210,7 +209,10 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
   // Assign scalar_type pointer to given ptr
   // This makes BIG assumption on how the data was allocated
   void assign(const value_type * ptr) {
-    m_scalar_ptr_on_device = ptr->coeff();
+    if (ptr != 0)
+      m_scalar_ptr_on_device = ptr->coeff();
+    else
+      m_scalar_ptr_on_device = 0;
   }
 };
 
@@ -292,7 +294,8 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::PCEAllocation<typename traits::value_type> allocation_type;
+  typedef Impl::PCEAllocation<typename traits::value_type,
+                              typename traits::device_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
