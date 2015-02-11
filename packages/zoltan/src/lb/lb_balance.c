@@ -400,7 +400,7 @@ struct OVIS_parameters ovisParameters;
     goto End;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-    int i, np, fp;
+    int np, fp;
     for (i = 0; i < zz->Num_Proc; i++) {
       Zoltan_LB_Proc_To_Part(zz, i, &np, &fp);
       printf("%d Proc_To_Part Proc %d NParts %d FPart %d\n", 
@@ -449,12 +449,13 @@ struct OVIS_parameters ovisParameters;
   {
     int myRank = zz->Proc;
     if (myRank == 0){
-      int i, j;
-
+      int j;
       for (i = 0; i < zz->LB.Num_Global_Parts; i++){
         for (j = 0; j < part_dim; j++){
-          printf("Rank %d AG: part_sizes[%d] = %f (Num_Global_Parts = %d, part_dim = %d)\n",zz->Proc,
-                 (i*part_dim+j), part_sizes[i*part_dim+j],zz->LB.Num_Global_Parts, part_dim);
+          printf("Rank %d AG: part_sizes[%d] = %f "
+                 "(Num_Global_Parts = %d, part_dim = %d)\n", zz->Proc,
+                 (i*part_dim+j), part_sizes[i*part_dim+j],
+                 zz->LB.Num_Global_Parts, part_dim);
         }
       }
     }
@@ -738,7 +739,6 @@ struct OVIS_parameters ovisParameters;
   lb_time[0] = end_time - start_time;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST) {
-    int i;
     Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
     printf("ZOLTAN: Objects to be imported to Proc %d\n", zz->Proc);
     for (i = 0; i < *num_import_objs; i++) {

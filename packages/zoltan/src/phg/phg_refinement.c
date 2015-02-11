@@ -282,7 +282,7 @@ int    best_imbalance, imbalance;
   Zoltan_Heap_Make(&heap[1]);
 
   /* Initialize given partition as best partition */
-  best_cutsize = cutsize_beforepass = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
+  best_cutsize = cutsize_beforepass = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part);
   best_error = MAX (part_weight[0]-max_weight[0], part_weight[1]-max_weight[1]);
   best_imbalance = (part_weight[0]>max_weight[0])||(part_weight[1]>max_weight[1]);
   do {
@@ -330,7 +330,7 @@ int    best_imbalance, imbalance;
         imbal = (tw0==0.0) ? 0.0 : (part_weight[0]-tw0)/tw0;
         uprintf(hg->comm, "%4d: SEQ moving %4d from %d to %d cut=%6.0lf bal=%.3lf\n", step, vertex, sour, dest, cur_cutsize, imbal);
         /* Just for debugging */
-        cutsize = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part, p);
+        cutsize = Zoltan_PHG_Compute_NetCut(hg->comm, hg, part);
         if (cur_cutsize!=cutsize) {
             errexit("%s: SEQ after move cutsize=%.2lf Verify: total=%.2lf\n", uMe(hg->comm), cur_cutsize,
                     cutsize);
@@ -793,7 +793,7 @@ static int refine_fm2 (ZZ *zz,
         
 #ifdef _DEBUG
         /* Just for debugging */
-        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
+        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part);
         if (best_cutsize!=cutsize) {
             errexit("%s: Initial cutsize=%.2lf Verify: total=%.2lf\n", uMe(hgc), cutsize,
                     best_cutsize);
@@ -949,16 +949,16 @@ static int refine_fm2 (ZZ *zz,
             
             /* roll back the moves without any improvement */
             for (i=movecnt-1; i>=best_cutsizeat; --i) {
-                int v = moves[i];
-                if (v<0)
-                    v = -v-1;
+                int vv = moves[i];
+                if (vv<0)
+                    vv = -vv-1;
                 else /* we don't need to roll pins, or weights etc; rolling local ones suffices */
-                    fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, lweights);
-                mark[v] = 0;
+                    fm2_move_vertex_oneway_nonroot(vv, hg, part, lpins, lweights);
+                mark[vv] = 0;
             }
             for (i=0; i<best_cutsizeat; ++i){
-                int v = (moves[i] < 0 ) ? -moves[i] - 1 : moves[i];
-                mark[v] = 0;
+                int vv = (moves[i] < 0 ) ? -moves[i] - 1 : moves[i];
+                mark[vv] = 0;
             }
             if (detail_timing) 
                 ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfroll, hgc->Communicator);            
@@ -972,9 +972,9 @@ static int refine_fm2 (ZZ *zz,
         MPI_Bcast(moves, best_cutsizeat, MPI_INT, rootRank, hgc->col_comm);
         if (hgc->myProc_y!=rootRank) { /* now non-root does move simulation */
             for (i=0; i<best_cutsizeat; ++i) {
-                int v = moves[i];
-                if (v>=0)
-                    fm2_move_vertex_oneway_nonroot(v, hg, part, lpins, lweights);
+                int vv = moves[i];
+                if (vv>=0)
+                    fm2_move_vertex_oneway_nonroot(vv, hg, part, lpins, lweights);
             }
         }
         if (detail_timing) 
@@ -1063,7 +1063,7 @@ static int refine_fm2 (ZZ *zz,
             successivefails = 0; 
 #ifdef _DEBUG
         /* Just for debugging */
-        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
+        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part);
         imbal = (targetw0 == 0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
         /* debuggging code ends here */

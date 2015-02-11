@@ -845,7 +845,6 @@ exit(-1);
       /* Only do ordering if this was specified in the driver input file */
       /* NOTE: This part of the code is not modified to recognize
 	       blanked vertices. */
-    int i;
       ZOLTAN_ID_PTR order = NULL;	/* Ordering vector(s) */
       ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */

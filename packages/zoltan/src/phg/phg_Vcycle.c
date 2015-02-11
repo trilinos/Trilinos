@@ -756,8 +756,7 @@ End:
 double Zoltan_PHG_Compute_NetCut(
   PHGComm *hgc,
   HGraph *hg,
-  Partition part,
-  int p
+  Partition part
 )
 {
 /* Calculates the cutsize of a partition by summing the weight of all edges
