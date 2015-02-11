@@ -620,11 +620,11 @@ void AllocationTracker::reallocate( size_t size ) const
 {
   AllocationRecord * rec = to_alloc_rec( m_alloc_rec );
 
-  void * alloc_ptr = rec->allocator->reallocate( rec->alloc_ptr, rec->alloc_size, size );
+  void * the_alloc_ptr = rec->allocator->reallocate( rec->alloc_ptr, rec->alloc_size, size );
 
-  if ( NULL != alloc_ptr )
+  if ( NULL != the_alloc_ptr )
   {
-    *const_cast<void **>(&rec->alloc_ptr) = alloc_ptr;
+    *const_cast<void **>(&rec->alloc_ptr) = the_alloc_ptr;
     *const_cast<uint64_t *>(&rec->alloc_size) = size;
   }
   else {
@@ -642,8 +642,8 @@ void AllocationTracker::increment_ref_count() const
 void AllocationTracker::decrement_ref_count() const
 {
   AllocationRecord * alloc_rec = to_alloc_rec( m_alloc_rec );
-  uint32_t ref_count = alloc_rec->decrement_ref_count();
-  if (ref_count == 0u) {
+  uint32_t the_ref_count = alloc_rec->decrement_ref_count();
+  if (the_ref_count == 0u) {
     try {
       global_alloc_rec_pool.destroy( alloc_rec );
     }
