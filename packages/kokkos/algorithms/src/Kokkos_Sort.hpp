@@ -276,7 +276,7 @@ struct DefaultBinOp1D {
   //Construct BinOp with number of bins, minimum value and maxuimum value
   DefaultBinOp1D(int max_bins__, typename KeyViewType::const_value_type min,
                                typename KeyViewType::const_value_type max )
-     :max_bins_(max_bins__+1),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
+     :max_bins_(max_bins__+1),mul_(1.0*max_bins__/(max-min)),range_(max-min),min_(min) {}
 
   //Determine bin index from key value
   template<class ViewType>
