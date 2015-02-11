@@ -155,9 +155,6 @@ private:
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
     , OMPNODE
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    , THRUSTGPUNODE
-#endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
     , SERIAL_WRAPPER_NODE
@@ -188,9 +185,6 @@ private:
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
   Teuchos::RCP<KokkosClassic::OpenMPNode> ompNode_;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  Teuchos::RCP<KokkosClassic::ThrustGPUNode> thrustNode_;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
@@ -243,11 +237,6 @@ HybridPlatform::runUserCode (UserCode& codeobj)
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   case TPINODE:
     codeobj.template run<KokkosClassic::TPINode> (instList_, comm_, tpiNode_);
-    break;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  case THRUSTGPUNODE:
-    codeobj.template run<KokkosClassic::ThrustGPUNode> (instList_, comm_, thrustNode_);
     break;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
@@ -312,11 +301,6 @@ HybridPlatform::runUserCode ()
     UserCode<KokkosClassic::TPINode>::run (instList_, comm_, tpiNode_);
     break;
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  case THRUSTGPUNODE:
-    UserCode<KokkosClassic::ThrustGPUNode>::run (instList_, comm_, thrustNode_);
-    break;
-#endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
   case SERIAL_WRAPPER_NODE:
@@ -366,10 +350,6 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::OpenMPNode)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::TPINode)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::ThrustGPUNode)
-#endif
-
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosSerialWrapperNode)
@@ -392,7 +372,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(Kokkos::Compat::KokkosCudaWrapperNod
 // only do this if it's not any of the Node types listed above,
 // because the default Node type is just a typedef, and we don't want
 // to instantiate support for it twice.
-#if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
+#if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #    if ! defined (KOKKOS_HAVE_SERIAL) && ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DECL(KokkosClassic::DefaultNode::DefaultNodeType)

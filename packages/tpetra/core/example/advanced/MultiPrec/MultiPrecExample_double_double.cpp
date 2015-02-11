@@ -48,8 +48,6 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 
-// no CXX11 on the GPU
-#undef HAVE_KOKKOSCLASSIC_THRUST
 #include <Tpetra_HybridPlatform.hpp>
 
 #include <TpetraExt_TypeStack.hpp>

@@ -666,7 +666,12 @@ private:
   mutable magnitude_type Condest_;
 };
 
-//Set necessary local solve parameters when using ThrustGPU node
+// NOTE (mfh 11 Feb 2015) This used to exist in order to deal with
+// different behavior of Tpetra::Crs{Graph,Matrix} for
+// KokkosClassic::ThrustGPUNode.  In particular, fillComplete on a
+// CrsMatrix used to make the graph go away by default, so we had to
+// pass in a parameter to keep a host copy of the graph.  With the new
+// (Kokkos refactor) version of Tpetra, this problem has gone away.
 namespace detail {
   template<class MatrixType, class NodeType>
   struct setLocalSolveParams{
@@ -675,18 +680,7 @@ namespace detail {
       return param;
     }
   };
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
-  template<class MatrixType>
-  struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode>
-  {
-    static Teuchos::RCP<Teuchos::ParameterList>
-    setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
-      param->sublist ("fillComplete").sublist ("Local Sparse Ops").set ("Prepare Solve", true);
-      return param;
-    }
-  };
-#endif
-} //end namespace detail
+} // namespace detail
 
 template <class MatrixType>
 template <typename NewMatrixType>

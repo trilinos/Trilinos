@@ -164,7 +164,12 @@ solveWithBelosGPU (
   const Teuchos::RCP<const operator_type>& M_left,
   const Teuchos::RCP<const operator_type>& M_right) {
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
+
+  // FIXME (mfh 11 Feb 2015) I am removing
+  // KokkosClassic::ThrustGPUNode, so this example won't build.  We
+  // need to test this example, though!  We should figure out how to
+  // test it in a sensible way without needing ThrustGPUNode.
+#if 0 // ifdef HAVE_KOKKOSCLASSIC_THRUST
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
@@ -242,13 +247,14 @@ solveWithBelosGPU (
       node, X, A, B, prec_type, M_left, M_right);
   }
 
-#else
+#else // don't have ThrustGPUNode
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Solve on GPU requested by Kokkos CUDA support not enabled!");
+    true, std::logic_error, "KokkosClassic::ThrustGPUNode has been deprecated "
+    "and removed.  Please rewrite this function to use "
+    "Kokkos::Compat::KokkosCudaWrapperNode instead.");
 
-#endif
+#endif // whether ThrustGPUNode exists
 }
 
 } // namespace TpetraIntrepidPoissonExample

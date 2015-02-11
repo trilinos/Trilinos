@@ -2,6 +2,11 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Development version (11.15):
+----------------------------
+
+* Removed downstream support for KokkosClassic::ThrustGPUNode
+
 Trilinos 11.14:
 ---------------
 

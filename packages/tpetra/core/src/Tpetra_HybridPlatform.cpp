@@ -61,9 +61,6 @@ namespace Tpetra {
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
   TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::TPINode)
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::ThrustGPUNode)
-#endif
 
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
@@ -85,7 +82,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(Kokkos::Compat::KokkosCudaWrapperNode
 
 // Make sure that the default Node type is always supported.  We can
 // only do this if it's not any of the Node types listed above.
-#if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_THRUST)
+#if ! defined(HAVE_KOKKOSCLASSIC_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_TBB) && ! defined(HAVE_KOKKOSCLASSIC_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 #  ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #    if ! defined(KOKKOS_HAVE_OPENMP) && ! defined(KOKKOS_HAVE_PTHREAD) && ! defined(KOKKOS_HAVE_CUDA) && ! defined(KOKKOS_HAVE_SERIAL)
 TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNodeType)
@@ -123,7 +120,7 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
     //
     // For example:
     // "%2=0"  ->
-    //    NodeType     = "KokkosClassic::ThrustGPUNode"
+    //    NodeType     = "KokkosClassic::SerialNode"
     //    DeviceNumber = 0
     //    Verbose      = 1
     // "%2=1"  ->
@@ -131,9 +128,9 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
     //    NumThreads   = 8
     //
     // In this scenario, nodes that are equivalent to zero module 2,
-    // that is, even nodes, will be selected to use ThrustGPUNode
+    // that is, even nodes, will be selected to use SerialNode
     // objects and initialized with the parameter list containing
-    //    NodeType   = "KokkosClassic::ThrustGPUNode"
+    //    NodeType   = "KokkosClassic::SerialNode"
     //    DeviceNumber = 0
     //    Verbose      = 1
     //
@@ -211,11 +208,6 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
           else if (desigNode == "KokkosClassic::OpenMPNode") {
             nodeType_ = OMPNODE;
-          }
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-          else if (desigNode == "KokkosClassic::ThrustGPUNode") {
-            nodeType_ = THRUSTGPUNODE;
           }
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
@@ -296,14 +288,6 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
       list->set("=-4",subpl);
     }
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    {
-      ParameterList subpl;
-      subpl.set("NodeType","KokkosClassic::ThrustGPUNode");
-      subpl.setParameters( KokkosClassic::ThrustGPUNode::getDefaultParameters() );
-      list->set("=-5",subpl);
-    }
-#endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT
 #ifdef KOKKOS_HAVE_SERIAL
     {
@@ -374,11 +358,6 @@ TPETRA_HYBRIDPLATFORM_ADD_NODE_SUPPORT_DEF(KokkosClassic::DefaultNode::DefaultNo
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
     case TPINODE:
       tpiNode_  = rcp (new KokkosClassic::TPINode (instList_));
-      break;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    case THRUSTGPUNODE:
-      thrustNode_ = rcp (new KokkosClassic::ThrustGPUNode (instList_));
       break;
 #endif
 #ifdef HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT

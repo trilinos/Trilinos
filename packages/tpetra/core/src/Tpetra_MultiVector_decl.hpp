@@ -245,11 +245,11 @@ namespace Tpetra {
   /// running on a Graphics Processing Unit (GPU) device.  You can
   /// tell at compile time whether you are running on a GPU by looking
   /// at the Kokkos Node type.  (Currently, the only GPU Node type we
-  /// provide is KokkosClassic::ThrustGPUNode.  All other types are CPU
-  /// Nodes.)  If the Kokkos Node is a GPU Node type, then views
-  /// always reside in host (CPU) memory, rather than device (GPU)
-  /// memory.  When you ask for a view, it copies data from the device
-  /// to the host.
+  /// provide is Kokkos::Compat::KokkosCudaWrapperNode.  All other
+  /// types are CPU Nodes.)  If the Kokkos Node is a GPU Node type,
+  /// then views always reside in host (CPU) memory, rather than
+  /// device (GPU) memory.  When you ask for a view, it copies data
+  /// from the device to the host.
   ///
   /// What happens next to your view depends on whether the view is
   /// const (read-only) or nonconst (read and write).  Const views
@@ -413,7 +413,7 @@ namespace Tpetra {
   MultiVector<ST, LO, GO, NT>
   createCopy (const MultiVector<ST, LO, GO, NT>& src);
 
-#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
 
   // Partial specialization for the "classic" Node types.  This is the
   // original "classic" implementation of MultiVector.  It will be
@@ -1530,7 +1530,7 @@ namespace Tpetra {
     }
   } // namespace Details
 
-#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
 
 } // namespace Tpetra
 
@@ -1589,9 +1589,7 @@ namespace Tpetra {
   ///   refactor version of Tpetra, with constructors that accept
   ///   Kokkos::DualView.
   ///
-  /// \warning This function is not supported for all Kokkos Node
-  ///   types.  Specifically, it is not typically supported for
-  ///   GPU accelerator-based nodes like KokkosClassic::ThrustGPUNode.
+  /// \warning This function is not supported for all Kokkos Node types.
   ///
   /// \param map [in] The Map describing the distribution of rows of
   ///   the multivector.

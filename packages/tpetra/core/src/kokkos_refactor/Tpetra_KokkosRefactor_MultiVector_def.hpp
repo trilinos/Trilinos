@@ -3970,9 +3970,7 @@ namespace Tpetra {
   /// \relatesalso MultiVector
   /// \relatesalso Vector
   ///
-  /// \warning This function is not supported for all Kokkos Node
-  ///   types.  Specifically, it is not typically supported for
-  ///   GPU accelerator-based nodes like KokkosClassic::ThrustGPUNode.
+  /// \warning This function is not supported for all Kokkos Node types.
   ///
   /// \param map [in] The Map describing the distribution of rows of
   ///   the multivector.

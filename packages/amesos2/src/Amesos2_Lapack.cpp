@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -127,10 +127,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
   AMESOS2_LAPACK_LOCAL_INSTANT(double, int, int, KokkosClassic_TPINode)
-#endif
-
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-  AMESOS2_LAPACK_LOCAL_INSTANT(double, int, int, KokkosClassic_ThrustGPUNode)
 #endif
 
 #if defined(HAVE_TPETRA_INST_SERIAL) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)

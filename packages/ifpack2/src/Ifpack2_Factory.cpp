@@ -88,19 +88,6 @@ bool supportsUnsymmetric (const std::string& prec_type)
 
   IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template<>
-  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string&,
-                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >&);
-
-  template<>
-  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string&,
-                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >&,
-                                                                                       const int overlap);
-#endif
-
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >

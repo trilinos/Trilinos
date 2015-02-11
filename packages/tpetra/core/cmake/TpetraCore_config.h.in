@@ -22,17 +22,13 @@
 #  define HAVE_TPETRA_MPI
 #endif // HAVE_TPETRACORE_MPI
 
-/* Determine if we have CUDA, Thrust, QD */
+/* Determine if we have CUDA */
 #cmakedefine HAVE_TPETRACORE_CUDA
 #ifdef HAVE_TPETRACORE_CUDA
 #  define HAVE_TPETRA_CUDA
 #endif // HAVE_TPETRACORE_CUDA
 
-#cmakedefine HAVE_TPETRACORE_THRUST
-#ifdef HAVE_TPETRACORE_THRUST
-#  define HAVE_TPETRA_THRUST
-#endif // HAVE_TPETRACORE_THRUST
-
+/* Determine if we have QD */
 #cmakedefine HAVE_TPETRACORE_QD
 #ifdef HAVE_TPETRACORE_QD
 #  define HAVE_TPETRA_QD

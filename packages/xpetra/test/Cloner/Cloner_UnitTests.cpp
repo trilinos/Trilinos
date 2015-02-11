@@ -271,8 +271,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 //#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 //  typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -294,8 +292,6 @@ namespace {
 //   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD)
@@ -317,33 +313,8 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 // #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
 //   typedef KokkosClassic::OpenMPNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_CUDA) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  typedef Kokkos::Compat::KokkosCudaWrapperNode NodeType;
-#  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  typedef Kokkos::Compat::KokkosSerialWrapperNode NodeType;
-#  else
-  // There's only one Node type defined, so we have no choice but to use it.
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
-#  endif
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-#  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_TBB)
-  typedef KokkosClassic::TBBNode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-  typedef KokkosClassic::TPINode NodeType;
-// #  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-//   typedef KokkosClassic::ThrustGPUNode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
-  typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -363,8 +334,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -386,8 +355,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -409,8 +376,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 // #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -432,8 +397,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -455,8 +418,6 @@ namespace {
   typedef KokkosClassic::TBBNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode NodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode NodeType;
 #  elif defined(HAVE_KOKKOSCLASSIC_OPENMP)
   typedef KokkosClassic::OpenMPNode NodeType;
 #  elif defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)

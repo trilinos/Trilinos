@@ -63,14 +63,6 @@ namespace Details {
   // FIXME (mfh 17,21 Jul 2014) Work-arounds for Ifpack2's incomplete
   // ETI implementation.  It doesn't work if you write "template<>
   // class ...", for some reason I don't fully understand.
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class DenseSolver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-  template class DenseSolver<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-#endif
-
-  // FIXME (mfh 17,21 Jul 2014) Work-arounds for Ifpack2's incomplete
-  // ETI implementation.  It doesn't work if you write "template<>
-  // class ...", for some reason I don't fully understand.
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class DenseSolver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
   template class DenseSolver<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;

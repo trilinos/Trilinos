@@ -74,7 +74,7 @@ class Vector {
   // See partial specializations for documentation of methods.
 };
 
-#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
 
 // Partial specialization for the "classic" Node types.  This is the
 // original "classic" implementation of Vector.  It will be deprecated
@@ -430,9 +430,7 @@ protected:
 ///
 /// \warning This function is DEPRECATED.
 ///
-/// \warning This use case is not supported for all Node
-///   types. Specifically, it is not supported for GPU-based nodes
-///   like KokkosClassic::ThrustGPUNode.
+/// \warning This use case is not supported for all Node types.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TPETRA_DEPRECATED
 Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
@@ -451,7 +449,7 @@ createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, 
   );
 }
 
-#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP) || defined(HAVE_TPETRACLASSIC_THRUST)
+#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
 
 /// \brief Nonmember Vector "constructor": Create a Vector from a given Map.
 /// \relatesalso Vector

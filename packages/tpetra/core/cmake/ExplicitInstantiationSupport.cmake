@@ -29,27 +29,13 @@ ENDIF()
 # Tpetra ETI type fields
 SET(${PACKAGE_NAME}_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 
-# Exclude all of the types that CUDA/Thrust doesn't support
-ASSERT_DEFINED(TpetraClassic_ENABLE_ThrustGPUNode)
-IF(TpetraClassic_ENABLE_ThrustGPUNode)
-  # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
-  SET(CUDA_UNSUPPORTED_SCALARS "dd_real|qd_real|std::complex<double>|std::complex<float>")
-  TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET     "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}|int" "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
-  TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET     "SIN=${CUDA_UNSUPPORTED_SCALARS}|int" "SOUT=.*" "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
-  # do int separately, because we will instantiate vector in it
-  TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_INT "S=int|long|unsigned int"                       "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
-  #
-  ASSERT_DEFINED(TpetraClassic_ENABLE_CUDA_DOUBLE)
-  IF(NOT TpetraClassic_ENABLE_CUDA_DOUBLE)
-    APPEND_SET(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=double SIN=double SOUT=double LO=.* GO=.* N=KokkosClassic::ThrustGPUNode")
-  ENDIF()
-  #
-  ASSERT_DEFINED(TpetraClassic_ENABLE_CUDA_FLOAT)
-  IF(NOT TpetraClassic_ENABLE_CUDA_FLOAT)
-    APPEND_SET(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=float SIN=float SOUT=float LO=.* GO=.* N=KokkosClassic::ThrustGPUNode")
-  ENDIF()
-ENDIF()
+# mfh 11 Feb 2015: If a given Node type doesn't support certain
+# combinations of Scalar, LO, GO, etc. types, this would be the place
+# to add in only those type combinations that the Node type supports.
+# We used to do this for Node = KokkosClassic::ThrustGPUNode.  I much
+# prefer instead that all type combinations _build_, but that
+# unsupported types for a particular Node get stub implementations
+# that just throw.  This simplifies the CMake configuration process.
 
 TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=int|long|unsigned int|unsigned|long long" "LO=.*" "GO=.*" "N=.*")
 
@@ -120,7 +106,7 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_CONVERT(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT)
 TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
-    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};SIN=.* SOUT=.* CS=.* DS=.* S=.* LO=.* GO=.* N=KokkosClassic::ThrustGPUNode"  
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET}"
     list_of_manglings   eti_typedefs
     "TPETRA_INSTANTIATE_SLGN_NOGPU(S,LO,GO,N)"            TPETRA_ETIMACRO_SLGN_NOGPU
     "TPETRA_INSTANTIATE_LGN_NOGPU(LO,GO,N)"               TPETRA_ETIMACRO_LGN_NOGPU
@@ -147,7 +133,7 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_TESTMV(S,LO,GO,N)"            TPETRA_ETIMACRO_TESTMV)
 TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
-    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=unsigned LO=.* GO=.* N=.*;S=unsigned int LO=.* GO=.* N=.*;S=long long LO=.* GO=.* N=.*;S=.* LO=.* GO=.* N=KokkosClassic::ThrustGPUNode"
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};S=int LO=.* GO=.* N=.*;S=long LO=.* GO=.* N=.*;S=unsigned LO=.* GO=.* N=.*;S=unsigned int LO=.* GO=.* N=.*;S=long long LO=.* GO=.* N=.*"
     list_of_manglings eti_typedefs
     "TPETRA_INSTANTIATE_TESTMV_NOGPU(S,LO,GO,N)"      TPETRA_ETIMACRO_TESTMV_NOGPU)
 

@@ -56,10 +56,6 @@ namespace Ifpack2 {
 
   IFPACK2_INSTANTIATE_SLG_REAL(LCLINST)
 
-#if defined(HAVE_KOKKOSCLASSIC_THRUST) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class SupportGraph<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-#endif
-
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class SupportGraph<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
