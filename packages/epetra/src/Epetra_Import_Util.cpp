@@ -60,17 +60,15 @@ namespace Epetra_Import_Util {
 // =========================================================================
 template<typename int_type>
 int TPackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & A,
-				 int NumExportIDs,
-				 int * ExportLIDs,
-				 int & LenExports,
-				 char *& Exports,
-				 int & SizeOfPacket,
-				 int * Sizes,
-				 bool & VarSizes,
-				 std::vector<int>& pids)
+                                 int NumExportIDs,
+                                 int * ExportLIDs,
+                                 int & LenExports,
+                                 char *& Exports,
+                                 int & SizeOfPacket,
+                                 int * Sizes,
+                                 bool & VarSizes,
+                                 std::vector<int>& pids)
 {
-  int i, j;
-
   VarSizes = true; //enable variable block size data comm
 
   int TotalSendLength = 0;
@@ -79,7 +77,7 @@ int TPackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & A,
 
   int SizeofIntType = sizeof(int_type);
 
-  for(i = 0; i < NumExportIDs; ++i) {
+  for(int i = 0; i < NumExportIDs; ++i) {
     int NumEntries;
     A.NumMyRowEntries( ExportLIDs[i], NumEntries );
     // Will have NumEntries doubles, 2*NumEntries +2 ints pack them interleaved     Sizes[i] = NumEntries;
@@ -116,55 +114,62 @@ int TPackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & A,
   const Epetra_Map & rowMap = A.RowMap();
   const Epetra_Map & colMap = A.ColMap();
 
-  if( NumExportIDs > 0 ) {
+  if (NumExportIDs > 0) {
     int_type * Indices;
     int_type FromRow;
     int_type * intptr;
 
     int maxNumEntries = A.MaxNumEntries();
     std::vector<int> MyIndices(maxNumEntries);
+    // FIXME (mfh 11 Feb 2015) This probably violates ANSI C++'s
+    // prohibition of unaligned type-punning access.
     dintptr = (double *) Exports;
     valptr = dintptr + IntSizes[0];
+    // FIXME (mfh 11 Feb 2015) This probably violates ANSI C++'s
+    // prohibition of unaligned type-punning access.
     intptr = (int_type *) dintptr;
-    for (i=0; i<NumExportIDs; i++) {
+    for (int i = 0; i < NumExportIDs; ++i) {
       FromRow   = (int_type) rowMap.GID64(ExportLIDs[i]);
       intptr[0] = FromRow;
       values    = valptr;
       Indices   = intptr + 2;
       EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, MyIndices.size() ? &MyIndices[0] : 0));
-      for (j=0; j<NumEntries; j++) {
-	Indices[2*j]   = (int_type) colMap.GID64(MyIndices[j]);   // convert to GIDs
-	Indices[2*j+1] = pids[MyIndices[j]];                      // PID owning the entry.
+      for (int j = 0; j < NumEntries; ++j) {
+        Indices[2*j]   = (int_type) colMap.GID64(MyIndices[j]);   // convert to GIDs
+        Indices[2*j+1] = pids[MyIndices[j]];                      // PID owning the entry.
       }
       intptr[1] = NumEntries; // Load second slot of segment
-      if( i < (NumExportIDs-1) ) {
-	dintptr += (IntSizes[i]+Sizes[i]);
-	valptr = dintptr + IntSizes[i+1];
-	intptr = (int_type *) dintptr;
-      }	
+      if (i < (NumExportIDs-1)) {
+        dintptr += (IntSizes[i]+Sizes[i]);
+        valptr = dintptr + IntSizes[i+1];
+        // FIXME (mfh 11 Feb 2015) This probably violates ANSI C++'s
+        // prohibition of unaligned type-punning access.
+        intptr = (int_type *) dintptr;
+      }
     }
 
-    for(i = 0; i < NumExportIDs; ++i )
+    for (int i = 0; i < NumExportIDs; ++i) {
       Sizes[i] += IntSizes[i];
+    }
   }
 
   if( IntSizes ) delete [] IntSizes;
 
-  return(0);
+  return 0;
 }
 
 
 // =========================================================================
 // =========================================================================
 int PackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & SourceMatrix,
-				 int NumExportIDs,
-				 int * ExportLIDs,
-				 int & LenExports,
-				 char *& Exports,
-				 int & SizeOfPacket,
-				 int * Sizes,
-				 bool & VarSizes,
-				 std::vector<int>& SourcePids)
+                                 int NumExportIDs,
+                                 int * ExportLIDs,
+                                 int & LenExports,
+                                 char *& Exports,
+                                 int & SizeOfPacket,
+                                 int * Sizes,
+                                 bool & VarSizes,
+                                 std::vector<int>& SourcePids)
 {
   if(SourceMatrix.RowMap().GlobalIndicesInt()) {
     return TPackAndPrepareWithOwningPIDs<int>(SourceMatrix,NumExportIDs,ExportLIDs,LenExports,Exports,SizeOfPacket,Sizes,VarSizes,SourcePids);
@@ -181,14 +186,14 @@ int PackAndPrepareWithOwningPIDs(const Epetra_CrsMatrix & SourceMatrix,
 // =========================================================================
 template<typename int_type>
 int TUnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
-			       int NumSameIDs,
-			       int NumRemoteIDs,
-			       const int * RemoteLIDs,
-			       int NumPermuteIDs,
-			       const int *PermuteToLIDs,
-			       const int *PermuteFromLIDs,
-			       int LenImports,
-			       char* Imports)
+                               int NumSameIDs,
+                               int NumRemoteIDs,
+                               const int * RemoteLIDs,
+                               int NumPermuteIDs,
+                               const int *PermuteToLIDs,
+                               const int *PermuteFromLIDs,
+                               int LenImports,
+                               char* Imports)
 {
   int i,nnz=0;
   int SizeofIntType = (int)sizeof(int_type);
@@ -212,10 +217,10 @@ int TUnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
       nnz += NumEntries;
 
       if( i < (NumRemoteIDs-1) ) {
-	dintptr   += IntSize + NumEntries;
-	intptr     = (int_type *) dintptr;
-	NumEntries = (int) intptr[1];
-	IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+        dintptr   += IntSize + NumEntries;
+        intptr     = (int_type *) dintptr;
+        NumEntries = (int) intptr[1];
+        IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
       }
     }
   }
@@ -227,49 +232,49 @@ int TUnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
 // =========================================================================
 // =========================================================================
 int UnpackWithOwningPIDsCount(const Epetra_CrsMatrix& SourceMatrix,
-			      int NumSameIDs,
-			      int NumRemoteIDs,
-			      const int * RemoteLIDs,
-			      int NumPermuteIDs,
-			      const int *PermuteToLIDs,
-			      const int *PermuteFromLIDs,
-			      int LenImports,
-			      char* Imports)	
+                              int NumSameIDs,
+                              int NumRemoteIDs,
+                              const int * RemoteLIDs,
+                              int NumPermuteIDs,
+                              const int *PermuteToLIDs,
+                              const int *PermuteFromLIDs,
+                              int LenImports,
+                              char* Imports)
 {
   if(SourceMatrix.RowMap().GlobalIndicesInt()) {
     return TUnpackWithOwningPIDsCount<int>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-					   PermuteToLIDs,PermuteFromLIDs,LenImports,Imports);
+                                           PermuteToLIDs,PermuteFromLIDs,LenImports,Imports);
   }
   else if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
    return TUnpackWithOwningPIDsCount<long long>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-						PermuteToLIDs,PermuteFromLIDs,LenImports,Imports);
+                                                PermuteToLIDs,PermuteFromLIDs,LenImports,Imports);
   }
   else
     throw std::runtime_error("UnpackWithOwningPIDsCount: Unable to determine source global index type");
 
 }
 
-				
+
 // =========================================================================
 // =========================================================================
 template<typename int_type>
 int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
-				  int NumSameIDs,
-				  int NumRemoteIDs,
-				  const int * RemoteLIDs,
-				  int NumPermuteIDs,
-				  const int *PermuteToLIDs,
-				  const int *PermuteFromLIDs,
-				  int LenImports,
-				  char* Imports,
-				  int TargetNumRows,
-				  int TargetNumNonzeros,
-				  int MyTargetPID,
-				  int * CSR_rowptr,
-				  int_type * CSR_colind,
-				  double * CSR_vals,
-				  const std::vector<int> &SourcePids,
-				  std::vector<int> &TargetPids)
+                                  int NumSameIDs,
+                                  int NumRemoteIDs,
+                                  const int * RemoteLIDs,
+                                  int NumPermuteIDs,
+                                  const int *PermuteToLIDs,
+                                  const int *PermuteFromLIDs,
+                                  int LenImports,
+                                  char* Imports,
+                                  int TargetNumRows,
+                                  int TargetNumNonzeros,
+                                  int MyTargetPID,
+                                  int * CSR_rowptr,
+                                  int_type * CSR_colind,
+                                  double * CSR_vals,
+                                  const std::vector<int> &SourcePids,
+                                  std::vector<int> &TargetPids)
 {
   // What we really need to know is where in the CSR arrays each row should start (aka the rowptr).
   // We do that by (a) having each row record it's size in the rowptr (b) doing a cumulative sum to get the rowptr values correct and
@@ -310,10 +315,10 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
       CSR_rowptr[RemoteLIDs[i]] += NumEntries;
 
       if( i < (NumRemoteIDs-1) ) {
-	dintptr   += IntSize + NumEntries;
-	intptr     = (int_type *) dintptr;
-	NumEntries = (int) intptr[1];
-	IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+        dintptr   += IntSize + NumEntries;
+        intptr     = (int_type *) dintptr;
+        NumEntries = (int) intptr[1];
+        IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
       }
     }
   }
@@ -380,21 +385,21 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     for (i=0; i<NumRemoteIDs; i++) {
       int ToLID    = RemoteLIDs[i];
       int StartRow = NewStartRow[ToLID];
-      NewStartRow[ToLID]+=NumEntries;	
+      NewStartRow[ToLID]+=NumEntries;
 
       double * values    = valptr;
       int_type * Indices = intptr + 2;
       for(j=0; j<NumEntries; j++){
-	CSR_vals[StartRow + j]   = values[j];	
-	CSR_colind[StartRow + j] = Indices[2*j];
-	TargetPids[StartRow + j] = (Indices[2*j+1] != MyPID) ? Indices[2*j+1] : -1;
+        CSR_vals[StartRow + j]   = values[j];
+        CSR_colind[StartRow + j] = Indices[2*j];
+        TargetPids[StartRow + j] = (Indices[2*j+1] != MyPID) ? Indices[2*j+1] : -1;
       }
       if( i < (NumRemoteIDs-1) ) {
-	dintptr   += IntSize + NumEntries;
-	intptr     = (int_type *) dintptr;
-	NumEntries = (int) intptr[1];
-	IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
-	valptr     = dintptr + IntSize;
+        dintptr   += IntSize + NumEntries;
+        intptr     = (int_type *) dintptr;
+        NumEntries = (int) intptr[1];
+        IntSize    = 1 + (((2*NumEntries+2)*SizeofIntType)/(int)sizeof(double));
+        valptr     = dintptr + IntSize;
       }
     }
   }
@@ -407,27 +412,27 @@ int TUnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 // =========================================================================
 // =========================================================================
 int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
-				  int NumSameIDs,
-				  int NumRemoteIDs,
-				  const int * RemoteLIDs,
-				  int NumPermuteIDs,
-				  const int *PermuteToLIDs,
-				  const int *PermuteFromLIDs,
-				  int LenImports,
-				  char* Imports,
-				  int TargetNumRows,
-				  int TargetNumNonzeros,
-				  int MyTargetPID,
-				  int * CSR_rowptr,
-				  int * CSR_colind,
-				  double * CSR_values,
-				  const std::vector<int> &SourcePids,
-				  std::vector<int> &TargetPids)
+                                  int NumSameIDs,
+                                  int NumRemoteIDs,
+                                  const int * RemoteLIDs,
+                                  int NumPermuteIDs,
+                                  const int *PermuteToLIDs,
+                                  const int *PermuteFromLIDs,
+                                  int LenImports,
+                                  char* Imports,
+                                  int TargetNumRows,
+                                  int TargetNumNonzeros,
+                                  int MyTargetPID,
+                                  int * CSR_rowptr,
+                                  int * CSR_colind,
+                                  double * CSR_values,
+                                  const std::vector<int> &SourcePids,
+                                  std::vector<int> &TargetPids)
 {
   if(SourceMatrix.RowMap().GlobalIndicesInt()) {
     return TUnpackAndCombineIntoCrsArrays<int>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-					       PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
-					       CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
+                                               PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
+                                               CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
   }
   else
     throw std::runtime_error("UnpackAndCombineIntoCrsArrays: int type not matched.");
@@ -436,27 +441,27 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
 // =========================================================================
 // =========================================================================
 int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
-				  int NumSameIDs,
-				  int NumRemoteIDs,
-				  const int * RemoteLIDs,
-				  int NumPermuteIDs,
-				  const int *PermuteToLIDs,
-				  const int *PermuteFromLIDs,
-				  int LenImports,
-				  char* Imports,
-				  int TargetNumRows,
-				  int TargetNumNonzeros,
-				  int MyTargetPID,
-				  int * CSR_rowptr,
-				  long long * CSR_colind,
-				  double * CSR_values,
-				  const std::vector<int> &SourcePids,
-				  std::vector<int> &TargetPids)
+                                  int NumSameIDs,
+                                  int NumRemoteIDs,
+                                  const int * RemoteLIDs,
+                                  int NumPermuteIDs,
+                                  const int *PermuteToLIDs,
+                                  const int *PermuteFromLIDs,
+                                  int LenImports,
+                                  char* Imports,
+                                  int TargetNumRows,
+                                  int TargetNumNonzeros,
+                                  int MyTargetPID,
+                                  int * CSR_rowptr,
+                                  long long * CSR_colind,
+                                  double * CSR_values,
+                                  const std::vector<int> &SourcePids,
+                                  std::vector<int> &TargetPids)
 {
   if(SourceMatrix.RowMap().GlobalIndicesLongLong()) {
     return TUnpackAndCombineIntoCrsArrays<long long>(SourceMatrix,NumSameIDs,NumRemoteIDs,RemoteLIDs,NumPermuteIDs,
-						     PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
-						     CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
+                                                     PermuteToLIDs,PermuteFromLIDs,LenImports,Imports,TargetNumRows,TargetNumNonzeros,MyTargetPID,
+                                                     CSR_rowptr,CSR_colind,CSR_values,SourcePids,TargetPids);
   }
   else
     throw std::runtime_error("UnpackAndCombineIntoCrsArrays: int type not matched.");
@@ -513,26 +518,26 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
       // Check if GID matches a row GID
       int LID = domainMap.LID(GID);
       if(LID != -1) {
-	bool alreadyFound = LocalGIDs[LID];
-	if (!alreadyFound) {
+        bool alreadyFound = LocalGIDs[LID];
+        if (!alreadyFound) {
           LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
           NumLocalColGIDs++;
-	}
-	colind_LID[j] = LID;
+        }
+        colind_LID[j] = LID;
       }
       else {
-	int_type hash_value=RemoteGIDs.Get(GID);
-	if(hash_value  == -1) { // This means its a new remote GID
-	  int PID = owningPIDs[j];
-	  if(PID==-1) throw std::runtime_error("LowCommunicationMakeColMapAndReindex: Cannot figure out if PID is owned.");
-	  colind_LID[j] = numDomainElements + NumRemoteColGIDs;
-	  RemoteGIDs.Add(GID, NumRemoteColGIDs);
-	  RemoteGIDList.push_back(GID);
-	  PIDList.push_back(PID);
-	  NumRemoteColGIDs++;
-	}
-	else
-	  colind_LID[j] = numDomainElements + hash_value;	
+        int_type hash_value=RemoteGIDs.Get(GID);
+        if(hash_value  == -1) { // This means its a new remote GID
+          int PID = owningPIDs[j];
+          if(PID==-1) throw std::runtime_error("LowCommunicationMakeColMapAndReindex: Cannot figure out if PID is owned.");
+          colind_LID[j] = numDomainElements + NumRemoteColGIDs;
+          RemoteGIDs.Add(GID, NumRemoteColGIDs);
+          RemoteGIDList.push_back(GID);
+          PIDList.push_back(PID);
+          NumRemoteColGIDs++;
+        }
+        else
+          colind_LID[j] = numDomainElements + hash_value;
       }
     }
   }
@@ -608,8 +613,8 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     while ( StartNext < NumRemoteColGIDs ) {
       if (PIDList[StartNext]==PIDList[StartNext-1]) StartNext++;
       else {
-	IntSortLists[0] =  &RemotePermuteIDs[StartCurrent];
-	Epetra_Util::Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,1,IntSortLists,0,0);
+        IntSortLists[0] =  &RemotePermuteIDs[StartCurrent];
+        Epetra_Util::Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,1,IntSortLists,0,0);
         StartCurrent = StartNext; StartNext++;
       }
     }
@@ -644,8 +649,8 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     use_local_permute = true;
     for(i = 0; i < numDomainElements; i++) {
       if(LocalGIDs[i]) {
-	LocalPermuteIDs[i] = NumLocalAgain;
-	ColIndices[NumLocalAgain++] = MyGlobalElements[i];
+        LocalPermuteIDs[i] = NumLocalAgain;
+        ColIndices[NumLocalAgain++] = MyGlobalElements[i];
       }
     }
     assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
@@ -664,12 +669,12 @@ int UnpackAndCombineIntoCrsArrays(const Epetra_CrsMatrix& SourceMatrix,
     for(j=rowptr[i]; j<rowptr[i+1]; j++){
       int ID=colind_LID[j];
       if(ID < numDomainElements){
-	if(use_local_permute) colind_LID[j] = LocalPermuteIDs[colind_LID[j]];
-	// In the case where use_local_permute==false, we just copy the DomainMap's ordering, which it so happens
-	// is what we put in colind to begin with.
+        if(use_local_permute) colind_LID[j] = LocalPermuteIDs[colind_LID[j]];
+        // In the case where use_local_permute==false, we just copy the DomainMap's ordering, which it so happens
+        // is what we put in colind to begin with.
       }
       else
-	colind_LID[j] =  NumLocalColGIDs + ReverseRemotePermuteIDs[colind_LID[j]-numDomainElements];
+        colind_LID[j] =  NumLocalColGIDs + ReverseRemotePermuteIDs[colind_LID[j]-numDomainElements];
     }
   }
 
