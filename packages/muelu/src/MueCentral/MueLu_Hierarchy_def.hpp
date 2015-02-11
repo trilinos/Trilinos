@@ -958,9 +958,6 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const Hierarchy &h) { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsPreconditioner(const bool flag) {
     isPreconditioner_ = flag;
   }

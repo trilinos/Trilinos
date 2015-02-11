@@ -79,15 +79,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
+    "-DCMAKE_VERBOSE_MAKEFILE=ON"
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+    "-DTPL_ENABLE_SuperLU=ON"
+        "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
+        "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
+        "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
     )
 
   SET_DEFAULT(COMPILER_VERSION "Clang-3.5.1")
@@ -104,8 +104,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/llvm-3.5.1/bin/clang"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/llvm-3.5.1/bin/clang++"
+      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/llvm-3.5.1/bin/clang"
+        "-DCMAKE_C_FLAGS=\"--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2\""
+      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/llvm-3.5.1/bin/clang++"
+        "-DCMAKE_CXX_FLAGS=\"--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2\""
       )
 
   ENDIF()
