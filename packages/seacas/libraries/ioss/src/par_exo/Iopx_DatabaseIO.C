@@ -2553,7 +2553,6 @@ namespace Iopx {
                                            void *data, size_t data_size) const
     {
       size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
 
         int64_t id = get_id(eb, EX_FACE_BLOCK, &ids_);
         size_t my_face_count = eb->get_property("entity_count").get_int();
@@ -2619,7 +2618,6 @@ namespace Iopx {
         } else if (role == Ioss::Field::REDUCTION) {
           num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
         }
-      }
       return num_to_get;
     }
 
@@ -2628,7 +2626,6 @@ namespace Iopx {
                                            void *data, size_t data_size) const
     {
       size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
 
         int64_t id = get_id(eb, EX_EDGE_BLOCK, &ids_);
         int64_t my_edge_count = eb->get_property("entity_count").get_int();
@@ -2685,7 +2682,6 @@ namespace Iopx {
         } else if (role == Ioss::Field::REDUCTION) {
           num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
         }
-      }
       return num_to_get;
     }
 
@@ -2796,7 +2792,6 @@ namespace Iopx {
     {
       size_t num_to_get = field.verify(data_size);
 
-      if (num_to_get > 0) {
         // Return the <entity (node or side), processor> pair
         if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
 
@@ -2824,7 +2819,6 @@ namespace Iopx {
         } else {
           num_to_get = Ioss::Utils::field_warning(cs, field, "input");
         }
-      }
       return num_to_get;
     }
 
@@ -3668,7 +3662,6 @@ namespace Iopx {
                                            void *data, size_t data_size) const
     {
       size_t num_to_get = field.verify(data_size);
-      if (num_to_get > 0) {
 
         size_t proc_offset = 0;
         if (nb->property_exists("processor_offset"))
@@ -3795,7 +3788,6 @@ namespace Iopx {
         } else if (role == Ioss::Field::REDUCTION) {
           store_reduction_field(EX_NODE_BLOCK, field, nb, data);
         }
-      }
       return num_to_get;
     }
 
@@ -3959,7 +3951,6 @@ namespace Iopx {
     {
       size_t num_to_get = field.verify(data_size);
 
-      if (num_to_get > 0) {
         int ierr = 0;
 
         // Get the face block id and face count
@@ -4013,7 +4004,6 @@ namespace Iopx {
         } else if (role == Ioss::Field::REDUCTION) {
           store_reduction_field(EX_FACE_BLOCK, field, eb, data);
         }
-      }
       return num_to_get;
     }
 
@@ -4023,7 +4013,6 @@ namespace Iopx {
     {
       size_t num_to_get = field.verify(data_size);
 
-      if (num_to_get > 0) {
         int ierr = 0;
 
         // Get the edge block id and edge count
@@ -4067,7 +4056,6 @@ namespace Iopx {
         } else if (role == Ioss::Field::REDUCTION) {
           store_reduction_field(EX_EDGE_BLOCK, field, eb, data);
         }
-      }
       return num_to_get;
     }
 
