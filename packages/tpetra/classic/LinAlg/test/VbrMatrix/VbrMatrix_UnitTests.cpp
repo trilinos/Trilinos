@@ -59,12 +59,12 @@ namespace {
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
-  int N;
+  int N_;
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption("test-size",&N,"Vector length for tests.");
+    clp.setOption("test-size",&N_,"Vector length for tests.");
   }
 
   //

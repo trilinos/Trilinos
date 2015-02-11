@@ -189,7 +189,7 @@ public:
     typedef typename VectorType::value_type  scalar_type ;
 
     const int mpi_tag = 42 ;
-    const unsigned chunk = v.dimension_1();
+    const unsigned chunk_ = v.dimension_1();
 
     // Subvector for receives
     const std::pair<unsigned,unsigned> recv_range( count_owned , count_owned + count_receive );
@@ -203,7 +203,7 @@ public:
 
       for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
         const int proc  = recv_msg(i,0);
-        const int count = recv_msg(i,1) * chunk ;
+        const int count = recv_msg(i,1) * chunk_ ;
 
         MPI_Irecv( ptr , count * sizeof(scalar_type) , MPI_BYTE ,
                    proc , mpi_tag , comm , & recv_request[i] );
@@ -223,7 +223,7 @@ public:
 
       for ( size_t i = 0 ; i < send_msg.dimension_0() ; ++i ) {
         const int proc  = send_msg(i,0);
-        const int count = send_msg(i,1) * chunk ;
+        const int count = send_msg(i,1) * chunk_ ;
 
         // MPI_Ssend blocks until
         // (1) a receive is matched for the message and
@@ -256,7 +256,7 @@ public:
       // Verify message properly received:
 
       const int  expected_proc = recv_msg(recv_which,0);
-      const int  expected_size = recv_msg(recv_which,1) * chunk * sizeof(scalar_type);
+      const int  expected_size = recv_msg(recv_which,1) * chunk_ * sizeof(scalar_type);
 
       if ( ( expected_proc != recv_proc ) ||
            ( expected_size != recv_size ) ) {

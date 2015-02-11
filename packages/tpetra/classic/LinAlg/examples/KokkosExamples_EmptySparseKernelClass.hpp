@@ -238,7 +238,7 @@ namespace KokkosExamples {
         copy, callers should not change the KokkosClassic::CrsGraph after
         calling this method.
       */
-    void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph,
+    void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph_,
                            const RCP<const EmptyCrsMatrix<Scalar,Node> > &node) {};
 
     //@}

@@ -273,10 +273,10 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     throw;
   }
 
-  ArrayView<const OffsetType> ptr1_view (const_cast<const OffsetType*> (ptr1), numRows+1);
-  const OffsetType numEntries1 = ptr1_view[numRows];
-  ArrayView<const OrdinalType> ind1_view (const_cast<const OrdinalType*> (ind1), numEntries1);
-  ArrayView<const ScalarType> val1_view (const_cast<const ScalarType*> (val1), numEntries1);
+  ArrayView<const OffsetType> ptr1_view_ (const_cast<const OffsetType*> (ptr1), numRows+1);
+  const OffsetType numEntries1_ = ptr1_view_[numRows];
+  ArrayView<const OrdinalType> ind1_view_ (const_cast<const OrdinalType*> (ind1), numEntries1_);
+  ArrayView<const ScalarType> val1_view_ (const_cast<const ScalarType*> (val1), numEntries1_);
 
   out << "Constructing test matrix 2" << endl;
   OffsetType* ptr2 = NULL;
@@ -297,10 +297,10 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
     throw;
   }
 
-  ArrayView<const OffsetType> ptr2_view (const_cast<const OffsetType*> (ptr2), numRows+1);
-  const OffsetType numEntries2 = ptr2_view[numRows];
-  ArrayView<const OrdinalType> ind2_view (const_cast<const OrdinalType*> (ind2), numEntries2);
-  ArrayView<const ScalarType> val2_view (const_cast<const ScalarType*> (val2), numEntries2);
+  ArrayView<const OffsetType> ptr2_view_ (const_cast<const OffsetType*> (ptr2), numRows+1);
+  const OffsetType numEntries2_ = ptr2_view_[numRows];
+  ArrayView<const OrdinalType> ind2_view_ (const_cast<const OrdinalType*> (ind2), numEntries2_);
+  ArrayView<const ScalarType> val2_view_ (const_cast<const ScalarType*> (val2), numEntries2_);
 
   out << "Test alpha = 1, beta = 1" << endl;
   {
@@ -333,8 +333,8 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
 
       maxDiff = testAddSparseMatrices<OffsetType, OrdinalType, ST> (
         ptrOut_view, indOut_view, valOut_view,
-        alpha, ptr1_view, ind1_view, val1_view,
-        beta, ptr2_view, ind2_view, val2_view,
+        alpha, ptr1_view_, ind1_view_, val1_view_,
+        beta, ptr2_view_, ind2_view_, val2_view_,
         numRows, numCols, out);
     } catch (...) {
       if (ptrOut != NULL) {
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST( KokkosRaw, AddSparseMatrices )
 
       maxDiff = testAddSparseMatrices<OffsetType, OrdinalType, ST> (
         ptrOut_view, indOut_view, valOut_view,
-        alpha, ptr1_view, ind1_view, val1_view,
+        alpha, ptr1_view_, ind1_view, val1_view,
         beta, ptr2_view, ind2_view, val2_view,
         numRows, numCols, out);
     } catch (...) {
