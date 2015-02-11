@@ -56,9 +56,6 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_MultiVectorKernelOps.hpp"
 #include "Kokkos_NodeHelpers.hpp"
-#ifdef HAVE_TPETRACLASSIC_THRUST
-#  include "cublas.h"
-#endif
 #include <Teuchos_BLAS.hpp>
 
 
@@ -164,62 +161,6 @@ namespace KokkosClassic {
         blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
-#endif
-
-#ifdef HAVE_TPETRACLASSIC_THRUST
-  template <typename Scalar>
-  struct NodeGEMM<Scalar,ThrustGPUNode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,ThrustGPUNode> &A, const MultiVector<Scalar,ThrustGPUNode> &B, Scalar beta, MultiVector<Scalar,ThrustGPUNode> &C) {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "NodeGEMM: ThrustGPUNode has no support for GEMM operations over Scalar=" << Teuchos::typeName(alpha) << ".");
-      }
-  };
-
-
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
-  template <>
-  struct NodeGEMM<float,ThrustGPUNode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, float alpha, const MultiVector<float,ThrustGPUNode> &A, const MultiVector<float,ThrustGPUNode> &B, float beta, MultiVector<float,ThrustGPUNode> &C) {
-        const int m = Teuchos::as<int>(C.getNumRows()),
-                  n = Teuchos::as<int>(C.getNumCols()),
-                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
-                  lda = Teuchos::as<int>(A.getStride()),
-                  ldb = Teuchos::as<int>(B.getStride()),
-                  ldc = Teuchos::as<int>(C.getStride());
-        const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
-                   char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-        cublasSgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-#ifdef HAVE_TPETRACLASSIC_DEBUG
-        cublasStatus info = cublasGetError();
-        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasSgemm failed with status " << info << "." );
-#endif
-      }
-  };
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
-  template <>
-  struct NodeGEMM<double,ThrustGPUNode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha, const MultiVector<double,ThrustGPUNode> &A, const MultiVector<double,ThrustGPUNode> &B, double beta, MultiVector<double,ThrustGPUNode> &C) {
-        const int m = Teuchos::as<int>(C.getNumRows()),
-                  n = Teuchos::as<int>(C.getNumCols()),
-                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
-                  lda = Teuchos::as<int>(A.getStride()),
-                  ldb = Teuchos::as<int>(B.getStride()),
-                  ldc = Teuchos::as<int>(C.getStride());
-        const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
-                   char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
-        cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-#ifdef HAVE_TPETRACLASSIC_DEBUG
-        cublasStatus info = cublasGetError();
-        TEUCHOS_TEST_FOR_EXCEPTION( info != CUBLAS_STATUS_SUCCESS, std::runtime_error, "cublasDgemm failed with status " << info << "." );
-#endif
-      }
-  };
-#endif
-
 #endif
 
   /// \class DefaultArithmeticBase

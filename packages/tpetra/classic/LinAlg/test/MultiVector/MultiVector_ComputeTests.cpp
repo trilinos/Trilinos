@@ -148,19 +148,11 @@ namespace {
 #define UNIT_TEST_TPINODE(SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  typedef KokkosClassic::ThrustGPUNode KokkosClassic_ThrustGPUNode;
-#define UNIT_TEST_THRUSTGPUNODE(SCALAR) \
-  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUSTGPUNODE(SCALAR)
-#endif
 
 #define UNIT_TEST_GROUP_SCALAR( SCALAR ) \
         UNIT_TEST_SERIALNODE( SCALAR ) \
         UNIT_TEST_TBBNODE( SCALAR ) \
-        UNIT_TEST_TPINODE( SCALAR ) \
-        UNIT_TEST_THRUSTGPUNODE( SCALAR )
+        UNIT_TEST_TPINODE( SCALAR )
 
   UNIT_TEST_GROUP_SCALAR( float )
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -46,26 +46,21 @@
 #define KERNEL_PREFIX
 #endif
 
-#ifdef __CUDACC__
-#include <Teuchos_ScalarTraitsCUDA.hpp>
-#else
 #include <Teuchos_ScalarTraits.hpp>
-#endif
-
 
 namespace KokkosClassic {
 
-  // 
+  //
   // Matrix formatting and mat-vec options
   // Applies to all four operations below
-  // 
+  //
   // unitDiag indicates whether we neglect the diagonal row entry and scale by it
   // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
   // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
-  // 
+  //
   // upper -> diagonal is first entry on row
   // lower -> diagonal is last entry on row
-  // 
+  //
 
   template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseSolveOp {
@@ -83,10 +78,10 @@ namespace KokkosClassic {
 
     inline KERNEL_PREFIX void execute() {
       // solve for X in A * X = Y
-      // 
+      //
       // upper triangular requires backwards substition, solving in reverse order
       // must unroll the last iteration, because decrement results in wrap-around
-      // 
+      //
       if (upper && unitDiag) {
         // upper + unit
         for (Ordinal j=0; j<numRHS; ++j) x[j*xstride+numRows-1] = (DomainScalar)y[j*ystride+numRows-1];
@@ -179,7 +174,7 @@ namespace KokkosClassic {
 
     inline KERNEL_PREFIX void execute() {
       // solve for X in A^H * X = Y
-      // 
+      //
       // put y into x and solve system in-situ
       // this is copy-safe, in the scenario that x and y point to the same location.
       //
@@ -188,7 +183,7 @@ namespace KokkosClassic {
           x[rhs*xstride+row] = y[rhs*xstride+row];
         }
       }
-      // 
+      //
       if (upper && unitDiag) {
         // upper + unit
         for (Ordinal row=0; row < numRows-1; ++row) {

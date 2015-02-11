@@ -69,33 +69,5 @@ IF (${PACKAGE_NAME}_ENABLE_TPINode)
   APPEND_SET(TIMING_INSTALLS TpetraClassic_TPINodeTestAndTiming)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
-  set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-  set(source_files TestOps.cu)
-  CUDA_COMPILE(CUDA_FILES TestOps.cu)
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ThrustGPUNodeTestAndTiming
-    SOURCES 
-      NodeTest
-      ThrustGPUNodeTest
-      ${CUDA_FILES}
-      ${source_files}
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-  APPEND_SET(TIMING_INSTALLS TpetraClassic_ThrustGPUNodeTestAndTiming)
-
-  CUDA_COMPILE(CUDA_FILES CUDABuiltAxpy.cu)
-  TRIBITS_ADD_EXECUTABLE(
-    CUDABuiltAxpy 
-    SOURCES CUDABuiltAxpy.cpp
-            ${CUDA_FILES}
-    COMM serial mpi
-  )
-ENDIF()
-
 INSTALL(TARGETS ${TIMING_INSTALLS}
         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")

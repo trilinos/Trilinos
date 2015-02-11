@@ -47,12 +47,6 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
-#ifdef HAVE_TPETRACLASSIC_CUSPARSE
-#  include "Kokkos_CUSPARSEOps.hpp"
-#endif
-#ifdef HAVE_TPETRACLASSIC_CUSP
-#  include "Kokkos_CuspOps.hpp"
-#endif
 
 namespace Kokkos {
   namespace Compat {
@@ -102,8 +96,7 @@ namespace KokkosClassic {
   /// Tpetra developers, so they can find all the default kernels in
   /// one place.  We also use specializations of DefaultKernels for
   /// various Scalar, Ordinal, and Node types to ensure that Tpetra
-  /// uses high-performance TPLs whenever possible.  This is
-  /// particularly important for the GPU case (Node = ThrustGPUNode).
+  /// uses high-performance TPLs whenever possible.
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
     typedef DefaultHostSparseOps<void, Ordinal, Node> SparseOps;
@@ -159,51 +152,6 @@ namespace KokkosClassic {
     typedef DefaultRelaxation<Scalar, Ordinal, OpenMPNode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_OPENMP
-
-  //
-  // We don't have block sparse ops or relaxation kernels for GPUs
-  // yet.  (This means that compilation of Tpetra::VbrMatrix or
-  // anything that depends on the Relaxations typedef will fail if
-  // Node = ThrustGPUNode, if using the default fifth template
-  // parameter of Tpetra::VbrMatrix.)  Please plug them in here as
-  // they become available.
-  //
-
-  class ThrustGPUNode;
-
-#if defined(HAVE_TPETRACLASSIC_CUSP)
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, ThrustGPUNode> {
-    typedef CuspOps<void, Ordinal, ThrustGPUNode> SparseOps;
-  };
-#else
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, ThrustGPUNode> {
-    // By default, if you don't have CUSP, you won't have any kernels
-    // for arbtrary Scalar and Ordinal types.  Compilation of
-    // DefaultKernels in that case will fail, since the SparseOps
-    // typedef will be missing.  However, cuSPARSE provides kernels
-    // for specific Scalar and Ordinal types, to which we refer in the
-    // specializations below.
-  };
-#endif
-#if defined(HAVE_TPETRACLASSIC_CUSPARSE)
-  // cuSPARSE only implements float and double kernels.  Attempts to
-  // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
-  // will result in a compile-time error.
-  template <>
-  struct DefaultKernels<void, int, ThrustGPUNode> {
-    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
-  };
-  template <>
-  struct DefaultKernels<float, int, ThrustGPUNode> {
-    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
-  };
-  template <>
-  struct DefaultKernels<double, int, ThrustGPUNode> {
-    typedef CUSPARSEOps<void, ThrustGPUNode> SparseOps;
-  };
-#endif
 
 } // namespace KokkosClassic
 

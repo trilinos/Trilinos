@@ -107,60 +107,6 @@ IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_TBBNode)
   MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TBBNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
 ENDIF ()
 
-#
-# Users may specify TpetraClassic_ENABLE_ThrustGPUNode to enable
-# KokkosClassic::ThrustGPUNode explicitly.  It will be DEPRECATED in
-# the next Trilinos release.  It will also be disabled by default if
-# the Kokkos refactor version of Tpetra is enabled.
-#
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thrust)
-IF (${PACKAGE_NAME}_ENABLE_Thrust AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT OFF)
-ENDIF()
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT)
-  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_ThrustGPUNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
-ENDIF ()
-
-TRIBITS_ADD_OPTION_AND_DEFINE( 
-  ${PACKAGE_NAME}_ENABLE_ThrustGPUNode
-  HAVE_TPETRACLASSIC_THRUST
-  "Enable KokkosClassic::ThrustGPUNode in ${PACKAGE_NAME}.  This Node type and this CMake option will be DEPRECATED in the next Trilinos release.  Please use Kokkos::Compat::KokkosCudaWrapperNode instead."  
-  ${${PACKAGE_NAME}_ENABLE_ThrustGPUNode_DEFAULT}
-  )
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
-  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_ThrustGPUNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
-ENDIF ()
-
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_CUDA_FLOAT
-  HAVE_TPETRACLASSIC_CUDA_FLOAT
-  "Enable float type for CUDA nodes."
-  ON
-)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_CUDA_DOUBLE
-  HAVE_TPETRACLASSIC_CUDA_DOUBLE
-  "Enable double type for CUDA nodes."
-  OFF
-)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_CUDA_NODE_MEMORY_PROFILING
-  HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-  "Enable profiling of memory transfers for CUDA nodes."
-  ${${PACKAGE_NAME}_ENABLE_DEBUG}
-)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_ENABLE_CUDA_NODE_MEMORY_TRACE
-  HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_TRACE
-  "Enable memory movement trace for CUDA nodes."
-  OFF
-)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_TREAT_SERIALNODE_AS_DEVICE

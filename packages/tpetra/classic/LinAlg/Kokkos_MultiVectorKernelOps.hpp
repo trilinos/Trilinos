@@ -42,12 +42,7 @@
 #ifndef KOKKOS_MULTIVECTOR_KERNELOPS_HPP
 #define KOKKOS_MULTIVECTOR_KERNELOPS_HPP
 
-#ifdef __CUDACC__
-#include <Teuchos_ScalarTraitsCUDA.hpp>
-#else
 #include <Teuchos_ScalarTraits.hpp>
-#endif
-
 
 #ifndef KERNEL_PREFIX
 #define KERNEL_PREFIX

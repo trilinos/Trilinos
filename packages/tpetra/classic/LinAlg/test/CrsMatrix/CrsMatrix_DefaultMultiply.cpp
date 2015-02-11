@@ -52,29 +52,6 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
-#if (defined(HAVE_TPETRACLASSIC_CUSPARSE) || defined(HAVE_TPETRACLASSIC_CUSP)) && defined(HAVE_TPETRACLASSIC_THRUST)
-  #include "Kokkos_ThrustGPUNode.hpp"
-  #ifdef HAVE_TPETRACLASSIC_CUSPARSE
-    #include "Kokkos_CUSPARSEOps.hpp"
-  #endif
-  #ifdef HAVE_TPETRACLASSIC_CUSP
-    #include "Kokkos_CuspOps.hpp"
-  #endif
-  #define TEST_CUDA
-  #ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
-    #define TEST_CUDA_FLOAT
-  #endif
-  #ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
-    #define TEST_CUDA_DOUBLE
-  #endif
-  #ifdef HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_FLOAT
-    #define TEST_CUDA_COMPLEX_FLOAT
-  #endif
-  #ifdef HAVE_KOKKOSCLASSIC_CUDA_COMPLEX_DOUBLE
-    #define TEST_CUDA_COMPLEX_DOUBLE
-  #endif
-#endif
-
 namespace {
   using KokkosClassic::DefaultArithmetic;
   using KokkosClassic::DefaultKernels;
@@ -430,25 +407,6 @@ namespace {
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
-#if (defined(HAVE_TPETRACLASSIC_CUSPARSE) || defined(HAVE_TPETRACLASSIC_CUSP)) && defined(HAVE_TPETRACLASSIC_THRUST)
-  typedef KokkosClassic::ThrustGPUNode KokkosClassic_ThrustGPUNode;
-#ifdef TEST_CUDA_FLOAT
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, KokkosClassic_ThrustGPUNode )
-#endif
-#ifdef TEST_CUDA_DOUBLE
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, KokkosClassic_ThrustGPUNode )
-#endif
-#ifdef TEST_CUDA_COMPLEX_FLOAT
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, KokkosClassic_ThrustGPUNode )
-#endif
-#ifdef TEST_CUDA_COMPLEX_DOUBLE
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, KokkosClassic_ThrustGPUNode )
-#endif
-
-#ifdef HAVE_TPETRACLASSIC_CUSP
-ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( short, float, KokkosClassic_ThrustGPUNode )
-#endif
-#endif
 
 UNIT_TEST_GROUP_ORDINAL(int)
 typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)

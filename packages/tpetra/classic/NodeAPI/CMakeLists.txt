@@ -22,21 +22,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # protected by the macro that controls whether that Node type is
 # enabled.  This makes it a bit easier to manage the build system.
 
-# CUDA-specific source and headers
-APPEND_SET(CUDA_HEADERS
-    Kokkos_CUDANodeMemoryModel.hpp
-    Kokkos_CUDANodeMemoryModelImpl.hpp
-    Kokkos_ThrustGPUNode.cuh
-    Kokkos_ThrustGPUNode.hpp
-    Kokkos_ThrustGPUWrappers.hpp
-    Kokkos_CUDANodeUtils.hpp
-)
-APPEND_SET(CUDA_SOURCES
-    Kokkos_CUDANodeMemoryModel.cpp
-    Kokkos_ThrustGPUNode.cpp
-    Kokkos_CUDANodeUtils.cpp
-)
-
 # TBB-specific source and headers
 APPEND_SET(TBB_HEADERS
     Kokkos_TBBNode.hpp
@@ -85,14 +70,6 @@ IF (${PACKAGE_NAME}_ENABLE_SerialNode)
   LIST(APPEND kokkos_enabled_nodes "KokkosClassic::SerialNode")
   MESSAGE(STATUS "Enabling Node: KokkosClassic::SerialNode (DEPRECATED)")  
   set(kokkos_defaultnode_default "KokkosClassic::SerialNode")
-ENDIF()
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
-IF (${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
-  LIST(APPEND kokkos_enabled_nodes "KokkosClassic::ThrustGPUNode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::ThrustGPUNode (DEPRECATED)")
-  APPEND_SET(HEADERS ${CUDA_HEADERS})
-  APPEND_SET(SOURCES ${CUDA_SOURCES})
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TPINode)
@@ -172,8 +149,6 @@ ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::TBBNode"       AND ${P
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE ON CACHE BOOL "")
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::OpenMPNode"    AND ${PACKAGE_NAME}_ENABLE_OpenMPNode)
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE ON CACHE BOOL "")
-ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::ThrustGPUNode" AND ${PACKAGE_NAME}_ENABLE_ThrustGPUNode)
-  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE ON CACHE BOOL "")
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "KokkosClassic::SerialNode"    AND ${PACKAGE_NAME}_ENABLE_SerialNode)
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
 ELSEIF(KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")

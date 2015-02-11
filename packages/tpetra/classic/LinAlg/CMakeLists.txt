@@ -57,29 +57,6 @@ APPEND_SET(SOURCES
     Kokkos_Mkl_MatrixDescriptor.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_CUSPARSE)
-  APPEND_SET(SOURCES Kokkos_CUSPARSEOps.cpp)
-  APPEND_SET(HEADERS Kokkos_CUSPARSEOps.hpp)
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Cusp)
-  APPEND_SET(HEADERS Kokkos_CuspOps.hpp)
-ENDIF()
-
-SET(CUDA_SOURCES Kokkos_DefaultArithmetic.cu 
-#                Kokkos_DefaultBlockSparseOps.cu 
-#                Kokkos_DefaultSparseOps.cu 
-#                Kokkos_DefaultRelaxation.cu
-   )
-IF (${PACKAGE_NAME}_ENABLE_Cusp) 
-  APPEND_SET(CUDA_SOURCES Kokkos_CuspOps.cu)
-ENDIF()
-
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thrust)
-IF (${PACKAGE_NAME}_ENABLE_Thrust)
-  PACKAGE_ADD_CUDA_LIBRARY(tpetraclassiclinalg_cuda SOURCES ${CUDA_SOURCES})
-ENDIF()
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MKL)
 IF (${PACKAGE_NAME}_ENABLE_MKL)
   APPEND_SET(HEADERS

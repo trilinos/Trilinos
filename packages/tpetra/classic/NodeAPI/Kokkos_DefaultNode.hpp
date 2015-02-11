@@ -59,9 +59,6 @@
 #ifdef HAVE_TPETRACLASSIC_OPENMP
 #  include "Kokkos_OpenMPNode.hpp"
 #endif
-#ifdef HAVE_TPETRACLASSIC_THRUST
-#  include "Kokkos_ThrustGPUNode.hpp"
-#endif
 #ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
 #  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #endif
@@ -118,8 +115,6 @@ namespace Details {
       typedef TBBNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
       typedef OpenMPNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
-      typedef ThrustGPUNode DefaultNodeType;
 #elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
 #  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
       typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;

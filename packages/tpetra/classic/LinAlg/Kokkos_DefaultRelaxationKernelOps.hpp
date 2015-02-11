@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -46,11 +46,7 @@
 #define KERNEL_PREFIX
 #endif
 
-#ifdef __CUDACC__
-#include <Teuchos_ScalarTraitsCUDA.hpp>
-#else
 #include <Teuchos_ScalarTraits.hpp>
-#endif
 
 namespace KokkosClassic {
 
@@ -202,7 +198,7 @@ namespace KokkosClassic {
       const size_t rhs  = (i - row) / numRows;
       Scalar       *xj  = x + rhs * stride;
       const Scalar *x0j = x0 + rhs * stride;
-      Scalar       *wj  = w + rhs * stride;      
+      Scalar       *wj  = w + rhs * stride;
       const Scalar *bj  = b + rhs * stride;
       Scalar        vj;
 

@@ -40,17 +40,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( Raw_AddSparseMatrices
 ) 
 
 
-IF (${PACKAGE_NAME}_ENABLE_CUSPARSE) 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_CUSPARSE
-    SOURCES   
-      CrsMatrix_CUSPARSE.cpp 
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-  ) 
-ENDIF()
-
 #disabling for PGI due to this being a known issue with the PGI compiler.
 #see bug 4989 for a similar issue.
 IF(NOT __LINUX_COMPILER_PGI)

@@ -77,7 +77,7 @@ namespace {
   // doesn't build correctly if the default Node type is one of the
   // CUDA Node types.  Thus, we go through a bit of effort not to use
   // a CUDA Node type here.
-#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE) || defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   typedef KokkosClassic::SerialNode node_type;
 #  elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
