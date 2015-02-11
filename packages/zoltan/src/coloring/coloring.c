@@ -1469,7 +1469,7 @@ static int ReorderGraph(
 
     /* move cut edges to the beginning of adj lists for boundary vertices */
     for (i=0; i<nvtx; ++i) {
-	int j, b, tmp;
+	int b, tmp;
 	b = xadj[i+1] - 1;
 	j = xadj[i];
 	while (b > j) {

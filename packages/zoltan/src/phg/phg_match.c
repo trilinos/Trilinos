@@ -1992,21 +1992,21 @@ static int pmatching_agg_ipm (ZZ *zz,
 */
         for (i = 0; i < m; i++)  {
           float val, mcw=0.0;
-          int  lno=aux[i];
+          int  llno=aux[i];
 
 
           for (j=0; j<VtxDim; ++j)
-              if (cw[lno*VtxDim+j]>mcw)
-                  mcw = cw[lno*VtxDim+j];
+              if (cw[llno*VtxDim+j]>mcw)
+                  mcw = cw[llno*VtxDim+j];
           if (mcw==0.0)
               mcw = 1.0;
-          val = sums[lno] / mcw;
-/*          printf("[v=%d (lno=%zd) ip=%f mcw=%f val=%f] ", VTX_LNO_TO_GNO(hg, lno), lno, sums[lno], mcw, val); */
-          if (val > bestsum && match[lno]>=0)  {
+          val = sums[llno] / mcw;
+/*          printf("[v=%d (llno=%zd) ip=%f mcw=%f val=%f] ", VTX_LNO_TO_GNO(hg, llno), llno, sums[llno], mcw, val); */
+          if (val > bestsum && match[llno]>=0)  {
             bestsum = val;
-            bestlno = lno;
+            bestlno = llno;
           }
-          sums[lno] = 0.0;  
+          sums[llno] = 0.0;  
         }
 
         /*
@@ -2168,11 +2168,11 @@ static int pmatching_agg_ipm (ZZ *zz,
     }
 
     for (i=0; i<locCandCnt; ++i) {
-        int lno=locCandidates[i];
-        if (match[lno]<0)
-            match[lno] = -match[lno]-1;
+        int llno=locCandidates[i];
+        if (match[llno]<0)
+            match[llno] = -match[llno]-1;
         else
-            errexit("hey hey hey match[%d]=%zd\n", lno, match[lno]);
+            errexit("hey hey hey match[%d]=%zd\n", llno, match[llno]);
     }
 
     /* bcast accepted match to column so that they can
@@ -2219,7 +2219,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         MACRO_RESIZE (reccnt*msgsize, nSend, sendbuf);  /* increase buffer size */
       s = sendbuf;         
       for (r = recvbuf; r < recvbuf + recsize;) {
-        int ci, lheadno, pref;
+        int ci, lheadno;
         ZOLTAN_GNO_TYPE partner;
 
         intptr = (int *)r;
@@ -2278,7 +2278,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     MPI_Bcast (sendbuf, recsize, MPI_CHAR, 0, hgc->col_comm);
 
     if (hgc->myProc_y !=0) { /* master row already done this */
-      int lno, lheadno, partner, pref;
+      int lheadno, partner;
       for (s = sendbuf; s < sendbuf + recsize; ) {
 
         gnoptr = (ZOLTAN_GNO_TYPE *)s;
@@ -2321,29 +2321,28 @@ static int pmatching_agg_ipm (ZZ *zz,
   if (hgc->myProc_y==0 && total_nCandidates)
     Zoltan_KVHash_Destroy(&hash);
 
-  
-ZOLTAN_FREE(&candIdx);
-ZOLTAN_FREE(&cw);
-ZOLTAN_FREE(&tw);
-ZOLTAN_FREE(&maxw);
-ZOLTAN_FREE(&candw);
-ZOLTAN_FREE(&lhead);
-ZOLTAN_FREE(&lheadpref);
-ZOLTAN_FREE(&visit);
-ZOLTAN_FREE(&visited);
-ZOLTAN_FREE(&sums);
-ZOLTAN_FREE(&sendbuf);
-ZOLTAN_FREE(&dest);
-ZOLTAN_FREE(&size);
-ZOLTAN_FREE(&recvbuf);
-ZOLTAN_FREE(&aux);
-ZOLTAN_FREE(&idxptr);
-ZOLTAN_FREE(&candvisit);
-ZOLTAN_FREE(&edgebuf);
-ZOLTAN_FREE(&locCandidates);
-ZOLTAN_FREE(&rows);
-ZOLTAN_FREE(&master_data);
-ZOLTAN_FREE(&master_procs);
+  ZOLTAN_FREE(&candIdx);
+  ZOLTAN_FREE(&cw);
+  ZOLTAN_FREE(&tw);
+  ZOLTAN_FREE(&maxw);
+  ZOLTAN_FREE(&candw);
+  ZOLTAN_FREE(&lhead);
+  ZOLTAN_FREE(&lheadpref);
+  ZOLTAN_FREE(&visit);
+  ZOLTAN_FREE(&visited);
+  ZOLTAN_FREE(&sums);
+  ZOLTAN_FREE(&sendbuf);
+  ZOLTAN_FREE(&dest);
+  ZOLTAN_FREE(&size);
+  ZOLTAN_FREE(&recvbuf);
+  ZOLTAN_FREE(&aux);
+  ZOLTAN_FREE(&idxptr);
+  ZOLTAN_FREE(&candvisit);
+  ZOLTAN_FREE(&edgebuf);
+  ZOLTAN_FREE(&locCandidates);
+  ZOLTAN_FREE(&rows);
+  ZOLTAN_FREE(&master_data);
+  ZOLTAN_FREE(&master_procs);
     
 /*
   Zoltan_Multifree (__FILE__, __LINE__, 22, &candIdx, &cw, &tw, &maxw, &candw, &lhead, &lheadpref,

@@ -421,14 +421,14 @@ if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO
 
     /* Accumulating on-processor coordinates */
     for (i = 0; i < hg->nVtx; i++) {
-      ZOLTAN_GNO_TYPE ni = LevelMap[i];
-      if (ni >= 0) {
+      ZOLTAN_GNO_TYPE nni = LevelMap[i];
+      if (nni >= 0) {
         double hg_vwgt = hg->vwgt[i*hg->VtxWeightDim];
 	for (j = 0; j < hg->nDim; j++)
-	  c_hg->coor[ni*hg->nDim + j] += (hg_vwgt * hg->coor[i*hg->nDim + j]);
-	coorcount[ni] += hg_vwgt;
+	  c_hg->coor[nni*hg->nDim + j] += (hg_vwgt * hg->coor[i*hg->nDim + j]);
+	coorcount[nni] += hg_vwgt;
 #ifdef KDDKDD_DEBUG
-if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into ni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], ni, coorcount[ni]);
+if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into nni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], nni, coorcount[nni]);
 #endif
       }
     }
@@ -461,10 +461,10 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
                                              sizeof(float))))
       MEMORY_ERROR;
   for (i=0; i < hg->nVtx; ++i) {
-      ZOLTAN_GNO_TYPE ni=LevelMap[i];
-      if (ni>=0)
-          for (j=0; j<hg->VtxWeightDim; ++j)
-              c_hg->vwgt[ni*hg->VtxWeightDim+j] += hg->vwgt[i*hg->VtxWeightDim+j];
+      ZOLTAN_GNO_TYPE nni=LevelMap[i];
+      if (nni>=0)
+        for (j=0; j<hg->VtxWeightDim; ++j)
+          c_hg->vwgt[nni*hg->VtxWeightDim+j] += hg->vwgt[i*hg->VtxWeightDim+j];
   }
       
   /* index all received data for rapid lookup */ 
@@ -475,7 +475,7 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
     doubleptr = (double *)coordrecbuf;
 
   while (b < b_end){
-    int j, sz, source_lno;
+    int sz, source_lno;
     /* ZOLTAN_GNO_TYPE lno; */
     int lno;               /* we get memory errors using ZOLTAN_GNO_TYPE to index int arrays TODO64 */
 
@@ -534,7 +534,7 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
   b_end = rbuffer + (size * sizeof(int));
 
   while (b < b_end){
-    int lno, sz, j;
+    int lno, sz;
 
     gnoptr = (ZOLTAN_GNO_TYPE *)b;
     intptr = (int *)(gnoptr + 1);
@@ -832,7 +832,7 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
           if (j!=rootRank) {
               int *enets=allemptynets+j*emptynetsize;
               int *inets=allidennets+idennetdest[j], rootnet=-1;
-              int *x, *y, *a, *b;
+              int *x, *y, *aa, *bb;
 
               for (i=0; i<size; ++i) {
                   ip[i] = BITCHECK(enets, i) ? -1 : 0;
@@ -848,20 +848,20 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
               /* merge received identical net info with the local one */
               /*
                 identical operator:
-                a[i]  b[i]     res[i]
+                aa[i]  bb[i]     res[i]
                 -1    -1       -1  : -1 means no edge in that proc; identical to everything :)
-                -1    y        -1==a[y] ? y : 0   --> UVC note that this is same as x < y
-                x     -1       -1==b[x] ? x : 0   --> UVC note that this is same as y < x
+                -1    y        -1==aa[y] ? y : 0   --> UVC note that this is same as x < y
+                x     -1       -1==bb[x] ? x : 0   --> UVC note that this is same as y < x
                 0     y        0   : 0 means not identical to anyone in this proc; hence not identical anyone in all
                 x     0        0   
                 x     x        x   : they are identical to same net
                 x <   y       x==a[y] ? y : 0
-                x >   y       y==b[x] ? x : 0
+                x >   y       y==bb[x] ? x : 0
               */
               
               x = ip;   y = iden;
               memcpy(ids, iden, size*sizeof(int));
-              a = ip-1; b=ids-1; /* net ids in the a and b are base-1 numbers */
+              aa = ip-1; bb=ids-1; /* net ids in the aa and bb are base-1 numbers */
               for (i=0; i < size; ++i, ++x, ++y) {
                   if (*x == -1 && *y == -1)
                       ; /* no op *y = *y */
@@ -870,9 +870,9 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
                   else if (*x==*y)
                       ; /* no op */
                   else if (*x < *y)
-                      *y = (*x==a[*y]) ? *y : 0;
+                      *y = (*x==aa[*y]) ? *y : 0;
                   else /* *x > *y */ 
-                      *y = (*y==b[*x]) ? *x : 0;
+                      *y = (*y==bb[*x]) ? *x : 0;
               }
           }
       }

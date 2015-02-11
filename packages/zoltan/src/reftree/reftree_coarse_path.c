@@ -73,7 +73,7 @@ static int sfc_coarse_grid_path(int nobj,int *num_vert, ZOLTAN_ID_PTR vertices,
                           double *coords, int *order, ZOLTAN_ID_PTR gids,
                           ZOLTAN_ID_PTR lids, char *initpath_method,
                           int all_triangles, ZZ *zz);
-static int find_inout(int elem, int prev, int prevprev,
+static int find_inout(int elem, int pprev, int prevprev,
                       ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
                       ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
                       ZZ *zz);
@@ -1841,7 +1841,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
  */
 
   char *yo = "sfc_coarse_grid_path";
-  int ierr, num_geom, i, elem, prev, prevprev;
+  int ierr, num_geom, i, elem, pprev, prevprev;
   int *ind, *first_vert;
   double *sfccoord, loc_coords[3];
   double xmin,xmax,ymin,ymax,zmin,zmax;
@@ -1974,14 +1974,14 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   for (i=1; i<nobj; i++) {
     elem = ind[i];
     order[elem] = i;
-    prev = ind[i-1];
+    pprev = ind[i-1];
     if (i==1) {
       prevprev = -1;
     } else {
       prevprev = ind[i-2];
     }
 
-    ierr = find_inout(elem, prev, prevprev, in_vertex, out_vertex,
+    ierr = find_inout(elem, pprev, prevprev, in_vertex, out_vertex,
                       vertices, num_vert, first_vert, zz);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -2009,17 +2009,17 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int find_inout(int elem, int prev, int prevprev,
+static int find_inout(int elem, int pprev, int prevprev,
                ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
                ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
                ZZ *zz)
 {
 
 /*
- * This routine finds and sets an in-vertex for elem and out-vertex for prev.
+ * This routine finds and sets an in-vertex for elem and out-vertex for pprev.
  * Usually they will be the same vertex, but if necessary they will be
  * different which will cause the Hamiltonian path to be disconnected.
- * If necessary and possible, this routine will change the in-vertex of prev
+ * If necessary and possible, this routine will change the in-vertex of pprev
  * and out-vertex of prevprev to make in and out be the same.
  */
 
@@ -2030,20 +2030,20 @@ static int find_inout(int elem, int prev, int prevprev,
   ngid = zz->Num_GID;
 
 /*
- * first look for a shared vertex of elem and prev that is not the
- * in-vertex of prev
+ * first look for a shared vertex of elem and pprev that is not the
+ * in-vertex of pprev
  */
 
   looking = TRUE;
   for (i=0; i<num_vert[elem] && looking; i++) {
-    for (j=0; j<num_vert[prev] && looking; j++) {
-      if (ZOLTAN_EQ_GID(zz,&(vertices[ngid*(first_vert[prev]+j)]),
+    for (j=0; j<num_vert[pprev] && looking; j++) {
+      if (ZOLTAN_EQ_GID(zz,&(vertices[ngid*(first_vert[pprev]+j)]),
                            &(vertices[ngid*(first_vert[elem]+i)])) &&
-          !ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[prev]+j)]),
-                            &(in_vertex[ngid*prev]))) {
+          !ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[pprev]+j)]),
+                            &(in_vertex[ngid*pprev]))) {
         ZOLTAN_SET_GID(zz,&(in_vertex[ngid*elem]),
                           &( vertices[ngid*(first_vert[elem]+i)]));
-        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
                           &(vertices[ngid*(first_vert[elem]+i)]));
         looking = FALSE;
       }
@@ -2051,117 +2051,117 @@ static int find_inout(int elem, int prev, int prevprev,
   }
 
 /*
- * If that failed then the in-vertex of prev must be shared, or else there
- * are no shared vertices between elem and prev.
+ * If that failed then the in-vertex of pprev must be shared, or else there
+ * are no shared vertices between elem and pprev.
  */
 
   if (looking) {
     shared = FALSE;
     for (i=0; i<num_vert[elem] && !shared; i++) {
       if (ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[elem]+i)]),
-                           &(in_vertex[ngid*prev]))) {
+                           &(in_vertex[ngid*pprev]))) {
         shared = TRUE;
       }
     }
 
 /*
- * If the in-vertex of prev is not shared, then prev and elem are not adjacent,
+ * If the in-vertex of pprev is not shared, pprev and elem are not adjacent,
  * so pick any vertices for the in and out.
  */
 
     if (!shared) {
       ZOLTAN_SET_GID(zz,&(in_vertex[ngid*elem]),
                         &( vertices[ngid*(first_vert[elem])]));
-      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
-                           &( vertices[ngid*first_vert[prev]]))) {
-        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                          &(  vertices[ngid*(first_vert[prev]+1)]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*pprev]),
+                           &( vertices[ngid*first_vert[pprev]]))) {
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                          &(  vertices[ngid*(first_vert[pprev]+1)]));
       } else {
-        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                          &(  vertices[ngid*first_vert[prev]]));
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                          &(  vertices[ngid*first_vert[pprev]]));
       }
       looking = FALSE;
     }
   }
 
 /*
- * If the in-vertex of prev is shared, then it must be the only shared vertex
- * between elem and prev (otherwise the first approach would have worked).
- * Try to change the in-vertex of prev and use it as the out-vertex of prev
+ * If the in-vertex of pprev is shared, then it must be the only shared vertex
+ * between elem and pprev (otherwise the first approach would have worked).
+ * Try to change the in-vertex of pprev and use it as the out-vertex of pprev
  * and in-vertex of elem.
  */
 
 /*
- * First, if prev is the beginning of the path then set in-vertex to be
+ * First, if pprev is the beginning of the path then set in-vertex to be
  * any other vertex.
  */
 
   if (looking) {
     if (prevprev == -1) {
       ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
-                        &( in_vertex[ngid*prev]));
-      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                        &( in_vertex[ngid*prev]));
-      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
-                           &( vertices[ngid*first_vert[prev]]))) {
-        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
-                          &( vertices[ngid*(first_vert[prev]+1)]));
+                        &( in_vertex[ngid*pprev]));
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                        &( in_vertex[ngid*pprev]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*pprev]),
+                           &( vertices[ngid*first_vert[pprev]]))) {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*pprev]),
+                          &( vertices[ngid*(first_vert[pprev]+1)]));
       } else {
-        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
-                          &( vertices[ngid*first_vert[prev]]));
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*pprev]),
+                          &( vertices[ngid*first_vert[pprev]]));
       }
       looking = FALSE;
     }
   }
 
 /*
- * Second, if prev and prevprev are not adjacent or contain a broken link,
- * i.e., out_vertex of prevprev is not the in_vertex of prev, then change
- * the in_vertex of prev to any other vertex.
+ * Second, if pprev and prevprev are not adjacent or contain a broken link,
+ * i.e., out_vertex of prevprev is not the in_vertex of pprev, then change
+ * the in_vertex of pprev to any other vertex.
  */
 
   if (looking) {
-    if (!ZOLTAN_EQ_GID(zz,&( in_vertex[ngid*prev]),
+    if (!ZOLTAN_EQ_GID(zz,&( in_vertex[ngid*pprev]),
                           &(out_vertex[ngid*prevprev]))) {
       ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
-                        &( in_vertex[ngid*prev]));
-      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                        &( in_vertex[ngid*prev]));
-      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
-                           &( vertices[ngid*first_vert[prev]]))) {
-        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
-                          &( vertices[ngid*(first_vert[prev]+1)]));
+                        &( in_vertex[ngid*pprev]));
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                        &( in_vertex[ngid*pprev]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*pprev]),
+                           &( vertices[ngid*first_vert[pprev]]))) {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*pprev]),
+                          &( vertices[ngid*(first_vert[pprev]+1)]));
       } else {
-        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
-                          &( vertices[ngid*first_vert[prev]]));
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*pprev]),
+                          &( vertices[ngid*first_vert[pprev]]));
       }
       looking = FALSE;
     }
   }
 
 /*
- * Third and final, look for a shared vertex between prev and prevprev that
- * is not the in-vertex of either prev or prevprev and use that as the new
- * out-vertex of prevprev and in-vertex of prev.
+ * Third and final, look for a shared vertex between pprev and prevprev that
+ * is not the in-vertex of either pprev or prevprev and use that as the new
+ * out-vertex of prevprev and in-vertex of pprev.
  */
 
   if (looking) {
-    for (i=0; i<num_vert[prev] && looking; i++) {
-      if (!ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
-                            &( vertices[ngid*(first_vert[prev]+i)]))) {
+    for (i=0; i<num_vert[pprev] && looking; i++) {
+      if (!ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*pprev]),
+                            &( vertices[ngid*(first_vert[pprev]+i)]))) {
         for (j=0; j<num_vert[prevprev] && looking; j++) {
           if (ZOLTAN_EQ_GID(zz,&(vertices[ngid*(first_vert[prevprev]+j)]),
-                               &(vertices[ngid*(first_vert[prev]+i)])) &&
+                               &(vertices[ngid*(first_vert[pprev]+i)])) &&
               !ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[prevprev]+j)]),
                                 &(in_vertex[ngid*prevprev]))) {
             ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
-                              &( in_vertex[ngid*prev]));
-            ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                              &( in_vertex[ngid*prev]));
-            ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
-                              &( vertices[ngid*(first_vert[prev]+i)]));
+                              &( in_vertex[ngid*pprev]));
+            ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                              &( in_vertex[ngid*pprev]));
+            ZOLTAN_SET_GID(zz,&(in_vertex[ngid*pprev]),
+                              &( vertices[ngid*(first_vert[pprev]+i)]));
             ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prevprev]),
-                              &(  vertices[ngid*(first_vert[prev]+i)]));
+                              &(  vertices[ngid*(first_vert[pprev]+i)]));
             looking = FALSE;
           }
         }
@@ -2171,20 +2171,20 @@ static int find_inout(int elem, int prev, int prevprev,
 
 /*
  * If that failed, give up and put in a broken link by using the in-vertex
- * of prev (the only shared vertex between elem and prev) as the in-vertex
- * of elem and any other vertex of prev as the out-vertex of prev
+ * of pprev (the only shared vertex between elem and pprev) as the in-vertex
+ * of elem and any other vertex of pprev as the out-vertex of pprev
  */
 
   if (looking) {
     ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
-                      &( in_vertex[ngid*prev]));
-    if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
-                         &( vertices[ngid*first_vert[prev]]))) {
-      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                        &(  vertices[ngid*(first_vert[prev]+1)]));
+                      &( in_vertex[ngid*pprev]));
+    if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*pprev]),
+                         &( vertices[ngid*first_vert[pprev]]))) {
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                        &(  vertices[ngid*(first_vert[pprev]+1)]));
     } else {
-      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
-                        &(  vertices[ngid*first_vert[prev]]));
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*pprev]),
+                        &(  vertices[ngid*first_vert[pprev]]));
     }
   }
 

@@ -110,8 +110,8 @@ void meminfo_signal_handler(int sig)
 
   sprintf(msg,"(%d) Received signal %d\n",myRank,sig);
 
-  // Signal handler for Linux that helps us to understand
-  // whether failure was due to insufficient memory.
+  /* Signal handler for Linux that helps us to understand */
+  /* whether failure was due to insufficient memory. */
 
   signal(SIGINT, SIG_IGN);
   signal(SIGTERM, SIG_IGN);

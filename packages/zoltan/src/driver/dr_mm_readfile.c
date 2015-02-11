@@ -498,7 +498,7 @@ int error = 0;  /* flag to indicate status */
               vwgts[iptr->i] = iptr->v;
           }
           else { /* Off-diagonal */
-            int idx = start[iptr->i]+cnt[iptr->i];
+            idx = start[iptr->i]+cnt[iptr->i];
             adj[idx] = iptr->j;
             if (*ch_ewgt_dim) 
               ewgts[idx] = iptr->v;

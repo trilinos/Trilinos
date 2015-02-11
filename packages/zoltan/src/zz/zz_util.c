@@ -544,7 +544,7 @@ char buf[2048],label[64],value[64],units[64];
     *result = c;
   }
 }
-#endif  // !WIN32
+#endif  /* !WIN32 */
 
 int Zoltan_get_global_id_type(char **name)
 {

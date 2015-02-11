@@ -55,7 +55,7 @@
 
 /* Name of file containing graph to be partitioned */
 
-static char *fname="graph.txt";
+static char *global_fname="graph.txt";
 
 /* Structure to hold graph data */
 
@@ -126,15 +126,15 @@ int main(int argc, char *argv[])
   ** Read graph from input file and distribute it 
   ******************************************************************/
 
-  fp = fopen(fname, "r");
+  fp = fopen(global_fname, "r");
   if (!fp){
-    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPI_Finalize();
     exit(1);
   }
   fclose(fp);
 
-  read_input_file(myRank, numProcs, fname, &myGraph);
+  read_input_file(myRank, numProcs, global_fname, &myGraph);
 
   /******************************************************************
   ** Create a Zoltan library structure for this instance of load

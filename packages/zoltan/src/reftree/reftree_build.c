@@ -3125,14 +3125,10 @@ int *num_vert;        /* number of vertices for each coarse element */
 ZOLTAN_ID_PTR vertices; /* vertices for the coarse elements */
 ZOLTAN_ID_PTR in_vertex;       /* "in" vertex for each coarse element */
 ZOLTAN_ID_PTR out_vertex;      /* "out" vertex for each coarse element */
-ZOLTAN_ID_PTR slocal_gids;/* coarse element Global IDs from user */
-ZOLTAN_ID_PTR slocal_lids;/* coarse element Local IDs from user */
 ZOLTAN_ID_PTR plocal_gids;/* previous coarse element Global IDs from user */
 ZOLTAN_ID_PTR plocal_lids;/* previous coarse element Local IDs from user */
-int sassigned;        /* 1 if the element is assigned to this proc */
-int snum_vert;        /* number of vertices for a coarse element */
-ZOLTAN_ID_PTR sin_vertex = ZOLTAN_MALLOC_GID(zz); /* "in" vertex for a coarse element */
-ZOLTAN_ID_PTR sout_vertex = ZOLTAN_MALLOC_GID(zz); /* "out" vertex for a coarse element */
+int iassigned;        /* 1 if the element is assigned to this proc */
+int inum_vert;        /* number of vertices for a coarse element */
 int in_order;         /* 1 if user is supplying order of the elements */
 int num_obj;          /* number of coarse objects known to this proc */
 int ierr;             /* error flag */
@@ -3268,17 +3264,24 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    * Get objects via first/next
    */
 
-    slocal_gids = ZOLTAN_MALLOC_GID(zz);
-    slocal_lids = ZOLTAN_MALLOC_LID(zz);
+    local_gids = ZOLTAN_MALLOC_GID(zz);
+    local_lids = ZOLTAN_MALLOC_LID(zz);
+    in_vertex = ZOLTAN_MALLOC_GID(zz);
+    out_vertex = ZOLTAN_MALLOC_GID(zz);
     plocal_gids = ZOLTAN_MALLOC_GID(zz);
     plocal_lids = ZOLTAN_MALLOC_LID(zz);
     vertices = ZOLTAN_MALLOC_GID_ARRAY(zz,MAXVERT);
-    if (slocal_gids == NULL || (nlid_ent > 0 && slocal_lids == NULL) || 
+    if (local_gids == NULL || (nlid_ent > 0 && local_lids == NULL) || 
         plocal_gids == NULL || (nlid_ent > 0 && plocal_lids == NULL) || 
+        in_vertex == NULL || out_vertex == NULL ||
         vertices == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      Zoltan_Multifree(__FILE__, __LINE__, 3, &slocal_gids,
-                                              &slocal_lids,
+      Zoltan_Multifree(__FILE__, __LINE__, 7, &local_gids,
+                                              &local_lids,
+                                              &plocal_gids,
+                                              &plocal_lids,
+                                              &in_vertex,
+                                              &out_vertex,
                                               &vertices);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
@@ -3286,55 +3289,59 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
     found = zz->Get_First_Coarse_Obj(zz->Get_First_Coarse_Obj_Data,
                                      ngid_ent, nlid_ent,
-                                     slocal_gids, slocal_lids, &sassigned,
-                                     &snum_vert, vertices, &in_order,
-                                     sin_vertex, sout_vertex, &ierr);
+                                     local_gids, local_lids, &iassigned,
+                                     &inum_vert, vertices, &in_order,
+                                     in_vertex, out_vertex, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
-      Zoltan_Multifree(__FILE__, __LINE__, 3, &slocal_gids,
-                                              &slocal_lids,
+      Zoltan_Multifree(__FILE__, __LINE__, 7, &local_gids,
+                                              &local_lids,
+                                              &plocal_gids,
+                                              &plocal_lids,
+                                              &in_vertex,
+                                              &out_vertex,
                                               &vertices);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
     while (found) {
-      tree_node = Zoltan_Reftree_hash_lookup(zz, hashtab,slocal_gids,hashsize);
+      tree_node = Zoltan_Reftree_hash_lookup(zz, hashtab,local_gids,hashsize);
       if (tree_node == NULL) {
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "coarse grid element not"
                                     " previously seen.");
         final_ierr = ZOLTAN_WARN;
       }
       else {
-        tree_node->assigned_to_me = sassigned;
+        tree_node->assigned_to_me = iassigned;
         tree_node->known_to_me = 1;
-        ZOLTAN_SET_LID(zz, tree_node->local_id, slocal_lids);
+        ZOLTAN_SET_LID(zz, tree_node->local_id, local_lids);
         if (zz->Obj_Weight_Dim == 0)
           tree_node->weight[0] = 0.0;
         else
           zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
                              ngid_ent, nlid_ent,
-                             slocal_gids, slocal_lids, zz->Obj_Weight_Dim,
+                             local_gids, local_lids, zz->Obj_Weight_Dim,
                              tree_node->weight, &ierr);
       }
 
-      ZOLTAN_SET_GID(zz, plocal_gids, slocal_gids);
-      ZOLTAN_SET_LID(zz, plocal_lids, slocal_lids);
+      ZOLTAN_SET_GID(zz, plocal_gids, local_gids);
+      ZOLTAN_SET_LID(zz, plocal_lids, local_lids);
       found = zz->Get_Next_Coarse_Obj(zz->Get_Next_Coarse_Obj_Data,
                                       ngid_ent, nlid_ent,
                                       plocal_gids, plocal_lids,
-                                      slocal_gids, slocal_lids, &sassigned,
-                                      &snum_vert, vertices,
-                                      sin_vertex, sout_vertex, &ierr);
+                                      local_gids, local_lids, &iassigned,
+                                      &inum_vert, vertices,
+                                      in_vertex, out_vertex, &ierr);
     }
-    Zoltan_Multifree(__FILE__, __LINE__, 5, &slocal_gids,
-                                            &slocal_lids,
+    Zoltan_Multifree(__FILE__, __LINE__, 7, &local_gids,
+                                            &local_lids,
                                             &plocal_gids,
                                             &plocal_lids,
+                                            &in_vertex,
+                                            &out_vertex,
                                             &vertices);
   }
-  Zoltan_Multifree(__FILE__, __LINE__, 2, &sin_vertex,
-                                          &sout_vertex);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
 }

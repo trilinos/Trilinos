@@ -144,16 +144,16 @@ int Zoltan_Preprocess_Graph(
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
-    printf("Third party library real type is %zd-byte real number\n",
-           sizeof(realtype));
-    printf("Third party library index type is %zd-byte integer\n",
-           sizeof(indextype));
+    printf("Third party library real type is %lu-byte real number\n",
+           (unsigned long) (sizeof(realtype)));
+    printf("Third party library index type is %lu-byte integer\n",
+           (unsigned long) (sizeof(indextype)));
 #ifdef TPL_INTEGRAL_WEIGHT
-    printf("Third party library weight type is %zd-byte integer\n",
-           sizeof(weighttype));
+    printf("Third party library weight type is %lu-byte integer\n",
+           (unsigned long) (sizeof(weighttype)));
 #else
-    printf("Third party library weight type is %zd-byte floating point value\n",
-           sizeof(weighttype));
+    printf("Third party library weight type is %lu-byte floating point value\n",
+           (unsigned long) (sizeof(weighttype)));
 #endif    
 
 #if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ > 1

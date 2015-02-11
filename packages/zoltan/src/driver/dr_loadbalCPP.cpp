@@ -131,7 +131,6 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 /* Local declarations. */
   const char *yo = "setup_zoltan";
   int ierr;                      /* Error code */
-  int i;
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
@@ -299,7 +298,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     psize = new float [nparts];
     partid = new int [nparts];
 
-    for (i=0; i<nparts; i++){
+    for (int i=0; i<nparts; i++){
       partid[i] = i;
       psize[i] = (float) i;
     }
@@ -696,7 +695,6 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (Driver_Action & 2){
-    int i;
       /* Only do ordering if this was specified in the driver input file */
 
       int *order = NULL;		/* Ordering vector(s) */
@@ -718,7 +716,7 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 	  Gen_Error(0, "memory alloc failed for Zoltan_Order\n");
 	  return 0;
       }
-      for (i = 0 ; i < mesh->num_elems ; ++i) {
+      for (int i = 0 ; i < mesh->num_elems ; ++i) {
 	order_gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i].globalID;
 	order_lids[num_lid_entries * i + (num_lid_entries - 1)] = i;
       }
@@ -760,7 +758,6 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 
 
   if (Driver_Action & 4) {
-    int i;
       int *color = NULL;          /* Color vector */
       ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
@@ -780,7 +777,7 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 	  return 0;
       }
 
-      for (i = 0 ; i < mesh->num_elems ; ++i) {
+      for (int i = 0 ; i < mesh->num_elems ; ++i) {
 	gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i].globalID;
 	lids[num_lid_entries * i + (num_lid_entries - 1)] = i;
       }

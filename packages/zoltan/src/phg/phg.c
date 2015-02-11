@@ -534,8 +534,7 @@ End:
                                        zz->LB.Num_Global_Parts, parts);
       cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                       zz->LB.Num_Global_Parts, &err);
-      cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
-                                       zz->LB.Num_Global_Parts);
+      cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts);
       for (i = 0; i < zoltan_hg->nObj; ++i) {
         /* uprintf(hg->comm, " obj[%d] = %d  in=%d out=%d\n", i, zoltan_hg->AppObjSizes[i], zoltan_hg->Input_Parts[i], zoltan_hg->Output_Parts[i]); */
 	if (zoltan_hg->Input_Parts[i] != zoltan_hg->Output_Parts[i])

@@ -63,7 +63,7 @@
 
 /* Name of file containing hypergraph to be partitioned */
 
-static char *fname="hypergraph.txt";
+static char *global_fname="hypergraph.txt";
 
 /* Structure to hold distributed hypergraph */
 
@@ -138,15 +138,15 @@ int main(int argc, char *argv[])
   ** Read hypergraph from input file and distribute it 
   ******************************************************************/
 
-  fp = fopen(fname, "r");
+  fp = fopen(global_fname, "r");
   if (!fp){
-    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPI_Finalize();
     exit(1);
   }
   fclose(fp);
 
-  read_input_file(myRank, numProcs, fname, &hg);
+  read_input_file(myRank, numProcs, global_fname, &hg);
 
   /******************************************************************
   ** Create a Zoltan library structure for this instance of load

@@ -55,7 +55,7 @@
 
 /* Name of file containing objects to be partitioned */
 
-static char *fname="objects.txt";
+static char *global_fname="objects.txt";
 
 /* Structure to hold object data */
 
@@ -114,15 +114,15 @@ int main(int argc, char *argv[])
   ** Read objects from input file and distribute them unevenly
   ******************************************************************/
 
-  fp = fopen(fname, "r");
+  fp = fopen(global_fname, "r");
   if (!fp){
-    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",global_fname);
     MPI_Finalize();
     exit(1);
   }
   fclose(fp);
 
-  read_input_objects(myRank, numProcs, fname, &myData);
+  read_input_objects(myRank, numProcs, global_fname, &myData);
 
   /******************************************************************
   ** Create a Zoltan library structure for this instance of load
