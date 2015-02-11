@@ -135,25 +135,31 @@ namespace Details {
 template<typename S, typename D>
 struct PackTraits< Sacado::UQ::PCE<S>, D > {
   typedef Sacado::UQ::PCE<S> value_type;
+  typedef D device_type;
+  typedef typename device_type::size_type size_type;
 
   /// \brief Whether the number of bytes required to pack one instance
   ///   of \c value_type is fixed at compile time.
   static const bool compileTimeSize = false;
 
-  typedef Kokkos::View<const char*, D, Kokkos::MemoryUnmanaged> input_buffer_type;
-  typedef Kokkos::View<char*, D, Kokkos::MemoryUnmanaged> output_buffer_type;
-  typedef Kokkos::View<const value_type*, D, Kokkos::MemoryUnmanaged> input_array_type;
-  typedef Kokkos::View<value_type*, D, Kokkos::MemoryUnmanaged> output_array_type;
+  typedef Kokkos::View<const char*, device_type, Kokkos::MemoryUnmanaged> input_buffer_type;
+  typedef Kokkos::View<char*, device_type, Kokkos::MemoryUnmanaged> output_buffer_type;
+  typedef Kokkos::View<const value_type*, device_type, Kokkos::MemoryUnmanaged> input_array_type;
+  typedef Kokkos::View<value_type*, device_type, Kokkos::MemoryUnmanaged> output_array_type;
 
-  static size_t numValuesPerScalar (const S& x) {
+  typedef typename value_type::value_type scalar_value_type;
+  typedef PackTraits< scalar_value_type, device_type > SPT;
+  typedef typename SPT::input_array_type scalar_input_array_type;
+  typedef typename SPT::output_array_type scalar_output_array_type;
+
+  static size_t numValuesPerScalar (const value_type& x) {
     return x.size ();
   }
 
-  static Kokkos::View<S*, D>
-  allocateArray (const S& x, const size_t numEnt, const std::string& label = "")
+  static Kokkos::View<value_type*, device_type>
+  allocateArray (const value_type& x, const size_t numEnt, const std::string& label = "")
   {
-    typedef Kokkos::View<S*, D> view_type;
-    typedef typename view_type::size_type size_type;
+    typedef Kokkos::View<value_type*, device_type> view_type;
 
     const size_type numVals = numValuesPerScalar (x);
     return view_type (label, static_cast<size_type> (numEnt), numVals);
@@ -164,8 +170,6 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
              const input_array_type& inBuf,
              const size_t numEnt)
   {
-    typedef typename value_type::value_type SVT; // "scalar value type"
-
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       static_cast<size_t> (inBuf.dimension_0 ()) < numEnt,
@@ -177,31 +181,35 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
       return 0;
     }
     else {
-      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
-      // value_type require the same number of bytes.  To generalize
-      // this, we would need to sum up the counts for all entries of
-      // inBuf.  That of course would suggest that we would need to
-      // memcpy each entry separately.
-      //
-      // We can't just default construct an instance of value_type,
-      // because value_type's size is run-time dependent.  However, we
-      // require that all entries of the input array have the correct
-      // size, so it suffices to ask the first entry of the input
-      // array for its size.
-      const size_t numBytes = numEnt * packValueCount (inBuf(0));
-#ifdef HAVE_TPETRA_DEBUG
+      // Check whether input array is contiguously allocated based on the size
+      // of the first entry.  We can only pack contiguously allocated data
+      // since that is the only way we can guarrantee all of the PCE arrays
+      // are the same size and the buffer will allocated correctly.
+      const size_t scalar_size = numValuesPerScalar(inBuf(0));
+      const size_t in_dim = inBuf.dimension_0();
+      const scalar_value_type* last_coeff = inBuf(in_dim-1).coeff();
+      const scalar_value_type* last_coeff_expected =
+        inBuf(0).coeff() + (in_dim-1)*scalar_size;
+      const bool is_contiguous = (last_coeff == last_coeff_expected);
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (outBuf.dimension_0 ()) < numBytes,
-        std::invalid_argument, "PackTraits::packArray: outBuf.dimension_0() = "
-        << outBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
-#endif // HAVE_TPETRA_DEBUG
+         !is_contiguous, std::logic_error,
+         "Cannot pack non-contiguous PCE array since buffer size calculation" <<
+         " is likely wrong.");
 
-      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-      // hand, reinterpret_cast may break aliasing and/or alignment
-      // rules.
-      const SVT* inBufRaw = inBuf(0).coeff ();
-      memcpy (outBuf.ptr_on_device (), inBufRaw, numBytes);
-      return numBytes;
+      // Check we are packing length-1 PCE arrays (mean-based preconditioner).
+      // We can technically pack length > 1, but the unpack assumes the
+      // output array is sized appropriately.  Currently this is not the case
+      // in Tpetra::CrsMatrix::transferAndFillComplete() which allocates a
+      // local Teuchos::Array for the CSR values, which will only be length-1
+      // by default.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+         scalar_size != 1, std::logic_error,
+         "Cannot pack PCE array with pce_size > 1 since unpack array" <<
+         " may not be allocated correctly.");
+
+      const size_t flat_numEnt = numEnt * scalar_size;
+      scalar_input_array_type flat_inBuf(inBuf(0).coeff(), flat_numEnt);
+      return SPT::packArray(outBuf, flat_inBuf, flat_numEnt);
     }
   }
 
@@ -210,57 +218,55 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
                const input_buffer_type& inBuf,
                const size_t numEnt)
   {
-    typedef typename value_type::value_type SVT; // "scalar value type"
-
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (outBuf.dimension_0 ()) < numEnt, std::invalid_argument,
-      "PackTraits::unpackArray: outBuf.dimension_0 () = " << outBuf.dimension_0 ()
-      << " < numEnt = " << numEnt << ".");
+      static_cast<size_t> (outBuf.dimension_0 ()) < numEnt,
+      std::invalid_argument,
+      "PackTraits::unpackArray: outBuf.dimension_0 () = " <<
+      outBuf.dimension_0 () << " < numEnt = " << numEnt << ".");
 #endif // HAVE_TPETRA_DEBUG
 
     if (numEnt == 0) {
       return static_cast<size_t> (0);
     }
     else {
-      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
-      // value_type require the same number of bytes.  To generalize
-      // this, we would need to sum up the counts for all entries of
-      // outBuf.  That of course would suggest that we would need to
-      // memcpy each entry separately.
-      //
-      // We can't just default construct an instance of value_type,
-      // because if value_type's size is run-time dependent, a
-      // default-constructed value_type might not have the right size.
-      // However, we require that all entries of the output array have
-      // the correct size, so it suffices to look at the first entry.
-      const size_t numBytes = numEnt * packValueCount (outBuf(0));
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (inBuf.dimension_0 ()) < numBytes,
-        std::invalid_argument, "PackTraits::unpackArray: inBuf.dimension_0() = "
-        << inBuf.dimension_0 () << " < numBytes = " << numBytes << ".");
-#endif // HAVE_TPETRA_DEBUG
+      // Check whether output array is contiguously allocated based on the size
+      // of the first entry.  We have a simpler method to unpack in this case
+      const size_type scalar_size = numValuesPerScalar(outBuf(0));
+      const size_type out_dim = outBuf.dimension_0();
+      const scalar_value_type* last_coeff = outBuf(out_dim-1).coeff();
+      const scalar_value_type* last_coeff_expected =
+        outBuf(0).coeff() + (out_dim-1)*scalar_size;
+      const bool is_contiguous = (last_coeff == last_coeff_expected);
 
-      // FIXME (mfh 02,05 Feb 2015) This may assume UVM.  On the other
-      // hand, reinterpret_cast may break aliasing and/or alignment
-      // rules.
-      SVT* outBufRaw = outBuf(0).coeff ();
-      memcpy (outBufRaw, inBuf.ptr_on_device (), numBytes);
-      return numBytes;
+      if (is_contiguous) {
+        // Unpack all of the PCE coefficients for the whole array
+        const size_t flat_numEnt = numEnt * scalar_size;
+        scalar_output_array_type flat_outBuf(outBuf(0).coeff(), flat_numEnt);
+        return SPT::unpackArray(flat_outBuf, inBuf, flat_numEnt);
+      }
+      else {
+        // Unpack one entry at a time.  This assumes each entry of outBuf
+        // is the correct size based on the packing.  This is is only
+        // guarranteed to be true for pce_size == 1, hence the check in
+        // packArray().
+        size_t numBytesTotal = 0;
+        const size_type in_dim = inBuf.dimension_0();
+        for (size_t i=0; i<numEnt; ++i) {
+          input_buffer_type val_inBuf(inBuf.ptr_on_device()+numBytesTotal,
+                                      in_dim-numBytesTotal);
+          const size_t numBytes = unpackValue(outBuf(i), val_inBuf);
+          numBytesTotal += numBytes;
+        }
+        return numBytesTotal;
+      }
     }
   }
 
   static size_t
   packValueCount (const value_type& inVal)
   {
-    typedef typename value_type::value_type SVT; // "scalar value type"
-    // NOTE (mfh 06 Feb 2015) It might be reasonable to assume that
-    // SVT is default constructible, and that all SVT instances have
-    // the same size.  On the other hand, the latter might not be true
-    // if Stokhos allows nesting of PCE types.  It's safer just to ask
-    // inVal for its (zeroth) value.
-    return inVal.size () * PackTraits<SVT, D>::packValueCount (inVal.val ());
+    return inVal.size () * SPT::packValueCount (inVal.val ());
   }
 
   static size_t
