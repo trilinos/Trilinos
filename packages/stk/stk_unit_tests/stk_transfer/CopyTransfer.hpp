@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Sandia Corporation.
+// Copyright (c) 2015, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -31,28 +31,54 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef  STK_TRANSFERBASE_HPP
-#define  STK_TRANSFERBASE_HPP
+
+#ifndef  STK_COPYTRANSFER_HPP
+#define  STK_COPYTRANSFER_HPP
+
+#include <stk_transfer/TransferBase.hpp>
+#include "CopySearchBase.hpp"
+#include "CopyTransferMeshBase.hpp"
 
 
 namespace stk {
 namespace transfer {
 
-class TransferBase {
-public :
-  TransferBase(){};
-  virtual ~TransferBase(){};
-  void initialize() {
-    coarse_search();
-    communication();
-    local_search();
-  }
-  virtual void coarse_search() = 0;
-  virtual void communication() = 0;
-  virtual void local_search()  = 0;
-  virtual void apply()         = 0;
-};
-}
-}
-#endif
 
+class CopyTransfer : public TransferBase {
+public :
+
+  typedef CopySearchBase::Mesh_ID Mesh_ID;
+  typedef CopySearchBase::KeyToTargetProcessor KeyToTargetProcessor;
+  typedef CopySearchBase::MeshIDSet MeshIDSet;
+
+  CopyTransfer(CopySearchBase & search_in, CopyTransferMeshBase & mesha_in, CopyTransferMeshBase & meshb_in)
+    :m_search(search_in)
+    ,m_mesha(mesha_in)
+    ,m_meshb(meshb_in)
+  {}
+  virtual ~CopyTransfer() {};
+  virtual void coarse_search()
+  {
+    m_search.do_search(m_mesha,m_meshb,m_key_to_target_processor);
+  }
+  virtual void communication() {};
+  virtual void local_search() {};
+  virtual void apply()
+  {
+    do_transfer(m_key_to_target_processor,m_mesha,m_meshb);
+  }
+
+private:
+  void do_transfer(const KeyToTargetProcessor & key_to_target_processor,
+                   const CopyTransferMeshBase & mesha,
+                   CopyTransferMeshBase & meshb);
+
+  CopySearchBase & m_search;
+  CopyTransferMeshBase & m_mesha;
+  CopyTransferMeshBase & m_meshb;
+  KeyToTargetProcessor m_key_to_target_processor;
+};
+
+}  } // namespace transfer stk
+
+#endif //  STK_COPYTRANSFER_HPP

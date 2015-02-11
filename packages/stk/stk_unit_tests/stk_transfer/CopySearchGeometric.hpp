@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Sandia Corporation.
+// Copyright (c) 2015, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -31,28 +31,42 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef  STK_TRANSFERBASE_HPP
-#define  STK_TRANSFERBASE_HPP
 
+#ifndef  STK_COPYSEARCHGEOMETRIC_HPP
+#define  STK_COPYSEARCHGEOMETRIC_HPP
+
+#include "CopySearchBase.hpp"
+#include <stk_search/IdentProc.hpp>
+#include "CopyTransferMeshBase.hpp"
 
 namespace stk {
 namespace transfer {
 
-class TransferBase {
-public :
-  TransferBase(){};
-  virtual ~TransferBase(){};
-  void initialize() {
-    coarse_search();
-    communication();
-    local_search();
-  }
-  virtual void coarse_search() = 0;
-  virtual void communication() = 0;
-  virtual void local_search()  = 0;
-  virtual void apply()         = 0;
-};
-}
-}
-#endif
+class CopySearchGeometric : public CopySearchBase {
+public:
+  CopySearchGeometric() : m_radius(1.0e-6) {}
+  virtual ~CopySearchGeometric() {}
+  virtual void intialize(const CopyTransferMeshBase & mesha, const CopyTransferMeshBase & meshb) {}
+  virtual void do_search(const CopyTransferMeshBase & mesha, const CopyTransferMeshBase & meshb, KeyToTargetProcessor & key_to_target_processor);
+  virtual const MeshIDSet & get_remote_keys() const { return m_remote_keys; }
+  void set_bounding_box_radius(float radius_in) { m_radius = radius_in; }
+  float get_bounding_box_radius() const { return m_radius; }
 
+private:
+  MeshIDSet m_remote_keys;
+  float m_radius;
+};
+
+template< typename BoundingBox>
+struct BoundingBoxCompare {
+    bool operator()(const BoundingBox & a, const BoundingBox & b) const
+    {
+      return a.second.id() < b.second.id();
+    }
+};
+
+typedef stk::search::IdentProc<CopyTransferMeshBase::Mesh_ID> MeshIDProc;
+
+}  } // namespace transfer stk
+
+#endif //  STK_COPYSEARCHGEOMETRIC_HPP

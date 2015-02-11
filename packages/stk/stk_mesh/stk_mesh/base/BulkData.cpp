@@ -576,7 +576,7 @@ void BulkData::require_entity_owner( const Entity entity ,
     const bool error_not_owner = owner != parallel_owner_rank(entity) ;
 
     ThrowRequireMsg( !error_not_owner,
-                     "Entity " << identifier(entity) << " owner is " <<
+                     "P" << parallel_rank() << " " << entity_key(entity) << " owner is " <<
                      parallel_owner_rank(entity) << ", expected " << owner);
   }
 }

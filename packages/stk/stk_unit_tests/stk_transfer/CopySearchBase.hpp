@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Sandia Corporation.
+// Copyright (c) 2015, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -31,28 +31,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef  STK_TRANSFERBASE_HPP
-#define  STK_TRANSFERBASE_HPP
 
+#ifndef  STK_COPYSEARCHBASE_HPP
+#define  STK_COPYSEARCHBASE_HPP
+
+#include <set>
+#include <map>
+
+#include "CopyTransferMeshBase.hpp"
 
 namespace stk {
 namespace transfer {
 
-class TransferBase {
-public :
-  TransferBase(){};
-  virtual ~TransferBase(){};
-  void initialize() {
-    coarse_search();
-    communication();
-    local_search();
-  }
-  virtual void coarse_search() = 0;
-  virtual void communication() = 0;
-  virtual void local_search()  = 0;
-  virtual void apply()         = 0;
-};
-}
-}
-#endif
+class CopySearchBase {
+public:
+  typedef CopyTransferMeshBase::Mesh_ID Mesh_ID;
+  typedef std::map<Mesh_ID,int> KeyToTargetProcessor;
+  typedef std::set<Mesh_ID> MeshIDSet;
 
+  virtual void intialize(const CopyTransferMeshBase & mesha, const CopyTransferMeshBase & meshb) =0;
+  virtual void do_search(const CopyTransferMeshBase & mesha,
+                         const CopyTransferMeshBase & meshb,
+                         KeyToTargetProcessor & key_to_target_processor) =0;
+  virtual const MeshIDSet & get_remote_keys() const =0;
+};
+
+}  } // namespace transfer stk
+
+#endif //  STK_COPYSEARCHBASE_HPP

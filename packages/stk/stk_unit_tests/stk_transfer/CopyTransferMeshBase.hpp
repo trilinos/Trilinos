@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Sandia Corporation.
+// Copyright (c) 2015, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -31,28 +31,36 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef  STK_TRANSFERBASE_HPP
-#define  STK_TRANSFERBASE_HPP
+#ifndef STK_TRANSFER_MESHBASE_HPP
+#define STK_TRANSFER_MESHBASE_HPP
 
+#include <inttypes.h>
+#include <vector>
+#include <stk_util/parallel/Parallel.hpp>
 
 namespace stk {
 namespace transfer {
 
-class TransferBase {
-public :
-  TransferBase(){};
-  virtual ~TransferBase(){};
-  void initialize() {
-    coarse_search();
-    communication();
-    local_search();
-  }
-  virtual void coarse_search() = 0;
-  virtual void communication() = 0;
-  virtual void local_search()  = 0;
-  virtual void apply()         = 0;
+class CopyTransferMeshBase {
+public:
+  typedef uint64_t Mesh_ID;
+  typedef std::vector<Mesh_ID> MeshIDVector;
+
+  virtual const double* field_data(const Mesh_ID & id, const unsigned field_index) const =0;
+  virtual       double* field_data(const Mesh_ID & id, const unsigned field_index)       =0;
+  virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const =0;
+  virtual unsigned num_fields() const =0;
+  virtual ParallelMachine comm() const =0;
+
+  virtual const MeshIDVector & get_mesh_ids() const =0;
+  virtual bool is_locally_owned(const Mesh_ID & id) const =0;
+  virtual void centroid(const Mesh_ID & id, double coords[3]) const =0;
+  virtual std::string print_mesh_id(const Mesh_ID& id) const =0;
 };
-}
-}
-#endif
+
+} } // namespace stk transfer
+
+
+
+#endif // STK_TRANSFER_MESHBASE_HPP
 
