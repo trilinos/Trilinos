@@ -101,7 +101,6 @@ cmake \
   -D Kokkos_ENABLE_EXAMPLES:BOOL=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=OFF \
   -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosCudaWrapperNode" \
-  -D TpetraClassic_ENABLE_CUDA_DOUBLE:BOOL=ON \
   -D TpetraClassic_ENABLE_OpenMPNode=OFF \
   -D TpetraClassic_ENABLE_TPINode=OFF \
   -D TpetraClassic_ENABLE_MKL=OFF \

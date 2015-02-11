@@ -107,7 +107,6 @@ if [ 1 ] ; then
   if [ -n "${USE_CUDA_ARCH}" ] ; then
 
     CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D Kokkos_ENABLE_Cuda:BOOL=ON"
-    CMAKE_CONFIGURE="${CMAKE_CONFIGURE} -D TpetraClassic_ENABLE_CUDA_DOUBLE:BOOL=ON"
 
   fi
 
