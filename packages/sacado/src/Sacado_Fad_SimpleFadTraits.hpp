@@ -127,6 +127,12 @@ namespace Sacado {
     static const bool value = false;
   };
 
+  //! Specialization of %IsFad to SimpleFad types
+  template <typename ValueT>
+  struct IsFad< Fad::SimpleFad<ValueT> > {
+    static const bool value = true;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes

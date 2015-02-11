@@ -248,9 +248,13 @@ namespace Sacado {
 
   } // namespace Fad
 
-
   template <typename T, unsigned l, unsigned s, typename U>
   struct IsView< Sacado::FAD_NS::ViewFad<T,l,s,U> > {
+    static const bool value = true;
+  };
+
+  template <typename T, unsigned l, unsigned s, typename U>
+  struct IsFad< FAD_NS::ViewFad<T,l,s,U> > {
     static const bool value = true;
   };
 

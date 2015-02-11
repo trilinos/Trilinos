@@ -261,6 +261,11 @@ namespace Sacado {
   } // namespace Fad
 
   template <typename T>
+  struct IsFad< FAD_NS::DFad<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
   struct IsExpr< FAD_NS::DFad<T> > {
     static const bool value = true;
   };

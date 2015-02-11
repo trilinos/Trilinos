@@ -109,6 +109,11 @@ namespace Sacado {
     static const bool value = false;
   };
 
+  template <typename T>
+  struct IsFad< Fad::DMFad<T> > {
+    static const bool value = true;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes
