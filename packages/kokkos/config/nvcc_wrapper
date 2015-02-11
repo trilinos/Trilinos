@@ -23,7 +23,7 @@ default_arch="sm_35"
 #
 # The default C++ compiler.
 #
-default_compiler="g++"
+default_compiler=${NVCC_WRAPPER_DEFAULT_COMPILER:-"g++"}
 #default_compiler="icpc"
 #default_compiler="/usr/local/gcc/4.8.3/bin/g++"
 #default_compiler="/usr/local/gcc/4.9.1/bin/g++"

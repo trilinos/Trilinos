@@ -918,7 +918,9 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   // RemoteIDs: Loop structure following UnpackAndCombine
   if (imports.size () > 0) {
     size_t offset = 0;
-    int lclErr = 0;  (void)lclErr;
+#ifdef HAVE_TPETRA_DEBUG
+    int lclErr = 0;
+#endif
 
     for (size_t i = 0; i < static_cast<size_t> (numImportLIDs); ++i) {
       const size_t numBytes = numPacketsPerLID[i];
@@ -947,9 +949,12 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
         unpackRow<ST, LO, GO, HMS> (gidsOut, pidsOut, valsOut, importsK,
                                     offset, numBytes, numEnt, numBytesPerValue);
       if (numBytesOut != numBytes) {
+#ifdef HAVE_TPETRA_DEBUG
         lclErr = 1;
+#endif
         break;
       }
+
       // Correct target PIDs.
       for (size_t j = 0; j < numEnt; ++j) {
         const int pid = pidsOut[j];

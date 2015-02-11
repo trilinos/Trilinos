@@ -204,7 +204,7 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
   allocate(const LabelType& label,
            const ShapeType& shape,
            const CijkType& cijk,
-           const unsigned pce_size) {}
+           const unsigned pce_size) { return 0; }
 
   // Assign scalar_type pointer to given ptr
   // This makes BIG assumption on how the data was allocated
