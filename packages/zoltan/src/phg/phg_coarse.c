@@ -302,9 +302,6 @@ int Zoltan_PHG_Coarsening
     for (i = 0; i < hg->nVtx; ++i){
         if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
             LevelMap[i] = (ZOLTAN_GNO_TYPE)c_hg->nVtx;
-#ifdef KDDKDD_DEBUG
-if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
-#endif
             if (c_hg->fixed_part)
                 c_hg->fixed_part[c_hg->nVtx] = hg->fixed_part[i];
             if (c_hg->pref_part)
@@ -330,9 +327,6 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
 /*                  uprintf(hgc, "LOCMAT:  match[%d (gno=%zd)] = %zd   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], LevelMap[i]);*/
               }
       }
-#ifdef KDDKDD_DEBUG
-if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d MATCH %d (%f %f %f) to %d; LevelMap = %d\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], match[i], LevelMap[i]);
-#endif
     }
     *LevelSndCnt = count;
 /*      errexit("this type of coarsening is not implemented yet"); */
@@ -395,9 +389,6 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
       int lno = listlno[i];
       for (j = 0; j < hg->nDim; j++)
 	coordbuf[i * hg->nDim + j] = hg->coor[lno * hg->nDim + j];
-#ifdef KDDKDD_DEBUG
-if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO_GNO(hg, lno) == 66) printf("%d LOADING %d (%f %f %f) (%f %f %f)\n", zz->Proc, VTX_LNO_TO_GNO(hg, lno), hg->coor[lno*hg->nDim], hg->coor[lno*hg->nDim+1], hg->coor[lno*hg->nDim+2], coordbuf[i*hg->nDim], coordbuf[i*hg->nDim+1], coordbuf[i*hg->nDim+2]);
-#endif
     }
   }
   /* Create comm plan. */
@@ -427,9 +418,6 @@ if (VTX_LNO_TO_GNO(hg, lno) == 35 || VTX_LNO_TO_GNO(hg, lno) == 65 || VTX_LNO_TO
 	for (j = 0; j < hg->nDim; j++)
 	  c_hg->coor[nni*hg->nDim + j] += (hg_vwgt * hg->coor[i*hg->nDim + j]);
 	coorcount[nni] += hg_vwgt;
-#ifdef KDDKDD_DEBUG
-if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO(hg, i) == 66) printf("%d SUMMING %d (%f %f %f) into nni %d coorcount %f\n", zz->Proc, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], nni, coorcount[nni]);
-#endif
       }
     }
   }

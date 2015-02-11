@@ -250,7 +250,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   nProc_y = outmat->comm->nProc_y;
   myProc_y = outmat->comm->myProc_y;
 
-KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Remove_Duplicates");
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
 
 /* KDDKDDKDD  FIX INDENTATION OF THIS BLOCK */
@@ -267,7 +266,6 @@ if (inmat.opts.speed != MATRIX_NO_REDIST) {
       if (outmat->mtx.nY > 0 && cmember == NULL) MEMORY_ERROR;
       Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, (char *)cmember, NULL,
 		      outmat->mtx.nY, NULL);
-KDDKDDKDD(zz->Proc, "    Zoltan_Distribute_Partition_Register");
       partdata = Zoltan_Distribute_Partition_Register(zz, outmat->mtx.nY, outmat->mtx.yGNO,
 						      cmember, zz->Num_Proc, zz->Num_Proc);
       ZOLTAN_FREE(&cmember);
@@ -292,7 +290,6 @@ KDDKDDKDD(zz->Proc, "    Zoltan_Distribute_Partition_Register");
   yGNO = outmat->mtx.yGNO;
   pinGNO = outmat->mtx.pinGNO;
 
-KDDKDDKDD(zz->Proc, "    CommPlan Hash");
   cnt = 0;
   for (i = 0; i < outmat->mtx.nY; i++) {
     ZOLTAN_GNO_TYPE edge_gno=-1;
@@ -344,7 +341,6 @@ KDDKDDKDD(zz->Proc, "    CommPlan Hash");
    * They become non-zeros in the 2D data distribution.
    */
 
-KDDKDDKDD(zz->Proc, "    CommPlan Create");
   msg_tag--;
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, communicator, msg_tag, &outmat->mtx.nPins);
   ZOLTAN_FREE(&proclist);
@@ -369,7 +365,6 @@ KDDKDDKDD(zz->Proc, "    CommPlan Create");
 
   /* Unpack the non-zeros received. */
 
-KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Remove_DupArcs");
   /* TODO: do take care about singletons */
   Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
 			       &outmat->mtx);
@@ -394,10 +389,8 @@ KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Remove_DupArcs");
     perm_y[i] = i + outmat->dist_y[myProc_y];
   }
 
-KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Permute");
   Zoltan_Matrix_Permute(zz, &outmat->mtx, perm_y);
 
-KDDKDDKDD(zz->Proc, "    Zoltan_Matrix_Permute done");
  End:
   Zoltan_Comm_Destroy(&plan);  /* Needed here only if got to End on error */
   ZOLTAN_FREE(&perm_y);

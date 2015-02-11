@@ -2385,11 +2385,6 @@ static int pmatching_geom (ZZ *zz,
   int *export_to_part = NULL;             /* Not computed */
   /* ----------------- */
 
-#ifdef KDDKDD_DEBUG
-for (i =0; i < hg->nVtx; i++)
-  printf("%d KDDIN: %d (%f %f %f) %f\n", hg->info, VTX_LNO_TO_GNO(hg, i), hg->coor[i*3], hg->coor[i*3+1], hg->coor[i*3+2], hg->vwgt[i]);
-#endif
-
   /* Register new geometric callbacks and parameters */
   if ((Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE,
                      (void (*)()) geometric_get_num_obj,
@@ -2453,17 +2448,6 @@ for (i =0; i < hg->nVtx; i++)
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
   MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM,
                 hg->comm->col_comm);
-
-#ifdef KDDKDD_DEBUG
- {/* KDDKDD */
-   int kdd, kddlid;
-   for (kdd = 0; kdd < num_import; kdd++) { 
-     kddlid = import_local_ids[kdd];
-     printf("%d KDDMATCH (%d %d %d)  (%f %f %f)  wgt %f Candidate %d\n", hg->info, import_global_ids[kdd], VTX_LNO_TO_GNO(hg, kddlid), kddlid, hg->coor[3*kddlid], hg->coor[3*kddlid+1], hg->coor[3*kddlid+2], hg->vwgt[kddlid], candidate_ids[kdd]); 
-   } 
- /* KDDKDD */
- } 
-#endif
 
   /* 
    * Perform geometric matching only on geometric_levels levels.  If done,

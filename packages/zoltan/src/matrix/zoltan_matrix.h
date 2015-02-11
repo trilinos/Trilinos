@@ -61,12 +61,6 @@
 extern "C" {
 #endif
 
-#ifdef KDDKDD_DEBUG
-#define KDDKDDKDD(me, s) if (me==0){printf("KDDKDD %s  ", s);fflush(stdout);system("date");}
-#else
-#define KDDKDDKDD(me, s) {}
-#endif
-
 #include "phg_comm.h" /* Not useful in the future ? */
 #include "zoltan_dd.h"
 

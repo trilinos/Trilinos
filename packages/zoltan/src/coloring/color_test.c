@@ -204,7 +204,6 @@ int Zoltan_Color_Test(
       goto End;
   }
 
-KDDKDDKDD(zz->Proc, "COLORTEST DD");
   /* Exchange global color information */
   if (vtxdist[zz->Num_Proc] && !(color = (int *) ZOLTAN_CALLOC(vtxdist[zz->Num_Proc], sizeof(int))))
       MEMORY_ERROR;
@@ -241,8 +240,6 @@ KDDKDDKDD(zz->Proc, "COLORTEST DD");
   Zoltan_DD_Destroy(&dd_color);
   ZOLTAN_FREE(&local_GNOs);
   ZOLTAN_FREE(&global_GNOs);
-
-KDDKDDKDD(zz->Proc, "COLORTEST CHECK");
 
   if (coloring_problem == 'P' || coloring_problem == '2') {
       if (vtxdist[zz->Num_Proc] && !(partialD2 = (int *) ZOLTAN_CALLOC(vtxdist[zz->Num_Proc], sizeof(int))))
@@ -322,7 +319,6 @@ KDDKDDKDD(zz->Proc, "COLORTEST CHECK");
       ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 and distance-2 coloring. Unknown coloring, skipping verification.");      
   
  End:
-KDDKDDKDD(zz->Proc, "COLORTEST DONE");
   if (ierr==ZOLTAN_FATAL)
       ierr = 2;
   MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);

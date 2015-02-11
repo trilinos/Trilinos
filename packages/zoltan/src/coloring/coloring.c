@@ -382,7 +382,6 @@ int Zoltan_Color(
   times[2] = Zoltan_Time(zz->Timer);
 #endif
 
-KDDKDDKDD(zz->Proc, "Coloring Hash");
   if (nvtx && !(local_GNOs = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nvtx * sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
   for (i=0; i<nvtx; ++i)
@@ -412,7 +411,6 @@ KDDKDDKDD(zz->Proc, "Coloring Hash");
     }
   }
 
-KDDKDDKDD(zz->Proc, "Coloring DD");
   /* lastlno is the total number of local and d1 neighbors */
   lastlno = nvtx+hash.size;
 
@@ -454,7 +452,6 @@ KDDKDDKDD(zz->Proc, "Coloring DD");
   times[3] = Zoltan_Time(zz->Timer);
 #endif
   /* Select Coloring algorithm and perform the coloring */
-KDDKDDKDD(zz->Proc, "Coloring D1");
   if (coloring_problem == '1')
       D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color,
 		 recoloring_permutation, recoloring_type, recoloring_num_of_iterations);
@@ -464,7 +461,6 @@ KDDKDDKDD(zz->Proc, "Coloring D1");
   times[4] = Zoltan_Time(zz->Timer);
 #endif
 
-KDDKDDKDD(zz->Proc, "Coloring Result");
    ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
                             sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, nvtx, 0);
    if (ierr != ZOLTAN_OK)
@@ -484,7 +480,6 @@ KDDKDDKDD(zz->Proc, "Coloring Result");
    /* Free DDirectory */
    Zoltan_DD_Destroy(&dd_color);
    ZOLTAN_FREE(&my_global_ids); 
-KDDKDDKDD(zz->Proc, "Coloring Done");
 
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
