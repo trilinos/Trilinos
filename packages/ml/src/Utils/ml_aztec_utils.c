@@ -35,7 +35,7 @@ int warning_flag = 0;
 /***************************************************************************/
 /***************************************************************************/
 int AZ_convert_aztec_matrix_2ml_matrix(AZ_MATRIX *AZmat, ML_Operator *MLmat,
-				       int *proc_config)
+                                       int *proc_config)
 {
   ML *bogus;
   int size;
@@ -53,7 +53,7 @@ int AZ_convert_aztec_matrix_2ml_matrix(AZ_MATRIX *AZmat, ML_Operator *MLmat,
 }
 
 int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
-	AZ_MATRIX *Amat, int *proc_config)
+        AZ_MATRIX *Amat, int *proc_config)
 {
 /* Convert an Aztec matrix to an ML matrix and store the resulting ML
    matrix in the  level'th slot in ml_handle.
@@ -112,24 +112,24 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    }
    else if (Amat->matrix_type == AZ_MSR_MATRIX) {
      msr_mat = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
-							      ML_CSR_MSRdata));
+                                                              ML_CSR_MSRdata));
      msr_mat->columns     = Amat->bindx;
      msr_mat->values      = Amat->val;
      msr_mat->rowptr      = NULL;
      context->getrowstuff = (void *) msr_mat;
      ML_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,
-			   az_comm_wrapper,
+                           az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
      ML_Set_Amatrix_Diag(  ml_handle, level, osize,   Amat->val);
      ml_handle->Amat[level].N_nonzeros =
                             msr_mat->columns[ml_handle->Amat[level].invec_leng];
    }
-	 else if (Amat->matrix_type ==AZ_USER_MATRIX) {
-		 context->getrowstuff = (void *)Amat->matvec_data;
+         else if (Amat->matrix_type ==AZ_USER_MATRIX) {
+                 context->getrowstuff = (void *)Amat->matvec_data;
      ML_Set_Amatrix_Getrow(ml_handle,level,az_usergetrow_wrapper,az_comm_wrapper,
-													 isize+(Amat->data_org)[AZ_N_external]);
+                                                                                                         isize+(Amat->data_org)[AZ_N_external]);
      AZ_ML_set_userdiagonal(ml_handle,  level, Amat);
-	 }
+         }
    else {
       printf("Can only convert MSR, VBR or USER matrices\n");
       exit(1);
@@ -137,7 +137,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
 
 
    ML_Operator_Set_ApplyFunc(&(ml_handle->Amat[level]),
-			     az_matvec_wrapper);
+                             az_matvec_wrapper);
 
    ml_handle->Amat[level].data_destroy = AZ_ML_Clean;
    return(1);
@@ -203,7 +203,7 @@ int az_matvec_wrapper(ML_Operator *data,  int in, double p[], int out, double ap
 /***************************************************************************/
 
 void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
-		       int proc_config[])
+                       int proc_config[])
 {
   ML_Operator *ML_Amat;
 
@@ -211,7 +211,7 @@ void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
 
   ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
   ML_Operator_Apply(ML_Amat, ML_Amat->invec_leng, invec,
-		    ML_Amat->outvec_leng, outvec);
+                    ML_Amat->outvec_leng, outvec);
 }
 
 /***************************************************************************/
@@ -244,7 +244,7 @@ int az_wrap_ml_comm(double vector[], AZ_MATRIX *Amat)
 
   if (ML_Amat->getrow->pre_comm != NULL)
     ML_exchange_bdry(vector,ML_Amat->getrow->pre_comm, ML_Amat->invec_leng,
-		     ML_Amat->comm, ML_OVERWRITE,NULL);
+                     ML_Amat->comm, ML_OVERWRITE,NULL);
   return 0;
 }
 
@@ -265,7 +265,7 @@ int az_msrgetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_
    temp1     = (void *) context;
    mat_in->data = context->getrowstuff;
    status = MSR_getrows(mat_in, N_requested_rows, requested_rows,
-			allocated_space, columns, values, row_lengths);
+                        allocated_space, columns, values, row_lengths);
    mat_in->data = temp1;
    return(status);
 }
@@ -275,15 +275,15 @@ int az_msrgetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_
 /***************************************************************************/
 
 int az_wrap_ml_getrow(int columns[], double values[], int row_lengths[],
-		      struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
-		      int requested_rows[], int allocated_space)
+                      struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
+                      int requested_rows[], int allocated_space)
 {
   ML_Operator *ML_Amat;
 
   ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
 
   return(ML_Operator_Getrow(ML_Amat, N_requested_rows, requested_rows,
-		      allocated_space, columns, values, row_lengths) );
+                      allocated_space, columns, values, row_lengths) );
 }
 
 /***************************************************************************/
@@ -303,8 +303,8 @@ int az_vbrgetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_
    temp1     = (void *) context;
    mat_in->data = context->getrowstuff;
    status = VBR_cnst_blk_getrows(mat_in, N_requested_rows,
-				 requested_rows,allocated_space,
-				 columns, values, row_lengths);
+                                 requested_rows,allocated_space,
+                                 columns, values, row_lengths);
    mat_in->data = temp1;
    return(status);
 }
@@ -328,7 +328,7 @@ int az_usergetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested
    Amat=(AZ_MATRIX *)context->Amat;
 
    return(Amat->getrow(columns, values, row_lengths, Amat, N_requested_rows,
-		       requested_rows,allocated_space));
+                       requested_rows,allocated_space));
 }
 
 /***************************************************************************/
@@ -389,41 +389,41 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
   fixed_leng = matrix->data_org[AZ_N_internal] + matrix->data_org[AZ_N_border];
   diagonal = (double *) ML_allocate( (fixed_leng)*sizeof(double));
 
-	cols = (int *) ML_allocate(max_nnz_per_row*sizeof(int));
-	vals = (double *)ML_allocate(max_nnz_per_row*sizeof(double));
-	if (vals == NULL) {
-		printf("AZ_ML_set_userdiagonal: memory allocation error\n");
-		exit(-1);
-	}
+        cols = (int *) ML_allocate(max_nnz_per_row*sizeof(int));
+        vals = (double *)ML_allocate(max_nnz_per_row*sizeof(double));
+        if (vals == NULL) {
+                printf("AZ_ML_set_userdiagonal: memory allocation error\n");
+                exit(-1);
+        }
 
 
-	for (i=0; i < fixed_leng; i++) {
-		tmp = matrix->getrow(cols, vals, &row_len, matrix, 1,
-												 &i, max_nnz_per_row);
-		while (tmp == 0) {
-			ML_free(cols);
-			ML_free(vals);
-			max_nnz_per_row=max_nnz_per_row*2+1;
-			cols=(int *)ML_allocate(max_nnz_per_row*sizeof(int));
-			vals=(double *)ML_allocate(max_nnz_per_row*sizeof(double));
-			tmp = matrix->getrow(cols, vals, &row_len, matrix, 1,
-													 &i, max_nnz_per_row);
-		}
-		loc=0;
-		while ((loc<row_len) && (cols[loc] != i))
-			loc++;
+        for (i=0; i < fixed_leng; i++) {
+                tmp = matrix->getrow(cols, vals, &row_len, matrix, 1,
+                                                                                                 &i, max_nnz_per_row);
+                while (tmp == 0) {
+                        ML_free(cols);
+                        ML_free(vals);
+                        max_nnz_per_row=max_nnz_per_row*2+1;
+                        cols=(int *)ML_allocate(max_nnz_per_row*sizeof(int));
+                        vals=(double *)ML_allocate(max_nnz_per_row*sizeof(double));
+                        tmp = matrix->getrow(cols, vals, &row_len, matrix, 1,
+                                                                                                         &i, max_nnz_per_row);
+                }
+                loc=0;
+                while ((loc<row_len) && (cols[loc] != i))
+                        loc++;
 
-		if (loc == row_len)
-			diagonal[i]=0.0;
-		else
-			diagonal[i]=vals[loc];
-	}
+                if (loc == row_len)
+                        diagonal[i]=0.0;
+                else
+                        diagonal[i]=vals[loc];
+        }
 
 
   ML_Set_Amatrix_Diag( ml, mesh_level, fixed_leng, diagonal );
   ML_free(diagonal);
-	ML_free(cols);
-	ML_free(vals);
+        ML_free(cols);
+        ML_free(vals);
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -614,17 +614,17 @@ void new_norm(AZ_PRECOND *prec, double res[], double *result)
 
 #ifdef MARZIO
 extern double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
+                             int approx_all_zeros, ML_Comm *comm,
+                             int res_norm_or_not, ML *ml);
 extern double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
+                             int approx_all_zeros, ML_Comm *comm,
+                             int res_norm_or_not, ML *ml);
 extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
-			   int approx_all_zeros, ML_Comm *comm,
-			   int res_norm_or_not, ML *ml);
+                           int approx_all_zeros, ML_Comm *comm,
+                           int res_norm_or_not, ML *ml);
 extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
+                             int approx_all_zeros, ML_Comm *comm,
+                             int res_norm_or_not, ML *ml);
 #endif
 
 /*****************************************************************************/
@@ -669,9 +669,9 @@ void ML_precondition(double ff[], int options[], int proc_config[],
         printf("\tunsupported solver intended to handle changing \n");
         printf("\tpreconditioners or ML_Iterate() can be used to run\n");
         printf("\tthe multilevel method.\n\n");
-	ML_avoid_unused_param( (void *) proc_config);
-	ML_avoid_unused_param( (void *) params);
-	ML_avoid_unused_param( (void *) mat);
+        ML_avoid_unused_param( (void *) proc_config);
+        ML_avoid_unused_param( (void *) params);
+        ML_avoid_unused_param( (void *) mat);
      }
   }
   lenf  = ml->SingleLevel[ml->ML_finest_level].Amat->outvec_leng;
@@ -688,21 +688,21 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 #ifdef MARZIO
   else if( ml->ML_scheme == ML_ONE_LEVEL_DD ) {
     ML_DD_OneLevel(&(ml->SingleLevel[ml->ML_finest_level]),
-		   ffout, ff,
-		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+                   ffout, ff,
+                   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
   }
   else if (ml->ML_scheme == ML_TWO_LEVEL_DD_ADD )
     ML_DD_Additive(&(ml->SingleLevel[ml->ML_finest_level]),
-		   ffout, ff,
-		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+                   ffout, ff,
+                   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
   else if( ml->ML_scheme == ML_TWO_LEVEL_DD_HYBRID)
     ML_DD_Hybrid(&(ml->SingleLevel[ml->ML_finest_level]),
-		 ffout,ff,
-		 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+                 ffout,ff,
+                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
   else if( ml->ML_scheme == ML_TWO_LEVEL_DD_HYBRID_2 )
     ML_DD_Hybrid_2(&(ml->SingleLevel[ml->ML_finest_level]),
-		   ffout, ff,
-		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+                   ffout, ff,
+                   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 #endif
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
@@ -743,7 +743,7 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
 
       if (i != ml_handle->ML_coarsest_level) {
          i = ml_handle->ML_coarsest_level;
-	 if ( ML_CSolve_Check( &(ml_handle->csolve[i]) ) == 1 )
+         if ( ML_CSolve_Check( &(ml_handle->csolve[i]) ) == 1 )
             sprintf(coarsest, "%s", ml_handle->csolve[i].label);
          else {
             if (ml_handle->pre_smoother[i].smoother->func_ptr != NULL)
@@ -855,8 +855,8 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
 /*****************************************************************************/
 
 void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
-	double params[], int proc_config[], double status[],
-	int N_iterations, int pre_or_post,
+        double params[], int proc_config[], double status[],
+        int N_iterations, int pre_or_post,
         void (*prec_function)(double *, int *, int *, double *,
                               struct AZ_MATRIX_STRUCT  *,
                               struct AZ_PREC_STRUCT *))
@@ -870,9 +870,9 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    double                *params_copy = NULL;
    int                   save_old_values[6], *orig_data_org, global_mat_flag=0;
    static int            matrix_name = 7911;
-   void           *data;
+   /* void           *data; (set but not used) */
    ML_Operator    *op;
-   int            osize, *row_ptr, space, getrow_flag, flag, *cols = NULL, nz_ptr;
+   int            osize, *row_ptr, space, /* getrow_flag, (set but not used) */ flag, *cols = NULL, nz_ptr;
    int            length, zero_flag, j, offset, nrows, *sub_proc_config;
    int N_ghost;
    double         *vals = NULL, dsize, di;
@@ -919,7 +919,7 @@ options_copy[AZ_output]    = 20;
    matrix_name++;
 
    ML_Amat = &(ml_handle->Amat[level]);
-   data    = ML_Amat->data;
+   /* data    = ML_Amat->data; (set but not used) */
 
    if (ML_Amat->matvec->func_ptr == NULL) {
        if (ml_handle->comm->ML_mypid == 0) {
@@ -939,13 +939,13 @@ options_copy[AZ_output]    = 20;
          exit(-1);
       }
       op      = (ML_Operator *) &ml_handle->Amat[level];
-      data    = op->data;
+      /* data    = op->data; (set but not used) */
       osize   = op->outvec_leng;
       row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
       space   = osize * 5 + 30;
-      getrow_flag = 0;
+      /* getrow_flag = 0; (set but not used) */
       if ( op->getrow->func_ptr != NULL ) {
-         getrow_flag = 1;
+        /* getrow_flag = 1; (set but not used) */
       } else {
          printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
          exit(-1);
@@ -961,8 +961,8 @@ options_copy[AZ_output]    = 20;
          row_ptr[0] = nz_ptr;
          flag = 1;
          for (i = 0; i < osize; i++) {
-	   flag = op->getrow->func_ptr(op, 1, &i, space-nz_ptr,
-			       &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
+           flag = op->getrow->func_ptr(op, 1, &i, space-nz_ptr,
+                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
 
             if (flag == 0) break;
             zero_flag = 1;
@@ -1079,16 +1079,16 @@ options_copy[AZ_output]    = 20;
                     0, NULL, AZ_LOCAL);
       }
       else {
-	   AZ_free(data_org);
+           AZ_free(data_org);
 
-	   AZ_set_MATFREE(AZ_Amat, ML_Amat, az_wrap_ml_matvec);
+           AZ_set_MATFREE(AZ_Amat, ML_Amat, az_wrap_ml_matvec);
 
-	   ML_CommInfoOP_Compute_TotalRcvLength(ML_Amat->getrow->pre_comm);
-	   if (ML_Amat->getrow->pre_comm != NULL)
-	     N_ghost =  ML_Amat->getrow->pre_comm->total_rcv_length;
-	   else N_ghost = 0;
+           ML_CommInfoOP_Compute_TotalRcvLength(ML_Amat->getrow->pre_comm);
+           if (ML_Amat->getrow->pre_comm != NULL)
+             N_ghost =  ML_Amat->getrow->pre_comm->total_rcv_length;
+           else N_ghost = 0;
 
-	   AZ_set_MATFREE_getrow(AZ_Amat, ML_Amat, az_wrap_ml_getrow,
+           AZ_set_MATFREE_getrow(AZ_Amat, ML_Amat, az_wrap_ml_getrow,
                         az_wrap_ml_comm, N_ghost, proc_config);
       }
    }
@@ -1097,7 +1097,7 @@ options_copy[AZ_output]    = 20;
    if (options_copy[AZ_precond] == AZ_Neumann ||
        options_copy[AZ_precond] == AZ_ls ) {
      AZ_set_MATFREE_matrix_norm(AZ_Amat,
-				ML_Operator_MaxNorm(ML_Amat,0));
+                                ML_Operator_MaxNorm(ML_Amat,0));
    }
 
    if (options_copy[AZ_precond] == AZ_user_precond) {
@@ -1154,8 +1154,8 @@ options_copy[AZ_output]    = 20;
 
    if (context->prec_or_solver == AZ_ONLY_PRECONDITIONER) {
       if (!AZ_initialize(NULL, NULL, context->options, context->params,
-		    context->status, context->proc_config,
-		    context->Amat, context->Prec, save_old_values
+                    context->status, context->proc_config,
+                    context->Amat, context->Prec, save_old_values
 #ifdef AZ_ver2_1_0_5
                     ,context->scaling
 #endif
@@ -1222,9 +1222,9 @@ int az_wrap_solvers(ML_Smoother *smoo_in, int in, double x[], int out,
        for (i = 0; i < n; i++) p2[i] = rhs[i];
      }
      context->Prec->prec_function(p2,context->options,
-				  context->proc_config,context->params,
-				  context->Amat, context->Prec);
-      for (i = 0; i < n; i++)	x[i] += alpha*p2[i];
+                                  context->proc_config,context->params,
+                                  context->Amat, context->Prec);
+      for (i = 0; i < n; i++)   x[i] += alpha*p2[i];
    }
    else {
      for (i = 0; i < n; i++) p2[i] = x[i];
@@ -1267,7 +1267,7 @@ void AZ_ML_SmootherClean(void *data)
    if ( (context->options[AZ_precond] == AZ_user_precond) &&
         (context->Prec->prec_function == ML_precondition) &&
         (context->Prec->precond_data  != NULL) ) {
-	ML_Solve_SmootherDestroy( context->Prec->precond_data );
+        ML_Solve_SmootherDestroy( context->Prec->precond_data );
    }
 
 
@@ -1592,7 +1592,7 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 extern int AZ_using_fortran;
 
 void AZ_transform_norowreordering(int proc_config[], int *external[],
-			int bindx[], double val[],
+                        int bindx[], double val[],
             int update[], int *update_index[], int *extern_index[],
             int *data_org[], int N_update, int indx[], int bnptr[],
             int rnptr[], int *cnptr[], int mat_type)
@@ -1797,7 +1797,7 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
 /******************************************************************************/
 /******************************************************************************/
 void AZ_input_msr_matrix_nodiag(char datafile[], int update[], double **val, int **bindx,
-												 int N_update, int proc_config[])
+                                                                                                 int N_update, int proc_config[])
 
 /*******************************************************************************
 
@@ -1977,7 +1977,7 @@ file specified by the input argument datafile instead from a file called
       }
       if ((current < N_update) && (i == update[current])) {
         AZ_add_new_row_nodiag(i, &nz_ptr, &current, val, bindx, 0, dfp, &msr_len,
-		       &column0);
+                       &column0);
       }
       else {
 #ifdef ML_BINARY
@@ -2016,15 +2016,15 @@ file specified by the input argument datafile instead from a file called
             }
             if (need_request != 0)  {
                mdwrap_iread((void *) &(requests[need_request]),
-		        sizeof(int), &need_request,&type,&request);
+                        sizeof(int), &need_request,&type,&request);
                mdwrap_wait((void *) &(requests[need_request]),
-		        sizeof(int), &need_request,&type,&st,&request);
+                        sizeof(int), &need_request,&type,&st,&request);
                need_request = 0;
             }
             for (jjj = 1; jjj < nprocs; jjj++) {
               if (requests[jjj] != -1)
                  mdwrap_write((void *) &buf_len, sizeof(int), jjj, type2, &st);
-	    }
+            }
           }
 
           /* put 'temp' and 'dtemp' into 'str' so that they can be sent */
@@ -2056,9 +2056,9 @@ file specified by the input argument datafile instead from a file called
         k = 0;
         if (need_request != 0)  {
            mdwrap_iread((void *) &(requests[need_request]), sizeof(int),
-		    &need_request,&type,&request);
+                    &need_request,&type,&request);
            mdwrap_wait((void *) &(requests[need_request]), sizeof(int),
-		    &need_request,&type,&st, &request);
+                    &need_request,&type,&st, &request);
            need_request = 0;
         }
 
@@ -2075,9 +2075,9 @@ file specified by the input argument datafile instead from a file called
     }
     if (need_request != 0)  {
        mdwrap_iread((void *) &(requests[need_request]), sizeof(int),
-		&need_request,&type,&request);
+                &need_request,&type,&request);
        mdwrap_wait((void *) &(requests[need_request]), sizeof(int),
-		&need_request,&type,&st,&request);
+                &need_request,&type,&st,&request);
        need_request = 0;
     }
 
@@ -2117,7 +2117,7 @@ file specified by the input argument datafile instead from a file called
 
 void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
                     int **bindx, char *input, FILE *dfp, int *msr_len,
-		    int *column0)
+                    int *column0)
 
 /*******************************************************************************
 
@@ -2263,7 +2263,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
 
 void ML_find_local_indices(int N_update, int bindx[], int update[],
                            int *sorted_ext, int N_external, int map[],
-			   int start, int end)
+                           int start, int end)
 
 /*******************************************************************************
 
@@ -2449,9 +2449,9 @@ int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
 /****************************************************************************/
 
 void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordered_node_externs,
-			    int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
-			    int global_node_inds[], ML_Comm *comm, int Nlocal_edges,
-			    ML_Operator **Tmat)
+                            int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
+                            int global_node_inds[], ML_Comm *comm, int Nlocal_edges,
+                            ML_Operator **Tmat)
 {
   int *sorted_ext, *map, i;
   struct ML_CSR_MSRdata *csr_data;
@@ -2468,7 +2468,7 @@ void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordere
   AZ_sort(sorted_ext, Nexterns, map, NULL);
 
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct
-							  ML_CSR_MSRdata));
+                                                          ML_CSR_MSRdata));
   csr_data->columns = Tmat_bindx;
   csr_data->values  = Tmat_val;
   csr_data->rowptr = rowptr;
@@ -2538,14 +2538,14 @@ void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
       /* Eliminate the Dirichlet value from all equations that depend on it. */
       for (j = bindx[i]; j < bindx[i+1]; j++)
       {
-   	     col = bindx[j];
-   	     /* Eliminate the (col,i) entry */
-   	     for (k = bindx[col]; k < bindx[col+1] ; k++)
-   	        if (bindx[k] == i)
+             col = bindx[j];
+             /* Eliminate the (col,i) entry */
+             for (k = bindx[col]; k < bindx[col+1] ; k++)
+                if (bindx[k] == i)
             {
-   	           rhs[col] -= val[k]*sol_value;
-   	           val[k] = 0.0;
-   	        }
+                   rhs[col] -= val[k]*sol_value;
+                   val[k] = 0.0;
+                }
       }
     }
   }
@@ -2555,7 +2555,7 @@ void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
 #endif
 
 int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
-				int proc_config[], double **scale_vect)
+                                int proc_config[], double **scale_vect)
 
 /*******************************************************************************
 
@@ -2612,7 +2612,7 @@ int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   sc_vec = (double *) ML_allocate((N + data_org[AZ_N_external]) *
-				   sizeof(double));
+                                   sizeof(double));
   *scale_vect = sc_vec;
 
   if (sc_vec == NULL) {
@@ -2634,7 +2634,7 @@ int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat,
 
     if (ML_dabs(val[irow]) < DBL_MIN) {
       (void) fprintf(stderr, "%sERROR: diagonal of row %d is zero\n", yo,
-		     irow);
+                     irow);
       exit(-1);
     }
 
@@ -2756,14 +2756,14 @@ void AZ_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
   /* variables at the end of 'x'.                                        */
 
   x_pad = (double *) AZ_allocate((AZ_MAT_blockmat_data->N+
-				  AZ_MAT_blockmat_data->Nghost+1)*sizeof(double));
+                                  AZ_MAT_blockmat_data->Nghost+1)*sizeof(double));
   for (i = 0; i < AZ_MAT_blockmat_data->N; i++) x_pad[i] = x[i];
 
   AZ_MAT_blockmat_data->Ke->matvec( x_pad, y, AZ_MAT_blockmat_data->Ke, proc_config);
 
   if (AZ_MAT_blockmat_data->M != NULL) {
       AZ_MAT_blockmat_data->M->matvec(&(x[AZ_MAT_blockmat_data->N]), z,
-				  AZ_MAT_blockmat_data->M, proc_config);
+                                  AZ_MAT_blockmat_data->M, proc_config);
       for (i = 0; i < AZ_MAT_blockmat_data->N; i++) y[i] -= z[i];
   }
 
@@ -2853,10 +2853,10 @@ static void get_pos3D( int glonum, int nx, int ny, int * ix, int  * iy, int *iz)
 /* ------------------------------------------------------------------------ */
 
 void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
-				   int update[], int external[],
-				   int update_index[], int extern_index[],
-				   double x[], double y[], double z[],
-				   int option )
+                                   int update[], int external[],
+                                   int update_index[], int extern_index[],
+                                   double x[], double y[], double z[],
+                                   int option )
 {
 
   int i, irow, icol, j;
@@ -2889,8 +2889,8 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
   default:
     fprintf( stderr,
              "*MATGEN*ERR* value of option not valid (%d)\n",
-	     option );
-	     exit( EXIT_FAILURE );
+             option );
+             exit( EXIT_FAILURE );
 
   }
 
@@ -3034,22 +3034,22 @@ static MLAZ_Settings Settings = {0};
 
     MLAZ_smoother: MLAZ_Jacobi
                    MLAZ_GaussSeidel
-		   MLAZ_Aztec (default)
-		   MLAZ_BlockGaussSeidel
-		   MLAZ_MLS
-		   MLAZ_SuperLU (only for coarse level)
+                   MLAZ_Aztec (default)
+                   MLAZ_BlockGaussSeidel
+                   MLAZ_MLS
+                   MLAZ_SuperLU (only for coarse level)
 
     MLAZ_max_levels :
     MLAZ_num_smoother_steps :
     MLAZ_output : from 0 to 10, (10 verbose)
     MLAZ_metis_aggregation_property : MLAZ_NumLocalAggregates
                                     MLAZ_NumGlobalAggregates
-				    MLAZ_NumNodesPerAggregate
+                                    MLAZ_NumNodesPerAggregate
     MLAZ_metis_aggregation_value :
     MLAZ_coarsen_scheme : MLAZ_Uncoupled
                           MLAZ_MIS
-			  MLAZ_METIS
-			  MLAZ_ParMETIS
+                          MLAZ_METIS
+                          MLAZ_ParMETIS
 
     MLAZ_smoothP_damping_factor :
     MLAZ_omega] : damping factor for Jacobi
@@ -3064,9 +3064,9 @@ static MLAZ_Settings Settings = {0};
 /* ------------------------------------------------------------------------ */
 
 void MLAZ_Iterate( double delta_x[], double resid_vector[],
-		   int options[], double params[],
-		   double status[], int proc_config[],
-		   AZ_MATRIX *Amat, struct AZ_SCALING *scaling )
+                   int options[], double params[],
+                   double status[], int proc_config[],
+                   AZ_MATRIX *Amat, struct AZ_SCALING *scaling )
 {
 
   int          i, N_update,N_update_blk,num_PDE_eqns;
@@ -3130,7 +3130,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 
     if(  proc_config[AZ_node] == 0 ) {
       printf("Timing : First application of ML_preconditioner  = %e (s)\n",
-	     tS);
+             tS);
     }
 
     tS = GetClock();
@@ -3143,7 +3143,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 
     if( proc_config[AZ_node] == 0 ) {
       printf("Timing : Second application of ML_preconditioner = %e (s)\n",
-	     tS);
+             tS);
     }
 
     free( (void *) fake_rez);
@@ -3152,7 +3152,7 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   /* solve with Aztec-2.1 */
 
   AZ_iterate(delta_x, resid_vector, solver_options, solver_params,
-	     status, proc_config, Amat, ML_Prec, scaling);
+             status, proc_config, Amat, ML_Prec, scaling);
 
   ML_Aggregate_Destroy(&ag);
   ML_Destroy(&ml);
@@ -3164,8 +3164,8 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 #include "ml_amesos_wrap.h"
 
 int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
-			       int proc_config[AZ_PROC_SIZE],
-			       ML *ml, ML_Aggregate *ag)
+                               int proc_config[AZ_PROC_SIZE],
+                               ML *ml, ML_Aggregate *ag)
 {
 
   int          i, Nlevels;
@@ -3227,43 +3227,43 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     default:
       fprintf( stderr,
-	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	       "*ML*ERR* (file %s, line %d)\n",
-	       Settings.Level[i].coarsen_scheme,
-	       __FILE__,
-	       __LINE__ );
+               "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+               "*ML*ERR* (file %s, line %d)\n",
+               Settings.Level[i].coarsen_scheme,
+               __FILE__,
+               __LINE__ );
       exit( EXIT_FAILURE );
 
     } /* switch */
 
     if( Settings.Level[i].coarsen_scheme == MLAZ_METIS ||
-	Settings.Level[i].coarsen_scheme == MLAZ_ParMETIS ) {
+        Settings.Level[i].coarsen_scheme == MLAZ_ParMETIS ) {
 
       switch( Settings.Level[i].metis_aggregation_property ) {
 
       case MLAZ_NumLocalAggregates:
-	ML_Aggregate_Set_LocalNumber( ml, ag, i,
-				      Settings.Level[i].metis_aggregation_value );
-	break;
+        ML_Aggregate_Set_LocalNumber( ml, ag, i,
+                                      Settings.Level[i].metis_aggregation_value );
+        break;
 
       case MLAZ_NumGlobalAggregates:
-	ML_Aggregate_Set_GlobalNumber( ml, ag, i,
-				       Settings.Level[i].metis_aggregation_value );
-	break;
+        ML_Aggregate_Set_GlobalNumber( ml, ag, i,
+                                       Settings.Level[i].metis_aggregation_value );
+        break;
 
       case MLAZ_NumNodesPerAggregate:
-	ML_Aggregate_Set_NodesPerAggr( ml, ag, i,
-				       Settings.Level[i].metis_aggregation_value );
-	break;
+        ML_Aggregate_Set_NodesPerAggr( ml, ag, i,
+                                       Settings.Level[i].metis_aggregation_value );
+        break;
 
       default:
-	fprintf( stderr,
-		 "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-		 "*ML*ERR* (file %s, line %d)\n",
-		 Settings.Level[i].metis_aggregation_value,
-		 __FILE__,
-		 __LINE__ );
-	exit( EXIT_FAILURE );
+        fprintf( stderr,
+                 "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+                 "*ML*ERR* (file %s, line %d)\n",
+                 Settings.Level[i].metis_aggregation_value,
+                 __FILE__,
+                 __LINE__ );
+        exit( EXIT_FAILURE );
 
       } /* switch */
     } /* if */
@@ -3277,14 +3277,14 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   ML_Aggregate_Set_MaxCoarseSize(ag, Settings.max_coarse_size );
   ML_Aggregate_Set_Threshold( ag, Settings.threshold );
   ML_Aggregate_Set_ReqLocalCoarseSize( ml->ML_num_levels, ag, -1,
-  				       Settings.req_aggre_per_proc);
+                                       Settings.req_aggre_per_proc);
 
   if( 5 < ML_Get_PrintLevel() && proc_config[AZ_node] == 0 ) {
     printf("Damping Factor = %e\n", Settings.smoothP_damping_factor);
     printf("Threshold for aggregation = %e\n", Settings.threshold);
     printf("Max coarse size = %d\n", Settings.max_coarse_size);
     printf("Req local coarse size (for ParMETIS) = %d\n",
-	   Settings.req_aggre_per_proc);
+           Settings.req_aggre_per_proc);
   }
 
   /************************************************************************/
@@ -3315,118 +3315,118 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     case MLAZ_Jacobi:
       if( proc_config[AZ_node] == 0 )
-	printf("Smoother (level %d) : Jacobi (its=%d,omega=%e)\n",
-	       i,
-	       num_smoother_steps, omega);
+        printf("Smoother (level %d) : Jacobi (its=%d,omega=%e)\n",
+               i,
+               num_smoother_steps, omega);
       sprintf( label, "Jacobi");
       ML_Gen_Smoother_Jacobi(ml, i, pre_or_post_smoother,
-			     num_smoother_steps, omega);
+                             num_smoother_steps, omega);
       break;
 
     case MLAZ_GaussSeidel:
       if( proc_config[AZ_node] == 0 )
-	printf("Smoother (level %d) : Gauss-Seidel (its=%d,omega=%e)\n",
-	       i,
-	       num_smoother_steps, omega);
+        printf("Smoother (level %d) : Gauss-Seidel (its=%d,omega=%e)\n",
+               i,
+               num_smoother_steps, omega);
       sprintf( label, "Gauss-Seidel ");
       ML_Gen_Smoother_GaussSeidel(ml, i, pre_or_post_smoother,
-				  num_smoother_steps, omega);
+                                  num_smoother_steps, omega);
       break;
 
     case MLAZ_SymGaussSeidel:
       if( proc_config[AZ_node] == 0 )
-	printf("Smoother (level %d) : Symmetric Gauss-Seidel (its=%d,omega=%e)\n",
-	       i,
-	       num_smoother_steps, omega);
+        printf("Smoother (level %d) : Symmetric Gauss-Seidel (its=%d,omega=%e)\n",
+               i,
+               num_smoother_steps, omega);
       sprintf( label, "Symmetric Gauss-Seidel");
       ML_Gen_Smoother_SymGaussSeidel(ml, i, pre_or_post_smoother,
-				  num_smoother_steps, omega);
+                                  num_smoother_steps, omega);
       break;
 
     case MLAZ_MLS:
       if( proc_config[AZ_node] == 0 )
-	printf("Smoother (level %d) : Chebyshev (order=%d,alpha=%e)\n",
-	       i,
-	       Settings.MLS_poly_order,
-	       Settings.MLS_alpha );
+        printf("Smoother (level %d) : Chebyshev (order=%d,alpha=%e)\n",
+               i,
+               Settings.MLS_poly_order,
+               Settings.MLS_alpha );
       sprintf( label, "Chebyshev");
       ML_Gen_Smoother_Cheby(ml, i, pre_or_post_smoother,
-			  Settings.MLS_alpha,
-			  Settings.MLS_poly_order);
+                          Settings.MLS_alpha,
+                          Settings.MLS_poly_order);
       break;
 
     case MLAZ_BlockGaussSeidel:
       if( proc_config[AZ_node] == 0 )
-	printf("Smoother (level %d) : Block Gauss-Seidel (eqns=%d,order=%d,alpha=%e)\n",
-	       i,
-	       num_smoother_steps,
-	       num_smoother_steps, omega);
+        printf("Smoother (level %d) : Block Gauss-Seidel (eqns=%d,order=%d,alpha=%e)\n",
+               i,
+               num_smoother_steps,
+               num_smoother_steps, omega);
 
       sprintf( label, "Block Gauss-Seidel");
       ML_Gen_Smoother_BlockGaussSeidel(ml, i, pre_or_post_smoother,
-				       num_smoother_steps, omega, num_PDE_eqns);
+                                       num_smoother_steps, omega, num_PDE_eqns);
       break;
 
     case MLAZ_Aztec:
       if( proc_config[AZ_node] == 0 ) {
-	printf("Smoother (level %d) : Aztec ",
-	       i);
-	if( Settings.Level[i].options[AZ_precond] == AZ_dom_decomp ) {
-	  printf("DD, overlap=%d, ", Settings.Level[i].options[AZ_overlap]);
-	  if( Settings.Level[i].options[AZ_reorder] == 1 ) printf("reord, ");
-	  else printf("no reord, ");
-	  switch( Settings.Level[i].options[AZ_subdomain_solve] ) {
-	  case AZ_lu: printf(" with LU"); break;
-	  case AZ_ilu:
-	    printf("ILU(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
-	    break;
-	  case AZ_ilut:
-	    printf("ILUT(fill=%5.2e,drop=%5.2e)",
-		   Settings.Level[i].params[AZ_ilut_fill],
-		   Settings.Level[i].params[AZ_drop] );
-	    break;
-	  case AZ_icc:
-	    printf("ICC(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
-	    break;
-	  case AZ_bilu:
-	    printf("BILU(fill=%d)",Settings.Level[i].options[AZ_graph_fill]);
-	    break;
-	  case AZ_rilu:
-	    printf("RILU(fill=%d,omega=%5.2e)",
-		   Settings.Level[i].options[AZ_graph_fill],
-		   Settings.Level[i].params[AZ_omega]);
-	    break;
-	  }
-	} else if( Settings.Level[i].options[AZ_precond] == AZ_Jacobi ) {
-	  printf(" Jacobi preconditioner");
-	} else if( Settings.Level[i].options[AZ_precond] == AZ_Neumann ) {
-	  printf(" Neumann preconditioner, order = %d", Settings.Level[i].options[AZ_poly_ord]);
-	} else if( Settings.Level[i].options[AZ_precond] == AZ_ls ) {
-	  printf(" LS preconditioner, order = %d",
-		 Settings.Level[i].options[AZ_poly_ord]);
-	} else if( Settings.Level[i].options[AZ_precond] == AZ_sym_GS ) {
-	  printf(" symmetric Gauss-Seidel preconditioner, sweeps = %d",
-		 Settings.Level[i].options[AZ_poly_ord]);
-	} else if( Settings.Level[i].options[AZ_precond] == AZ_none ) {
-	  printf(" with no preconditioning");
-	}
-	printf("\n");
+        printf("Smoother (level %d) : Aztec ",
+               i);
+        if( Settings.Level[i].options[AZ_precond] == AZ_dom_decomp ) {
+          printf("DD, overlap=%d, ", Settings.Level[i].options[AZ_overlap]);
+          if( Settings.Level[i].options[AZ_reorder] == 1 ) printf("reord, ");
+          else printf("no reord, ");
+          switch( Settings.Level[i].options[AZ_subdomain_solve] ) {
+          case AZ_lu: printf(" with LU"); break;
+          case AZ_ilu:
+            printf("ILU(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
+            break;
+          case AZ_ilut:
+            printf("ILUT(fill=%5.2e,drop=%5.2e)",
+                   Settings.Level[i].params[AZ_ilut_fill],
+                   Settings.Level[i].params[AZ_drop] );
+            break;
+          case AZ_icc:
+            printf("ICC(fill=%d)", Settings.Level[i].options[AZ_graph_fill]);
+            break;
+          case AZ_bilu:
+            printf("BILU(fill=%d)",Settings.Level[i].options[AZ_graph_fill]);
+            break;
+          case AZ_rilu:
+            printf("RILU(fill=%d,omega=%5.2e)",
+                   Settings.Level[i].options[AZ_graph_fill],
+                   Settings.Level[i].params[AZ_omega]);
+            break;
+          }
+        } else if( Settings.Level[i].options[AZ_precond] == AZ_Jacobi ) {
+          printf(" Jacobi preconditioner");
+        } else if( Settings.Level[i].options[AZ_precond] == AZ_Neumann ) {
+          printf(" Neumann preconditioner, order = %d", Settings.Level[i].options[AZ_poly_ord]);
+        } else if( Settings.Level[i].options[AZ_precond] == AZ_ls ) {
+          printf(" LS preconditioner, order = %d",
+                 Settings.Level[i].options[AZ_poly_ord]);
+        } else if( Settings.Level[i].options[AZ_precond] == AZ_sym_GS ) {
+          printf(" symmetric Gauss-Seidel preconditioner, sweeps = %d",
+                 Settings.Level[i].options[AZ_poly_ord]);
+        } else if( Settings.Level[i].options[AZ_precond] == AZ_none ) {
+          printf(" with no preconditioning");
+        }
+        printf("\n");
       }
 
       sprintf( label, "Aztec");
       ML_Gen_SmootherAztec(ml, i, Settings.Level[i].options,
-			   Settings.Level[i].params,
-			   proc_config, Settings.Level[i].status,
-			   num_smoother_steps, pre_or_post_smoother, NULL);
+                           Settings.Level[i].params,
+                           proc_config, Settings.Level[i].status,
+                           num_smoother_steps, pre_or_post_smoother, NULL);
       break;
 
     default:
       fprintf( stderr,
-	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	       "*ML*ERR* (file %s, line %d)\n",
-	       Settings.Level[i].smoother,
-	       __FILE__,
-	       __LINE__ );
+               "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+               "*ML*ERR* (file %s, line %d)\n",
+               Settings.Level[i].smoother,
+               __FILE__,
+               __LINE__ );
       exit( EXIT_FAILURE );
 
     } /* switch */
@@ -3445,21 +3445,21 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
   case MLAZ_Jacobi:
     ML_Gen_Smoother_Jacobi(ml, Nlevels-1, pre_or_post_smoother,
-			   num_smoother_steps, omega);
+                           num_smoother_steps, omega);
     break;
 
   case MLAZ_GaussSeidel:
     ML_Gen_Smoother_GaussSeidel(ml, Nlevels-1, pre_or_post_smoother,
-				num_smoother_steps, omega);
+                                num_smoother_steps, omega);
     break;
 
   case MLAZ_Aztec:
     ML_Gen_SmootherAztec(ml, Nlevels-1,
-			 Settings.Level[MLAZ_COARSE_LEVEL].options,
-			 Settings.Level[MLAZ_COARSE_LEVEL].params,
-			 proc_config,
-			 Settings.Level[MLAZ_COARSE_LEVEL].status,
-			 num_smoother_steps, pre_or_post_smoother, NULL);
+                         Settings.Level[MLAZ_COARSE_LEVEL].options,
+                         Settings.Level[MLAZ_COARSE_LEVEL].params,
+                         proc_config,
+                         Settings.Level[MLAZ_COARSE_LEVEL].status,
+                         num_smoother_steps, pre_or_post_smoother, NULL);
     break;
 
   case MLAZ_SuperLU:
@@ -3474,11 +3474,11 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
   default:
     fprintf( stderr,
-	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     Settings.Level[MLAZ_COARSE_LEVEL].smoother,
-	     __FILE__,
-	     __LINE__ );
+             "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+             "*ML*ERR* (file %s, line %d)\n",
+             Settings.Level[MLAZ_COARSE_LEVEL].smoother,
+             __FILE__,
+             __LINE__ );
     exit( EXIT_FAILURE );
 
   } /* switch */
@@ -3549,12 +3549,12 @@ void MLAZ_Defaults( void )
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_smoother, MLAZ_Aztec);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_pre_or_post_smoother, ML_BOTH);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_num_smoother_steps,
-			AZ_ONLY_PRECONDITIONER);
+                        AZ_ONLY_PRECONDITIONER);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_coarsen_scheme, MLAZ_METIS);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_metis_aggregation_property,
-			MLAZ_NumNodesPerAggregate);
+                        MLAZ_NumNodesPerAggregate);
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_metis_aggregation_value,
-			512);
+                        512);
   MLAZ_Set_LevelParam(MLAZ_ALL, MLAZ_smoother_damping, .67);
   MLAZ_Set_LevelAztecSmoother(MLAZ_ALL,options,params);
 
@@ -3605,7 +3605,7 @@ void MLAZ_Set_Option(int option, int value)
 
   default:
     fprintf( stderr,
-	     "*ERR*ML* input option not valid\n" );
+             "*ERR*ML* input option not valid\n" );
   }
 
   return;
@@ -3630,7 +3630,7 @@ void MLAZ_Set_Param(int option ,double value)
 
   default:
     fprintf( stderr,
-	     "*ERR*ML* input param not valid\n" );
+             "*ERR*ML* input param not valid\n" );
   }
 
   return;
@@ -3685,7 +3685,7 @@ void MLAZ_Set_LevelOption( int level, int option, int value )
 
       default:
       fprintf( stderr,
-	       "*ERR*ML* input level option not valid\n" );
+               "*ERR*ML* input level option not valid\n" );
     }
 
   }
@@ -3719,7 +3719,7 @@ void MLAZ_Set_LevelParam(int level,int option, double value)
 
     default:
       fprintf( stderr,
-	       "*ERR*ML* input level param not valid\n" );
+               "*ERR*ML* input level param not valid\n" );
     }
   }
 
@@ -3729,7 +3729,7 @@ void MLAZ_Set_LevelParam(int level,int option, double value)
 
 
 void MLAZ_Set_LevelAztecSmoother(int level,
-				 int options[], double params[])
+                                 int options[], double params[])
 {
 
   int i;
@@ -3758,8 +3758,8 @@ void MLAZ_Set_LevelAztecSmoother(int level,
 
 
 void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
-			       AZ_MATRIX * Amat, int proc_config[],
-			       int choice, int max_procs )
+                               AZ_MATRIX * Amat, int proc_config[],
+                               int choice, int max_procs )
 {
   ML           *ml = NULL;
   int N_update;
@@ -3773,7 +3773,7 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
 
   ML_Set_PrintLevel(10);
   AZ_ML_Set_Amat(ml, 0, N_update,
-		 N_update, Amat, proc_config);
+                 N_update, Amat, proc_config);
 
   switch( choice ) {
   case ML_AMESOS_KLU:
@@ -3786,9 +3786,9 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
     break;
   default:
     fprintf( stderr,
-	     "*ML*ERR* In `MLAZ_Direct_Solve_Amesos', choice has an\n"
-	     "*ML*ERR* improper value (%d)\n",
-	     choice );
+             "*ML*ERR* In `MLAZ_Direct_Solve_Amesos', choice has an\n"
+             "*ML*ERR* improper value (%d)\n",
+             choice );
     exit( EXIT_FAILURE);
   }
 
@@ -3801,7 +3801,7 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   ML_Amesos_Destroy(Amesos_Handle);
 #else
   fprintf( stderr,
-	   "*ML*ERR* configure with --with-ml_amesos to use this function\n");
+           "*ML*ERR* configure with --with-ml_amesos to use this function\n");
   exit( EXIT_FAILURE );
 #endif
 
@@ -3852,14 +3852,14 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
 {
   FILE *ifp=NULL;
   int   i,j,row,count=0,count2=0,gcount,index=-1;
-  int   proc=-1,nprocs=0;
+  int   proc=-1; /*,nprocs=0; */
   int   G_update=0, gnblocks=0, *gblocks=NULL, *gblock_pde=NULL, block, pde;
   char  buffer[200],*buffptr=NULL;
   int   bsize;
   int   firstrow,lastrow,faligned=0,laligned=0;
   /*********************** BEGIN EXECUTION ***********************************/
   proc   = proc_config[AZ_node];
-  nprocs = proc_config[AZ_N_procs];
+  /* nprocs = proc_config[AZ_N_procs]; */
 
   /* Open the file containing block information*/
 
@@ -3879,8 +3879,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
 
   if (*N_update <= 0 || (*update)==NULL) {
     (void) fprintf(stderr,
-		   "no update vector present for reading blocks\n%s:%d\n",
-		   __FILE__,__LINE__);
+                   "no update vector present for reading blocks\n%s:%d\n",
+                   __FILE__,__LINE__);
     fflush(stderr);
     exit(EXIT_FAILURE);
   }
@@ -3892,7 +3892,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   if (gblocks == NULL)
   {
      (void) fprintf(stderr,"not enough space to read blocks\n%s:%d\n",
-		    __FILE__,__LINE__);
+                    __FILE__,__LINE__);
      exit(EXIT_FAILURE);
   }
 
@@ -3902,13 +3902,13 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      if (ifp==NULL)
      {
         (void) fprintf(stderr,"could not open file\n%s:%d\n",
-		       __FILE__,__LINE__);
+                       __FILE__,__LINE__);
         exit(EXIT_FAILURE);
      }
      if (fgets(buffer,199,ifp) == NULL)
      {
         (void) fprintf(stderr,"I/O error\n%s:%d\n",
-		       __FILE__,__LINE__);
+                       __FILE__,__LINE__);
         exit(EXIT_FAILURE);
      }
      gnblocks = strtol(buffer,&buffptr,10);
@@ -3920,7 +3920,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
         if (fgets(buffer,199,ifp)==NULL)
         {
            printf("***ERR***error reading file %s\n%s:%d\n",
-		  cmd_file_name,__FILE__,__LINE__);
+                  cmd_file_name,__FILE__,__LINE__);
            exit(EXIT_FAILURE);
         }
         bsize = strtol(buffer,&buffptr,10);
@@ -3937,8 +3937,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
      {
         (void) fprintf(stderr,"number of dofs in file %s ",cmd_file_name);
         (void) fprintf(stderr,
-		       "does not match total number of dofs\n%s:%d\n",
-		       __FILE__,__LINE__);
+                       "does not match total number of dofs\n%s:%d\n",
+                       __FILE__,__LINE__);
         fflush(stderr); exit(EXIT_FAILURE);
      }
      fclose(ifp);
@@ -3960,8 +3960,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
     if (count2>5)
     {
        fprintf(stderr,
-	       "Cannot align update vector to block distribution\n%s:%d\n",
-	       __FILE__,__LINE__);
+               "Cannot align update vector to block distribution\n%s:%d\n",
+               __FILE__,__LINE__);
        fflush(stderr);
        exit(EXIT_FAILURE);
     }
@@ -4027,7 +4027,7 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
        *update = (int*)AZ_realloc((void*)(*update),(*N_update+count)*sizeof(int));
        if (*update==NULL) {
        fprintf(stderr,"Allocation of memory failed\n%s:%d\n",
-	       __FILE__,__LINE__);
+               __FILE__,__LINE__);
        fflush(stderr); exit(EXIT_FAILURE);
        }
        for (i=*N_update; i<*N_update+count; i++)
@@ -4048,8 +4048,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
   if (*blocks==NULL)
   {
      (void) fprintf(stderr,
-		    "not enough space to allocate blocks: *blocks\n%s:%d\n",
-		    __FILE__,__LINE__);
+                    "not enough space to allocate blocks: *blocks\n%s:%d\n",
+                    __FILE__,__LINE__);
      fflush(stderr);
      exit(EXIT_FAILURE);
   }
@@ -4086,8 +4086,8 @@ void ML_AZ_Reader_ReadVariableBlocks(char *cmd_file_name, int *nblocks, int **bl
         if (proc==0)
         {
           (void) fprintf(stderr,
-			 "***ERR*** global number of variable blocks wrong\n%s:%d\n",
-			 __FILE__,__LINE__);
+                         "***ERR*** global number of variable blocks wrong\n%s:%d\n",
+                         __FILE__,__LINE__);
           fflush(stderr);
         }
         exit(EXIT_FAILURE);
