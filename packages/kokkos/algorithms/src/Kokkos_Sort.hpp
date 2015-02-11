@@ -274,9 +274,9 @@ struct DefaultBinOp1D {
   typename KeyViewType::const_value_type min_;
 
   //Construct BinOp with number of bins, minimum value and maxuimum value
-  DefaultBinOp1D(int max_bins, typename KeyViewType::const_value_type min,
+  DefaultBinOp1D(int max_bins__, typename KeyViewType::const_value_type min,
                                typename KeyViewType::const_value_type max )
-     :max_bins_(max_bins+1),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
+     :max_bins_(max_bins__+1),mul_(1.0*max_bins/(max-min)),range_(max-min),min_(min) {}
 
   //Determine bin index from key value
   template<class ViewType>
@@ -306,15 +306,15 @@ struct DefaultBinOp3D {
   typename KeyViewType::non_const_value_type range_[3];
   typename KeyViewType::non_const_value_type min_[3];
 
-  DefaultBinOp3D(int max_bins[], typename KeyViewType::const_value_type min[],
+  DefaultBinOp3D(int max_bins__[], typename KeyViewType::const_value_type min[],
                                typename KeyViewType::const_value_type max[] )
   {
-    max_bins_[0] = max_bins[0]+1;
-    max_bins_[1] = max_bins[1]+1;
-    max_bins_[2] = max_bins[2]+1;
-    mul_[0] = 1.0*max_bins[0]/(max[0]-min[0]);
-    mul_[1] = 1.0*max_bins[1]/(max[1]-min[1]);
-    mul_[2] = 1.0*max_bins[2]/(max[2]-min[2]);
+    max_bins_[0] = max_bins__[0]+1;
+    max_bins_[1] = max_bins__[1]+1;
+    max_bins_[2] = max_bins__[2]+1;
+    mul_[0] = 1.0*max_bins__[0]/(max[0]-min[0]);
+    mul_[1] = 1.0*max_bins__[1]/(max[1]-min[1]);
+    mul_[2] = 1.0*max_bins__[2]/(max[2]-min[2]);
     range_[0] = max[0]-min[0];
     range_[1] = max[1]-min[1];
     range_[2] = max[2]-min[2];

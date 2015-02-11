@@ -342,7 +342,6 @@ void test_random(unsigned int num_draws)
 {
   using std::cerr;
   using std::endl;
-  typedef typename RandomGenerator::generator_type rnd_type;
   typename test_random_functor<RandomGenerator,int>::type_1d density_1d("D1d");
   typename test_random_functor<RandomGenerator,int>::type_3d density_3d("D3d");
 

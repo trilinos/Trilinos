@@ -95,7 +95,6 @@ struct sum3D {
 template<class ExecutionSpace, typename KeyType>
 void test_1D_sort(unsigned int n,bool force_kokkos) {
   typedef Kokkos::View<KeyType*,ExecutionSpace> KeyViewType;
-  typedef typename KeyViewType::memory_space::size_type size_type;
   KeyViewType keys("Keys",n);
 
   Kokkos::Random_XorShift64_Pool<ExecutionSpace> g(1931);
@@ -123,7 +122,6 @@ void test_1D_sort(unsigned int n,bool force_kokkos) {
 template<class ExecutionSpace, typename KeyType>
 void test_3D_sort(unsigned int n) {
   typedef Kokkos::View<KeyType*[3],ExecutionSpace > KeyViewType;
-  typedef typename KeyViewType::memory_space::size_type size_type;
 
   KeyViewType keys("Keys",n*n*n);
 
