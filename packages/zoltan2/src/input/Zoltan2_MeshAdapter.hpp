@@ -142,6 +142,10 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
 
+  /*! \brief Returns the global number of mesh entities of MeshEntityType
+   */
+//KDD  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+
   /*! \brief Returns the number of mesh entities on this process.
    */
   virtual size_t getLocalNumOf(MeshEntityType etype) const = 0;
@@ -317,9 +321,14 @@ public:
         throughGIDs[i] = as<GO> (throughIds[i]);
       }
 
+// KDD SHOULD 0 below be global_min(Ids[i])?
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 0, comm));
 
+// KDD SHOULD 0 below be global_min(throughIds[i])?
+// KDD throughGIDs' entries will not be unique across processors.  Think should use first constructor on web page.
+// KDD but then need global number of unique entities of type through.  Think that isn't readily available.
+// KDD      throughMapG = rcp (new map_type (getGlobalNumOf(through), whatever_the_index_base_should_be, comm));
       //Generate Map for through.
       throughMapG = rcp (new map_type (INVALID, throughGIDs (), 0 , comm));
 
@@ -345,6 +354,8 @@ public:
         }
 
         for (int j = offsets[localElement]; j < NumAdjs; ++j) {
+// KDD should this be global ordinal instead of int?
+// KDD can we insert all adjacencies at once instead of one at a time (since they are contiguous in adjacencyIds)?
           int globalCol = as<int> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
           ArrayView<int> globalColAV = Teuchos::arrayView (&globalCol,1);
