@@ -268,7 +268,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Stor
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
-  typedef typename ViewType::host_mirror_space HostDevice;
+  typedef Kokkos::HostSpace HostDevice;
   typedef Kokkos::View<PCE*,typename ViewType::array_layout,HostDevice,Kokkos::MemoryUnmanaged> HostViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename PCE::cijk_type Cijk;
