@@ -362,7 +362,7 @@ namespace MueLu {
   private:
 
     //! Copy constructor.
-    Level(const Level& source) { }
+    Level(const Level& source);
 
     //! If input factory == NULL, returns the default factory. Else, return input factory.
     //
