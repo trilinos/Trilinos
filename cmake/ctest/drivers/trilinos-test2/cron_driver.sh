@@ -26,7 +26,7 @@ BASEDATADIR=$BASEDIR
 
 export CVS_RSH=ssh
 export LD_LIBRARY_PATH="/home/trilinos/lib:$BASEDIR/MPI_OPT_DEV_SHARED/BUILD/packages/PyTrilinos/src:/home/trilinos/gcc4.7.2/base/lib64"
-export PYTHONPATH="/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3/lib64/python:/home/trilinos/tpl/gcc4.1.2/numpy-1.9.1/lib/python2.7/site-packages"
+export PYTHONPATH="/home/trilinos/tpl/gcc4.1.2/numpy-1.9.1/lib/python2.7/site-packages"
 export TRILINOSDATADIRECTORY="$BASEDATADIR/TrilinosData"
 
 pushd "$BASEDATADIR"
