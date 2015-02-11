@@ -1,8 +1,8 @@
-//  This example computes the eigenvalues of smallest magnitude of the 
-//  discretized 2D Laplacian operator using the block Davidson method.  
+//  This example computes the eigenvalues of smallest magnitude of the
+//  discretized 2D Laplacian operator using the block Davidson method.
 //  This problem shows the construction of a shifted eigenproblem that
 //  targets the smallest eigenvalues around a certain value (sigma).
-//  This operator is discretized using linear finite elements and constructed 
+//  This operator is discretized using linear finite elements and constructed
 //  as an Epetra matrix, then passed shifted using EpetraExt utilities.
 
 // Include autoconfigured header
@@ -65,24 +65,24 @@ int main(int argc, char *argv[]) {
 
   // Number of dimension of the domain
   int space_dim = 2;
-  
+
   // Size of each of the dimensions of the domain
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   brick_dim[1] = 1.0;
-  
+
   // Number of elements in each of the dimensions of the domain
   std::vector<int> elements( space_dim );
   elements[0] = 10;
   elements[1] = 10;
-  
+
   // Create problem
   Teuchos::RCP<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
-  
+
   // Get the stiffness and mass matrices
   Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
   Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
-	
+
   // Create the shifted system K - sigma * M.
 
   double sigma = 1.0;
@@ -123,30 +123,30 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
- 
+
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
   typedef Anasazi::MultiVecTraits<double, MV> MVT;
-  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
-  
+  // typedef Anasazi::OperatorTraits<double, MV, OP> OPT; // unused
+
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
   MVT::MvRandom( *ivec );
-  
-  Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
+
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Kshift, M, ivec) );
-  
+
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   MyProblem->setHermitian(true);
-  
-  // Set the number of eigenvalues requested 
+
+  // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
-  
+
   // Inform the eigenproblem that you are finished passing it information
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
-    printer.print(Anasazi::Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n"); 
+    printer.print(Anasazi::Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
 
   // Initialize the Block Davidson solver
   Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
-  
+
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0) {
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
   Teuchos::RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
-  
+
   if (numev > 0) {
 
     // Undo shift transformation; computed eigenvalues are real
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     for (i=0; i<numev; ++i) {
       compEvals[i] = evals[i].realpart + sigma;
     }
-   
+
     //************************************
     // Compute residuals, just for funsies
     //************************************
@@ -185,21 +185,21 @@ int main(int argc, char *argv[]) {
     Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
     Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
     Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-    T.putScalar(0.0); 
+    T.putScalar(0.0);
     for (i=0; i<sol.numVecs; i++) {
       T(i,i) = compEvals[i];
     }
     K->Apply( *evecs, Kvec );
-    M->Apply( *evecs, Mvec );   
+    M->Apply( *evecs, Mvec );
     MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, normR );
-  
+
     //************************************
     // Print the results
     //************************************
     //
     std::ostringstream os;
-    os.setf(std::ios_base::right, std::ios_base::adjustfield); 
+    os.setf(std::ios_base::right, std::ios_base::adjustfield);
     os<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << std::endl;
     os<<std::endl;
     os<<"------------------------------------------------------"<<std::endl;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     }
     os<<"------------------------------------------------------"<<std::endl;
     printer.print(Anasazi::Errors,os.str());
-   
+
   }
 
 #ifdef EPETRA_MPI
