@@ -704,23 +704,40 @@ typedef NNTI_remote_addr_t NNTI_remote_addr_array_t<>;
  * a multipurpose buffer.
  */
 enum NNTI_buf_ops_t {
-    /** @brief this buffer can be put from */
-    NNTI_PUT_SRC=1,
-    /** @brief this buffer can be put into */
-    NNTI_PUT_DST=2,
-    /** @brief this buffer can be got from */
-    NNTI_GET_SRC=4,
-    /** @brief this buffer can be got into */
-    NNTI_GET_DST=8,
+    /** @brief a local process/NIC can read from this buffer */
+    NNTI_BOP_LOCAL_READ=1,
+    /** @brief a remote process/NIC can read from this buffer */
+    NNTI_BOP_REMOTE_READ=2,
+    /** @brief a local process/NIC can write to this buffer */
+    NNTI_BOP_LOCAL_WRITE=4,
+    /** @brief a remote process/NIC can write to this buffer */
+    NNTI_BOP_REMOTE_WRITE=8,
     /** @brief this buffer can be sent from */
-    NNTI_SEND_SRC=16,
+    NNTI_BOP_SEND_SRC=16,
     /** @brief this buffer can be received into */
-    NNTI_RECV_DST=32,
+    NNTI_BOP_RECV_DST=32,
     /** @brief this buffer has multiple receive slots */
-    NNTI_RECV_QUEUE=64,
+    NNTI_BOP_RECV_QUEUE=64,
     /** @brief this buffer allows atomic operations */
-    NNTI_ATOMICS=128
+    NNTI_BOP_ATOMICS=128
 };
+
+/** @brief this buffer can be put from */
+const NNTI_PUT_SRC=NNTI_BOP_LOCAL_READ;
+/** @brief this buffer can be put into */
+const NNTI_PUT_DST=NNTI_BOP_REMOTE_WRITE;
+/** @brief this buffer can be got from */
+const NNTI_GET_SRC=NNTI_BOP_REMOTE_READ;
+/** @brief this buffer can be got into */
+const NNTI_GET_DST=NNTI_BOP_LOCAL_WRITE;
+/** @brief this buffer can be sent from */
+const NNTI_SEND_SRC=NNTI_BOP_SEND_SRC;
+/** @brief this buffer can be received into */
+const NNTI_RECV_DST=NNTI_BOP_RECV_DST;
+/** @brief this buffer has multiple receive slots */
+const NNTI_RECV_QUEUE=NNTI_BOP_RECV_QUEUE;
+/** @brief this buffer allows atomic operations */
+const NNTI_ATOMICS=NNTI_BOP_ATOMICS;
 
 
 /***********  Buffer Type  ***********/
