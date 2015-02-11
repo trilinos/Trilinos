@@ -302,7 +302,6 @@ public:
       /***********************************************************************/
 
       Array<GO> sourcetargetGIDs;
-      Array<GO> throughGIDs;
       RCP<const map_type> sourcetargetMapG;
       RCP<const map_type> throughMapG;
 
@@ -311,19 +310,28 @@ public:
 
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
+      GO min = as<GO> (Ids[0]);
       for (int i = 0; i < LocalNumIDs; ++i) {
         sourcetargetGIDs[i] = as<GO> (Ids[i]);
-      }
 
-      //Build a list of the global through ids...
-      throughGIDs.resize (LocalNumOfNodes);
-      for (int i = 0; i < LocalNumOfNodes; ++i) {
-        throughGIDs[i] = as<GO> (throughIds[i]);
+	if (sourcetargetGIDs[i] < min) {
+	  min = sourcetargetGIDs[i];
+	}
       }
 
 // KDD SHOULD 0 below be global_min(Ids[i])?
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 0, comm));
+
+      // min(throughIds[i])
+      min = as<GO> (throughIds[0]);
+      for (int i = 0; i < LocalNumOfNodes; ++i) {
+	GO tmp = as<GO> (throughIds[i]);
+
+	if (tmp < min) {
+	  min = tmp;
+	}
+      }
 
 // KDD SHOULD 0 below be global_min(throughIds[i])?
       //Generate Map for through.
