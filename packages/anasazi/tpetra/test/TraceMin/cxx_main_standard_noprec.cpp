@@ -45,29 +45,26 @@
   // Instead of constantly typing Tpetra::MultiVector<Scalar, ...>,
   // we can type MV.
   //
-  typedef double                                                 Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                          SCT;
-  typedef SCT::magnitudeType                                     Magnitude;
-  typedef Tpetra::Map<>::local_ordinal_type                      LocalOrdinal;
-  typedef Tpetra::Map<>::global_ordinal_type                     GlobalOrdinal;
+  typedef double                                        Scalar;
+  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType  Magnitude;
+  typedef Tpetra::Map<>::local_ordinal_type             LocalOrdinal;
+  typedef Tpetra::Map<>::global_ordinal_type            GlobalOrdinal;
   typedef Tpetra::Map<>               Map;
   typedef Tpetra::MultiVector<Scalar> MV;
   typedef Tpetra::Operator<Scalar>    OP;
-  typedef Anasazi::MultiVecTraits<Scalar, MV>                    MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                OPT;
-  typedef Tpetra::Import<>             Import;
 
 //
 // Define a class for our user-defined operator.
 // In this case, it is the tridiagonal matrix [-1,2,-1].
 // You can define it to be whatever you like.
 //
-// In general, Trilinos does NOT require the user to explicitly deal with MPI.
-// If you want to define your own operator though, there's no getting around it.
-// Fortunately, Trilinos makes this relatively straightforward with the use of
-// Importer objects.  All you have to do is define your initial data distribution
-// (which is a block row distribution here), and the data distribution you need
-// to perform the operations of your matvec.
+// In general, Trilinos does NOT require the user to explicitly deal
+// with MPI.  If you want to define your own operator though, there's
+// no getting around it.  Fortunately, Trilinos makes this relatively
+// straightforward with the use of Tpetra::Import objects.  All you
+// have to do is define your initial data distribution (which is a
+// block row distribution here), and the data distribution you need to
+// perform the operations of your matvec.
 //
 // For instance, when performing a matvec with a tridiagonal matrix (with a block
 // row distribution), each process needs to know the last element owned by the
@@ -77,6 +74,9 @@
 // ignore everything here regarding maps and importers
 //
 class MyOp : public virtual OP {
+private:
+  typedef Tpetra::Import<> Import;
+
 public:
   //
   // Constructor
@@ -107,42 +107,47 @@ public:
     // Here, each process needs to receive one element from each of its neighbors.
     //
 
-    // All processes but the first will receive one element from the previous process
-    if(myRank_ > 0) nlocal++;
-    // All processes but the last will receive one element from the next process
-    if(myRank_ < numProcs_-1) nlocal++;
-    // Construct a list of columns where this process has nonzero elements
-    // For our tridiagonal matrix, this is firstRowItOwns-1:lastRowItOwns+1
+    // All processes but the first will receive one entry from the
+    // previous process.
+    if (myRank_ > 0) {
+      nlocal++;
+    }
+    // All processes but the last will receive one entry from the next
+    // process.
+    if (myRank_ < numProcs_-1) {
+      nlocal++;
+    }
+    // Construct a list of columns where this process has nonzero elements.
+    // For our tridiagonal matrix, this is firstRowItOwns-1:lastRowItOwns+1.
     std::vector<GlobalOrdinal> indices;
-    indices.reserve(nlocal);
+    indices.reserve (nlocal);
     // The first process is a special case...
-    if(myRank_ > 0) indices.push_back(opMap_->getMinGlobalIndex()-1);
-    for(GlobalOrdinal i=opMap_->getMinGlobalIndex(); i<=opMap_->getMaxGlobalIndex(); i++)
-      indices.push_back(i);
+    if (myRank_ > 0) {
+      indices.push_back (opMap_->getMinGlobalIndex () - 1);
+    }
+    for (GlobalOrdinal i = opMap_->getMinGlobalIndex ();
+         i <= opMap_->getMaxGlobalIndex (); ++i) {
+      indices.push_back (i);
+    }
     // So is the last process...
-    if(myRank_ < numProcs_-1) indices.push_back(opMap_->getMaxGlobalIndex()+1);
+    if (myRank_ < numProcs_-1) {
+      indices.push_back (opMap_->getMaxGlobalIndex () + 1);
+    }
 
-    //
-    // Wrap our vector in an array view, which is like a pointer
-    //
-    Teuchos::ArrayView<const GlobalOrdinal> elementList(indices);
+    // Wrap our vector in an array view, which is like a raw pointer.
+    Teuchos::ArrayView<const GlobalOrdinal> elementList (indices);
 
-    //
-    // Make a map for handling the redistribution
-    // There will be some redundancies (i.e. some of the elements will be owned by multiple processes)
-    //
+    // Make a Map for handling the redistribution.  There will be some
+    // redundancies (i.e., some of the entries will be owned by
+    // multiple MPI processes).
     GlobalOrdinal numGlobalElements = n + 2*(numProcs_-1);
-    redistMap_ = rcp(new Map(numGlobalElements, elementList, 0, comm));
+    redistMap_ = rcp (new Map (numGlobalElements, elementList, 0, comm));
 
-    //
-    // Make an Import object that describes how data will be redistributed.
-    // It takes a map describing who owns what originally, and a map that describes who you WANT
-    // to own what.
-    //
-    importer_= rcp(new Import(opMap_, redistMap_));
-  };
-
-
+    // Make an Import object that describes how data will be
+    // redistributed.  It takes a Map describing who owns what
+    // originally, and a Map that describes who you WANT to own what.
+    importer_= rcp (new Import (opMap_, redistMap_));
+  }
 
   //
   // These functions are required since we inherit from Tpetra::Operator
@@ -155,85 +160,76 @@ public:
   RCP<const Map> getDomainMap() const { return opMap_; };
   RCP<const Map> getRangeMap() const { return opMap_; };
 
+  // Compute Y = alpha Op X + beta Y.
   //
-  // Computes Y = alpha Op X + beta Y
   // TraceMin will never use alpha ~= 1 or beta ~= 0,
   // so we have ignored those options for simplicity.
-  //
-  void apply(const MV& X, MV& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=SCT::one(), Scalar beta=SCT::zero()) const
+  void
+  apply (const MV& X,
+         MV& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const
   {
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     //
     // Let's make sure alpha is 1 and beta is 0...
     // This will throw an exception if that is not the case.
     //
-    TEUCHOS_TEST_FOR_EXCEPTION(alpha != SCT::one() || beta != SCT::zero(),std::invalid_argument,
-           "MyOp::apply was given alpha != 1 or beta != 0. That's not supposed to happen.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      alpha != SCT::one() || beta != SCT::zero(), std::logic_error,
+      "MyOp::apply was given alpha != 1 or beta != 0.  It does not currently "
+      "implement either of those two cases.");
 
-    //
     // Get the number of local rows
-    //
-    LocalOrdinal nlocRows = X.getLocalLength();
+    const LocalOrdinal nlocRows = X.getLocalLength();
 
-    //
     // Get the number of vectors
-    //
-    int numVecs = X.getNumVectors();
+    const int numVecs = X.getNumVectors();
 
-    //
     // Make a multivector for holding the redistributed data
-    //
     RCP<MV> redistData = rcp(new MV(redistMap_, numVecs));
 
-    //
     // Redistribute the data.
     // This will do all the necessary communication for you.
     // All processes now own enough data to do the matvec.
-    //
     redistData->doImport(X, *importer_, Tpetra::INSERT);
 
-    //
     // Perform the matvec with the data we now locally own
     //
     // For each column...
-    for(int c=0; c<numVecs; c++)
-    {
+    for (int c = 0; c < numVecs; ++c) {
       // Get a view of the desired column
-      Teuchos::ArrayRCP<Scalar> colView = redistData->getDataNonConst(c);
+      Teuchos::ArrayRCP<Scalar> colView = redistData->getDataNonConst (c);
 
       int offset;
       // Y[0,c] = -colView[0] + 2*colView[1] - colView[2] (using local indices)
-      if(myRank_ > 0)
-      {
-        Y.replaceLocalValue(0, c, -colView[0] + 2*colView[1] - colView[2]);
+      if (myRank_ > 0) {
+        Y.replaceLocalValue (0, c, -colView[0] + 2*colView[1] - colView[2]);
         offset = 0;
       }
       // Y[0,c] = 2*colView[1] - colView[2] (using local indices)
-      else
-      {
+      else {
         Y.replaceLocalValue(0, c, 2*colView[0] - colView[1]);
         offset = 1;
       }
 
       // Y[r,c] = -colView[r-offset] + 2*colView[r+1-offset] - colView[r+2-offset]
-      for(LocalOrdinal r=1; r<nlocRows-1; r++)
-      {
+      for(LocalOrdinal r=1; r<nlocRows-1; r++) {
         Y.replaceLocalValue(r, c, -colView[r-offset] + 2*colView[r+1-offset] - colView[r+2-offset]);
       }
 
       // Y[nlocRows-1,c] = -colView[nlocRows-1-offset] + 2*colView[nlocRows-offset] - colView[nlocRows+1-offset]
-      if(myRank_ < numProcs_-1)
-      {
+      if (myRank_ < numProcs_-1) {
         Y.replaceLocalValue(nlocRows-1, c, -colView[nlocRows-1-offset] + 2*colView[nlocRows-offset] - colView[nlocRows+1-offset]);
       }
       // Y[nlocRows-1,c] = -colView[nlocRows-1-offset] + 2*colView[nlocRows-offset]
-      else
-      {
+      else {
         Y.replaceLocalValue(nlocRows-1, c, -colView[nlocRows-1-offset] + 2*colView[nlocRows-offset]);
       }
     }
   }
-
-
 
 private:
   RCP<const Map> opMap_, redistMap_;
@@ -244,6 +240,9 @@ private:
 
 
 int main(int argc, char *argv[]) {
+  typedef Anasazi::MultiVecTraits<Scalar, MV> MVT;
+  typedef Anasazi::OperatorTraits<Scalar, MV, OP> OPT;
+
   //
   // Initialize the MPI session
   //
