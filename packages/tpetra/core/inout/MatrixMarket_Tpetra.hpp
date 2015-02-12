@@ -5283,7 +5283,9 @@ namespace Tpetra {
                       const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                       const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
-        const int myRank = X.getMap ()->getComm ()->getRank ();
+        const int myRank = X.getMap ().is_null () ? 0 :
+          (X.getMap ()->getComm ().is_null () ? 0 :
+           X.getMap ()->getComm ()->getRank ());
         std::ofstream out;
 
         if (myRank == 0) { // Only open the file on Process 0.
@@ -5352,18 +5354,19 @@ namespace Tpetra {
       ///
       /// Write the given Tpetra::MultiVector matrix to an output
       /// stream, using the Matrix Market "array" format for dense
-      /// matrices.  MPI Process 0 is the only MPI process that writes
-      /// to the output stream.
+      /// matrices.  MPI Process 0 in the given MultiVector's
+      /// communicator is the only MPI process that may write to the
+      /// given output stream.
       ///
       /// This is the preferred overload of writeDense().  It is used
       /// to implement all other overloads of writeDense(), and is
-      /// also used to implement all overloads of writeDenseFile.
+      /// also used to implement all overloads of writeDenseFile().
       ///
       /// \param out [out] The output stream to which to write (on MPI
       ///   Process 0 only).
       ///
-      /// \param X [in] The dense matrix (stored as a multivector) to
-      ///   write to the output file.
+      /// \param X [in] The Tpetra::MultiVector to write to the given
+      ///   output file \c out.
       ///
       /// \param matrixName [in] Name of the matrix, to print in the
       ///   comments section of the output stream.  If empty, we don't
@@ -5383,6 +5386,198 @@ namespace Tpetra {
                   const std::string& matrixDescription,
                   const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
                   const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        using Teuchos::Comm;
+        using Teuchos::outArg;
+        using Teuchos::REDUCE_MAX;
+        using Teuchos::reduceAll;
+        using Teuchos::RCP;
+        using std::endl;
+
+        RCP<const Comm<int> > comm = X.getMap ().is_null () ?
+          Teuchos::null : X.getMap ()->getComm ();
+        const int myRank = comm.is_null () ? 0 : comm->getRank ();
+
+        // If the caller provides a nonnull debug output stream, we
+        // print debugging output to it.  This is a local thing; we
+        // don't have to check across processes.
+        const bool debug = ! dbg.is_null ();
+        if (debug) {
+          dbg->pushTab ();
+          std::ostringstream os;
+          os << myRank << ": writeDense" << endl;
+          *dbg << os.str ();
+          dbg->pushTab ();
+        }
+        // Print the Matrix Market header.
+        writeDenseHeader (out, X, matrixName, matrixDescription, err, dbg);
+
+        // Print each column one at a time.  This is a (perhaps)
+        // temporary fix for Bug 6288.
+        const size_t numVecs = X.getNumVectors ();
+        for (size_t j = 0; j < numVecs; ++j) {
+          writeDenseColumn (out, * (X.getVector (j)), err, dbg);
+        }
+
+        if (debug) {
+          dbg->popTab ();
+          std::ostringstream os;
+          os << myRank << ": writeDense: Done" << endl;
+          *dbg << os.str ();
+          dbg->popTab ();
+        }
+      }
+
+    private:
+
+      /// \brief Print the MultiVector's Matrix Market header.
+      ///
+      /// Write the given Tpetra::MultiVector's Matrix Market header
+      /// to the given output stream.  The header includes metadata
+      /// like the storage format and dimensions, but not the actual
+      /// entries.  MPI Process 0 is the only MPI process that may
+      /// write to the output stream.
+      ///
+      /// \param out [out] The output stream to which to write (on MPI
+      ///   Process 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output file.
+      ///
+      /// \param matrixName [in] Name of the matrix, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param matrixDescription [in] Matrix description, to print
+      ///   in the comments section of the output stream.  If empty,
+      ///   we don't print anything (not even an empty line).
+      ///
+      /// \param err [out] If nonnull, print any error messages to it.
+      ///
+      /// \param dbg [out] If nonnull, print copious debugging output to it.
+      static void
+      writeDenseHeader (std::ostream& out,
+                        const multivector_type& X,
+                        const std::string& matrixName,
+                        const std::string& matrixDescription,
+                        const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                        const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
+      {
+        using Teuchos::Comm;
+        using Teuchos::outArg;
+        using Teuchos::RCP;
+        using Teuchos::REDUCE_MAX;
+        using Teuchos::reduceAll;
+        using std::endl;
+        typedef typename multivector_type::scalar_type scalar_type;
+        typedef Teuchos::ScalarTraits<scalar_type> STS;
+        const char prefix[] = "Tpetra::MatrixMarket::writeDenseHeader: ";
+
+        RCP<const Comm<int> > comm = X.getMap ().is_null () ?
+          Teuchos::null : X.getMap ()->getComm ();
+        const int myRank = comm.is_null () ? 0 : comm->getRank ();
+        int lclErr = 0; // whether this MPI process has seen an error
+        int gblErr = 0; // whether we know if some MPI process has seen an error
+
+        // If the caller provides a nonnull debug output stream, we
+        // print debugging output to it.  This is a local thing; we
+        // don't have to check across processes.
+        const bool debug = ! dbg.is_null ();
+
+        if (debug) {
+          dbg->pushTab ();
+          std::ostringstream os;
+          os << myRank << ": writeDenseHeader" << endl;
+          *dbg << os.str ();
+          dbg->pushTab ();
+        }
+
+        //
+        // Process 0: Write the MatrixMarket header.
+        //
+        if (myRank == 0) {
+          try {
+            // Print the Matrix Market header.  MultiVector stores data
+            // nonsymmetrically, hence "general" in the banner line.
+            // Print first to a temporary string output stream, and then
+            // write it to the main output stream, so that at least the
+            // header output has transactional semantics.  We can't
+            // guarantee transactional semantics for the whole output,
+            // since that would not be memory scalable.  (This could be
+            // done in the file system by using a temporary file; we
+            // don't do this, but users could.)
+            std::ostringstream hdr;
+            {
+              std::string dataType;
+              if (STS::isComplex) {
+                dataType = "complex";
+              } else if (STS::isOrdinal) {
+                dataType = "integer";
+              } else {
+                dataType = "real";
+              }
+              hdr << "%%MatrixMarket matrix array " << dataType << " general"
+                  << endl;
+            }
+
+            // Print comments (the matrix name and / or description).
+            if (matrixName != "") {
+              printAsComment (hdr, matrixName);
+            }
+            if (matrixDescription != "") {
+              printAsComment (hdr, matrixDescription);
+            }
+            // Print the Matrix Market dimensions header for dense matrices.
+            hdr << X.getGlobalLength () << " " << X.getNumVectors () << endl;
+
+            // Write the MatrixMarket header to the output stream.
+            out << hdr.str ();
+          } catch (std::exception& e) {
+            if (! err.is_null ()) {
+              *err << prefix << "While writing the Matrix Market header, "
+                "Process 0 threw an exception: " << e.what () << endl;
+            }
+            lclErr = 1;
+          }
+        } // if I am Process 0
+
+        // Establish global agreement on the error state.  It wouldn't
+        // be good for other processes to keep going, if Process 0
+        // finds out that it can't write to the given output stream.
+        reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          gblErr == 1, std::runtime_error, prefix << "Some error occurred "
+          "which prevented this method from completing.");
+
+        if (debug) {
+          dbg->popTab ();
+          *dbg << myRank << ": writeDenseHeader: Done" << endl;
+          dbg->popTab ();
+        }
+      }
+
+      /// \brief Print a single column of the given MultiVector in
+      ///   Matrix Market format.
+      ///
+      /// Write the given Tpetra::MultiVector matrix (which must have
+      /// only one column!) to an output stream, using the Matrix
+      /// Market "array" format for dense matrices.  MPI Process 0 is
+      /// the only MPI process that writes to the output stream.
+      ///
+      /// \param out [out] The output stream to which to write (on MPI
+      ///   Process 0 only).
+      ///
+      /// \param X [in] The dense matrix (stored as a multivector) to
+      ///   write to the output file.
+      ///
+      /// \param err [out] If nonnull, print any error messages to it.
+      ///
+      /// \param dbg [out] If nonnull, print copious debugging output to it.
+      static void
+      writeDenseColumn (std::ostream& out,
+                        const multivector_type& X,
+                        const Teuchos::RCP<Teuchos::FancyOStream>& err = Teuchos::null,
+                        const Teuchos::RCP<Teuchos::FancyOStream>& dbg = Teuchos::null)
       {
         using Teuchos::arcp;
         using Teuchos::ArrayRCP;
@@ -5414,7 +5609,7 @@ namespace Tpetra {
         if (debug) {
           dbg->pushTab ();
           std::ostringstream os;
-          os << myRank << ": writeDense" << endl;
+          os << myRank << ": writeDenseColumn" << endl;
           *dbg << os.str ();
           dbg->pushTab ();
         }
@@ -5587,48 +5782,9 @@ namespace Tpetra {
         }
 
         //
-        // Process 0: Write the MatrixMarket header.
+        // Process 0: Write my entries.
         //
         if (myRank == 0) {
-          if (debug) {
-            *dbg << myRank << ": Write MatrixMarket header" << endl;
-          }
-          // Print the Matrix Market header.  MultiVector stores data
-          // nonsymmetrically, hence "general" in the banner line.
-          // Print first to a temporary string output stream, and then
-          // write it to the main output stream, so that at least the
-          // header output has transactional semantics.  We can't
-          // guarantee transactional semantics for the whole output,
-          // since that would not be memory scalable.  (This could be
-          // done in the file system by using a temporary file; we
-          // don't do this, but users could.)
-          std::ostringstream hdr;
-          {
-            std::string dataType;
-            if (STS::isComplex) {
-              dataType = "complex";
-            } else if (STS::isOrdinal) {
-              dataType = "integer";
-            } else {
-              dataType = "real";
-            }
-            hdr << "%%MatrixMarket matrix array " << dataType << " general"
-                << endl;
-          }
-
-          // Print comments (the matrix name and / or description).
-          if (matrixName != "") {
-            printAsComment (hdr, matrixName);
-          }
-          if (matrixDescription != "") {
-            printAsComment (hdr, matrixDescription);
-          }
-          // Print the Matrix Market dimensions header for dense matrices.
-          hdr << X.getGlobalLength () << " " << X.getNumVectors () << endl;
-
-          // Write the MatrixMarket header to the output stream.
-          out << hdr.str ();
-
           if (debug) {
             std::ostringstream os;
             os << myRank << ": Write my entries" << endl;
@@ -5953,10 +6109,12 @@ namespace Tpetra {
 
         if (debug) {
           dbg->popTab ();
-          *dbg << myRank << ": writeMap: Done" << endl;
+          *dbg << myRank << ": writeDenseColumn: Done" << endl;
           dbg->popTab ();
         }
       }
+
+    public:
 
       /// \brief Print the multivector in Matrix Market format, with
       ///   matrix name and or description.
