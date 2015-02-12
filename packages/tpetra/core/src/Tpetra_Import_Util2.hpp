@@ -964,10 +964,10 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      offset != imports.size (), std::logic_error, prefix << "After "
-      "unpacking and counting all the imports, the final offset in bytes "
-      << offset << " != imports.size() = " << imports.size () << ".  "
-      "Please report this bug to the Tpetra developers.");
+      offset != static_cast<size_t> (imports.size ()), std::logic_error, prefix
+      << "After unpacking and counting all the import packets, the final offset"
+      " in bytes " << offset << " != imports.size() = " << imports.size () <<
+      ".  Please report this bug to the Tpetra developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       lclErr != 0, std::logic_error, prefix << "numBytes != numBytesOut "
       "somewhere in unpack loop.  This should never happen.  "
@@ -1096,32 +1096,46 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
                                       Teuchos::Array<int> &remotePIDs,
                                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap)
 {
+  using Teuchos::rcp;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::global_size_t GST;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  const char prefix[] = "lowCommunicationMakeColMapAndReindex: ";
+
   // The domainMap is an RCP because there is a shortcut for a
   // (common) special case to return the columnMap = domainMap.
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &domainMap = *domainMapRCP;
+  const map_type& domainMap = *domainMapRCP;
 
   // Scan all column indices and sort into two groups:
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
-  size_t numDomainElements = domainMap.getNodeNumElements();
+  const size_t numDomainElements = domainMap.getNodeNumElements ();
   Teuchos::Array<bool> LocalGIDs;
-  if (numDomainElements>0) LocalGIDs.resize(numDomainElements,false); // Assume domain GIDs are not local
+  if (numDomainElements > 0) {
+    LocalGIDs.resize (numDomainElements, false); // Assume domain GIDs are not local
+  }
 
   // In principle it is good to have RemoteGIDs and RemotGIDList be as
   // long as the number of remote GIDs on this processor, but this
   // would require two passes through the column IDs, so we make it
   // the max of 100 and the number of block rows.
-  const size_t numMyRows =  rowptr.size()-1;
-  int    hashsize        = Teuchos::as<int>(numMyRows);
-  if (hashsize < 100) hashsize = 100;
+  //
+  // FIXME (mfh 11 Feb 2015) Tpetra::Details::HashTable can hold at
+  // most INT_MAX entries, but it's possible to have more rows than
+  // that (if size_t is 64 bits and int is 32 bits).
+  const size_t numMyRows = rowptr.size () - 1;
+  const int hashsize = std::max (static_cast<int> (numMyRows), 100);
 
-  Tpetra::Details::HashTable<GlobalOrdinal,LocalOrdinal> RemoteGIDs(hashsize);
-  Teuchos::Array<GlobalOrdinal> RemoteGIDList; RemoteGIDList.reserve(hashsize);
-  Teuchos::Array<int> PIDList;                 PIDList.reserve(hashsize);
+  Tpetra::Details::HashTable<GO, LO> RemoteGIDs (hashsize);
+  Teuchos::Array<GO> RemoteGIDList;
+  RemoteGIDList.reserve (hashsize);
+  Teuchos::Array<int> PIDList;
+  PIDList.reserve (hashsize);
 
   // Here we start using the *LocalOrdinal* colind_LID array.  This is
   // safe even if both columnIndices arrays are actually the same
-  // (because LocalOrdinal==GlobalOrdinal).  For *local* GID's set
+  // (because LocalOrdinal==GO).  For *local* GID's set
   // colind_LID with with their LID in the domainMap.  For *remote*
   // GIDs, we set colind_LID with (numDomainElements+NumRemoteColGIDs)
   // before the increment of the remote count.  These numberings will
@@ -1129,44 +1143,54 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
   // numDomainElements.
 
   size_t NumLocalColGIDs = 0;
-  LocalOrdinal NumRemoteColGIDs = 0;
-  for(size_t i = 0; i < numMyRows; i++) {
-    for(size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
-      GlobalOrdinal GID = colind_GID[j];
+  LO NumRemoteColGIDs = 0;
+  for (size_t i = 0; i < numMyRows; ++i) {
+    for(size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
+      const GO GID = colind_GID[j];
       // Check if GID matches a row GID
-      LocalOrdinal LID = domainMap.getLocalElement(GID);
+      const LO LID = domainMap.getLocalElement (GID);
       if(LID != -1) {
-        bool alreadyFound = LocalGIDs[LID];
-        if (!alreadyFound) {
+        const bool alreadyFound = LocalGIDs[LID];
+        if (! alreadyFound) {
           LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
           NumLocalColGIDs++;
         }
         colind_LID[j] = LID;
       }
       else {
-        LocalOrdinal hash_value=RemoteGIDs.get(GID);
-        if(hash_value  == -1) { // This means its a new remote GID
-          int PID = owningPIDs[j];
-          TEUCHOS_TEST_FOR_EXCEPTION(PID==-1,std::invalid_argument, "lowCommunicationMakeColMapAndReindex: Cannot figure out if PID is owned.");
-          colind_LID[j] = Teuchos::as<LocalOrdinal>(numDomainElements + NumRemoteColGIDs);
-          RemoteGIDs.add(GID, NumRemoteColGIDs);
-          RemoteGIDList.push_back(GID);
-          PIDList.push_back(PID);
+        const LO hash_value = RemoteGIDs.get (GID);
+        if (hash_value == -1) { // This means its a new remote GID
+          const int PID = owningPIDs[j];
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            PID == -1, std::invalid_argument, prefix << "Cannot figure out if "
+            "PID is owned.");
+          colind_LID[j] = static_cast<LO> (numDomainElements + NumRemoteColGIDs);
+          RemoteGIDs.add (GID, NumRemoteColGIDs);
+          RemoteGIDList.push_back (GID);
+          PIDList.push_back (PID);
           NumRemoteColGIDs++;
         }
-        else
-          colind_LID[j] = Teuchos::as<LocalOrdinal>(numDomainElements + hash_value);
+        else {
+          colind_LID[j] = static_cast<LO> (numDomainElements + hash_value);
+        }
       }
     }
   }
 
-  // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=domainMap and quit
-  if (domainMap.getComm()->getSize()==1) {
-    // Sanity check: When there is one processor,there can be no remoteGIDs
-    TEUCHOS_TEST_FOR_EXCEPTION(NumRemoteColGIDs!=0,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Some column IDs are not in domainMap.");
-    if (Teuchos::as<size_t>(NumLocalColGIDs)==numDomainElements) {
-      // In this case, we just use the domainMap's indices, which is, not coincidently, what we clobbered colind with up above anyway.
-      // No further reindexing is needed.
+  // Possible short-circuit: If all domain map GIDs are present as
+  // column indices, then set ColMap=domainMap and quit.
+  if (domainMap.getComm ()->getSize () == 1) {
+    // Sanity check: When there is only one process, there can be no
+    // remoteGIDs.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      NumRemoteColGIDs != 0, std::runtime_error, prefix << "There is only one "
+      "process in the domain Map's communicator, which means that there are no "
+      "\"remote\" indices.  Nevertheless, some column indices are not in the "
+      "domain Map.");
+    if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
+      // In this case, we just use the domainMap's indices, which is,
+      // not coincidently, what we clobbered colind with up above
+      // anyway.  No further reindexing is needed.
       colMap = domainMapRCP;
       return;
     }
@@ -1174,92 +1198,125 @@ lowCommunicationMakeColMapAndReindex (const ArrayView<const size_t> &rowptr,
 
   // Now build the array containing column GIDs
   // Build back end, containing remote GIDs, first
-  LocalOrdinal numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
-  Teuchos::Array<GlobalOrdinal> ColIndices;
-  GlobalOrdinal * RemoteColIndices=0;
-  if(numMyCols > 0) {
-    ColIndices.resize(numMyCols);
-    if(NumLocalColGIDs!=Teuchos::as<size_t>(numMyCols)) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
-  }
-
-  for(LocalOrdinal i = 0; i < NumRemoteColGIDs; i++)
-    RemoteColIndices[i] = RemoteGIDList[i];
-
-  // Build permute array for *remote* reindexing.
-  Teuchos::Array<LocalOrdinal> RemotePermuteIDs(NumRemoteColGIDs);
-  for(LocalOrdinal i=0; i<NumRemoteColGIDs; i++) RemotePermuteIDs[i]=i;
-
-
-  // Sort External column indices so that all columns coming from a given remote processor are contiguous
-  // This is a sort with two auxillary arrays: RemoteColIndices and RemotePermuteIDs.
-  Tpetra::sort3(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
-
-  // Stash the RemotePIDs
-  // Note: If Teuchos::Array had a shrink_to_fit like std::vector, we'd call it here.
-  remotePIDs = PIDList;
-
-  // Sort external column indices so that columns from a given remote processor are not only contiguous
-  // but also in ascending order. NOTE: I don't know if the number of externals associated
-  // with a given remote processor is known at this point ... so I count them here.
-
-  // NTS: Only sort the RemoteColIndices this time...
-  LocalOrdinal StartCurrent = 0, StartNext = 1;
-  while ( StartNext < NumRemoteColGIDs ) {
-    if (PIDList[StartNext]==PIDList[StartNext-1]) StartNext++;
-    else {
-      Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent);
-      StartCurrent = StartNext; StartNext++;
+  const LO numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
+  Teuchos::Array<GO> ColIndices;
+  GO* RemoteColIndices = NULL;
+  if (numMyCols > 0) {
+    ColIndices.resize (numMyCols);
+    if (NumLocalColGIDs != static_cast<size_t> (numMyCols)) {
+      RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
     }
   }
-    Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent);
+
+  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
+    RemoteColIndices[i] = RemoteGIDList[i];
+  }
+
+  // Build permute array for *remote* reindexing.
+  Teuchos::Array<LO> RemotePermuteIDs (NumRemoteColGIDs);
+  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
+    RemotePermuteIDs[i]=i;
+  }
+
+  // Sort External column indices so that all columns coming from a
+  // given remote processor are contiguous.  This is a sort with two
+  // auxillary arrays: RemoteColIndices and RemotePermuteIDs.
+  Tpetra::sort3 (PIDList.begin (), PIDList.end (),
+                 ColIndices.begin () + NumLocalColGIDs,
+                 RemotePermuteIDs.begin ());
+
+  // Stash the RemotePIDs.
+  //
+  // Note: If Teuchos::Array had a shrink_to_fit like std::vector,
+  // we'd call it here.
+  remotePIDs = PIDList;
+
+  // Sort external column indices so that columns from a given remote
+  // processor are not only contiguous but also in ascending
+  // order. NOTE: I don't know if the number of externals associated
+  // with a given remote processor is known at this point ... so I
+  // count them here.
+
+  // NTS: Only sort the RemoteColIndices this time...
+  LO StartCurrent = 0, StartNext = 1;
+  while (StartNext < NumRemoteColGIDs) {
+    if (PIDList[StartNext]==PIDList[StartNext-1]) {
+      StartNext++;
+    }
+    else {
+      Tpetra::sort2 (ColIndices.begin () + NumLocalColGIDs + StartCurrent,
+                     ColIndices.begin () + NumLocalColGIDs + StartNext,
+                     RemotePermuteIDs.begin () + StartCurrent);
+      StartCurrent = StartNext;
+      StartNext++;
+    }
+  }
+  Tpetra::sort2 (ColIndices.begin () + NumLocalColGIDs + StartCurrent,
+                 ColIndices.begin () + NumLocalColGIDs + StartNext,
+                 RemotePermuteIDs.begin () + StartCurrent);
 
   // Reverse the permutation to get the information we actually care about
-  Teuchos::Array<LocalOrdinal> ReverseRemotePermuteIDs(NumRemoteColGIDs);
-  for(LocalOrdinal i=0; i<NumRemoteColGIDs; i++) ReverseRemotePermuteIDs[RemotePermuteIDs[i]]=i;
+  Teuchos::Array<LO> ReverseRemotePermuteIDs (NumRemoteColGIDs);
+  for (LO i = 0; i < NumRemoteColGIDs; ++i) {
+    ReverseRemotePermuteIDs[RemotePermuteIDs[i]] = i;
+  }
 
   // Build permute array for *local* reindexing.
-  bool use_local_permute=false;
-  Teuchos::Array<LocalOrdinal> LocalPermuteIDs(numDomainElements);
+  bool use_local_permute = false;
+  Teuchos::Array<LO> LocalPermuteIDs (numDomainElements);
 
   // Now fill front end. Two cases:
-  // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
-  //     can simply read the domain GIDs into the front part of ColIndices, otherwise
-  // (2) We step through the GIDs of the domainMap, checking to see if each domain GID is a column GID.
-  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
-  Teuchos::ArrayView<const GlobalOrdinal> domainGlobalElements = domainMap.getNodeElementList();
-  if(Teuchos::as<size_t>(NumLocalColGIDs) == numDomainElements) {
-    if(NumLocalColGIDs > 0) {
+  //
+  // (1) If the number of Local column GIDs is the same as the number
+  //     of Local domain GIDs, we can simply read the domain GIDs into
+  //     the front part of ColIndices, otherwise
+  //
+  // (2) We step through the GIDs of the domainMap, checking to see if
+  //     each domain GID is a column GID.  we want to do this to
+  //     maintain a consistent ordering of GIDs between the columns
+  //     and the domain.
+  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getNodeElementList();
+  if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
+    if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list
-      std::copy(domainGlobalElements.begin(),domainGlobalElements.end(),ColIndices.begin());
+      std::copy (domainGlobalElements.begin (), domainGlobalElements.end (),
+                 ColIndices.begin ());
     }
   }
   else {
-    LocalOrdinal NumLocalAgain = 0;
+    LO NumLocalAgain = 0;
     use_local_permute = true;
-    for(size_t i = 0; i < numDomainElements; i++) {
-      if(LocalGIDs[i]) {
+    for (size_t i = 0; i < numDomainElements; ++i) {
+      if (LocalGIDs[i]) {
         LocalPermuteIDs[i] = NumLocalAgain;
         ColIndices[NumLocalAgain++] = domainGlobalElements[i];
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(NumLocalAgain)!=NumLocalColGIDs,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Local ID count test failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_t> (NumLocalAgain) != NumLocalColGIDs,
+      std::runtime_error, prefix << "Local ID count test failed.");
   }
 
-  // Make Column map
-  Tpetra::global_size_t minus_one = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  colMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(minus_one,ColIndices,domainMap.getIndexBase(),domainMap.getComm(),domainMap.getNode()));
+  // Make column Map
+  const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
+  colMap = rcp (new map_type (minus_one, ColIndices, domainMap.getIndexBase (),
+                              domainMap.getComm (), domainMap.getNode ()));
 
   // Low-cost reindex of the matrix
-  for(size_t i=0; i<numMyRows; i++){
-    for(size_t j=rowptr[i]; j<rowptr[i+1]; j++){
-      LocalOrdinal ID=colind_LID[j];
-      if(Teuchos::as<size_t>(ID) < numDomainElements){
-        if(use_local_permute) colind_LID[j] = LocalPermuteIDs[colind_LID[j]];
-        // In the case where use_local_permute==false, we just copy the DomainMap's ordering,
-        // which it so happens is what we put in colind_LID to begin with.
+  for (size_t i = 0; i < numMyRows; ++i) {
+    for (size_t j = rowptr[i]; j < rowptr[i+1]; ++j) {
+      const LO ID = colind_LID[j];
+      if (static_cast<size_t> (ID) < numDomainElements) {
+        if (use_local_permute) {
+          colind_LID[j] = LocalPermuteIDs[colind_LID[j]];
+        }
+        // In the case where use_local_permute==false, we just copy
+        // the DomainMap's ordering, which it so happens is what we
+        // put in colind_LID to begin with.
       }
-      else
+      else {
         colind_LID[j] =  NumLocalColGIDs + ReverseRemotePermuteIDs[colind_LID[j]-numDomainElements];
+      }
     }
   }
 }

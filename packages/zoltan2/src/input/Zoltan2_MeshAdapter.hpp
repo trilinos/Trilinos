@@ -108,23 +108,19 @@ class MeshAdapter : public BaseAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
-  typedef typename InputTraits<User>::lno_t    lno_t;
-  typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t   zgid_t;
-  typedef typename InputTraits<User>::part_t   part_t;
-  typedef typename InputTraits<User>::node_t   node_t;
-  typedef User                                 user_t;
-  typedef User                                 userCoord_t;
-  typedef double                               ST;
-  typedef int                                  LO;
-  typedef int                                  GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef Tpetra::CrsMatrix<ST, LO, GO, Node>  sparse_matrix_type;
-  typedef Teuchos::ScalarTraits<ST>            STS;
-  typedef Tpetra::Map<LO, GO, Node>            map_type;
-  typedef Tpetra::Export<LO, GO, Node>         export_type;
-  typedef Tpetra::CrsGraph<LO, GO, Node>       sparse_graph_type;
+  typedef typename InputTraits<User>::scalar_t              scalar_t;
+  typedef typename InputTraits<User>::lno_t                 lno_t;
+  typedef typename InputTraits<User>::gno_t                 gno_t;
+  typedef typename InputTraits<User>::zgid_t                zgid_t;
+  typedef typename InputTraits<User>::part_t                part_t;
+  typedef typename InputTraits<User>::node_t                node_t;
+  typedef User                                              user_t;
+  typedef User                                              userCoord_t;
+  typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> sparse_matrix_type;
+  typedef Teuchos::ScalarTraits<scalar_t>                   STS;
+  typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
+  typedef Tpetra::Export<lno_t, gno_t, node_t>              export_type;
+  typedef Tpetra::CrsGraph<lno_t, gno_t, node_t>            sparse_graph_type;
 #endif
 
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -301,7 +297,7 @@ public:
       /************************* BUILD MAPS FOR ADJS *************************/
       /***********************************************************************/
 
-      Array<GO> sourcetargetGIDs;
+      Array<gno_t> sourcetargetGIDs;
       RCP<const map_type> sourcetargetMapG;
       RCP<const map_type> throughMapG;
 
@@ -310,10 +306,10 @@ public:
 
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
-      GO min[2];
-      min[0] = as<GO> (Ids[0]);
+      gno_t min[2];
+      min[0] = as<gno_t> (Ids[0]);
       for (int i = 0; i < LocalNumIDs; ++i) {
-        sourcetargetGIDs[i] = as<GO> (Ids[i]);
+        sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
 
 	if (sourcetargetGIDs[i] < min[0]) {
 	  min[0] = sourcetargetGIDs[i];
@@ -321,17 +317,17 @@ public:
       }
 
       // min(throughIds[i])
-      min[1] = as<GO> (throughIds[0]);
+      min[1] = as<gno_t> (throughIds[0]);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
-	GO tmp = as<GO> (throughIds[i]);
+	gno_t tmp = as<gno_t> (throughIds[i]);
 
 	if (tmp < min[1]) {
 	  min[1] = tmp;
 	}
       }
 
-      GO gmin[2] = {1, 1};
-      //Teuchos::reduceAll<GO>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
+      gno_t gmin[2] = {1, 1};
+      //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp(new map_type(INVALID, sourcetargetGIDs(), gmin[0],
@@ -363,9 +359,9 @@ public:
 
         for (int j = offsets[localElement]; j < NumAdjs; ++j) {
 // KDD can we insert all adjacencies at once instead of one at a time (since they are contiguous in adjacencyIds)?
-          GO globalCol = as<GO> (adjacencyIds[j]);
+          gno_t globalCol = as<gno_t> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
-          ArrayView<GO> globalColAV = Teuchos::arrayView (&globalCol,1);
+          ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
           //Update Tpetra adjs Graph
           adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
@@ -391,18 +387,23 @@ public:
       // 1-1 column map. (???)
       RCP<const export_type> bdyExporter =
         rcp (new export_type (ColMap, globalMap));
+
       // Create a vector of global column indices to which we will export
-      RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
-        rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+      RCP<Tpetra::Vector<gno_t, lno_t, gno_t, node_t> > globColsToZeroT =
+        rcp (new Tpetra::Vector<gno_t, lno_t, gno_t, node_t> (globalMap));
+
       // Create a vector of local column indices from which we will export
-      RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
-        rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
+      RCP<Tpetra::Vector<lno_t, lno_t, gno_t, node_t> > myColsToZeroT =
+        rcp (new Tpetra::Vector<lno_t, lno_t, gno_t, node_t> (ColMap));
+
       myColsToZeroT->putScalar (0);
 
       // Set to 1 all local columns corresponding to the local rows specified.
       for (int i = 0; i < LocalNumIDs; ++i) {
-        const GO globalRow = adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
-        const LO localCol =adjsMatrix->getColMap()->getLocalElement(globalRow);
+        const gno_t globalRow =
+	  adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
+        const lno_t localCol =
+	  adjsMatrix->getColMap()->getLocalElement(globalRow);
         // Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
         // Epetra has a separate Epetra_IntVector class for ints.
         myColsToZeroT->replaceLocalValue (localCol, 1);
@@ -421,16 +422,16 @@ public:
         rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
       Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
                                      true,*secondAdjs);
-      Array<GO> Indices;
-      Array<ST> Values;
+      Array<gno_t> Indices;
+      Array<scalar_t> Values;
 
       /* Allocate memory necessary for the adjacency */
       lno_t *start = new lno_t [LocalNumIDs+1];
-      std::vector<GO> adj;
+      std::vector<gno_t> adj;
 
       for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
         start[localElement] = nadj;
-        const GO globalRow = Ids[localElement];
+        const gno_t globalRow = Ids[localElement];
         size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
         Indices.resize (NumEntries);
         Values.resize (NumEntries);

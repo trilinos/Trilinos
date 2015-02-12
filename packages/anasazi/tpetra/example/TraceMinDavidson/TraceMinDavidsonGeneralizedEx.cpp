@@ -15,16 +15,16 @@
 #include "AnasaziOperator.hpp"
 
 // Include header for Tpetra compressed-row storage matrix
-#include "Tpetra_CrsMatrix.hpp" 
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"        
-#include "Tpetra_Map.hpp"            
-#include "Tpetra_MultiVector.hpp" 
-#include "Tpetra_Operator.hpp"   
-#include "Tpetra_Vector.hpp" 
+#include "Tpetra_Version.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
+#include "Tpetra_Vector.hpp"
 
 // Include headers for reading and writing matrix-market files
-#include <MatrixMarket_Tpetra.hpp>           
+#include <MatrixMarket_Tpetra.hpp>
 
 // Include header for sparse matrix operations
 #include <TpetraExt_MatrixMatrix_def.hpp>
@@ -36,52 +36,54 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+
+int main(int argc, char *argv[]) {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using std::cout;
 
   //
   // Specify types used in this example
-  //                                   
-  typedef double                                                  Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                           SCT;
-  typedef SCT::magnitudeType                                      Magnitude;
-  typedef int                                                     Ordinal;  
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform; 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;     
-  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
-  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>             Vector;
-  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node>        MV;
-  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal,Node>           OP;
-  typedef Anasazi::MultiVecTraits<Scalar, MV>                     MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                 OPT;
-  typedef Tpetra::MatrixMarket::Reader<CrsMatrix>                 Reader;
+  //
+  typedef double                                       Scalar;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+  typedef Tpetra::Map<>::node_type                     Node;
+  typedef Tpetra::CrsMatrix<Scalar>                    CrsMatrix;
+  typedef Tpetra::MultiVector<Scalar>                  MV;
+  typedef Tpetra::Operator<Scalar>                     OP;
+  typedef Tpetra::MatrixMarket::Reader<CrsMatrix>      Reader;
+  typedef Anasazi::MultiVecTraits<Scalar, MV>          MVT;
+  typedef Anasazi::OperatorTraits<Scalar, MV, OP>      OPT;
 
-int main(int argc, char *argv[]) {
   //
   // Initialize the MPI session
   //
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  // 
+  //
   // Get the default communicator and node
-  //                                      
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();          
-  RCP<Node>                      node = platform.getNode();          
-  const int myRank = comm->getRank();  
+  //
+  Platform& platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+  RCP<Node>                      node = platform.getNode ();
+  const int myRank = comm->getRank ();
 
   //
   // Get parameters from command-line processor
-  // 
-  std::string filenameA("/home/amklinv/matrices/bcsstk06.mtx");
-  std::string filenameB("/home/amklinv/matrices/bcsstm06.mtx");
+  //
+  // FIMME (mfh 12 Feb 2015) The defaults shouldn't point to a
+  // specific path.  I don't think the test uses the defaults, though.
+  // I don't want to change this because it might break the author's
+  // workflow.
+  std::string filenameA ("/home/amklinv/matrices/bcsstk06.mtx");
+  std::string filenameB ("/home/amklinv/matrices/bcsstm06.mtx");
   Scalar tol = 1e-6;
   int nev = 4;
   int blockSize = 1;
   bool verbose = true;
   std::string whenToShift = "Always";
-  Teuchos::CommandLineProcessor cmdp(false,true); 
+  Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("fileA",&filenameA, "Filename for the Matrix-Market stiffness matrix.");
   cmdp.setOption("fileB",&filenameB, "Filename for the Matrix-Market mass matrix.");
   cmdp.setOption("tolerance",&tol, "Relative residual used for solver.");
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
   // Compute the norm of the matrix
   //
   Scalar mat_norm = std::max(K->getFrobeniusNorm(),M->getFrobeniusNorm());
-  
+
   //
   // ************************************
   // Start the block Arnoldi iteration
@@ -132,30 +134,30 @@ int main(int argc, char *argv[]) {
   MyPL.set("Num Restart Blocks", numRestartBlocks);    // When we restart, we start back up with 2*nev blocks
   MyPL.set("Num Blocks", numBlocks);                   // Maximum number of blocks in the subspace
   MyPL.set("When To Shift", whenToShift);
-  
+
   //
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
-  RCP<MV> ivec = Teuchos::rcp( new MV(K->getRowMap(), blockSize) );
-  MVT::MvRandom( *ivec );
+  RCP<MV> ivec = rcp (new MV (K->getRowMap (), blockSize));
+  MVT::MvRandom (*ivec);
 
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem = 
-      Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(K, M, ivec) );
-  
+  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem =
+    rcp (new Anasazi::BasicEigenproblem<Scalar,MV,OP> (K, M, ivec));
+
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   //
   MyProblem->setHermitian(true);
-  
+
   //
-  // Set the number of eigenvalues requested 
+  // Set the number of eigenvalues requested
   //
   MyProblem->setNEV( nev );
-  
+
   //
   // Inform the eigenproblem that you are finished passing it information
   //
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) {
   // Initialize the TraceMin-Davidson solver
   //
   Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, MV, OP> MySolverMgr(MyProblem, MyPL);
- 
+
   //
   // Solve the problem to the specified tolerances
   //
@@ -181,7 +183,7 @@ int main(int argc, char *argv[]) {
   }
   else if (myRank == 0)
     cout << "Anasazi::EigensolverMgr::solve() returned converged." << std::endl;
-  
+
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
@@ -189,12 +191,12 @@ int main(int argc, char *argv[]) {
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
-  
+
   //
   // Compute the residual, just as a precaution
   //
   if (numev > 0) {
-    
+
     Teuchos::SerialDenseMatrix<int,Scalar> T(numev,numev);
     for(int i=0; i < numev; i++)
       T(i,i) = evals[i].realpart;
@@ -202,11 +204,11 @@ int main(int argc, char *argv[]) {
     MV Kvec( K->getRowMap(), MVT::GetNumberVecs( *evecs ) );
     MV Mvec( M->getRowMap(), MVT::GetNumberVecs( *evecs ) );
 
-    OPT::Apply( *K, *evecs, Kvec ); 
+    OPT::Apply( *K, *evecs, Kvec );
     OPT::Apply( *M, *evecs, Mvec );
     MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, normR );
-  
+
     if (myRank == 0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<"Actual Eigenvalues: "<<std::endl;
