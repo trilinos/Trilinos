@@ -456,7 +456,7 @@ int i, val[2];
 static void showGraphPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts, int nparts)
 {
 int partAssign[25], allPartAssign[25];
-int i, j, part, cuts, prevPart;
+int i, j, part, cuts, prevPart=-1;
 float imbal, localImbal, sum;
 int *partCount=NULL;
 

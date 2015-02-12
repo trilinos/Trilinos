@@ -1633,7 +1633,7 @@ char *c_in, *c_out, *c_end;
 char *c_in_end;
 char *buf;
 long count_mine;
-int rc, max_sanity, total_line_found, line_size;
+int rc, max_sanity, total_line_found, line_size=0;
 ZOLTAN_ID_TYPE nedges, nvtxs, npins, numew; 
 int numOwners, vdim, edim;
 int i=0;
