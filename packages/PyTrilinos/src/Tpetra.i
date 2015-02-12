@@ -193,10 +193,12 @@ __version__ = version()
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm,
       Tpetra::LocalGlobal lg=GloballyDistributed)
   {
-    return new Tpetra::Map< LocalOrdinal, GlobalOrdinal >(numGlobalElements,
-                                                          indexBase,
-                                                          comm,
-                                                          lg);
+    return new Tpetra::Map< LocalOrdinal,
+                            GlobalOrdinal,
+                            Node          >(numGlobalElements,
+                                            indexBase,
+                                            comm,
+                                            lg);
   }
 
   Map(Tpetra::global_size_t numGlobalElements,
@@ -204,10 +206,12 @@ __version__ = version()
       GlobalOrdinal indexBase,
       const Teuchos::RCP< const Teuchos::Comm< int > > & comm)
   {
-    return new Tpetra::Map< LocalOrdinal, GlobalOrdinal >(numGlobalElements,
-                                                          numLocalElements,
-                                                          indexBase,
-                                                          comm);
+    return new Tpetra::Map< LocalOrdinal,
+                            GlobalOrdinal,
+                            Node          >(numGlobalElements,
+                                            numLocalElements,
+                                            indexBase,
+                                            comm);
   }
 
   Map(Tpetra::global_size_t numGlobalElements,
@@ -225,10 +229,12 @@ __version__ = version()
     Teuchos::ArrayView< GlobalOrdinal > elementArray =
       Teuchos::arrayView( (GlobalOrdinal*) array_data(npArray),
                           array_size(npArray, 0));
-    return new Tpetra::Map< LocalOrdinal, GlobalOrdinal >(numGlobalElements,
-                                                          elementArray,
-                                                          indexBase,
-                                                          comm);
+    return new Tpetra::Map< LocalOrdinal,
+                            GlobalOrdinal,
+                            Node          >(numGlobalElements,
+                                            elementArray,
+                                            indexBase,
+                                            comm);
   }
 
   PyObject * getLocalElement(GlobalOrdinal globalIndex)
@@ -326,8 +332,13 @@ __version__ = version()
 %ignore Tpetra::Map::getGlobalElement;
 %ignore Tpetra::Map::getRemoteIndexList;
 %include "Tpetra_Map_decl.hpp"
-%teuchos_rcp(Tpetra::Map< long, long >)
-%template(Map_default) Tpetra::Map< long, long >;
+// N.B.: Technically, the third template argument in the two SWIG
+// directives below are redundant, because it is the same as the
+// default template argument.  But SWIG is much more acurate when
+// comparing types when all template arguments are specified.
+%teuchos_rcp(Tpetra::Map< long, long, Tpetra::Details::DefaultTypes::node_type >)
+%template(Map_default)
+    Tpetra::Map< long, long, Tpetra::Details::DefaultTypes::node_type >;
 %pythoncode
 {
 Map = Map_default
