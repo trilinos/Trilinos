@@ -310,7 +310,7 @@ package:
 %typemap(out,fragment="NumPy_Backward_Compatibility,NumPy_Macros")
   (std::vector< Anasazi::Value< ScalarType > >)
 {
-  npy_intp dims[1] = { $1.size() };
+  npy_intp dims[1] = { static_cast< npy_intp >($1.size()) };
   PyObject * array = PyArray_SimpleNew(1, dims, NumPyType);
   ScalarType * data = (ScalarType*) array_data(array);
   for (npy_intp i=0; i<dims[0]; ++i)
