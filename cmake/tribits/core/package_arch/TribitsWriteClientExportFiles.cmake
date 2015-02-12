@@ -403,16 +403,28 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
 
     # Include configurations of dependent packages
     FOREACH(DEP_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
+      # Could use file(RELATIVE_PATH ...), but probably not necessary
+      # since unlike install trees, build trees need not be relocatable
       SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
-INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/../${DEP_PACKAGE}/${DEP_PACKAGE}Config.cmake)"
-)
+INCLUDE(\"${${DEP_PACKAGE}_BINARY_DIR}/${DEP_PACKAGE}Config.cmake\")"
+        )
     ENDFOREACH()
 
     # Import build tree targets into applications.
+    #
+    # BMA: Export only the immediate libraries of this project to the
+    # build tree. Should manage more carefully, checking that they are
+    # targets of this project and not other libs.  Also, should
+    # consider more careful recursive management of targets when there
+    # are sub-packages.  We'd like to export per-package, but deps
+    # won't be satisfied, so we export one file for the project for
+    # now...
     IF(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES)
+      EXPORT(TARGETS ${${PACKAGE_NAME}_LIBRARIES} FILE
+	"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake" APPEND)
       SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
 # Import ${PACKAGE_NAME} targets
-INCLUDE(\"${PROJECT_BINARY_DIR}/${PACKAGE_NAME}Targets.cmake\")"
+INCLUDE(\"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")"
       )
     ENDIF()
 
