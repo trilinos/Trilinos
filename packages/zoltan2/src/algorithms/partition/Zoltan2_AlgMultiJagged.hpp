@@ -62,10 +62,7 @@
 #include <algorithm>    // std::sort
 #include <Zoltan2_Util.hpp>
 #include <vector>
-
-#include <Teuchos_Hashtable.hpp>
-// TODO:  KDD Switch Teuchos::Hashtable to unordered_map after move to C++11
-// TODO   KDD #include <unordered_map>
+#include <unordered_map>
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #ifdef HAVE_ZOLTAN2_MPI
@@ -6195,21 +6192,16 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     		);
 
     // Reorder results so that they match the order of the input
-    // TODO:  KDD Once C++11 is supported, switch Hashtable to unordered_map
-    Teuchos::Hashtable<mj_gno_t, mj_lno_t> 
-                       localGidToLid(this->num_local_coords);
+    std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
+    localGidToLid.reserve(this->num_local_coords);
     for (mj_lno_t i = 0; i < this->num_local_coords; i++)
-      localGidToLid.put(this->initial_mj_gnos[i], i);
+      localGidToLid[this->initial_mj_gnos[i]] = i;
 
     ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
                                       0, this->num_local_coords, true);
  
     for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
-      // TODO:  KDD gnoList should not be needed once all partitioners 
-      // TODO:  KDD return data in the correct order.  Build it for now
-      // TODO:  just to satisfy the setParts function.  We can remove it from
-      // TODO:  setParts later.
-      mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
+      mj_lno_t origLID = localGidToLid[result_mj_gnos[i]];
       partId[origLID] = result_assigned_part_ids[i];
     }
     
