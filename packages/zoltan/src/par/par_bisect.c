@@ -336,39 +336,42 @@ int Zoltan_RB_find_bisector(
     types[0] = types[3] = MPI_DOUBLE;
     types[1] = Zoltan_mpi_gno_type();
     types[2] = MPI_INT;
+#if MPI_VERSION >= 2
+    /* Since we do not use arrays of our defined type med_type, we don't need */
+    /* MPI_UB or call to MPI_Type_create_resized to mark end of med_type.     */
+#else /* MPI 1.x */
+    /* MPI_UB is deprecated in MPI 2.0 */
     types[4] = MPI_UB;
+#endif /* MPI_VERSION >= 2 */
 
 #if MPI_VERSION >= 2
     MPI_Get_address(med, &offset);
-#else /* MPI 1.x */
-    MPI_Address(med, &offset); /* Deprecated in MPI 2.0 */
-#endif /* MPI_VERSION >= 2 */
-    ind[0] = 0;
-
-#if MPI_VERSION >= 2
     MPI_Get_address(&(med->countlo), &(ind[1]));
-#else /* MPI 1.x */
-    MPI_Address(&(med->countlo), &(ind[1])); /* Deprecated in MPI 2.0 */
-#endif /* MPI_VERSION >= 2 */
-    ind[1] -= offset;
-
-#if MPI_VERSION >= 2
     MPI_Get_address(&(med->proclo), &(ind[2]));
-#else /* MPI 1.x */
-    MPI_Address(&(med->proclo), &(ind[2])); /* Deprecated in MPI 2.0 */
-#endif /* MPI_VERSION >= 2 */
-    ind[2] -= offset;
-
-#if MPI_VERSION >= 2
     MPI_Get_address(&(med->totallo[0]), &(ind[3]));
 #else /* MPI 1.x */
-    MPI_Address(&(med->totallo[0]), &(ind[3])); /* Deprecated in MPI 2.0 */
+    /* MPI_Address is deprecated in MPI 2.0 */
+    MPI_Address(med, &offset); 
+    MPI_Address(&(med->countlo), &(ind[1])); 
+    MPI_Address(&(med->proclo), &(ind[2])); 
+    MPI_Address(&(med->totallo[0]), &(ind[3])); 
 #endif /* MPI_VERSION >= 2 */
-    ind[3] -= offset;
 
+    ind[0] = 0;
+    ind[1] -= offset;
+    ind[2] -= offset;
+    ind[3] -= offset;
     ind[4] = sizeof(struct bisector);
 
+#if MPI_VERSION >= 2
+    MPI_Type_create_struct(4, lengths, ind, types, &med_type);
+    /* Since we do not use arrays of med_type, we don't need     */
+    /* to call MPI_Type_create_resized to mark end of med_type.  */
+#else /* MPI 1.x */
+    /* MPI_Type_struct is deprecated in MPI 2.0 */
     MPI_Type_struct(5, lengths, ind, types, &med_type);
+#endif /* MPI_VERSION >= 2 */
+
     MPI_Type_commit(&med_type);
 
     MPI_Op_create(&Zoltan_bisector_merge, 1, &med_op);
