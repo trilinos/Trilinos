@@ -126,10 +126,12 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 {
    // try to find element block
    std::map<std::string,std::vector<int> >::const_iterator fieldsItr = blockIdToFieldNumbers_.find(block);
-   TEUCHOS_TEST_FOR_EXCEPTION(fieldsItr==blockIdToFieldNumbers_.end(),std::logic_error,
-                      "BlockedDOFManager::getBlockFieldNumbers cannot field elemenet block, has registerFields() been called?");
+   if(fieldsItr==blockIdToFieldNumbers_.end())
+     return fieldsItr->second;
 
-   return fieldsItr->second;
+   // nothing to return
+   static std::vector<int> empty;
+   return empty;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
