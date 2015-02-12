@@ -105,9 +105,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/llvm-3.5.1/bin/clang"
-        "-DCMAKE_C_FLAGS=\"--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2\""
+        "-DCMAKE_C_FLAGS=--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2"
       "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/llvm-3.5.1/bin/clang++"
-        "-DCMAKE_CXX_FLAGS=\"--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2\""
+        "-DCMAKE_CXX_FLAGS=--gcc-toolchain=/home/aprokop/local/opt/gcc-4.9.2"
       )
 
   ENDIF()
