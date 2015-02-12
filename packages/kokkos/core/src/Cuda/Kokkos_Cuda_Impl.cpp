@@ -122,7 +122,7 @@ void cuda_device_synchronize()
 void cuda_internal_error_throw( cudaError e , const char * name, const char * file, const int line )
 {
   std::ostringstream out ;
-  out << name << " error: " << cudaGetErrorString(e);
+  out << name << " error( " << cudaGetErrorName(e) << "): " << cudaGetErrorString(e);
   if (file) {
     out << " " << file << ":" << line;
   }

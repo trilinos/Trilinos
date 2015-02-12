@@ -101,6 +101,11 @@ do
     cuda_args="$cuda_args $1"
     arch_set=1
     ;;
+  #Handle -Xcudafe argument
+  -Xcudafe)
+    cuda_args="$cuda_args -Xcudafe $2"
+    shift
+    ;;
   #Handle args that should be sent to the linker
   -Wl*)
     xlinker_args="$xlinker_args -Xlinker ${1:4:${#1}}"
