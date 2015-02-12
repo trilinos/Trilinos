@@ -46,8 +46,9 @@
 /* only compile this file if CUDA is enabled for Kokkos */
 #ifdef KOKKOS_HAVE_CUDA
 
-#include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
+#include <Cuda/Kokkos_Cuda_BasicAllocators.hpp>
+#include <Cuda/Kokkos_Cuda_Error.hpp>
 
 #include <sstream>
 
@@ -61,45 +62,22 @@ TextureAttribute::TextureAttribute(  void * const alloc_ptr
                                   )
   : m_tex_obj(0)
 {
-  cudaError sync_status = cudaDeviceSynchronize();
-  cudaError create_status = cudaSuccess;
-  if ( cudaSuccess == sync_status ) {
-    struct cudaResourceDesc resDesc ;
-    struct cudaTextureDesc  texDesc ;
+  cuda_device_synchronize();
 
-    memset( & resDesc , 0 , sizeof(resDesc) );
-    memset( & texDesc , 0 , sizeof(texDesc) );
+  struct cudaResourceDesc resDesc ;
+  struct cudaTextureDesc  texDesc ;
 
-    resDesc.resType                = cudaResourceTypeLinear ;
-    resDesc.res.linear.desc        = desc ;
-    resDesc.res.linear.sizeInBytes = alloc_size ;
-    resDesc.res.linear.devPtr      = alloc_ptr ;
+  memset( & resDesc , 0 , sizeof(resDesc) );
+  memset( & texDesc , 0 , sizeof(texDesc) );
 
-    create_status = cudaCreateTextureObject( & m_tex_obj , & resDesc, & texDesc, NULL);
+  resDesc.resType                = cudaResourceTypeLinear ;
+  resDesc.res.linear.desc        = desc ;
+  resDesc.res.linear.sizeInBytes = alloc_size ;
+  resDesc.res.linear.devPtr      = alloc_ptr ;
 
-    if ( cudaSuccess == create_status ) {
-      sync_status = cudaDeviceSynchronize();
-    }
-  }
+  CUDA_SAFE_CALL( cudaCreateTextureObject( & m_tex_obj , & resDesc, & texDesc, NULL) );
 
-  if ( cudaSuccess != sync_status || cudaSuccess != create_status) {
-
-    std::ostringstream oss;
-    oss << "Cuda Error: ";
-
-    if ( cudaSuccess != sync_status ) {
-      oss << cudaGetErrorString(sync_status) << " ";
-    }
-
-    if (cudaSuccess == create_status) {
-      cudaDestroyTextureObject(m_tex_obj);
-      m_tex_obj = 0;
-    }
-    else {
-      oss << cudaGetErrorString(create_status);
-    }
-    Kokkos::Impl::throw_runtime_exception( oss.str() );
-  }
+  cuda_device_synchronize();
 }
 
 
@@ -115,18 +93,16 @@ TextureAttribute::~TextureAttribute()
 void * CudaMallocAllocator::allocate( size_t size )
 {
   void * ptr = NULL;
-  if ( cudaSuccess != cudaMalloc( &ptr, size ) ) {
-    std::ostringstream msg ;
-    msg << name() << ": allocate(" << size << ") FAILED";
-    throw_runtime_exception( msg.str() );
-  }
+
+  CUDA_SAFE_CALL( cudaMalloc( &ptr, size ) );
+
   return ptr;
 }
 
 void CudaMallocAllocator::deallocate( void * ptr, size_t /*size*/ )
 {
   try {
-    cudaFree( ptr );
+    CUDA_SAFE_CALL( cudaFree( ptr ) );
   } catch(...) {}
 }
 
@@ -136,9 +112,9 @@ void * CudaMallocAllocator::reallocate(void * old_ptr, size_t old_size, size_t n
   if (old_size != new_size) {
     ptr = allocate( new_size );
     size_t copy_size = old_size < new_size ? old_size : new_size;
-    if (cudaSuccess != cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyDefault ) ) {
-      throw_runtime_exception("Error: Cuda Malloc Allocator could not reallocate memory");
-    }
+
+    CUDA_SAFE_CALL( cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyDefault ) );
+
     deallocate( old_ptr, old_size );
   }
   return ptr;
@@ -150,12 +126,7 @@ void * CudaUVMAllocator::allocate( size_t size )
 {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION )
   void * ptr = NULL;
-
-  if ( cudaSuccess != cudaMallocManaged( &ptr, size, cudaMemAttachGlobal ) ) {
-    std::ostringstream msg ;
-    msg << name() << ": allocate(" << size << ") FAILED";
-    throw_runtime_exception( msg.str() );
-  }
+  CUDA_SAFE_CALL( cudaMallocManaged( &ptr, size, cudaMemAttachGlobal ) );
   return ptr;
 #else
   throw_runtime_exception( "CUDA VERSION does not support UVM" );
@@ -166,7 +137,7 @@ void * CudaUVMAllocator::allocate( size_t size )
 void CudaUVMAllocator::deallocate( void * ptr, size_t /*size*/ )
 {
   try {
-    cudaFree( ptr );
+    CUDA_SAFE_CALL( cudaFree( ptr ) );
   } catch(...) {}
 }
 
@@ -176,9 +147,9 @@ void * CudaUVMAllocator::reallocate(void * old_ptr, size_t old_size, size_t new_
   if (old_size != new_size) {
     ptr = allocate( new_size );
     size_t copy_size = old_size < new_size ? old_size : new_size;
-    if (cudaSuccess != cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyDefault ) ) {
-      throw_runtime_exception("Error: Cuda UVM Allocator could not reallocate memory");
-    }
+
+    CUDA_SAFE_CALL( cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyDefault ) );
+
     deallocate( old_ptr, old_size );
   }
   return ptr;
@@ -189,18 +160,14 @@ void * CudaUVMAllocator::reallocate(void * old_ptr, size_t old_size, size_t new_
 void * CudaHostAllocator::allocate( size_t size )
 {
   void * ptr = NULL;
-  if( cudaSuccess != cudaHostAlloc( &ptr , size , cudaHostAllocDefault )) {
-    std::ostringstream msg ;
-    msg << name() << ": allocate(" << size << ") FAILED";
-    throw_runtime_exception( msg.str() );
-  }
+  CUDA_SAFE_CALL( cudaHostAlloc( &ptr , size , cudaHostAllocDefault ) );
   return ptr;
 }
 
 void CudaHostAllocator::deallocate( void * ptr, size_t /*size*/ )
 {
   try {
-    cudaFreeHost( ptr );
+    CUDA_SAFE_CALL( cudaFreeHost( ptr ) );
   } catch(...) {}
 }
 
@@ -210,9 +177,9 @@ void * CudaHostAllocator::reallocate(void * old_ptr, size_t old_size, size_t new
   if (old_size != new_size) {
     ptr = allocate( new_size );
     size_t copy_size = old_size < new_size ? old_size : new_size;
-    if (cudaSuccess != cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyHostToHost ) ) {
-      throw_runtime_exception("Error: Cuda Host Allocator could not reallocate memory");
-    }
+
+    CUDA_SAFE_CALL( cudaMemcpy( ptr , old_ptr , copy_size , cudaMemcpyHostToHost ) );
+
     deallocate( old_ptr, old_size );
   }
   return ptr;

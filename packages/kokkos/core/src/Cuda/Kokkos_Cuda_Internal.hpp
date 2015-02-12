@@ -44,18 +44,10 @@
 #ifndef KOKKOS_CUDA_INTERNAL_HPP
 #define KOKKOS_CUDA_INTERNAL_HPP
 
-namespace Kokkos {
-namespace Impl {
+#include <Cuda/Kokkos_Cuda_Error.hpp>
 
-void cuda_internal_error_throw( cudaError e , const char * name, const char * file = NULL, const int line = 0 );
+namespace Kokkos { namespace Impl {
 
-void cuda_device_synchronize();
-
-inline
-void cuda_internal_safe_call( cudaError e , const char * name, const char * file = NULL, const int line = 0)
-{
-  if ( cudaSuccess != e ) { cuda_internal_error_throw( e , name, file, line ); }
-}
 
 template<class DriverType>
 int cuda_get_max_block_size(const typename DriverType::functor_type & f) {
@@ -161,11 +153,7 @@ int cuda_get_opt_block_size(const typename DriverType::functor_type & f) {
 #endif
 }
 
-}
-}
-
-#define CUDA_SAFE_CALL( call )  \
-	Kokkos::Impl::cuda_internal_safe_call( call , #call, __FILE__, __LINE__ )
+}} // namespace Kokkos::Impl
 
 #endif /* #ifndef KOKKOS_CUDA_INTERNAL_HPP */
 
