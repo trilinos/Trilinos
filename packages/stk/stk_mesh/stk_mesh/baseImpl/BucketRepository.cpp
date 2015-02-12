@@ -332,50 +332,48 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
   typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
-  if (!m_need_sync_from_partitions[rank])
+  if (m_need_sync_from_partitions[rank])
   {
-    return;
-  }
+      std::vector<Partition *> &partitions = m_partitions[rank];
 
-  std::vector<Partition *> &partitions = m_partitions[rank];
+      size_t num_partitions = partitions.size();
+      size_t num_buckets = 0;
+      for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+      {
+        if (!partitions[p_i]->empty())
+        {
+          num_buckets += partitions[p_i]->num_buckets();
+        }
+      }
 
-  size_t num_partitions = partitions.size();
-  size_t num_buckets = 0;
-  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
-  {
-    if (!partitions[p_i]->empty())
-    {
-      num_buckets += partitions[p_i]->num_buckets();
-    }
-  }
+      m_buckets[rank].resize(num_buckets);
 
-  m_buckets[rank].resize(num_buckets);
+      bool has_hole = false;
+      BucketVector::iterator bkts_i = m_buckets[rank].begin();
+      for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+      {
+        Partition &partition = *partitions[p_i];
 
-  bool has_hole = false;
-  BucketVector::iterator bkts_i = m_buckets[rank].begin();
-  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
-  {
-    Partition &partition = *partitions[p_i];
+        if (partition.empty())
+        {
+          partitions[p_i]->~Partition();
+          partition_allocator().deallocate(partitions[p_i],1);
+          partitions[p_i] = 0;
+          has_hole = true;
+          continue;
+        }
+        size_t num_bkts_in_partition = partition.num_buckets();
+        std::copy(partition.begin(), partition.end(), bkts_i);
+        bkts_i += num_bkts_in_partition;
+      }
 
-    if (partition.empty())
-    {
-      partitions[p_i]->~Partition();
-      partition_allocator().deallocate(partitions[p_i],1);
-      partitions[p_i] = 0;
-      has_hole = true;
-      continue;
-    }
-    size_t num_bkts_in_partition = partition.num_buckets();
-    std::copy(partition.begin(), partition.end(), bkts_i);
-    bkts_i += num_bkts_in_partition;
-  }
-
-  if (has_hole)
-  {
-    std::vector<Partition *>::iterator new_end;
-    new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
-    size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
-    partitions.resize(new_size);
+      if (has_hole)
+      {
+        std::vector<Partition *>::iterator new_end;
+        new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
+        size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
+        partitions.resize(new_size);
+      }
   }
 
   if(m_mesh.should_sort_buckets_by_first_entity_identifier())
@@ -383,7 +381,10 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
       std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
   }
 
-  sync_bucket_ids(rank);
+  if (m_need_sync_from_partitions[rank] == true || m_mesh.should_sort_buckets_by_first_entity_identifier())
+  {
+      sync_bucket_ids(rank);
+  }
 
   m_need_sync_from_partitions[rank] = false;
 }
