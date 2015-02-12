@@ -45,12 +45,12 @@ using Teuchos::Time;
 
 #ifdef HAVE_MPI
 
-typedef int LO;
-typedef int GO;
-typedef unsigned int ZLO;
-typedef unsigned int ZGO;
-#define MPI_ZGO_TYPE MPI_UNSIGNED
-typedef double Scalar;
+typedef int TPETRA_LO;
+typedef int TPETRA_GO;
+typedef unsigned int ZOLTAN_LO;
+typedef unsigned int ZOLTAN_GO;
+#define MPI_ZOLTAN_GO_TYPE MPI_UNSIGNED
+typedef double TPETRA_SCALAR;
 
 RCP<Time> tmvBuild;
 RCP<Time> tmvMigrate;
@@ -80,11 +80,11 @@ static void usage(char *argv[]){
 ///////////////////////////////////////////////
 // Generate global Ids for different mappings
 ///////////////////////////////////////////////
-LO numSequentialGlobalIds(GO numGlobalCoords, int nprocs, int rank)
+TPETRA_LO numSequentialGlobalIds(TPETRA_GO numGlobalCoords, int nprocs, int rank)
 {
-  LO share = numGlobalCoords / nprocs;
-  LO extra = numGlobalCoords % nprocs;
-  LO numLocalCoords = share;
+  TPETRA_LO share = numGlobalCoords / nprocs;
+  TPETRA_LO extra = numGlobalCoords % nprocs;
+  TPETRA_LO numLocalCoords = share;
   if (rank < extra)
     numLocalCoords++;
 
@@ -190,12 +190,12 @@ void subGroupGloballyIncreasingIds(T numGlobalCoords,
   }
 }
 
-void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
+void timeEpetra(TPETRA_GO numGlobalCoords, const RCP<const MpiComm<int> > &comm, bool);
 void
-timeTpetra (const GO numGlobalCoords,
+timeTpetra (const TPETRA_GO numGlobalCoords,
             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
             const bool doMemory);
-void timeZoltan(ZGO numGlobalCoords, bool);
+void timeZoltan(ZOLTAN_GO numGlobalCoords, bool);
 
 ///////////////////////////////////////////////
 // Main
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  GO numGlobalCoords = 0;
+  TPETRA_GO numGlobalCoords = 0;
   std::string theArg(argv[1]);
   std::istringstream iss(theArg);
   iss >> numGlobalCoords;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 }
 
 void
-timeTpetra (const GO numGlobalCoords,
+timeTpetra (const TPETRA_GO numGlobalCoords,
             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
             const bool doMemory)
 {
@@ -293,9 +293,9 @@ timeTpetra (const GO numGlobalCoords,
   using Teuchos::rcp;
   using std::cout;
   using std::endl;
-  typedef Tpetra::Map<LO, GO> map_type;
-  typedef Tpetra::MultiVector<Scalar, LO, GO> MV;
-  typedef ArrayView<const Scalar> coordList_t;
+  typedef Tpetra::Map<TPETRA_LO, TPETRA_GO> map_type;
+  typedef Tpetra::MultiVector<TPETRA_SCALAR, TPETRA_LO, TPETRA_GO> MV;
+  typedef ArrayView<const TPETRA_SCALAR> coordList_t;
 
   const int nprocs = comm->getSize ();
   const int rank = comm->getRank ();
@@ -303,21 +303,21 @@ timeTpetra (const GO numGlobalCoords,
   ///////////// Step 1 //////////////////////////////////
   // Create a MV with contiguous global IDs
 
-  const LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
+  const TPETRA_LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
 
   RCP<const map_type> tmap;
   RCP<MV> mvector;
-  Scalar* coords = NULL;
+  TPETRA_SCALAR* coords = NULL;
   {
     Teuchos::TimeMonitor timeMon (*tmvBuild);
 
     tmap = rcp (new map_type (numGlobalCoords, numLocalCoords, 0, comm));
 
-    coords = new Scalar [COORDDIM * numLocalCoords];
-    memset (coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
+    coords = new TPETRA_SCALAR [COORDDIM * numLocalCoords];
+    memset (coords, 0, sizeof(TPETRA_SCALAR) * numLocalCoords * COORDDIM);
 
     coordList_t *avList = new coordList_t [COORDDIM];
-    LO offset = 0;
+    TPETRA_LO offset = 0;
 
     for (int dim = 0; dim < COORDDIM; ++dim) {
       avList[dim] = coordList_t(coords + offset, numLocalCoords);
@@ -336,21 +336,21 @@ timeTpetra (const GO numGlobalCoords,
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
 
-  ArrayRCP<const GO> newGidArray;
+  ArrayRCP<const TPETRA_GO> newGidArray;
   {
-    GO *newGids = NULL;
-    roundRobinGlobalIds<GO> (numGlobalCoords, nprocs, rank, newGids);
-    newGidArray = arcp<const GO> (newGids, 0, numLocalCoords, true);
+    TPETRA_GO *newGids = NULL;
+    roundRobinGlobalIds<TPETRA_GO> (numGlobalCoords, nprocs, rank, newGids);
+    newGidArray = arcp<const TPETRA_GO> (newGids, 0, numLocalCoords, true);
   }
 
   RCP<const map_type> newTmap;
-  RCP<Tpetra::Import<LO, GO> > importer;
+  RCP<Tpetra::Import<TPETRA_LO, TPETRA_GO> > importer;
   RCP<MV> newMvector;
   {
     Teuchos::TimeMonitor timeMon (*tmvMigrate);
 
     newTmap = rcp (new map_type (numGlobalCoords, newGidArray.view(0, numLocalCoords), 0, comm));
-    importer = rcp (new Tpetra::Import<LO, GO> (tmap, newTmap));
+    importer = rcp (new Tpetra::Import<TPETRA_LO, TPETRA_GO> (tmap, newTmap));
     newMvector = rcp (new MV (newTmap, COORDDIM, true));
 
     newMvector->doImport (*mvector, *importer, Tpetra::INSERT);
@@ -402,7 +402,7 @@ timeTpetra (const GO numGlobalCoords,
   {
     Teuchos::TimeMonitor timeMon (*tmvBuildN);
 
-    ArrayView<const GO> gidList = mvector->getMap ()->getNodeElementList ();
+    ArrayView<const TPETRA_GO> gidList = mvector->getMap ()->getNodeElementList ();
     subMap = rcp (new map_type (globalSize, gidList, 0, subComm));
     globalSize = subMap->getGlobalNumElements ();
 
@@ -418,14 +418,14 @@ timeTpetra (const GO numGlobalCoords,
   // Each subgroup migrates the sub-multivector so the
   // global Ids are increasing with process rank.
 
-  GO *increasingGids = NULL;
-  subGroupGloballyIncreasingIds<GO> (numGlobalCoords, nprocs,
+  TPETRA_GO *increasingGids = NULL;
+  subGroupGloballyIncreasingIds<TPETRA_GO> (numGlobalCoords, nprocs,
                                      rank, increasingGids);
 
-  ArrayRCP<const GO> incrGidArray (increasingGids, 0, numLocalCoords, true);
+  ArrayRCP<const TPETRA_GO> incrGidArray (increasingGids, 0, numLocalCoords, true);
 
   RCP<const map_type> newSubMap;
-  RCP<Tpetra::Import<LO, GO> > subImporter;
+  RCP<Tpetra::Import<TPETRA_LO, TPETRA_GO> > subImporter;
   RCP<MV> newSubMvector;
   {
     Teuchos::TimeMonitor timeMon (*tmvMigrateN);
@@ -433,14 +433,14 @@ timeTpetra (const GO numGlobalCoords,
     newSubMap =
       rcp (new map_type (globalSize, incrGidArray.view (0, numLocalCoords),
                          0, subComm));
-    subImporter = rcp (new Tpetra::Import<LO, GO> (subMap, newSubMap));
+    subImporter = rcp (new Tpetra::Import<TPETRA_LO, TPETRA_GO> (subMap, newSubMap));
     newSubMvector = rcp (new MV (newSubMap, COORDDIM, true));
     newSubMvector->doImport (*subMvector, *subImporter, Tpetra::INSERT);
     mvector = newSubMvector;
   }
 }
 
-void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
+void timeEpetra(TPETRA_GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   bool doMemory)
 {
   RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > commPtr =
@@ -454,7 +454,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   ///////////// Step 1 //////////////////////////////////
   // Create a MV with contiguous global IDs
 
-  LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
+  TPETRA_LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
 
   emvBuild->start();
   emvBuild->incrementNumCalls();
@@ -462,8 +462,8 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   RCP<Epetra_BlockMap> emap = rcp(new Epetra_BlockMap(numGlobalCoords,
     numLocalCoords, 1, 0, *ecomm));
 
-  Scalar *coords = new Scalar [COORDDIM * numLocalCoords];
-  memset(coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
+  TPETRA_SCALAR *coords = new TPETRA_SCALAR [COORDDIM * numLocalCoords];
+  memset(coords, 0, sizeof(TPETRA_SCALAR) * numLocalCoords * COORDDIM);
 
   RCP<Epetra_MultiVector> mvector = rcp(new Epetra_MultiVector(
     View, *emap, coords, 1, COORDDIM));
@@ -478,8 +478,8 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   ///////////// Step 2 //////////////////////////////////
   // Migrate the MV.
 
-  GO *newGids = NULL;
-  roundRobinGlobalIds<GO>(numGlobalCoords, nprocs, rank, newGids);
+  TPETRA_GO *newGids = NULL;
+  roundRobinGlobalIds<TPETRA_GO>(numGlobalCoords, nprocs, rank, newGids);
 
   emvMigrate->start();
   emvMigrate->incrementNumCalls();
@@ -547,7 +547,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   RCP<Epetra_BlockMap> subMap = rcp(new Epetra_BlockMap(-1,
    numLocalCoords, newGids, 1, 0, *subComm));
 
-  Scalar **avSubList = new Scalar * [COORDDIM];
+  TPETRA_SCALAR **avSubList = new TPETRA_SCALAR * [COORDDIM];
 
   for (int dim=0; dim < COORDDIM; dim++)
     (*mvector)(dim)->ExtractView(avSubList + dim);
@@ -566,8 +566,8 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   // Each subgroup migrates the sub-multivector so the
   // global Ids are increasing with process rank.
 
-  GO *increasingGids = NULL;
-  subGroupGloballyIncreasingIds<GO>(numGlobalCoords, nprocs, rank,
+  TPETRA_GO *increasingGids = NULL;
+  subGroupGloballyIncreasingIds<TPETRA_GO>(numGlobalCoords, nprocs, rank,
     increasingGids);
 
   emvMigrateN->start();
@@ -591,7 +591,7 @@ void timeEpetra(GO numGlobalCoords, const RCP<const MpiComm<int> > &comm,
   delete [] increasingGids;
 }
 
-void timeZoltan(ZGO numGlobalCoords,
+void timeZoltan(ZOLTAN_GO numGlobalCoords,
   bool doMemory)
 {
   int nprocs, rank;
@@ -602,14 +602,14 @@ void timeZoltan(ZGO numGlobalCoords,
   // Create a global data directory with contiguous global IDs.
   // (We don't need this, but it is analygous to a Tpetra::Map.)
 
-  ZLO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
+  ZOLTAN_LO numLocalCoords = numSequentialGlobalIds(numGlobalCoords, nprocs, rank);
 
-  ZGO offset=0;
+  ZOLTAN_GO offset=0;
   MPI_Exscan(&numLocalCoords, &offset, 1,
-    MPI_ZGO_TYPE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_ZOLTAN_GO_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
-  ZGO *gids = new ZGO [numLocalCoords];
-  for (ZLO i=0; i < numLocalCoords; i++){
+  ZOLTAN_GO *gids = new ZOLTAN_GO [numLocalCoords];
+  for (ZOLTAN_LO i=0; i < numLocalCoords; i++){
     gids[i] = offset++;
   }
 
@@ -625,8 +625,8 @@ void timeZoltan(ZGO numGlobalCoords,
 
   // Create an array of coordinates associated with the global Ids.
 
-  Scalar *coords = new Scalar [COORDDIM * numLocalCoords];
-  memset(coords, 0, sizeof(Scalar) * numLocalCoords * COORDDIM);
+  TPETRA_SCALAR *coords = new TPETRA_SCALAR [COORDDIM * numLocalCoords];
+  memset(coords, 0, sizeof(TPETRA_SCALAR) * numLocalCoords * COORDDIM);
 
   ztnBuild->stop();
 
@@ -640,8 +640,8 @@ void timeZoltan(ZGO numGlobalCoords,
   ///////////// Step 2 //////////////////////////////////
   // Migrate the array of coordinates.
 
-  ZGO *newGids = NULL;
-  roundRobinGlobalIds<ZGO>(numGlobalCoords, nprocs, rank, newGids);
+  ZOLTAN_GO *newGids = NULL;
+  roundRobinGlobalIds<ZOLTAN_GO>(numGlobalCoords, nprocs, rank, newGids);
 
   ztnMigrate->start();
   ztnMigrate->incrementNumCalls();
@@ -672,7 +672,7 @@ void timeZoltan(ZGO numGlobalCoords,
   if (rc != ZOLTAN_OK)
     exit(1);
 
-  Scalar *newCoords = new Scalar [COORDDIM * numReceive];
+  TPETRA_SCALAR *newCoords = new TPETRA_SCALAR [COORDDIM * numReceive];
 
   tag = 11000;
 
@@ -683,7 +683,7 @@ void timeZoltan(ZGO numGlobalCoords,
   char *charNewCoords = static_cast<char *>(x);
 
   rc = Zoltan_Comm_Do(commPlan, tag, charCoords,
-    sizeof(Scalar)*COORDDIM, charNewCoords);
+    sizeof(TPETRA_SCALAR)*COORDDIM, charNewCoords);
 
   if (rc != ZOLTAN_OK)
     exit(1);
@@ -752,8 +752,8 @@ void timeZoltan(ZGO numGlobalCoords,
   // Each subgroup migrates the sub-arrays so the
   // global Ids are again increasing with process rank.
 
-  ZGO *increasingGids = NULL;
-  subGroupGloballyIncreasingIds<ZGO>(
+  ZOLTAN_GO *increasingGids = NULL;
+  subGroupGloballyIncreasingIds<ZOLTAN_GO>(
     numGlobalCoords, nprocs, rank, increasingGids);
 
   // Global "map" corresponding to new contiguous ids.
@@ -789,7 +789,7 @@ void timeZoltan(ZGO numGlobalCoords,
 
   delete [] procOwners;
 
-  Scalar *newContigCoords = new Scalar [COORDDIM * numReceive];
+  TPETRA_SCALAR *newContigCoords = new TPETRA_SCALAR [COORDDIM * numReceive];
 
   tag = 13000;
   // To prevent compile warnings or errors
@@ -797,7 +797,7 @@ void timeZoltan(ZGO numGlobalCoords,
   char *charNewContigCoords = static_cast<char *>(x);
 
   rc = Zoltan_Comm_Do(subCommPlan, tag, charNewCoords,
-    sizeof(Scalar)*COORDDIM, charNewContigCoords);
+    sizeof(TPETRA_SCALAR)*COORDDIM, charNewContigCoords);
   if (rc != ZOLTAN_OK)
     exit(1);
 

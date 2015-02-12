@@ -61,43 +61,6 @@ using std::vector;
     An example of the use of the RCB algorithm to partition coordinate data.
 */
 
-// Zoltan2 is templated.  What data types will we use for
-// scalars (coordinate values and weights), for local ids, and
-// for global ids?
-//
-// If Zoltan2 was compiled with explicit instantiation, we will
-// use the library's data types.  These macros are defined
-// in Zoltan2_config.h.
-
-#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
-typedef float scalar_t;
-typedef int localId_t;
-typedef long globalId_t;
-#else
-  #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
-  typedef double scalar_t;
-  typedef int localId_t;
-  typedef long globalId_t;
-  #else
-    #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
-    typedef float scalar_t;
-    typedef int localId_t;
-    typedef int globalId_t;
-    #else
-      #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
-      typedef double scalar_t;
-      typedef int localId_t;
-      typedef int globalId_t;
-      #else
-      typedef float scalar_t;
-      typedef int localId_t;
-      typedef int globalId_t;
-      #endif
-    #endif
-  #endif
-#endif
-
-
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_ZOLTAN2_MPI                   
@@ -110,6 +73,10 @@ int main(int argc, char *argv[])
 #endif
 
   // TODO explain
+  typedef float  scalar_t;
+  typedef int    localId_t;
+  typedef long globalId_t;
+
   typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
   // TODO explain

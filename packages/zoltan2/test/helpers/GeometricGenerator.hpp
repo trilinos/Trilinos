@@ -169,7 +169,6 @@ void getObjList(void *data, int numGid, int numLid,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int num_wgts, float *obj_wgts, int *ierr)
 {
-  typedef typename tMVector_t::scalar_type scalar_t;
   typedef typename tMVector_t::global_ordinal_type gno_t;
 
   *ierr = 0;

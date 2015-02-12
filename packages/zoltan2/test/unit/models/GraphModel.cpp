@@ -84,8 +84,6 @@ typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>      tcrsMatrix_t;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t>                 tcrsGraph_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t>                      tmap_t;
 
-typedef Zoltan2::StridedData<zlno_t, zscalar_t>                  input_t;
-
 typedef Zoltan2::BasicVectorAdapter<simpleUser_t>              simpleVAdapter_t;
 
 typedef Zoltan2::MatrixAdapter<tcrsMatrix_t,simpleUser_t>      baseMAdapter_t;
@@ -158,6 +156,8 @@ void testAdapter(
     int nVtxWeights, int nEdgeWeights, int nnzWgtIdx, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
+  typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
+
   int fail=0;
   int rank = comm->getRank();
   int nprocs = comm->getSize();

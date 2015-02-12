@@ -11,9 +11,6 @@
 #define nProcs 200;
 #define nParts 200;
 
-typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
-typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
-typedef inputAdapter_t::part_t part_t;
 
 string trim_right_copy(
         const string& s,
@@ -116,6 +113,7 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
     return true;
 }
 
+template <typename part_t>
 void getArgVals(
         int argc,
         char **argv,
@@ -179,6 +177,11 @@ void getArgVals(
 
 }
 int main(int argc, char *argv[]){
+
+    typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
+    typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
+    typedef inputAdapter_t::part_t part_t;
+
     Teuchos::GlobalMPISession session(&argc, &argv);
     //if (argc != 3){
     //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
@@ -194,7 +197,7 @@ int main(int argc, char *argv[]){
 
 
 
-    part_t jobX = 1, jobY = 1 ,jobZ = 1;
+    part_t jobX = 1, jobY = 1, jobZ = 1;
     string procfile = "";
 
     const RCP<Comm<int> > commN;
@@ -205,7 +208,7 @@ int main(int argc, char *argv[]){
     part_t *task_communication_adj_ = NULL;
     try {
 
-        getArgVals(
+        getArgVals<part_t>(
                 argc,
                 argv,
                 procfile ,

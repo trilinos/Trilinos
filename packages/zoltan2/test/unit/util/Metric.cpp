@@ -55,10 +55,6 @@
 #include <stdlib.h>
 #include <vector>
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> user_t;
-typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
-typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
-typedef idInput_t::part_t part_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -102,6 +98,11 @@ int main(int argc, char *argv[])
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes)
 {
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> user_t;
+  typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
+  typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
+  typedef idInput_t::part_t part_t;
+
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   int fail=0;
