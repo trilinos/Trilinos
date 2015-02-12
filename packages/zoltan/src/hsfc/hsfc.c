@@ -262,19 +262,16 @@ int Zoltan_HSFC(
       out[i] = in[i] = -HUGE_VAL;
    for (i = dim; i < 2*dim; i++)
       out[i] = in[i] =  HUGE_VAL;
-   for (i = 0; i < ndots; i++)
+   for (i = 0; i < ndots; i++) {
      for (j = 0; j < dim; j++) {
-       /* get maximum and minimum bound box coordinates: */
+       /* get maximum bound box coordinates: */
        if(dots[i].x[j]>in[j]) in[j]=dots[i].x[j];
-       /* FIXME (mfh 11 Feb 2015) GCC 4.8 warns that in[j+dim] is an
-          out-of-bounds array access.  I'm not sure how to fix this,
-          since I am not a Zoltan developer, so I'll just leave this
-          comment here for now. */
-       /* KDD 2/11/15  GCC probably doesn't know that dim <= 3.  Since  
-        * dim <= 3, this code is fine; no ABR occurs.  As a last resort,
-        * we can dynamically allocate in and out to avoid warnings. */
-       if(dots[i].x[j]<in[j+dim]) in[j+dim]=dots[i].x[j];
        }
+     for (j = dim; j < 2*dim; j++) {
+       /* get minimum bound box coordinates: */
+       if(dots[i].x[j-dim]<in[j]) in[j]=dots[i].x[j-dim];
+       }
+     }
    err = MPI_Allreduce(in,out,dim,MPI_DOUBLE,MPI_MAX,zz->Communicator);
    err = MPI_Allreduce(in+dim,out+dim,dim,MPI_DOUBLE,MPI_MIN,zz->Communicator);
    if (err != MPI_SUCCESS)
@@ -301,7 +298,6 @@ int Zoltan_HSFC(
       for (j = 0; j < dim; j++)
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j];
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
-/* printf("KDDKDD %f %f %f \n", dots[i].fsfc, dots[i].x[0], dots[i].x[1]);*/
       }
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
