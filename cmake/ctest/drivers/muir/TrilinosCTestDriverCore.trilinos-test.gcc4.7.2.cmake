@@ -108,7 +108,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR=/home/trilinos/compilers/gcc/openmpi-1.6.3-gcc-4.7.2"
+      "-DMPI_BASE_DIR=/home/trilinos/compilers/gcc/openmpi-1.6.5-gcc-4.7.2"
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
