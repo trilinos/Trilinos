@@ -199,7 +199,6 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
-  z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
 
   ////// Create an input adapter for the Tpetra matrix.
@@ -218,7 +217,6 @@ int main(int narg, char** arg)
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkGIDs = soln->getGids();
   checkPerm = soln->getPermutation();
 
   for (size_t ii = 0; ii < checkLength; ii++)

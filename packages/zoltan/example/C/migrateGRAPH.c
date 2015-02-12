@@ -709,7 +709,7 @@ int i, j;
 /* Draw part assignments of the objects.  We know globals IDs are [1,25] */
 static void showGraphParts(int me, struct Zoltan_DD_Struct *dd)
 {
-int i, j, rc, part, cuts, prevPart=-1, nparts=0;
+int i, j, part, cuts, prevPart=-1, nparts=0;
 int *partCount;
 float imbal, localImbal, sum;
 ZOLTAN_ID_TYPE gid[25];
@@ -719,7 +719,7 @@ int parts[25];
     gid[i] = i+1;
   }
 
-  rc = Zoltan_DD_Find(dd, gid, NULL, NULL, parts, 25, NULL);
+  Zoltan_DD_Find(dd, gid, NULL, NULL, parts, 25, NULL);
 
   if (me > 0){
     return;

@@ -129,9 +129,8 @@ void getArgVals(
         string tmp = convert_to_string(argv[i]);
         string tmp2 = "";
         string identifier = "";
-        long long int value = -1; double fval = -1;
+        double fval = -1;
         if(!getArgumentValue(identifier, fval, tmp)) continue;
-        value = (long long int) (fval);
 
         if(identifier == "PROC"){
             std::stringstream stream(std::stringstream::in | std::stringstream::out);
@@ -316,10 +315,10 @@ int main(int argc, char *argv[]){
         */
         part_t *partArray = NULL;
         int partArraysize = -1;
-        part_t hopper[3];
-        hopper[0] = 17;
-        hopper[1] = 8;
-        hopper[2] = 24;
+        //part_t hopper[3];
+        //hopper[0] = 17;
+        //hopper[1] = 8;
+        //hopper[2] = 24;
         part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
         Zoltan2::coordinateTaskMapperInterface<part_t, zscalar_t, zscalar_t>(

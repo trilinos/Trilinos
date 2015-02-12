@@ -758,7 +758,7 @@ static int setup_mesh_struct(
 const char *yo = "setup_mesh_struct";
 int i, j, k;
 ZOLTAN_ID_TYPE elem_id;
-ZOLTAN_ID_TYPE min_vtx, max_vtx; 
+ZOLTAN_ID_TYPE min_vtx;
 
   DEBUG_TRACE_START(Proc, yo);
 
@@ -822,7 +822,6 @@ ZOLTAN_ID_TYPE min_vtx, max_vtx;
     initialize_element(&(mesh->elements[i]));
 
   min_vtx = local_to_global_id_map(0, Proc);
-  max_vtx = local_to_global_id_map(nvtxs-1, Proc);
 
   for (i = 0; i < nvtxs; i++) {
     mesh->elements[i].globalID = local_to_global_id_map(i, Proc);
