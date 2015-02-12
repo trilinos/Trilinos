@@ -582,7 +582,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (side_rank, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, sides, block, *I);
       }
@@ -758,7 +758,7 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
     if(*I == "attribute" && names.size() > 1)
       continue;
-    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
+    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, *I);
     if (field)
       stk::io::field_data_from_ioss(bulk, field, nodes, nb, *I);
   }
@@ -1057,7 +1057,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, nodes, entity, *I);
       }
