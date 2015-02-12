@@ -310,32 +310,35 @@ public:
 
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
-      GO min = as<GO> (Ids[0]);
+      GO min[2];
+      min[0] = as<GO> (Ids[0]);
       for (int i = 0; i < LocalNumIDs; ++i) {
         sourcetargetGIDs[i] = as<GO> (Ids[i]);
 
-	if (sourcetargetGIDs[i] < min) {
-	  min = sourcetargetGIDs[i];
+	if (sourcetargetGIDs[i] < min[0]) {
+	  min[0] = sourcetargetGIDs[i];
 	}
       }
 
-// KDD SHOULD 0 below be global_min(Ids[i])?
-      //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp (new map_type (INVALID, sourcetargetGIDs (), 0, comm));
-
       // min(throughIds[i])
-      min = as<GO> (throughIds[0]);
+      min[1] = as<GO> (throughIds[0]);
       for (int i = 0; i < LocalNumOfNodes; ++i) {
 	GO tmp = as<GO> (throughIds[i]);
 
-	if (tmp < min) {
-	  min = tmp;
+	if (tmp < min[1]) {
+	  min[1] = tmp;
 	}
       }
 
-// KDD SHOULD 0 below be global_min(throughIds[i])?
+      GO gmin[2] = {1, 1};
+      //Teuchos::reduceAll<GO>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
+
+      //Generate Map for sourcetarget.
+      sourcetargetMapG = rcp(new map_type(INVALID, sourcetargetGIDs(), gmin[0],
+					  comm));
+
       //Generate Map for through.
-      throughMapG = rcp (new map_type (getGlobalNumOf(through), 0 , comm));
+      throughMapG = rcp (new map_type(getGlobalNumOf(through), gmin[1], comm));
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
