@@ -270,6 +270,9 @@ int Zoltan_HSFC(
           out-of-bounds array access.  I'm not sure how to fix this,
           since I am not a Zoltan developer, so I'll just leave this
           comment here for now. */
+       /* KDD 2/11/15  GCC probably doesn't know that dim <= 3.  Since  
+        * dim <= 3, this code is fine; no ABR occurs.  As a last resort,
+        * we can dynamically allocate in and out to avoid warnings. */
        if(dots[i].x[j]<in[j+dim]) in[j+dim]=dots[i].x[j];
        }
    err = MPI_Allreduce(in,out,dim,MPI_DOUBLE,MPI_MAX,zz->Communicator);
