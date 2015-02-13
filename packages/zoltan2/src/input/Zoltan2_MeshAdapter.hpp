@@ -326,7 +326,7 @@ public:
 	}
       }
 
-      gno_t gmin[2] = {1, 1};
+      gno_t gmin[2] = {as<gno_t> (1), as<gno_t> (1)};
       //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
