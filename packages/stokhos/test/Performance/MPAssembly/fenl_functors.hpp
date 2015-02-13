@@ -860,17 +860,17 @@ namespace FENL {
 struct ElementComputationConstantCoefficient {
   enum { is_constant = true };
 
-  const float coeff_k ;
+  const double coeff_k ;
 
   KOKKOS_INLINE_FUNCTION
-  float operator()( double /* x */
+  double operator()( double /* x */
                   , double /* y */
                   , double /* z */
                   , unsigned ensemble_rank
                   ) const
     { return coeff_k ; }
 
-  ElementComputationConstantCoefficient( const float val )
+  ElementComputationConstantCoefficient( const double val )
     : coeff_k( val ) {}
 
   ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
@@ -1030,14 +1030,14 @@ public:
      /* Gradient transform */ FunctionCount * 15 ;
 
   KOKKOS_INLINE_FUNCTION
-  float transform_gradients(
-    const float grad[][ FunctionCount ] , // Gradient of bases master element
+  double transform_gradients(
+    const double grad[][ FunctionCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ,
-    float dpsidx[] ,
-    float dpsidy[] ,
-    float dpsidz[] ) const
+    double dpsidx[] ,
+    double dpsidy[] ,
+    double dpsidz[] ) const
   {
     enum { j11 = 0 , j12 = 1 , j13 = 2 ,
            j21 = 3 , j22 = 4 , j23 = 5 ,
@@ -1052,9 +1052,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -1071,33 +1071,33 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
-    const float detJinv = 1.0 / detJ ;
+    const double detJinv = 1.0 / detJ ;
 
     for ( unsigned i = 0 ; i < TensorDim ; ++i ) { invJ[i] *= detJinv ; }
 
     // Transform gradients:
 
     for( unsigned i = 0; i < FunctionCount ; ++i ) {
-      const float g0 = grad[0][i];
-      const float g1 = grad[1][i];
-      const float g2 = grad[2][i];
+      const double g0 = grad[0][i];
+      const double g1 = grad[1][i];
+      const double g2 = grad[2][i];
 
       dpsidx[i] = g0 * invJ[j11] + g1 * invJ[j12] + g2 * invJ[j13];
       dpsidy[i] = g0 * invJ[j21] + g1 * invJ[j22] + g2 * invJ[j23];
@@ -1110,13 +1110,13 @@ public:
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
     const local_scalar_type dof_values[] ,
-    const float  dpsidx[] ,
-    const float  dpsidy[] ,
-    const float  dpsidz[] ,
-    const float  detJ ,
+    const double  dpsidx[] ,
+    const double  dpsidy[] ,
+    const double  dpsidz[] ,
+    const double  detJ ,
     const local_scalar_type  coeff_k ,
-    const float  integ_weight ,
-    const float  bases_vals[] ,
+    const double  integ_weight ,
+    const double  bases_vals[] ,
     local_scalar_type  elem_res[] ,
     local_scalar_type  elem_mat[][ FunctionCount ] ) const
   {
@@ -1141,10 +1141,10 @@ public:
 
     for ( unsigned m = 0; m < FunctionCount; ++m) {
       local_scalar_type * const mat = elem_mat[m] ;
-      const float bases_val_m = bases_vals[m];
-      const float dpsidx_m    = dpsidx[m] ;
-      const float dpsidy_m    = dpsidy[m] ;
-      const float dpsidz_m    = dpsidz[m] ;
+      const double bases_val_m = bases_vals[m];
+      const double dpsidx_m    = dpsidx[m] ;
+      const double dpsidy_m    = dpsidy[m] ;
+      const double dpsidz_m    = dpsidz[m] ;
 
       elem_res[m] += k_detJ_weight * ( dpsidx_m * gradx_at_pt +
                                        dpsidy_m * grady_at_pt +
@@ -1227,9 +1227,9 @@ public:
 
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
-      float dpsidx[ FunctionCount ] ;
-      float dpsidy[ FunctionCount ] ;
-      float dpsidz[ FunctionCount ] ;
+      double dpsidx[ FunctionCount ] ;
+      double dpsidy[ FunctionCount ] ;
+      double dpsidz[ FunctionCount ] ;
 
       local_scalar_type coeff_k = 0 ;
 
@@ -1252,7 +1252,7 @@ public:
         coeff_k = coeff_function(pt_x,pt_y,pt_z,ensemble_rank);
       }
 
-      const float detJ =
+      const double detJ =
         transform_gradients( elem_data.gradients[i] , x , y , z ,
                              dpsidx , dpsidy , dpsidz );
 
@@ -1531,8 +1531,8 @@ public:
   //------------------------------------
 
    KOKKOS_INLINE_FUNCTION
-  float compute_detJ(
-    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+  double compute_detJ(
+    const double grad[][ ElemNodeCount ] , // Gradient of bases master element
     const double x[] ,
     const double y[] ,
     const double z[] ) const
@@ -1550,9 +1550,9 @@ public:
       const double x2 = y[i] ;
       const double x3 = z[i] ;
 
-      const float g1 = grad[0][i] ;
-      const float g2 = grad[1][i] ;
-      const float g3 = grad[2][i] ;
+      const double g1 = grad[0][i] ;
+      const double g2 = grad[1][i] ;
+      const double g3 = grad[2][i] ;
 
       J[j11] += g1 * x1 ;
       J[j12] += g1 * x2 ;
@@ -1569,20 +1569,20 @@ public:
 
     // Inverse jacobian:
 
-    float invJ[ TensorDim ] = {
-      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
-      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
-      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+    double invJ[ TensorDim ] = {
+      static_cast<double>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<double>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<double>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
 
-      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
-      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
-      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+      static_cast<double>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<double>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<double>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
 
-      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
-      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
-      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+      static_cast<double>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<double>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<double>( J[j11] * J[j22] - J[j12] * J[j21] ) };
 
-    const float detJ = J[j11] * invJ[j11] +
+    const double detJ = J[j11] * invJ[j11] +
                        J[j21] * invJ[j12] +
                        J[j31] * invJ[j13] ;
 
@@ -1592,9 +1592,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   value_type contributeResponse(
     const value_type dof_values[] ,
-    const float  detJ ,
-    const float  integ_weight ,
-    const float  bases_vals[] ) const
+    const double  detJ ,
+    const double  integ_weight ,
+    const double  bases_vals[] ) const
   {
     // $$ g_i = \int_{\Omega} T^2 d \Omega $$
 
@@ -1632,7 +1632,7 @@ public:
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
 
-      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+      const double detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
 
       response += contributeResponse( val , detJ , elem_data.weights[i] ,
                                       elem_data.values[i] );

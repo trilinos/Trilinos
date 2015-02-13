@@ -152,9 +152,9 @@ Perf fenl_assembly(
 
   // Decompose by node to avoid parallel communication in assembly
 
-  const float bubble_x = 1.0 ;
-  const float bubble_y = 1.0 ;
-  const float bubble_z = 1.0 ;
+  const double bubble_x = 1.0 ;
+  const double bubble_y = 1.0 ;
+  const double bubble_z = 1.0 ;
 
   const FixtureType fixture( Kokkos::Example::BoxElemPart::DecomposeNode ,
                              comm_size , comm_rank ,
