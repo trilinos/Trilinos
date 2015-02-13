@@ -171,6 +171,7 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 %include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
 %include "TpetraCore_config.h"
+%include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
 
