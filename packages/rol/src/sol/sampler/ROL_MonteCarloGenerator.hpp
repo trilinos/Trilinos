@@ -120,6 +120,9 @@ private:
         p.resize(dist_.size(),0.0);
         for ( unsigned j = 0; j < dist_.size(); j++ ) {
           p[j] = (dist_[j])->invcdf((Real)rand()/(Real)RAND_MAX);
+          while (std::abs(p[j]) > 0.1*ROL::ROL_OVERFLOW) {
+            p[j] = (dist_[j])->invcdf((Real)rand()/(Real)RAND_MAX);
+          }
         }
       }
       pts.push_back(p);
@@ -162,6 +165,9 @@ private:
         p.resize(dist_.size(),0.0);
         for ( unsigned j = 0; j < dist_.size(); j++ ) {
           p[j] = (dist_[j])->invcdf((Real)rand()/(Real)RAND_MAX);
+          while (std::abs(p[j]) > 0.1*ROL::ROL_OVERFLOW) {
+            p[j] = (dist_[j])->invcdf((Real)rand()/(Real)RAND_MAX);
+          }
         }
       }
       pts.push_back(p);
