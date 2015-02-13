@@ -265,8 +265,10 @@ class ViewDataHandle< ViewTraits ,
 public:
   enum { ReturnTypeIsReference = false };
 
+  // Force the use of __ldg to fix errors where tpetra is using runtime unmanged
+  // views and binding them to texture memory.  DJS 02/13/2015
   typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
-                                , typename ViewTraits::memory_space > handle_type;
+                                , typename ViewTraits::memory_space, void > handle_type;
 
   KOKKOS_INLINE_FUNCTION
   static handle_type create_handle( typename ViewTraits::value_type * arg_data_ptr, AllocationTracker const & arg_tracker )
