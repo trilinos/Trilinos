@@ -84,6 +84,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/pnetcdf-4.2/include"
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline"
   )
 
 #
