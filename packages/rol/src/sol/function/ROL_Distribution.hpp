@@ -47,12 +47,14 @@
 #include "ROL_Types.hpp"
 
 #include <cmath>
+#include <iostream>
 
 namespace ROL {
 
 enum EDistribution {
   DISTRIBUTION_DIRAC = 0, 
   DISTRIBUTION_GAUSSIAN,
+  DISTRIBUTION_TRUNCATEDGAUSSIAN,
   DISTRIBUTION_UNIFORM, 
   DISTRIBUTION_LOGISTIC,
   DISTRIBUTION_TRIANGLE,
@@ -61,6 +63,8 @@ enum EDistribution {
   DISTRIBUTION_LAPLACE,
   DISTRIBUTION_CAUCHY,
   DISTRIBUTION_SMALE,
+  DISTRIBUTION_ARCSINE,
+  DISTRIBUTION_KUMARASWAMY,
   DISTRIBUTION_LAST
 };
 
@@ -82,6 +86,13 @@ public:
         data_.resize(2,0.0);
         data_[0] = 0.0; // Mean 
         data_[1] = 1.0; // Standard Deviation
+        break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:
+        data_.resize(2,0.0);
+        data_[0] = -1.0; // Lower bound
+        data_[1] = 1.0;  // Upper bound
+        data_[2] = 0.0;  // Mean 
+        data_[3] = 1.0;  // Standard Deviation
         break;
       case DISTRIBUTION_UNIFORM:
         data_.resize(2,0.0); 
@@ -123,6 +134,18 @@ public:
         data_[0] = 0.0;
         data_[1] = 1.0;
         break;
+      case DISTRIBUTION_ARCSINE:
+        data_.resize(2,0.0);
+        data_[0] = 0.0;
+        data_[1] = 1.0;
+        break;
+      case DISTRIBUTION_KUMARASWAMY:
+        data_.resize(4,0.0);
+        data_[0] = 0.0; // Lower Bound
+        data_[1] = 1.0; // Upper Bound
+        data_[2] = 0.5; // Exponent 1
+        data_[3] = 0.5; // Exponent 2
+        break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
@@ -134,16 +157,19 @@ public:
   Real pdf(Real input) {
     Real val = 0.0;
     switch(ed_) {
-      case DISTRIBUTION_DIRAC:        val = dirac_pdf(input);        break;
-      case DISTRIBUTION_GAUSSIAN:     val = gaussian_pdf(input);     break;
-      case DISTRIBUTION_UNIFORM:      val = uniform_pdf(input);      break;
-      case DISTRIBUTION_LOGISTIC:     val = logistic_pdf(input);     break;
-      case DISTRIBUTION_TRIANGLE:     val = triangle_pdf(input);     break;
-      case DISTRIBUTION_PARABOLIC:    val = parabolic_pdf(input);    break;
-      case DISTRIBUTION_RAISEDCOSINE: val = raisedcosine_pdf(input); break;
-      case DISTRIBUTION_LAPLACE:      val = laplace_pdf(input);      break;
-      case DISTRIBUTION_CAUCHY:       val = cauchy_pdf(input);       break;
-      case DISTRIBUTION_SMALE:        val = smale_pdf(input);        break;
+      case DISTRIBUTION_DIRAC:             val = dirac_pdf(input);             break;
+      case DISTRIBUTION_GAUSSIAN:          val = gaussian_pdf(input);          break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN: val = truncatedgaussian_pdf(input); break;
+      case DISTRIBUTION_UNIFORM:           val = uniform_pdf(input);           break;
+      case DISTRIBUTION_LOGISTIC:          val = logistic_pdf(input);          break;
+      case DISTRIBUTION_TRIANGLE:          val = triangle_pdf(input);          break;
+      case DISTRIBUTION_PARABOLIC:         val = parabolic_pdf(input);         break;
+      case DISTRIBUTION_RAISEDCOSINE:      val = raisedcosine_pdf(input);      break;
+      case DISTRIBUTION_LAPLACE:           val = laplace_pdf(input);           break;
+      case DISTRIBUTION_CAUCHY:            val = cauchy_pdf(input);            break;
+      case DISTRIBUTION_SMALE:             val = smale_pdf(input);             break;
+      case DISTRIBUTION_ARCSINE:           val = arcsine_pdf(input);           break;
+      case DISTRIBUTION_KUMARASWAMY:       val = kumaraswamy_pdf(input);       break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
@@ -154,16 +180,19 @@ public:
   Real cdf(Real input) {
     Real val = 0.0;
     switch(ed_) {
-      case DISTRIBUTION_DIRAC:        val = dirac_cdf(input);        break;
-      case DISTRIBUTION_GAUSSIAN:     val = gaussian_cdf(input);     break;
-      case DISTRIBUTION_UNIFORM:      val = uniform_cdf(input);      break;
-      case DISTRIBUTION_LOGISTIC:     val = logistic_cdf(input);     break;
-      case DISTRIBUTION_TRIANGLE:     val = triangle_cdf(input);     break;
-      case DISTRIBUTION_PARABOLIC:    val = parabolic_cdf(input);    break;
-      case DISTRIBUTION_RAISEDCOSINE: val = raisedcosine_cdf(input); break;
-      case DISTRIBUTION_LAPLACE:      val = laplace_cdf(input);      break;
-      case DISTRIBUTION_CAUCHY:       val = cauchy_cdf(input);       break;
-      case DISTRIBUTION_SMALE:        val = smale_cdf(input);        break;
+      case DISTRIBUTION_DIRAC:             val = dirac_cdf(input);             break;
+      case DISTRIBUTION_GAUSSIAN:          val = gaussian_cdf(input);          break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN: val = truncatedgaussian_cdf(input); break;
+      case DISTRIBUTION_UNIFORM:           val = uniform_cdf(input);           break;
+      case DISTRIBUTION_LOGISTIC:          val = logistic_cdf(input);          break;
+      case DISTRIBUTION_TRIANGLE:          val = triangle_cdf(input);          break;
+      case DISTRIBUTION_PARABOLIC:         val = parabolic_cdf(input);         break;
+      case DISTRIBUTION_RAISEDCOSINE:      val = raisedcosine_cdf(input);      break;
+      case DISTRIBUTION_LAPLACE:           val = laplace_cdf(input);           break;
+      case DISTRIBUTION_CAUCHY:            val = cauchy_cdf(input);            break;
+      case DISTRIBUTION_SMALE:             val = smale_cdf(input);             break;
+      case DISTRIBUTION_ARCSINE:           val = arcsine_cdf(input);           break;
+      case DISTRIBUTION_KUMARASWAMY:       val = kumaraswamy_cdf(input);       break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
@@ -174,16 +203,19 @@ public:
   Real intcdf(Real input) {
     Real val = 0.0;
     switch(ed_) {
-      case DISTRIBUTION_DIRAC:        val = dirac_intcdf(input);        break;
-      case DISTRIBUTION_GAUSSIAN:     val = gaussian_intcdf(input);     break;
-      case DISTRIBUTION_UNIFORM:      val = uniform_intcdf(input);      break;
-      case DISTRIBUTION_LOGISTIC:     val = logistic_intcdf(input);     break;
-      case DISTRIBUTION_TRIANGLE:     val = triangle_intcdf(input);     break;
-      case DISTRIBUTION_PARABOLIC:    val = parabolic_intcdf(input);    break;
-      case DISTRIBUTION_RAISEDCOSINE: val = raisedcosine_intcdf(input); break;
-      case DISTRIBUTION_LAPLACE:      val = laplace_intcdf(input);      break;
-      case DISTRIBUTION_CAUCHY:       val = cauchy_intcdf(input);       break;
-      case DISTRIBUTION_SMALE:        val = smale_intcdf(input);        break;
+      case DISTRIBUTION_DIRAC:             val = dirac_intcdf(input);             break;
+      case DISTRIBUTION_GAUSSIAN:          val = gaussian_intcdf(input);          break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN: val = truncatedgaussian_intcdf(input); break;
+      case DISTRIBUTION_UNIFORM:           val = uniform_intcdf(input);           break;
+      case DISTRIBUTION_LOGISTIC:          val = logistic_intcdf(input);          break;
+      case DISTRIBUTION_TRIANGLE:          val = triangle_intcdf(input);          break;
+      case DISTRIBUTION_PARABOLIC:         val = parabolic_intcdf(input);         break;
+      case DISTRIBUTION_RAISEDCOSINE:      val = raisedcosine_intcdf(input);      break;
+      case DISTRIBUTION_LAPLACE:           val = laplace_intcdf(input);           break;
+      case DISTRIBUTION_CAUCHY:            val = cauchy_intcdf(input);            break;
+      case DISTRIBUTION_SMALE:             val = smale_intcdf(input);             break;
+      case DISTRIBUTION_ARCSINE:           val = arcsine_intcdf(input);           break;
+      case DISTRIBUTION_KUMARASWAMY:       val = kumaraswamy_intcdf(input);       break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
@@ -194,16 +226,19 @@ public:
   Real invcdf(Real input) {
     Real val = 0.0;
     switch(ed_) {
-      case DISTRIBUTION_DIRAC:        val = dirac_invcdf(input);        break;
-      case DISTRIBUTION_GAUSSIAN:     val = gaussian_invcdf(input);     break;
-      case DISTRIBUTION_UNIFORM:      val = uniform_invcdf(input);      break;
-      case DISTRIBUTION_LOGISTIC:     val = logistic_invcdf(input);     break;
-      case DISTRIBUTION_TRIANGLE:     val = triangle_invcdf(input);     break;
-      case DISTRIBUTION_PARABOLIC:    val = parabolic_invcdf(input);    break;
-      case DISTRIBUTION_RAISEDCOSINE: val = raisedcosine_invcdf(input); break;
-      case DISTRIBUTION_LAPLACE:      val = laplace_invcdf(input);      break;
-      case DISTRIBUTION_CAUCHY:       val = cauchy_invcdf(input);       break;
-      case DISTRIBUTION_SMALE:        val = smale_invcdf(input);        break;
+      case DISTRIBUTION_DIRAC:             val = dirac_invcdf(input);             break;
+      case DISTRIBUTION_GAUSSIAN:          val = gaussian_invcdf(input);          break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN: val = truncatedgaussian_invcdf(input); break;
+      case DISTRIBUTION_UNIFORM:           val = uniform_invcdf(input);           break;
+      case DISTRIBUTION_LOGISTIC:          val = logistic_invcdf(input);          break;
+      case DISTRIBUTION_TRIANGLE:          val = triangle_invcdf(input);          break;
+      case DISTRIBUTION_PARABOLIC:         val = parabolic_invcdf(input);         break;
+      case DISTRIBUTION_RAISEDCOSINE:      val = raisedcosine_invcdf(input);      break;
+      case DISTRIBUTION_LAPLACE:           val = laplace_invcdf(input);           break;
+      case DISTRIBUTION_CAUCHY:            val = cauchy_invcdf(input);            break;
+      case DISTRIBUTION_SMALE:             val = smale_invcdf(input);             break;
+      case DISTRIBUTION_ARCSINE:           val = arcsine_invcdf(input);           break;
+      case DISTRIBUTION_KUMARASWAMY:       val = kumaraswamy_invcdf(input);       break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
@@ -211,7 +246,7 @@ public:
     return val;
   }
  
-  void test(Real x) {
+  void test(std::ostream &outStream = std::cout ) {
     int size;
     std::vector<Real> X;
     std::vector<int> T;
@@ -229,6 +264,9 @@ public:
         break;
       case DISTRIBUTION_UNIFORM:
       case DISTRIBUTION_PARABOLIC:
+      case DISTRIBUTION_ARCSINE:
+      case DISTRIBUTION_KUMARASWAMY:
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:
         size = 5;
         X.resize(size,0.0);
         T.resize(size,0);
@@ -276,16 +314,17 @@ public:
         T[5] = 1;
         X[6] = data_[2]+4.0*(Real)rand()/(Real)RAND_MAX; 
         T[6] = 0;
+        break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           ">>> ERROR (ROL::Distribution): Distribution not defined!");
     }
     for ( int k = 0; k < size; k++ ) {
       if ( T[k] == 0 ) {
-        test_onesided(X[k]);
+        test_onesided(X[k],outStream);
       }
       else {
-        test_centered(X[k]);
+        test_centered(X[k],outStream);
       }
     }
   }
@@ -335,6 +374,33 @@ private:
       cnt++;
     }
     return std::sqrt(2*data_[1])*val + data_[0];
+  }
+  // Truncated Gaussian
+  Real truncatedgaussian_pdf(Real input) {
+    Real xi    = (input-data_[2])/data_[3];
+    Real alpha = (data_[0]-data_[2])/data_[3];
+    Real beta  = (data_[1]-data_[2])/data_[3]; 
+    Real Z     = gaussian_cdf(beta)-gaussian_cdf(alpha);
+    return ((input <= data_[0]) ? 0.0 : ((input >= data_[1]) ? 0.0 : gaussian_pdf(xi)/(data_[3]*Z)));
+  }
+  Real truncatedgaussian_cdf(Real input) {
+    Real xi    = (input-data_[2])/data_[3];
+    Real alpha = (data_[0]-data_[2])/data_[3];
+    Real beta  = (data_[1]-data_[2])/data_[3]; 
+    Real Z     = gaussian_cdf(beta)-gaussian_cdf(alpha);
+    return ((input <= data_[0]) ? 0.0 : ((input >= data_[1]) ? 1.0 : 
+             (gaussian_cdf(xi)-gaussian_cdf(alpha))/Z));
+  }
+  Real truncatedgaussian_intcdf(Real input) {
+    // NOT IMPLEMENTED
+    return ((input < data_[0]) ? 0.0 : input);
+  }
+  Real truncatedgaussian_invcdf(Real input) {
+    Real alpha = (data_[0]-data_[2])/data_[3];
+    Real beta  = (data_[1]-data_[2])/data_[3]; 
+    Real Z     = gaussian_cdf(beta)-gaussian_cdf(alpha);
+    Real x     = gaussian_invcdf(Z*input+gaussian_cdf(alpha));
+    return data_[3]*x + data_[2];
   }
   // Uniform Distribution
   Real uniform_pdf(Real input) {
@@ -560,18 +626,53 @@ private:
     }
     return x;
   }
+  // Arcsine Distribution
+  Real arcsine_pdf(Real input) {
+    return ((input <= data_[0]) ? 0.0 : ((input >= data_[1]) ? 0.0 : 
+             1.0/(M_PI*std::sqrt((input-data_[0])*(data_[1]-input)))));
+  }
+  Real arcsine_cdf(Real input) {
+    return ((input <= data_[0]) ? 0.0 : ((input >= data_[1]) ? 1.0 : 
+             2.0/M_PI * asin(std::sqrt((input-data_[0])/(data_[1]-data_[0])))));
+  }
+  Real arcsine_intcdf(Real input) {
+    // NOT IMPLEMENTED
+    return ((input < data_[0]) ? 0.0 : input);
+  }
+  Real arcsine_invcdf(Real input) {
+    Real x = std::pow(std::sin(0.5*M_PI*input),2.0);
+    return x*(data_[1]-data_[0]) + data_[0];
+  }
+  // Kumaraswamy Distribution
+  Real kumaraswamy_pdf(Real input) {
+    Real x = (input - data_[0])/(data_[1]-data_[0]);
+    return ((x <= 0.0) ? 0.0 : ((x >= 1.0) ? 0.0 : 
+             data_[2]*data_[3]*std::pow(x,data_[2]-1)*std::pow(1.0-std::pow(x,data_[2]),data_[3]-1)));
+  }
+  Real kumaraswamy_cdf(Real input) {
+    Real x = (input - data_[0])/(data_[1]-data_[0]);
+    return ((x <= 0.0) ? 0.0 : ((x >= 1.0) ? 1.0 : 1.0-std::pow(1.0-std::pow(x,data_[2]),data_[3])));
+  }
+  Real kumaraswamy_intcdf(Real input) {
+    // NOT IMPLEMENTED
+    return ((input < data_[0]) ? 0.0 : input);
+  }
+  Real kumaraswamy_invcdf(Real input) {
+    Real x = std::pow(1.0-std::pow(1.0-input,1.0/data_[3]),1.0/data_[2]);
+    return x*(data_[1]-data_[0]) + data_[0];
+  }
 
-  void test_onesided(Real x) {
+  void test_onesided(Real x, std::ostream &outStream = std::cout) {
     Real vx = cdf(x);
     Real vy = 0.0;
     Real dv = pdf(x);
     Real t = 1.0;
     Real diff = 0.0;
     Real err = 0.0;
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = cdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = cdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "t"
+    outStream << std::right << std::setw(20) << "t"
                             << std::setw(20) << "f'(x)"
                             << std::setw(20) << "(f(x+t)-f(x))/t"
                             << std::setw(20) << "Error"
@@ -580,7 +681,7 @@ private:
       vy = cdf(x+t);
       diff = (vy-vx)/t;
       err = std::abs(diff-dv);
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
                 << std::setw(20) << dv
                 << std::setw(20) << diff
@@ -588,7 +689,7 @@ private:
                 << "\n";
       t *= 0.1;
     }
-    std::cout << "\n";
+    outStream << "\n";
     // CHECK INTCDF
     vx = intcdf(x);
     vy = 0.0;
@@ -596,10 +697,10 @@ private:
     t = 1.0;
     diff = 0.0;
     err = 0.0;
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = intcdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = intcdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "t"
+    outStream << std::right << std::setw(20) << "t"
                             << std::setw(20) << "f'(x)"
                             << std::setw(20) << "(f(x+t)-f(x))/t"
                             << std::setw(20) << "Error"
@@ -608,7 +709,7 @@ private:
       vy = intcdf(x+t);
       diff = (vy-vx)/t;
       err = std::abs(diff-dv);
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
                 << std::setw(20) << dv
                 << std::setw(20) << diff
@@ -616,36 +717,36 @@ private:
                 << "\n";
       t *= 0.1;
     }
-    std::cout << "\n";
+    outStream << "\n";
     // CHECK INVCDF
     vx = cdf(x);
     vy = invcdf(vx);
     err = std::abs(x-vy);
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = invcdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = invcdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "cdf(x)"
+    outStream << std::right << std::setw(20) << "cdf(x)"
                             << std::setw(20) << "invcdf(cdf(x))"
                             << std::setw(20) << "Error"
                             << "\n";
-    std::cout << std::scientific << std::setprecision(11) << std::right
+    outStream << std::scientific << std::setprecision(11) << std::right
               << std::setw(20) << vx
               << std::setw(20) << vy
               << std::setw(20) << err
               << "\n\n";
   }
 
-  void test_centered(Real x) {
+  void test_centered(Real x, std::ostream &outStream = std::cout) {
     Real vx = 0.0;
     Real vy = 0.0;
     Real dv = pdf(x);
     Real t = 1.0;
     Real diff = 0.0;
     Real err = 0.0;
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = cdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = cdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "t"
+    outStream << std::right << std::setw(20) << "t"
                             << std::setw(20) << "f'(x)"
                             << std::setw(20) << "(f(x+t)-f(x-t))/2t"
                             << std::setw(20) << "Error"
@@ -655,7 +756,7 @@ private:
       vy = cdf(x-t);
       diff = 0.5*(vx-vy)/t;
       err = std::abs(diff-dv);
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
                 << std::setw(20) << dv
                 << std::setw(20) << diff
@@ -663,7 +764,7 @@ private:
                 << "\n";
       t *= 0.1;
     }
-    std::cout << "\n";
+    outStream << "\n";
     // CHECK INTCDF
     vx = 0.0;
     vy = 0.0;
@@ -671,10 +772,10 @@ private:
     t = 1.0;
     diff = 0.0;
     err = 0.0;
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = intcdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = intcdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "t"
+    outStream << std::right << std::setw(20) << "t"
                             << std::setw(20) << "f'(x)"
                             << std::setw(20) << "(f(x+t)-f(x-t))/2t"
                             << std::setw(20) << "Error"
@@ -684,7 +785,7 @@ private:
       vy = intcdf(x-t);
       diff = 0.5*(vx-vy)/t;
       err = std::abs(diff-dv);
-      std::cout << std::scientific << std::setprecision(11) << std::right
+      outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << t
                 << std::setw(20) << dv
                 << std::setw(20) << diff
@@ -692,19 +793,19 @@ private:
                 << "\n";
       t *= 0.1;
     }
-    std::cout << "\n";
+    outStream << "\n";
     // CHECK INVCDF
     vx = cdf(x);
     vy = invcdf(vx);
     err = std::abs(x-vy);
-    std::cout << std::scientific << std::setprecision(11);
-    std::cout << std::right << std::setw(20) << "CHECK DENSITY: f(x) = invcdf(x) with x = "
+    outStream << std::scientific << std::setprecision(11);
+    outStream << std::right << std::setw(20) << "CHECK DENSITY: f(x) = invcdf(x) with x = "
                                              << x << " is correct?\n";
-    std::cout << std::right << std::setw(20) << "cdf(x)"
+    outStream << std::right << std::setw(20) << "cdf(x)"
                             << std::setw(20) << "invcdf(cdf(x))"
                             << std::setw(20) << "Error"
                             << "\n";
-    std::cout << std::scientific << std::setprecision(11) << std::right
+    outStream << std::scientific << std::setprecision(11) << std::right
               << std::setw(20) << vx
               << std::setw(20) << vy
               << std::setw(20) << err

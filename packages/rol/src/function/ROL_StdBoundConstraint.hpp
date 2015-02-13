@@ -61,8 +61,10 @@ namespace ROL {
     std::vector<Real> x_lo_;
     std::vector<Real> x_up_;
     Real min_diff_;
+    Real scale_;
   public:
-    StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u) : x_lo_(l), x_up_(u) {
+    StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = 1.0) 
+      : x_lo_(l), x_up_(u), scale_(scale) {
       dim_ = x_lo_.size();
       for ( int i = 0; i < dim_; i++ ) { 
         if ( i == 0 ) {
@@ -101,7 +103,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] <= this->x_lo_[i]+epsn) ) {
           (*ev)[i] = 0.0;
@@ -114,7 +116,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] >= this->x_up_[i]-epsn) ) {
           (*ev)[i] = 0.0;
@@ -127,7 +129,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] <= this->x_lo_[i]+epsn) || 
              ((*ex)[i] >= this->x_up_[i]-epsn) ) {
@@ -143,7 +145,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ) {
           (*ev)[i] = 0.0;
@@ -158,7 +160,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
           (*ev)[i] = 0.0;
@@ -173,7 +175,7 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      Real epsn = std::min(eps,this->min_diff_);
+      Real epsn = std::min(scale_*eps,this->min_diff_);
       for ( int i = 0; i < this->dim_; i++ ) {
         if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) || 
              ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
