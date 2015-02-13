@@ -68,6 +68,43 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+struct DeviceConfig {
+  struct Dim3 {
+    size_t x, y, z;
+    Dim3(const size_t x_, const size_t y_ = 1, const size_t z_ = 1) :
+      x(x_), y(y_), z(z_) {}
+  };
+
+  Dim3 block_dim;
+  size_t num_blocks;
+  size_t num_threads_per_block;
+
+  DeviceConfig(const size_t num_blocks_ = 0,
+               const size_t threads_per_block_x_ = 0,
+               const size_t threads_per_block_y_ = 0,
+               const size_t threads_per_block_z_ = 1) :
+    block_dim(threads_per_block_x_,threads_per_block_y_,threads_per_block_z_),
+    num_blocks(num_blocks_),
+    num_threads_per_block(block_dim.x * block_dim.y * block_dim.z)
+    {}
+};
+
+template< typename ValueType , class Space >
+struct CrsMatrix {
+  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , unsigned >  StaticCrsGraphType ;
+  typedef View< ValueType * , Space > values_type ;
+
+  StaticCrsGraphType  graph ;
+  values_type  values ;
+
+  CrsMatrix() : graph(), values() {}
+
+  CrsMatrix( const StaticCrsGraphType & arg_graph )
+    : graph( arg_graph )
+    , values( "crs_matrix_values" , arg_graph.entries.dimension_0() )
+    {}
+};
+
 // Traits class for creating strided local views for embedded ensemble-based,
 // specialized for ensemble UQ scalar type
 template <typename ViewType>
@@ -129,12 +166,12 @@ struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVect
 // Compute DeviceConfig struct's based on scalar type
 template <typename ScalarType>
 struct CreateDeviceConfigs {
-  static void eval( Kokkos::DeviceConfig& dev_config_elem,
-                    Kokkos::DeviceConfig& dev_config_gath,
-                    Kokkos::DeviceConfig& dev_config_bc ) {
-    dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
-    dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+  static void eval( Kokkos::Example::FENL::DeviceConfig& dev_config_elem,
+                    Kokkos::Example::FENL::DeviceConfig& dev_config_gath,
+                    Kokkos::Example::FENL::DeviceConfig& dev_config_bc ) {
+    dev_config_elem = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
+    dev_config_gath = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
+    dev_config_bc   = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
   }
 };
 
@@ -142,9 +179,9 @@ struct CreateDeviceConfigs {
 template <typename StorageType>
 struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
   typedef typename StorageType::device_type device_type;
-  static void eval( Kokkos::DeviceConfig& dev_config_elem,
-                    Kokkos::DeviceConfig& dev_config_gath,
-                    Kokkos::DeviceConfig& dev_config_bc ) {
+  static void eval( Kokkos::Example::FENL::DeviceConfig& dev_config_elem,
+                    Kokkos::Example::FENL::DeviceConfig& dev_config_gath,
+                    Kokkos::Example::FENL::DeviceConfig& dev_config_bc ) {
     static const unsigned VectorSize = StorageType::static_size;
 #if defined( KOKKOS_HAVE_CUDA )
     enum { is_cuda = Kokkos::Impl::is_same< device_type, Kokkos::Cuda >::value };
@@ -152,14 +189,14 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
     enum { is_cuda = false };
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
     if ( is_cuda ) {
-      dev_config_elem = Kokkos::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
-      dev_config_gath = Kokkos::DeviceConfig( 0 , VectorSize , 128/VectorSize );
-      dev_config_bc   = Kokkos::DeviceConfig( 0 , VectorSize , 256/VectorSize );
+      dev_config_elem = Kokkos::Example::FENL::DeviceConfig( 0 , VectorSize , 64/VectorSize  );
+      dev_config_gath = Kokkos::Example::FENL::DeviceConfig( 0 , VectorSize , 128/VectorSize );
+      dev_config_bc   = Kokkos::Example::FENL::DeviceConfig( 0 , VectorSize , 256/VectorSize );
     }
     else {
-      dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
-      dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
-      dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_elem = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
+      dev_config_gath = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
+      dev_config_bc   = Kokkos::Example::FENL::DeviceConfig( 0 , 1 , 1 );
     }
   }
 };
@@ -519,7 +556,7 @@ private:
   elem_vectors_type     elem_residual ;
   elem_matrices_type    elem_jacobian ;
   PhaseType             phase ;
-  const Kokkos::DeviceConfig dev_config ;
+  const Kokkos::Example::FENL::DeviceConfig dev_config ;
 
 public:
 
@@ -559,7 +596,7 @@ public:
                       const sparse_matrix_type & arg_jacobian ,
                       const elem_vectors_type  & arg_elem_residual ,
                       const elem_matrices_type & arg_elem_jacobian ,
-                      const Kokkos::DeviceConfig arg_dev_config )
+                      const Kokkos::Example::FENL::DeviceConfig arg_dev_config )
     : elem_node_id( arg_elem_node_id )
     , elem_graph( arg_elem_graph )
     , row_total( "row_total" )
@@ -847,11 +884,10 @@ class ElementComputation ;
 
 
 template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
-          class CoeffFunctionType >
+          typename ScalarType , class CoeffFunctionType >
 class ElementComputation
   < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
-  , Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >
+  , Kokkos::Example::FENL::CrsMatrix< ScalarType , DeviceType >
   , CoeffFunctionType >
 {
 public:
@@ -864,7 +900,7 @@ public:
   typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::Example::FENL::CrsMatrix< ScalarType , DeviceType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
@@ -914,7 +950,7 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const CoeffFunctionType   coeff_function ;
-  const Kokkos::DeviceConfig dev_config ;
+  const Kokkos::Example::FENL::DeviceConfig dev_config ;
 
   ElementComputation( const ElementComputation & rhs )
     : elem_data()
@@ -938,7 +974,7 @@ public:
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
-                      const Kokkos::DeviceConfig arg_dev_config )
+                      const Kokkos::Example::FENL::DeviceConfig arg_dev_config )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -955,7 +991,7 @@ public:
   ElementComputation( const mesh_type          & arg_mesh ,
                       const CoeffFunctionType  & arg_coeff_function ,
                       const vector_type        & arg_solution ,
-                      const Kokkos::DeviceConfig arg_dev_config)
+                      const Kokkos::Example::FENL::DeviceConfig arg_dev_config)
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -1285,10 +1321,10 @@ template< class FixtureType , class SparseMatrixType >
 class DirichletComputation ;
 
 template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
+          typename ScalarType >
 class DirichletComputation<
   Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  Kokkos::Example::FENL::CrsMatrix< ScalarType , DeviceType > >
 {
 public:
 
@@ -1299,7 +1335,7 @@ public:
   typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::Example::FENL::CrsMatrix< ScalarType , DeviceType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , device_type > vector_type ;
@@ -1328,7 +1364,7 @@ public:
   const unsigned            bc_plane ;
   const unsigned            node_count ;
         bool                init ;
-  const Kokkos::DeviceConfig dev_config ;
+  const Kokkos::Example::FENL::DeviceConfig dev_config ;
 
 
   DirichletComputation( const mesh_type          & arg_mesh ,
@@ -1338,7 +1374,7 @@ public:
                         const unsigned             arg_bc_plane ,
                         const bc_scalar_type       arg_bc_lower_value ,
                         const bc_scalar_type       arg_bc_upper_value ,
-                        const Kokkos::DeviceConfig arg_dev_config )
+                        const Kokkos::Example::FENL::DeviceConfig arg_dev_config )
     : node_coords( arg_mesh.node_coord() )
     , solution(    arg_solution )
     , jacobian(    arg_jacobian )

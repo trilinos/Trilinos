@@ -43,11 +43,6 @@
 // MP::Vector
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
-#include "Kokkos_MV_MP_Vector.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 // Compile-time loops
 #include "Sacado_mpl_range_c.hpp"
@@ -57,8 +52,6 @@
 // Kokkos libraries' headers:
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_ArithTraits.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 // Utilities
@@ -114,7 +107,7 @@ Perf fenl_assembly(
   const int use_trials ,
   const int use_atomic ,
   const int use_nodes[] ,
-  Kokkos::DeviceConfig dev_config ,
+  Kokkos::Example::FENL::DeviceConfig dev_config ,
   Kokkos::View< Scalar* , Kokkos::LayoutLeft, Device >& nodal_residual)
 {
   using Teuchos::RCP;
@@ -125,9 +118,7 @@ Perf fenl_assembly(
 
   typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemLinear > FixtureType ;
 
-  typedef Kokkos::CrsMatrix< Scalar , unsigned , Device >
-  //typedef typename GlobalMatrixType::k_local_matrix_type
-    LocalMatrixType ;
+  typedef Kokkos::Example::FENL::CrsMatrix< Scalar , Device > LocalMatrixType ;
 
   typedef typename LocalMatrixType::StaticCrsGraphType
     LocalGraphType ;
@@ -224,39 +215,7 @@ Perf fenl_assembly(
                      graph_times );
 
     // Create the local sparse matrix from the graph:
-    LocalMatrixType jacobian( "jacobian" , mesh_to_graph.graph );
-
-    //----------------------------------
-
-    if ( print_flag ) {
-      const unsigned nrow = jacobian.numRows();
-      std::cout << "JacobianGraph[ "
-                << jacobian.numRows() << " x " << jacobian.numCols()
-                << " ] {" << std::endl ;
-      for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
-        std::cout << "  row[" << irow << "]{" ;
-        const unsigned entry_end = jacobian.graph.row_map(irow+1);
-        for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
-          std::cout << " " << jacobian.graph.entries(entry);
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-
-      std::cout << "ElemGraph {" << std::endl ;
-      for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
-        std::cout << "  elem[" << ielem << "]{" ;
-        for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
-          std::cout << " {" ;
-          for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
-            std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
-          }
-          std::cout << " }" ;
-        }
-        std::cout << " }" << std::endl ;
-      }
-      std::cout << "}" << std::endl ;
-    }
+    LocalMatrixType jacobian( mesh_to_graph.graph );
 
     //----------------------------------
 
@@ -265,7 +224,7 @@ Perf fenl_assembly(
     nodal_residual = VectorType( "nodal_residual" , fixture.node_count_owned() );
 
     // Get DeviceConfig structs used by some functors
-    Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+    Kokkos::Example::FENL::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
     Kokkos::Example::FENL::CreateDeviceConfigs<Scalar>::eval( dev_config_elem,
                                                               dev_config_gath,
                                                               dev_config_bc );
@@ -393,7 +352,7 @@ struct PerformanceDriverOp {
   const int use_atomic ;
   const int *use_nodes ;
   const bool check     ;
-  Kokkos::DeviceConfig dev_config;
+  Kokkos::Example::FENL::DeviceConfig dev_config;
 
   PerformanceDriverOp(const Teuchos::RCP<const Teuchos::Comm<int> >& comm_ ,
                       const int use_print_ ,
@@ -401,7 +360,7 @@ struct PerformanceDriverOp {
                       const int use_atomic_ ,
                       const int use_nodes_[] ,
                       const bool check_ ,
-                      Kokkos::DeviceConfig dev_config_) :
+                      Kokkos::Example::FENL::DeviceConfig dev_config_) :
     comm(comm_),
     use_print(use_print_),
     use_trials(use_trials_),
@@ -421,14 +380,14 @@ struct PerformanceDriverOp {
     typedef Kokkos::View< mp_vector_type* , Kokkos::LayoutLeft, Device > ensemble_vector_type ;
 
     scalar_vector_type scalar_residual;
-    Kokkos::DeviceConfig scalar_dev_config(0, 1, 1);
+    Kokkos::Example::FENL::DeviceConfig scalar_dev_config(0, 1, 1);
     Perf perf_scalar =
       fenl_assembly<Scalar,Device>(
         comm, use_print, use_trials*ensemble, use_atomic, use_nodes,
         scalar_dev_config, scalar_residual );
 
     ensemble_vector_type ensemble_residual;
-    Kokkos::DeviceConfig ensemble_dev_config = dev_config;
+    Kokkos::Example::FENL::DeviceConfig ensemble_dev_config = dev_config;
 #if defined( KOKKOS_HAVE_CUDA )
     const bool is_cuda = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
 #else
@@ -484,7 +443,7 @@ void performance_test_driver( const Teuchos::RCP<const Teuchos::Comm<int> >& com
                               const int use_atomic ,
                               const int use_nodes[] ,
                               const bool check ,
-                              Kokkos::DeviceConfig dev_config)
+                              Kokkos::Example::FENL::DeviceConfig dev_config)
 {
   if (comm->getRank() == 0) {
     std::cout.precision(8);

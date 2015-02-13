@@ -62,7 +62,24 @@ void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
-              Kokkos::DeviceConfig dev_config);
+              Kokkos::Example::FENL::DeviceConfig dev_config) {
+#ifdef __MIC__
+  const int entry_min = 8;
+  const int entry_max = 48;
+  const int entry_step = 8;
+#else
+  const int entry_min = 4;
+  const int entry_max = 32;
+  const int entry_step = 4;
+  // const int entry_min = 16;
+  // const int entry_max = 16;
+  // const int entry_step = 16;
+#endif
+
+  performance_test_driver<Storage,entry_min,entry_max,entry_step>(
+    comm, use_print, use_trials, use_atomic, use_nodes, check, dev_config);
+}
+
 template <typename Storage>
 void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_print ,
@@ -70,7 +87,13 @@ void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
-              Kokkos::DeviceConfig dev_config);
+              Kokkos::Example::FENL::DeviceConfig dev_config) {
+  const int entry_min = 16;
+  const int entry_max = 64;
+  const int entry_step = 16;
+  performance_test_driver<Storage,entry_min,entry_max,entry_step>(
+    comm, use_print, use_trials, use_atomic, use_nodes, check, dev_config);
+}
 
 int main(int argc, char *argv[])
 {
@@ -159,7 +182,7 @@ int main(int argc, char *argv[])
                   << " MPI ranks and " << num_cores*num_hyper_threads
                   << " threads per rank:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      Kokkos::Example::FENL::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
@@ -183,7 +206,7 @@ int main(int argc, char *argv[])
                   << " MPI ranks and " << num_cores*num_hyper_threads
                   << " threads per rank:" << std::endl;
 
-      Kokkos::DeviceConfig dev_config(num_cores,
+      Kokkos::Example::FENL::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
@@ -230,7 +253,7 @@ int main(int argc, char *argv[])
                   << deviceProp.name << "):"
                   << std::endl;
 
-      Kokkos::DeviceConfig dev_config(
+      Kokkos::Example::FENL::DeviceConfig dev_config(
         num_cuda_blocks,
         cuda_threads_per_vector,
         cuda_threads_per_vector == 0 ? 0 : cuda_block_size / cuda_threads_per_vector);
