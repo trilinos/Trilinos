@@ -36,6 +36,7 @@
 
 #include <inttypes.h>
 #include <vector>
+#include <string>
 #include <stk_util/parallel/Parallel.hpp>
 
 namespace stk {
