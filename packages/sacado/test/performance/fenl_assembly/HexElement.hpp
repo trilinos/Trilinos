@@ -98,7 +98,7 @@ public:
     weights_1d[1] = 1 ;
 
     const double points_1d[ integration_count_1d ] =
-      { -0.577350269 , 0.577350269 };
+      { -0.577350269189623 , 0.577350269189623 };
 
     for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
       eval_map[i][0] = tmp_map[i][0];
@@ -184,13 +184,13 @@ public:
 
     // Interval [-1,1]
 
-    weights_1d[0] = 0.555555556 ;
-    weights_1d[1] = 0.888888889 ;
-    weights_1d[2] = 0.555555556 ;
+    weights_1d[0] = 0.55555555555556 ;
+    weights_1d[1] = 0.88888888888889 ;
+    weights_1d[2] = 0.55555555555556 ;
 
-    const double points_1d[3] = { -0.774596669 ,
-                                  0.000000000 ,
-                                  0.774596669 };
+    const double points_1d[3] = { -0.774596669241483 ,
+                                   0.000000000000000 ,
+                                   0.774596669241483 };
 
     for ( unsigned i = 0 ; i < element_node_count ; ++i ) {
       eval_map[i][0] = tmp_map[i][0];
