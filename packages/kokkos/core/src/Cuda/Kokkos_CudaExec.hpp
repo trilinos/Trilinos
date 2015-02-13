@@ -50,6 +50,7 @@
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
+#include <Cuda/Kokkos_Cuda_Error.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -189,6 +190,7 @@ struct CudaParallelLaunch< DriverType , true > {
 
 #if defined( KOKKOS_EXPRESSION_CHECK )
       Kokkos::Cuda::fence();
+      CUDA_SAFE_CALL( cudaGetLastError() );
 #endif
     }
   }
@@ -219,6 +221,7 @@ struct CudaParallelLaunch< DriverType , false > {
 
 #if defined( KOKKOS_EXPRESSION_CHECK )
       Kokkos::Cuda::fence();
+      CUDA_SAFE_CALL( cudaGetLastError() );
 #endif
     }
   }
