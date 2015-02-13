@@ -275,7 +275,7 @@ public:
 
       // Get the default communicator and Kokkos Node instance
       // TODO:  Default communicator may not be correct here
-      RCP<const Comm<int> > comm =
+      RCP<const Comm<gno_t> > comm =
         DefaultPlatform::getDefaultPlatform ().getComm ();
 
       // Get node-element connectivity
@@ -358,7 +358,8 @@ public:
         }
 
         for (int j = offsets[localElement]; j < NumAdjs; ++j) {
-// KDD can we insert all adjacencies at once instead of one at a time (since they are contiguous in adjacencyIds)?
+// KDD can we insert all adjacencies at once instead of one at a time
+// (since they are contiguous in adjacencyIds)?
           gno_t globalCol = as<gno_t> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
           ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
