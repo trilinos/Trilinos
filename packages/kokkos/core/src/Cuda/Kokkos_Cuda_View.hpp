@@ -111,6 +111,37 @@ private:
   const ValueType         * m_alloc_ptr ;
   int                       m_offset ;
 
+  void attach( const ValueType * const arg_ptr, AllocationTracker const & tracker )
+  {
+    typedef char const * const byte;
+
+    m_alloc_ptr = reinterpret_cast<ValueType *>(tracker.alloc_ptr());
+
+    size_t byte_offset = reinterpret_cast<byte>(arg_ptr) - reinterpret_cast<byte>(m_alloc_ptr);
+    const bool ok_aligned = 0 == byte_offset % sizeof(ValueType);
+
+    const size_t count = tracker.alloc_size() / sizeof(ValueType);
+    const bool ok_contains = (m_alloc_ptr <= arg_ptr) && (arg_ptr < (m_alloc_ptr + count));
+
+    if (ok_aligned && ok_contains) {
+      if (tracker.attribute() == NULL ) {
+        MemorySpace::texture_object_attach(
+            tracker
+            , sizeof(ValueType)
+            , cudaCreateChannelDesc< AliasType >()
+            );
+      }
+      m_obj = dynamic_cast<TextureAttribute*>(tracker.attribute())->m_tex_obj;
+      m_offset = arg_ptr - m_alloc_ptr;
+    }
+    else if( !ok_contains ) {
+      throw_runtime_exception("Error: cannot attach a texture object to a tracker which does not bound the pointer.");
+    }
+    else {
+      throw_runtime_exception("Error: cannot attach a texture object to an incorrectly aligned pointer.");
+    }
+  }
+
 public:
 
   KOKKOS_INLINE_FUNCTION
@@ -140,22 +171,17 @@ public:
     : m_obj( 0 ) , m_alloc_ptr(0) , m_offset(0)
     {
 #if defined( __CUDACC__ ) && ! defined( __CUDA_ARCH__ )
-      if ( tracker.is_valid() ) {
-        typedef char const * const byte;
-        size_t byte_offset = reinterpret_cast<byte>(arg_ptr) - reinterpret_cast<byte>(tracker.alloc_ptr());
-        bool ok_align = 0 == byte_offset % sizeof(ValueType);
-
-        if (ok_align) {
-          if (tracker.attribute() == NULL ) {
-            MemorySpace::texture_object_attach(
-                tracker
-                , sizeof(ValueType)
-                , cudaCreateChannelDesc< AliasType >()
-                );
+      if ( arg_ptr != NULL ) {
+        if ( tracker.is_valid() ) {
+          attach( arg_ptr, tracker );
+        }
+        else {
+          AllocationTracker found_tracker = AllocationTracker::find<typename MemorySpace::allocator>(arg_ptr);
+          if ( found_tracker.is_valid() ) {
+            attach( arg_ptr, found_tracker );
+          } else {
+            throw_runtime_exception("Error: cannot attach a texture object to an untracked pointer!");
           }
-          m_obj = dynamic_cast<TextureAttribute*>(tracker.attribute())->m_tex_obj;
-          m_alloc_ptr = reinterpret_cast<ValueType *>(tracker.alloc_ptr());
-          m_offset = arg_ptr - m_alloc_ptr;
         }
       }
 #endif
@@ -170,15 +196,9 @@ public:
   ValueType operator[]( const iType & i ) const
     {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#if defined( KOKKOS_USE_LDG_INTRINSIC )
-      // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
-      // Currently texture fetches are faster, but that might change in the future
-      return __ldg( & m_alloc_ptr[i+m_offset] );
-#else /* ! defined( KOKKOS_USE_LDG_INTRINSIC ) */
       AliasType v = tex1Dfetch<AliasType>( m_obj , i + m_offset );
 
       return  *(reinterpret_cast<ValueType*> (&v));
-#endif /* ! defined( KOKKOS_USE_LDG_INTRINSIC ) */
 #else  /* ! defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ ) */
       return m_alloc_ptr[ i + m_offset ];
 #endif
@@ -265,10 +285,13 @@ class ViewDataHandle< ViewTraits ,
 public:
   enum { ReturnTypeIsReference = false };
 
-  // Force the use of __ldg to fix errors where tpetra is using runtime unmanged
-  // views and binding them to texture memory.  DJS 02/13/2015
+#if defined( KOKKOS_USE_LDG_INTRINSIC )
   typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
-                                , typename ViewTraits::memory_space, void > handle_type;
+                                , typename ViewTraits::memory_space, void> handle_type;
+#else
+  typedef Impl::CudaTextureFetch< typename ViewTraits::value_type
+                                , typename ViewTraits::memory_space, void> handle_type;
+#endif
 
   KOKKOS_INLINE_FUNCTION
   static handle_type create_handle( typename ViewTraits::value_type * arg_data_ptr, AllocationTracker const & arg_tracker )
