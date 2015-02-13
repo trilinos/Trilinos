@@ -190,7 +190,7 @@ void parallel_for( const ExecPolicy  & policy
                  , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                  )
 {
-  (void) Impl::ParallelFor< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking(functor) , policy );
+  (void) Impl::ParallelFor< FunctorType , ExecPolicy >( functor , policy );
 }
 
 template< class FunctorType >
