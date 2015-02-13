@@ -655,7 +655,7 @@ namespace {
 
 struct NullAllocator { static const char * name() { return "Null Allocator"; } };
 
-};
+}
 
 AllocatorBase * AllocationTracker::allocator() const
 {

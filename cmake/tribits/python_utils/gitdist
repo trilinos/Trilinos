@@ -240,12 +240,14 @@ def getTableField(field, width, just):
 
 # Format an ASCII table from a set of fields
 #
-# The format is of tableData is:
+# The format is of tableData input is:
 #
 #   [ { "label":"<label0>:, "align":"<align0>, "fields":[<fld00>, ... ]}, 
 #     { "label":"<label1>:, "align":"<align1>, "fields":[<fld10>, ... ]},
 #     ...
 #     ]
+#
+# The "algin" field is either "R" for right, or "L" for left.
 #
 def createAsciiTable(tableData):
 
