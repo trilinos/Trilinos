@@ -65,7 +65,7 @@ struct ViewMPVectorInterlaced {};
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < ValueType 
+  < ValueType
   , ViewMPVectorInterlaced
   , LayoutLeft
   , MemorySpace
@@ -76,7 +76,7 @@ struct ViewSpecialize
 
 template< class ValueType , class MemorySpace , class MemoryTraits >
 struct ViewSpecialize
-  < ValueType 
+  < ValueType
   , ViewMPVectorInterlaced
   , LayoutRight
   , MemorySpace
@@ -196,6 +196,7 @@ private:
   typename traits::device_type::size_type      m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                             m_sacado_size ; // Size of sacado dimension
   Impl::ViewDataManagement< traits >           m_management ;
+  Impl::AllocationTracker                      m_tracker ;
   // Note:  if the view is partitioned, m_sacado_size != m_storage_size.
   // We always have m_storage_size >= m_sacado_size
 
@@ -296,7 +297,7 @@ public:
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { m_management.decrement( m_ptr_on_device ); }
+  ~View() { }
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
@@ -383,8 +384,9 @@ public:
 
       verify_dimension_storage_static_size();
 
-      m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( Alloc::label( prop ) , sizeof(scalar_type) * Impl::capacity( m_array_shape , m_stride ) );
+      m_tracker = memory_space::allocate_and_track( Alloc::label( prop ) , sizeof(scalar_type) * Impl::capacity( m_array_shape , m_stride ) );
+
+      m_ptr_on_device = (scalar_type *) m_tracker.alloc_ptr();
 
       (void) Kokkos::Impl::ViewDefaultConstruct< typename traits::execution_space , scalar_type , Alloc::Initialize >
           ( m_ptr_on_device , Impl::capacity( m_array_shape , m_stride ) );
@@ -949,8 +951,6 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     typedef typename dst_type::array_shape_type       array_shape_type ;
     typedef typename dst_type::stride_type            stride_type ;
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     shape_type::assign( dst.m_shape,
                         src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
                         src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
@@ -962,8 +962,7 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     dst.m_ptr_on_device = src.m_ptr_on_device ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size  = src.m_sacado_size ;
-
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker ;
   }
 
   //------------------------------------
@@ -1051,6 +1050,7 @@ struct ViewAssignment< ViewMPVectorInterlaced , ViewMPVectorInterlaced , void >
     else { // if ( Impl::is_same< typename traits::array_layout , LayoutRight >::value )
       dst.m_ptr_on_device = src.m_ptr_on_device + part.begin ;
     }
+    dst.m_tracker = src.m_tracker ;
   }
 };
 
@@ -1073,8 +1073,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorInterlaced , void >
     typedef typename dst_type::shape_type   dst_shape_type ;
     typedef typename dst_type::stride_type  dst_stride_type ;
 
-    dst.m_management.decrement( dst.m_ptr_on_device );
-
     dst_shape_type::assign( dst.m_shape,
                             src.m_array_shape.N0 , src.m_array_shape.N1 , src.m_array_shape.N2 , src.m_arrat_shape.N3 ,
                             src.m_array_shape.N4 , src.m_array_shape.N5 , src.m_arrat_shape.N6 , src.m_arrat_shape.N7 );
@@ -1083,7 +1081,7 @@ struct ViewAssignment< ViewDefault , ViewMPVectorInterlaced , void >
 
     dst.m_ptr_on_device = reinterpret_cast< typename dst_type::value_type *>( src.m_ptr_on_device );
 
-    dst.m_management.increment( dst.m_ptr_on_device );
+    dst.m_tracker = src.m_tracker ;
   }
 };
 
