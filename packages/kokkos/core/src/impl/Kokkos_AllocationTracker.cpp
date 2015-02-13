@@ -651,12 +651,18 @@ void AllocationTracker::decrement_ref_count() const
   }
 }
 
+namespace {
+
+struct NullAllocator { static const char * name() { return "Null Allocator"; } };
+
+};
+
 AllocatorBase * AllocationTracker::allocator() const
 {
   if (m_alloc_rec & REF_COUNT_MASK) {
     return to_alloc_rec(m_alloc_rec)->allocator;
   }
-  return NULL;
+  return Allocator<NullAllocator>::singleton();
 }
 
 void * AllocationTracker::alloc_ptr()  const
