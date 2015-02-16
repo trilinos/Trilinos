@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
@@ -79,6 +80,107 @@ TEST_F( cuda, hexgrad )
 TEST_F( cuda, gramschmidt )
 {
   EXPECT_NO_THROW( run_test_gramschmidt< Kokkos::Cuda >( 10 , 20, "Kokkos::Cuda" ) );
+}
+
+namespace {
+
+template <typename T>
+struct TextureFetch
+{
+  typedef Kokkos::View< T *, Kokkos::CudaSpace> array_type;
+  typedef Kokkos::View< const T *, Kokkos::CudaSpace, Kokkos::MemoryRandomAccess> const_array_type;
+  typedef Kokkos::View< int *, Kokkos::CudaSpace> index_array_type;
+  typedef Kokkos::View< const int *, Kokkos::CudaSpace> const_index_array_type;
+
+  struct FillArray
+  {
+    array_type m_array;
+    FillArray( const array_type & array )
+      : m_array(array)
+    {}
+
+    void apply() const
+    {
+      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.size()), *this);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(int i) const { m_array(i) = i; }
+  };
+
+  struct RandomIndexes
+  {
+    index_array_type m_indexes;
+    typename index_array_type::HostMirror m_host_indexes;
+    RandomIndexes( const index_array_type & indexes)
+      : m_indexes(indexes)
+      , m_host_indexes(Kokkos::create_mirror(m_indexes))
+    {}
+
+    void apply() const
+    {
+      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::HostSpace::execution_space,int>(0,m_host_indexes.size()), *this);
+      //random shuffle
+      Kokkos::HostSpace::execution_space::fence();
+      std::random_shuffle(m_host_indexes.ptr_on_device(), m_host_indexes.ptr_on_device() + m_host_indexes.size());
+      Kokkos::deep_copy(m_indexes,m_host_indexes);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(int i) const { m_host_indexes(i) = i; }
+  };
+
+  struct RandomReduce
+  {
+    const_array_type       m_array;
+    const_index_array_type m_indexes;
+    RandomReduce( const const_array_type & array, const const_index_array_type & indexes)
+      : m_array(array)
+      , m_indexes(indexes)
+    {}
+
+    void apply(T & reduce) const
+    {
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.size()), *this, reduce);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(int i, T & reduce) const
+    { reduce += m_array(m_indexes(i)); }
+  };
+
+  static void run(int size, double & reduce_time, T &reduce)
+  {
+    array_type array("array",size);
+    index_array_type indexes("indexes",size);
+
+    { FillArray f(array); f.apply(); }
+    { RandomIndexes f(indexes); f.apply(); }
+
+    Kokkos::Cuda::fence();
+
+    Kokkos::Impl::Timer timer;
+    for (int j=0; j<10; ++j) {
+      RandomReduce f(array,indexes);
+      f.apply(reduce);
+    }
+    Kokkos::Cuda::fence();
+    reduce_time = timer.seconds();
+  }
+};
+
+} // unnamed namespace
+
+TEST_F( cuda, texture_double )
+{
+  printf("Random reduce of double through texture fetch\n");
+  for (int i=1; i<=27; ++i) {
+    int size = 1<<i;
+    double time = 0;
+    double reduce = 0;
+    TextureFetch<double>::run(size,time,reduce);
+    printf("   time = %1.3e   size = 2^%d\n", time, i);
+  }
 }
 
 } // namespace Test
