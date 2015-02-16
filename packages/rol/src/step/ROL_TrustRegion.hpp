@@ -156,29 +156,29 @@ public:
     softUp_ = parlist.get("Variable Objective Function",false);  
   }
 
-  void initialize( const Vector<Real> &x, const Vector<Real> &g) {
+  void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
     xupdate_ = x.clone();
     if (etr_ == TRUSTREGION_TRUNCATEDCG ) {
-      s_ = x.clone();
+      s_ = s.clone();
       g_ = g.clone();
-      v_ = x.clone();
-      p_ = x.clone();
+      v_ = s.clone();
+      p_ = s.clone();
       Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_DOGLEG ) {
-      s_ = x.clone();
+      s_ = s.clone();
       Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
-      s_ = x.clone();
-      v_ = x.clone();
+      s_ = s.clone();
+      v_ = s.clone();
       Hp_ = g.clone();
     }
     else if ( etr_ == TRUSTREGION_CAUCHYPOINT ) {
       Hp_ = g.clone();
       if ( useCGTCP_ ) {
         g_ = g.clone();
-        p_ = x.clone();
+        p_ = s.clone();
       }
     }
   }

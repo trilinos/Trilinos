@@ -331,11 +331,12 @@ public:
       @param[in]     con         is the bound constraint.
       @param[in]     algo_state  is the algorithm state.
   */
-  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
+                   Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
 
-    trustRegion_->initialize(x,g);
+    trustRegion_->initialize(x,s,g);
 
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
@@ -343,7 +344,7 @@ public:
     Real htol = std::sqrt(ROL_EPSILON);
     Real ftol = ROL_OVERFLOW; 
 
-    step_state->descentVec  = x.clone();
+    step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
 
     if ( con.isActivated() ) {
@@ -378,7 +379,7 @@ public:
         alpha = algo_state.gnorm*algo_state.gnorm/gBg;
       }
       // Evaluate the objective function at the Cauchy point
-      Teuchos::RCP<Vector<Real> > cp = x.clone();
+      Teuchos::RCP<Vector<Real> > cp = s.clone();
       cp->set((step_state->gradientVec)->dual()); 
       cp->scale(-alpha);
       Teuchos::RCP<Vector<Real> > xcp = x.clone();

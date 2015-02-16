@@ -76,9 +76,9 @@ public:
     bound_ = parlist.get("Path-Based Target Level: Upper Bound on Path Length",1.0);
   }
 
-  void initialize(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g, 
+  void initialize(const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                   Objective<Real> &obj, BoundConstraint<Real> &con) {
-    LineSearch<Real>::initialize(x,g,obj,con);
+    LineSearch<Real>::initialize(x,s,g,obj,con);
     xnew_ = x.clone();
   }
 

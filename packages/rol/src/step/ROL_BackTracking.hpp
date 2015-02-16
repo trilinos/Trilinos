@@ -65,9 +65,9 @@ public:
     rho_ = parlist.get("Backtracking Rate",0.5);
   }
 
-  void initialize( const Vector<Real> &x, const Vector<Real> &g, 
+  void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
                    Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    LineSearch<Real>::initialize(x,g,obj,con);
+    LineSearch<Real>::initialize(x,s,g,obj,con);
     xnew_ = x.clone();
   }
 

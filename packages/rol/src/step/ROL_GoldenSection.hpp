@@ -70,11 +70,11 @@ public:
     btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
   }
 
-  void initialize( const Vector<Real> &x, const Vector<Real> &g,
+  void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                    Objective<Real> &obj, BoundConstraint<Real> &con ) {
-    LineSearch<Real>::initialize(x,g,obj,con);
+    LineSearch<Real>::initialize(x,s,g,obj,con);
     xnew_ = x.clone();
-    btls_->initialize(x,g,obj,con);
+    btls_->initialize(x,s,g,obj,con);
   }
 
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,

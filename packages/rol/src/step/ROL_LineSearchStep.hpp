@@ -437,11 +437,12 @@ public:
     ls_ngrad_ = 0;
   }
 
-  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
+                   Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
-    Step<Real>::initialize(x,g,obj,con,algo_state);
+    Step<Real>::initialize(x,s,g,obj,con,algo_state);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
-    lineSearch_->initialize(x, *(step_state->gradientVec),obj,con);
+    lineSearch_->initialize(x, s, *(step_state->gradientVec),obj,con);
     if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_NEWTON || edesc_ == DESCENT_SECANT ) {
       Teuchos::RCP<Objective<Real> > obj_ptr = Teuchos::rcp(&obj, false);
       Teuchos::RCP<BoundConstraint<Real> > con_ptr = Teuchos::rcp(&con, false);
@@ -453,7 +454,7 @@ public:
                                           step_state->gradientVec,useSecantPrecond_));
     }
     if ( con.isActivated() ) {
-      d_ = x.clone();
+      d_ = s.clone();
     }
     if ( con.isActivated() || edesc_ == DESCENT_SECANT 
                            || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {

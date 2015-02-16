@@ -240,18 +240,19 @@ public:
              @param[in]        con         are the bound constraints
              @param[in]        algo_state  is the current state of the algorithm
   */
-  void initialize( Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj, BoundConstraint<Real> &con, 
+  void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
+                   Objective<Real> &obj, BoundConstraint<Real> &con, 
                    AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Initialize state descent direction and gradient storage
-    step_state->descentVec  = x.clone();
+    step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
     step_state->searchSize  = 0.0;
     // Initialize additional storage
     xlam_ = x.clone(); 
     x0_   = x.clone();
     xbnd_ = x.clone();
-    As_   = x.clone(); 
+    As_   = s.clone(); 
     xtmp_ = x.clone(); 
     res_  = g.clone();
     Ag_   = g.clone(); 
@@ -267,7 +268,7 @@ public:
     algo_state.gnorm = computeCriticalityMeasure(x,obj,con,tol);
     algo_state.ngrad++;
     // Initialize dual variable
-    lambda_ = x.clone(); 
+    lambda_ = s.clone(); 
     lambda_->set((step_state->gradientVec)->dual());
     lambda_->scale(-1.0);
     //con.setVectorToLowerBound(*lambda_);

@@ -65,9 +65,9 @@ public:
   // Constructor
   IterationScaling( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist), algo_iter_(0) {}
 
-  void initialize(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g, 
+  void initialize(const ROL::Vector<Real> &x, const ROL::Vector<Real> &s, const ROL::Vector<Real> &g, 
                   Objective<Real> &obj, BoundConstraint<Real> &con) {
-    LineSearch<Real>::initialize(x,g,obj,con);
+    LineSearch<Real>::initialize(x,s,g,obj,con);
     xnew_ = x.clone();
   }
 
