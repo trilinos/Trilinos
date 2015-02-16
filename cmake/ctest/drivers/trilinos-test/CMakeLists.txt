@@ -54,13 +54,18 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #  TIMEOUT_MINUTES 450
   #)
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_OPT_DEV1
-    ctest_linux_nightly_serial_development_opt_pgi_11.1_stable_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 420
-  )
+  # mfh 16 Feb 2015: Turning off PGI 11.1 builds.  PGI compiler has
+  # changed significantly between versions 11 and 15, such that it no
+  # longer makes sense to test version 11, just as it doesn't make
+  # sense to test old GCC versions.
+
+  # TRILINOS_DRIVER_ADD_DASHBOARD(
+  #   SERIAL_OPT_DEV1
+  #   ctest_linux_nightly_serial_development_opt_pgi_11.1_stable_trilinos-test.cmake
+  #   CTEST_INSTALLER_TYPE release
+  #   RUN_SERIAL
+  #   TIMEOUT_MINUTES 420
+  # )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_DEV2
@@ -70,16 +75,16 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     TIMEOUT_MINUTES 210
   )
 
-#Only run this build once a week
-if(${DAYOFWEEK} MATCHES "Saturday")
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_OPT_DEV3
-    ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 600
-  )
-endif()
+# #Only run this build once a week
+# if(${DAYOFWEEK} MATCHES "Saturday")
+#   TRILINOS_DRIVER_ADD_DASHBOARD(
+#     SERIAL_OPT_DEV3
+#     ctest_linux_nightly_serial_development_opt_pgi_11.1_trilinos-test.cmake
+#     CTEST_INSTALLER_TYPE release
+#     RUN_SERIAL
+#     TIMEOUT_MINUTES 600
+#   )
+# endif()
 
 ELSE()
   TRILINOS_DRIVER_ADD_DASHBOARD(
