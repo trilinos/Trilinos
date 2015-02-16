@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc4.7.
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME MPI_DEBUG_DEV)
+SET(BUILD_DIR_NAME MPI_DEBUG_Werror_DEV)
 SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/compilers/gcc/support_libs/mpc-1.0.1/lib:/home/trilinos/compilers/gcc/support_libs/mpfr-3.1.2/lib:/home/trilinos/compilers/gcc/support_libs/gmp-5.1.1/lib:/home/trilinos/compilers/gcc/4.7.2/lib64:$ENV{LD_LIBRARY_PATH}")
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
@@ -84,7 +84,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/pnetcdf-4.2/include"
   "-DZoltan2_ENABLE_Experimental:BOOL=ON"
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow"
+  "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow"
   )
 
 #
