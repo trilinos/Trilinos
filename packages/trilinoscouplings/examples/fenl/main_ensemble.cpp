@@ -265,7 +265,7 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
-#if defined( HAVE_TPETRA_INST_PTHREAD )
+#if defined( HAVE_TPETRA_PTHREAD )
     if ( cmdline.USE_THREADS ) {
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
@@ -289,7 +289,7 @@ int main( int argc , char ** argv )
     }
 #endif
 
-#if defined( HAVE_TPETRA_INST_OPENMP )
+#if defined( HAVE_TPETRA_OPENMP )
     if ( cmdline.USE_OPENMP ) {
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
@@ -313,7 +313,7 @@ int main( int argc , char ** argv )
     }
 #endif
 
-#if defined( HAVE_TPETRA_INST_CUDA )
+#if defined( HAVE_TPETRA_CUDA )
     if ( cmdline.USE_CUDA ) {
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
            cmdline.USE_UQ_ENSEMBLE == 16 )
