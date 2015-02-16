@@ -231,7 +231,7 @@ public:
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
-  /*
+
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
     if (through == MESH_VERTEX) {
@@ -263,7 +263,7 @@ public:
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
-  */
+
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
   zgid_t *element_num_map_, *node_num_map_;
