@@ -330,7 +330,7 @@ public:
       //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
+      sourcetargetMapG = rcp(new map_type(INVALID,
 					  sourcetargetGIDs(), gmin[0], comm));
 
       //Generate Map for through.
@@ -381,7 +381,7 @@ public:
       // Find the local column numbers
       RCP<const map_type> ColMap = adjsMatrix->getColMap ();
       RCP<const map_type> globalMap =
-        rcp (new map_type (adjsMatrix->getGlobalNumCols (), 0, comm,
+        rcp (new map_type (adjsMatrix->getGlobalNumCols (), gmin[1], comm,
                            Tpetra::GloballyDistributed));
 
       // Create the exporter from this process' column Map to the global
