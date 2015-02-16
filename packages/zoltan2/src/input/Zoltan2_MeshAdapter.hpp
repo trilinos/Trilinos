@@ -330,7 +330,7 @@ public:
       //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp(new map_type(INVALID,
+      sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
 					  sourcetargetGIDs(), gmin[0], comm));
 
       //Generate Map for through.
