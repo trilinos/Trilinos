@@ -275,7 +275,7 @@ public:
 
       // Get the default communicator and Kokkos Node instance
       // TODO:  Default communicator may not be correct here
-      RCP<const Comm<gno_t> > comm =
+      RCP<const Comm<int> > comm =
         DefaultPlatform::getDefaultPlatform ().getComm ();
 
       // Get node-element connectivity
