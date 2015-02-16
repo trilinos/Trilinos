@@ -189,7 +189,7 @@ public:
     rm_->getHessVec(hv,*gsampler_);
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     Pv.set(v.dual());
   }
 };
