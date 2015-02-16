@@ -126,7 +126,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 {
    // try to find element block
    std::map<std::string,std::vector<int> >::const_iterator fieldsItr = blockIdToFieldNumbers_.find(block);
-   if(fieldsItr==blockIdToFieldNumbers_.end())
+   if(fieldsItr!=blockIdToFieldNumbers_.end())
      return fieldsItr->second;
 
    // nothing to return
