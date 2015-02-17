@@ -261,7 +261,7 @@ public:
                                     const zgid_t *&adjacencyIds) const
   {
     typedef Tpetra::global_size_t GST;
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
