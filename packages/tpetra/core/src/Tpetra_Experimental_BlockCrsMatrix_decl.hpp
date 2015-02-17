@@ -45,10 +45,10 @@
 /// \file Tpetra_Experimental_BlockCrsMatrix_decl.hpp
 /// \brief Declaration of Tpetra::Experimental::BlockCrsMatrix
 
+#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -740,6 +740,12 @@ private:
   /// error stream, because all views have the same (nonnull at
   /// construction) outer pointer.
   Teuchos::RCP<Teuchos::RCP<std::ostringstream> > errs_;
+
+  //! Mark that a local error occurred, and get a stream for reporting it.
+  std::ostream& markLocalErrorAndGetStream ();
+
+  // //! Clear the local error state and stream.
+  // void clearLocalErrorStateAndStream ();
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
