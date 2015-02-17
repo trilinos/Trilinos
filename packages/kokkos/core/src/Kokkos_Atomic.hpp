@@ -74,7 +74,7 @@
 #if defined(_WIN32)
 #define KOKKOS_ATOMICS_USE_WINDOWS
 #else
-#if defined( __CUDA_ARCH__ )
+#if defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
 
 // Compiling NVIDIA device code, must use Cuda atomics:
 
@@ -89,7 +89,8 @@
 // Preference: GCC, INTEL, OMP31
 
 #if defined( KOKKOS_COMPILER_GNU ) || \
-    defined( KOKKOS_COMPILER_CLANG )
+    defined( KOKKOS_COMPILER_CLANG ) || \
+    ( defined ( KOKKOS_COMPILER_NVCC ) && defined ( __GNUC__ ) )
 
 #define KOKKOS_ATOMICS_USE_GCC
 

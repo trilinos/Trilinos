@@ -47,7 +47,10 @@
 #include <iostream>
 #include <stdio.h>
 
-#if defined( __CUDACC__ )
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#if defined( __CUDACC__ ) && defined( KOKKOS_HAVE_CUDA )
 
 #include <utility>
 #include <Kokkos_Parallel.hpp>

@@ -44,6 +44,11 @@
 #ifndef KOKKOS_CUDA_VIEW_HPP
 #define KOKKOS_CUDA_VIEW_HPP
 
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <cstring>
 
 #include <Kokkos_HostSpace.hpp>
@@ -308,5 +313,6 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#endif // KOKKOS_HAVE_CUDA
 #endif /* #ifndef KOKKOS_CUDA_VIEW_HPP */
 
