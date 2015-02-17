@@ -1005,10 +1005,19 @@ double *dtmp;
         exit(-1);
       }
       temp = (struct mem_ptr *) &(dtmp[aligned_size/sizeof(double)]);
+#ifdef NotPortable
+      /* Something does not quite work right with this check.         */
+      /* Every once in a while this prints in some unusual situations */
+      /* where it does not seem possible that we have requested too   */
+      /* much memory. Not really sure what is going on? It might be a */
+      /* good idea to print the binary form of each address so that at*/
+      /* the least we have a little more diagnostic information. It   */
+      /* might also be smart to print the 'name' and size info.       */ 
       if ( (unsigned int) temp < (unsigned int) dtmp ) {
         (void) AZ_printf_err( "Error: Something wrong here. Perhaps negative space has been requested? Could be a large number without enough bits to represent it.\n");
         exit(-1);
       }
+#endif
       temp->name = (char *)     &(dtmp[(aligned_str_mem+aligned_size)/
 				          sizeof(double)]);
       temp->address = dtmp;
