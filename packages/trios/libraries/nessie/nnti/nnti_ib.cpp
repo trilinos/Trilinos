@@ -4435,7 +4435,6 @@ static int process_event(
                 if ((config.use_rdma_target_ack) &&
                     (ib_wr->state == NNTI_IB_WR_STATE_RDMA_COMPLETE)) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
-                    ib_wr->last_op=IB_OP_PUT_INITIATOR;
                     ib_wr->state=NNTI_IB_WR_STATE_ACK_COMPLETE;
                     ib_wr->nnti_wr->result=NNTI_OK;
                 }
@@ -4466,7 +4465,6 @@ static int process_event(
                   (wc->wc_flags==IBV_WC_WITH_IMM))) {
             if (ib_wr->state == NNTI_IB_WR_STATE_RDMA_COMPLETE) {
                 log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
-                ib_wr->last_op=IB_OP_GET_INITIATOR;
                 ib_wr->state=NNTI_IB_WR_STATE_ACK_COMPLETE;
                 ib_wr->nnti_wr->result=NNTI_OK;
             }
@@ -4478,7 +4476,6 @@ static int process_event(
     } else if (ib_wr->last_op == IB_OP_NEW_REQUEST) {
         if (wc->opcode==IBV_WC_RECV) {
             log_debug(debug_level, "recv completion - wc==%p, ib_wr==%p", wc, ib_wr);
-            ib_wr->last_op=IB_OP_NEW_REQUEST;
             ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
 
 //                if (transport_global_data.req_queue.req_received == transport_global_data.srq_count) {
@@ -4499,7 +4496,6 @@ static int process_event(
     } else if (ib_wr->last_op == IB_OP_RECEIVE) {
         if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
             log_debug(debug_level, "recv completion - wc==%p, ib_wr==%p", wc, ib_wr);
-            ib_wr->last_op=IB_OP_RECEIVE;
             ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
 
             if (ib_wr->cq == transport_global_data.data_cq) {
@@ -4510,7 +4506,6 @@ static int process_event(
     } else if (ib_wr->last_op == IB_OP_PUT_TARGET) {
         if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
             log_debug(debug_level, "RDMA write (target) completion - wc==%p, ib_wr==%p", wc, ib_wr);
-            ib_wr->last_op=IB_OP_PUT_TARGET;
             ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
 
             if (ib_wr->cq == transport_global_data.data_cq) {
@@ -4525,7 +4520,6 @@ static int process_event(
     } else if (ib_wr->last_op == IB_OP_GET_TARGET) {
         if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
             log_debug(debug_level, "RDMA read (target) completion - wc==%p, ib_wr==%p", wc, ib_wr);
-            ib_wr->last_op=IB_OP_GET_TARGET;
             ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
 
             if (ib_wr->cq == transport_global_data.data_cq) {
@@ -4538,7 +4532,7 @@ static int process_event(
 //            print_ack_buf(&ib_wr->ack);
 //        }
     } else {
-        log_error(nnti_debug_level, "unknown ib_wr->last_op");
+        log_error(nnti_debug_level, "unknown ib_wr->last_op(%d)", ib_wr->last_op);
     }
 
     return (rc);
