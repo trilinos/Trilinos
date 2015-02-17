@@ -394,7 +394,6 @@ std::cout << " GRAPH " << *adjsMatrix << std::endl;
         rcp (new sparse_matrix_type (adjsGraph.getConst ()));
 
       adjsMatrix->setAllToScalar (STS::zero ());
-std::cout << "KDDKDD AFTER SETALL " << std::endl;
 #endif
 #ifdef WHY_IS_THIS_CODE_NEEDED
 
