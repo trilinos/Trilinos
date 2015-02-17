@@ -8,6 +8,8 @@ echo
 #
 #update this after git is installed on the NFS mount
 export TDD_GIT_EXE=/usr/bin/git
+
+export TDD_DRIVER_SUBDIRECTORY=rhel6-x86_64/SERIAL_OPT_GCC_4.7.2 
 export TDD_PARALLEL_LEVEL=2
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 
