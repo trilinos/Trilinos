@@ -4784,7 +4784,12 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,c
 
 // ===================================================================
 template<class TransferType>
-  void Epetra_CrsMatrix::FusedTransfer(const Epetra_CrsMatrix & SourceMatrix, const TransferType & RowTransfer,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap,bool RestrictCommunicator)
+void
+Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
+                                 const TransferType& RowTransfer,
+                                 const Epetra_Map* theDomainMap,
+                                 const Epetra_Map* theRangeMap,
+                                 const bool RestrictCommunicator)
 {
   // Fused constructor, import & FillComplete
   int rv;
@@ -4841,8 +4846,8 @@ template<class TransferType>
 
   // The new Domain & Range maps
   const Epetra_Map* MyRowMap        = &RowMap();
-  const Epetra_Map* MyDomainMap     = DomainMap ? DomainMap : &SourceMatrix.DomainMap();
-  const Epetra_Map* MyRangeMap      = RangeMap  ? RangeMap  : &RowMap();
+  const Epetra_Map* MyDomainMap     = theDomainMap ? theDomainMap : &SourceMatrix.DomainMap();
+  const Epetra_Map* MyRangeMap      = theRangeMap  ? theRangeMap  : &RowMap();
   const Epetra_Map* BaseRowMap      = &RowMap();
   const Epetra_Map* BaseDomainMap   = MyDomainMap;
 
@@ -4901,7 +4906,7 @@ template<class TransferType>
   }
   else if(BaseDomainMap->SameAs(*BaseRowMap) && SourceMatrix.DomainMap().SameAs(SourceMatrix.RowMap())){
     // We can use the RowTransfer + SourceMatrix' importer to find out who owns what.
-    Epetra_IntVector TargetRow_pids(*DomainMap,true);
+    Epetra_IntVector TargetRow_pids(*theDomainMap,true);
     Epetra_IntVector SourceRow_pids(SourceMatrix.RowMap());
     SourcePids.resize(SourceMatrix.ColMap().NumMyElements(),0);
     Epetra_IntVector SourceCol_pids(View,SourceMatrix.ColMap(),SourcePids.size() ? &SourcePids[0] : 0);
@@ -4916,7 +4921,7 @@ template<class TransferType>
     SourceCol_pids.Import(SourceRow_pids,*MyImporter,Insert);
   }
   else
-    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *DomainMap==SourceMatrix.DomainMap() || *DomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
+    throw ReportError("Epetra_CrsMatrix: Fused import/export constructor only supports *theDomainMap==SourceMatrix.DomainMap() || *theDomainMap==RowTransfer.TargetMap() && SourceMatrix.DomainMap() == SourceMatrix.RowMap().",-4);
 
   // Pack & Prepare w/ owning PIDs
   rv=Epetra_Import_Util::PackAndPrepareWithOwningPIDs(SourceMatrix,
