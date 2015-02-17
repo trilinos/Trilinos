@@ -117,6 +117,9 @@ public:
 
   size_t getGlobalNumOf(MeshEntityType etype) const
   {
+
+std::cout << "KDDKDD GETGLOBALNUMOF " << etype << " " << num_elems_global_ << " " << num_nodes_global_ << std::endl;
+
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
       return num_elems_global_;
@@ -126,6 +129,7 @@ public:
       return num_nodes_global_;
     }
 
+std::cout << "KDDKDD WHY ARE WE HERE?" << std::endl;
     return 0;
   }
 
@@ -232,6 +236,8 @@ public:
     }
   }
 
+#define USE_MESH_ADAPTER
+#ifndef USE_MESH_ADAPTER
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
     if (through == MESH_VERTEX) {
@@ -263,6 +269,7 @@ public:
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
+#endif
 
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
@@ -451,12 +458,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   }
 
   int nprocs = comm.getSize();
+  int neid=0,num_elem_blks_global,num_node_sets_global,num_side_sets_global;
+  error += im_ne_get_init_global(neid,&num_nodes_global_,&num_elems_global_,
+		                 &num_elem_blks_global,&num_node_sets_global,
+		                 &num_side_sets_global);
 
   if (nprocs > 1) {
-    int neid=0,num_elem_blks_global,num_node_sets_global,num_side_sets_global;
-    error += im_ne_get_init_global(neid,&num_nodes_global_,&num_elems_global_,
-				   &num_elem_blks_global,&num_node_sets_global,
-				   &num_side_sets_global);
 
     int num_internal_nodes, num_border_nodes, num_external_nodes;
     int num_internal_elems, num_border_elems, num_node_cmaps, num_elem_cmaps;

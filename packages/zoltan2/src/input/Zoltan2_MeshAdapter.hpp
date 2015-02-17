@@ -290,8 +290,8 @@ public:
       zgid_t const *throughIds=NULL;
       getIDsViewOf(through, throughIds);
 
-      int LocalNumIDs = getLocalNumOf(sourcetarget);
-      int LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
+      size_t LocalNumIDs = getLocalNumOf(sourcetarget);
+      size_t LocalNumAdjs = getLocalNumAdjs(sourcetarget, through);
 
       /***********************************************************************/
       /************************* BUILD MAPS FOR ADJS *************************/
@@ -302,13 +302,13 @@ public:
       RCP<const map_type> throughMapG;
 
       // count owned nodes
-      int LocalNumOfNodes = getLocalNumOf(through);
+      int LocalNumOfThrough = getLocalNumOf(through);
 
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
       gno_t min[2];
       min[0] = as<gno_t> (Ids[0]);
-      for (int i = 0; i < LocalNumIDs; ++i) {
+      for (size_t i = 0; i < LocalNumIDs; ++i) {
         sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
 
 	if (sourcetargetGIDs[i] < min[0]) {
@@ -318,7 +318,7 @@ public:
 
       // min(throughIds[i])
       min[1] = as<gno_t> (throughIds[0]);
-      for (int i = 0; i < LocalNumOfNodes; ++i) {
+      for (int i = 0; i < LocalNumOfThrough; ++i) {
 	gno_t tmp = as<gno_t> (throughIds[i]);
 
 	if (tmp < min[1]) {
@@ -329,12 +329,22 @@ public:
       gno_t gmin[2] = {as<gno_t> (1), as<gno_t> (1)};
       //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
+for (size_t i=0; i < LocalNumIDs; i++)
+  std::cout << " KDDROWS " << i << " " << sourcetargetGIDs[i] << std::endl;
+
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp(new map_type(INVALID,
 					  sourcetargetGIDs(), gmin[0], comm));
 
+std::cout << " KDDKDD ROWMAP " << std::endl;
+std::cout << *sourcetargetMapG << std::endl;
+
+std::cout << " KDDKDDADJ " << getGlobalNumOf(through) << " " << gmin[1] << std::endl;
       //Generate Map for through.
       throughMapG = rcp (new map_type(getGlobalNumOf(through), gmin[1], comm));
+
+std::cout << " KDDKDD THROUGHMAP " << std::endl;
+std::cout << *throughMapG << std::endl;
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -345,32 +355,37 @@ public:
       // Construct Tpetra::CrsGraph objects.
       adjsGraph = rcp (new sparse_graph_type (sourcetargetMapG, 0));
 
-      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+      for (size_t localElement = 0; localElement < LocalNumIDs; ++localElement){
 
         //globalRow for Tpetra Graph
         global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
 
-        int NumAdjs;
+        lno_t NumAdjs;
         if (localElement + 1 < LocalNumIDs) {
           NumAdjs = offsets[localElement+1];
         } else {
           NumAdjs = LocalNumAdjs;
         }
+std::cout << "KDDKDD OFFSETS " << localElement << " " << globalRowT << ":  " << offsets[localElement] << "-" << NumAdjs << std::endl;
 
-        for (int j = offsets[localElement]; j < NumAdjs; ++j) {
 // KDD can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
+// KDD maybe not until I get rid of zgid_t, as we need the conversion to  gno_t.
+        for (lno_t j = offsets[localElement]; j < NumAdjs; ++j) {
           gno_t globalCol = as<gno_t> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
           ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
           //Update Tpetra adjs Graph
+std::cout << " KDDKDD insert " << globalRowT << "," << globalColAV[0] << std::endl;
           adjsGraph->insertGlobalIndices(globalRowT,globalColAV);
         }// *** node loop ***
       }// *** element loop ***
 
       //Fill-complete adjs Graph
       adjsGraph->fillComplete (throughMapG, adjsGraph->getRowMap());
+
+std::cout << " GRAPH " << *adjsGraph << std::endl;
 
       // Construct adjs matrix.
       RCP<sparse_matrix_type> adjsMatrix =
@@ -400,7 +415,7 @@ public:
       myColsToZeroT->putScalar (0);
 
       // Set to 1 all local columns corresponding to the local rows specified.
-      for (int i = 0; i < LocalNumIDs; ++i) {
+      for (size_t i = 0; i < LocalNumIDs; ++i) {
         const gno_t globalRow =
 	  adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
         const lno_t localCol =
@@ -430,7 +445,7 @@ public:
       lno_t *start = new lno_t [LocalNumIDs+1];
       std::vector<gno_t> adj;
 
-      for (int localElement = 0; localElement < LocalNumIDs; ++localElement) {
+      for (size_t localElement = 0; localElement < LocalNumIDs; ++localElement){
         start[localElement] = nadj;
         const gno_t globalRow = Ids[localElement];
         size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
