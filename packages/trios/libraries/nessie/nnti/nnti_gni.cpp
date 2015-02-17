@@ -1929,6 +1929,13 @@ NNTI_result_t NNTI_gni_send (
                 "NNTI_send", dest_hdl);
     }
 
+    wr->transport_id     =msg_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
+    wr->ops              =NNTI_SEND_SRC;
+    wr->transport_private=(uint64_t)gni_wr;
+
+    log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
+
     if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
         nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
@@ -1947,13 +1954,6 @@ NNTI_result_t NNTI_gni_send (
 
         wr->result=NNTI_OK;
     }
-
-    wr->transport_id     =msg_hdl->transport_id;
-    wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_SEND_SRC;
-    wr->transport_private=(uint64_t)gni_wr;
-
-    log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
 
     log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
@@ -2023,7 +2023,18 @@ NNTI_result_t NNTI_gni_put (
 	}
 	assert(gni_wr);
 
-	gni_wr->reg_buf = src_buffer_hdl;
+	gni_wr->reg_buf=src_buffer_hdl;
+    gni_wr->last_op=GNI_OP_PUT_INITIATOR;
+    gni_wr->peer_instance=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
+    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
+
+    gni_wr->nnti_wr=wr;
+
+    wr->transport_id     =src_buffer_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
+    wr->ops              =NNTI_PUT_SRC;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)gni_wr;
 
     nnti_gni_connection_t *conn=get_conn_peer(&dest_buffer_hdl->buffer_owner);
     assert(conn);
@@ -2301,18 +2312,6 @@ NNTI_result_t NNTI_gni_put (
 		sge_index++;
 	}
 
-    gni_wr->last_op      =GNI_OP_PUT_INITIATOR;
-    gni_wr->peer_instance=dest_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
-    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
-
-    gni_wr->nnti_wr=wr;
-
-    wr->transport_id     =src_buffer_hdl->transport_id;
-    wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
-    wr->ops              =NNTI_PUT_SRC;
-    wr->result           =NNTI_OK;
-    wr->transport_private=(uint64_t)gni_wr;
-
     log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
     return((NNTI_result_t)rc);
@@ -2381,7 +2380,19 @@ NNTI_result_t NNTI_gni_get (
     }
     assert(gni_wr);
 
-    gni_wr->reg_buf = dest_buffer_hdl;
+    gni_wr->reg_buf=dest_buffer_hdl;
+    gni_wr->last_op=GNI_OP_GET_INITIATOR;
+    gni_wr->peer_instance=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
+    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
+
+    gni_wr->nnti_wr=wr;
+
+    wr->transport_id     =dest_buffer_hdl->transport_id;
+    wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
+    wr->ops              =NNTI_GET_SRC;
+    wr->result           =NNTI_OK;
+    wr->transport_private=(uint64_t)gni_wr;
+
 
     nnti_gni_connection_t *conn=get_conn_peer(&src_buffer_hdl->buffer_owner);
     assert(conn);
@@ -2655,18 +2666,6 @@ NNTI_result_t NNTI_gni_get (
 
 		sge_index++;
 	}
-
-    gni_wr->last_op  =GNI_OP_GET_INITIATOR;
-    gni_wr->peer_instance=src_buffer_hdl->buffer_owner.peer.NNTI_remote_process_t_u.gni.inst_id;
-    log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
-
-    gni_wr->nnti_wr=wr;
-
-    wr->transport_id     =dest_buffer_hdl->transport_id;
-    wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
-    wr->ops              =NNTI_GET_SRC;
-    wr->result           =NNTI_OK;
-    wr->transport_private=(uint64_t)gni_wr;
 
     log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
 
