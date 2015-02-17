@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    OptiPack: Collection of simple Thyra-based Optimization ANAs
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -186,7 +186,7 @@ createNonlinearCGSolver(
   const RCP<FancyOStream> &out
   )
 {
- 
+
   // Set up a quadratic interploation line search that will do just one
   // iteration and should exactly minimize a quadratic function.
   const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
@@ -220,9 +220,9 @@ createNonlinearCGSolver(
 template<class Scalar>
 class TOpAssignValToGlobalIndex : public RTOpPack::RTOpT<Scalar> {
 public:
-  TOpAssignValToGlobalIndex(const Teuchos::Range1D &range = Teuchos::Range1D())
-    :range_(range)
-    {}
+  TOpAssignValToGlobalIndex (const Teuchos::Range1D& theRange = Teuchos::Range1D ())
+    : range_ (theRange)
+  {}
 protected:
   bool coord_invariant_impl() const
     {
@@ -396,18 +396,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, oneEigenVal, Scalar )
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   ScalarMag g_opt = -1.0;
   const ScalarMag tol = as<Scalar>(g_solve_tol_scale * dim) * ST::eps();
   const ScalarMag alpha_init = 10.0;
   int numIters = -1;
-    
+
   const NCGU::ESolveReturn solveResult =
     cgSolver->doSolve( p.ptr(), outArg(g_opt),
       optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
 
   out << "\n";
- 
+
   const ScalarMag err_tol = as<Scalar>(g_error_tol_scale * dim) * ST::eps();
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_EQUALITY( numIters, 1);
@@ -420,7 +420,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, oneEigenVal, Scalar )
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, oneEigenVal )
@@ -468,7 +468,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   ScalarMag g_opt = -1.0;
   const ScalarMag tol = as<Scalar>(g_solve_tol_scale * dim) * ST::eps();
   const ScalarMag alpha_init = 10.0;
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
       optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
 
   out << "\n";
- 
+
   const ScalarMag err_tol = as<Scalar>(g_error_tol_scale * dim) * ST::eps();
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_COMPARE( numIters, <=, maxIters );
@@ -491,7 +491,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, partialEigenVal )
@@ -534,7 +534,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenVal, Scalar )
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   ScalarMag g_opt = -1.0;
   const ScalarMag tol = as<Scalar>(g_solve_tol_scale * dim) * ST::eps();
   const ScalarMag alpha_init = 10.0;
@@ -544,7 +544,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenVal, Scalar )
       optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
 
   out << "\n";
- 
+
   const ScalarMag err_tol = as<Scalar>(g_error_tol_scale * dim) * ST::eps();
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_COMPARE( numIters, <=, maxIters );
@@ -557,7 +557,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenVal, Scalar )
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, fullEigenVal )
@@ -616,7 +616,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   ScalarMag g_opt = -1.0;
   const ScalarMag tol = as<Scalar>(g_solve_tol_scale * dim) * ST::eps();
   const ScalarMag alpha_init = 10.0;
@@ -626,7 +626,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
       optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
 
   out << "\n";
- 
+
   const ScalarMag err_tol = as<Scalar>(g_error_tol_scale * dim) * ST::eps();
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_COMPARE( numIters, <=, maxIters );
@@ -639,7 +639,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, fullEigenValScalarProd )
@@ -673,7 +673,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar 
 
   const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
   model->setNonlinearTermFactor(nonlinearTermFactor);
-  
+
   RCP<BrentsLineSearch<Scalar> > linesearch = brentsLineSearch<Scalar>();
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
@@ -689,7 +689,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar 
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   ScalarMag g_opt = -1.0;
   const ScalarMag tol = as<ScalarMag>(g_nonlin_solve_tol);
   const ScalarMag alpha_init = 5.0;
@@ -699,7 +699,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar 
       optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
 
   out << "\n";
- 
+
   const ScalarMag err_tol = as<ScalarMag>(g_nonlin_error_tol);
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_FLOATING_EQUALITY(g_opt, g_offset, err_tol);
@@ -711,7 +711,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar 
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
@@ -747,7 +747,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scal
 
   const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
   model->setNonlinearTermFactor(nonlinearTermFactor);
-   
+
   RCP<BrentsLineSearch<Scalar> > linesearch = brentsLineSearch<Scalar>();
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
@@ -757,7 +757,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scal
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
   V_S( p.ptr(), ST::zero() );
-  
+
   const double tol = as<double>(g_nonlin_solve_tol);
   const double alpha_init = as<double>(5.0);
   const RCP<ParameterList> pl = parameterList();
@@ -774,9 +774,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scal
   const NCGU::ESolveReturn solveResult =
     cgSolver->doSolve( p.ptr(), outArg(g_opt),
       null, null, null, outArg(numIters) );
-  
+
   out << "\n";
- 
+
   const ScalarMag err_tol = as<ScalarMag>(g_nonlin_error_tol);
   TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
   TEST_FLOATING_EQUALITY(g_opt, g_offset, err_tol);
@@ -788,7 +788,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scal
     &out
     );
   if (!result) success = false;
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
