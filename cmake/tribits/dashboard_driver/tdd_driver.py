@@ -168,13 +168,8 @@ def invoke_ctest(ctestExe, script, tddDashboardRootDir, environment = {}):
   # variables. It would be nice to have another way to do this, but
   # until ctest supports something like CMake's -D argument, this is
   # how it has to be done.
-  ctest_environ = None
   if environment:
     print "environment =", environment
-    # Use a dictionary that is distinct from the os environment dictionary.
-    ctest_environ = os.environ.copy()
-    # Append additional environment variables to the
-    ctest_environ.update(environment)
 
   cmd = ctestExe
   if verbose:
@@ -184,7 +179,7 @@ def invoke_ctest(ctestExe, script, tddDashboardRootDir, environment = {}):
     throwExcept=False,
     timeCmnd=True,
     workingDir=tddDashboardRootDir,
-    environment = ctest_environ
+    extraEnv = environment
     )
 
   print "ctestRtn: '" + str(ctestRtn) + "'"

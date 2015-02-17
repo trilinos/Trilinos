@@ -295,7 +295,7 @@ if cmndInterceptsFile:
 g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
 
 
-def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
+def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
   workingDir="", getStdErr=False \
   ):
   if g_dumpAllSysCmnds:
@@ -313,6 +313,11 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
       writeStrToFile(outFile, cmndOutput)  
     return cmndReturn
   # Else, fall through
+  if extraEnv:
+    fullEnv = os.environ.copy()
+    fullEnv.update(extraEnv)
+  else:
+    fullEnv = None
   pwd = None
   if workingDir:
     pwd = os.getcwd()
@@ -322,10 +327,10 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
     if rtnOutput:
       if getStdErr:
         child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
-          stderr = subprocess.STDOUT, env=environment)
+          stderr = subprocess.STDOUT, env=fullEnv)
       else:
         child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
-          env=environment)
+          env=fullEnv)
       data = child.stdout.read()
       #print "data = '"+str(data)+"'"
       child.wait()
@@ -337,7 +342,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
       if outFile:
         outFileHandle = open(outFile, 'w')
       rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
-        stdout=outFileHandle, env=environment)
+        stdout=outFileHandle, env=fullEnv)
       rtnObject = rtnCode
   finally:
     if pwd: os.chdir(pwd)
@@ -350,13 +355,14 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, environment=None, \
 
 
 def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
-  environment=None):
+  extraEnv=None \
+  ):
   """Run system command and optionally throw on failure"""
   sys.stdout.flush()
   sys.stderr.flush()
   try:
     outFileHandle = None
-    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, environment=environment,
+    rtnCode = runSysCmndInterface(cmnd, outFile=outFile, extraEnv=extraEnv,
       workingDir=workingDir)
   except OSError, e:
     rtnCode = 1 # Just some error code != 0 please!
@@ -368,13 +374,15 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir="",
 
 def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   timeCmnd=False, verbose=True, workingDir="", returnTimeCmnd=False,
-  environment=None
+  extraEnv=None
   ):
   """Echo command to be run and run command with runSysCmnd()"""
   if verbose:
     print "\nRunning: "+cmnd+"\n"
     if workingDir:
       print "  Running in working directory: "+workingDir+" ...\n"
+    if extraEnv:
+      print "  Appending environment:", extraEnv, "\n"
     if outFile:
       print "  Writing console output to file "+outFile+" ..."
   if msg and verbose:
@@ -382,7 +390,7 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   t1 = time.time()
   totalTimeMin = -1.0
   try:
-    rtn = runSysCmnd(cmnd, throwExcept, outFile, workingDir, environment)
+    rtn = runSysCmnd(cmnd, throwExcept, outFile, workingDir, extraEnv)
   finally:
     if timeCmnd:
       t2 = time.time()
@@ -509,8 +517,10 @@ def removeIfExists(fileName):
     echoRunSysCmnd("rm "+fileName)
 
 
-def removeDirIfExists(dirName):
+def removeDirIfExists(dirName, verbose=False):
   if os.path.exists(dirName):
+    if verbose:
+      print "Removing existing directory '"+dirName+"' ..."
     echoRunSysCmnd("rm -rf "+dirName)
 
 

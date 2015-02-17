@@ -44,9 +44,12 @@
 # Defaults
 #
 
-gccBaseName = "gcc"
-gccDefaultVersion = "4.8.3"
-gccSupportedVersions = ["4.8.3"]
+autoconfBaseName = "autoconf"
+autoconfDefaultVersion = "2.69"
+autoconfSupportedVersions = ["2.69"]
+autoconfTarballVersions = {
+  "2.69" : "2.69"
+  }
 
 #
 # Script code
@@ -57,7 +60,7 @@ from InstallProgramDriver import *
 from GeneralScriptSupport import *
 
 
-class GccInstall:
+class AutoconfInstall:
 
   def __init__(self):
     self.dummy = None
@@ -67,16 +70,16 @@ class GccInstall:
   #
 
   def getScriptName(self):
-    return "install-gcc.py"
+    return "install-autoconf.py"
 
   def getProductBaseName(self):
-    return gccBaseName
+    return autoconfBaseName
 
   def getProductDefaultVersion(self):
-    return gccDefaultVersion
+    return autoconfDefaultVersion
 
   def getProductSupportedVersions(self):
-    return gccSupportedVersions
+    return autoconfSupportedVersions
 
   #
   # Called after knowing the product version but before parsing the
@@ -84,21 +87,21 @@ class GccInstall:
   #
 
   def getProductName(self, version):
-    return gccBaseName+"-"+version
+    return autoconfBaseName+"-"+version
 
   def getBaseDirName(self, version):
-    return gccBaseName+"-"+version+"-base"
+    return autoconfBaseName+"-"+version+"-base"
 
   def getExtraHelpStr(self, version):
     return """
-This script builds """+self.getProductName(version)+""" from source compiled with the
+This script builds Autoconf"""+self.getProductName(version)+""" from source compiled with the
 configured C compilers in your path.
 
 NOTE: The assumed directory structure of the download source provided by the
 command --download-cmnd=<download-cmnd> is:
 
-   gcc-<version>-base/
-     gcc-<full-version>.tar.gz
+   autoconf-<version>-base/
+     autoconf-<full-version>.tar.gz
 """
 
   def injectExtraCmndLineOptions(self, clp, version):
@@ -106,8 +109,7 @@ command --download-cmnd=<download-cmnd> is:
     clp.add_option(
       "--extra-configure-options", dest="extraConfigureOptions", type="string", \
       default="", \
-      help="Extra options to add to the 'configure' command for " \
-        + self.getProductName(version)+"." \
+      help="Extra options to add to the 'configure' command for "+self.getProductName(version)+"." \
         +"  Note: This does not override the hard-coded configure options." )
 
   def echoExtraCmndLineOptions(self, inOptions):
@@ -123,9 +125,11 @@ command --download-cmnd=<download-cmnd> is:
   def setup(self, inOptions):
     self.inOptions = inOptions
     self.baseDir = os.getcwd()
-    self.gccBaseDir = self.baseDir+"/"+self.getBaseDirName(self.inOptions.version)
-    self.gccSrcDir = "gcc-"+self.inOptions.version
-    self.gccBuildBaseDir = self.gccBaseDir+"/gcc-build"
+    self.autoconfBaseDir = self.baseDir+"/"+self.getBaseDirName(self.inOptions.version)
+    autoconfVersionFull = autoconfTarballVersions[self.inOptions.version]
+    self.autoconfTarball = "autoconf-"+autoconfVersionFull+".tar.gz"
+    self.autoconfSrcDir = "autoconf-"+autoconfVersionFull
+    self.autoconfBuildBaseDir = self.autoconfBaseDir+"/autoconf-build"
     self.scriptBaseDir = getScriptBaseDir()
 
   #
@@ -133,45 +137,40 @@ command --download-cmnd=<download-cmnd> is:
   #
 
   def doDownload(self):
-    removeDirIfExists(self.gccBaseDir, True)
+    removeDirIfExists(self.autoconfBaseDir, True)
     echoRunSysCmnd(self.inOptions.downloadCmnd)
 
   def doUntar(self):
-    print "Nothing to untar!"
+    # Find the full name of the source tarball
+    echoChDir(self.autoconfBaseDir)
+    echoRunSysCmnd("tar -xzf "+self.autoconfTarball)
 
   def doConfigure(self):
-    createDir(self.gccBuildBaseDir)
+    createDir(self.autoconfBuildBaseDir, True, True)
     echoRunSysCmnd(
-      "../"+self.gccSrcDir+"/configure --disable-multilib --enable-languages='c,c++,fortran'"+\
+      "../"+self.autoconfSrcDir+"/configure "+\
       " "+self.inOptions.extraConfigureOptions+\
       " --prefix="+self.inOptions.installDir,
-      workingDir=self.gccBuildBaseDir,
       extraEnv={"CFLAGS":"-O3"},
       )
 
   def doBuild(self):
-    echoChDir(self.gccBuildBaseDir)
+    echoChDir(self.autoconfBuildBaseDir)
     echoRunSysCmnd("make " + getParallelOpt(self.inOptions, "-j") \
       + self.inOptions.makeOptions)
 
   def doInstall(self):
-    echoChDir(self.gccBuildBaseDir)
+    echoChDir(self.autoconfBuildBaseDir)
     echoRunSysCmnd("make " + getParallelOpt(self.inOptions, "-j") \
       + self.inOptions.makeOptions + " install")
 
   def getFinalInstructions(self):
     return """
-To use the installed version of gcc-"""+self.inOptions.version+""" add the path:
+To use the installed version of autoconf-"""+self.inOptions.version+""" add the path:
 
   """+self.inOptions.installDir+"""/bin
 
 to your path and that should be it!
-
-Also, you must prepend
-
-   """+self.inOptions.installDir+"""/lib[64]
-
-to your LD_LIBRARY_PATH env variable.
 """
 
 
@@ -179,5 +178,5 @@ to your LD_LIBRARY_PATH env variable.
 # Executable statements
 #
 
-gccInstaller = InstallProgramDriver(GccInstall())
-gccInstaller.runDriver()
+autoconfInstaller = InstallProgramDriver(AutoconfInstall())
+autoconfInstaller.runDriver()
