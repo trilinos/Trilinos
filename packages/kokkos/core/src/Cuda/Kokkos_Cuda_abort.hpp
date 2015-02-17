@@ -46,8 +46,8 @@
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+#include "Kokkos_Macros.hpp"
+#if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ ) && defined( KOKKOS_HAVE_CUDA )
 
 #include <cuda.h>
 

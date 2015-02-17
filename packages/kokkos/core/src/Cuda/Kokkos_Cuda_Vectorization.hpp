@@ -42,6 +42,12 @@
 */
 #ifndef KOKKOS_CUDA_VECTORIZATION_HPP
 #define KOKKOS_CUDA_VECTORIZATION_HPP
+
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <Kokkos_Cuda.hpp>
 
 namespace Kokkos {
@@ -288,4 +294,5 @@ namespace Impl {
 
 }
 
+#endif // KOKKOS_HAVE_CUDA
 #endif

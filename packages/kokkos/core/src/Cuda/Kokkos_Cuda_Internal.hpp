@@ -44,6 +44,11 @@
 #ifndef KOKKOS_CUDA_INTERNAL_HPP
 #define KOKKOS_CUDA_INTERNAL_HPP
 
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <Cuda/Kokkos_Cuda_Error.hpp>
 
 namespace Kokkos { namespace Impl {
@@ -155,5 +160,6 @@ int cuda_get_opt_block_size(const typename DriverType::functor_type & f) {
 
 }} // namespace Kokkos::Impl
 
+#endif // KOKKOS_HAVE_CUDA
 #endif /* #ifndef KOKKOS_CUDA_INTERNAL_HPP */
 

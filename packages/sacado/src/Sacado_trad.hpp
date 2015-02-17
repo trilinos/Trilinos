@@ -109,8 +109,7 @@ Got "RAD_REINIT = " RAD_REINIT .
 #endif
 
 #include <stddef.h>
-#include <cmath>
-#include <math.h>
+#include <Sacado_cmath.hpp>
 
 #ifdef RAD_Const_WARN   // ==> RAD_AUTO_AD_Const and RAD_DEBUG
 #ifndef RAD_AUTO_AD_Const

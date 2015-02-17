@@ -46,6 +46,11 @@
 #ifndef KOKKOS_CUDAEXEC_HPP
 #define KOKKOS_CUDAEXEC_HPP
 
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 #include <string>
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_Error.hpp>
@@ -236,5 +241,5 @@ struct CudaParallelLaunch< DriverType , false > {
 //----------------------------------------------------------------------------
 
 #endif /* defined( __CUDACC__ ) */
-
+#endif /* defined( KOKKOS_HAVE_CUDA ) */
 #endif /* #ifndef KOKKOS_CUDAEXEC_HPP */

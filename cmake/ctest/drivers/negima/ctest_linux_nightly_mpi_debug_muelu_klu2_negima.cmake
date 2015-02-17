@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+SET(Trilinos_PACKAGES MueLu Kokkos Tpetra Xpetra Belos Amesos2 Ifpack2 Zoltan2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DMueLu_ENABLE_EXPLICIT_INSTANTIATION=ON"

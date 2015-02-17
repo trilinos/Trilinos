@@ -111,19 +111,19 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
-#if defined( HAVE_TPETRA_INST_PTHREAD )
+#if defined( HAVE_TPETRA_PTHREAD )
     if ( cmdline.USE_THREADS ) {
       run< Kokkos::Threads >( comm , cmdline );
     }
 #endif
 
-#if defined( HAVE_TPETRA_INST_OPENMP )
+#if defined( HAVE_TPETRA_OPENMP )
     if ( cmdline.USE_OPENMP ) {
       run< Kokkos::OpenMP >( comm , cmdline );
     }
 #endif
 
-#if defined( HAVE_TPETRA_INST_CUDA )
+#if defined( HAVE_TPETRA_CUDA )
     if ( cmdline.USE_CUDA ) {
       run< Kokkos::Cuda >( comm , cmdline );
     }

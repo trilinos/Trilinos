@@ -503,6 +503,21 @@ private:
   //! The base class of this class.
   typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
+  KOKKOS_INLINE_FUNCTION
+  bool equal(const ScalarType& a, const ScalarType& b) const {
+    if(b!=Kokkos::Details::ArithTraits<ScalarType>::zero()) {
+      if(a>b)
+        return (a-b)/b < 2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+      else
+        return (b-a)/b < 2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+    } else {
+      if(a>b)
+        return (a-b) < 2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+      else
+        return (b-a) < 2 * Kokkos::Details::ArithTraits<ScalarType>::epsilon();
+    }
+  }
+
 public:
   typedef DeviceType device_type;
   typedef typename device_type::size_type size_type;
@@ -546,20 +561,20 @@ public:
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
     if (! AT::is_complex) {
       result = AT::pow (two, three);
-      if (result != eight) {
+      if (!equal(result,eight)) {
         printf ("AT::pow(2,3) != 8\n");
         success = 0;
       }
     }
-    if (AT::pow (three, zero) != one) {
+    if (!equal(AT::pow (three, zero) , one)) {
       printf ("AT::pow(3,0) != 1\n");
       success = 0;
     }
-    if (AT::pow (three, one) != three) {
+    if (!equal(AT::pow (three, one) , three)) {
       printf ("AT::pow(3,1) != 3\n");
       success = 0;
     }
-    if (AT::pow (three, two) != nine) {
+    if (!equal(AT::pow (three, two) , nine)) {
       printf ("AT::pow(3,2) != 9\n");
       success = 0;
     }
@@ -567,7 +582,7 @@ public:
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
     if (! AT::is_complex) {
       result = AT::pow (three, three);
-      if (result != twentySeven) {
+      if (!equal(result , twentySeven)) {
         printf ("AT::pow(3,3) != 27\n");
         success = 0;
       }
@@ -576,54 +591,54 @@ public:
     // These fail inexplicably for complex numbers on gcc 4.2.1 on Mac.
     if (AT::is_signed && ! AT::is_complex) {
       result = AT::pow (-three, one);
-      if (result != -three) {
+      if (!equal(result , -three)) {
         printf ("AT::pow(-3,1) != -3\n");
         success = 0;
       }
       result = AT::pow (-three, two);
-      if (result != nine) {
+      if (!equal(result , nine)) {
         printf ("AT::pow(-3,2) != 9\n");
         success = 0;
       }
       result = AT::pow (-three, three);
-      if (result != -twentySeven) {
+      if (!equal(result , -twentySeven)) {
         printf ("AT::pow(-3,3) != 27\n");
         success = 0;
       }
     }
 
-    if (AT::sqrt (zero) != zero) {
+    if (!equal(AT::sqrt (zero) , zero)) {
       printf ("AT::sqrt(0) != 0\n");
       success = 0;
     }
-    if (AT::sqrt (one) != one) {
+    if (!equal(AT::sqrt (one) , one)) {
       printf ("AT::sqrt(1) != 1\n");
       success = 0;
     }
-    if (AT::sqrt (thirtySix) != six) {
+    if (!equal(AT::sqrt (thirtySix) , six)) {
       printf ("AT::sqrt(36) != 6\n");
       success = 0;
     }
-    if (AT::sqrt (sixtyFour) != eight) {
+    if (!equal(AT::sqrt (sixtyFour) , eight)) {
       printf ("AT::sqrt(64) != 8\n");
       success = 0;
     }
     if (AT::is_integer) {
-      if (AT::sqrt (fortyTwo) != six) {
+      if (!equal(AT::sqrt (fortyTwo) , six)) {
         printf ("AT:sqrt(42) != 6\n");
         success = 0;
       }
-      if (AT::sqrt (oneTwentySeven) != eleven) {
+      if (!equal(AT::sqrt (oneTwentySeven) , eleven)) {
         printf ("AT::sqrt(127) != 11\n");
         success = 0;
       }
     }
 
-    if (AT::log (one) != zero) {
+    if (!equal(AT::log (one) , zero)) {
       printf ("AT::log(1) != 0\n");
       success = 0;
     }
-    if (AT::log10 (one) != zero) {
+    if (!equal(AT::log10 (one) , zero)) {
       printf ("AT::log10(1) != 0\n");
       success = 0;
     }

@@ -117,6 +117,7 @@ public:
 
   size_t getGlobalNumOf(MeshEntityType etype) const
   {
+
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
       return num_elems_global_;
@@ -232,6 +233,8 @@ public:
     }
   }
 
+#define USE_MESH_ADAPTER
+#ifndef USE_MESH_ADAPTER
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
     if (through == MESH_VERTEX) {
@@ -263,6 +266,7 @@ public:
       Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
     }
   }
+#endif
 
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
@@ -392,7 +396,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   int nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new int [num_elem_ * nnodes_per_elem];
   int telct = 0;
-  elemOffsets_ = new int [num_elem_];
+  elemOffsets_ = new int [num_elem_+1];
   tnoct_ = 0;
   int **reconnect = new int * [num_elem_];
   size_t max_nsur = 0;
@@ -412,6 +416,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       ++telct;
     }
   }
+  elemOffsets_[telct] = tnoct_;
 
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
@@ -451,8 +456,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   }
 
   int nprocs = comm.getSize();
-
-  if (nprocs > 1) {
+  //if (nprocs > 1) {
     int neid=0,num_elem_blks_global,num_node_sets_global,num_side_sets_global;
     error += im_ne_get_init_global(neid,&num_nodes_global_,&num_elems_global_,
 				   &num_elem_blks_global,&num_node_sets_global,
@@ -678,7 +682,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     }
 
     delete[] rbuf;
-  }
+    //}
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     start_[ecnt] = nadj_;

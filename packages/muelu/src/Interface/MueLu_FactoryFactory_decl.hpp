@@ -284,7 +284,7 @@ namespace MueLu {
 
       const char* strarray[] = {"A", "P", "R", "Graph", "UnAmalgamationInfo", "Aggregates", "Nullspace", "TransferFactory", "DofsPerNode"};
       std::vector<std::string> v(strarray, strarray + arraysize(strarray));
-      for (int i=0; i<v.size(); ++i)
+      for (size_t i = 0; i < v.size(); ++i)
         if (paramList.isParameter(v[i]))
           factory->SetFactory(v[i], BuildFactory(paramList.getEntry(v[i]), factoryMapIn, factoryManagersIn));
 

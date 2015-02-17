@@ -209,7 +209,7 @@ int main(int narg, char *arg[]) {
   }
   else if (action == "scotch") {
     do_partitioning = true;
-    params.set("debug_level", "basic_status");
+    params.set("debug_level", "verbose_detailed_status");
     params.set("imbalance_tolerance", 1.1);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");

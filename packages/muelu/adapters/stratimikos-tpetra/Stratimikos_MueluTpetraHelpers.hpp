@@ -60,71 +60,48 @@
 
 #include <string>
 
+namespace Stratimikos {
+
+  // Dynamically register MueLu Tpetra adapters in Stratimikos
+  void enableMueLuTpetra(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu");
+
+  // Dynamically register MueLu Tpetra adapters in Stratimikos
+  // Note: No Scalar template argument is available because Stratimikos
+  // does not support types beyond double
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+  void enableMueLuTpetra(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu")
+  {
+    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
+                               "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
+
+    typedef Thyra::PreconditionerFactoryBase<double>                                          Base;
+    typedef Thyra::MueLuTpetraPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal,Node> Impl;
+
+    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+  }
+
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
-namespace Stratimikos {
+  // Dynamically register MueLu Tpetra adapters in Stratimikos
+  void enableMueLuTpetraQ2Q1(DefaultLinearSolverBuilder &builder, const std::string &stratName = "MueLu");
 
-// Dynamically register MueLu Tpetra adapters in Stratimikos
-void enableMueLuTpetraQ2Q1(
-    DefaultLinearSolverBuilder &builder,
-    const std::string &stratName = "MueLu");
+  // Dynamically register MueLu Tpetra adapters in Stratimikos
+  // Note: No Scalar template argument is available because Stratimikos
+  // does not support types beyond double
+  template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+  void enableMueLuTpetraQ2Q1(DefaultLinearSolverBuilder& builder, const std::string &stratName = "MueLu") {
+    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
-// Dynamically register MueLu Tpetra adapters in Stratimikos
-// Note: No Scalar template argument is available because Stratimikos
-// does not support types beyond double
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void enableMueLuTpetraQ2Q1(
-    DefaultLinearSolverBuilder &builder,
-    const std::string &stratName = "MueLu")
-{
-  {
-    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams =
-      Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
+    TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
+                               "Stratimikos::enableMueLuTpetraQ2Q1 cannot add \"" + stratName +"\" because it is already included in builder!");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        precValidParams->isParameter(stratName),
-        std::logic_error,
-        "Stratimikos::enableMueLuTpetraQ2Q1 cannot add \"" + stratName +"\" because it is already included in builder!");
+    typedef Thyra::PreconditionerFactoryBase<double>                                              Base;
+    typedef Thyra::MueLuTpetraQ2Q1PreconditionerFactory<double, LocalOrdinal, GlobalOrdinal,Node> Impl;
+
+    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
   }
-
-  typedef Thyra::PreconditionerFactoryBase<double> Base;
-  typedef Thyra::MueLuTpetraQ2Q1PreconditionerFactory<double, LocalOrdinal, GlobalOrdinal,Node> xmpl;
-
-  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, xmpl>(), stratName);
-}
-} // namespace Stratimikos
 #endif
-
-namespace Stratimikos {
-
-// Dynamically register MueLu Tpetra adapters in Stratimikos
-void enableMueLuTpetra(
-    DefaultLinearSolverBuilder &builder,
-    const std::string &stratName = "MueLu");
-
-// Dynamically register MueLu Tpetra adapters in Stratimikos
-// Note: No Scalar template argument is available because Stratimikos
-// does not support types beyond double
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void enableMueLuTpetra(
-    DefaultLinearSolverBuilder &builder,
-    const std::string &stratName = "MueLu")
-{
-  {
-    const Teuchos::RCP<const Teuchos::ParameterList> precValidParams =
-      Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        precValidParams->isParameter(stratName),
-        std::logic_error,
-        "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
-  }
-
-  typedef Thyra::PreconditionerFactoryBase<double> Base;
-  typedef Thyra::MueLuTpetraPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal,Node> Impl;
-
-  builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
-}
-
 
 } // namespace Stratimikos
 

@@ -44,6 +44,11 @@
 #ifndef KOKKOS_CUDA_ERROR_HPP
 #define KOKKOS_CUDA_ERROR_HPP
 
+#include <Kokkos_Macros.hpp>
+
+/* only compile this file if CUDA is enabled for Kokkos */
+#ifdef KOKKOS_HAVE_CUDA
+
 namespace Kokkos { namespace Impl {
 
 void cuda_device_synchronize();
@@ -60,4 +65,5 @@ inline void cuda_internal_safe_call( cudaError e , const char * name, const char
 
 }} // namespace Kokkos::Impl
 
+#endif //KOKKOS_HAVE_CUDA
 #endif //KOKKOS_CUDA_ERROR_HPP
