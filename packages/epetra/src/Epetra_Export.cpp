@@ -343,48 +343,46 @@ Epetra_Export::Epetra_Export(const Epetra_Import& Importer):
   NumRecv_(Importer.NumSend_),//revsese
   Distor_(0)
 {
-  int i;
   // Reverse the permutes
-  if (NumPermuteIDs_>0) {
+  if (NumPermuteIDs_ > 0) {
     PermuteToLIDs_   = new int[NumPermuteIDs_];
     PermuteFromLIDs_ = new int[NumPermuteIDs_];
-    for (i=0; i< NumPermuteIDs_; i++) {
+    for (int i = 0; i < NumPermuteIDs_; ++i) {
       PermuteFromLIDs_[i] = Importer.PermuteToLIDs_[i];
       PermuteToLIDs_[i]   = Importer.PermuteFromLIDs_[i];
     }
   }
 
   // Copy the exports to the remotes
-  if (NumRemoteIDs_>0) {
+  if (NumRemoteIDs_ > 0) {
     RemoteLIDs_ = new int[NumRemoteIDs_];
-    for (i=0; i< NumRemoteIDs_; i++) RemoteLIDs_[i] = Importer.ExportLIDs_[i];
+    for (int i = 0; i < NumRemoteIDs_; ++i) RemoteLIDs_[i] = Importer.ExportLIDs_[i];
   }
 
   // Copy the remotes to the exports
-  if (NumExportIDs_>0) {
+  if (NumExportIDs_ > 0) {
     ExportLIDs_ = new int[NumExportIDs_];
     ExportPIDs_ = new int[NumExportIDs_];
-    for (i=0; i< NumExportIDs_; i++) ExportLIDs_[i] = Importer.RemoteLIDs_[i];
-
+    for (int i = 0; i < NumExportIDs_; ++i) ExportLIDs_[i] = Importer.RemoteLIDs_[i];
 
     // Extract the RemotePIDs from the Distributor
 #ifdef HAVE_MPI
     Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
     if(!D) throw ReportError("Epetra_Export: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-1);
-    int i,j,k;
 
     // Get the distributor's data
-    int NumReceives        = D->NumReceives();
+    const int NumReceives  = D->NumReceives();
     const int *ProcsFrom   = D->ProcsFrom();
     const int *LengthsFrom = D->LengthsFrom();
 
     // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
     // MpiDistributor so it ought to duplicate that effect.
-    for(i=0,j=0;i<NumReceives;i++){
-      int pid=ProcsFrom[i];
-      for(k=0;k<LengthsFrom[i];k++){
-	ExportPIDs_[j]=pid;
-	j++;
+    int j;
+    for (int i = 0, j = 0; i < NumReceives; ++i) {
+      const int pid = ProcsFrom[i];
+      for (int k = 0; k < LengthsFrom[i]; ++k) {
+        ExportPIDs_[j] = pid;
+        j++;
       }
     }
 #else

@@ -65,7 +65,7 @@
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>
 void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs,
-				      const int & UserNumExportIDs, const int * UserExportLIDs,  const int * UserExportPIDs)
+                                      const int & UserNumExportIDs, const int * UserExportLIDs,  const int * UserExportPIDs)
 {
   int i,ierr;
   // Build three ID lists:
@@ -200,20 +200,20 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
 
     if(targetMap.GlobalIndicesLongLong())
       {
-	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
-	// int_type != long long.  On some compilers, it results in
-	// warnings such as this: "dereferencing type-punned pointer
-	// will break strict-aliasing rules".
-	util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
+        // FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+        // int_type != long long.  On some compilers, it results in
+        // warnings such as this: "dereferencing type-punned pointer
+        // will break strict-aliasing rules".
+        util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
       {
-	int* ptrs[2] = {RemoteLIDs_, (int*)RemoteGIDs};
-	util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,&ptrs[0], 0, 0);
+        int* ptrs[2] = {RemoteLIDs_, (int*)RemoteGIDs};
+        util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,&ptrs[0], 0, 0);
       }
     else
       {
-	throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+        throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
       }
 
     // Build distributor & Export lists
@@ -236,8 +236,8 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     Epetra_MpiDistributor* MpiDistor = dynamic_cast< Epetra_MpiDistributor*>(Distor_);
     bool Deterministic = true;
     if(MpiDistor)
-      ierr=MpiDistor->CreateFromSendsAndRecvs(NumExportIDs_,ExportPIDs_,					
-					      NumRemoteIDs_, RemoteGIDs, RemotePIDs,Deterministic);
+      ierr=MpiDistor->CreateFromSendsAndRecvs(NumExportIDs_,ExportPIDs_,
+                                              NumRemoteIDs_, RemoteGIDs, RemotePIDs,Deterministic);
     else ierr=-10;
 #else
     ierr=-20;
@@ -366,12 +366,12 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
       int globaleq=0;
       sourceMap.Comm().MinAll(&myeq,&globaleq,1);
       if(globaleq!=1) {
-	printf("[%d] UserRemotePIDs count wrong %d != %d\n",sourceMap.Comm().MyPID(),NumRemotePIDs,NumRemoteIDs_);
-	fflush(stdout);
-	sourceMap.Comm().Barrier();
-	sourceMap.Comm().Barrier();
-	sourceMap.Comm().Barrier();
-	throw ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
+        printf("[%d] UserRemotePIDs count wrong %d != %d\n",sourceMap.Comm().MyPID(),NumRemotePIDs,NumRemoteIDs_);
+        fflush(stdout);
+        sourceMap.Comm().Barrier();
+        sourceMap.Comm().Barrier();
+        sourceMap.Comm().Barrier();
+        throw ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
       }
     }
 #endif
@@ -425,20 +425,20 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     //Sort Remote IDs by processor so DoReverses will work
     if(targetMap.GlobalIndicesLongLong())
       {
-	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
-	// int_type != long long.  On some compilers, it results in
-	// warnings such as this: "dereferencing type-punned pointer
-	// will break strict-aliasing rules".
-	Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
+        // FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+        // int_type != long long.  On some compilers, it results in
+        // warnings such as this: "dereferencing type-punned pointer
+        // will break strict-aliasing rules".
+        Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
       {
-	int* ptrs[2] = {RemoteLIDs_, (int*)RemoteGIDs};
-	Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,&ptrs[0], 0, 0);
+        int* ptrs[2] = {RemoteLIDs_, (int*)RemoteGIDs};
+        Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,&ptrs[0], 0, 0);
       }
     else
       {
-	throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+        throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
       }
     Distor_ = sourceMap.Comm().CreateDistributor();
 
@@ -448,36 +448,36 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     bool Deterministic = true;
     int_type* tmp_ExportLIDs; //Export IDs come in as GIDs
     ierr = Distor_->CreateFromRecvs( NumRemoteIDs_, RemoteGIDs, RemotePIDs,
-				     Deterministic, NumExportIDs_, tmp_ExportLIDs, ExportPIDs_ );
+                                     Deterministic, NumExportIDs_, tmp_ExportLIDs, ExportPIDs_ );
     if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromRecvs()", ierr);
 
 
     // Export IDs come in as GIDs, convert to LIDs
     if(targetMap.GlobalIndicesLongLong())
       {
-	ExportLIDs_ = new int[NumExportIDs_];
-	
-	for (i=0; i< NumExportIDs_; i++) {
-	  if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
-	  ExportLIDs_[i] = sourceMap.LID(tmp_ExportLIDs[i]);
-	  NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
-	}
-	
-	delete[] tmp_ExportLIDs;
+        ExportLIDs_ = new int[NumExportIDs_];
+
+        for (i=0; i< NumExportIDs_; i++) {
+          if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
+          ExportLIDs_[i] = sourceMap.LID(tmp_ExportLIDs[i]);
+          NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+        }
+
+        delete[] tmp_ExportLIDs;
       }
     else if(targetMap.GlobalIndicesInt())
       {
-	for (i=0; i< NumExportIDs_; i++) {
-	  if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
-	  tmp_ExportLIDs[i] = sourceMap.LID(tmp_ExportLIDs[i]);
-	  NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
-	}
-	
-	ExportLIDs_ = reinterpret_cast<int *>(tmp_ExportLIDs); // Can't reach here if tmp_ExportLIDs is long long.
+        for (i=0; i< NumExportIDs_; i++) {
+          if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
+          tmp_ExportLIDs[i] = sourceMap.LID(tmp_ExportLIDs[i]);
+          NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+        }
+
+        ExportLIDs_ = reinterpret_cast<int *>(tmp_ExportLIDs); // Can't reach here if tmp_ExportLIDs is long long.
       }
     else
       {
-	throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+        throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
       }
   }
 
@@ -531,7 +531,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
 
 //==============================================================================
 Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap,int NumRemotePIDs,const int * RemotePIDs,
-			      const int & NumExportIDs, const int * ExportLIDs,  const int * ExportPIDs)
+                              const int & NumExportIDs, const int * theExportLIDs,  const int * theExportPIDs)
   : Epetra_Object("Epetra::Import"),
     TargetMap_(targetMap),
     SourceMap_(sourceMap),
@@ -553,13 +553,13 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
 
   if(targetMap.GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    Construct_Expert<int>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,ExportLIDs,ExportPIDs);
+    Construct_Expert<int>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,theExportLIDs,theExportPIDs);
 #else
     throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesInt but no API for it.",-1);
 #endif
   else if(targetMap.GlobalIndicesLongLong())
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    Construct_Expert<long long>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,ExportLIDs,ExportPIDs);
+    Construct_Expert<long long>(targetMap, sourceMap,NumRemotePIDs,RemotePIDs,NumExportIDs,theExportLIDs,theExportPIDs);
 #else
     throw ReportError("Epetra_Import::Epetra_Import: ERROR, GlobalIndicesLongLong but no API for it.",-1);
 #endif
@@ -683,12 +683,11 @@ Epetra_Import::Epetra_Import(const Epetra_Export& Exporter):
   NumRecv_(Exporter.NumSend_),//revsese
   Distor_(0)
 {
-  int i;
   // Reverse the permutes
-  if (NumPermuteIDs_>0) {
+  if (NumPermuteIDs_ > 0) {
     PermuteToLIDs_   = new int[NumPermuteIDs_];
     PermuteFromLIDs_ = new int[NumPermuteIDs_];
-    for (i=0; i< NumPermuteIDs_; i++) {
+    for (int i = 0; i < NumPermuteIDs_; ++i) {
       PermuteFromLIDs_[i] = Exporter.PermuteToLIDs_[i];
       PermuteToLIDs_[i]   = Exporter.PermuteFromLIDs_[i];
     }
@@ -697,34 +696,33 @@ Epetra_Import::Epetra_Import(const Epetra_Export& Exporter):
   // Copy the exports to the remotes
   if (NumRemoteIDs_>0) {
     RemoteLIDs_ = new int[NumRemoteIDs_];
-    for (i=0; i< NumRemoteIDs_; i++) RemoteLIDs_[i] = Exporter.ExportLIDs_[i];
+    for (int i = 0; i < NumRemoteIDs_; ++i) RemoteLIDs_[i] = Exporter.ExportLIDs_[i];
   }
 
   // Copy the remotes to the exports
   if (NumExportIDs_>0) {
     ExportLIDs_ = new int[NumExportIDs_];
     ExportPIDs_ = new int[NumExportIDs_];
-    for (i=0; i< NumExportIDs_; i++) ExportLIDs_[i] = Exporter.RemoteLIDs_[i];
-
+    for (int i = 0; i < NumExportIDs_; ++i) ExportLIDs_[i] = Exporter.RemoteLIDs_[i];
 
     // Extract the RemotePIDs from the Distributor
 #ifdef HAVE_MPI
     Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Exporter.Distributor());
     if(!D) throw ReportError("Epetra_Import: Can't have ExportPIDs w/o an Epetra::MpiDistributor.",-1);
-    int i,j,k;
 
     // Get the distributor's data
-    int NumReceives        = D->NumReceives();
+    const int NumReceives  = D->NumReceives();
     const int *ProcsFrom   = D->ProcsFrom();
     const int *LengthsFrom = D->LengthsFrom();
 
     // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
     // MpiDistributor so it ought to duplicate that effect.
-    for(i=0,j=0;i<NumReceives;i++){
-      int pid=ProcsFrom[i];
-      for(k=0;k<LengthsFrom[i];k++){
-	ExportPIDs_[j]=pid;
-	j++;
+    int j;
+    for (int i = 0, j = 0; i < NumReceives; ++i) {
+      const int pid = ProcsFrom[i];
+      for (int k = 0; k < LengthsFrom[i]; ++k) {
+        ExportPIDs_[j] = pid;
+        j++;
       }
     }
 #else
