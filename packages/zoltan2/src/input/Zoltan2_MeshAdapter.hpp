@@ -279,7 +279,8 @@ public:
       using Teuchos::rcp;
 
       // Get the default communicator and Kokkos Node instance
-      // TODO:  Default communicator may not be correct here
+      // TODO:  Default communicator is not correct here; need to get
+      //        communicator from the problem
       RCP<const Comm<int> > comm =
         DefaultPlatform::getDefaultPlatform ().getComm ();
 
