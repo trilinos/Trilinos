@@ -399,7 +399,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   int nnodes_per_elem = num_nodes_per_elem[0];
   elemToNode_ = new int [num_elem_ * nnodes_per_elem];
   int telct = 0;
-  elemOffsets_ = new int [num_elem_];
+  elemOffsets_ = new int [num_elem_+1];
   tnoct_ = 0;
   int **reconnect = new int * [num_elem_];
   size_t max_nsur = 0;
@@ -419,6 +419,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       ++telct;
     }
   }
+  elemOffsets_[telct] = tnoct_;
 
   delete[] num_nodes_per_elem;
   num_nodes_per_elem = NULL;
