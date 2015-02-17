@@ -280,7 +280,7 @@ public:
 
       // Get the default communicator and Kokkos Node instance
       // TODO:  Default communicator is not correct here; need to get
-      //        communicator from the problem
+      // TODO:  communicator from the problem
       RCP<const Comm<int> > comm =
         DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -307,7 +307,7 @@ public:
       RCP<const map_type> throughMapG;
 
       // count owned nodes
-      int LocalNumOfThrough = getLocalNumOf(through);
+      size_t LocalNumOfThrough = getLocalNumOf(through);
 
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
@@ -323,7 +323,7 @@ public:
 
       // min(throughIds[i])
       min[1] = as<gno_t> (throughIds[0]);
-      for (int i = 0; i < LocalNumOfThrough; ++i) {
+      for (size_t i = 0; i < LocalNumOfThrough; ++i) {
 	gno_t tmp = as<gno_t> (throughIds[i]);
 
 	if (tmp < min[1]) {
@@ -332,7 +332,7 @@ public:
       }
 
       gno_t gmin[2] = {as<gno_t> (1), as<gno_t> (1)};
-      //Teuchos::reduceAll<gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
+      //Teuchos::reduceAll<int, gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
 for (size_t i=0; i < LocalNumIDs; i++)
   std::cout << " KDDROWS " << i << " " << sourcetargetGIDs[i] << std::endl;
@@ -346,6 +346,13 @@ std::cout << sourcetargetMapG->description() << std::endl;
 
 std::cout << " KDDKDDADJ " << getGlobalNumOf(through) << " " << gmin[1] << std::endl;
       //Generate Map for through.
+// TODO
+// TODO Could check for max through id as well, and if all through ids are
+// TODO in gmin to gmax, then default constructors works below.
+// TODO Otherwise, may need a constructor that is not one-to-one containing
+// TODO all through entities on processor, followed by call to createOneToOne
+// TODO
+
       throughMapG = rcp (new map_type(getGlobalNumOf(through), gmin[1], comm));
 
 std::cout << " KDDKDD THROUGHMAP " << std::endl;
@@ -558,6 +565,8 @@ std::cout << "KDDKDD AFTER MATMAT " << std::endl;
     Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
+// TODO:  If MeshAdapter computes second adjs, what (if anything) should be
+// TODO;  used for weights?
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
 //VJL Yes.
