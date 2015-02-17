@@ -40,6 +40,7 @@ if [ "$LOADED_VERA_DEV_ENV" != "gcc461" ] ; then
 fi
 
 echo "
+-DTrilinos_ENABLE_CXX11=OFF
 -DTrilinos_EXCLUDE_PACKAGES=CTrilinos
 -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
 " > COMMON.config

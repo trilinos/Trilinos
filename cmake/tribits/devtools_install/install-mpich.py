@@ -44,9 +44,12 @@
 # Defaults
 #
 
-gccBaseName = "gcc"
-gccDefaultVersion = "4.8.3"
-gccSupportedVersions = ["4.8.3"]
+mpichBaseName = "mpich"
+mpichDefaultVersion = "3.1.3"
+mpichSupportedVersions = ["3.1.3"]
+mpichTarballVersions = {
+  "3.1.3" : "3.1.3"
+  }
 
 #
 # Script code
@@ -57,7 +60,7 @@ from InstallProgramDriver import *
 from GeneralScriptSupport import *
 
 
-class GccInstall:
+class MpichInstall:
 
   def __init__(self):
     self.dummy = None
@@ -67,16 +70,16 @@ class GccInstall:
   #
 
   def getScriptName(self):
-    return "install-gcc.py"
+    return "install-mpich.py"
 
   def getProductBaseName(self):
-    return gccBaseName
+    return mpichBaseName
 
   def getProductDefaultVersion(self):
-    return gccDefaultVersion
+    return mpichDefaultVersion
 
   def getProductSupportedVersions(self):
-    return gccSupportedVersions
+    return mpichSupportedVersions
 
   #
   # Called after knowing the product version but before parsing the
@@ -84,21 +87,22 @@ class GccInstall:
   #
 
   def getProductName(self, version):
-    return gccBaseName+"-"+version
+    return mpichBaseName+"-"+version
 
   def getBaseDirName(self, version):
-    return gccBaseName+"-"+version+"-base"
+    return mpichBaseName+"-"+version+"-base"
 
   def getExtraHelpStr(self, version):
     return """
-This script builds """+self.getProductName(version)+""" from source compiled with the
-configured C compilers in your path.
+This script builds """+self.getProductName(version)+""" from source compiled
+with the configured C/C++/Fortran compilers in your path or set by the env
+vars CC, CXX, and FC.
 
 NOTE: The assumed directory structure of the download source provided by the
 command --download-cmnd=<download-cmnd> is:
 
-   gcc-<version>-base/
-     gcc-<full-version>.tar.gz
+   mpich-<version>-base/
+     mpich-<version>.tar.gz
 """
 
   def injectExtraCmndLineOptions(self, clp, version):
@@ -106,8 +110,7 @@ command --download-cmnd=<download-cmnd> is:
     clp.add_option(
       "--extra-configure-options", dest="extraConfigureOptions", type="string", \
       default="", \
-      help="Extra options to add to the 'configure' command for " \
-        + self.getProductName(version)+"." \
+      help="Extra options to add to the 'configure' command for "+self.getProductName(version)+"." \
         +"  Note: This does not override the hard-coded configure options." )
 
   def echoExtraCmndLineOptions(self, inOptions):
@@ -123,9 +126,11 @@ command --download-cmnd=<download-cmnd> is:
   def setup(self, inOptions):
     self.inOptions = inOptions
     self.baseDir = os.getcwd()
-    self.gccBaseDir = self.baseDir+"/"+self.getBaseDirName(self.inOptions.version)
-    self.gccSrcDir = "gcc-"+self.inOptions.version
-    self.gccBuildBaseDir = self.gccBaseDir+"/gcc-build"
+    self.mpichBaseDir = self.baseDir+"/"+self.getBaseDirName(self.inOptions.version)
+    mpichVersionFull = mpichTarballVersions[self.inOptions.version]
+    self.mpichTarball = "mpich-"+mpichVersionFull+".tar.gz"
+    self.mpichSrcDir = "mpich-"+mpichVersionFull
+    self.mpichBuildBaseDir = self.mpichBaseDir+"/mpich-build"
     self.scriptBaseDir = getScriptBaseDir()
 
   #
@@ -133,35 +138,39 @@ command --download-cmnd=<download-cmnd> is:
   #
 
   def doDownload(self):
-    removeDirIfExists(self.gccBaseDir, True)
+    removeDirIfExists(self.mpichBaseDir, True)
     echoRunSysCmnd(self.inOptions.downloadCmnd)
 
   def doUntar(self):
-    print "Nothing to untar!"
+    # Find the full name of the source tarball
+    echoChDir(self.mpichBaseDir)
+    echoRunSysCmnd("tar -xzf "+self.mpichTarball)
+    # NOTE: I found that you have to untar the tarball and can't store the
+    # open source in the git repo.  Otherwise the timestaps are messed up and
+    # it 'make' tries to recreate some generated files.
 
   def doConfigure(self):
-    createDir(self.gccBuildBaseDir)
+    createDir(self.mpichBuildBaseDir, True, True)
     echoRunSysCmnd(
-      "../"+self.gccSrcDir+"/configure --disable-multilib --enable-languages='c,c++,fortran'"+\
+      "../"+self.mpichSrcDir+"/configure "+\
       " "+self.inOptions.extraConfigureOptions+\
       " --prefix="+self.inOptions.installDir,
-      workingDir=self.gccBuildBaseDir,
-      extraEnv={"CFLAGS":"-O3"},
+      extraEnv={"CFLAGS":"-O3", "CXXFLAGS":"-O3", "FFLAGS":"-O3"},
       )
 
   def doBuild(self):
-    echoChDir(self.gccBuildBaseDir)
+    echoChDir(self.mpichBuildBaseDir)
     echoRunSysCmnd("make " + getParallelOpt(self.inOptions, "-j") \
       + self.inOptions.makeOptions)
 
   def doInstall(self):
-    echoChDir(self.gccBuildBaseDir)
+    echoChDir(self.mpichBuildBaseDir)
     echoRunSysCmnd("make " + getParallelOpt(self.inOptions, "-j") \
       + self.inOptions.makeOptions + " install")
 
   def getFinalInstructions(self):
     return """
-To use the installed version of gcc-"""+self.inOptions.version+""" add the path:
+To use the installed version of mpich-"""+self.inOptions.version+""" add the path:
 
   """+self.inOptions.installDir+"""/bin
 
@@ -179,5 +188,5 @@ to your LD_LIBRARY_PATH env variable.
 # Executable statements
 #
 
-gccInstaller = InstallProgramDriver(GccInstall())
-gccInstaller.runDriver()
+mpichInstaller = InstallProgramDriver(MpichInstall())
+mpichInstaller.runDriver()

@@ -14,7 +14,13 @@ from os.path import abspath, basename, isdir
 from sys import argv, exit
 from optparse import OptionParser
 
-def tree(dir, padding, options, top_level=False):
+def tree(dir, padding, options, depth, top_level=False):
+
+  if depth != None:
+    if depth == 0:
+      return
+    else:
+      depth = depth - 1
 
   print_files = options.printFiles
   print_compact = options.printCompact
@@ -48,11 +54,12 @@ def tree(dir, padding, options, top_level=False):
     path = dir + sep + file
     if isdir(path):
       if count == len(files):
-        tree(path, padding + ' ', options)
+        tree(path, padding + ' ', options, depth)
       else:
-        tree(path, padding + verticalLineChar, options)
+        tree(path, padding + verticalLineChar, options, depth)
     else:
       print padding + fileDirPrefix + file
+
 
 usageHelp = r""" tree.py [-f] [-c] <PATH>
 Print tree structure of specified <PATH>.
@@ -78,6 +85,10 @@ def main():
     "-x", dest="noDirectorySep", action="store_true",
     help="Remove the directory seperators and continuation lines.",
     default=False )
+
+  clp.add_option(
+    "--depth", dest="depth", type="int", default=None,
+    help="Depth (integer) to recurse into.  Default = '' or unbounded.")
   
   (options, args) = clp.parse_args()
 
@@ -91,7 +102,8 @@ def main():
     print "See --help!"
     exit(1)
 
-  tree(path, ' ', options, True)
+  depth = options.depth
+  tree(path, ' ', options, depth, True)
 
 
 if __name__ == '__main__':

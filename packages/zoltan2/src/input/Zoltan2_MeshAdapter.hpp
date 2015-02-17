@@ -261,7 +261,7 @@ public:
                                     const zgid_t *&adjacencyIds) const
   {
     typedef Tpetra::global_size_t GST;
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     /* Find the adjacency for a nodal based decomposition */
     size_t nadj = 0;
@@ -333,7 +333,7 @@ for (size_t i=0; i < LocalNumIDs; i++)
   std::cout << " KDDROWS " << i << " " << sourcetargetGIDs[i] << std::endl;
 
       //Generate Map for sourcetarget.
-      sourcetargetMapG = rcp(new map_type(INVALID,
+      sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
 					  sourcetargetGIDs(), gmin[0], comm));
 
 std::cout << " KDDKDD ROWMAP " << std::endl;

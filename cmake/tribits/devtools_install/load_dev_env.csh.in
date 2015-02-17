@@ -1,0 +1,33 @@
+#
+# Source this file to load the development environment for csh shells
+#
+
+setenv TRIBITS_DEV_ENV_BASE @DEV_ENV_BASE@
+
+# A) Common tools independent of the compiler
+setenv PATH ${TRIBITS_DEV_ENV_BASE}/common_tools:$PATH
+setenv PATH ${TRIBITS_DEV_ENV_BASE}/common_tools/cmake-@CMAKE_VERSION@/bin:$PATH
+setenv PATH ${TRIBITS_DEV_ENV_BASE}/common_tools/git-@GIT_VERSION@/bin:$PATH
+setenv PATH ${TRIBITS_DEV_ENV_BASE}/common_tools/autoconf-@AUTOCONF_VERSION@/bin:$PATH
+
+# B) GCC compiler stack base dir
+setenv TRIBITS_DEV_ENV_GCC_VERSION gcc-@GCC_VERSION@
+setenv TRIBITS_DEV_ENV_COMPILER_BASE $TRIBITS_DEV_ENV_BASE/$TRIBITS_DEV_ENV_GCC_VERSION
+
+# B.1) GCC
+setenv TRIBITS_DEV_ENV_GCC_DIR ${TRIBITS_DEV_ENV_COMPILER_BASE}/toolset/$TRIBITS_DEV_ENV_GCC_VERSION
+setenv PATH ${TRIBITS_DEV_ENV_GCC_DIR}/bin:$PATH
+if ( $?LD_LIBRARY_PATH) then
+  setenv LD_LIBRARY_PATH ${TRIBITS_DEV_ENV_GCC_DIR}/lib64:$LD_LIBRARY_PATH
+else
+  setenv LD_LIBRARY_PATH ${TRIBITS_DEV_ENV_GCC_DIR}/lib64
+endif
+
+# B.2) MPICH
+setenv TRIBITS_DEV_ENV_MPICH_DIR ${TRIBITS_DEV_ENV_COMPILER_BASE}/toolset/mpich-@MPICH_VERSION@
+setenv PATH ${TRIBITS_DEV_ENV_MPICH_DIR}/bin:$PATH 
+setenv LD_LIBRARY_PATH ${TRIBITS_DEV_ENV_MPICH_DIR}/lib:$LD_LIBRARY_PATH
+
+setenv LOADED_TRIBITS_DEV_ENV $TRIBITS_DEV_ENV_GCC_VERSION
+
+rehash

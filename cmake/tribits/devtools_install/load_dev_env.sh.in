@@ -1,0 +1,27 @@
+#
+# Source this file to load the development environment for sh and bash shells
+#
+
+export TRIBITS_DEV_ENV_BASE=@DEV_ENV_BASE@
+
+# A) Common tools independent of the compiler
+export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools:$PATH
+export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/cmake-@CMAKE_VERSION@/bin:$PATH
+export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/git-@GIT_VERSION@/bin:$PATH
+export PATH=${TRIBITS_DEV_ENV_BASE}/common_tools/autoconf-@AUTOCONF_VERSION@/bin:$PATH
+
+# B) GCC compiler stack base dir
+export TRIBITS_DEV_ENV_GCC_VERSION=gcc-@GCC_VERSION@
+export TRIBITS_DEV_ENV_COMPILER_BASE=$TRIBITS_DEV_ENV_BASE/$TRIBITS_DEV_ENV_GCC_VERSION
+
+# B.1) GCC
+export TRIBITS_DEV_ENV_GCC_DIR=${TRIBITS_DEV_ENV_COMPILER_BASE}/toolset/$TRIBITS_DEV_ENV_GCC_VERSION
+export PATH=${TRIBITS_DEV_ENV_GCC_DIR}/bin:$PATH
+export LD_LIBRARY_PATH=${TRIBITS_DEV_ENV_GCC_DIR}/lib64:$LD_LIBRARY_PATH
+
+# B.2) MPICH
+export TRIBITS_DEV_ENV_MPICH_DIR=${TRIBITS_DEV_ENV_COMPILER_BASE}/toolset/mpich-@MPICH_VERSION@
+export PATH=${TRIBITS_DEV_ENV_MPICH_DIR}/bin:$PATH 
+export LD_LIBRARY_PATH=${TRIBITS_DEV_ENV_MPICH_DIR}/lib:$LD_LIBRARY_PATH
+
+export LOADED_TRIBITS_DEV_ENV=$TRIBITS_DEV_ENV_GCC_VERSION
