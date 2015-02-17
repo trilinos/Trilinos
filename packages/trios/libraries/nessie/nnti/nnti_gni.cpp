@@ -2864,7 +2864,7 @@ NNTI_result_t NNTI_gni_atomic_cswap (
     nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
     assert(conn);
 
-    gni_wr->last_op  =GNI_OP_FETCH_ADD;
+    gni_wr->last_op=GNI_OP_COMPARE_SWAP;
     gni_wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
     log_debug(nnti_event_debug_level, "gni_wr->peer_instance==%lu", gni_wr->peer_instance);
 
