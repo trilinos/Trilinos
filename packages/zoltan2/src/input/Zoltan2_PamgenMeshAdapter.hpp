@@ -118,8 +118,6 @@ public:
   size_t getGlobalNumOf(MeshEntityType etype) const
   {
 
-std::cout << "KDDKDD GETGLOBALNUMOF " << etype << " " << num_elems_global_ << " " << num_nodes_global_ << std::endl;
-
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
       return num_elems_global_;
@@ -129,7 +127,6 @@ std::cout << "KDDKDD GETGLOBALNUMOF " << etype << " " << num_elems_global_ << " 
       return num_nodes_global_;
     }
 
-std::cout << "KDDKDD WHY ARE WE HERE?" << std::endl;
     return 0;
   }
 
