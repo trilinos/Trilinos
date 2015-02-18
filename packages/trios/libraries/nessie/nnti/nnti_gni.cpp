@@ -1655,8 +1655,8 @@ NNTI_result_t NNTI_gni_register_segments (
 
     log_debug(nnti_ee_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
-        log_debug(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types cannot be segmented.");
+    if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
+        log_debug(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types cannot be segmented.");
         return(NNTI_EINVAL);
     }
 
@@ -1931,12 +1931,12 @@ NNTI_result_t NNTI_gni_send (
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_SEND_SRC;
+    wr->ops              =NNTI_BOP_SEND_SRC;
     wr->transport_private=(uint64_t)gni_wr;
 
     log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
 
-    if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
+    if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_BOP_RECV_QUEUE)) {
         nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
 
@@ -1944,7 +1944,7 @@ NNTI_result_t NNTI_gni_send (
         int rc=request_send(peer_hdl, conn, msg_hdl, 0, gni_wr);
         trios_stop_timer("send to request queue", call_time);
 
-    } else if (dest_hdl->ops == NNTI_RECV_DST) {
+    } else if (dest_hdl->ops == NNTI_BOP_RECV_DST) {
         nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
 
@@ -2032,7 +2032,7 @@ NNTI_result_t NNTI_gni_put (
 
     wr->transport_id     =src_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
-    wr->ops              =NNTI_PUT_SRC;
+    wr->ops              =NNTI_BOP_LOCAL_READ;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
@@ -2389,7 +2389,7 @@ NNTI_result_t NNTI_gni_get (
 
     wr->transport_id     =dest_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
-    wr->ops              =NNTI_GET_SRC;
+    wr->ops              =NNTI_BOP_LOCAL_WRITE;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
@@ -2809,7 +2809,7 @@ NNTI_result_t NNTI_gni_atomic_fop (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
@@ -2896,7 +2896,7 @@ NNTI_result_t NNTI_gni_atomic_cswap (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)gni_wr;
 
@@ -2937,7 +2937,7 @@ NNTI_result_t NNTI_gni_create_work_request (
 
     log_debug(nnti_debug_level, "enter (reg_buf=%p ; wr=%p)", reg_buf, wr);
 
-    if (reg_buf->ops == NNTI_RECV_QUEUE) {
+    if (reg_buf->ops == NNTI_BOP_RECV_QUEUE) {
     	nnti_gni_request_queue_handle_t *q_hdl=&transport_global_data.req_queue;
     	assert(q_hdl);
 
@@ -3003,7 +3003,7 @@ NNTI_result_t NNTI_gni_create_work_request (
     		}
     	}
     	log_debug(nnti_debug_level, "q->head=%lld ; q->tail==%lld", q_hdl->head, q_hdl->tail);
-    } else if (reg_buf->ops == NNTI_RECV_DST) {
+    } else if (reg_buf->ops == NNTI_BOP_RECV_DST) {
     	gni_wr=gni_mem_hdl->wr_queue->front();
 		GNI_ATTACH_WR(wr,gni_wr);
     } else {
@@ -3073,7 +3073,7 @@ NNTI_result_t NNTI_gni_destroy_work_request (
 		return(NNTI_OK);
 	}
 
-	if (wr->ops == NNTI_RECV_QUEUE) {
+	if (wr->ops == NNTI_BOP_RECV_QUEUE) {
     	nnti_gni_request_queue_handle_t *q_hdl=&transport_global_data.req_queue;
     	assert(q_hdl);
 
@@ -3133,7 +3133,7 @@ NNTI_result_t NNTI_gni_destroy_work_request (
 		}
 
     	log_debug(nnti_debug_level, "q->head=%lld ; q->tail==%lld", q_hdl->head, q_hdl->tail);
-    } else if (wr->ops == NNTI_RECV_DST) {
+    } else if (wr->ops == NNTI_BOP_RECV_DST) {
         nthread_lock(&gni_mem_hdl->wr_queue_lock);
 		gni_wr->state=NNTI_GNI_WR_STATE_POSTED;
         q_victim=find(gni_mem_hdl->wr_queue->begin(), gni_mem_hdl->wr_queue->end(), gni_wr);
@@ -3381,7 +3381,7 @@ NNTI_result_t NNTI_gni_wait (
 
         gni_wr->state=NNTI_GNI_WR_STATE_WAIT_COMPLETE;
 
-        if (gni_wr->nnti_wr->ops == NNTI_ATOMICS) {
+        if (gni_wr->nnti_wr->ops == NNTI_BOP_ATOMICS) {
             del_sge_sgehash(&gni_wr->sge_list[0]);
 
             if (config.use_wr_pool) {
@@ -4114,7 +4114,7 @@ nthread_lock(&nnti_mem_lock);
 
     	gni_mem_hdl->extra=extra;
 
-        if (ops == NNTI_RECV_QUEUE) {
+        if (ops == NNTI_BOP_RECV_QUEUE) {
             nnti_gni_request_queue_handle_t *q_hdl=&transport_global_data.req_queue;
 
             q_hdl->reg_buf=reg_buf;
@@ -4137,7 +4137,7 @@ nthread_lock(&nnti_mem_lock);
         }
     }
 
-    if (ops == NNTI_RECV_DST) {
+    if (ops == NNTI_BOP_RECV_DST) {
         post_recv_work_request(reg_buf);
     }
 
@@ -4157,7 +4157,7 @@ nthread_lock(&nnti_mem_lock);
         reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword1 = gni_mem_hdl->mem_hdl.qword1;
         reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.mem_hdl.qword2 = gni_mem_hdl->mem_hdl.qword2;
 
-        if (ops == NNTI_RECV_QUEUE) {
+        if (ops == NNTI_BOP_RECV_QUEUE) {
             reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.size = transport_global_data.req_queue.req_size;
             reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.buf  = (uint64_t)transport_global_data.req_queue.req_buffer;
             reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.gni.type = NNTI_GNI_REQUEST_BUFFER;
@@ -4435,7 +4435,7 @@ static int process_event(
     gni_wr=gni_sge->gni_wr;
     assert(gni_wr);
 
-    if ((gni_wr->nnti_wr) && (gni_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+    if ((gni_wr->nnti_wr) && (gni_wr->nnti_wr->ops == NNTI_BOP_ATOMICS)) {
         gni_wr->state=NNTI_GNI_WR_STATE_RDMA_COMPLETE;
         gni_wr->nnti_wr->result=NNTI_OK;
         return NNTI_OK;
@@ -4851,7 +4851,7 @@ static void create_status(
         }
         assert(conn);
 
-        if (gni_wr->nnti_wr->ops != NNTI_ATOMICS) {
+        if (gni_wr->nnti_wr->ops != NNTI_BOP_ATOMICS) {
             status->start  = (uint64_t)gni_wr->reg_buf->payload;
             status->offset = gni_wr->wc->byte_offset;
             status->length = gni_wr->wc->byte_len;
