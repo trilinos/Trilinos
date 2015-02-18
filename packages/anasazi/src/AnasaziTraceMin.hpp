@@ -55,7 +55,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 // TODO: TraceMin performs some unnecessary computations upon restarting.  Fix it!
-  enum SaddleSolType {SCHUR, PROJ};
 
 namespace Anasazi {
 namespace Experimental {
@@ -179,6 +178,8 @@ namespace Experimental {
 
     // TraceMin specific methods
     void addToBasis(const Teuchos::RCP<const MV> Delta);
+    
+    void harmonicAddToBasis(const Teuchos::RCP<const MV> Delta);
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,6 +256,57 @@ namespace Experimental {
       this->count_ApplyOp_+= this->blockSize_;
       OPT::Apply(*this->Op_,*this->V_,*this->KV_);
     }
+  }
+  
+  
+  
+  template <class ScalarType, class MV, class OP>
+  void TraceMin<ScalarType,MV,OP>::harmonicAddToBasis(const Teuchos::RCP<const MV> Delta)
+  {
+    // V = X - Delta
+    MVT::MvAddMv(ONE,*this->X_,-ONE,*Delta,*this->V_);
+
+    // Project out auxVecs
+    if(this->numAuxVecs_ > 0)
+    {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
+      this->orthman_->projectMat(*this->V_,this->auxVecs_);
+    }
+    
+    // Compute KV
+    if(this->Op_ != Teuchos::null)
+    {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *this->timerOp_ );
+#endif
+      this->count_ApplyOp_+= this->blockSize_;
+
+      OPT::Apply(*this->Op_,*this->V_,*this->KV_);
+    }
+
+    // Normalize lclKV
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > gamma = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(this->blockSize_,this->blockSize_));
+    int rank = this->orthman_->normalizeMat(*this->KV_,gamma);
+                
+    // lclV = lclV/gamma
+    Teuchos::SerialDenseSolver<int,ScalarType> SDsolver;
+    SDsolver.setMatrix(gamma);
+    SDsolver.invert();
+    RCP<MV> tempMV = MVT::CloneCopy(*this->V_);
+    MVT::MvTimesMatAddMv(ONE,*tempMV,*gamma,ZERO,*this->V_);
+    
+    // Compute MV
+    if(this->hasM_)
+    {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *this->timerMOp_ );
+#endif
+      this->count_ApplyM_+= this->blockSize_;
+
+      OPT::Apply(*this->MOp_,*this->V_,*this->MV_);
+    }    
   }
 
 }} // End of namespace Anasazi

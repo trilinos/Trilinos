@@ -47,7 +47,7 @@
     #include "BelosTpetraAdapter.hpp"
   #endif
   #ifdef HAVE_ANASAZI_EPETRA
-    #include "BelosEpetraAdapter.hpp"
+//    #include "BelosEpetraAdapter.hpp"
   #endif
 #endif
 
@@ -145,6 +145,8 @@ public:
   void setRitzShifts(std::vector<Scalar> shifts) {ritzShifts_ = shifts;};
 
   Scalar getRitzShift(const int subscript) { return ritzShifts_[subscript]; };
+
+  Teuchos::RCP<TraceMinRitzOp<Scalar,MV,OP> > getPrec() { return Prec_; };
 
   // sets the tolerances for the inner solves
   void setInnerTol(const std::vector<Scalar>& tolerances) { tolerances_ = tolerances; };
@@ -540,7 +542,7 @@ ZERO(Teuchos::ScalarTraits<Scalar>::zero())
   A_ = A;
   B_ = B;
   // TODO: maxits should not be hard coded
-  maxits_ = 1000;
+  maxits_ = 200;
 
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   PetraMultTime_ = Teuchos::TimeMonitor::getNewTimer("Anasazi: TraceMinRitzOp: *Petra::Apply()");
@@ -720,13 +722,13 @@ void TraceMinProjRitzOp<Scalar,MV,OP>::Apply(const MV& X, MV& Y) const
 {
   int nvecs = MVT::GetNumberVecs(X);
 
-  // compute PX
-  Teuchos::RCP<MV> PX = MVT::Clone(X,nvecs);
-  projector_->Apply(X,*PX);
+//  // compute PX
+//  Teuchos::RCP<MV> PX = MVT::Clone(X,nvecs);
+//  projector_->Apply(X,*PX);
 
   // compute (A+\sigma B) P X
   Teuchos::RCP<MV> APX = MVT::Clone(X,nvecs);
-  OPT::Apply(*Op_,*PX,*APX);
+  OPT::Apply(*Op_,X,*APX);
 
   // compute Y := P (A+\sigma B) P X
   projector_->Apply(*APX,Y);
@@ -796,7 +798,7 @@ ONE(Teuchos::ScalarTraits<Scalar>::one())
   // Set the preconditioner
   // TODO: This does not support right preconditioning
   Prec_ = Teuchos::rcp( new TraceMinProjectedPrecOp<Scalar,MV,OP>(Op_->Prec_->A_, projVecs, orthman) );
-  problem_->setLeftPrec(Prec_);
+//  problem_->setLeftPrec(Prec_);
 
   // create the pseudoblock gmres solver
   // minres has trouble with the projected preconditioner
@@ -823,7 +825,7 @@ ONE(Teuchos::ScalarTraits<Scalar>::one())
   // Set the preconditioner
   // TODO: This does not support right preconditioning
   Prec_ = Teuchos::rcp( new TraceMinProjectedPrecOp<Scalar,MV,OP>(Op_->Prec_->A_, projVecs, orthman, auxVecs) );
-  problem_->setRightPrec(Prec_);
+//  problem_->setLeftPrec(Prec_);
 
   // create the pseudoblock gmres solver
   // minres has trouble with the projected preconditioner
@@ -834,7 +836,10 @@ ONE(Teuchos::ScalarTraits<Scalar>::one())
 template <class Scalar, class MV, class OP>
 void TraceMinProjRitzOpWithPrec<Scalar,MV,OP>::Apply(const MV& X, MV& Y) const
 {
-  OPT::Apply(*Op_,X,Y);
+  int nvecs = MVT::GetNumberVecs(X);
+  RCP<MV> Ydot = MVT::Clone(Y,nvecs);
+  OPT::Apply(*Op_,X,*Ydot);
+  Prec_->Apply(*Ydot,Y);
 }
 
 
@@ -847,8 +852,10 @@ void TraceMinProjRitzOpWithPrec<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
     indices[i] = i;
 
   Teuchos::RCP<MV> rcpY = MVT::CloneViewNonConst(Y,indices);
-  Teuchos::RCP<const MV> rcpX = MVT::CloneView(X,indices);
-
+  Teuchos::RCP<MV> rcpX = MVT::Clone(X,nvecs);
+  
+  Prec_->Apply(X,*rcpX);
+  
   // Create the linear problem
   problem_->setProblem(rcpY,rcpX);
 
@@ -861,7 +868,11 @@ void TraceMinProjRitzOpWithPrec<Scalar,MV,OP>::ApplyInverse(const MV& X, MV& Y)
   // TODO: Look into fixing my problem with the deflation quorum
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList());
   pl->set("Convergence Tolerance", Op_->tolerances_[0]);
-  pl->set("Verbosity", Belos::Debug+Belos::IterationDetails+Belos::StatusTestDetails);
+  pl->set("Block Size", nvecs);
+//  pl->set("Verbosity", Belos::IterationDetails + Belos::StatusTestDetails + Belos::Debug);
+//  pl->set("Output Frequency", 1);
+  pl->set("Maximum Iterations", Op_->getMaxIts());
+  pl->set("Num Blocks", Op_->getMaxIts());
   solver_->setParameters(pl);
 
   // Solve the linear system
@@ -923,7 +934,7 @@ ONE (Teuchos::ScalarTraits<Scalar>::one())
 
     MVT::MvScale(*helperMV, dotprods);
   }
-
+  
   projVecs_.push_back(helperMV);
 }
 
@@ -974,19 +985,19 @@ ONE(Teuchos::ScalarTraits<Scalar>::one())
     nvecs = MVT::GetNumberVecs(*projVecs);
     locProjVecs = MVT::CloneCopy(*projVecs);
   }
-
+  
   Teuchos::RCP<MV> helperMV = MVT::Clone(*projVecs,nvecs);
 
   // Compute Prec \ projVecs
   OPT::Apply(*Op_,*locProjVecs,*helperMV);
-
+  
   // Set the operator for the inner products
   B_ = orthman_->getOp();
   orthman_->setOp(Op_);
 
   // Normalize the vectors such that Y' Prec \ Y = I
   const int rank = orthman_->normalizeMat(*locProjVecs,Teuchos::null,helperMV);
-
+  
   projVecs_.push_back(helperMV);
 
 //  helperMV->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
@@ -1019,18 +1030,21 @@ void TraceMinProjectedPrecOp<Scalar,MV,OP>::Apply(const MV& X, MV& Y) const
     // Y = M\X - proj proj' X
     int nvecsP = MVT::GetNumberVecs(*projVecs_[0]);
     OPT::Apply(*Op_,X,Y);
+	
     Teuchos::RCP< Teuchos::SerialDenseMatrix<int,Scalar> > projX = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,Scalar>(nvecsP,nvecsX));
 
     MVT::MvTransMv(ONE, *projVecs_[0], X, *projX);
+	
     MVT::MvTimesMatAddMv(-ONE, *projVecs_[0], *projX, ONE, Y);
   }
   else
   {
     Teuchos::RCP<MV> MX = MVT::Clone(X,nvecsX);
     OPT::Apply(*Op_,X,*MX);
-
+	
     std::vector<Scalar> dotprods(nvecsX);
     MVT::MvDot(*projVecs_[0], X, dotprods);
+	
     Teuchos::RCP<MV> helper = MVT::CloneCopy(*projVecs_[0]);
     MVT::MvScale(*helper, dotprods);
     MVT::MvAddMv(ONE, *MX, -ONE, *helper, Y);

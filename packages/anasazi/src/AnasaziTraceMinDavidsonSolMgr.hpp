@@ -114,6 +114,7 @@ class TraceMinDavidsonSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. 
    * Since this class inherits from TraceMinBaseSolMgr, it accepts the same options as TraceMinBaseSolMgr(), with a few additions:
+   *   - \c "Use Harmonic Ritz Values" - a \c bool specifying whether to compute the harmonic Ritz values.  Unless you're computing interior eigenpairs, this should be false. Default: false
    *   - \c "Block Size" - an \c int specifying the block size to be used by the underlying solver. 
    *                       If the eigenvalues are clustered, you may want to use a larger block size to capture the correct multiplicity. 
    *                       Default: 1
@@ -171,6 +172,10 @@ TraceMinDavidsonSolMgr<ScalarType,MV,OP>::TraceMinDavidsonSolMgr( const Teuchos:
   TEUCHOS_TEST_FOR_EXCEPTION(maxRestarts_ <= 0, std::invalid_argument,
          "Anasazi::TraceMinDavidsonSolMgr::constructor(): \"Maximum Restarts\" must be strictly positive.");
 
+  this->useHarmonic_ = pl.get("Use Harmonic Ritz Values", false);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(this->useHarmonic_ && problem->getM() != Teuchos::null, std::invalid_argument, "Anasazi::TraceMinDavidsonSolMgr::constructor(): Harmonic Ritz values do not currently work with generalized eigenvalue problems.  Please disable \"Use Harmonic Ritz Values\".");
+
   // block size: default is 1
   this->blockSize_ = pl.get("Block Size", 1);
   TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ <= 0, std::invalid_argument,
@@ -222,7 +227,16 @@ bool TraceMinDavidsonSolMgr<ScalarType,MV,OP>::performRestart(int &numRestarts, 
 
   // Copy the relevant parts of the old state to the new one
   // This may involve computing parts of X
-  this->copyPartOfState (oldstate, newstate, indToCopy);
+  if(this->useHarmonic_)
+  {
+    newstate.V = MVT::CloneView(*solver->getRitzVectors(),indToCopy);
+    newstate.curDim = newdim;
+
+  }
+  else
+  {
+    this->copyPartOfState (oldstate, newstate, indToCopy);
+  }
 
   // send the new state to the solver
   newstate.NEV = oldstate.NEV;

@@ -94,6 +94,8 @@ namespace Experimental {
 
     // TraceMin specific methods
     void addToBasis(const Teuchos::RCP<const MV> Delta);
+    
+    void harmonicAddToBasis(const Teuchos::RCP<const MV> Delta);
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,6 +215,104 @@ namespace Experimental {
 
       lclKV = MVT::CloneViewNonConst(*this->KV_,newind);
       OPT::Apply(*this->Op_,*lclV,*lclKV);
+    }
+  }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // 1. Project Delta so that V' M Delta = 0 and Q' M Delta = 0
+  // 2. Normalize Delta so that Delta' M Delta = I
+  // 3. Add Delta to the end of V: V = [V Delta]
+  // 4. Update KV and MV
+  template <class ScalarType, class MV, class OP>
+  void TraceMinDavidson<ScalarType,MV,OP>::harmonicAddToBasis(Teuchos::RCP<const MV> Delta)
+  {
+    // TODO: We should also test the row length and map, etc...
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*Delta) != this->blockSize_, std::invalid_argument,
+           "Anasazi::TraceMinDavidson::addToBasis(): Delta does not have blockSize_ columns");
+
+    int rank;
+    // Vector of indices
+    std::vector<int> curind(this->curDim_), newind(this->blockSize_);
+    // Pointer to the meaningful parts of V, KV, and MV
+    Teuchos::RCP<MV> lclV, lclKV, lclMV, projVecs, KprojVecs;
+    // Array of things we project against
+    
+    // Get the existing parts of the basis and add them to the list of things we project against
+    for(int i=0; i<this->curDim_; i++)
+      curind[i] = i;
+    projVecs = MVT::CloneViewNonConst(*this->V_,curind);
+    
+    if(this->Op_ != Teuchos::null)
+    {
+      lclKV = MVT::CloneViewNonConst(*this->KV_,curind);
+      KprojVecs = lclKV;
+    }
+
+    // Get the new part of the basis (where we're going to insert Delta)
+    for (int i=0; i<this->blockSize_; ++i) 
+      newind[i] = this->curDim_ + i;
+    lclV = MVT::CloneViewNonConst(*this->V_,newind);
+    
+    // Insert Delta at the end of V
+    MVT::SetBlock(*Delta,newind,*this->V_);
+    this->curDim_ += this->blockSize_;
+    
+    // Project the auxVecs out of Delta
+    if(this->auxVecs_.size() > 0)
+      this->orthman_->projectMat(*lclV,this->auxVecs_);
+    
+    // Update KV
+    if(this->Op_ != Teuchos::null)
+    {
+      #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor lcltimer( *this->timerOp_ );
+      #endif
+      this->count_ApplyOp_+= this->blockSize_;
+
+      lclKV = MVT::CloneViewNonConst(*this->KV_,newind);
+      OPT::Apply(*this->Op_,*lclV,*lclKV);
+    }
+
+    // Project out the components of Delta in the direction of V
+    
+    // gamma = KauxVecs' lclKV
+    int nauxVecs = MVT::GetNumberVecs(*projVecs);
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > gamma = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(nauxVecs,this->blockSize_));
+          
+    this->orthman_->innerProdMat(*KprojVecs,*lclKV,*gamma);
+      
+    // lclKV = lclKV - KauxVecs gamma
+    MVT::MvTimesMatAddMv(-this->ONE,*KprojVecs,*gamma,this->ONE,*lclKV);
+          
+    // lclV = lclV - auxVecs gamma
+    MVT::MvTimesMatAddMv(-this->ONE,*projVecs,*gamma,this->ONE,*lclV);
+        
+    // Normalize lclKV
+    RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > gamma2 = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(this->blockSize_,this->blockSize_));
+    rank = this->orthman_->normalizeMat(*lclKV,gamma2);
+                
+    // lclV = lclV/gamma
+    Teuchos::SerialDenseSolver<int,ScalarType> SDsolver;
+    SDsolver.setMatrix(gamma2);
+    SDsolver.invert();
+    RCP<MV> tempMV = MVT::CloneCopy(*lclV);
+    MVT::MvTimesMatAddMv(this->ONE,*tempMV,*gamma2,this->ZERO,*lclV);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(rank != this->blockSize_,TraceMinBaseOrthoFailure,
+           "Anasazi::TraceMinDavidson::addToBasis(): Couldn't generate basis of full rank.");
+           
+    // Update MV
+    if(this->hasM_)
+    {
+      #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+        Teuchos::TimeMonitor lcltimer( *this->timerMOp_ );
+      #endif
+      this->count_ApplyM_+= this->blockSize_;
+
+      lclMV = MVT::CloneViewNonConst(*this->MV_,newind);
+      OPT::Apply(*this->MOp_,*lclV,*lclMV);
     }
   }
 

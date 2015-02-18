@@ -55,7 +55,8 @@ namespace Experimental {
   {
     PROJECTED_KRYLOV_SOLVER,
     SCHUR_COMPLEMENT_SOLVER,
-    BD_PREC_MINRES
+    BD_PREC_MINRES,
+    HSS_PREC_GMRES
   };
 
 }}

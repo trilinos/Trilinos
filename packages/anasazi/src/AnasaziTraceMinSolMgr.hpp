@@ -166,6 +166,10 @@ TraceMinSolMgr<ScalarType,MV,OP>::TraceMinSolMgr( const Teuchos::RCP<Eigenproble
   TEUCHOS_TEST_FOR_EXCEPTION(this->blockSize_ < this->problem_->getNEV(), std::invalid_argument,
          "Anasazi::TraceMinSolMgr::constructor(): \"Block Size\" must be greater than or equal to the number of desired eigenpairs.");
 
+  this->useHarmonic_ = pl.get("Use Harmonic Ritz Values", false);
+  TEUCHOS_TEST_FOR_EXCEPTION(this->useHarmonic_, std::invalid_argument,
+         "Anasazi::TraceMinSolMgr::constructor(): Please disable the harmonic Ritz values.  It doesn't make sense to use them with TraceMin, which does not use expanding subspaces.  Perhaps you wanted TraceMin-Davidson?");
+
   // TraceMin does not restart, so the number of blocks and number of restart blocks will always be 1
   this->numBlocks_ = 1;
   this->numRestartBlocks_ = 1;

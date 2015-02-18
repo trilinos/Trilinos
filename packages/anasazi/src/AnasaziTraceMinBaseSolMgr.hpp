@@ -123,11 +123,12 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
    *      - \c "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *      - \c "Saddle Solver Type" - a \c string specifying how to solve the saddle point problem arising at each iteration.
-   *           Options are "Projected Krylov" and "Schur Complement". Default: "Projected Krylov"
-   *            - \c "Projected Krylov": Uses projected-minres to solve the problem. Currently incapable of using a preconditioner.
+   *           Options are "Projected Krylov", "Schur Complement", and "Block Diagonal Preconditioned Minres". Default: "Projected Krylov"
+   *            - \c "Projected Krylov": Uses projected-minres to solve the problem.
    *            - \c "Schur Complement": Explicitly forms the (inexact) Schur complement using minres. 
-   *              This method does not ensure that \f$X^TM\Delta=0\f$ and is therefore not numerically stable.
-   *              However, it may be faster than the projected Krylov methods.
+   *            - \c "Block Diagonal Preconditioned Minres": Uses a block preconditioner on the entire saddle point problem.  For more information, please see "Overview of Anasazi and its newest eigensolver, TraceMin" on the main Anasazi page.
+   *           We recommend using "Projected Krylov" in the absence of preconditioning.  If you want to use a preconditioner, "Block Diagonal Preconditioned Minres" is recommended.
+   *           "Schur Complement" mainly exists for special use cases.
    *      - Ritz shift parameters
    *         - \c "When To Shift" - a \c string specifying when Ritz shifts should be performed. Options are "Never", "After Trace Levels", and "Always". Default: "Always"
    *            - \c "Never": Do not perform Ritz shifts.  This option produces guaranteed convergence but converges linearly.  Not recommended.
@@ -269,7 +270,8 @@ class TraceMinBaseSolMgr : public SolverManager<ScalarType,MV,OP> {
   int maxKrylovIter_;
   std::string ortho_, which_;
   enum SaddleSolType saddleSolType_;
-  bool projectAllVecs_, projectLockedVecs_, computeAllRes_, useRHSR_;
+  bool projectAllVecs_, projectLockedVecs_, computeAllRes_, useRHSR_, useHarmonic_, noSort_;
+  MagnitudeType alpha_;
 
   // Timers
   RCP<Teuchos::Time> _timerSolve, _timerRestarting, _timerLocking;
@@ -498,6 +500,8 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(shiftNorm_ != "2" && shiftNorm_ != "M", std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Shift Norm\"; valid options are \"2\" and \"M\".");  
 
+  noSort_ = pl.get("No Sorting", false);
+
   // How to choose shift
   strtmp = pl.get("How To Choose Shift", "Adjusted Ritz Values");
   
@@ -533,6 +537,8 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
     saddleSolType_ = SCHUR_COMPLEMENT_SOLVER;
   else if(strtmp == "Block Diagonal Preconditioned Minres")
     saddleSolType_ = BD_PREC_MINRES;
+  else if(strtmp == "HSS Preconditioned Gmres")
+    saddleSolType_ = HSS_PREC_GMRES;
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
            "Anasazi::TraceMinBaseSolMgr: Invalid value for \"Saddle Solver Type\"; valid options are \"Projected Krylov\", \"Schur Complement\", and \"Block Diagonal Preconditioned Minres\".");
@@ -540,13 +546,14 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   projectAllVecs_ = pl.get("Project All Vectors", true);
   projectLockedVecs_ = pl.get("Project Locked Vectors", true);
   computeAllRes_ = pl.get("Compute All Residuals", true);
-  useRHSR_ = pl.get("Use Residual as RHS", true);
+  useRHSR_ = pl.get("Use Residual as RHS", false);
+  alpha_ = pl.get("HSS: alpha", 1.0);
 
   TEUCHOS_TEST_FOR_EXCEPTION(projectLockedVecs_ && ! projectAllVecs_, std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: If you want to project out the locked vectors, you should really project out ALL the vectors of X.");
 
   // Maximum number of inner iterations
-  maxKrylovIter_ = pl.get("Maximum Krylov Iterations", 1000);
+  maxKrylovIter_ = pl.get("Maximum Krylov Iterations", 200);
   TEUCHOS_TEST_FOR_EXCEPTION(maxKrylovIter_ < 1, std::invalid_argument,
          "Anasazi::TraceMinBaseSolMgr: \"Maximum Krylov Iterations\" must be greater than 0.");
 		 
@@ -572,7 +579,7 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::TraceMinBaseSolMgr(
   // As a result, we have to use pseudo-block gmres for now.
   // Make sure it's available.
   TEUCHOS_TEST_FOR_EXCEPTION(problem_->getPrec() != Teuchos::null && saddleSolType_ == PROJECTED_KRYLOV_SOLVER, std::invalid_argument,
-         "Anasazi::TraceMinBaseSolMgr: When you use the projected Krylov solver with preconditioning, the preconditioner must be projected as well.  In theory, if the preconditioner is SPD, the projected preconditioner will be SPSD, but in practice, it can have small negative eigenvalues, presumably due to machine arithmetic.  This means we can't use TraceMin's built-in MINRES, and we are forced to use Belos for now.  You didn't install Belos.  You have three options to correct this problem:\n1. Reinstall Trilinos with Belos enabled (Recommended)\n2. Don't use a preconditioner\n3. Choose a different method for solving the saddle-point problem");
+         "Anasazi::TraceMinBaseSolMgr: When you use the projected Krylov solver with preconditioning, the preconditioner must be projected as well.  In theory, if the preconditioner is SPD, the projected preconditioner will be SPSD, but in practice, it can have small negative eigenvalues, presumably due to machine arithmetic.  This means we can't use TraceMin's built-in MINRES, and we are forced to use Belos for now.  You didn't install Belos.  You have three options to correct this problem:\n1. Reinstall Trilinos with Belos enabled\n2. Don't use a preconditioner\n3. Choose a different method for solving the saddle-point problem (Recommended)");
 
 
 #endif
@@ -816,7 +823,9 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
           std::vector<int> tmp_vector_int;
           if (curNumLocked + locktest->howMany() > maxLocked_) {
             // just use the first of them
-            tmp_vector_int.insert(tmp_vector_int.begin(),locktest->whichVecs().begin(),locktest->whichVecs().begin()+maxLocked_-curNumLocked);
+			for(int i=0; i<maxLocked_-curNumLocked; i++)
+			  tmp_vector_int.push_back(locktest->whichVecs()[i]);
+//            tmp_vector_int.insert(tmp_vector_int.begin(),locktest->whichVecs().begin(),locktest->whichVecs().begin()+maxLocked_-curNumLocked);
           }
           else {
             tmp_vector_int = locktest->whichVecs();
@@ -849,6 +858,8 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
 
           // Copy eigenvalues we want to lock into lockvals
           std::vector<Value<ScalarType> > allvals = tm_solver->getRitzValues();
+          for(int i=0; i<allvals.size(); i++)
+            printer_->stream(Debug) << "Ritz value[" << i << "] = " << allvals[i].realpart << std::endl;
           for (int i=0; i<numNewLocked; i++) {
             lockvals.push_back(allvals[lockind[i]].realpart);
           }
@@ -857,11 +868,27 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
           RCP<const MV> newLocked = MVT::CloneView(*tm_solver->getRitzVectors(),lockind);
           std::vector<int> indlock(numNewLocked);
           for (int i=0; i<numNewLocked; i++) indlock[i] = curNumLocked+i;
-          MVT::SetBlock(*newLocked,indlock,*lockvecs);
+          if(useHarmonic_)
+          {
+            RCP<MV> tempMV = MVT::CloneCopy(*newLocked);
+            ortho->normalizeMat(*tempMV);
+            MVT::SetBlock(*tempMV,indlock,*lockvecs);
+          }
+          else
+          {
+            MVT::SetBlock(*newLocked,indlock,*lockvecs);
+          }
 
           // Tell the StatusTestWithOrdering that things have been locked
           // This is VERY important
           // If this set of lines is removed, the code does not terminate correctly
+          if(noSort_)
+          {
+            for(int aliciaInd=0; aliciaInd<lockvals.size(); aliciaInd++)
+            {
+              lockvals[aliciaInd] = 0.0;
+            }
+          }
           ordertest->setAuxVals(lockvals);
 
           // Set the auxiliary vectors so that we remain orthogonal to the ones we locked
@@ -893,14 +920,28 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
           TraceMinBaseState<ScalarType,MV> newstate;
           if(newdim <= numUnlocked)
           {
-            std::vector<int> desiredSubscripts(newdim);
-            for(int i=0; i<newdim; i++)
+            if(useHarmonic_)
             {
-              desiredSubscripts[i] = unlockind[i];
-              printer_->stream(Debug) << "desiredSubscripts[" << i << "] = " << desiredSubscripts[i] << std::endl;
+              std::vector<int> desiredSubscripts(newdim);
+              for(int i=0; i<newdim; i++)
+              {
+                desiredSubscripts[i] = unlockind[i];
+                printer_->stream(Debug) << "H desiredSubscripts[" << i << "] = " << desiredSubscripts[i] << std::endl;
+              }
+              newstate.V = MVT::CloneView(*tm_solver->getRitzVectors(),desiredSubscripts);
+              newstate.curDim = newdim;
             }
+            else
+            {
+              std::vector<int> desiredSubscripts(newdim);
+              for(int i=0; i<newdim; i++)
+              {
+                desiredSubscripts[i] = unlockind[i];
+                printer_->stream(Debug) << "desiredSubscripts[" << i << "] = " << desiredSubscripts[i] << std::endl;
+              }
 
-            copyPartOfState(state, newstate, desiredSubscripts);
+              copyPartOfState(state, newstate, desiredSubscripts);
+            }
           }
           else
           {
@@ -918,7 +959,10 @@ TraceMinBaseSolMgr<ScalarType,MV,OP>::solve()
             RCP<MV> oldV = MVT::CloneViewNonConst(*totalV,tmp_vector_int);
 
             // Copy over the old things
-            helperMV = MVT::CloneView(*state.V,unlockind);
+            if(useHarmonic_)
+              helperMV = MVT::CloneView(*tm_solver->getRitzVectors(),unlockind);
+            else
+              helperMV = MVT::CloneView(*state.V,unlockind);
             MVT::Assign(*helperMV,*oldV);
 
             // Holds random vectors we're generating
@@ -1353,7 +1397,9 @@ void TraceMinBaseSolMgr<ScalarType,MV,OP>::setParameters(Teuchos::ParameterList 
   pl.set("Project Locked Vectors", projectLockedVecs_);
   pl.set("Compute All Residuals", computeAllRes_);
   pl.set("Use Residual as RHS", useRHSR_);
+  pl.set("Use Harmonic Ritz Values", useHarmonic_);
   pl.set("Maximum Krylov Iterations", maxKrylovIter_);
+  pl.set("HSS: alpha", alpha_);
 }
 
 

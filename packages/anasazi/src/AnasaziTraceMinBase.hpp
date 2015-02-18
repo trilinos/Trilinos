@@ -51,6 +51,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 using Teuchos::RCP;
@@ -175,11 +176,12 @@ namespace Experimental {
      * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include the following:
      *   - \c "Saddle Solver Type" - a \c string specifying how to solve the saddle point problem arising at each iteration.
-     *        Options are "Projected Krylov" and "Schur Complement". Default: "Projected Krylov"
-     *         - \c "Projected Krylov": Uses projected-minres to solve the problem. Currently incapable of using a preconditioner.
+     *        Options are "Projected Krylov", "Schur Complement", and "Block Diagonal Preconditioned Minres". Default: "Projected Krylov"
+     *         - \c "Projected Krylov": Uses projected-minres to solve the problem.
      *         - \c "Schur Complement": Explicitly forms the (inexact) Schur complement using minres. 
-     *           This method does not ensure that \f$X^TM\Delta=0\f$ and is therefore not numerically stable.
-     *           However, it may be faster than the projected Krylov methods.
+     *         - \c "Block Diagonal Preconditioned Minres": Uses a block preconditioner on the entire saddle point problem.  For more information, please see "Overview of Anasazi and its newest eigensolver, TraceMin" on the main Anasazi page.
+     *        We recommend using "Projected Krylov" in the absence of preconditioning.  If you want to use a preconditioner, "Block Diagonal Preconditioned Minres" is recommended.
+     *        "Schur Complement" mainly exists for special use cases.
      *   - Ritz shift parameters
      *      - \c "When To Shift" - a \c string specifying when Ritz shifts should be performed. Options are "Never", "After Trace Levels", and "Always". Default: "Always"
      *         - \c "Never": Do not perform Ritz shifts.  This option produces guaranteed convergence but converges linearly.  Not recommended.
@@ -236,6 +238,8 @@ namespace Experimental {
      * one of the TraceMinBase-specific exceptions.
      */
     void iterate();
+    
+    void harmonicIterate();
 
     /*! \brief Initialize the solver to an iterate, optionally providing the
      * other members of the state.
@@ -260,6 +264,8 @@ namespace Experimental {
      * the solver, the data is not copied.
      */
     void initialize(TraceMinBaseState<ScalarType,MV> newstate);
+    
+    void harmonicInitialize(TraceMinBaseState<ScalarType,MV> newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -444,12 +450,15 @@ namespace Experimental {
     //
     // Convenience typedefs
     //
-    typedef SolverUtils<ScalarType,MV,OP>      Utils;
-    typedef MultiVecTraits<ScalarType,MV>      MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV>   MVText;
-    typedef OperatorTraits<ScalarType,MV,OP>   OPT;
-    typedef Teuchos::ScalarTraits<ScalarType>  SCT;
-    typedef typename SCT::magnitudeType        MagnitudeType;
+    typedef SolverUtils<ScalarType,MV,OP>                 Utils;
+    typedef MultiVecTraits<ScalarType,MV>                 MVT;
+    typedef MultiVecTraitsExt<ScalarType,MV>              MVText;
+    typedef OperatorTraits<ScalarType,MV,OP>              OPT;
+    typedef Teuchos::ScalarTraits<ScalarType>             SCT;
+    typedef typename SCT::magnitudeType                   MagnitudeType;
+    typedef TraceMinRitzOp<ScalarType,MV,OP>              TraceMinRitzOp;
+    typedef SaddleContainer<ScalarType,MV>                SaddleContainer;
+    typedef SaddleOperator<ScalarType,MV,TraceMinRitzOp>  SaddleOperator;
     const MagnitudeType ONE;  
     const MagnitudeType ZERO; 
     const MagnitudeType NANVAL;
@@ -540,7 +549,7 @@ namespace Experimental {
     bool Rnorms_current_, R2norms_current_;
 
     // TraceMin specific variables
-    RCP<TraceMinRitzOp<ScalarType,MV,OP> > ritzOp_;    // Operator which incorporates Ritz shifts
+    RCP<TraceMinRitzOp> ritzOp_;    // Operator which incorporates Ritz shifts
     enum SaddleSolType saddleSolType_;                          // Type of saddle point solver being used
     bool previouslyLeveled_;                                    // True if the trace already leveled off
     MagnitudeType previousTrace_;                               // Trace of X'KX at the previous iteration
@@ -561,7 +570,9 @@ namespace Experimental {
     bool projectLockedVecs_;                                    // Project locked vectors too in minres; does nothing if projectAllVecs = false
     bool computeAllRes_;                                        // Compute all residuals, or just blocksize ones - helps make Ritz shifts safer
     bool useRHSR_;                                              // Use -R as the RHS of projected minres rather than AX
+    bool useHarmonic_;
     MagnitudeType traceThresh_;
+    MagnitudeType alpha_;
 
     // Variables that are only used if we're shifting when the residual gets small
     // TODO: These are currently unused
@@ -595,6 +606,8 @@ namespace Experimental {
     void solveSaddleSchur (RCP<MV> Delta) const;
     // Solves a saddle point problem with a block diagonal preconditioner
     void solveSaddleBDPrec (RCP<MV> Delta) const; 
+    // Solves a saddle point problem with a Hermitian/non-Hermitian splitting preconditioner
+    void solveSaddleHSSPrec (RCP<MV> Delta) const; 
     // Computes KK = X'KX
     void computeKK();
     // Computes the eigenpairs of KK
@@ -608,6 +621,7 @@ namespace Experimental {
     // Adds Delta to the basis
     // TraceMin and TraceMinDavidson each do this differently, which is why this is pure virtual
     virtual void addToBasis(const RCP<const MV> Delta) =0;
+    virtual void harmonicAddToBasis(const RCP<const MV> Delta) =0;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -695,7 +709,7 @@ namespace Experimental {
 
     // Set the saddle point solver parameters
     saddleSolType_ = params.get("Saddle Solver Type", PROJECTED_KRYLOV_SOLVER);
-    TEUCHOS_TEST_FOR_EXCEPTION(saddleSolType_ != PROJECTED_KRYLOV_SOLVER && saddleSolType_ != SCHUR_COMPLEMENT_SOLVER && saddleSolType_ != BD_PREC_MINRES, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(saddleSolType_ != PROJECTED_KRYLOV_SOLVER && saddleSolType_ != SCHUR_COMPLEMENT_SOLVER && saddleSolType_ != BD_PREC_MINRES && saddleSolType_ != HSS_PREC_GMRES, std::invalid_argument,
            "Anasazi::TraceMin::constructor: Invalid value for \"Saddle Solver Type\"; valid options are PROJECTED_KRYLOV_SOLVER, SCHUR_COMPLEMENT_SOLVER, and BD_PREC_MINRES.");    
 
     // Set the Ritz shift parameters
@@ -724,6 +738,7 @@ namespace Experimental {
     projectAllVecs_ = params.get("Project All Vectors", true);
     projectLockedVecs_ = params.get("Project Locked Vectors", true);
     useRHSR_ = params.get("Use Residual as RHS", true);
+    useHarmonic_ = params.get("Use Harmonic Ritz Values", false);
     computeAllRes_ = params.get("Compute All Residuals", true);
 
     // set the block size and allocate data
@@ -734,11 +749,13 @@ namespace Experimental {
     NEV_ = problem_->getNEV();
 
     // Create the Ritz shift operator
-    ritzOp_ = rcp( new TraceMinRitzOp<ScalarType,MV,OP>(Op_,MOp_,Prec_) );
-	
-	// Set the maximum number of inner iterations
-	int innerMaxIts = params.get("Maximum Krylov Iterations", 1000);
-	ritzOp_->setMaxIts(innerMaxIts);
+    ritzOp_ = rcp( new TraceMinRitzOp(Op_,MOp_,Prec_) );
+    
+    // Set the maximum number of inner iterations
+    int innerMaxIts = params.get("Maximum Krylov Iterations", 200);
+    ritzOp_->setMaxIts(innerMaxIts);
+
+    alpha_ = params.get("HSS: alpha", ONE);
   }
 
 
@@ -899,6 +916,12 @@ namespace Experimental {
   template <class ScalarType, class MV, class OP>
   void TraceMinBase<ScalarType,MV,OP>::iterate ()
   {
+    if(useHarmonic_)
+    {
+      harmonicIterate();
+      return;
+    }
+  
     //
     // Initialize solver state
     if (initialized_ == false) {
@@ -979,6 +1002,130 @@ namespace Experimental {
     } // end while (statusTest == false)
 
   } // end of iterate()
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Perform TraceMinBase iterations until the StatusTest tells us to stop.
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::harmonicIterate ()
+  {
+    //
+    // Initialize solver state
+    if (initialized_ == false) {
+      initialize();
+    }
+
+    // as a data member, this would be redundant and require synchronization with
+    // blockSize_ and numBlocks_; we'll use a constant here.
+    const int searchDim = blockSize_*numBlocks_;
+
+    // Update obtained from solving saddle point problem
+    RCP<MV> Delta = MVT::Clone(*X_,blockSize_);
+
+    ////////////////////////////////////////////////////////////////
+    // iterate until the status test tells us to stop.
+    // also break if our basis is full
+    while (tester_->checkStatus(this) != Passed && (numBlocks_ == 1 || curDim_ < searchDim)) {
+
+      // Print information on current iteration
+      if (om_->isVerbosity(Debug)) {
+        currentStatus( om_->stream(Debug) );
+      }
+      else if (om_->isVerbosity(IterationDetails)) {
+        currentStatus( om_->stream(IterationDetails) );
+      }
+
+      ++iter_;
+
+      // Solve the saddle point problem
+      solveSaddlePointProblem(Delta);
+
+      // Insert Delta at the end of V
+      harmonicAddToBasis(Delta);
+
+      if (om_->isVerbosity( Debug ) ) {
+        // Check almost everything here
+        CheckList chk;
+        chk.checkV = true;
+        om_->print( Debug, accuracyCheck(chk, ": after addToBasis(Delta)") );
+      }
+
+      // Compute KK := V'KV
+      computeKK();
+
+      if (om_->isVerbosity( Debug ) ) {
+        // Check almost everything here
+        CheckList chk;
+        chk.checkKK = true;
+        om_->print( Debug, accuracyCheck(chk, ": after computeKK()") );
+      }
+
+      // Compute the Ritz pairs
+      computeRitzPairs();
+
+      // Compute X := V RitzVecs
+      computeX();
+    
+      // Get norm of each vector in X
+      int nvecs;
+      if(computeAllRes_)
+        nvecs = curDim_;
+      else
+        nvecs = blockSize_;
+      std::vector<int> dimind(nvecs);
+      for(int i=0; i<nvecs; i++)
+        dimind[i] = i;
+      RCP<MV> lclX = MVT::CloneViewNonConst(*X_,dimind);
+      std::vector<ScalarType> normvec(nvecs);
+      orthman_->normMat(*lclX,normvec);
+      
+      // Scale X
+      for(int i=0; i<nvecs; i++)
+        normvec[i] = ONE/normvec[i];
+      MVT::MvScale(*lclX,normvec);
+      
+      // Scale eigenvalues
+      for(int i=0; i<nvecs; i++)
+      {
+        theta_[i] = theta_[i] * normvec[i] * normvec[i];
+      }        
+
+      if (om_->isVerbosity( Debug ) ) {
+        // Check almost everything here
+        CheckList chk;
+        chk.checkX = true;
+        om_->print( Debug, accuracyCheck(chk, ": after computeX()") );
+      }
+
+      // Compute KX := KV RitzVecs and MX := MV RitzVecs (if necessary)
+      updateKXMX();
+      
+      // Scale KX and MX
+      if(Op_ != Teuchos::null)
+      {
+        RCP<MV> lclKX = MVT::CloneViewNonConst(*KX_,dimind);  
+        MVT::MvScale(*lclKX,normvec);
+      }
+      if(hasM_)
+      {
+        RCP<MV> lclMX = MVT::CloneViewNonConst(*MX_,dimind);
+        MVT::MvScale(*lclMX,normvec);
+      }
+
+      if (om_->isVerbosity( Debug ) ) {
+        // Check almost everything here
+        CheckList chk;
+        chk.checkKX = true;
+        chk.checkMX = true;
+        om_->print( Debug, accuracyCheck(chk, ": after updateKXMX()") );
+      }
+
+      // Update the residual vectors
+      updateResidual(); 
+    } // end while (statusTest == false)
+
+  } // end of harmonicIterate()
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1014,6 +1161,14 @@ namespace Experimental {
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor inittimer( *timerInit_ );
 #endif
+    
+    previouslyLeveled_ = false;
+    
+    if(useHarmonic_)
+    {
+      harmonicInitialize(newstate);
+      return;
+    }
 
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; ++i) bsind[i] = i;
@@ -1536,6 +1691,602 @@ namespace Experimental {
       currentStatus( om_->stream(IterationDetails) );
     }
   }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Initialize the state of the solver
+   * 
+   * POST-CONDITIONS:
+   *
+   * V_ is orthonormal, orthogonal to auxVecs_, for first curDim_ vectors
+   * theta_ contains Ritz w.r.t. V_(1:curDim_)
+   * X is Ritz vectors w.r.t. V_(1:curDim_)
+   * KX = Op*X
+   * MX = M*X if hasM_
+   * R = KX - MX*diag(theta_)
+   *
+   */
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::harmonicInitialize(TraceMinBaseState<ScalarType,MV> newstate)
+  {
+    // TODO: Check for bad input
+    // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
+    // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
+
+    std::vector<int> bsind(blockSize_);
+    for (int i=0; i<blockSize_; ++i) bsind[i] = i;
+
+    // in TraceMinBase, V is primary
+    // the order of dependence follows like so.
+    // --init->               V,KK
+    //    --ritz analysis->   theta,X  
+    //       --op apply->     KX,MX  
+    //          --compute->   R
+    // 
+    // if the user specifies all data for a level, we will accept it.
+    // otherwise, we will generate the whole level, and all subsequent levels.
+    //
+    // the data members are ordered based on dependence, and the levels are
+    // partitioned according to the amount of work required to produce the
+    // items in a level.
+    //
+    // inconsistent multivectors widths and lengths will not be tolerated, and
+    // will be treated with exceptions.
+    //
+    // for multivector pointers in newstate which point directly (as opposed to indirectly, via a view) to 
+    // multivectors in the solver, the copy will not be affected.
+
+    // set up V and KK: get them from newstate if user specified them
+    // otherwise, set them manually
+    RCP<MV> lclV, lclKV, lclMV;
+    RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK, lclRV;
+
+    // If V was supplied by the user...
+    if (newstate.V != Teuchos::null) {
+      om_->stream(Debug) << "Copying V from the user\n";
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_), std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Vector length of V not correct." );
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim < blockSize_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Rank of new state must be at least blockSize().");
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*numBlocks_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Rank of new state must be less than getMaxSubspaceDim().");
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < newstate.curDim, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Multivector for basis in new state must be as large as specified state rank.");
+
+      curDim_ = newstate.curDim;
+      // pick an integral amount
+      curDim_ = (int)(curDim_ / blockSize_)*blockSize_;
+
+      TEUCHOS_TEST_FOR_EXCEPTION( curDim_ != newstate.curDim, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Rank of new state must be a multiple of getBlockSize().");
+
+      // put data in V
+      std::vector<int> nevind(curDim_);
+      for (int i=0; i<curDim_; ++i) nevind[i] = i;
+      if (newstate.V != V_) {
+        if (curDim_ < MVT::GetNumberVecs(*newstate.V)) {
+          newstate.V = MVT::CloneView(*newstate.V,nevind);
+        }
+        MVT::SetBlock(*newstate.V,nevind,*V_);
+      }
+      lclV = MVT::CloneViewNonConst(*V_,nevind);
+    } // end if user specified V
+    else 
+    {
+      // get vectors from problem or generate something, projectAndNormalize
+      RCP<const MV> ivec = problem_->getInitVec();
+      TEUCHOS_TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
+             "Anasazi::TraceMinBase::initialize(newstate): Eigenproblem did not specify initial vectors to clone from.");
+      // clear newstate so we won't use any data from it below
+      newstate.X       = Teuchos::null;
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+      newstate.T       = Teuchos::null;
+      newstate.RV      = Teuchos::null;
+      newstate.KK      = Teuchos::null;
+      newstate.KV      = Teuchos::null;
+      newstate.MopV    = Teuchos::null;
+      newstate.isOrtho = false;
+
+      // If the user did not specify a current dimension, use that of the initial vectors they provided
+      if(newstate.curDim > 0)
+        curDim_ = newstate.curDim;
+      else
+        curDim_ = MVT::GetNumberVecs(*ivec);
+
+      // pick the largest multiple of blockSize_
+      curDim_ = (int)(curDim_ / blockSize_)*blockSize_;
+      if (curDim_ > blockSize_*numBlocks_) {
+        // user specified too many vectors... truncate
+        // this produces a full subspace, but that is okay
+        curDim_ = blockSize_*numBlocks_;
+      }
+      bool userand = false;
+      if (curDim_ == 0) {
+        // we need at least blockSize_ vectors
+        // use a random multivec: ignore everything from InitVec
+        userand = true;
+        curDim_ = blockSize_;
+      }
+
+      std::vector<int> nevind(curDim_);
+      for (int i=0; i<curDim_; ++i) nevind[i] = i;  
+
+      // get a pointer into V
+      // lclV has curDim vectors
+      //
+      // get pointer to first curDim vectors in V_
+      lclV = MVT::CloneViewNonConst(*V_,nevind);
+      if (userand) 
+      {
+        // generate random vector data
+        MVT::MvRandom(*lclV);
+      }
+      else 
+      {
+        if(newstate.curDim > 0)
+        {
+          if(MVT::GetNumberVecs(*newstate.V) > curDim_) {
+            RCP<const MV> helperMV = MVT::CloneView(*newstate.V,nevind);
+            MVT::SetBlock(*helperMV,nevind,*lclV);
+          }
+          // assign ivec to first part of lclV
+          MVT::SetBlock(*newstate.V,nevind,*lclV);
+        }
+        else
+        {
+          if(MVT::GetNumberVecs(*ivec) > curDim_) {
+            ivec = MVT::CloneView(*ivec,nevind);
+          }
+          // assign ivec to first part of lclV
+          MVT::SetBlock(*ivec,nevind,*lclV);
+        }
+      }
+    } // end if user did not specify V
+    
+    // Nuke everything from orbit
+    // This is a temporary measure due to a bug in the code that I have not found yet
+    // It adds a minimal amount of work
+    newstate.X       = Teuchos::null;
+    newstate.MX      = Teuchos::null;
+    newstate.KX      = Teuchos::null;
+    newstate.R       = Teuchos::null;
+    newstate.T       = Teuchos::null;
+    newstate.RV      = Teuchos::null;
+    newstate.KK      = Teuchos::null;
+    newstate.KV      = Teuchos::null;
+    newstate.MopV    = Teuchos::null;
+    newstate.isOrtho = false;
+
+    // A vector of relevant indices
+    std::vector<int> dimind(curDim_);
+    for (int i=0; i<curDim_; ++i) dimind[i] = i;
+
+    // Project the auxVecs out of V
+    if(auxVecs_.size() > 0)
+      orthman_->projectMat(*lclV,auxVecs_);
+    
+    // Compute KV
+    if(Op_ != Teuchos::null && newstate.KV == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing KV\n";
+
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
+      count_ApplyOp_+= curDim_;
+
+      // These things are now invalid
+      newstate.X       = Teuchos::null;
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+      newstate.T       = Teuchos::null;
+      newstate.RV      = Teuchos::null;
+      newstate.KK      = Teuchos::null;
+
+      lclKV = MVT::CloneViewNonConst(*KV_,dimind);
+      OPT::Apply(*Op_,*lclV,*lclKV);
+    }
+    // Copy KV
+    else if(Op_ != Teuchos::null)
+    {
+      om_->stream(Debug) << "Copying KV\n";
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.KV) != MVText::GetGlobalLength(*KV_), std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Vector length of KV not correct." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KV) < curDim_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Number of vectors in KV not correct.");
+
+      if (newstate.KV != KV_) {
+        if (curDim_ < MVT::GetNumberVecs(*newstate.KV)) {
+          newstate.KV = MVT::CloneView(*newstate.KV,dimind);
+        }
+        MVT::SetBlock(*newstate.KV,dimind,*KV_);
+      }
+      lclKV = MVT::CloneViewNonConst(*KV_,dimind);
+    }
+    else
+    {
+      om_->stream(Debug) << "There is no KV\n";
+
+      lclKV = lclV;
+      KV_ = V_;
+    }  
+
+
+
+    // Project and normalize so that V'V = I and Q'V=0
+    if(newstate.isOrtho == false)
+    {
+      om_->stream(Debug) << "Project and normalize\n";
+
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
+
+      // These things are now invalid
+      newstate.MopV    = Teuchos::null;
+      newstate.X       = Teuchos::null;
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+      newstate.T       = Teuchos::null;
+      newstate.RV      = Teuchos::null;
+      newstate.KK      = Teuchos::null;
+
+      // Normalize lclKV
+      RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > gamma = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(curDim_,curDim_));
+      int rank = orthman_->normalizeMat(*lclKV,gamma);
+                
+      // lclV = lclV/gamma
+      Teuchos::SerialDenseSolver<int,ScalarType> SDsolver;
+      SDsolver.setMatrix(gamma);
+      SDsolver.invert();
+      RCP<MV> tempMV = MVT::CloneCopy(*lclV);
+      MVT::MvTimesMatAddMv(ONE,*tempMV,*gamma,ZERO,*lclV);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != curDim_,TraceMinBaseInitFailure,
+             "Anasazi::TraceMinBase::initialize(): Couldn't generate initial basis of full rank.");
+    }
+    
+    // Compute MV if necessary
+    if(hasM_ && newstate.MopV == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing MV\n";
+
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+#endif
+      count_ApplyM_+= curDim_;
+
+      // Get a pointer to the relevant parts of MV
+      lclMV = MVT::CloneViewNonConst(*MV_,dimind);
+      OPT::Apply(*MOp_,*lclV,*lclMV);
+    }
+    // Copy MV if necessary
+    else if(hasM_)
+    {
+      om_->stream(Debug) << "Copying MV\n";
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.MopV) != MVText::GetGlobalLength(*MV_), std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Vector length of MV not correct." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MopV) < curDim_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Number of vectors in MV not correct.");
+
+      if(newstate.MopV != MV_) {
+        if(curDim_ < MVT::GetNumberVecs(*newstate.MopV)) {
+          newstate.MopV = MVT::CloneView(*newstate.MopV,dimind);
+        }
+        MVT::SetBlock(*newstate.MopV,dimind,*MV_);
+      }
+      lclMV = MVT::CloneViewNonConst(*MV_,dimind);
+    }
+    // There is no M, so there is no MV
+    else
+    {
+      om_->stream(Debug) << "There is no MV\n";
+
+      lclMV = lclV;
+      MV_ = V_;
+    }
+
+    // Compute KK
+    if(newstate.KK == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing KK\n";
+
+      // These things are now invalid
+      newstate.X       = Teuchos::null;
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+      newstate.T       = Teuchos::null;
+      newstate.RV      = Teuchos::null;
+
+      // Note: there used to be a bug here.
+      // We can't just call computeKK because it only computes the new parts of KK
+
+      // Get a pointer to the part of KK we're interested in
+      lclKK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+
+      // KK := V'KV
+      MVT::MvTransMv(ONE,*lclV,*lclKV,*lclKK);
+    }
+    // Copy KK
+    else
+    {
+      om_->stream(Debug) << "Copying KK\n";
+
+      // check size of KK
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.KK->numRows() < curDim_ || newstate.KK->numCols() < curDim_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Projected matrix in new state must be as large as specified state rank.");
+
+      // put data into KK_
+      lclKK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+      if (newstate.KK != KK_) {
+        if (newstate.KK->numRows() > curDim_ || newstate.KK->numCols() > curDim_) {
+          newstate.KK = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.KK,curDim_,curDim_) );
+        }
+        lclKK->assign(*newstate.KK);
+      }
+    }
+
+    // Compute Ritz pairs
+    if(newstate.T == Teuchos::null || newstate.RV == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing Ritz pairs\n";
+
+      // These things are now invalid
+      newstate.X       = Teuchos::null;
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+      newstate.T       = Teuchos::null;
+      newstate.RV      = Teuchos::null;
+
+      computeRitzPairs();
+    }
+    // Copy Ritz pairs
+    else
+    {
+      om_->stream(Debug) << "Copying Ritz pairs\n";
+
+      TEUCHOS_TEST_FOR_EXCEPTION((signed int)(newstate.T->size()) != curDim_,
+             std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of T must be consistent with dimension of V.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION( newstate.RV->numRows() < curDim_ || newstate.RV->numCols() < curDim_, std::invalid_argument, 
+             "Anasazi::TraceMinBase::initialize(newstate): Ritz vectors in new state must be as large as specified state rank.");
+
+      std::copy(newstate.T->begin(),newstate.T->end(),theta_.begin());
+
+      lclRV = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*ritzVecs_,curDim_,curDim_) );
+      if (newstate.RV != ritzVecs_) {
+        if (newstate.RV->numRows() > curDim_ || newstate.RV->numCols() > curDim_) {
+          newstate.RV = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*newstate.RV,curDim_,curDim_) );
+        }
+        lclRV->assign(*newstate.RV);
+      }
+    }
+
+    // Compute X
+    if(newstate.X == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing X\n";
+
+      // These things are now invalid
+      newstate.MX      = Teuchos::null;
+      newstate.KX      = Teuchos::null;
+      newstate.R       = Teuchos::null;
+
+      computeX();
+    }
+    // Copy X
+    else
+    {
+      om_->stream(Debug) << "Copying X\n";
+
+      if(computeAllRes_ == false)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with block size and length of V.");
+
+        if(newstate.X != X_) {
+          MVT::SetBlock(*newstate.X,bsind,*X_);
+        }
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != curDim_ || MVText::GetGlobalLength(*newstate.X) != MVText::GetGlobalLength(*X_),
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of X must be consistent with current dimension and length of V.");
+
+        if(newstate.X != X_) {
+          MVT::SetBlock(*newstate.X,dimind,*X_);
+        }
+      }
+    }
+
+    // Compute KX and MX if necessary
+    // TODO: These technically should be separate; it won't matter much in terms of running time though
+    if((Op_ != Teuchos::null && newstate.KX == Teuchos::null) || (hasM_ && newstate.MX == Teuchos::null))
+    {
+      om_->stream(Debug) << "Computing KX and MX\n";
+
+      // These things are now invalid
+      newstate.R = Teuchos::null;
+
+      updateKXMX();
+    }
+    // Copy KX and MX if necessary
+    else
+    {
+      om_->stream(Debug) << "Copying KX and MX\n";
+      if(Op_ != Teuchos::null)
+      {
+        if(computeAllRes_ == false)
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != blockSize_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with block size and length of V.");
+
+          if(newstate.KX != KX_) {
+            MVT::SetBlock(*newstate.KX,bsind,*KX_);
+          }
+        }
+        else
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.KX) != curDim_ || MVText::GetGlobalLength(*newstate.KX) != MVText::GetGlobalLength(*KX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of KX must be consistent with current dimension and length of V.");
+
+          if (newstate.KX != KX_) {
+            MVT::SetBlock(*newstate.KX,dimind,*KX_);
+          }
+        }
+      }
+
+      if(hasM_)
+      {
+        if(computeAllRes_ == false)
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != blockSize_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with block size and length of V.");
+
+          if (newstate.MX != MX_) {
+            MVT::SetBlock(*newstate.MX,bsind,*MX_);
+          }
+        }
+        else
+        {
+          TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.MX) != curDim_ || MVText::GetGlobalLength(*newstate.MX) != MVText::GetGlobalLength(*MX_),
+                 std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): Size of MX must be consistent with current dimension and length of V.");
+
+          if (newstate.MX != MX_) {
+            MVT::SetBlock(*newstate.MX,dimind,*MX_);
+          }
+        }
+      }
+    }
+    
+    // Scale X so each vector is of length 1
+    {
+      // Get norm of each vector in X
+      int nvecs;
+      if(computeAllRes_)
+        nvecs = curDim_;
+      else
+        nvecs = blockSize_;
+      std::vector<int> dimind(nvecs);
+      for(int i=0; i<nvecs; i++)
+        dimind[i] = i;
+      RCP<MV> lclX = MVT::CloneViewNonConst(*X_,dimind);
+      std::vector<ScalarType> normvec(nvecs);
+      orthman_->normMat(*lclX,normvec);
+      
+      // Scale X, KX, and MX accordingly
+      for(int i=0; i<nvecs; i++)
+        normvec[i] = ONE/normvec[i];
+      MVT::MvScale(*lclX,normvec);
+      if(Op_ != Teuchos::null)
+      {
+        RCP<MV> lclKX = MVT::CloneViewNonConst(*KX_,dimind);  
+        MVT::MvScale(*lclKX,normvec);
+      }
+      if(hasM_)
+      {
+        RCP<MV> lclMX = MVT::CloneViewNonConst(*MX_,dimind);
+        MVT::MvScale(*lclMX,normvec);
+      }
+      
+      // Scale eigenvalues
+      for(int i=0; i<nvecs; i++)
+        theta_[i] = theta_[i] * normvec[i] * normvec[i];
+    }
+
+    // Compute R
+    if(newstate.R == Teuchos::null)
+    {
+      om_->stream(Debug) << "Computing R\n";
+
+      updateResidual();
+    }
+    // Copy R
+    else
+    {
+      om_->stream(Debug) << "Copying R\n";
+
+      if(computeAllRes_ == false)
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != blockSize_,
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least block size vectors." );
+        if (newstate.R != R_) {
+          MVT::SetBlock(*newstate.R,bsind,*R_);
+        }
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPTION(MVText::GetGlobalLength(*newstate.R) != MVText::GetGlobalLength(*X_),
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): vector length of newstate.R not correct." );
+        TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.R) != curDim_,
+               std::invalid_argument, "Anasazi::TraceMinBase::initialize(newstate): newstate.R must have at least curDim vectors." );
+        if (newstate.R != R_) {
+          MVT::SetBlock(*newstate.R,dimind,*R_);
+        }
+      }
+    }
+
+    // R has been updated; mark the norms as out-of-date
+    Rnorms_current_ = false;
+    R2norms_current_ = false;
+
+    // Set the largest safe shift
+    largestSafeShift_ = newstate.largestSafeShift;
+
+    // Copy over the Ritz shifts
+    if(newstate.ritzShifts != Teuchos::null)
+    {
+      om_->stream(Debug) << "Copying Ritz shifts\n";
+      std::copy(newstate.ritzShifts->begin(),newstate.ritzShifts->end(),ritzShifts_.begin());
+    }
+    else
+    {
+      om_->stream(Debug) << "Setting Ritz shifts to 0\n";
+      for(size_t i=0; i<ritzShifts_.size(); i++)
+        ritzShifts_[i] = ZERO;
+    }
+
+    for(size_t i=0; i<ritzShifts_.size(); i++)
+      om_->stream(Debug) << "Ritz shifts[" << i << "] = " << ritzShifts_[i] << std::endl;
+
+    // finally, we are initialized
+    initialized_ = true;
+
+    if (om_->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkV = true;
+      chk.checkX = true;
+      chk.checkKX = true;
+      chk.checkMX = true;
+      chk.checkQ = true;
+      chk.checkKK = true;
+      om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
+    }
+
+    // Print information on current status
+    if (om_->isVerbosity(Debug)) {
+      currentStatus( om_->stream(Debug) );
+    }
+    else if (om_->isVerbosity(IterationDetails)) {
+      currentStatus( om_->stream(IterationDetails) );
+    }
+  }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1887,8 +2638,7 @@ namespace Experimental {
   {
     ScalarType currentTrace = ZERO;
 
-    int neigs = std::min(NEV_,curDim_);
-    for(int i=0; i < neigs; i++)
+    for(int i=0; i < blockSize_; i++)
       currentTrace += theta_[i];
 
     return currentTrace;
@@ -1943,6 +2693,8 @@ namespace Experimental {
       nvecs = curDim_;
     else
       nvecs = blockSize_;
+
+    getRes2Norms();
 
     std::vector<ScalarType> clusterResids(nvecs);
     std::vector<int> clusterIndices;
@@ -2134,7 +2886,9 @@ namespace Experimental {
     for(int i=0; i<blockSize_; i++)
     {
       if(theta_[i] < 0)
-        ritzShifts_[i] = -ritzShifts_[i];
+        ritzShifts_[i] = -abs(ritzShifts_[i]);
+      else
+        ritzShifts_[i] = abs(ritzShifts_[i]);
     }
   }
 
@@ -2151,13 +2905,13 @@ namespace Experimental {
       if(std::abs(theta_[0]) != std::abs(ritzShifts_[i]))
         temp1 = std::abs(theta_[i]-ritzShifts_[i])/std::abs(std::abs(theta_[0])-std::abs(ritzShifts_[i]));
       else
-        temp1 = ONE;
+        temp1 = ZERO;
 
       temp2 = pow(2.0,-iter_);
 
       // TODO: The min and max tolerances should not be hard coded
       //       Neither should the maximum number of iterations
-      tolerances.push_back(std::max(std::min(temp1,temp2),1e-8));
+      tolerances.push_back(std::max(std::min(temp1*temp1,temp2),1e-8));
     }
   
     if(nvecs > 1)
@@ -2223,25 +2977,25 @@ namespace Experimental {
     {
       std::vector<int> order(curDim_);
       std::vector<ScalarType> tempvec(blockSize_);
-      RCP<BasicSort<MagnitudeType> > sorter = rcp( new BasicSort<MagnitudeType>("SR") );
+//      RCP<BasicSort<MagnitudeType> > sorter = rcp( new BasicSort<MagnitudeType>("SR") );
 
       // Stores the residual of each CLUSTER of eigenvalues
       std::vector<ScalarType> clusterResids;
 
-      // Sort the eigenvalues in ascending order for the Ritz shift selection
+/*      // Sort the eigenvalues in ascending order for the Ritz shift selection
       sorter->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
 
       // Apply the same ordering to the residual norms
       getRes2Norms();
       for (int i=0; i<blockSize_; i++)
         tempvec[i] = R2norms_[order[i]];
-      R2norms_ = tempvec;
+      R2norms_ = tempvec;*/
 
       // Compute the residual of each CLUSTER of eigenvalues
       // This is important for selecting the Ritz shifts
       clusterResids = getClusterResids();
 
-      // Sort the eigenvalues based on what the user wanted
+/*      // Sort the eigenvalues based on what the user wanted
       sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);
 
       // Apply the same ordering to the residual norms and cluster residuals
@@ -2251,7 +3005,7 @@ namespace Experimental {
 
       for (int i=0; i<blockSize_; i++)
         tempvec[i] = clusterResids[order[i]];
-      clusterResids = tempvec;      
+      clusterResids = tempvec;*/      
 
       // Compute the Ritz shifts
       computeRitzShifts(clusterResids);
@@ -2286,6 +3040,7 @@ namespace Experimental {
         if(Z_ == Teuchos::null || MVT::GetNumberVecs(*Z_) != blockSize_)
         {
           // We do NOT want Z to be 0, because that could result in stagnation
+          // I know it's tempting to take out the MvRandom, but seriously, don't do it.
           Z_ = MVT::Clone(*X_,blockSize_);
           MVT::MvRandom(*Z_);
         }
@@ -2295,6 +3050,10 @@ namespace Experimental {
       {
         solveSaddleBDPrec(Delta);
 //        Delta->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
+      }
+      else if(saddleSolType_ == HSS_PREC_GMRES)
+      {
+        solveSaddleHSSPrec(Delta);
       }
       else
         std::cout << "Invalid saddle solver type\n";
@@ -2383,9 +3142,15 @@ namespace Experimental {
 
     if(computeAllRes_)
     {
+	  int dimension;
+	  if(projectAllVecs_)
+	    dimension = curDim_;
+	  else
+	    dimension = blockSize_;
+		
       // Get the valid indices of X
-      std::vector<int> curind(blockSize_);
-      for(int i=0; i<blockSize_; i++)
+      std::vector<int> curind(dimension);
+      for(int i=0; i<dimension; i++)
         curind[i] = i;
 
       RCP<const MV> locMX = MVT::CloneView(*MX_, curind);
@@ -2404,16 +3169,20 @@ namespace Experimental {
       // Remember, Delta0 must equal 0
       // This ensures B-orthogonality between Delta and X
       MVT::MvInit(*Delta);
+	  
+	  std::vector<int> dimind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        dimind[i] = i;
 
       if(useRHSR_)
       {
-        RCP<const MV> locR = MVT::CloneView(*R_, curind);
+        RCP<const MV> locR = MVT::CloneView(*R_, dimind);
         projOp->ApplyInverse(*locR, *Delta);
         MVT::MvScale(*Delta, -ONE);
       }
       else
       {
-        RCP<const MV> locKX = MVT::CloneView(*KX_, curind);
+        RCP<const MV> locKX = MVT::CloneView(*KX_, dimind);
         projOp->ApplyInverse(*locKX, *Delta);
       }
     }
@@ -2465,9 +3234,14 @@ namespace Experimental {
         curind[i] = i;
 
       // Z = K \ MX
-      MVT::SetBlock(*X_,curind,*Z_);
+      // Why would I have wanted to set Z <- X?  I want to leave Z's previous value alone...
       RCP<const MV> lclMX = MVT::CloneView(*MX_, curind);
+
+#ifdef USE_APPLY_INVERSE
+      Op_->ApplyInverse(*lclMX,*Z_);
+#else
       ritzOp_->ApplyInverse(*lclMX,*Z_);
+#endif
 
       // form S = X' M Z
       MVT::MvTransMv(ONE,*Z_,*lclMX,*lclS);
@@ -2485,7 +3259,11 @@ namespace Experimental {
     else
     {
       // Z = K \ MX
+#ifdef USE_APPLY_INVERSE
+      Op_->ApplyInverse(*MX_,*Z_);
+#else
       ritzOp_->ApplyInverse(*MX_,*Z_);
+#endif
 
       // form S = X' M Z
       MVT::MvTransMv(ONE,*Z_,*MX_,*lclS);
@@ -2523,24 +3301,28 @@ namespace Experimental {
     }
 
     // Create the operator [A BX; X'B 0]
-    RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadOp = rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX));
+    RCP<SaddleOperator> sadOp = rcp(new SaddleOperator(ritzOp_,locMX));
 
     // Create the RHS [AX; 0]
-    RCP< SaddleContainer<ScalarType, MV> > sadRHS = rcp(new SaddleContainer<ScalarType,MV>(locKX));
+    RCP<SaddleContainer> sadRHS = rcp(new SaddleContainer(locKX));
+
+//    locKX->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
+
+//    locMX->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
 
     // Create the solution vector [Delta; L]
     MVT::MvInit(*Delta);
-    RCP< SaddleContainer<ScalarType, MV> > sadSol = rcp(new SaddleContainer<ScalarType,MV>(Delta));
+    RCP<SaddleContainer> sadSol = rcp(new SaddleContainer(Delta));
 
     // Create a minres solver
-    RCP<PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > > sadSolver;
+    RCP<PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator > > sadSolver;
     if(Prec_ != Teuchos::null)
     {
-      RCP< SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > > sadPrec = rcp(new SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> >(ritzOp_,locMX,BD_PREC));
-      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp, sadPrec));
+      RCP<SaddleOperator> sadPrec = rcp(new SaddleOperator(ritzOp_->getPrec(),locMX,BD_PREC));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator>(sadOp, sadPrec));
     }
     else {
-      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer<ScalarType, MV>,SaddleOperator<ScalarType, MV, TraceMinRitzOp<ScalarType,MV,OP> > >(sadOp));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator>(sadOp));
     }
 
     // Set the tolerance for the minres solver
@@ -2560,6 +3342,88 @@ namespace Experimental {
     // Solve the saddle point problem
     sadSolver->solve();
   }
+
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO: We can hold the Schur complement constant in later iterations
+  template <class ScalarType, class MV, class OP>
+  void TraceMinBase<ScalarType,MV,OP>::solveSaddleHSSPrec (RCP<MV> Delta) const 
+  {
+#ifdef HAVE_ANASAZI_BELOS
+    typedef Belos::LinearProblem<ScalarType,SaddleContainer,SaddleOperator>           LP;
+    typedef Belos::PseudoBlockGmresSolMgr<ScalarType,SaddleContainer,SaddleOperator>  GmresSolMgr;
+
+    RCP<MV> locKX, locMX;
+    if(computeAllRes_)
+    {
+      std::vector<int> curind(blockSize_);
+      for(int i=0; i<blockSize_; i++)
+        curind[i] = i;
+      locKX = MVT::CloneViewNonConst(*KX_, curind);
+      locMX = MVT::CloneViewNonConst(*MX_, curind);
+    }
+    else
+    {
+      locKX = KX_;
+      locMX = MX_;
+    }
+
+    // Create the operator [A BX; X'B 0]
+    RCP<SaddleOperator> sadOp = rcp(new SaddleOperator(ritzOp_,locMX,NONSYM));
+
+    // Create the RHS [AX; 0]
+    RCP<SaddleContainer> sadRHS = rcp(new SaddleContainer(locKX));
+
+    // Create the solution vector [Delta; L]
+    MVT::MvInit(*Delta);
+    RCP<SaddleContainer> sadSol = rcp(new SaddleContainer(Delta));
+
+    // Create a parameter list for the gmres solver
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+
+    // Set the tolerance for the gmres solver
+    std::vector<ScalarType> tol;
+    ritzOp_->getInnerTol(tol);
+    pl->set("Convergence Tolerance",tol[0]);
+
+    // Set the maximum number of iterations
+    // TODO: Come back to this
+    pl->set("Maximum Iterations", ritzOp_->getMaxIts());
+    pl->set("Num Blocks", ritzOp_->getMaxIts());
+
+    // Set the block size
+    // TODO: Come back to this
+	// TODO: This breaks the code right now, presumably because of a MVT cloneview issue.
+    pl->set("Block Size", blockSize_);
+
+    // Set the verbosity of gmres
+//    pl->set("Verbosity", Belos::IterationDetails + Belos::StatusTestDetails + Belos::Debug);
+//    pl->set("Output Frequency", 1);
+
+    // Create the linear problem
+    RCP<LP> problem = rcp(new LP(sadOp,sadSol,sadRHS));
+
+    // Set the preconditioner
+    if(Prec_ != Teuchos::null)
+    {
+      RCP<SaddleOperator> sadPrec = rcp(new SaddleOperator(ritzOp_->getPrec(),locMX,HSS_PREC,alpha_));
+      problem->setLeftPrec(sadPrec);
+    }
+
+    // Set the problem
+    problem->setProblem();
+
+    // Create a minres solver
+    RCP<GmresSolMgr> sadSolver = rcp(new GmresSolMgr(problem,pl)) ;
+
+    // Solve the saddle point problem
+    sadSolver->solve();
+#elif
+    std::cout << "No Belos.  This is bad\n";
+#endif
+  }
+
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2634,7 +3498,15 @@ namespace Experimental {
       std::vector<int> order(curDim_);
       //
       // sort the first curDim_ values in theta_
-      sm_->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
+      if(useHarmonic_)
+      {
+        Anasazi::BasicSort<ScalarType> sm;
+        sm.sort(theta_, Teuchos::rcpFromRef(order), curDim_);
+      }
+      else
+      {
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
+      }
       //
       // apply the same ordering to the primitive ritz vectors
       Utils::permuteVectors(order,*lclRV);
