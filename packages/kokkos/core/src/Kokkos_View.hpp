@@ -249,7 +249,7 @@ public:
 
   //------------------------------------
 
-  typedef ExecutionSpace  device_type ; // for backward compatibility, to be removed
+  typedef Impl::DeviceInternal<ExecutionSpace,MemorySpace>  device_type ; // for backward compatibility, to be removed
 
   //------------------------------------
   // Specialization tag:
