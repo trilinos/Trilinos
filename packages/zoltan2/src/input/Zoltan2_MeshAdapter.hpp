@@ -117,15 +117,8 @@ public:
   typedef User                                              user_t;
   typedef User                                              userCoord_t;
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
-  typedef Tpetra::CrsMatrix<nonzero_t, lno_t, gno_t, node_t> sparse_matrix_type;
+  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
-#ifdef WHY_IS_THIS_CODE_NEEDED
-  typedef Tpetra::Export<lno_t, gno_t, node_t>              export_type;
-#endif
-#if 0  // CONSTRUCT THE MATRIX DIRECTLY, RATHER THAN BUILD GRAPH FIRST
-  typedef Teuchos::ScalarTraits<scalar_t>                   STS;
-  typedef Tpetra::CrsGraph<lno_t, gno_t, node_t>            sparse_graph_type;
-#endif
 #endif
 
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
@@ -331,20 +324,13 @@ public:
 	}
       }
 
-      gno_t gmin[2] = {as<gno_t> (1), as<gno_t> (1)};
-      //Teuchos::reduceAll<int, gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
-
-for (size_t i=0; i < LocalNumIDs; i++)
-  std::cout << " KDDROWS " << i << " " << sourcetargetGIDs[i] << std::endl;
+      gno_t gmin[2];
+      Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
 					  sourcetargetGIDs(), gmin[0], comm));
 
-std::cout << " KDDKDD SOURCETARGETMAP " << std::endl;
-std::cout << sourcetargetMapG->description() << std::endl;
-
-std::cout << " KDDKDDADJ " << getGlobalNumOf(through) << " " << gmin[1] << std::endl;
       //Generate Map for through.
 // TODO
 // TODO Could check for max through id as well, and if all through ids are
@@ -354,9 +340,6 @@ std::cout << " KDDKDDADJ " << getGlobalNumOf(through) << " " << gmin[1] << std::
 // TODO
 
       throughMapG = rcp (new map_type(getGlobalNumOf(through), gmin[1], comm));
-
-std::cout << " KDDKDD THROUGHMAP " << std::endl;
-std::cout << throughMapG->description() << std::endl;
 
       /***********************************************************************/
       /************************* BUILD GRAPH FOR ADJS ************************/
@@ -370,23 +353,20 @@ std::cout << throughMapG->description() << std::endl;
       nonzero_t justOne = 1;
       ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
 
-      for (size_t localElement = 0; localElement < LocalNumIDs; ++localElement){
+      for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
 
         //globalRow for Tpetra Graph
         global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
 
-std::cout << "KDDKDD OFFSETS " << localElement << " " << globalRowT << ":  " << offsets[localElement] << "-" << offsets[localElement+1] << std::endl;
-
 // KDD can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
 // KDD maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
-        for (lno_t j = offsets[localElement]; j < offsets[localElement+1]; ++j){
+        for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
           gno_t globalCol = as<gno_t> (adjacencyIds[j]);
           //create ArrayView globalCol object for Tpetra
           ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
           //Update Tpetra adjs Graph
-std::cout << " KDDKDD insert " << globalRowT << "," << globalColAV[0] << std::endl;
           adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
         }// *** through loop ***
       }// *** source loop ***
@@ -394,66 +374,11 @@ std::cout << " KDDKDD insert " << globalRowT << "," << globalColAV[0] << std::en
       //Fill-complete adjs Graph
       adjsMatrix->fillComplete (throughMapG, adjsMatrix->getRowMap());
 
-std::cout << " GRAPH " << *adjsMatrix << std::endl;
-
-#if 0  // CONSTRUCT THE MATRIX DIRECTLY, RATHER THAN BUILD GRAPH FIRST
-      // Construct adjs matrix.
-      RCP<sparse_matrix_type> adjsMatrix =
-        rcp (new sparse_matrix_type (adjsGraph.getConst ()));
-
-      adjsMatrix->setAllToScalar (STS::zero ());
-#endif
-#ifdef WHY_IS_THIS_CODE_NEEDED
-
-      // Find the local column numbers
-      RCP<const map_type> ColMap = adjsMatrix->getColMap ();
-      RCP<const map_type> globalMap =
-        rcp (new map_type (adjsMatrix->getGlobalNumCols (), gmin[1], comm,
-                           Tpetra::GloballyDistributed));
-
-      // Create the exporter from this process' column Map to the global
-      // 1-1 column map. (???)
-      RCP<const export_type> bdyExporter =
-        rcp (new export_type (ColMap, globalMap));
-
-      // Create a vector of global column indices to which we will export
-      RCP<Tpetra::Vector<gno_t, lno_t, gno_t, node_t> > globColsToZeroT =
-        rcp (new Tpetra::Vector<gno_t, lno_t, gno_t, node_t> (globalMap));
-
-      // Create a vector of local column indices from which we will export
-      RCP<Tpetra::Vector<lno_t, lno_t, gno_t, node_t> > myColsToZeroT =
-        rcp (new Tpetra::Vector<lno_t, lno_t, gno_t, node_t> (ColMap));
-
-      myColsToZeroT->putScalar (0);
-
-      // Set to 1 all local columns corresponding to the local rows specified.
-      for (size_t i = 0; i < LocalNumIDs; ++i) {
-        const gno_t globalRow =
-	  adjsMatrix->getRowMap()->getGlobalElement(Ids[i]);
-        const lno_t localCol =
-	  adjsMatrix->getColMap()->getLocalElement(globalRow);
-        // Tpetra::Vector<int, ...> works just like Tpetra::Vector<double, ...>
-        // Epetra has a separate Epetra_IntVector class for ints.
-        myColsToZeroT->replaceLocalValue (localCol, 1);
-      }
-
-      // Export to the global column map.
-      globColsToZeroT->doExport (*myColsToZeroT, *bdyExporter, Tpetra::ADD);
-      // Import from the global column map to the local column map.
-      myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
-
-      // We're done modifying the adjs matrix.
-      adjsMatrix->fillComplete(throughMapG, adjsMatrix->getRowMap());
-#endif  // WHY_IS_THIS_CODE_NEEDED
-
-std::cout << "KDDKDD BEFORE MATMAT " << std::endl;
       // Form 2ndAdjs
       RCP<sparse_matrix_type> secondAdjs =
         rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
       Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
                                      true,*secondAdjs);
-std::cout << "KDDKDD AFTER MATMAT " << std::endl;
-
       Array<gno_t> Indices;
       Array<nonzero_t> Values;
 
@@ -461,7 +386,7 @@ std::cout << "KDDKDD AFTER MATMAT " << std::endl;
       lno_t *start = new lno_t [LocalNumIDs+1];
       std::vector<gno_t> adj;
 
-      for (size_t localElement = 0; localElement < LocalNumIDs; ++localElement){
+      for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
         start[localElement] = nadj;
         const gno_t globalRow = Ids[localElement];
         size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
@@ -569,7 +494,6 @@ std::cout << "KDDKDD AFTER MATMAT " << std::endl;
 // TODO;  used for weights?
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
-//VJL Yes.
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
@@ -585,7 +509,6 @@ std::cout << "KDDKDD AFTER MATMAT " << std::endl;
    *  That is, a primaryEntityType that contains an adjacencyEntityType are
    *  adjacent.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
-   *  VJL:  Maybe
    */
   inline enum MeshEntityType getAdjacencyEntityType() const {
     return this->adjacencyEntityType;
@@ -606,7 +529,6 @@ std::cout << "KDDKDD AFTER MATMAT " << std::endl;
    *  secondAdjacencyEntityType to something reasonable:  primaryEntityType not
    *  adjacencyEntityType or secondAdjacencyEntityType.
    *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
-   *  VJL:  Maybe
    */
   void setEntityTypes(std::string ptypestr, std::string atypestr,
                       std::string satypestr) {

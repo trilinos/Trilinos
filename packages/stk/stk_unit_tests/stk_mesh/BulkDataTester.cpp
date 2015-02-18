@@ -38,7 +38,6 @@
 #include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, Trace_, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc

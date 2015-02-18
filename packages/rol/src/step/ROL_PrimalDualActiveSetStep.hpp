@@ -140,11 +140,8 @@ private:
   Teuchos::RCP<Krylov<Real> > krylov_;
 
   // Krylov Parameters
-  int maxitCR_; ///< Maximum number of CR iterations to solve quadratic subproblem
   int iterCR_;  ///< CR iteration counter
   int flagCR_;  ///< CR termination flag
-  Real tol1_;   ///< CR absolute tolerance
-  Real tol2_;   ///< CR relative tolerance
   Real itol_;   ///< Inexact CR tolerance
 
   // PDAS Parameters
@@ -197,6 +194,21 @@ private:
     return xtmp_->norm();
   }
 
+  void KrylovFactory(Teuchos::ParameterList &parlist) {
+    EKrylov ekv  = StringToEKrylov(parlist.get("Krylov Method","Conjugate Residuals"));  
+    Real absTol  = parlist.get("Absolute Krylov Tolerance", 1.e-4);
+    Real relTol  = parlist.get("Relative Krylov Tolerance", 1.e-2);
+    int maxit    = parlist.get("Maximum Number of Krylov Iterations", 20);
+    bool inexact = parlist.get("Use Inexact Hessian-Times-A-Vector",false);
+    switch(ekv) {
+      case KRYLOV_CR:
+        krylov_ = Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,inexact) ); break;
+      case KRYLOV_CG:
+      default:
+        krylov_ = Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,inexact) ); break;
+    }
+  }
+
 public:
   /** \brief Constructor.
      
@@ -206,11 +218,7 @@ public:
   */
   PrimalDualActiveSetStep( Teuchos::ParameterList &parlist ) 
     : Step<Real>::Step(), iterCR_(0), flagCR_(0), iter_(0), flag_(0), neps_(-ROL_EPSILON), feasible_(false) {
-    maxitCR_ = parlist.get("Maximum Number of Krylov Iterations", 50);
-    tol1_    = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-    tol2_    = parlist.get("Relative Krylov Tolerance", 1.e-2);
     esec_    = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-
     maxit_   = parlist.get("PDAS Maximum Number of Iterations",10);
     stol_    = parlist.get("PDAS Relative Step Tolerance",1.e-8);
     gtol_    = parlist.get("PDAS Relative Gradient Tolerance",1.e-6);
@@ -224,9 +232,7 @@ public:
       int BB  = parlist.get("Barzilai-Borwein",1);
       secant_ = getSecant<Real>(esec_,L,BB); 
     }
-
-    EKrylov ekv = StringToEKrylov(parlist.get("Krylov Method","Conjugate Residuals"));  
-    krylov_ = Teuchos::rcp( new Krylov<Real>(ekv,tol1_,tol2_,maxitCR_,false) ); 
+    KrylovFactory(parlist);
   }
 
   /** \brief Initialize step.  

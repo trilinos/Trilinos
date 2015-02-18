@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/Demangle.hpp>  // for demangle
+#include <stk_util/diag/StringUtil.hpp>  // for demangle
 #include <gtest/gtest.h>
 #include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
@@ -118,7 +118,7 @@ TEST(UnitTestDemangle, UnitTest)
 #elif defined(__linux__)
   {
     std::string linux_name("ThisIsJunk");
-    std::string demangled_name = stk::demangle(linux_name.c_str());
+    std::string demangled_name = sierra::demangle(linux_name.c_str());
     ASSERT_EQ((linux_name == demangled_name), true);
   }
 
@@ -128,7 +128,7 @@ TEST(UnitTestDemangle, UnitTest)
 #else
     std::string linux_name("bool ()()");
 #endif
-    std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
+    std::string demangled_name = sierra::demangle(typeid(utest_demangle).name());
     ASSERT_EQ(linux_name, demangled_name);
   }
 
@@ -142,7 +142,7 @@ TEST(UnitTestDemangle, UnitTest)
 #else
     std::string linux_name("std::vector<double, std::allocator<double> >");
 #endif
-    std::string demangled_name = stk::demangle(typeid(double_vector).name());
+    std::string demangled_name = sierra::demangle(typeid(double_vector).name());
     ASSERT_EQ((linux_name == demangled_name), true);
   }
 #endif

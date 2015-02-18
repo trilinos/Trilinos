@@ -63,31 +63,19 @@ APPEND_SET(HEADERS
 #
 # step headers
 #
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/step)
-APPEND_SET(HEADERS
-  step/ROL_Step.hpp
-  step/ROL_PrimalDualActiveSetStep.hpp
-  step/ROL_TrustRegionStep.hpp
-  step/ROL_TrustRegion.hpp
-  step/ROL_LineSearchStep.hpp
-  step/ROL_LineSearch.hpp
-  step/ROL_Secant.hpp
-  step/ROL_lBFGS.hpp
-  step/ROL_lDFP.hpp
-  step/ROL_lSR1.hpp
-  step/ROL_BarzilaiBorwein.hpp
-  step/ROL_Krylov.hpp
-  step/ROL_NonlinearCG.hpp
-  step/ROL_CompositeStepSQP.hpp
-  step/ROL_IterationScaling.hpp
-  step/ROL_BackTracking.hpp
-  step/ROL_CubicInterp.hpp
-  step/ROL_Bisection.hpp
-  step/ROL_GoldenSection.hpp
-  step/ROL_Brents.hpp
-  step/ROL_PathBasedTargetLevel.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/step)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/linesearch
+                    ${DIR}/trustregion
+                    ${DIR}/secant
+                    ${DIR}/krylov
+                   )
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/linesearch/*.hpp 
+                    ${DIR}/trustregion/*.hpp
+                    ${DIR}/secant/*.hpp
+                    ${DIR}/krylov/*.hpp
+                   )
 
 #
 # algorithm headers

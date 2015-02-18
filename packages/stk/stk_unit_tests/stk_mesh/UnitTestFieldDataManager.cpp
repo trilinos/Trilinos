@@ -50,7 +50,6 @@
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 namespace stk { namespace mesh { class Part; } }
 
 namespace

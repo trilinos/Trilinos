@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
         parlist->set("Trust-Region Subproblem Solver Type", ETrustRegionToString(tr));
         if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
-          parlist->set("Use Secant Hessian-Times-A-Vector", false);
+          parlist->set("Use Secant Hessian-Times-A-Vector", true);
         } 
         else {
           parlist->set("Use Secant Hessian-Times-A-Vector", false);

@@ -186,6 +186,19 @@ private:
     }
   }
 
+  void KrylovFactory(Teuchos::ParameterList &parlist) {
+    Real absTol = parlist.get("Absolute Krylov Tolerance", 1.e-4);
+    Real relTol = parlist.get("Relative Krylov Tolerance", 1.e-2);
+    int maxit   = parlist.get("Maximum Number of Krylov Iterations", 20);
+    switch(ekv_) {
+      case KRYLOV_CR:
+        krylov_ = Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,useInexact_[2]) ); break;
+      case KRYLOV_CG:
+      default:
+        krylov_ = Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,useInexact_[2]) ); break;
+    }
+  }
+
 public:
 
   virtual ~LineSearchStep() {}
@@ -226,10 +239,7 @@ public:
     iterKrylov_ = 0;
     flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
-      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
+      KrylovFactory(parlist);
     }
 
     // Initialize Secant Object
@@ -290,10 +300,7 @@ public:
     iterKrylov_ = 0;
     flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
-      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
+      KrylovFactory(parlist);
     }
 
     // Initialize Secant Object
@@ -356,10 +363,7 @@ public:
     iterKrylov_ = 0;
     flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
-      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
+      KrylovFactory(parlist);
     }
 
     // Secant Information
@@ -367,6 +371,64 @@ public:
       useSecantHessVec_ = true;
     }
      
+    // Initialize Nonlinear CG Object
+    nlcg_ = Teuchos::null;
+    if ( edesc_ == DESCENT_NONLINEARCG ) {
+      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
+    }
+
+    ls_nfval_ = 0;
+    ls_ngrad_ = 0;
+  }
+
+  /** \brief Constructor.
+
+      Standard constructor to build a LineSearchStep object.  Algorithmic 
+      specifications are passed in through a Teuchos::ParameterList.
+
+      @param[in]     krylov     is a user-defined Krylov object
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
+  LineSearchStep( Teuchos::RCP<Krylov<Real> > &krylov, Teuchos::ParameterList &parlist ) 
+    : Step<Real>(), krylov_(krylov) {
+    // Enumerations
+    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
+    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
+    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
+    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
+    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
+    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
+
+    // Inexactness Information
+    useInexact_.clear();
+    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
+    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
+    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
+     
+    // Initialize Linesearch Object
+    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
+    LineSearchFactory(parlist);
+
+    // Changing Objective Functions
+    softUp_ = parlist.get("Variable Objective Function",false);
+
+    // Initialize Krylov Object
+    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
+    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
+    iterKrylov_ = 0;
+    flagKrylov_ = 0;
+
+    // Initialize Secant Object
+    secant_ = Teuchos::null;
+    if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
+      int L      = parlist.get("Maximum Secant Storage",10);
+      int BBtype = parlist.get("Barzilai-Borwein Type",1);
+      secant_ = getSecant<Real>(esec_,L,BBtype);
+    }
+    if ( edesc_ == DESCENT_SECANT ) {
+      useSecantHessVec_ = true;
+    }
+
     // Initialize Nonlinear CG Object
     nlcg_ = Teuchos::null;
     if ( edesc_ == DESCENT_NONLINEARCG ) {
@@ -416,10 +478,7 @@ public:
     iterKrylov_ = 0;
     flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
-      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
+      KrylovFactory(parlist);
     }
 
     // Secant Information

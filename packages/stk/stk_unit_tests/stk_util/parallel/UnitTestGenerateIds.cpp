@@ -41,10 +41,11 @@
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_util/parallel/MPI.hpp>
+#include <stk_util/stk_config.h>
 #include <fstream>
 #include <stdint.h>
 
-#if defined(STK_BUILT_IN_SIERRA)  // means that MPI is available
+#if defined(STK_HAS_MPI)  // means that MPI is available
 
 namespace {
 
@@ -615,7 +616,7 @@ TEST(GeneratedIds, multiPerf) {
   //
   //  Performance and scalability comparision of a number of id generation routines.
   //
-  //  16384 ids per processor initially.  
+  //  16384 ids per processor initially.
   //  Add 1000 ids in each of ten steps
   //
   //  Case 1:  Ids initially densly packed
@@ -631,7 +632,7 @@ TEST(GeneratedIds, multiPerf) {
 
 
   {
-    srand((unsigned)0);  
+    srand((unsigned)0);
 
 
     std::vector<unsigned> inUse32a;
@@ -709,7 +710,7 @@ TEST(GeneratedIds, multiPerf) {
       double endTime = stk::wall_time();
       timeRED += (endTime-startTime);
 
-    } 
+    }
 
     for(int iter=0; iter<64; ++iter) {
       MPI_Barrier(MPI_COMM_WORLD);
@@ -734,7 +735,7 @@ TEST(GeneratedIds, multiPerf) {
         inUse32b.push_back(new32b[inew]);
       }
     }
- 
+
     for(int iter=0; iter<64; ++iter) {
       MPI_Barrier(MPI_COMM_WORLD);
       double startTime = stk::wall_time();
@@ -757,8 +758,8 @@ TEST(GeneratedIds, multiPerf) {
       std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
       std::cout<<"CASE 1: TIME RED: "<<timeRED<<std::endl;
     }
- 
-    
+
+
     for(int iter=0; iter<64; ++iter) {
       new64a.resize(numNew);
       MPI_Barrier(MPI_COMM_WORLD);
@@ -792,7 +793,7 @@ TEST(GeneratedIds, multiPerf) {
       std::cout<<"CASE 1: TIME 64 B: "<<timeGenerateB<<std::endl;
       std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
     }
-    
+
 
     typedef stk::parallel::DistributedIndex PDIndex;
     PDIndex::KeySpanVector partition_spans;
@@ -862,7 +863,7 @@ TEST(GeneratedIds, multiPerf) {
       std::cout<<"CASE 1: TIME DI: "<<timeDI<<std::endl;
     }
   }
-#endif 
+#endif
 }
 
 
@@ -1042,5 +1043,5 @@ void getAvailableIds_exp(const std::vector<uint64_t> &myIds, uint64_t numIdsNeed
 
 }
 
-#endif
+#endif // STK_HAS_MPI
 

@@ -14,6 +14,15 @@ IF(${PROJECT_NAME}_ENABLE_Sacado)
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_01b
+    SOURCES example_01b.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_01c
     SOURCES example_01c.cpp
     ARGS PrintItAll

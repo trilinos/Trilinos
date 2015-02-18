@@ -40,7 +40,6 @@
 #include <set>                          // for set
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
-#include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldVector, etc
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case

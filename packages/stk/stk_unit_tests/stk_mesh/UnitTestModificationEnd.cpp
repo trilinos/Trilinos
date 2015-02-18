@@ -260,30 +260,30 @@ public:
 
                     int counter = 0;
                     {
-                        for (size_t i=0;i<numUnshared;++i)
+                        for (size_t j=0;j<numUnshared;++j)
                         {
-                            std::vector<int>::iterator iter = std::find(sharingProcs.begin(), sharingProcs.end(), unsharedProcs[i]);
-                            if ( iter != sharingProcs.end() && *iter != parallel_rank() )
+                            std::vector<int>::iterator localIter = std::find(sharingProcs.begin(), sharingProcs.end(), unsharedProcs[j]);
+                            if ( localIter != sharingProcs.end() && *localIter != parallel_rank() )
                             {
                                 if ( counter == 0 )
                                 {
                                     os << "Error in sharing between procs for entity " << key.id() << " with rank " << key.rank()  << "  between procs: " << this->parallel_rank() << " and " << from << std::endl;
                                     counter++;
                                 }
-                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[i] << " from other proc: "
+                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[j] << " from other proc: "
                                         << from << " but not from this proc: " << parallel_rank() << std::endl;
                                 anyErrors = true;
                             }
 
-                            iter = std::find(localSharingProcs.begin(), localSharingProcs.end(), unsharedProcs[i]);
-                            if ( iter != localSharingProcs.end() && *iter != from )
+                            localIter = std::find(localSharingProcs.begin(), localSharingProcs.end(), unsharedProcs[j]);
+                            if ( localIter != localSharingProcs.end() && *localIter != from )
                             {
                                 if ( counter == 0 )
                                 {
                                     os << "Error in sharing between procs for entity " << key.id() << " with rank " << key.rank()  << "  between procs: " << this->parallel_rank() << " and " << from << std::endl;
                                     counter++;
                                 }
-                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[i] << " from this proc: "
+                                os << "\tEntity " << key << " is shared with proc " << unsharedProcs[j] << " from this proc: "
                                         << parallel_rank() << " but not from other proc: " << from << std::endl;
                                 anyErrors = true;
                             }

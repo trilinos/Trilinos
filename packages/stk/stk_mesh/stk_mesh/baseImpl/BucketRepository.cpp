@@ -303,6 +303,28 @@ namespace {
 
 inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
+struct bucket_less_by_first_entity_identifier
+{
+    bool operator()(const Bucket* first, const Bucket* second) const
+    {
+        if (first->size() == 0)
+        {
+            return true;
+        }
+        else if (second->size() == 0)
+        {
+            return false;
+        }
+        else
+        {
+            const stk::mesh::BulkData& mesh = first->mesh();
+            stk::mesh::EntityId firstId = mesh.identifier((*first)[0]);
+            stk::mesh::EntityId secondId = mesh.identifier((*second)[0]);
+            return firstId < secondId;
+       }
+    }
+};
+
 }
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
@@ -310,53 +332,59 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
   typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
-  if (!m_need_sync_from_partitions[rank])
+  if (m_need_sync_from_partitions[rank])
   {
-    return;
+      std::vector<Partition *> &partitions = m_partitions[rank];
+
+      size_t num_partitions = partitions.size();
+      size_t num_buckets = 0;
+      for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+      {
+        if (!partitions[p_i]->empty())
+        {
+          num_buckets += partitions[p_i]->num_buckets();
+        }
+      }
+
+      m_buckets[rank].resize(num_buckets);
+
+      bool has_hole = false;
+      BucketVector::iterator bkts_i = m_buckets[rank].begin();
+      for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+      {
+        Partition &partition = *partitions[p_i];
+
+        if (partition.empty())
+        {
+          partitions[p_i]->~Partition();
+          partition_allocator().deallocate(partitions[p_i],1);
+          partitions[p_i] = 0;
+          has_hole = true;
+          continue;
+        }
+        size_t num_bkts_in_partition = partition.num_buckets();
+        std::copy(partition.begin(), partition.end(), bkts_i);
+        bkts_i += num_bkts_in_partition;
+      }
+
+      if (has_hole)
+      {
+        std::vector<Partition *>::iterator new_end;
+        new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
+        size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
+        partitions.resize(new_size);
+      }
   }
 
-  std::vector<Partition *> &partitions = m_partitions[rank];
-
-  size_t num_partitions = partitions.size();
-  size_t num_buckets = 0;
-  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+  if(m_mesh.should_sort_buckets_by_first_entity_identifier())
   {
-    if (!partitions[p_i]->empty())
-    {
-      num_buckets += partitions[p_i]->num_buckets();
-    }
+      std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
   }
 
-  m_buckets[rank].resize(num_buckets);
-
-  bool has_hole = false;
-  BucketVector::iterator bkts_i = m_buckets[rank].begin();
-  for (size_t p_i = 0; p_i < num_partitions; ++p_i)
+  if (m_need_sync_from_partitions[rank] == true || m_mesh.should_sort_buckets_by_first_entity_identifier())
   {
-    Partition &partition = *partitions[p_i];
-
-    if (partition.empty())
-    {
-      partitions[p_i]->~Partition();
-      partition_allocator().deallocate(partitions[p_i],1);
-      partitions[p_i] = 0;
-      has_hole = true;
-      continue;
-    }
-    size_t num_bkts_in_partition = partition.num_buckets();
-    std::copy(partition.begin(), partition.end(), bkts_i);
-    bkts_i += num_bkts_in_partition;
+      sync_bucket_ids(rank);
   }
-
-  if (has_hole)
-  {
-    std::vector<Partition *>::iterator new_end;
-    new_end = std::remove_if(partitions.begin(), partitions.end(), is_null);
-    size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
-    partitions.resize(new_size);
-  }
-
-  sync_bucket_ids(rank);
 
   m_need_sync_from_partitions[rank] = false;
 }
