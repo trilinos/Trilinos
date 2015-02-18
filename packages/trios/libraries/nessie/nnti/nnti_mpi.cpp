@@ -704,17 +704,17 @@ NNTI_result_t NNTI_mpi_register_memory (
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_QUEUE) {
+    if (ops == NNTI_BOP_RECV_QUEUE) {
         mpi_mem_hdl->rtr_tag  = 0;
         mpi_mem_hdl->rts_tag  = 0;
         mpi_mem_hdl->data_tag = NNTI_MPI_REQUEST_TAG;
 
-    } else if (ops == NNTI_RECV_DST) {
+    } else if (ops == NNTI_BOP_RECV_DST) {
         mpi_mem_hdl->rtr_tag  = 0;
         mpi_mem_hdl->rts_tag  = 0;
         mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
 
-    } else if (ops == NNTI_SEND_SRC) {
+    } else if (ops == NNTI_BOP_SEND_SRC) {
         mpi_mem_hdl->rtr_tag  = 0;
         mpi_mem_hdl->rts_tag  = 0;
         mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
@@ -733,7 +733,7 @@ NNTI_result_t NNTI_mpi_register_memory (
     reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag  = mpi_mem_hdl->rts_tag;
     reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag = mpi_mem_hdl->data_tag;
 
-    if (ops == NNTI_RECV_QUEUE) {
+    if (ops == NNTI_BOP_RECV_QUEUE) {
         mpi_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
         q_hdl->reg_buf=reg_buf;
@@ -754,21 +754,21 @@ NNTI_result_t NNTI_mpi_register_memory (
                 q_hdl->req_count,
                 q_hdl->mpi_request_list);
 
-    } else if (ops == NNTI_RECV_DST) {
+    } else if (ops == NNTI_BOP_RECV_DST) {
         post_recv_dst_work_request(
                 reg_buf,
                 mpi_mem_hdl->data_tag,
                 element_size);
 
-    } else if (ops == NNTI_PUT_DST) {
+    } else if (ops == NNTI_BOP_REMOTE_WRITE) {
         post_RTS_recv_work_request(reg_buf);
         insert_target_buffer(reg_buf);
 
-    } else if (ops == NNTI_GET_SRC) {
+    } else if (ops == NNTI_BOP_REMOTE_READ) {
         post_RTR_recv_work_request(reg_buf);
         insert_target_buffer(reg_buf);
 
-    } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
+    } else if (ops == (NNTI_BOP_REMOTE_READ|NNTI_BOP_REMOTE_WRITE)) {
         post_RTR_RTS_recv_work_request(reg_buf);
         insert_target_buffer(reg_buf);
 
@@ -964,7 +964,7 @@ NNTI_result_t NNTI_mpi_send (
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_SEND_SRC;
+    wr->ops              =NNTI_BOP_SEND_SRC;
     wr->transport_private=(uint64_t)mpi_wr;
 
     nthread_lock(&mpi_mem_hdl->wr_queue_lock);
@@ -1075,7 +1075,7 @@ NNTI_result_t NNTI_mpi_put (
 
     wr->transport_id     =src_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
-    wr->ops              =NNTI_PUT_SRC;
+    wr->ops              =NNTI_BOP_LOCAL_READ;
     wr->transport_private=(uint64_t)mpi_wr;
 
     nthread_lock(&mpi_mem_hdl->wr_queue_lock);
@@ -1196,7 +1196,7 @@ NNTI_result_t NNTI_mpi_get (
 
     wr->transport_id     =dest_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
-    wr->ops              =NNTI_GET_DST;
+    wr->ops              =NNTI_BOP_LOCAL_WRITE;
     wr->transport_private=(uint64_t)mpi_wr;
 
     nthread_lock(&mpi_mem_hdl->wr_queue_lock);
@@ -1349,7 +1349,7 @@ NNTI_result_t NNTI_mpi_atomic_fop (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)mpi_wr;
 
@@ -1437,7 +1437,7 @@ NNTI_result_t NNTI_mpi_atomic_cswap (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)mpi_wr;
 
@@ -1592,7 +1592,7 @@ NNTI_result_t NNTI_mpi_wait (
     assert(status);
 
 	mpi_wr=MPI_WORK_REQUEST(wr);
-    if (wr->ops != NNTI_ATOMICS) {
+    if (wr->ops != NNTI_BOP_ATOMICS) {
     	mpi_mem_hdl=MPI_MEM_HDL(wr->reg_buf);
     	assert(mpi_mem_hdl);
     	if (mpi_wr==NULL) {
@@ -2548,9 +2548,9 @@ static int process_event(
 
     mpi_wr->last_event=*event;
 
-    if ((mpi_wr->nnti_wr) && (mpi_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+    if ((mpi_wr->nnti_wr) && (mpi_wr->nnti_wr->ops == NNTI_BOP_ATOMICS)) {
     	if (mpi_wr->op_state == BUFFER_INIT) {
-            log_debug(debug_level, "got NNTI_ATOMICS send completion - event arrived from %d - tag %4d",
+            log_debug(debug_level, "got NNTI_BOP_ATOMICS send completion - event arrived from %d - tag %4d",
                     event->MPI_SOURCE, event->MPI_TAG);
 
             mpi_wr->op_state = SEND_COMPLETE;
@@ -2560,7 +2560,7 @@ static int process_event(
             mpi_wr->request_count=1;
 
     	} else if (mpi_wr->op_state == SEND_COMPLETE) {
-            log_debug(debug_level, "got NNTI_ATOMICS recv completion - event arrived from %d - tag %4d",
+            log_debug(debug_level, "got NNTI_BOP_ATOMICS recv completion - event arrived from %d - tag %4d",
                     event->MPI_SOURCE, event->MPI_TAG);
 
             mpi_wr->op_state = RECV_COMPLETE;
