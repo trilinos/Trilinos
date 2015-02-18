@@ -602,13 +602,13 @@ struct FunctorTeamShmemSize
 };
 
 template< class FunctorType >
-struct FunctorTeamShmemSize< FunctorType , typename enable_if< sizeof( & FunctorType::team_shmem_size ) >::type >
+struct FunctorTeamShmemSize< FunctorType , typename Impl::enable_if< 0 < sizeof( & FunctorType::team_shmem_size ) >::type >
 {
   static inline size_t value( const FunctorType & f , int team_size ) { return f.team_shmem_size( team_size ) ; }
 };
 
 template< class FunctorType >
-struct FunctorTeamShmemSize< FunctorType , typename enable_if< sizeof( & FunctorType::shmem_size ) >::type >
+struct FunctorTeamShmemSize< FunctorType , typename Impl::enable_if< 0 < sizeof( & FunctorType::shmem_size ) >::type >
 {
   static inline size_t value( const FunctorType & f , int team_size ) { return f.shmem_size( team_size ) ; }
 };
