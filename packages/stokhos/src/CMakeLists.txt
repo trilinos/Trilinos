@@ -491,6 +491,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/vector/Kokkos_View_MP_Vector_Utils.hpp
     sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
     sacado/kokkos/vector/Kokkos_Parallel_MP_Vector.hpp
+    sacado/kokkos/vector/Teuchos_BLAS_MP_Vector.hpp
     sacado/kokkos/vector/Teuchos_LAPACK_MP_Vector.hpp
     sacado/kokkos/vector/Teuchos_SerialQRDenseSolver_MP_Vector.hpp
 

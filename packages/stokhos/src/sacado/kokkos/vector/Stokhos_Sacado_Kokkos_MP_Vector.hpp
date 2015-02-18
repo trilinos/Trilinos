@@ -63,6 +63,7 @@
 #include "Kokkos_Atomic_MP_Vector.hpp"
 
 #include "Teuchos_SerialQRDenseSolver_MP_Vector.hpp"
+#include "Teuchos_BLAS_MP_Vector.hpp"
 #include "Teuchos_LAPACK_MP_Vector.hpp"
 
 #endif // STOKHOS_SACADO_KOKKOS_MP_VECTOR_HPP
