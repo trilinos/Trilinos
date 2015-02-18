@@ -313,8 +313,6 @@ namespace MueLu {
     GetOStream(Statistics0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
     GetOStream(Statistics0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
 
-#else
-#warning PermutationFactory not compiling/working for Scalar==complex.
 #endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
   }
 
