@@ -647,7 +647,7 @@ namespace Kokkos {
     Random_XorShift64_Pool() {
       num_states_ = 0;
     }
-    Random_XorShift64_Pool(unsigned int seed) {
+    Random_XorShift64_Pool(uint64_t seed) {
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
     }
@@ -665,7 +665,7 @@ namespace Kokkos {
       return *this;
     }
 
-    void init(unsigned int seed, int num_states) {
+    void init(uint64_t seed, int num_states) {
       num_states_ = num_states;
 
       locks_ = lock_type("Kokkos::Random_XorShift64::locks",num_states_);
@@ -891,7 +891,7 @@ namespace Kokkos {
     }
 
     inline
-    Random_XorShift1024_Pool(unsigned int seed){
+    Random_XorShift1024_Pool(uint64_t seed){
       num_states_ = 0;
       init(seed,DeviceType::max_hardware_threads());
     }
@@ -912,7 +912,7 @@ namespace Kokkos {
     }
 
     inline
-    void init(unsigned int seed, int num_states) {
+    void init(uint64_t seed, int num_states) {
       num_states_ = num_states;
 
       locks_ = int_view_type("Kokkos::Random_XorShift1024::locks",num_states_);
@@ -1121,7 +1121,7 @@ namespace Kokkos {
 
 template<>
 inline
-Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(unsigned int seed) {
+Random_XorShift64_Pool<Kokkos::Cuda>::Random_XorShift64_Pool(uint64_t seed) {
   num_states_ = 0;
   init(seed,4*32768);
 }
@@ -1157,7 +1157,7 @@ void Random_XorShift64_Pool<Kokkos::Cuda>::free_state(const Random_XorShift64<Ko
 
 template<>
 inline
-Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(unsigned int seed) {
+Random_XorShift1024_Pool<Kokkos::Cuda>::Random_XorShift1024_Pool(uint64_t seed) {
   num_states_ = 0;
   init(seed,4*32768);
 }
