@@ -62,10 +62,11 @@
 #include <algorithm>    // std::sort
 #include <Zoltan2_Util.hpp>
 #include <vector>
+
 #if defined(__cplusplus) && __cplusplus >= 201103L
-#  include <unordered_map>
+#include <unordered_map>
 #else
-#  include <map>
+#include <Teuchos_Hashtable.hpp>
 #endif // C++11 is enabled
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
@@ -6199,9 +6200,6 @@ void Zoltan2_AlgMJ<Adapter>::partition(
 #if defined(__cplusplus) && __cplusplus >= 201103L
     std::unordered_map<mj_gno_t, mj_lno_t> localGidToLid;
     localGidToLid.reserve(this->num_local_coords);
-#else
-    std::map<mj_gno_t, mj_lno_t> localGidToLid;
-#endif // C++11 is enabled
     for (mj_lno_t i = 0; i < this->num_local_coords; i++)
       localGidToLid[this->initial_mj_gnos[i]] = i;
 
@@ -6212,6 +6210,22 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       mj_lno_t origLID = localGidToLid[result_mj_gnos[i]];
       partId[origLID] = result_assigned_part_ids[i];
     }
+
+#else
+    Teuchos::Hashtable<mj_gno_t, mj_lno_t> 
+                       localGidToLid(this->num_local_coords);
+    for (mj_lno_t i = 0; i < this->num_local_coords; i++)
+      localGidToLid.put(this->initial_mj_gnos[i], i);
+
+    ArrayRCP<mj_part_t> partId = arcp(new mj_part_t[this->num_local_coords],
+                                      0, this->num_local_coords, true);
+
+    for (mj_lno_t i = 0; i < this->num_local_coords; i++) {
+      mj_lno_t origLID = localGidToLid.get(result_mj_gnos[i]);
+      partId[origLID] = result_assigned_part_ids[i];
+    }
+
+#endif // C++11 is enabled
 
     delete [] result_mj_gnos;
     delete [] result_assigned_part_ids;
