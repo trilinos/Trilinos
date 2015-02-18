@@ -41,12 +41,13 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_MV_GEMM_HPP
+#define KOKKOS_MV_GEMM_HPP
+
 // Note this code lives only temporarily in TpetraCore.  As soon as
 // GEMM kernels exist in the TpetraKernels subpackage, and thus a
 // depnedency on Teuchos can be eliminated, the code will move to
 // TpetraKernels.
-
-#if defined(KOKKOS_MULTIVECTOR_H_) && defined(TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP)
 
 #include<Teuchos_BLAS.hpp>
 #include<Teuchos_as.hpp>
@@ -355,5 +356,5 @@ namespace Kokkos {
 
 #endif
 }
-#endif
+#endif // KOKKOS_MV_GEMM_HPP
 
