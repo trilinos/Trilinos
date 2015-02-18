@@ -1422,7 +1422,7 @@ NNTI_result_t NNTI_ib_register_memory (
         ib_mem_hdl->mr_list=&ib_mem_hdl->mr;
         ib_mem_hdl->mr_count=1;
 
-        if (ops == NNTI_RECV_QUEUE) {
+        if (ops == NNTI_BOP_RECV_QUEUE) {
             ib_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
             q_hdl->reg_buf=reg_buf;
@@ -1461,7 +1461,7 @@ NNTI_result_t NNTI_ib_register_memory (
 
             log_debug(nnti_debug_level, "mr=%p mr_list[0]=%p", ib_mem_hdl->mr, ib_mem_hdl->mr_list[0]);
 
-            if (ops == NNTI_RECV_DST) {
+            if (ops == NNTI_BOP_RECV_DST) {
                 post_recv_work_request(
                         reg_buf,
                         -1,
@@ -1532,8 +1532,8 @@ NNTI_result_t NNTI_ib_register_segments (
     assert(ops>0);
     assert(reg_buf);
 
-    if ((ops == NNTI_SEND_SRC) || (ops == NNTI_RECV_DST) || (ops == NNTI_RECV_QUEUE)) {
-        log_debug(nnti_debug_level, "NNTI_SEND_SRC, NNTI_RECV_DST and NNTI_RECV_QUEUE types cannot be segmented.");
+    if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
+        log_debug(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types cannot be segmented.");
         return(NNTI_EINVAL);
     }
 
@@ -1768,7 +1768,7 @@ NNTI_result_t NNTI_ib_send (
     ib_wr->sq_wr_list =&ib_wr->sq_wr;
     ib_wr->sq_wr_count=1;
 
-    if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
+    if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_BOP_RECV_QUEUE)) {
         ib_wr->comp_channel=transport_global_data.req_comp_channel;
         ib_wr->cq          =transport_global_data.req_cq;
         ib_wr->qp          =ib_wr->conn->req_qp.qp;
@@ -1840,7 +1840,7 @@ NNTI_result_t NNTI_ib_send (
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_SEND_SRC;
+    wr->ops              =NNTI_BOP_SEND_SRC;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
@@ -2262,7 +2262,7 @@ NNTI_result_t NNTI_ib_put (
 
     wr->transport_id     =src_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
-    wr->ops              =NNTI_PUT_SRC;
+    wr->ops              =NNTI_BOP_LOCAL_READ;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
@@ -2712,7 +2712,7 @@ NNTI_result_t NNTI_ib_get (
 
     wr->transport_id     =dest_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
-    wr->ops              =NNTI_GET_DST;
+    wr->ops              =NNTI_BOP_LOCAL_WRITE;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
@@ -2908,7 +2908,7 @@ NNTI_result_t NNTI_ib_atomic_fop (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
@@ -3017,7 +3017,7 @@ NNTI_result_t NNTI_ib_atomic_cswap (
 
     wr->transport_id     =trans_hdl->id;
     wr->reg_buf          =(NNTI_buffer_t*)NULL;
-    wr->ops              =NNTI_ATOMICS;
+    wr->ops              =NNTI_BOP_ATOMICS;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
@@ -3389,7 +3389,7 @@ NNTI_result_t NNTI_ib_wait (
 
         ib_wr->state=NNTI_IB_WR_STATE_WAIT_COMPLETE;
 
-        if (ib_wr->nnti_wr->ops == NNTI_ATOMICS) {
+        if (ib_wr->nnti_wr->ops == NNTI_BOP_ATOMICS) {
             nthread_lock(&nnti_wrmap_lock);
             wrmap_iter_t m_victim=wrmap.find(ib_wr->key);
             if (m_victim != wrmap.end()) {
@@ -4383,7 +4383,7 @@ static int process_event(
 
     log_debug(nnti_debug_level, "enter (ib_wr=%p)", ib_wr);
 
-    if ((ib_wr->nnti_wr) && (ib_wr->nnti_wr->ops == NNTI_ATOMICS)) {
+    if ((ib_wr->nnti_wr) && (ib_wr->nnti_wr->ops == NNTI_BOP_ATOMICS)) {
         ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
         ib_wr->nnti_wr->result=NNTI_OK;
         return NNTI_OK;
@@ -5096,7 +5096,7 @@ static void create_status(
 
         conn = get_conn_qpn(ib_wr->last_wc.qp_num);
 
-        if (ib_wr->nnti_wr->ops != NNTI_ATOMICS) {
+        if (ib_wr->nnti_wr->ops != NNTI_BOP_ATOMICS) {
             status->start  = (uint64_t)ib_wr->reg_buf->payload;
         }
         switch (ib_wr->last_op) {
