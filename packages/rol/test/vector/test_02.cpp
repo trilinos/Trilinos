@@ -84,10 +84,9 @@ int main(int argc, char *argv[]) {
     // Instantiate from raw pointer, Teuchos::ArrayRCP, and int (length) constructor
     ElementT* x_rawp = new ElementT[dim];
 
-    Teuchos::ArrayRCP<ElementT> x_arcp(x_rawp,0,dim,false);
     Teuchos::ArrayRCP<ElementT> y_arcp(dim,0);
 
-    ROL::CArrayVector<RealT, ElementT> x(x_arcp);
+    ROL::CArrayVector<RealT, ElementT> x(x_rawp,dim);
     ROL::CArrayVector<RealT, ElementT> y(y_arcp);
     ROL::CArrayVector<RealT, ElementT> z(dim);
 

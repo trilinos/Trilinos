@@ -60,7 +60,7 @@ class CArrayVector : public Vector<Real> {
         Teuchos::ArrayRCP<Element> array_;
     public:
         // Create from C array with raw ptr
-        CArrayVector(const Element* array, unsigned int dim) : 
+        CArrayVector(Element* array, unsigned int dim) : 
             dim_(dim),array_(array,0,dim,false) {}
  
         // Create from Teuchos ArrayRCP
