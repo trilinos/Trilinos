@@ -64,12 +64,14 @@ APPEND_SET(HEADERS
 # step headers
 #
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/step)
-INCLUDE_DIRECTORIES(${DIR}/linesearch
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/linesearch
                     ${DIR}/trustregion
                     ${DIR}/secant
                     ${DIR}/krylov
                    )
-APPEND_GLOB(HEADERS ${DIR}/linesearch/*.hpp 
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/linesearch/*.hpp 
                     ${DIR}/trustregion/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
