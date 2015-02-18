@@ -150,11 +150,11 @@ public:
                                     Real &tol);
 
 
-  /** \brief Apply the adjoint of the constraint Hessian at \f$x\f$
-             to vector \f$v\f$ in direction \f$u\f$,
+  /** \brief Apply the derivative of the adjoint of the constraint Jacobian at \f$x\f$
+             to vector \f$u\f$ in direction \f$v\f$,
              according to \f$ v \mapsto c''(x)(v,\cdot)^*u \f$.
 
-             @param[out]      ahuv is the result of applying the adjoint of the constraint Hessian to @b v at @b x in direction @b u; a dual optimization-space vector
+             @param[out]      ahuv is the result of applying the derivative of the adjoint of the constraint Jacobian at @b x to vector @b u in direction @b v; a dual optimization-space vector
              @param[in]       u    is the direction vector; a dual constraint-space vector
              @param[in]       v    is an optimization-space vector
              @param[in]       x    is the constraint argument; an optimization-space vector

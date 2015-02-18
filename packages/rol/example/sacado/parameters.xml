@@ -1,5 +1,5 @@
 <ParameterList name="Inputs">
-    <Parameter name="Descent Type"                           type="string" value="Nonlinear-CG"        />
+    <Parameter name="Descent Type"                           type="string" value="Newton Krylov"       />
     <Parameter name="Linesearch Type"                        type="string" value="Cubic Interpolation" />
     <Parameter name="Linesearch Curvature Condition"         type="string" value="Wolfe"               />
     <Parameter name="Maximum Number of Function Evaluations" type="int"    value="20"                  />
