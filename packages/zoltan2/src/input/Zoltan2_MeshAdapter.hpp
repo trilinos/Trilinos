@@ -324,8 +324,8 @@ public:
 	}
       }
 
-      gno_t gmin[2] = {as<gno_t> (1), as<gno_t> (1)};
-      //Teuchos::reduceAll<int,gno_t>(comm, Teuchos::REDUCE_MIN, 2, min, gmin);
+      gno_t gmin[2];
+      Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
       //Generate Map for sourcetarget.
       sourcetargetMapG = rcp(new map_type(getGlobalNumOf(sourcetarget),
