@@ -97,6 +97,7 @@ struct MPVectorAllocation<Device, Storage, true> {
   typedef Sacado::MP::Vector<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
   typedef typename Device::memory_space memory_space;
+  typedef typename Device::execution_space execution_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -105,14 +106,21 @@ struct MPVectorAllocation<Device, Storage, true> {
   MPVectorAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType>
+  template <bool Initialize, class LabelType, class ShapeType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const unsigned vector_size) {
-    m_tracker = memory_space::allocate_and_track( label , sizeof(scalar_type) * Impl::cardinality_count( shape ) * vector_size );
-    m_scalar_ptr_on_device = reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
+    const size_t count = Impl::cardinality_count( shape ) * vector_size;
+    m_tracker = memory_space::allocate_and_track( label ,
+                                                  sizeof(scalar_type)*count );
+    m_scalar_ptr_on_device =
+      reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
+
+    // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count );
+
     return reinterpret_cast<value_type*>(m_scalar_ptr_on_device);
   }
 
@@ -138,7 +146,7 @@ struct MPVectorAllocation<Device, Storage, false> {
   MPVectorAllocation() : m_scalar_ptr_on_device(), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType>
+  template <bool Initialize, class LabelType, class ShapeType>
   inline
   value_type*
   allocate(const LabelType& label,
@@ -172,6 +180,8 @@ struct MPVectorAllocation<Device, Storage, false> {
     //   new (p++) value_type(vector_size, sp, false);
     //   sp += vector_size;
     // }
+    //
+    // We must always do this, regardless of Initialize
     parallel_for( num_vec, VectorInit( ptr, m_scalar_ptr_on_device,
                                        vector_size ) );
 
@@ -513,13 +523,9 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_sacado_size.value );
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
+        m_allocation.template allocate<Alloc::Initialize>( Alloc::label( prop ),
+                                                           m_offset_map,
+                                                           m_sacado_size.value );
     }
 
   template< class AllocationProperties , typename iType >
@@ -549,13 +555,9 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_sacado_size.value );
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
+        m_allocation.template allocate<Alloc::Initialize>( Alloc::label( prop ),
+                                                           m_offset_map,
+                                                           m_sacado_size.value );
     }
 
   //------------------------------------
