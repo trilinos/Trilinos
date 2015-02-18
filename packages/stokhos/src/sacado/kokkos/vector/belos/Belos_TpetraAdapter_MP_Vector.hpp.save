@@ -914,19 +914,19 @@ namespace Belos {
     typedef typename Tpetra::MultiVector<Scalar,LO,GO,Node>::dot_type dot_type;
     typedef typename Tpetra::MultiVector<Scalar,LO,GO,Node>::mag_type mag_type;
 
-    /// \brief Create a new MultiVector with \c numVecs columns.
+    /// \brief Create a new multivector with \c numvecs columns.
     ///
     /// The returned Tpetra::MultiVector has the same Tpetra::Map
-    /// (distribution over one or more parallel processes) as \c X.
+    /// (distribution over one or more parallel processes) as \c mv.
     /// Its entries are not initialized and have undefined values.
-    static Teuchos::RCP<MV> Clone (const MV& X, const int numVecs) {
-      Teuchos::RCP<MV> Y (new MV (X.getMap (), numVecs, false));
-      Y->setCopyOrView (Teuchos::View);
-      return Y;
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    Clone (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs)
+    {
+      return Teuchos::rcp (new MV (mv.getMap (), numvecs, false));
     }
 
-    //! Create and return a deep copy of X.
-    static Teuchos::RCP<MV> CloneCopy (const MV& X)
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& X)
     {
       // Make a deep copy of X.  The one-argument copy constructor
       // does a shallow copy by default; the second argument tells it
@@ -942,32 +942,21 @@ namespace Belos {
       return X_copy;
     }
 
-    /// \brief Create and return a deep copy of the given columns of mv.
-    ///
-    /// \pre \code mv.getNumVectors() != 0 || index.size() == 0 \endcode
-    /// \pre For all k such that <tt>0 <= k < index.size()</tt>,
-    ///   \code
-    ///   0 <= index[k] < mv.getNumVectors();
-    ///   \endcode
-    /// \post If this method returns Y:
-    ///   \code
-    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
-    ///   \endcode
-    static Teuchos::RCP<MV>
-    CloneCopy (const MV& mv, const std::vector<int>& index)
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Belos::MultiVecTraits::CloneCopy(mv,index)";
-      const size_t inNumVecs = mv.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 && *std::min_element (index.begin (), index.end ()) < 0,
         std::runtime_error, fnName << ": All indices must be nonnegative.");
       TEUCHOS_TEST_FOR_EXCEPTION(
         index.size () > 0 &&
-        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= inNumVecs,
+        static_cast<size_t> (*std::max_element (index.begin (), index.end ())) >= mv.getNumVectors (),
         std::runtime_error,
         fnName << ": All indices must be strictly less than the number of "
-        "columns " << inNumVecs << " of the input multivector mv.");
+        "columns " << mv.getNumVectors () << " of the input multivector mv.");
 #endif // HAVE_TPETRA_DEBUG
 
       // Tpetra wants an array of size_t, not of int.
@@ -983,14 +972,9 @@ namespace Belos {
       return X_copy;
     }
 
-    /// \brief Create and return a deep copy of the given columns of mv.
-    ///
-    /// \post If this method returns Y:
-    ///   \code
-    ///   Y->isConstantStride() && Y->getNumVectors() == index.size();
-    ///   \endcode
-    static Teuchos::RCP<MV>
-    CloneCopy (const MV& mv, const Teuchos::Range1D& index)
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const Teuchos::Range1D& index)
     {
       const bool validRange = index.size() > 0 &&
         index.lbound() >= 0 &&
@@ -1019,8 +1003,9 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<MV>
-    CloneViewNonConst (MV& mv, const std::vector<int>& index)
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+                       const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Belos::MultiVecTraits::CloneViewNonConst(mv,index)";
@@ -1046,12 +1031,25 @@ namespace Belos {
       // continuous column index range in
       // MultiVector::subViewNonConst, so we don't have to check here.
       Teuchos::RCP<MV> X_view = mv.subViewNonConst (columns ());
-      X_view->setCopyOrView (Teuchos::View);
+      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
+      // understand, the Belos MVOpTester and/or OrthoManager tests
+      // fail if I uncomment the line below.  This is true for both
+      // the "classic" and Kokkos refactor versions of Tpetra.  I
+      // don't know why this is the case.  Belos shouldn't care
+      // whether Tpetra uses copy or view semantics, and the Kokkos
+      // refactor version of Tpetra _always_ uses view semantics.
+      // Nevertheless, the tests fail, so I will leave the following
+      // line commented out for now.  This is true for both CloneView
+      // overloads as well as both CloneViewNonConst overloads.
+
+      //X_view->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
-    static Teuchos::RCP<MV>
-    CloneViewNonConst (MV& mv, const Teuchos::Range1D& index)
+
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+                       const Teuchos::Range1D& index)
     {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
@@ -1079,12 +1077,25 @@ namespace Belos {
           os.str() << "Should never get here!");
       }
       Teuchos::RCP<MV> X_view = mv.subViewNonConst (index);
-      X_view->setCopyOrView (Teuchos::View);
+      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
+      // understand, the Belos MVOpTester and/or OrthoManager tests
+      // fail if I uncomment the line below.  This is true for both
+      // the "classic" and Kokkos refactor versions of Tpetra.  I
+      // don't know why this is the case.  Belos shouldn't care
+      // whether Tpetra uses copy or view semantics, and the Kokkos
+      // refactor version of Tpetra _always_ uses view semantics.
+      // Nevertheless, the tests fail, so I will leave the following
+      // line commented out for now.  This is true for both CloneView
+      // overloads as well as both CloneViewNonConst overloads.
+
+      //X_view->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
-    static Teuchos::RCP<const MV>
-    CloneView (const MV& mv, const std::vector<int>& index)
+
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
       const char fnName[] = "Belos::MultiVecTraits<Scalar, "
@@ -1110,12 +1121,24 @@ namespace Belos {
       // continuous column index range in MultiVector::subView, so we
       // don't have to check here.
       Teuchos::RCP<const MV> X_view = mv.subView (columns);
-      Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
+      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
+      // understand, the Belos MVOpTester and/or OrthoManager tests
+      // fail if I uncomment the line below.  This is true for both
+      // the "classic" and Kokkos refactor versions of Tpetra.  I
+      // don't know why this is the case.  Belos shouldn't care
+      // whether Tpetra uses copy or view semantics, and the Kokkos
+      // refactor version of Tpetra _always_ uses view semantics.
+      // Nevertheless, the tests fail, so I will leave the following
+      // line commented out for now.  This is true for both CloneView
+      // overloads as well as both CloneViewNonConst overloads.
+
+      //Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
-    static Teuchos::RCP<const MV>
-    CloneView (const MV& mv, const Teuchos::Range1D& index)
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> >
+    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+               const Teuchos::Range1D& index)
     {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
@@ -1140,19 +1163,33 @@ namespace Belos {
           os.str() << "Should never get here!");
       }
       Teuchos::RCP<const MV> X_view = mv.subView (index);
-      Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
+      // FIXME (mfh 14 Aug 2014) For some reason I currently don't
+      // understand, the Belos MVOpTester and/or OrthoManager tests
+      // fail if I uncomment the line below.  This is true for both
+      // the "classic" and Kokkos refactor versions of Tpetra.  I
+      // don't know why this is the case.  Belos shouldn't care
+      // whether Tpetra uses copy or view semantics, and the Kokkos
+      // refactor version of Tpetra _always_ uses view semantics.
+      // Nevertheless, the tests fail, so I will leave the following
+      // line commented out for now.  This is true for both CloneView
+      // overloads as well as both CloneViewNonConst overloads.
+
+      //Teuchos::rcp_const_cast<MV> (X_view)->setCopyOrView (Teuchos::View);
       return X_view;
     }
 
-     BELOS_DEPRECATED static int GetVecLength (const MV& mv) {
-      return static_cast<int> (mv.getGlobalLength ());
+    static int
+    GetVecLength (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return mv.getGlobalLength ();
     }
 
-    static int GetNumberVecs (const MV& mv) {
-      return static_cast<int> (mv.getNumVectors ());
+    static int
+    GetNumberVecs (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
+      return mv.getNumVectors ();
     }
 
-    static bool HasConstantStride (const MV& mv) {
+    static bool
+    HasConstantStride (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv) {
       return mv.isConstantStride ();
     }
 
@@ -1163,9 +1200,6 @@ namespace Belos {
                      const dot_type& beta,
                      Tpetra::MultiVector<Scalar,LO,GO,Node>& C)
     {
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-
       // Check if numRowsB == numColsB == 1, in which case we can call update()
       const int numRowsB = B.numRows ();
       const int numColsB = B.numCols ();
@@ -1175,20 +1209,12 @@ namespace Belos {
         return;
       }
 
-      // Ensure A and C have constant stride
-      RCP<const MV> Atmp, Ctmp;
-      if (A.isConstantStride() == false) Atmp = rcp (new MV (A, Teuchos::Copy));
-      else Atmp = rcp(&A,false);
-
-      if (C.isConstantStride() == false) Ctmp = rcp (new MV (C, Teuchos::Copy));
-      else Ctmp = rcp(&C,false);
-
       // Create flattened view's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::device_type device_type;
-      flat_view_type flat_A_view = Atmp->template getLocalView<device_type>();
-      flat_view_type flat_C_view = Ctmp->template getLocalView<device_type>();
+      flat_view_type flat_A_view = A.template getLocalView<device_type>();
+      flat_view_type flat_C_view = C.template getLocalView<device_type>();
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -1261,6 +1287,7 @@ namespace Belos {
       using Teuchos::rcp;
       using Teuchos::REDUCE_SUM;
       using Teuchos::reduceAll;
+      using Kokkos::Compat::persistingView;
 
       // Check if numRowsC == numColsC == 1, in which case we can call dot()
       const int numRowsC = C.numRows ();
@@ -1279,20 +1306,12 @@ namespace Belos {
         return;
       }
 
-      // Ensure A and B have constant stride
-      RCP<const MV> Atmp, Btmp;
-      if (A.isConstantStride() == false) Atmp = rcp (new MV (A, Teuchos::Copy));
-      else Atmp = rcp(&A,false);
-
-      if (B.isConstantStride() == false) Btmp = rcp (new MV (B, Teuchos::Copy));
-      else Btmp = rcp(&B,false);
-
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::device_type device_type;
-      flat_view_type flat_A_view = Atmp->template getLocalView<device_type>();
-      flat_view_type flat_B_view = Btmp->template getLocalView<device_type>();
+      flat_view_type flat_A_view = A.template getLocalView<device_type>();
+      flat_view_type flat_B_view = B.template getLocalView<device_type>();
 
       // Create a view for C on the host
        typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;
@@ -1400,30 +1419,38 @@ namespace Belos {
     }
 
     static void
-    SetBlock (const MV& A, const std::vector<int>& index, MV& mv)
+    SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+              const std::vector<int>& index,
+              Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       using Teuchos::Range1D;
       using Teuchos::RCP;
-      const size_t inNumVecs = A.getNumVectors ();
+      typedef std::vector<int>::size_type size_type;
+
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        inNumVecs < static_cast<size_t> (index.size ()), std::invalid_argument,
-        "Belos::MultiVecTraits::SetBlock(A,index,mv): 'index' argument must "
-        "have no more entries as the number of columns in the input MultiVector"
-        " A.  A.getNumVectors() = " << inNumVecs << " < index.size () = "
-        << index.size () << ".");
-#endif // HAVE_TPETRA_DEBUG
+        static_cast<size_type> (A.getNumVectors ()) < index.size (),
+        std::invalid_argument,
+        "Belos::MultiVecTraits::SetBlock(A,index,mv): The index argument must "
+        "have the same number of entries as the number of columns in A.  "
+        "index.size() = " << index.size () << " != A.getNumVectors() = "
+        << A.getNumVectors () << ".");
+#endif
       RCP<MV> mvsub = CloneViewNonConst (mv, index);
-      if (inNumVecs > static_cast<size_t> (index.size ())) {
+      if (static_cast<size_type> (A.getNumVectors ()) > index.size ()) {
         RCP<const MV> Asub = A.subView (Range1D (0, index.size () - 1));
-        ::Tpetra::deep_copy (*mvsub, *Asub);
-      } else {
-        ::Tpetra::deep_copy (*mvsub, A);
+        Tpetra::deep_copy (*mvsub, *Asub);
       }
+      else {
+        Tpetra::deep_copy (*mvsub, A);
+      }
+      mvsub = Teuchos::null;
     }
 
     static void
-    SetBlock (const MV& A, const Teuchos::Range1D& index, MV& mv)
+    SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+              const Teuchos::Range1D& index,
+              Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of Tpetra::MultiVector is a deep copy.
@@ -1432,29 +1459,26 @@ namespace Belos {
       // fair to assume that the number of vectors won't overflow int,
       // since the typical use case of multivectors involves few
       // columns, but it's friendly to check just in case.
-      const size_t maxInt =
-        static_cast<size_t> (Teuchos::OrdinalTraits<int>::max ());
-      const bool overflow =
-        maxInt < A.getNumVectors () && maxInt < mv.getNumVectors ();
+      const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+      const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow) {
         std::ostringstream os;
         os << "Belos::MultiVecTraits::SetBlock(A, index=[" << index.lbound ()
            << ", " << index.ubound () << "], mv): ";
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          maxInt < A.getNumVectors (), std::range_error, os.str () << "Number "
-          "of columns (size_t) in the input MultiVector 'A' overflows int.");
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          maxInt < mv.getNumVectors (), std::range_error, os.str () << "Number "
-          "of columns (size_t) in the output MultiVector 'mv' overflows int.");
+        TEUCHOS_TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
+                                   os.str() << "Number of columns in the input multi"
+                                   "vector 'A' (a size_t) overflows int.");
+        TEUCHOS_TEST_FOR_EXCEPTION(maxInt < mv.getNumVectors(), std::range_error,
+                                   os.str() << "Number of columns in the output multi"
+                                   "vector 'mv' (a size_t) overflows int.");
       }
       // We've already validated the static casts above.
-      const int numColsA = static_cast<int> (A.getNumVectors ());
-      const int numColsMv = static_cast<int> (mv.getNumVectors ());
+      const int numColsA = static_cast<int> (A.getNumVectors());
+      const int numColsMv = static_cast<int> (mv.getNumVectors());
       // 'index' indexes into mv; it's the index set of the target.
-      const bool validIndex =
-        index.lbound () >= 0 && index.ubound () < numColsMv;
+      const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
       // We can't take more columns out of A than A has.
-      const bool validSource = index.size () <= numColsA;
+      const bool validSource = index.size() <= numColsA;
 
       if (! validIndex || ! validSource) {
         std::ostringstream os;
@@ -1495,10 +1519,12 @@ namespace Belos {
         A_view = CloneView (A, Teuchos::Range1D (0, index.size () - 1));
       }
 
-      ::Tpetra::deep_copy (*mv_view, *A_view);
+      Tpetra::deep_copy (*mv_view, *A_view);
     }
 
-    static void Assign (const MV& A, MV& mv)
+    static void
+    Assign (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A,
+            Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       const char errPrefix[] = "Belos::MultiVecTraits::Assign(A, mv): ";
 
@@ -1509,19 +1535,17 @@ namespace Belos {
       // fair to assume that the number of vectors won't overflow int,
       // since the typical use case of multivectors involves few
       // columns, but it's friendly to check just in case.
-      const size_t maxInt =
-        static_cast<size_t> (Teuchos::OrdinalTraits<int>::max ());
-      const bool overflow =
-        maxInt < A.getNumVectors () && maxInt < mv.getNumVectors ();
+      const size_t maxInt = static_cast<size_t> (Teuchos::OrdinalTraits<int>::max());
+      const bool overflow = maxInt < A.getNumVectors() && maxInt < mv.getNumVectors();
       if (overflow) {
         TEUCHOS_TEST_FOR_EXCEPTION(
           maxInt < A.getNumVectors(), std::range_error,
-          errPrefix << "Number of columns in the input multivector 'A' "
-          "(a size_t) overflows int.");
+          errPrefix << "Number of columns in the input multivector 'A' (a "
+          "size_t) overflows int.");
         TEUCHOS_TEST_FOR_EXCEPTION(
           maxInt < mv.getNumVectors(), std::range_error,
-          errPrefix << "Number of columns in the output multivector 'mv' "
-          "(a size_t) overflows int.");
+          errPrefix << "Number of columns in the output multivector 'mv' (a "
+          "size_t) overflows int.");
         TEUCHOS_TEST_FOR_EXCEPTION(
           true, std::logic_error, "Should never get here!");
       }
@@ -1535,27 +1559,36 @@ namespace Belos {
           "but output multivector 'mv' has only " << numColsMv << " columns.");
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
       }
+      // Assignment of Tpetra::MultiVector objects via operator=
+      // assumes that both arguments have compatible Maps.  If
+      // HAVE_TPETRA_DEBUG is defined at compile time, operator= may
+      // throw an std::runtime_error if the Maps are incompatible.
       if (numColsA == numColsMv) {
-        ::Tpetra::deep_copy (mv, A);
+        Tpetra::deep_copy (mv, A);
       } else {
         Teuchos::RCP<MV> mv_view =
-          CloneViewNonConst (mv, Teuchos::Range1D (0, numColsA - 1));
-        ::Tpetra::deep_copy (*mv_view, A);
+          CloneViewNonConst (mv, Teuchos::Range1D (0, numColsA-1));
+        Tpetra::deep_copy (*mv_view, A);
       }
     }
 
 
-    static void MvRandom (MV& mv) {
+    static void
+    MvRandom (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    {
       mv.randomize ();
     }
 
     static void
-    MvInit (MV& mv, const Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero ())
+    MvInit (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv,
+            Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero ())
     {
       mv.putScalar (alpha);
     }
 
-    static void MvPrint (const MV& mv, std::ostream& os) {
+    static void
+    MvPrint (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os)
+    {
       Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
       mv.describe (fos, Teuchos::VERB_EXTREME);
     }
