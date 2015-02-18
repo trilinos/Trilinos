@@ -97,7 +97,7 @@ struct FunctorValueTraits
  *        const unsigned     value_count ;
  */
 template< class FunctorType , class ArgTag >
-struct FunctorValueTraits< FunctorType , ArgTag , true /* exists FunctorType::value_type */ >
+struct FunctorValueTraits< FunctorType , ArgTag , true /* == exists FunctorType::value_type */ >
 {
   typedef typename Impl::remove_extent< typename FunctorType::value_type >::type  value_type ;
 
@@ -133,153 +133,178 @@ struct FunctorValueTraits< FunctorType , ArgTag , true /* exists FunctorType::va
 
 #if defined( KOKKOS_HAVE_CXX11 )
 
-// If have C++11 and functor does not explicitly specify a value type
-// then try to deduce the value type from FunctorType::operator().
-// Can only deduce single value type since array length cannot be deduced.
-template< class FunctorType >
-struct FunctorValueTraits< FunctorType
-                       , void  /* == ArgTag */
-                       , false /* == exists FunctorType::value_type */
-                       >
-{
-private:
-
-  struct VOIDTAG {};
-
-  // parallel_for operator without a tag:
-  template< class ArgMember >
-  KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( ArgMember ) const ) {}
-
-  template< class ArgMember >
-  KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( const ArgMember& ) const ) {}
-
-  // parallel_reduce operator without a tag:
-  template< class ArgMember , class T >
-  KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgMember , T & ) const ) {}
-
-  // parallel_reduce operator without a tag:
-  template< class ArgMember , class T >
-  KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgMember& , T & ) const ) {}
-
-  // parallel_scan operator without a tag:
-  template< class ArgMember , class T >
-  KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgMember , T & , bool ) const ) {}
-
-  template< class ArgMember , class T >
-  KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgMember& , T & , bool ) const ) {}
-
-  typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
-
-  enum { IS_VOID = Impl::is_same<VOIDTAG,ValueType>::value };
-
-public:
-
-  typedef typename Impl::if_c< IS_VOID , void , ValueType   >::type  value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type  pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type  reference_type ;
-
-  enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
-
-  KOKKOS_FORCEINLINE_FUNCTION static
-  unsigned value_size( const FunctorType & ) { return StaticValueSize ; }
-
-  KOKKOS_FORCEINLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return IS_VOID ? 0 : 1 ; }
-};
-
-
 template< class FunctorType , class ArgTag >
 struct FunctorValueTraits< FunctorType
-                       , ArgTag /* != void */
-                       , false  /* == exists FunctorType::value_type */
-                       >
+                         , ArgTag
+                         , false  /* == exists FunctorType::value_type */
+                         >
 {
 private:
+
+  struct VOIDTAG {};   // Allow declaration of non-matching operator() with void argument tag.
+  struct REJECTTAG {}; // Reject tagged operator() when using non-tagged execution policy.
+
+  typedef typename
+    Impl::if_c< Impl::is_same< ArgTag , void >::value , VOIDTAG , ArgTag >::type tag_type ;
+
+  //----------------------------------------
+  // parallel_for operator without a tag:
+
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOIDTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( ArgMember ) const ) {}
+
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOIDTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const ArgMember & ) const ) {}
+
+  template< class TagType , class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , ArgMember ) const ) {}
+
+  template< class TagType , class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , const ArgMember & ) const ) {}
+
+  template< class TagType , class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , ArgMember ) const ) {}
+
+  template< class TagType , class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , const ArgMember & ) const ) {}
 
   //----------------------------------------
   // parallel_for operator with a tag:
 
-  struct VOIDTAG {}; // to allow valid sizeof(ValueType)
+  template< class ArgMember >
+  KOKKOS_INLINE_FUNCTION
+  static VOIDTAG deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , ArgMember ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( ArgTag , ArgMember ) const ) {}
+  static VOIDTAG deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , ArgMember ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( const ArgTag & , ArgMember ) const ) {}
+  static VOIDTAG deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , const ArgMember & ) const ) {}
 
   template< class ArgMember >
   KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( ArgTag , const ArgMember& ) const ) {}
+  static VOIDTAG deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , const ArgMember & ) const ) {}
 
-  template< class ArgMember >
+  //----------------------------------------
+  // parallel_reduce operator without a tag:
+
+  template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static VOIDTAG deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& ) const ) {}
+  static T deduce_reduce_type( VOIDTAG , void (FunctorType::*)( ArgMember , T & ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const ArgMember & , T & ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , ArgMember , T & ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , const ArgMember & , T & ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , ArgMember , T & ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , const ArgMember & , T & ) const ) {}
 
   //----------------------------------------
   // parallel_reduce operator with a tag:
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgTag , ArgMember , T & ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , ArgMember , T & ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgTag & , ArgMember , T & ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , ArgMember , T & ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgTag , const ArgMember & , T & ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , const ArgMember & , T & ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgTag & , const ArgMember & , T & ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , const ArgMember & , T & ) const ) {}
+
+  //----------------------------------------
+  // parallel_scan operator without a tag:
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce_reduce_type( VOIDTAG , void (FunctorType::*)( ArgMember , T & , bool ) const ) {}
+
+  template< class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static T deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const ArgMember & , T & , bool ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , ArgMember , T & , bool ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( TagType , const ArgMember & , T & , bool ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , ArgMember , T & , bool ) const ) {}
+
+  template< class TagType , class ArgMember , class T >
+  KOKKOS_INLINE_FUNCTION
+  static REJECTTAG deduce_reduce_type( VOIDTAG , void (FunctorType::*)( const TagType & , const ArgMember & , T & , bool ) const ) {}
 
   //----------------------------------------
   // parallel_scan operator with a tag:
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgTag , ArgMember , T & , bool ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , ArgMember , T & , bool ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgTag & , ArgMember , T & , bool ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , ArgMember , T & , bool ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( ArgTag , const ArgMember& , T & , bool ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( tag_type , const ArgMember& , T & , bool ) const ) {}
 
   template< class ArgMember , class T >
   KOKKOS_INLINE_FUNCTION
-  static T deduce( void (FunctorType::*)( const ArgTag & , const ArgMember& , T & , bool ) const ) {}
+  static T deduce_reduce_type( tag_type , void (FunctorType::*)( const tag_type & , const ArgMember& , T & , bool ) const ) {}
 
   //----------------------------------------
 
-  typedef decltype( deduce( & FunctorType::operator() ) ) ValueType ;
+  typedef decltype( deduce_reduce_type( tag_type() , & FunctorType::operator() ) ) ValueType ;
 
-  enum { IS_VOID = Impl::is_same<VOIDTAG,ValueType>::value };
+  enum { IS_VOID   = Impl::is_same<VOIDTAG  ,ValueType>::value };
+  enum { IS_REJECT = Impl::is_same<REJECTTAG,ValueType>::value };
 
 public:
 
-  typedef typename Impl::if_c< IS_VOID , void , ValueType   >::type  value_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType * >::type  pointer_type ;
-  typedef typename Impl::if_c< IS_VOID , void , ValueType & >::type  reference_type ;
+  typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType   >::type  value_type ;
+  typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType * >::type  pointer_type ;
+  typedef typename Impl::if_c< IS_VOID || IS_REJECT , void , ValueType & >::type  reference_type ;
 
-  enum { StaticValueSize = IS_VOID ? 0 : sizeof(ValueType) };
+  enum { StaticValueSize = IS_VOID || IS_REJECT ? 0 : sizeof(ValueType) };
 
   KOKKOS_FORCEINLINE_FUNCTION static
   unsigned value_size( const FunctorType & ) { return StaticValueSize ; }
 
   KOKKOS_FORCEINLINE_FUNCTION static
-  unsigned value_count( const FunctorType & ) { return IS_VOID ? 0 : 1 ; }
+  unsigned value_count( const FunctorType & ) { return IS_VOID || IS_REJECT ? 0 : 1 ; }
 };
 
 #endif /* #if defined( KOKKOS_HAVE_CXX11 ) */

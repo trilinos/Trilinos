@@ -58,7 +58,7 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-class VectorImport ;
+struct VectorImport ;
 
 } // namespace Example
 } // namespace Kokkos
