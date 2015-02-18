@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     }
 
-    delete x_rawp;
+    delete[] x_rawp;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
