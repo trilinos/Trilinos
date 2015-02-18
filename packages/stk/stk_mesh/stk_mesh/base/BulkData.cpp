@@ -70,7 +70,6 @@
 #include "stk_mesh/base/Trace.hpp"      // for DiagIfWatching, Trace_, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
@@ -577,7 +576,7 @@ void BulkData::require_entity_owner( const Entity entity ,
     const bool error_not_owner = owner != parallel_owner_rank(entity) ;
 
     ThrowRequireMsg( !error_not_owner,
-                     "Entity " << identifier(entity) << " owner is " <<
+                     "P" << parallel_rank() << " " << entity_key(entity) << " owner is " <<
                      parallel_owner_rank(entity) << ", expected " << owner);
   }
 }
@@ -5134,6 +5133,11 @@ void BulkData::internal_resolve_send_ghost_membership()
 {
     // This virtual method can be removed when we no longer need the
     // StkTransitionBulkData derived class in Framework.
+}
+
+bool BulkData::should_sort_buckets_by_first_entity_identifier() const
+{
+    return false;
 }
 
 void BulkData::internal_update_fast_comm_maps()

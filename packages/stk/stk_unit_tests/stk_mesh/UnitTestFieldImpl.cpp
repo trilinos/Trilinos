@@ -47,7 +47,7 @@
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateOld, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_mesh/base/Types.hpp"  // for FieldVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 

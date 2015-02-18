@@ -50,6 +50,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_util/stk_config.h>
 
 #include <stdint.h>
 
@@ -78,7 +79,7 @@ inline std::string getOption(const std::string& option, const std::string defaul
     return returnValue;
 }
 
-#if defined(STK_BUILT_IN_SIERRA)  // this means MPI is available
+#if defined(STK_HAS_MPI)  // this means MPI is available
 
 namespace {
 
@@ -717,5 +718,5 @@ void getAvailableIds_exp(stk::mesh::BulkData &stkMeshBulkData, uint64_t numIdsNe
 
 }
 
-#endif
+#endif // STK_HAS_MPI
 

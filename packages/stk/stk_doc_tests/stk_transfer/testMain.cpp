@@ -31,95 +31,24 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/diag/String.hpp>     // for Identifier, String
-#include <stk_util/diag/StringUtil.hpp> // for demangle
-#include <stk_util/util/Writer.hpp>     // for operator<<, Writer
-#include "stk_util/parallel/MPI.hpp"    // for Loc, TempLoc
+#include <gtest/gtest.h>
+#include <stk_util/parallel/Parallel.hpp>
 
+int gl_argc=0;
+char** gl_argv=0;
 
-
-namespace stk {
-namespace diag {
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const std::type_info &        t)
+int main(int argc, char **argv)
 {
-  if (dout.shouldPrint())
-    dout << sierra::demangle(t.name());
-  return dout;
+    MPI_Init(&argc, &argv);
+
+    testing::InitGoogleTest(&argc, argv);
+
+    gl_argc = argc;
+    gl_argv = argv;
+
+    int returnVal = RUN_ALL_TESTS();
+
+    MPI_Finalize();
+
+    return returnVal;
 }
-
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const sierra::String &        s)
-{
-  if (dout.shouldPrint()) 
-    dout << s.c_str();
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const sierra::Identifier &    s)
-{
-  if (dout.shouldPrint())
-    dout << s.c_str();
-  return dout;
-}
-
-
-#if defined ( STK_HAS_MPI )
-Writer &
-operator<<(
-  Writer &        dout,
-  const sierra::MPI::Loc<int> &      loc) 
-{
-  if (dout.shouldPrint()) 
-    dout << loc.m_value << "@" << loc.m_loc;
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &        dout,
-  const sierra::MPI::Loc<double> &   loc)
-{
-  if (dout.shouldPrint())
-    dout << loc.m_value << "@" << loc.m_loc;
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &        dout,
-  const sierra::MPI::Loc<float> &    loc)
-{
-  if (dout.shouldPrint())
-    dout << loc.m_value << "@" << loc.m_loc;
-  return dout;
-}
-
-  
-Writer &
-operator<<(
-  Writer &        dout,
-  const sierra::MPI::TempLoc &   loc)
-{
-  if (dout.shouldPrint())
-    dout << loc.m_value << " " << loc.m_other << "@" << loc.m_loc;
-  return dout;
-}
-#endif
-
-} // namespace diag
-} // namespace stk

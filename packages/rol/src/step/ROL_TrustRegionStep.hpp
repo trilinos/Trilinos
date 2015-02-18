@@ -228,6 +228,20 @@ private:
     }
   }
 
+  void TrustRegionFactory(Teuchos::ParameterList &parlist) {
+    switch(etr_) {
+      case TRUSTREGION_DOGLEG:
+        trustRegion_ = Teuchos::rcp(new DogLeg<Real>(parlist)); break;
+      case TRUSTREGION_DOUBLEDOGLEG:
+        trustRegion_ = Teuchos::rcp(new DoubleDogLeg<Real>(parlist)); break;
+      case TRUSTREGION_TRUNCATEDCG:
+        trustRegion_ = Teuchos::rcp(new TruncatedCG<Real>(parlist)); break;
+      case TRUSTREGION_CAUCHYPOINT: 
+      default:
+        trustRegion_ = Teuchos::rcp(new CauchyPoint<Real>(parlist)); break;
+    }
+  }
+
 public:
 
   virtual ~TrustRegionStep() {}
@@ -263,7 +277,7 @@ public:
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
     alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
-    trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+    TrustRegionFactory(parlist);
 
     // Secant Parameters
     secant_ = Teuchos::null;
@@ -314,7 +328,7 @@ public:
     useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
     max_fval_         = parlist.get("Maximum Number of Function Evaluations", 20);
     alpha_init_       = parlist.get("Initial Linesearch Parameter", 1.0);
-    trustRegion_      = Teuchos::rcp( new TrustRegion<Real>(parlist) );
+    TrustRegionFactory(parlist);
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);

@@ -1,23 +1,23 @@
-// Copyright (c) 2013, Sandia Corporation.
+// Copyright (c) 2015, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,105 +29,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <stk_util/environment/Demangle.hpp>
-#include <stdlib.h>
 
-#if __GNUC__ == 3 || __GNUC__ == 4
-#include <cxxabi.h>
-#endif
+#ifndef  STK_COPYSEARCHBASE_HPP
+#define  STK_COPYSEARCHBASE_HPP
 
-// #if defined __xlC__
-// #include <demangle.h>
-// #endif
+#include <set>
+#include <map>
+
+#include "CopyTransferMeshBase.hpp"
 
 namespace stk {
+namespace transfer {
 
-#ifdef STK_USE_PLATFORM_DEMANGLER
+class CopySearchBase {
+public:
+  typedef CopyTransferMeshBase::Mesh_ID Mesh_ID;
+  typedef std::map<Mesh_ID,int> KeyToTargetProcessor;
+  typedef std::set<Mesh_ID> MeshIDSet;
 
-#if defined(__GNUC__)
+  virtual void intialize(const CopyTransferMeshBase & mesha, const CopyTransferMeshBase & meshb) =0;
+  virtual void do_search(const CopyTransferMeshBase & mesha,
+                         const CopyTransferMeshBase & meshb,
+                         KeyToTargetProcessor & key_to_target_processor) =0;
+  virtual const MeshIDSet & get_remote_keys() const =0;
+};
 
-#if (__GNUC__ == 3)
-std::string
-demangle(
-  const char *	symbol)
-{
-#ifdef PURIFY_BUILD
-  return symbol;
-#else
-  std::string   s;
-  int		status = 0;
+}  } // namespace transfer stk
 
-  char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
-
-  if (demangled_symbol) {
-    s = std::string(demangled_symbol);
-    free(demangled_symbol);
-  }
-
-  if (status != 0)
-    s = std::string(symbol);
-
-  return s;
-#endif
-}
-
-#elif (__GNUC__ == 4)
-std::string
-demangle(
-  const char *	symbol)
-{
-#ifdef PURIFY_BUILD
-  return symbol;
-#else
-  std::string   s;
-
-  int		status=-1;
-
-  char *demangled_symbol = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status);
-
-  if (demangled_symbol) {
-    s = std::string(demangled_symbol);
-    free(demangled_symbol);
-  }
-
-  if (status != 0)
-    s = std::string(symbol);
-
-  return s;
-#endif
-}
-
-#endif // (__GNUC__ == 3)
-
-#elif defined __xlC__
-std::string
-demangle(
-  const char *	symbol)
-{
-  return symbol;
-// #ifdef PURIFY_BUILD
-//   return symbol;
-// #else
-//   char *rest;
-
-//   Name *name = Demangle(symbol, rest) ;
-
-//   std::string s(name ? name->Text() : symbol);
-
-//   delete name;
-
-//   return s;
-// #endif
-}
-
-#endif // defined __GNUC__
-
-#else
-const char *demangle(const char *symbol) {
-  return symbol;
-}
-#endif // STK_USE_PLATFORM_DEMANGLER
-
-} // namespace stk
+#endif //  STK_COPYSEARCHBASE_HPP

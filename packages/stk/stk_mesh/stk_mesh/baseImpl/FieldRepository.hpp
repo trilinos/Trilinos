@@ -51,9 +51,6 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
-
-typedef std::vector<FieldBase *> FieldVector;
-
 namespace impl {
 
 class FieldRepository {
