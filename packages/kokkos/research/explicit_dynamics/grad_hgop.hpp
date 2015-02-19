@@ -71,11 +71,11 @@ struct grad_hgop;
 template<typename Scalar>
 struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
-  typedef typename Kokkos::MDArray<int,device_type>    int_array_type ;
+  typedef KOKKOS_MACRO_DEVICE     execution_space ;
+  typedef typename Kokkos::MDArray<Scalar,execution_space> array_type ;
+  typedef typename Kokkos::MDArray<int,execution_space>    int_array_type ;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,execution_space>     scalar;
 
   // Global arrays used by this functor.
 
@@ -91,7 +91,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
   const int        current_state;
   const int        previous_state;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
   // Constructor on the Host to populate this device functor.
   // All array view copies are shallow.

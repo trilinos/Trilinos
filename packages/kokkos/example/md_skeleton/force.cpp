@@ -67,7 +67,7 @@
 
 struct ForceFunctor {
 
-  typedef t_x_array::device_type device_type; //Device Type for running the kernel
+  typedef t_x_array::execution_space execution_space; //Device Type for running the kernel
   typedef double2 value_type; // When energy calculation is requested return energy, and virial
 
   t_x_array_randomread x;       //atom positions
@@ -186,7 +186,7 @@ double2 force(System &s,int evflag) {
   else
     Kokkos::parallel_reduce(s.nlocal,f,ev);
 
-  device_type::fence();
+  execution_space::fence();
   return ev;
 }
 

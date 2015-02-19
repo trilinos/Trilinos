@@ -166,10 +166,10 @@ public:
 template< class Device >
 class BigSymmetricBlockCSRGraph {
 public:
-  typedef Device                     device_type ;
+  typedef Device                     execution_space ;
   typedef typename Device::size_type index_type ;
 
-  typedef View< index_type[] , device_type > vector_type ;
+  typedef View< index_type[] , execution_space > vector_type ;
 
   index_type  block_system_size ;
   index_type  block_length ;

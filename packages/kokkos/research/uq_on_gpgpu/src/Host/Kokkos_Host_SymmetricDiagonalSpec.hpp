@@ -51,9 +51,9 @@ namespace Impl {
 template<>
 class Multiply< SymmetricDiagonalSpec< Threads > , void , void > {
 public:
-  typedef Threads                    device_type ;
-  typedef device_type::size_type  size_type ;
-  typedef SymmetricDiagonalSpec< device_type > block_type ;
+  typedef Threads                    execution_space ;
+  typedef execution_space::size_type  size_type ;
+  typedef SymmetricDiagonalSpec< execution_space > block_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const block_type  & block ,

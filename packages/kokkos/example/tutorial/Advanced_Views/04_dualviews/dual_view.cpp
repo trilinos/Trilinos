@@ -71,12 +71,15 @@ typedef Kokkos::DualView<double*> view_type;
 typedef Kokkos::DualView<int**> idx_type;
 
 
-template<class Device>
+template<class ExecutionSpace>
 struct localsum {
-  // If the functor has a public 'device_type' typedef, that defines
+  // If the functor has a public 'execution_space' typedef, that defines
   // the functor's execution space (where it runs in parallel).  This
   // overrides Kokkos' default execution space.
-  typedef Device device_type;
+  typedef ExecutionSpace execution_space;
+
+  typedef typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<ExecutionSpace,Kokkos::DefaultExecutionSpace>::value ,
+     idx_type::memory_space, idx_type::host_mirror_space>::type memory_space;
 
   // Get the view types on the particular device for which the functor
   // is instantiated.
@@ -85,12 +88,12 @@ struct localsum {
   // the const version of the first template parameter of the View.
   // For example, the const_data_type version of double** is const
   // double**.
-  Kokkos::View<idx_type::const_data_type, idx_type::array_layout, Device> idx;
+  Kokkos::View<idx_type::const_data_type, idx_type::array_layout, memory_space> idx;
   // "array_intrinsic_type" is a typedef in ViewTraits (and DualView) which is the
   // array version of the value(s) stored in the View.
-  Kokkos::View<view_type::array_intrinsic_type, view_type::array_layout, Device> dest;
+  Kokkos::View<view_type::array_intrinsic_type, view_type::array_layout, memory_space> dest;
   Kokkos::View<view_type::const_data_type, view_type::array_layout,
-               Device, Kokkos::MemoryRandomAccess> src;
+               memory_space, Kokkos::MemoryRandomAccess> src;
 
   // Constructor takes DualViews, synchronizes them to the device,
   // then marks them as modified on the device.
@@ -101,9 +104,9 @@ struct localsum {
     // method, view(), which is templated on the memory space.  If the
     // DualView has a View from that memory space, view() returns the
     // View in that space.
-    idx = dv_idx.view<Device> ();
-    dest = dv_dest.template view<Device> ();
-    src = dv_src.template view<Device> ();
+    idx = dv_idx.view<memory_space> ();
+    dest = dv_dest.template view<memory_space> ();
+    src = dv_src.template view<memory_space> ();
 
     // Synchronize the DualView to the correct Device.
     //
@@ -115,12 +118,12 @@ struct localsum {
     // determines this by the user manually marking one side or the
     // other as modified; see the modify() call below.
 
-    dv_idx.sync<Device> ();
-    dv_dest.template sync<Device> ();
-    dv_src.template sync<Device> ();
+    dv_idx.sync<memory_space> ();
+    dv_dest.template sync<memory_space> ();
+    dv_src.template sync<memory_space> ();
 
     // Mark dest as modified on Device.
-    dv_dest.template modify<Device> ();
+    dv_dest.template modify<memory_space> ();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -134,8 +137,25 @@ struct localsum {
   }
 };
 
+class ParticleType {
+  public:
+    double q;
+    double m;
+    double q_over_m;
+    KOKKOS_INLINE_FUNCTION
+    ParticleType(double q_ = -1, double m_ = 1):
+     q(q_), m(m_), q_over_m(q/m) {}
+protected:
+};
+
+  typedef Kokkos::DualView<ParticleType[10]> ParticleTypes;
 int main (int narg, char* arg[]) {
   Kokkos::initialize (narg, arg);
+
+  ParticleTypes test("Test");
+  Kokkos::fence();
+  test.h_view(0) = ParticleType(-1e4,1);
+  Kokkos::fence();
 
   int size = 1000000;
 
@@ -144,6 +164,7 @@ int main (int narg, char* arg[]) {
   idx_type idx ("Idx",size,64);
   view_type dest ("Dest",size);
   view_type src ("Src",size);
+
 
   srand (134231);
 
@@ -164,12 +185,12 @@ int main (int narg, char* arg[]) {
   // Run on the device.  This will cause a sync of idx to the device,
   // since it was marked as modified on the host.
   Kokkos::Impl::Timer timer;
-  Kokkos::parallel_for(size,localsum<view_type::device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<view_type::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec1_dev = timer.seconds();
 
   timer.reset();
-  Kokkos::parallel_for(size,localsum<view_type::device_type>(idx,dest,src));
+  Kokkos::parallel_for(size,localsum<view_type::execution_space>(idx,dest,src));
   Kokkos::fence();
   double sec2_dev = timer.seconds();
 

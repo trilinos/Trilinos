@@ -196,5 +196,5 @@ int main(int argc, char** argv) {
   double time = timer.seconds();
   printf("Time: %e s for %i iterations with %i atoms\n",time,iter,system.nlocal);
 
-  device_type::finalize();
+  execution_space::finalize();
 }

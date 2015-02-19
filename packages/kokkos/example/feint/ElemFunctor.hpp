@@ -107,7 +107,7 @@ struct FiniteElementIntegration<
 
   //----------------------------------------
   // Device for parallel dispatch.
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space;
 
   // Value type for global parallel reduction.
   struct value_type {
@@ -332,7 +332,7 @@ template< class ViewNodeValue ,
           bool  AlreadyUsedAtomic >
 struct LumpElemToNode {
 
-  typedef typename ViewElemValue::device_type device_type ;
+  typedef typename ViewElemValue::execution_space execution_space ;
 
   // In this example we know that the ViewElemValue
   // array specification is < double*[nNode][nValue] >
@@ -341,8 +341,8 @@ struct LumpElemToNode {
 
   ViewNodeValue             m_node_value ; ///< Integrated values at nodes
   ViewElemValue             m_elem_value ; ///< Values apportioned to nodes
-  View<int*,   device_type> m_node_scan ;  ///< Offsets for nodes->element
-  View<int*[2],device_type> m_node_elem ;  ///< Node->element connectivity
+  View<int*,   execution_space> m_node_scan ;  ///< Offsets for nodes->element
+  View<int*[2],execution_space> m_node_elem ;  ///< Node->element connectivity
 
   // Only allocate node->element connectivity if have
   // not already used atomic updates for the nodes.

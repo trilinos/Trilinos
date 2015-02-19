@@ -50,7 +50,7 @@ namespace Test {
 template< class Device , class WorkSpec = size_t >
 struct TestScan {
 
-  typedef  Device    device_type ;
+  typedef  Device    execution_space ;
   typedef  long int  value_type ;
 
   KOKKOS_INLINE_FUNCTION

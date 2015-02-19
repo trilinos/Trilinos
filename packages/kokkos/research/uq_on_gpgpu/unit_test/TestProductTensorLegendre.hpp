@@ -20,13 +20,13 @@ test_product_tensor_legendre(
   const bool check )
 {
   typedef TensorType                         tensor_type ;
-  typedef typename tensor_type::device_type  device_type ;
+  typedef typename tensor_type::execution_space  execution_space ;
 
   typedef Kokkos::View< VectorScalar** ,
                              Kokkos::LayoutLeft ,
-                             device_type > vector_type ;
+                             execution_space > vector_type ;
 
-  typedef Kokkos::BlockCrsMatrix< tensor_type , MatrixScalar , device_type > matrix_type ;
+  typedef Kokkos::BlockCrsMatrix< tensor_type , MatrixScalar , execution_space > matrix_type ;
 
   typedef typename matrix_type::graph_type graph_type ;
 
@@ -152,7 +152,7 @@ test_product_tensor_legendre(
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     op.run();
   }
-  device_type::fence();
+  execution_space::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.multiply_add_flops();

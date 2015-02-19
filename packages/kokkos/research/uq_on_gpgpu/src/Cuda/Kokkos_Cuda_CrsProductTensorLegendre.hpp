@@ -95,8 +95,8 @@ private:
 
 public:
 
-  typedef Cuda                             device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef Cuda                             execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iy ) const
@@ -166,11 +166,11 @@ class Multiply<
 {
 public:
 
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
 
-  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef CrsProductTensorLegendre< MatrixScalar , execution_space >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
   typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
 
 private:
@@ -410,11 +410,11 @@ class Multiply<
 {
 public:
 
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
 
-  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef CrsProductTensorLegendre< MatrixScalar , execution_space >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
   typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
 
 private:
@@ -643,11 +643,11 @@ class Multiply<
 {
 public:
 
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
 
-  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef CrsProductTensorLegendre< MatrixScalar , execution_space >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
   typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
 
 private:
@@ -897,11 +897,11 @@ class Multiply<
 {
 public:
 
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
 
-  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef CrsProductTensorLegendre< MatrixScalar , execution_space >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
   typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
 
 private:
@@ -1131,11 +1131,11 @@ class Multiply<
 {
 public:
 
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
 
-  typedef CrsProductTensorLegendre< MatrixScalar , device_type >    tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
+  typedef CrsProductTensorLegendre< MatrixScalar , execution_space >    tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
   typedef View< VectorScalar** , LayoutLeft , Cuda >                vector_type ;
 
 private:

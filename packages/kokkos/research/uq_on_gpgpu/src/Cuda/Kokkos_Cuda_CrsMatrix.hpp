@@ -102,10 +102,10 @@ class Multiply<
   Kokkos::View< float[] , Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                        device_type ;
-  typedef device_type::size_type              size_type ;
-  typedef View< float[] , device_type >  vector_type ;
-  typedef CrsMatrix< float , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                        execution_space ;
+  typedef execution_space::size_type              size_type ;
+  typedef View< float[] , execution_space >  vector_type ;
+  typedef CrsMatrix< float , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -144,10 +144,10 @@ class Multiply<
   Kokkos::View< double[] , Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef View< double[] , device_type >  vector_type ;
-  typedef CrsMatrix< double , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef View< double[] , execution_space >  vector_type ;
+  typedef CrsMatrix< double , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -186,11 +186,11 @@ class MMultiply<
   Kokkos::View< float** , LayoutLeft, Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                           device_type ;
-  typedef device_type::size_type                      size_type ;
-  typedef View< float[] , device_type >              vector_type ;
-  typedef View< float** , LayoutLeft, device_type >  multi_vector_type ;
-  typedef CrsMatrix< float , device_type >           matrix_type ;
+  typedef Kokkos::Cuda                           execution_space ;
+  typedef execution_space::size_type                      size_type ;
+  typedef View< float[] , execution_space >              vector_type ;
+  typedef View< float** , LayoutLeft, execution_space >  multi_vector_type ;
+  typedef CrsMatrix< float , execution_space >           matrix_type ;
   typedef int                                         Ordinal ;
 
   //--------------------------------------------------------------------------
@@ -254,11 +254,11 @@ class MMultiply<
   Kokkos::View< double** , LayoutLeft, Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                           device_type ;
-  typedef device_type::size_type                      size_type ;
-  typedef View< double[] , device_type >              vector_type ;
-  typedef View< double** , LayoutLeft, device_type >  multi_vector_type ;
-  typedef CrsMatrix< double , device_type >           matrix_type ;
+  typedef Kokkos::Cuda                           execution_space ;
+  typedef execution_space::size_type                      size_type ;
+  typedef View< double[] , execution_space >              vector_type ;
+  typedef View< double** , LayoutLeft, execution_space >  multi_vector_type ;
+  typedef CrsMatrix< double , execution_space >           matrix_type ;
   typedef int                                         Ordinal ;
 
   //--------------------------------------------------------------------------
@@ -322,10 +322,10 @@ class MMultiply<
   Kokkos::View< float[] , Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef View< float[] , device_type >  vector_type ;
-  typedef CrsMatrix< float , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef View< float[] , execution_space >  vector_type ;
+  typedef CrsMatrix< float , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -385,10 +385,10 @@ class MMultiply<
   Kokkos::View< double[] , Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef View< double[] , device_type >  vector_type ;
-  typedef CrsMatrix< double , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef View< double[] , execution_space >  vector_type ;
+  typedef CrsMatrix< double , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -445,9 +445,9 @@ template< typename MatrixValue>
 class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
 {
 public:
-  typedef Kokkos::HostSpace::execution_space        device_type ;
-  typedef device_type::size_type                    size_type ;
-  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+  typedef Kokkos::HostSpace::execution_space        execution_space ;
+  typedef execution_space::size_type                    size_type ;
+  typedef CrsMatrix< MatrixValue , execution_space >    matrix_type ;
 
   MatrixMarketWriter() {}
   ~MatrixMarketWriter() {}

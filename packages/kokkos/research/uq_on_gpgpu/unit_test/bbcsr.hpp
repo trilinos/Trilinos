@@ -72,10 +72,10 @@ namespace Kokkos {
 template< class Device >
 class BigBlockCRSGraph {
 public:
-  typedef Device                     device_type ;
+  typedef Device                     execution_space ;
   typedef typename Device::size_type index_type ;
 
-  typedef View< index_type[] , device_type > vector_type ;
+  typedef View< index_type[] , execution_space > vector_type ;
 
   /** \brief  Index to the begining of the block */
   index_type offset_block( index_type block_row , index_type block_column ) const ;

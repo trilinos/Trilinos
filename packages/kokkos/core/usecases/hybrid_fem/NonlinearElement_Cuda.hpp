@@ -20,21 +20,21 @@ template< class MeshType , typename ScalarType > struct ElementComputation ;
 template<>
 struct ElementComputation< FEMesh< double , 27 , Kokkos::Cuda > , double >
 {
-  typedef Kokkos::Cuda    device_type ;
+  typedef Kokkos::Cuda    execution_space ;
 
   static const unsigned ElementNodeCount = 27 ;
 
   typedef HexElement_Data< ElementNodeCount >                element_data_type ;
-  typedef FEMesh< double , ElementNodeCount , device_type >  mesh_type ;
+  typedef FEMesh< double , ElementNodeCount , execution_space >  mesh_type ;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
   static const unsigned FunctionCount    = element_data_type::function_count ;
   static const unsigned IntegrationCount = element_data_type::integration_count ;
   static const unsigned TensorDim        = SpatialDim * SpatialDim ;
 
-  typedef Kokkos::View< double[][FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< double[][FunctionCount] , device_type > elem_vectors_type ;
-  typedef Kokkos::View< double[] , device_type > value_vector_type ;
+  typedef Kokkos::View< double[][FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< double[][FunctionCount] , execution_space > elem_vectors_type ;
+  typedef Kokkos::View< double[] , execution_space > value_vector_type ;
 
 private:
 

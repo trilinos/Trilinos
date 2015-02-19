@@ -390,7 +390,7 @@ template< class ElemCompType >
 class NodeElemGatherFill {
 public:
 
-  typedef typename ElemCompType::device_type         device_type ;
+  typedef typename ElemCompType::execution_space         execution_space ;
   typedef typename ElemCompType::vector_type         vector_type ;
   typedef typename ElemCompType::sparse_matrix_type  sparse_matrix_type ;
   typedef typename ElemCompType::elem_node_type      elem_node_type ;
@@ -404,9 +404,9 @@ public:
 
 private:
 
-  typedef Kokkos::StaticCrsGraph< unsigned[2] , device_type >  CrsGraphType ;
+  typedef Kokkos::StaticCrsGraph< unsigned[2] , execution_space >  CrsGraphType ;
   typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
-  typedef Kokkos::View< unsigned ,  device_type >              UnsignedValue ;
+  typedef Kokkos::View< unsigned ,  execution_space >              UnsignedValue ;
 
   enum PhaseType { FILL_NODE_COUNT ,
                    SCAN_NODE_COUNT ,
@@ -512,7 +512,7 @@ public:
       Kokkos::deep_copy( row_count , 0u );
       Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
 
-      device_type::fence();
+      execution_space::fence();
 
       //--------------------------------
       // Done with the temporary sets and arrays
@@ -526,7 +526,7 @@ public:
       phase = SORT_GRAPH_ENTRIES ;
       Kokkos::parallel_for( residual.dimension_0() , *this );
 
-      device_type::fence();
+      execution_space::fence();
 
       phase = GATHER_FILL ;
     }
@@ -691,7 +691,7 @@ public:
   typedef Kokkos::Example::CrsMatrix< ScalarType , ExecSpace >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType       sparse_graph_type ;
 
-  typedef ExecSpace   device_type ;
+  typedef ExecSpace   execution_space ;
   typedef ScalarType  scalar_type ;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
@@ -704,9 +704,9 @@ public:
 
   typedef typename mesh_type::node_coord_type                                      node_coord_type ;
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
-  typedef Kokkos::View< scalar_type* ,                               device_type > vector_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount] ,                execution_space > elem_vectors_type ;
+  typedef Kokkos::View< scalar_type* ,                               execution_space > vector_type ;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 
@@ -1037,12 +1037,12 @@ public:
   typedef Kokkos::Example::CrsMatrix< ScalarType , ExecSpace >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType       sparse_graph_type ;
 
-  typedef ExecSpace   device_type ;
+  typedef ExecSpace   execution_space ;
   typedef ScalarType  scalar_type ;
 
   //------------------------------------
 
-  typedef Kokkos::View< scalar_type* , device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , execution_space > vector_type ;
 
   //------------------------------------
   // Computational data:

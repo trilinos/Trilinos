@@ -17,8 +17,8 @@ GraphType create_graph_from_mesh( const MeshType & mesh )
 {
   typedef GraphType                         graph_type ;
   typedef MeshType                          mesh_type ;
-  typedef typename graph_type::device_type  device_type ;
-  typedef typename device_type::size_type   size_type  ;
+  typedef typename graph_type::execution_space  execution_space ;
+  typedef typename execution_space::size_type   size_type  ;
 
   static const unsigned ElemNodeCount = mesh_type::element_node_count ;
 

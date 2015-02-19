@@ -96,7 +96,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
-  typedef typename fixture_type::device_type  device_type ;
+  typedef typename fixture_type::execution_space  execution_space ;
 
   enum { ElementNodeCount = fixture_type::element_node_count };
 
@@ -130,7 +130,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Generate fields
 
-  typedef Fields< scalar_type , device_type > fields_type ;
+  typedef Fields< scalar_type , execution_space > fields_type ;
 
   fields_type mesh_fields( mesh , uq_count ,
                            lin_bulk_visc ,
@@ -192,7 +192,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   const unsigned comm_value_count = 6 ;
 
-  Kokkos::AsyncExchange< comm_value_type , device_type ,
+  Kokkos::AsyncExchange< comm_value_type , execution_space ,
                               Kokkos::ParallelDataMap >
     comm_exchange( mesh.parallel_data_map , comm_value_count * uq_count );
 
@@ -227,7 +227,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
                   mesh.parallel_data_map.count_owned ,
                   mesh.parallel_data_map.count_receive );
 
-    device_type::fence();
+    execution_space::fence();
 
     perf_data.comm_time += comm::max( machine , wall_clock.seconds() );
 
@@ -244,7 +244,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     internal_force( mesh_fields , user_dt );
 
-    device_type::fence();
+    execution_space::fence();
 
     perf_data.internal_force_time +=
       comm::max( machine , wall_clock.seconds() );
@@ -259,7 +259,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     nodal_update( mesh_fields , x_bc );
 
-    device_type::fence();
+    execution_space::fence();
 
     perf_data.central_diff +=
       comm::max( machine , wall_clock.seconds() );
@@ -334,12 +334,12 @@ static void driver( const char * const label ,
                     const size_t run_count )
 {
   typedef Scalar              scalar_type ;
-  typedef Device              device_type ;
+  typedef Device              execution_space ;
   typedef double              coordinate_scalar_type ;
   typedef FixtureElementHex8  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          device_type ,
+                          execution_space ,
                           fixture_element_type > fixture_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;

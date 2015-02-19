@@ -76,10 +76,10 @@ struct SparseProductTensorLegendre
 {
   enum { unsigned_long_is_8_bytes = Impl::StaticAssert< sizeof(unsigned long) == 8 >::value };
 
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
-  typedef View< TensorScalar  * , device_type >  array_scalar_type ;
-  typedef View< unsigned long * , device_type >  array_coord_type ;
+  typedef View< TensorScalar  * , execution_space >  array_scalar_type ;
+  typedef View< unsigned long * , execution_space >  array_coord_type ;
 
   array_scalar_type  m_value ;
   array_coord_type   m_coordinate ;
@@ -235,8 +235,8 @@ private:
 
 public:
 
-  typedef Threads                          device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef Threads                          execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iy ) const

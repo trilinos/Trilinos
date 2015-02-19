@@ -58,6 +58,10 @@ typedef Kokkos::View<double*[3]> view_type;
 // as the host mirror of view_type means that host_view_type has the
 // same layout as view_type.  This makes it easier to copy between the
 // two Views.
+// Advanced issues: If a memory space is accessible from the host without
+// performance penalties then it is its own host_mirror_space. This is
+// the case for HostSpace, CudaUVMSpace and CudaHostPinnedSpace.
+
 typedef view_type::HostMirror host_view_type;
 
 struct ReduceFunctor {

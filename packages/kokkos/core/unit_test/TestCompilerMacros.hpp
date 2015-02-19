@@ -49,8 +49,8 @@ namespace TestCompilerMacros {
 
 template<class DEVICE_TYPE>
 struct AddFunctor {
-  typedef DEVICE_TYPE device_type;
-  typedef typename Kokkos::View<int**,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef typename Kokkos::View<int**,execution_space> type;
   type a,b;
   int length;
 

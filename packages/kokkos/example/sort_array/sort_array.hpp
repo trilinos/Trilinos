@@ -99,7 +99,7 @@ void sort_array( const size_t array_length /* length of spans of array to sort *
                , const size_t total_length /* total length of array */
                , const int print = 1 )
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
   typedef Kokkos::View<int*,Device>  device_array_type ;
 
 #if defined( KOKKOS_HAVE_CUDA )
@@ -160,7 +160,7 @@ void sort_array( const size_t array_length /* length of spans of array to sort *
 
     sec_copy_in += timer.seconds(); timer.reset();
 
-    SortView< device_type >( work_array , 0 , end - begin );
+    SortView< execution_space >( work_array , 0 , end - begin );
 
     sec_sort += timer.seconds(); timer.reset();
 

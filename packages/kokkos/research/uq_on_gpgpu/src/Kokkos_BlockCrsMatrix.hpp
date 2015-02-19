@@ -60,12 +60,12 @@ namespace Kokkos {
 template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {
 public:
-  typedef Device                              device_type ;
-  typedef typename device_type::size_type     size_type ;
+  typedef Device                              execution_space ;
+  typedef typename execution_space::size_type     size_type ;
   typedef ValueType                           value_type ;
   typedef BlockSpec                           block_spec ;
-  typedef CrsArray< size_type , device_type > graph_type ;
-  typedef View< value_type**, LayoutLeft, device_type >  block_vector_type ;
+  typedef CrsArray< size_type , execution_space > graph_type ;
+  typedef View< value_type**, LayoutLeft, execution_space >  block_vector_type ;
 
   block_vector_type  values ;
   graph_type         graph ;

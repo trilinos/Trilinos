@@ -47,13 +47,13 @@ struct initialize_element;
 template<typename Scalar>
 struct initialize_element<Scalar, KOKKOS_MACRO_DEVICE>
 {
-	typedef KOKKOS_MACRO_DEVICE     device_type ;
-	typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
-  typedef typename Kokkos::MDArray<int,device_type>    int_array_type ;
+	typedef KOKKOS_MACRO_DEVICE     execution_space ;
+	typedef typename Kokkos::MDArray<Scalar,execution_space> array_type ;
+  typedef typename Kokkos::MDArray<int,execution_space>    int_array_type ;
 
   enum { NumNodePerElement = 8 };
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
   initialize_element( const MyRegion & arg_region )
     : region(arg_region)

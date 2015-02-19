@@ -1203,7 +1203,7 @@ struct fill_random_functor_begin_end;
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,1>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1228,7 +1228,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,1>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,2>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1256,7 +1256,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,2>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,3>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1284,7 +1284,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,3>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,4>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1313,7 +1313,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,4>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,5>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1343,7 +1343,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,5>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,6>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1374,7 +1374,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,6>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,7>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1406,7 +1406,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,7>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_range<ViewType,RandomPool,loops,8>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type range;
@@ -1438,7 +1438,7 @@ struct fill_random_functor_range<ViewType,RandomPool,loops,8>{
 };
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1463,7 +1463,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,1>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1491,7 +1491,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,2>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1519,7 +1519,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,3>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1548,7 +1548,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,4>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1578,7 +1578,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,5>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1610,7 +1610,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,6>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;
@@ -1642,7 +1642,7 @@ struct fill_random_functor_begin_end<ViewType,RandomPool,loops,7>{
 
 template<class ViewType, class RandomPool, int loops>
 struct fill_random_functor_begin_end<ViewType,RandomPool,loops,8>{
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   ViewType a;
   RandomPool rand_pool;
   typename ViewType::const_value_type begin,end;

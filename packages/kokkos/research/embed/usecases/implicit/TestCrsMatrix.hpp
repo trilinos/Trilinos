@@ -69,11 +69,11 @@ namespace Kokkos {
 template< typename ValueType , class Device >
 class CrsMatrix {
 public:
-  typedef Device     device_type ;
+  typedef Device     execution_space ;
   typedef ValueType  value_type ;
 
-  typedef View< value_type * , LayoutRight , device_type >   values_type ;
-  typedef CrsArray< int , device_type , void , int >  graph_type ;
+  typedef View< value_type * , LayoutRight , execution_space >   values_type ;
+  typedef CrsArray< int , execution_space , void , int >  graph_type ;
 
   values_type values ;
   graph_type  graph ;
@@ -83,11 +83,11 @@ public:
 template< typename ScalarType , unsigned N , class Device >
 class CrsMatrix< Array<ScalarType,N> , Device > {
 public:
-  typedef Device               device_type ;
+  typedef Device               execution_space ;
   typedef Array<ScalarType,N>  value_type ;
 
-  typedef View< value_type * , LayoutRight , device_type >   values_type ;
-  typedef CrsArray< int , device_type , void , int >  graph_type ;
+  typedef View< value_type * , LayoutRight , execution_space >   values_type ;
+  typedef CrsArray< int , execution_space , void , int >  graph_type ;
 
   values_type values ;
   graph_type  graph ;
@@ -119,7 +119,7 @@ class Multiply< CrsMatrix< MatrixValueType , Device > ,
 {
 public:
 
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   typedef  CrsMatrix< MatrixValueType , Device > matrix_type ;
   typedef  View<      InputValueType * , LayoutRight , Device > input_type ;
@@ -166,7 +166,7 @@ class Multiply< CrsMatrix< Array<MatrixValueType,N> , Device > ,
 {
 public:
 
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   typedef  CrsMatrix< Array<MatrixValueType,N> , Device > matrix_type ;
   typedef  View<      Array<InputValueType,N> * , LayoutRight , Device > input_type ;
@@ -216,11 +216,11 @@ class Multiply< CrsMatrix< Array<MatrixValueType,N> , Cuda > ,
 {
 public:
 
-  typedef Cuda device_type ;
+  typedef Cuda execution_space ;
 
-  typedef CrsMatrix<  Array< MatrixValueType,N> ,   device_type > matrix_type ;
-  typedef View<       Array< InputValueType, N> * , LayoutRight , device_type > input_type ;
-  typedef View<       Array< OutputValueType,N> * , LayoutRight , device_type > output_type ;
+  typedef CrsMatrix<  Array< MatrixValueType,N> ,   execution_space > matrix_type ;
+  typedef View<       Array< InputValueType, N> * , LayoutRight , execution_space > input_type ;
+  typedef View<       Array< OutputValueType,N> * , LayoutRight , execution_space > output_type ;
 
   const matrix_type m_A ;
   const input_type  m_x ;
@@ -293,11 +293,11 @@ class Multiply< CrsMatrix< double , Cuda > ,
 {
 public:
 
-  typedef Cuda device_type ;
+  typedef Cuda execution_space ;
 
-  typedef CrsMatrix<  double ,   device_type > matrix_type ;
-  typedef View<       double * , LayoutRight , device_type > input_type ;
-  typedef View<       double * , LayoutRight , device_type > output_type ;
+  typedef CrsMatrix<  double ,   execution_space > matrix_type ;
+  typedef View<       double * , LayoutRight , execution_space > input_type ;
+  typedef View<       double * , LayoutRight , execution_space > output_type ;
 
   Multiply( const matrix_type & A ,
             const unsigned      nRow ,

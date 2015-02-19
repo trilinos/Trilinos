@@ -47,13 +47,13 @@ struct Region;
 template<typename Scalar>
 struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
-  typedef device_type::size_type    size_type;
+  typedef KOKKOS_MACRO_DEVICE       execution_space;
+  typedef execution_space::size_type    size_type;
 
-  typedef Kokkos::MDArray<Scalar,device_type>   scalar_array;
-  typedef Kokkos::MDArray<int,device_type>      int_array;
+  typedef Kokkos::MDArray<Scalar,execution_space>   scalar_array;
+  typedef Kokkos::MDArray<int,execution_space>      int_array;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,execution_space>     scalar;
 
   template <class Mesh>
   Region(

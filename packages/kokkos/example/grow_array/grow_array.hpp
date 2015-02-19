@@ -88,7 +88,7 @@ struct SortView< Kokkos::Cuda > {
 template< class ExecSpace >
 struct GrowArrayFunctor {
 
-  typedef ExecSpace  device_type ;
+  typedef ExecSpace  execution_space ;
 
   enum { SHIFT = sizeof(int) == 8 ? 6 : 5 }; // 8 or 4 byte int
   enum { MASK  = ( 1 << SHIFT ) - 1 };
