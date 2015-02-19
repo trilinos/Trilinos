@@ -103,7 +103,7 @@ namespace Sacado {
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      GeneralFad(const int sz, const T & x, const bool zero_out = true) :
+      GeneralFad(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         Storage(sz, x, zero_out) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x

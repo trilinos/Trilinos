@@ -78,8 +78,8 @@ int main(int argc, char **argv)
 
   // Fad objects
   typedef Sacado::Fad::DFad<double> DFadType;
-  Sacado::Fad::DFad<DFadType> afad(num_deriv, 0, DFadType(a));
-  Sacado::Fad::DFad<DFadType> bfad(num_deriv, 1, DFadType(b));
+  Sacado::Fad::DFad<DFadType> afad(num_deriv, 0, a);
+  Sacado::Fad::DFad<DFadType> bfad(num_deriv, 1, b);
   Sacado::Fad::DFad<DFadType> cfad = c;
   Sacado::Fad::DFad<DFadType> rfad;
 

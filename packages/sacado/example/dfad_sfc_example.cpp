@@ -94,8 +94,8 @@ int main(int argc, char **argv)
   SFC::printCounters(std::cout);
 
   // Compute function and derivative with AD
-  FAD_SFC afad(num_deriv, 0, SFC(a));
-  FAD_SFC bfad(num_deriv, 1, SFC(b));
+  FAD_SFC afad(num_deriv, 0, a);
+  FAD_SFC bfad(num_deriv, 1, b);
   FAD_SFC cfad(c);
   SFC::resetCounters();
   FAD_SFC rfad = func(afad, bfad, cfad);

@@ -189,9 +189,9 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz, const T & x, const bool zero_out = true) :
+      MemPoolStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
-        if (zero_out)
+        if (zero_out == InitDerivArray)
           dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
         else
           dx_ = mp_array<T>::get(sz_, myPool_);

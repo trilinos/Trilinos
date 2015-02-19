@@ -98,7 +98,7 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      DVFad(const int sz, const ValueT& x, const bool zero_out = true) :
+      DVFad(const int sz, const ValueT& x, const DerivInit zero_out = InitDerivArray) :
         ExprType(sz,x,zero_out) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x

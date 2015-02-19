@@ -63,6 +63,15 @@
 
 namespace Sacado {
 
+  /*!
+   * \brief Enum use to signal whether the derivative array should be
+   * initialized in AD object constructors.
+   */
+  enum DerivInit {
+    NoInitDerivArray = 0, //!< Do not initialize the derivative array
+    InitDerivArray,       //!< Initialize the derivative array
+  };
+
   //! Base template specification for %Promote
   /*!
    * The %Promote classes provide a mechanism for computing the

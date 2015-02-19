@@ -56,9 +56,9 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       KOKKOS_INLINE_FUNCTION
-      DynamicStorage(const int sz, const T & x, const bool zero_out = true) :
+      DynamicStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz) {
-        if (zero_out)
+        if (zero_out == InitDerivArray)
           dx_ = ds_array<U>::get_and_fill(sz_);
         else
           dx_ = ds_array<U>::get(sz_);
