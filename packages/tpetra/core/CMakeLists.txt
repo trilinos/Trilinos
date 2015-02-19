@@ -63,13 +63,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_CLASSIC_VBR
-  HAVE_TPETRA_CLASSIC_VBR
-  "Whether to build Tpetra with the VbrMatrix, BlockMap, BlockCrsGraph, and BlockMultiVector classes enabled.  These classes implement variable-block-size block sparse matrices, block dense multivectors, and other related technology.  (These differ from the constant-block-size classes currently in the Tpetra::Experimental namespace.)  This option is ON (enabled) by default.  Turning OFF this option may be useful for testing compilation with new Kokkos Node types.  The \"CLASSIC\" in the name suggests that we may revisit these classes after finishing moving Tpetra to use new Kokkos."
-  ON
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_BUGTESTS
   HAVE_TPETRA_BUGTESTS
   "Enabling testing of previous Tpetra bugs."

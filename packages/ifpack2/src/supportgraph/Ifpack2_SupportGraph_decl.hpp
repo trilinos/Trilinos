@@ -256,7 +256,7 @@ public:
   //! Returns the computed estimated condition number, or -1.0 if no computed.
   magnitude_type getCondEst () const { return Condest_; }
 
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  //! Return the operator's communicator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix to be preconditioned.

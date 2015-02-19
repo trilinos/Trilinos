@@ -5,7 +5,12 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.15):
 ----------------------------
 
-* Removed (deprecated class) Tpetra::VbrMatrix
+* Removed (deprecated classes) Tpetra::VbrMatrix, Tpetra::BlockMap,
+  Tpetra::BlockCrsGraph, and Tpetra::BlockMultiVector.
+
+All these classes relate to VBR (variable-block-size block sparse
+matrix) functionality.  We may reimplement that at some point, but for
+now it's going away.
 
 * Removed (deprecated class) Tpetra::HybridPlatform
 

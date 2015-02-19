@@ -69,11 +69,6 @@
    Tpetra_ENABLE_TSQR to OFF. */
 #cmakedefine HAVE_TPETRA_TSQR
 
-/* Define when the variable-block-size classes VbrMatrix, BlockMap,
-   BlockCrsGraph, and BlockMultiVector (in the Tpetra namespace) are
-   enabled. */
-#cmakedefine HAVE_TPETRA_CLASSIC_VBR
-
 /* Define when enabling the Murmur hash function in Tpetra */
 #cmakedefine TPETRA_USE_MURMUR_HASH
 
