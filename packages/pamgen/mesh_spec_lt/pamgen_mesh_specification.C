@@ -590,16 +590,14 @@ void Mesh_Specification::Global_Data_Size( long long Num_Nodes_Global, long long
 void Mesh_Specification::Allocate_Parallel_Data()
 /*****************************************************************************/
 {
-  register long long i;
-
-  for(i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
+  for(long long i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
     if(mspa[NODE_CMAP_NODE_CNTS][i]) {
       msppa[COMM_NODE_IDS][i] = new long long[mspa[NODE_CMAP_NODE_CNTS][i]];
       msppa[COMM_NODE_PROC_IDS][i] = new long long[mspa[NODE_CMAP_NODE_CNTS][i]];
     }
   }
 
-  for(i = 0; i < msia[NUM_ELEM_COMM_MAPS]; i++) {
+  for(long long i = 0; i < msia[NUM_ELEM_COMM_MAPS]; i++) {
     if(mspa[ELEM_CMAP_ELEM_CNTS][i]) {
       msppa[COMM_ELEM_IDS][i] = new long long[mspa[ELEM_CMAP_ELEM_CNTS][i]];
       msppa[COMM_SIDE_IDS][i] = new long long[mspa[ELEM_CMAP_ELEM_CNTS][i]];
@@ -614,9 +612,7 @@ void Mesh_Specification::Allocate_Parallel_Data()
 void Mesh_Specification::Free_Parallel_Data()
 /*****************************************************************************/
 {
-  register long long i;
-
-  for(i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
+  for(long long i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
     if(mspa[NODE_CMAP_NODE_CNTS][i]) {
       delete [] msppa[COMM_NODE_IDS][i];// = new int[mspa[NODE_CMAP_NODE_CNTS][i]];
       delete [] msppa[COMM_NODE_PROC_IDS][i];// = new int[mspa[NODE_CMAP_NODE_CNTS][i]];
@@ -625,7 +621,7 @@ void Mesh_Specification::Free_Parallel_Data()
   delete [] msppa[COMM_NODE_IDS];
   delete [] msppa[COMM_NODE_PROC_IDS];
 
-  for(i = 0; i < msia[NUM_ELEM_COMM_MAPS]; i++) {
+  for(long long i = 0; i < msia[NUM_ELEM_COMM_MAPS]; i++) {
     if(mspa[ELEM_CMAP_ELEM_CNTS][i]) {
       delete [] msppa[COMM_ELEM_IDS][i];// = new int[mspa[ELEM_CMAP_ELEM_CNTS][i]];
       delete [] msppa[COMM_SIDE_IDS][i];// = new int[mspa[ELEM_CMAP_ELEM_CNTS][i]];
