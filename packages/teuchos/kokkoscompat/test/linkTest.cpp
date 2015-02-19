@@ -64,8 +64,8 @@ namespace {
   template<class Device>
   class FillFunctor {
   public:
-    // Functors need a device_type typedef.
-    typedef Device device_type;
+    // Functors need a execution_space typedef.
+    typedef Device execution_space;
 
     // Constructor accepts a View of a 1-D array.
     FillFunctor (const Kokkos::View<double*, Device>& vec) : vec_ (vec) {}
