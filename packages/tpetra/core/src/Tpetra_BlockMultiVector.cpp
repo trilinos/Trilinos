@@ -42,11 +42,17 @@
 */
 
 #include <Tpetra_ConfigDefs.hpp>
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_CLASSIC_VBR)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 
-// It's only legal to include Tpetra_BlockMultiVector*.hpp if
-// HAVE_TPETRA_CLASSIC_VBR is defined.  That's this ETI .cpp file
-// looks a bit different than the other ones.
+// Turn off deprecated warnings temporarily, just for GCC.  This
+// ensures that ETI builds won't trigger deprecation warnings.  Any
+// use of deprecated warnings outside of the ETI instantiation below
+// _will_ trigger deprecated warnings, though.  Note that the push /
+// pop thing only works for GCC versions >= 4.6, hence the check.
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "Tpetra_BlockMultiVector_decl.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
@@ -60,4 +66,8 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_CLASSIC_VBR)
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
+
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
