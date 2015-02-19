@@ -141,7 +141,7 @@ public:
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                   typename traits::data_type ,
-                  typename traits::host_mirror_space >::type ,
+                  typename traits::host_mirror_space::memory_space >::type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -193,7 +193,7 @@ private:
   typename traits::shape_type                  m_shape ;
   array_shape_type                             m_array_shape ; // Shape of intrinsic array
   stride_type                                  m_stride ;
-  typename traits::device_type::size_type      m_storage_size ; // Storage size of sacado dimension
+  typename traits::execution_space::size_type      m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                             m_sacado_size ; // Size of sacado dimension
   Impl::ViewDataManagement< traits >           m_management ;
   Impl::AllocationTracker                      m_tracker ;
@@ -275,7 +275,7 @@ private:
 
 #if defined( KOKKOS_EXPRESSION_CHECK )
   KOKKOS_INLINE_FUNCTION
-  void verify_dimension_storage_size( const typename traits::device_type & dev ) const
+  void verify_dimension_storage_size( const typename traits::execution_space & dev ) const
   {
     const int length = dimension( Rank );
 
@@ -288,7 +288,7 @@ private:
   }
 #else
   KOKKOS_INLINE_FUNCTION
-  void verify_dimension_storage_size( const typename traits::device_type & ) const {}
+  void verify_dimension_storage_size( const typename traits::execution_space & ) const {}
 #endif
 
 public:

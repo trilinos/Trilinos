@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -304,7 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -396,7 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -492,7 +492,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -596,7 +596,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -722,7 +722,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -861,7 +861,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -989,7 +989,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1136,7 +1136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1296,7 +1296,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1449,7 +1449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1611,7 +1611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1786,7 +1786,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   typedef Teuchos::Comm<int> Tpetra_Comm;
@@ -1960,7 +1960,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \
-  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> SFS; \
+  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::memory_space> SFS; \
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \

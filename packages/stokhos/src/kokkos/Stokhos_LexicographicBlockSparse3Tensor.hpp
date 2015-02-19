@@ -60,18 +60,18 @@ namespace Stokhos {
 /** \brief  Sparse product tensor with replicated entries
  *          to provide subsets with a given coordinate.
  */
-template< typename ValueType , class DeviceType >
+template< typename ValueType , class ExecutionSpace >
 class LexicographicBlockSparse3Tensor {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
+  typedef ExecutionSpace                       execution_space;
+  typedef typename execution_space::size_type  size_type;
   typedef ValueType                        value_type;
 
 private:
 
-  typedef Kokkos::View< int[][7] , Kokkos::LayoutRight, device_type >       coord_array_type;
-  typedef Kokkos::View< value_type[], device_type >    value_array_type;
+  typedef Kokkos::View< int[][7] , Kokkos::LayoutRight, execution_space >       coord_array_type;
+  typedef Kokkos::View< value_type[], execution_space >    value_array_type;
 
   coord_array_type  m_coord;
   value_array_type  m_value;

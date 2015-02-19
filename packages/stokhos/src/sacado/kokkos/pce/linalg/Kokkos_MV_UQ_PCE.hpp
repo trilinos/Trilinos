@@ -201,7 +201,7 @@ struct MV_ElementWiseMultiplyFunctor<
   typedef typename AVector::array_type AArray;
   typedef typename BVector::array_type BArray;
 
-  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::execution_space        execution_space;
   typedef typename CArray::size_type            size_type;
 
   typename CArray::const_value_type m_c;
@@ -257,7 +257,7 @@ struct V_ElementWiseMultiplyFunctor<
   typedef typename AVector::array_type AArray;
   typedef typename BVector::array_type BArray;
 
-  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::execution_space        execution_space;
   typedef typename CArray::size_type            size_type;
 
   typename CArray::const_value_type m_c;
@@ -308,9 +308,9 @@ V_ElementWiseMultiply(
   typedef View< Sacado::UQ::PCE<AS>*, AL, AD, AM > AVector;
   typedef View< Sacado::UQ::PCE<BS>*, BL, BD, BM > BVector;
 
-  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
-  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
-  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::execution_space, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::execution_space, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
   V_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B) ;
   Kokkos::parallel_for( C.dimension_0() , op );
@@ -356,9 +356,9 @@ MV_ElementWiseMultiply(
   typedef View< Sacado::UQ::PCE<AS>*,  AL, AD, AM > AVector;
   typedef View< Sacado::UQ::PCE<BS>**, BL, BD, BM > BVector;
 
-  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
-  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
-  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::execution_space, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::execution_space, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
   MV_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B,C.dimension_1()) ;
   Kokkos::parallel_for( C.dimension_0() , op );
@@ -467,7 +467,7 @@ struct V_ReciprocalThresholdSelfFunctor<
   typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
   typedef typename XVector::array_type array_type;
 
-  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>           KAT;
@@ -506,7 +506,7 @@ struct MV_ReciprocalThresholdSelfFunctor<
   typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
   typedef typename XVector::array_type array_type;
 
-  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>           KAT;

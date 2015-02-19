@@ -78,8 +78,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -106,9 +106,9 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t col) {
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( idx.size(), dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), dst.sacado_size() ),
           PackArraySingleColumn(dst,src,idx,col) );
       else
          Kokkos::parallel_for( idx.size(),
@@ -127,8 +127,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -162,9 +162,9 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t numCols) {
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( idx.size(), dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), dst.sacado_size() ),
           PackArrayMultiColumn(dst,src,idx,numCols) );
       else
         Kokkos::parallel_for( idx.size(),
@@ -185,8 +185,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -223,9 +223,9 @@ namespace Details {
                      const IdxView& idx,
                      const ColView& col,
                      size_t numCols) {
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( idx.size(), dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), dst.sacado_size() ),
           PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
       else
         Kokkos::parallel_for( idx.size(),
@@ -246,8 +246,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -284,9 +284,9 @@ namespace Details {
                        const IdxView& idx,
                        const Op& op,
                        size_t numCols) {
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( idx.size(), dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), dst.sacado_size() ),
           UnpackArrayMultiColumn(dst,src,idx,op,numCols) );
       else
         Kokkos::parallel_for( idx.size(),
@@ -307,8 +307,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -348,9 +348,9 @@ namespace Details {
                        const ColView& col,
                        const Op& op,
                        size_t numCols) {
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( idx.size(), dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), dst.sacado_size() ),
           UnpackArrayMultiColumnVariableStride(dst,src,idx,col,op,numCols) );
       else
         Kokkos::parallel_for( idx.size(),
@@ -371,8 +371,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -411,9 +411,9 @@ namespace Details {
                         const SrcIdxView& src_idx,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( n, dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( n, dst.sacado_size() ),
           PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
       else
         Kokkos::parallel_for(
@@ -434,8 +434,8 @@ namespace Details {
     typedef Kokkos::Impl::ViewMPVectorContiguous Spec;
     typedef Kokkos::View<DT,DL,DD,DM,Spec> DstView;
     typedef Kokkos::View<ST,SL,SD,SM,Spec> SrcView;
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -481,9 +481,9 @@ namespace Details {
                         const SrcColView& src_col,
                         size_t numCols) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Details::device_is_cuda<device_type>::value )
+      if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<device_type>( n, dst.sacado_size() ),
+          Kokkos::MPVectorWorkConfig<execution_space>( n, dst.sacado_size() ),
           PermuteArrayMultiColumnVariableStride(
             dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
       else

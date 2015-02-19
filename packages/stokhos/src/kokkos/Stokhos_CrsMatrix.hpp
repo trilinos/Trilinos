@@ -79,10 +79,10 @@ template <typename ValueType, typename Device,
           typename Layout = Kokkos::LayoutRight>
 class CrsMatrix {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef ValueType value_type;
-  typedef Kokkos::View< value_type[], Layout, device_type > values_type;
-  typedef Kokkos::CrsArray< int , Layout, device_type , int > graph_type;
+  typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
+  typedef Kokkos::CrsArray< int , Layout, execution_space , int > graph_type;
 
   typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 
@@ -111,8 +111,8 @@ public:
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -172,8 +172,8 @@ public:
   typedef OutputMultiVectorType output_multi_vector_type;
   typedef std::vector<OrdinalType> column_indices_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -261,8 +261,8 @@ public:
   typedef InputMultiVectorType input_multi_vector_type;
   typedef OutputMultiVectorType output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -357,8 +357,8 @@ public:
   typedef InputMultiVectorType input_multi_vector_type;
   typedef OutputMultiVectorType output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename output_multi_vector_type::value_type scalar_type;
 
   const matrix_type m_A;
@@ -441,8 +441,8 @@ public:
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename OutputViewType::value_type scalar_type;
 
   const matrix_type m_A;
@@ -537,8 +537,8 @@ public:
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
   typedef typename OutputViewType::value_type scalar_type;
 
   const matrix_type m_A;
@@ -699,8 +699,8 @@ class MatrixMarketWriter< CrsMatrix<MatrixValue,Device,Layout> >
 {
 public:
   typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type ;
-  typedef Device device_type ;
-  typedef typename device_type::size_type size_type ;
+  typedef Device execution_space ;
+  typedef typename execution_space::size_type size_type ;
 
   static void write(const matrix_type& A, const std::string& filename) {
     std::ofstream file(filename.c_str());

@@ -50,8 +50,8 @@ class Update
 public:
   typedef VectorType                        vector_type;
   typedef ValueType                         value_type;
-  typedef typename vector_type::device_type device_type;
-  typedef typename device_type::size_type   size_type;
+  typedef typename vector_type::execution_space execution_space;
+  typedef typename execution_space::size_type   size_type;
 
 
         vector_type  m_x;

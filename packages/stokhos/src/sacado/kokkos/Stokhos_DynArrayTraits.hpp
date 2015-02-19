@@ -80,7 +80,7 @@ namespace Stokhos {
   struct DynArrayTraits {
 
     typedef T value_type;
-    typedef device_t device_type;
+    typedef device_t execution_space;
 
     //! Copy array from \c src to \c dest of length \c sz
     static
@@ -220,7 +220,7 @@ namespace Stokhos {
   struct DynArrayTraits<T, device_t, false> {
 
     typedef T value_type;
-    typedef device_t device_type;
+    typedef device_t execution_space;
 
     //! Fill array \c dest of length \c sz with value \c v
     static
@@ -367,7 +367,7 @@ namespace Stokhos {
   struct DynArrayTraits<T,Kokkos::Cuda,true> {
 
     typedef T value_type;
-    typedef Kokkos::Cuda device_type;
+    typedef Kokkos::Cuda execution_space;
 
     //! Copy array from \c src to \c dest of length \c sz
     static
@@ -529,7 +529,7 @@ namespace Stokhos {
   struct DynArrayTraits<T, Kokkos::Cuda, false> {
 
     typedef T value_type;
-    typedef Kokkos::Cuda device_type;
+    typedef Kokkos::Cuda execution_space;
 
     //! Fill array \c dest of length \c sz with value \c v
     static

@@ -59,6 +59,7 @@ template <typename ViewType,
 struct LocalUQPCEView< ViewType, LocalSize, 1, true > {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename storage_type::template apply_N<LocalSize> StorageApply;
@@ -76,6 +77,7 @@ template <typename ViewType,
 struct LocalUQPCEView<ViewType, LocalSize, 1, false> {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
 
   typedef Kokkos::View< vector_type*,

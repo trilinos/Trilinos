@@ -133,7 +133,7 @@ namespace Sacado {
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
-      typedef typename storage_type::device_type device_type;
+      typedef typename storage_type::execution_space execution_space;
       typedef typename storage_type::pointer pointer;
       typedef typename storage_type::volatile_pointer volatile_pointer;
       typedef typename storage_type::const_pointer const_pointer;
@@ -143,7 +143,7 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
-      typedef typename device_type::memory_space memory_space;
+      typedef typename execution_space::memory_space memory_space;
       typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
       //! Typename of scalar's (which may be different from value_type)

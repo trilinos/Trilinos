@@ -157,15 +157,15 @@ checkConstantFadVectorView(const ViewType& view,
   return success;
 }
 
-template <typename DataType, typename LayoutType, typename DeviceType>
+template <typename DataType, typename LayoutType, typename ExecutionSpace>
 struct ApplyView {
-  typedef Kokkos::View<DataType,LayoutType,DeviceType> type;
+  typedef Kokkos::View<DataType,LayoutType,ExecutionSpace> type;
 };
 
 struct NoLayout {};
-template <typename DataType, typename DeviceType>
-struct ApplyView<DataType,NoLayout,DeviceType> {
-  typedef Kokkos::View<DataType,DeviceType> type;
+template <typename DataType, typename ExecutionSpace>
+struct ApplyView<DataType,NoLayout,ExecutionSpace> {
+  typedef Kokkos::View<DataType,ExecutionSpace> type;
 };
 
 //
@@ -179,7 +179,7 @@ const int global_fad_size = 5;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, Size, Scalar, Layout )
 {
   typedef typename Scalar::value_type Vector;
-  typedef typename Vector::device_type Device;
+  typedef typename Vector::execution_space Device;
   typedef typename ApplyView<Scalar*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
 
@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, DeepCopy_ConstantScalar, 
 {
   typedef typename Scalar::value_type Vector;
   typedef typename Vector::value_type BaseScalar;
-  typedef typename Vector::device_type Device;
+  typedef typename Vector::execution_space Device;
   typedef typename ApplyView<Scalar*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
 

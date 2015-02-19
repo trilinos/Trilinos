@@ -69,11 +69,11 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda  device_type ;
-  typedef device_type::size_type size_type ;
+  typedef Kokkos::Cuda  execution_space ;
+  typedef execution_space::size_type size_type ;
 
-  typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef TiledCrsProductTensor< TensorScalar, execution_space > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space > matrix_type ;
   typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
@@ -311,11 +311,11 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda  device_type ;
-  typedef device_type::size_type size_type ;
+  typedef Kokkos::Cuda  execution_space ;
+  typedef execution_space::size_type size_type ;
 
-  typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef TiledCrsProductTensor< TensorScalar, execution_space > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space > matrix_type ;
   typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
@@ -462,8 +462,8 @@ public:
   class Zero {
   public:
     typedef typename vector_type::value_type value_type;
-    typedef typename vector_type::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename vector_type::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     Zero( const vector_type & x ) : m_x( x ), m_d(x.dimension_0()) {}
 
@@ -541,11 +541,11 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda  device_type ;
-  typedef device_type::size_type size_type ;
+  typedef Kokkos::Cuda  execution_space ;
+  typedef execution_space::size_type size_type ;
 
-  typedef TiledCrsProductTensor< TensorScalar, device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef TiledCrsProductTensor< TensorScalar, execution_space > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space > matrix_type ;
   typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda >  vector_type ;
 
   class ProductTensorLoop {
