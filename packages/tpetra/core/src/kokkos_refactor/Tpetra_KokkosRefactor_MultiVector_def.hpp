@@ -117,6 +117,47 @@ namespace Kokkos {
 } // namespace Kokkos
 
 
+namespace { // (anonymous)
+
+
+  /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
+  ///
+  /// This function takes the same first three template parameters as
+  /// Tpetra::MultiVector.  The fourth template parameter is the
+  /// Kokkos "device type" (same as the "DeviceType" template
+  /// parameter below).
+  ///
+  /// \param lclNumRows [in] Number of rows in the DualView.
+  ///   "Local" means "local to the calling MPI process."
+  /// \param numCols [in] Number of columns in the DualView.
+  /// \param zeroOut [in] Whether to initialize all the entries of the
+  ///   DualView to zero.  Kokkos does first-touch initialization.
+  ///
+  /// \return The allocated Kokkos::DualView.
+  template<class S, class LO, class GO, class D>
+  typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type
+  allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = false)
+  {
+    typedef typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type dual_view_type;
+    const char* label = "MV::DualView";
+
+    if (zeroOut) {
+      return dual_view_type (label, lclNumRows, numCols);
+    } else {
+      // FIXME (mfh 18 Feb 2015) This is just a hack, until
+      // Kokkos::DualView accepts an AllocationProperties initial
+      // argument, just like Kokkos::View does.  However, the hack is
+      // harmless, since it does what the (currently nonexistent)
+      // equivalent DualView constructor would have done anyway.
+      typename dual_view_type::t_dev d_view (Kokkos::ViewAllocateWithoutInitializing (label), lclNumRows, numCols);
+      typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
+      return dual_view_type (d_view, h_view);
+    }
+  }
+
+} // namespace (anonymous)
+
+
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -146,21 +187,8 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
       "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
-    const size_t myLen = getLocalLength();
-    if (myLen > 0) {
-      RCP<node_type> node = map->getNode();
-      // On host-type Kokkos Nodes, allocBuffer() just calls the
-      // one-argument version of arcp to allocate memory.  This should
-      // not fill the memory by default, otherwise we would lose the
-      // first-touch allocation optimization.
-
-      // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
-      view_ = dual_view_type("MV::DualView",myLen,NumVectors);
-    }
-    else {
-      view_ = dual_view_type("MV::DualView",0,NumVectors);
-    }
-
+    const size_t myLen = this->getLocalLength ();
+    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (myLen, NumVectors, zeroOut);
     origView_ = view_;
   }
 
@@ -385,13 +413,13 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
       "LDA = " << LDA << " < numRows = " << numRows << ".");
 
-    view_ = dual_view_type ("MV::DualView", numRows, numVecs);
+    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (numRows, numVecs);
+    view_.template modify<typename dual_view_type::host_mirror_space> ();
     for (size_t i = 0; i < numRows; ++i) {
       for (size_t j = 0; j < numVecs; ++j) {
         view_.h_view(i,j) = data[j*LDA+i];
       }
     }
-    view_.template modify<typename dual_view_type::host_mirror_space> ();
     origView_ = view_;
   }
 
@@ -412,17 +440,14 @@ namespace Tpetra {
       std::runtime_error,
       ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
     const size_t myLen = getLocalLength ();
-    view_ = dual_view_type ("MV::DualView", myLen, NumVectors);
-
+    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (myLen, NumVectors);
+    view_.template modify<typename dual_view_type::t_host::memory_space> ();
     // TODO: write a functor and use parallel_for.
-
     for (size_t i = 0; i < myLen; ++i) {
       for (size_t j = 0; j < NumVectors; ++j) {
         view_.h_view(i,j) = ArrayOfPtrs[j][i];
       }
     }
-    view_.template modify<typename dual_view_type::t_host::memory_space> ();
-
     origView_ = view_;
   }
 
@@ -1840,7 +1865,7 @@ namespace Tpetra {
       const size_t numCols = this->getNumVectors ();
 
       if (origNumRows != newNumRows || view_.dimension_1 () != numCols) {
-        view_ = dual_view_type ("MV::DualView", newNumRows, numCols);
+        view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (newNumRows, numCols);
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
@@ -1848,7 +1873,7 @@ namespace Tpetra {
       // have 0 rows.  Keep the number of columns as before.
       const size_t newNumRows = static_cast<size_t> (0);
       const size_t numCols = this->getNumVectors ();
-      view_ = dual_view_type ("MV::DualView", newNumRows, numCols);
+      view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (newNumRows, numCols);
     }
 
     this->map_ = newMap;
@@ -2557,8 +2582,11 @@ namespace Tpetra {
     // desired (degenerate) dimensions.
     if (newView.dimension_0 () == 0 &&
         newView.dimension_1 () != view_.dimension_1 ()) {
-      newView = dual_view_type ("MV::DualView", size_t (0),
-                                this->getNumVectors ());
+      newView = allocDualView<Scalar,
+                              LocalOrdinal,
+                              GlobalOrdinal,
+                              DeviceType> (size_t (0),
+                                           this->getNumVectors ());
     }
     RCP<const MV> subViewMV;
     if (isConstantStride ()) {
