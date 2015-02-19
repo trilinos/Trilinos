@@ -89,6 +89,37 @@ namespace Kokkos {
     COMPAT_INSTANT_ALL(char)
     COMPAT_INSTANT_ALL(short)
 
+#if defined(KOKKOS_HAVE_OPENMP)
+#define COMPAT_INSTANT_CUDA(T) \
+    COMPAT_INSTANT(T,Kokkos::Cuda)
+#else
+    COMPAT_INSTANT_CUDA(T)
+#endif
+
+#if defined(KOKKOS_HAVE_CUDA)
+#define COMPAT_INSTANT_CUDA_UVM(T) \
+    COMPAT_INSTANT(T,Kokkos::CudaUVMSpace)
+#else
+    COMPAT_INSTANT_CUDA_UVM(T)
+#endif
+
+    COMPAT_INSTANT_CUDA(float)
+    COMPAT_INSTANT_CUDA(double)
+    COMPAT_INSTANT_CUDA(int)
+    COMPAT_INSTANT_CUDA(long)
+    COMPAT_INSTANT_CUDA(unsigned)
+    COMPAT_INSTANT_CUDA(unsigned long)
+    COMPAT_INSTANT_CUDA(char)
+    COMPAT_INSTANT_CUDA(short)
+
+    COMPAT_INSTANT_CUDA_UVM(float)
+    COMPAT_INSTANT_CUDA_UVM(double)
+    COMPAT_INSTANT_CUDA_UVM(int)
+    COMPAT_INSTANT_CUDA_UVM(long)
+    COMPAT_INSTANT_CUDA_UVM(unsigned)
+    COMPAT_INSTANT_CUDA_UVM(unsigned long)
+    COMPAT_INSTANT_CUDA_UVM(char)
+    COMPAT_INSTANT_CUDA_UVM(short)
   } // namespace Compat
 } // namespace Kokkos
 
