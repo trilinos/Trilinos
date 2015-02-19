@@ -46,11 +46,6 @@
 /// \brief Declarations for the class Tpetra::BlockMap.
 
 #include <Tpetra_ConfigDefs.hpp>
-
-#ifndef HAVE_TPETRA_CLASSIC_VBR
-#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
-#else
-
 #include <map>
 #include <Tpetra_Map.hpp>
 
@@ -252,6 +247,5 @@ convertBlockMapToPointMap (const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Nod
 
 } // namespace Tpetra
 
-#endif // ! HAVE_TPETRA_CLASSIC_VBR
 #endif // ! TPETRA_BLOCKMAP_DECL_HPP
 
