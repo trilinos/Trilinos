@@ -355,15 +355,15 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
     // Convert arguments to Kokkos::View's (involves deep copy to device)
-    typedef Kokkos::View<const LocalOrdinal*, device_type> lo_const_view_type;
+    typedef Kokkos::View<const LocalOrdinal*, execution_space> lo_const_view_type;
     lo_const_view_type permuteToLIDs =
-      getKokkosViewDeepCopy<device_type> (permuteToLIDs_);
+      getKokkosViewDeepCopy<execution_space> (permuteToLIDs_);
     lo_const_view_type permuteFromLIDs =
-      getKokkosViewDeepCopy<device_type> (permuteFromLIDs_);
+      getKokkosViewDeepCopy<execution_space> (permuteFromLIDs_);
     lo_const_view_type remoteLIDs =
-      getKokkosViewDeepCopy<device_type> (remoteLIDs_);
+      getKokkosViewDeepCopy<execution_space> (remoteLIDs_);
     lo_const_view_type exportLIDs =
-      getKokkosViewDeepCopy<device_type> (exportLIDs_);
+      getKokkosViewDeepCopy<execution_space> (exportLIDs_);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! checkSizes (src), std::invalid_argument,
@@ -480,8 +480,8 @@ namespace Tpetra {
       }
 
       // Create mirror views of [import|export]PacketsPerLID
-      typename Kokkos::View<size_t*,device_type>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
-      typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID = Kokkos::create_mirror_view (numImportPacketsPerLID_);
+      typename Kokkos::View<size_t*,execution_space>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
+      typename Kokkos::View<size_t*,execution_space>::HostMirror host_numImportPacketsPerLID = Kokkos::create_mirror_view (numImportPacketsPerLID_);
 
       // Copy numExportPacketsPerLID to host
       Kokkos::deep_copy (host_numExportPacketsPerLID, numExportPacketsPerLID_);

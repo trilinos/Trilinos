@@ -58,7 +58,7 @@ namespace Example {
 template< class Device >
 struct FixtureVerifyElemNodeCoord
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   typedef struct { size_t success , error ; } value_type ;
 

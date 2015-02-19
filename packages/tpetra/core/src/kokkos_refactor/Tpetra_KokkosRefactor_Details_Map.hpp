@@ -57,7 +57,7 @@ namespace Tpetra {
     template<class IntType, class DeviceType>
     class Iota {
     public:
-      typedef DeviceType device_type;
+      typedef DeviceType execution_space;
 
       Iota (const Kokkos::View<IntType*, DeviceType>& x,
             const IntType first) : x_ (x), first_ (first) {}
@@ -125,7 +125,7 @@ namespace Tpetra {
     template<class LO, class GO, class DeviceType>
     class GlobalToLocalTableFiller {
     public:
-      typedef DeviceType device_type;
+      typedef DeviceType execution_space;
       typedef typename DeviceType::size_type size_type;
       typedef MapData<LO, GO, DeviceType> value_type;
 
@@ -303,7 +303,7 @@ namespace Tpetra {
       //! The type of global indices.
       typedef GO global_ordinal_type;
       //! The type of the Kokkos Device.
-      typedef DeviceType device_type;
+      typedef DeviceType execution_space;
 
       //@}
       //! \name Constructors

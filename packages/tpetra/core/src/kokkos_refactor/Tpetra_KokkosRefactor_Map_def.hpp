@@ -117,7 +117,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Map (const global_size_t globalNumIndices,
-       const Kokkos::View<const GlobalOrdinal*, device_type>& myGlobalIndices,
+       const Kokkos::View<const GlobalOrdinal*, execution_space>& myGlobalIndices,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type>& node) :
@@ -156,7 +156,7 @@ namespace Tpetra {
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
-    typedef Kokkos::View<GlobalOrdinal*, device_type> device_view_type;
+    typedef Kokkos::View<GlobalOrdinal*, execution_space> device_view_type;
     typedef Kokkos::View<GlobalOrdinal*, typename device_view_type::host_mirror_space> host_view_type;
     typedef Kokkos::View<const GlobalOrdinal*, typename device_view_type::host_mirror_space> const_host_view_type;
 
@@ -539,7 +539,7 @@ namespace Tpetra {
     os << "\"Tpetra::Map\": {"
        << "LocalOrdinalType: " << TypeNameTraits<local_ordinal_type>::name ()
        << ", GlobalOrdinalType: " << TypeNameTraits<global_ordinal_type>::name ()
-       << ", DeviceType: " << TypeNameTraits<device_type>::name ();
+       << ", DeviceType: " << TypeNameTraits<execution_space>::name ();
     if (this->getObjectLabel () != "") {
       os << ", Label: \"" << this->getObjectLabel () << "\"";
     }
@@ -592,7 +592,7 @@ namespace Tpetra {
         OSTab tab1 (out);
         out << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name () << endl
             << "GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name () << endl
-            << "DeviceType: " << TypeNameTraits<device_type>::name () << endl;
+            << "DeviceType: " << TypeNameTraits<execution_space>::name () << endl;
         if (this->getObjectLabel () != "") {
           out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
         }

@@ -2790,9 +2790,9 @@ namespace {
     //   typedef typename dual_view_type::t_host host_view_type;
 
     //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //     X.template getLocalView<typename device_view_type::execution_space> ();
     //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::device_type> ();
+    //     X.template getLocalView<typename host_view_type::execution_space> ();
 
     //   if (comm->getRank () == 0) {
     //     TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
@@ -2833,9 +2833,9 @@ namespace {
     //   typedef typename dual_view_type::t_host host_view_type;
 
     //   device_view_type X_dev =
-    //     X.template getLocalView<typename device_view_type::device_type> ();
+    //     X.template getLocalView<typename device_view_type::execution_space> ();
     //   host_view_type X_host =
-    //     X.template getLocalView<typename host_view_type::device_type> ();
+    //     X.template getLocalView<typename host_view_type::execution_space> ();
 
     //   TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
     //   TEST_EQUALITY( X_dev.dimension_1 (), numCols );

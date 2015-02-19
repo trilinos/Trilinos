@@ -50,7 +50,7 @@ struct MultiVectorStatic{
 template<class RVector, class aVector, class XVector>
 struct MV_MulScalarFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -74,7 +74,7 @@ struct MV_MulScalarFunctor
 template<class aVector, class XVector>
 struct MV_MulScalarFunctorSelf
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
@@ -118,7 +118,7 @@ RVector MV_MulScalar (const RVector& r, const typename Kokkos::View<DataType,Lay
 template<class RVector, class XVector>
 struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -142,7 +142,7 @@ struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
 template<class XVector>
 struct MV_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
@@ -165,8 +165,8 @@ template<class RVector, class XVector>
 RVector MV_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
 {
   /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -196,7 +196,7 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::non_const_value
 template<class RVector, class XVector>
 struct MV_ReciprocalFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -220,7 +220,7 @@ struct MV_ReciprocalFunctor
 template<class XVector>
 struct MV_ReciprocalSelfFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x ;
@@ -251,8 +251,8 @@ RVector MV_Reciprocal( const RVector & r, const XVector & x)
 
   //TODO: Get 1D version done
   /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -275,7 +275,7 @@ RVector MV_Reciprocal( const RVector & r, const XVector & x)
 template<class XVector>
 struct MV_ReciprocalThresholdSelfFunctor
 {
-  typedef typename XVector::device_type           device_type;
+  typedef typename XVector::execution_space           execution_space;
   typedef typename XVector::size_type               size_type;
   typedef typename XVector::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>        KAT;
@@ -319,7 +319,7 @@ XVector MV_ReciprocalThreshold( const XVector & x, const typename XVector::non_c
 template<class RVector, class XVector>
 struct MV_AbsFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -343,7 +343,7 @@ struct MV_AbsFunctor
 template<class XVector>
 struct MV_AbsSelfFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x ;
@@ -374,8 +374,8 @@ RVector MV_Abs( const RVector & r, const XVector & x)
 
   //TODO: Get 1D version done
   /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -398,7 +398,7 @@ RVector MV_Abs( const RVector & r, const XVector & x)
 template<class CVector, class AVector, class BVector>
 struct MV_ElementWiseMultiplyFunctor
 {
-  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::execution_space        execution_space;
   typedef typename CVector::size_type            size_type;
 
   typename CVector::const_value_type m_c;
@@ -449,8 +449,8 @@ CVector MV_ElementWiseMultiply(
 
   //TODO: Get 1D version done
   /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -472,7 +472,7 @@ CVector MV_ElementWiseMultiply(
 template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
 
   RVector   m_r ;
@@ -558,7 +558,7 @@ for(size_type k=0;k<UNROLL;k++)
 template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y>
 struct MV_AddVectorFunctor
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
 
   RVector   m_r ;
@@ -664,7 +664,7 @@ struct MV_AddVectorFunctor
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor<RVector,typename XVector::non_const_value_type, XVector, typename YVector::non_const_value_type,YVector,scalar_x,scalar_y,UNROLL>
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
 
   RVector   m_r ;
@@ -750,7 +750,7 @@ for(size_type k=0;k<UNROLL;k++)
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y>
 struct MV_AddVectorFunctor<RVector,typename XVector::non_const_value_type, XVector, typename YVector::non_const_value_type,YVector,scalar_x,scalar_y>
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
 
   RVector   m_r ;
@@ -1114,9 +1114,9 @@ RVector MV_AddSpecialise( const RVector & r,const aVector &av,const XVector & x,
                 return MV_AddVector( r,av,x,bv,y,a,b);
 
         if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::device_type> YVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -1137,9 +1137,9 @@ RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
     return MV_AddVector( r,av,x,bv,y,n,2,2);
 
   if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::device_type> YVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -1156,9 +1156,9 @@ RVector MV_Add( const RVector & r, const XVector & x, const YVector & y, int n =
 {
   if(n==-1) n = x.dimension_0();
   if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::device_type> YVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -1177,9 +1177,9 @@ RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const 
 {
   if(n==-1) n = x.dimension_0();
   if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::device_type> YVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
@@ -1196,7 +1196,7 @@ RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const 
 template<class XVector,class YVector>
 struct MV_DotProduct_Right_FunctorVector
 {
-  typedef typename XVector::device_type         device_type;
+  typedef typename XVector::execution_space         execution_space;
   typedef typename XVector::size_type             size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -1260,7 +1260,7 @@ struct MV_DotProduct_Right_FunctorVector
 // in two MultiVectors.
 template<class MultiVecViewType>
 struct MultiVecDotFunctor {
-  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
   typedef typename MultiVecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
@@ -1268,7 +1268,7 @@ struct MultiVecDotFunctor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::dot_type*, device_type> dot_view_type;
+  typedef Kokkos::View<typename IPT::dot_type*, execution_space> dot_view_type;
 
   mv_const_view_type X_, Y_;
   dot_view_type dots_;
@@ -1398,7 +1398,7 @@ struct MultiVecDotFunctor {
 // two-norm of each column of a multivector.
 template<class MultiVecViewType>
 struct MultiVecNorm2SquaredFunctor {
-  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
   typedef typename MultiVecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
@@ -1406,7 +1406,7 @@ struct MultiVecNorm2SquaredFunctor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1501,7 +1501,7 @@ struct MultiVecNorm2SquaredFunctor {
 // column of a multivector.
 template<class MultiVecViewType>
 struct MultiVecNorm1Functor {
-  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
   typedef typename MultiVecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
@@ -1509,7 +1509,7 @@ struct MultiVecNorm1Functor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1603,7 +1603,7 @@ struct MultiVecNorm1Functor {
 // column of a multivector.
 template<class MultiVecViewType>
 struct MultiVecNormInfFunctor {
-  typedef typename MultiVecViewType::device_type device_type;
+  typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
   typedef typename MultiVecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
@@ -1611,7 +1611,7 @@ struct MultiVecNormInfFunctor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, device_type> norms_view_type;
+  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1727,15 +1727,15 @@ struct MultiVecNormInfFunctor {
 // vectors (columns).
 template<class VecViewType>
 struct VecDotFunctor {
-  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
   typedef typename VecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
   typedef typename IPT::dot_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one dot_type instance.
-  typedef Kokkos::View<typename IPT::dot_type, device_type> dot_view_type;
-  typedef Kokkos::View<typename IPT::dot_type*, device_type> dots_view_type;
+  typedef Kokkos::View<typename IPT::dot_type, execution_space> dot_view_type;
+  typedef Kokkos::View<typename IPT::dot_type*, execution_space> dots_view_type;
 
   vec_const_view_type x_, y_;
   dot_view_type dot_;
@@ -1781,14 +1781,14 @@ struct VecDotFunctor {
 // Compute the square of the two-norm of a single vector.
 template<class VecViewType>
 struct VecNorm2SquaredFunctor {
-  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
   typedef typename VecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -1829,14 +1829,14 @@ struct VecNorm2SquaredFunctor {
 // Compute the square of the one-norm of a single vector.
 template<class VecViewType>
 struct VecNorm1Functor {
-  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
   typedef typename VecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -1876,14 +1876,14 @@ struct VecNorm1Functor {
 // Compute the square of the infinity-norm of a single vector.
 template<class VecViewType>
 struct VecNormInfFunctor {
-  typedef typename VecViewType::device_type device_type;
+  typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
   typedef typename VecViewType::value_type mv_value_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<mv_value_type> IPT;
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, device_type> norm_view_type;
+  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -1955,7 +1955,7 @@ struct VecNormInfFunctor {
 template<class ViewType>
 class SquareRootFunctor {
 public:
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::size_type size_type;
 
   SquareRootFunctor (const ViewType& theView) : theView_ (theView) {}
@@ -1973,7 +1973,7 @@ private:
 template<class XVector,class YVector,int UNROLL>
 struct MV_DotProduct_Right_FunctorUnroll
 {
-  typedef typename XVector::device_type         device_type;
+  typedef typename XVector::execution_space         execution_space;
   typedef typename XVector::size_type             size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -2178,9 +2178,9 @@ MV_Dot (const rVector& r,
       // better performance.  (It's usually faster to use fewer
       // indices when looking up View entries.)
       typedef View<typename XVector::const_value_type*,
-                   typename XVector::device_type> XVector1D;
+                   typename XVector::execution_space> XVector1D;
       typedef View<typename YVector::const_value_type*,
-                   typename YVector::device_type> YVector1D;
+                   typename YVector::execution_space> YVector1D;
 
       XVector1D x_1d = Kokkos::subview<XVector1D> (x, ALL (), 0);
       YVector1D y_1d = Kokkos::subview<YVector1D> (y, ALL (), 0);
@@ -2198,7 +2198,7 @@ MV_Dot (const rVector& r,
 template<class XVector>
 struct MV_Sum_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef xvalue_type                         value_type[];
@@ -2270,7 +2270,7 @@ normVector MV_Sum(const normVector &r, const VectorType & x, int n = -1)
 template<class XVector>
 struct MV_Norm1_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -2342,7 +2342,7 @@ normVector MV_Norm1(const normVector &r, const VectorType & x, int n = -1)
 template<class XVector>
 struct MV_NormInf_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -2414,7 +2414,7 @@ struct MV_DotWeighted_Functor{};
 template<class WeightVector, class XVector>
 struct MV_DotWeighted_Functor<WeightVector,XVector,1>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef typename WeightVector::non_const_value_type     wvalue_type;
@@ -2471,7 +2471,7 @@ struct MV_DotWeighted_Functor<WeightVector,XVector,1>
 template<class WeightVector, class XVector>
 struct MV_DotWeighted_Functor<WeightVector,XVector,2>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef typename WeightVector::non_const_value_type     wvalue_type;
@@ -2547,7 +2547,7 @@ MV_DotWeighted (const rVector &r,
 template<class RVector, class aVector, class XVector>
 struct V_MulScalarFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -2565,7 +2565,7 @@ struct V_MulScalarFunctor
 template<class aVector, class XVector>
 struct V_MulScalarFunctorSelf
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
@@ -2602,7 +2602,7 @@ RVector V_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Lay
 template<class RVector, class XVector>
 struct V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -2620,7 +2620,7 @@ struct V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector
 template<class XVector>
 struct V_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x;
@@ -2657,7 +2657,7 @@ RVector V_MulScalar( const RVector & r, const typename XVector::non_const_value_
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y>
 struct V_AddVectorFunctor
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
   typedef typename XVector::non_const_value_type           value_type;
   RVector   m_r ;
@@ -2698,7 +2698,7 @@ struct V_AddVectorFunctor
 template<class RVector, class XVector, int scalar_x>
 struct V_AddVectorSelfFunctor
 {
-  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::execution_space        execution_space;
   typedef typename RVector::size_type            size_type;
   typedef typename XVector::non_const_value_type      value_type;
   RVector   m_r ;
@@ -2817,7 +2817,7 @@ RVector V_Add( const RVector & r, const typename XVector::non_const_value_type  
 template<class XVector, class YVector>
 struct V_DotFunctor
 {
-  typedef typename XVector::device_type          device_type;
+  typedef typename XVector::execution_space          execution_space;
   typedef typename XVector::size_type              size_type;
   typedef typename XVector::non_const_value_type xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type>  IPT;
@@ -2878,7 +2878,7 @@ V_Dot (const XVector& x,
 template<class WeightVector, class XVector>
 struct V_DotWeighted_Functor
 {
-  typedef typename XVector::device_type device_type;
+  typedef typename XVector::execution_space execution_space;
   typedef typename XVector::size_type size_type;
   typedef typename XVector::non_const_value_type xvalue_type;
   typedef typename WeightVector::non_const_value_type wvalue_type;
@@ -2940,7 +2940,7 @@ V_DotWeighted (const WeightVector& w,
 template<class XVector>
 struct V_Sum_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef xvalue_type                           value_type;
@@ -2991,7 +2991,7 @@ V_Sum (const VectorType& x, int n = -1)
 template<class XVector>
 struct V_Norm1_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -3037,7 +3037,7 @@ V_Norm1( const VectorType & x, int n = -1)
 template<class XVector>
 struct V_NormInf_Functor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
   typedef typename XVector::non_const_value_type          xvalue_type;
   typedef Details::InnerProductSpaceTraits<xvalue_type> IPT;
@@ -3085,7 +3085,7 @@ V_NormInf (const VectorType& x, int n = -1)
 template<class RVector, class XVector>
 struct V_ReciprocalFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -3104,7 +3104,7 @@ struct V_ReciprocalFunctor
 template<class XVector>
 struct V_ReciprocalSelfFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x ;
@@ -3145,7 +3145,7 @@ RVector V_Reciprocal( const RVector & r, const XVector & x)
 template<class XVector>
 struct V_ReciprocalThresholdSelfFunctor
 {
-  typedef typename XVector::device_type           device_type;
+  typedef typename XVector::execution_space           execution_space;
   typedef typename XVector::size_type               size_type;
   typedef typename XVector::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>        KAT;
@@ -3183,7 +3183,7 @@ XVector V_ReciprocalThreshold( const XVector & x, const typename XVector::non_co
 template<class RVector, class XVector>
 struct V_AbsFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   RVector m_r;
@@ -3202,7 +3202,7 @@ struct V_AbsFunctor
 template<class XVector>
 struct V_AbsSelfFunctor
 {
-  typedef typename XVector::device_type        device_type;
+  typedef typename XVector::execution_space        execution_space;
   typedef typename XVector::size_type            size_type;
 
   XVector m_x ;
@@ -3243,7 +3243,7 @@ RVector V_Abs( const RVector & r, const XVector & x)
 template<class CVector, class AVector, class BVector>
 struct V_ElementWiseMultiplyFunctor
 {
-  typedef typename CVector::device_type        device_type;
+  typedef typename CVector::execution_space        execution_space;
   typedef typename CVector::size_type            size_type;
 
   typename CVector::const_value_type m_c;
@@ -3287,8 +3287,8 @@ CVector V_ElementWiseMultiply(
 
   //TODO: Get 1D version done
   /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::device_type> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
     RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );

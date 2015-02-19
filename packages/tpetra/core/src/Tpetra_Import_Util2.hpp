@@ -493,8 +493,8 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename Node::device_type device_type;
-  typedef typename View<int*, device_type>::HostMirror::host_mirror_space HMS;
+  typedef typename Node::execution_space execution_space;
+  typedef typename View<int*, execution_space>::HostMirror::host_mirror_space HMS;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
   typedef std::pair<typename View<int*, HMS>::size_type,
@@ -666,8 +666,8 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  typedef typename Node::device_type device_type;
-  typedef typename Kokkos::View<int*, device_type>::HostMirror::host_mirror_space HMS;
+  typedef typename Node::execution_space execution_space;
+  typedef typename Kokkos::View<int*, execution_space>::HostMirror::host_mirror_space HMS;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -752,8 +752,8 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   using Teuchos::reduceAll;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename Node::device_type device_type;
-  typedef typename Kokkos::View<int*, device_type>::HostMirror::host_mirror_space HMS;
+  typedef typename Node::execution_space execution_space;
+  typedef typename Kokkos::View<int*, execution_space>::HostMirror::host_mirror_space HMS;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
