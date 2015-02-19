@@ -138,6 +138,7 @@ struct MPVectorAllocation<Device, Storage, false> {
   typedef Sacado::MP::Vector<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
   typedef typename Device::memory_space memory_space;
+  typedef typename Device::execution_space execution_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -161,15 +162,17 @@ struct MPVectorAllocation<Device, Storage, false> {
     // this is the best choice from a locality perspective
     // either.
     const size_t num_vec = Impl::cardinality_count( shape );
-    const size_t size_scalars =
-      num_vec * vector_size * sizeof(scalar_type);
-    const size_t size_values =
-      num_vec * sizeof(value_type);
+    const size_t count_scalars = num_vec * vector_size;
+    const size_t size_scalars = count_scalars * sizeof(scalar_type);
+    const size_t size_values = num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
     m_tracker = memory_space::allocate_and_track( label, size );
     char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
+
+     // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count_scalars );
 
     // Construct each MP::Vector using memory in ptr array,
     // setting pointer to MP::Vector values from values array
@@ -180,8 +183,6 @@ struct MPVectorAllocation<Device, Storage, false> {
     //   new (p++) value_type(vector_size, sp, false);
     //   sp += vector_size;
     // }
-    //
-    // We must always do this, regardless of Initialize
     parallel_for( num_vec, VectorInit( ptr, m_scalar_ptr_on_device,
                                        vector_size ) );
 
