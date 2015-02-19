@@ -136,7 +136,7 @@ namespace { // (anonymous)
   /// \return The allocated Kokkos::DualView.
   template<class S, class LO, class GO, class D>
   typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type
-  allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = false)
+  allocDualView (const size_t lclNumRows, const size_t numCols, const bool zeroOut = true)
   {
     typedef typename Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D>, false>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
