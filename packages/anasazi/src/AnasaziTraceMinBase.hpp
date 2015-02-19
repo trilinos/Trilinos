@@ -456,9 +456,9 @@ namespace Experimental {
     typedef OperatorTraits<ScalarType,MV,OP>              OPT;
     typedef Teuchos::ScalarTraits<ScalarType>             SCT;
     typedef typename SCT::magnitudeType                   MagnitudeType;
-    typedef TraceMinRitzOp<ScalarType,MV,OP>              TraceMinRitzOp;
-    typedef SaddleContainer<ScalarType,MV>                SaddleContainer;
-    typedef SaddleOperator<ScalarType,MV,TraceMinRitzOp>  SaddleOperator;
+    typedef TraceMinRitzOp<ScalarType,MV,OP>              tracemin_ritz_op_type;
+    typedef SaddleContainer<ScalarType,MV>                saddle_container_type;
+    typedef SaddleOperator<ScalarType,MV,tracemin_ritz_op_type>  saddle_op_type;
     const MagnitudeType ONE;
     const MagnitudeType ZERO;
     const MagnitudeType NANVAL;
@@ -466,7 +466,7 @@ namespace Experimental {
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > sm_;
+    const RCP<SortManager<MagnitudeType> >         sm_;
     const RCP<OutputManager<ScalarType> >          om_;
     RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
@@ -549,7 +549,7 @@ namespace Experimental {
     bool Rnorms_current_, R2norms_current_;
 
     // TraceMin specific variables
-    RCP<TraceMinRitzOp> ritzOp_;    // Operator which incorporates Ritz shifts
+    RCP<tracemin_ritz_op_type> ritzOp_;    // Operator which incorporates Ritz shifts
     enum SaddleSolType saddleSolType_;                          // Type of saddle point solver being used
     bool previouslyLeveled_;                                    // True if the trace already leveled off
     MagnitudeType previousTrace_;                               // Trace of X'KX at the previous iteration
@@ -749,13 +749,13 @@ namespace Experimental {
     NEV_ = problem_->getNEV();
 
     // Create the Ritz shift operator
-    ritzOp_ = rcp( new TraceMinRitzOp(Op_,MOp_,Prec_) );
+    ritzOp_ = rcp (new tracemin_ritz_op_type (Op_, MOp_, Prec_));
 
     // Set the maximum number of inner iterations
-    int innerMaxIts = params.get("Maximum Krylov Iterations", 200);
-    ritzOp_->setMaxIts(innerMaxIts);
+    const int innerMaxIts = params.get ("Maximum Krylov Iterations", 200);
+    ritzOp_->setMaxIts (innerMaxIts);
 
-    alpha_ = params.get("HSS: alpha", ONE);
+    alpha_ = params.get ("HSS: alpha", ONE);
   }
 
 
@@ -3301,10 +3301,10 @@ namespace Experimental {
     }
 
     // Create the operator [A BX; X'B 0]
-    RCP<SaddleOperator> sadOp = rcp(new SaddleOperator(ritzOp_,locMX));
+    RCP<saddle_op_type> sadOp = rcp(new saddle_op_type(ritzOp_,locMX));
 
     // Create the RHS [AX; 0]
-    RCP<SaddleContainer> sadRHS = rcp(new SaddleContainer(locKX));
+    RCP<saddle_container_type> sadRHS = rcp(new saddle_container_type(locKX));
 
 //    locKX->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
 
@@ -3312,17 +3312,17 @@ namespace Experimental {
 
     // Create the solution vector [Delta; L]
     MVT::MvInit(*Delta);
-    RCP<SaddleContainer> sadSol = rcp(new SaddleContainer(Delta));
+    RCP<saddle_container_type> sadSol = rcp(new saddle_container_type(Delta));
 
     // Create a minres solver
-    RCP<PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator > > sadSolver;
+    RCP<PseudoBlockMinres<ScalarType,saddle_container_type,saddle_op_type > > sadSolver;
     if(Prec_ != Teuchos::null)
     {
-      RCP<SaddleOperator> sadPrec = rcp(new SaddleOperator(ritzOp_->getPrec(),locMX,BD_PREC));
-      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator>(sadOp, sadPrec));
+      RCP<saddle_op_type> sadPrec = rcp(new saddle_op_type(ritzOp_->getPrec(),locMX,BD_PREC));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,saddle_container_type,saddle_op_type>(sadOp, sadPrec));
     }
     else {
-      sadSolver = rcp(new PseudoBlockMinres<ScalarType,SaddleContainer,SaddleOperator>(sadOp));
+      sadSolver = rcp(new PseudoBlockMinres<ScalarType,saddle_container_type,saddle_op_type>(sadOp));
     }
 
     // Set the tolerance for the minres solver
@@ -3351,8 +3351,8 @@ namespace Experimental {
   void TraceMinBase<ScalarType,MV,OP>::solveSaddleHSSPrec (RCP<MV> Delta) const
   {
 #ifdef HAVE_ANASAZI_BELOS
-    typedef Belos::LinearProblem<ScalarType,SaddleContainer,SaddleOperator>           LP;
-    typedef Belos::PseudoBlockGmresSolMgr<ScalarType,SaddleContainer,SaddleOperator>  GmresSolMgr;
+    typedef Belos::LinearProblem<ScalarType,saddle_container_type,saddle_op_type>           LP;
+    typedef Belos::PseudoBlockGmresSolMgr<ScalarType,saddle_container_type,saddle_op_type>  GmresSolMgr;
 
     RCP<MV> locKX, locMX;
     if(computeAllRes_)
@@ -3370,14 +3370,14 @@ namespace Experimental {
     }
 
     // Create the operator [A BX; X'B 0]
-    RCP<SaddleOperator> sadOp = rcp(new SaddleOperator(ritzOp_,locMX,NONSYM));
+    RCP<saddle_op_type> sadOp = rcp(new saddle_op_type(ritzOp_,locMX,NONSYM));
 
     // Create the RHS [AX; 0]
-    RCP<SaddleContainer> sadRHS = rcp(new SaddleContainer(locKX));
+    RCP<saddle_container_type> sadRHS = rcp(new saddle_container_type(locKX));
 
     // Create the solution vector [Delta; L]
     MVT::MvInit(*Delta);
-    RCP<SaddleContainer> sadSol = rcp(new SaddleContainer(Delta));
+    RCP<saddle_container_type> sadSol = rcp(new saddle_container_type(Delta));
 
     // Create a parameter list for the gmres solver
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
@@ -3407,7 +3407,7 @@ namespace Experimental {
     // Set the preconditioner
     if(Prec_ != Teuchos::null)
     {
-      RCP<SaddleOperator> sadPrec = rcp(new SaddleOperator(ritzOp_->getPrec(),locMX,HSS_PREC,alpha_));
+      RCP<saddle_op_type> sadPrec = rcp(new saddle_op_type(ritzOp_->getPrec(),locMX,HSS_PREC,alpha_));
       problem->setLeftPrec(sadPrec);
     }
 

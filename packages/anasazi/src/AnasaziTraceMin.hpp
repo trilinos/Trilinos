@@ -178,7 +178,7 @@ namespace Experimental {
 
     // TraceMin specific methods
     void addToBasis(const Teuchos::RCP<const MV> Delta);
-    
+
     void harmonicAddToBasis(const Teuchos::RCP<const MV> Delta);
   };
 
@@ -257,9 +257,9 @@ namespace Experimental {
       OPT::Apply(*this->Op_,*this->V_,*this->KV_);
     }
   }
-  
-  
-  
+
+
+
   template <class ScalarType, class MV, class OP>
   void TraceMin<ScalarType,MV,OP>::harmonicAddToBasis(const Teuchos::RCP<const MV> Delta)
   {
@@ -274,7 +274,7 @@ namespace Experimental {
 #endif
       this->orthman_->projectMat(*this->V_,this->auxVecs_);
     }
-    
+
     // Compute KV
     if(this->Op_ != Teuchos::null)
     {
@@ -289,14 +289,16 @@ namespace Experimental {
     // Normalize lclKV
     RCP< Teuchos::SerialDenseMatrix<int,ScalarType> > gamma = rcp(new Teuchos::SerialDenseMatrix<int,ScalarType>(this->blockSize_,this->blockSize_));
     int rank = this->orthman_->normalizeMat(*this->KV_,gamma);
-                
+    // FIXME (mfh 18 Feb 2015) It would make sense to check the rank.
+    (void) rank;
+
     // lclV = lclV/gamma
     Teuchos::SerialDenseSolver<int,ScalarType> SDsolver;
     SDsolver.setMatrix(gamma);
     SDsolver.invert();
     RCP<MV> tempMV = MVT::CloneCopy(*this->V_);
     MVT::MvTimesMatAddMv(ONE,*tempMV,*gamma,ZERO,*this->V_);
-    
+
     // Compute MV
     if(this->hasM_)
     {
@@ -306,7 +308,7 @@ namespace Experimental {
       this->count_ApplyM_+= this->blockSize_;
 
       OPT::Apply(*this->MOp_,*this->V_,*this->MV_);
-    }    
+    }
   }
 
 }} // End of namespace Anasazi

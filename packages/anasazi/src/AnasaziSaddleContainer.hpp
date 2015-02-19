@@ -57,7 +57,7 @@ class SaddleContainer //: public Anasazi::SaddleContainer<ScalarType, MV>
 private:
   typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
   typedef Teuchos::SerialDenseMatrix<int,ScalarType> SerialDenseMatrix;
-  const ScalarType ONE, ZERO; 
+  const ScalarType ONE, ZERO;
   RCP<MV> upper_;
   RCP<SerialDenseMatrix> lowerRaw_;
   std::vector<int> indices_;
@@ -82,25 +82,25 @@ public:
   int GetVecLength() const { return MVT::GetVecLength(*upper_) + lowerRaw_->numRows(); };
   int GetNumberVecs() const { return MVT::GetNumberVecs(*upper_); };
   // Update *this with alpha * A * B + beta * (*this)
-  void MvTimesMatAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV> &A, 
-                       const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
+  void MvTimesMatAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV> &A,
+                       const Teuchos::SerialDenseMatrix<int, ScalarType> &B,
                        ScalarType beta);
   // Replace *this with alpha * A + beta * B
-  void MvAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV>& A, 
+  void MvAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV>& A,
                ScalarType beta,  const SaddleContainer<ScalarType,MV>& B);
   // Scale the vectors by alpha
   void MvScale( ScalarType alpha );
   // Scale the i-th vector by alpha[i]
   void MvScale( const std::vector<ScalarType>& alpha );
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this)
-  void MvTransMv (ScalarType alpha, const SaddleContainer<ScalarType, MV>& A, 
+  void MvTransMv (ScalarType alpha, const SaddleContainer<ScalarType, MV>& A,
                   Teuchos::SerialDenseMatrix< int, ScalarType >& B) const;
-  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
+  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A.
   void MvDot (const SaddleContainer<ScalarType, MV>& A, std::vector<ScalarType> &b) const;
   // Compute the 2-norm of each individual vector
   void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &normvec) const;
-  // Copy the vectors in A to a set of vectors in *this. The numvecs vectors in 
-  // A are copied to a subset of vectors in *this indicated by the indices given 
+  // Copy the vectors in A to a set of vectors in *this. The numvecs vectors in
+  // A are copied to a subset of vectors in *this indicated by the indices given
   // in index.
   void SetBlock (const SaddleContainer<ScalarType, MV>& A, const std::vector<int> &index);
   // Deep copy.
@@ -169,7 +169,7 @@ void SaddleContainer<ScalarType, MV>::setLower(const RCP<SerialDenseMatrix> lowe
 // Constructor
 template <class ScalarType, class MV>
 SaddleContainer<ScalarType, MV>::SaddleContainer( const RCP<MV> X, bool eye )
-: ONE(Teuchos::ScalarTraits<ScalarType>::one()), ZERO(Teuchos::ScalarTraits<ScalarType>::zero()) 
+: ONE(Teuchos::ScalarTraits<ScalarType>::one()), ZERO(Teuchos::ScalarTraits<ScalarType>::zero())
 {
   int nvecs = MVT::GetNumberVecs(*X);
 
@@ -178,7 +178,7 @@ SaddleContainer<ScalarType, MV>::SaddleContainer( const RCP<MV> X, bool eye )
     // Initialize upper_ as all 0s
     upper_ = MVT::Clone(*X, nvecs);
     MVT::MvInit(*upper_);
-    
+
     // Initialize Y to be I
     lowerRaw_ = rcp(new SerialDenseMatrix(nvecs,nvecs));
     for(int i=0; i < nvecs; i++)
@@ -198,10 +198,10 @@ SaddleContainer<ScalarType, MV>::SaddleContainer( const RCP<MV> X, bool eye )
 
 // Returns a clone of the current vector
 template <class ScalarType, class MV>
-SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::Clone(const int nvecs) const 
-{  
+SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::Clone(const int nvecs) const
+{
   SaddleContainer<ScalarType, MV> * newSC = new SaddleContainer<ScalarType, MV>();
-  
+
   newSC->upper_ = MVT::Clone(*upper_,nvecs);
   newSC->lowerRaw_ = rcp(new SerialDenseMatrix(lowerRaw_->numRows(),nvecs));
 
@@ -212,13 +212,13 @@ SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::Clone(const i
 
 // Returns a duplicate of the current vector
 template <class ScalarType, class MV>
-SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneCopy() const 
+SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneCopy() const
 {
   SaddleContainer<ScalarType, MV> * newSC = new SaddleContainer<ScalarType, MV>();
-  
+
   newSC->upper_ = MVT::CloneCopy(*upper_);
   newSC->lowerRaw_ = getLower();
-  
+
   return newSC;
 }
 
@@ -229,9 +229,9 @@ template <class ScalarType, class MV>
 SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneCopy(const std::vector< int > &index) const
 {
   SaddleContainer<ScalarType, MV> * newSC = new SaddleContainer<ScalarType, MV>();
-  
+
   newSC->upper_ = MVT::CloneCopy(*upper_,index);
-  
+
   int ncols = index.size();
   int nrows = lowerRaw_->numRows();
   RCP<SerialDenseMatrix> lower = getLower();
@@ -241,7 +241,7 @@ SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneCopy(con
     for(int r=0; r < nrows; r++)
       (*newSC->lowerRaw_)(r,c) = (*lower)(r,index[c]);
   }
-  
+
   return newSC;
 }
 
@@ -306,8 +306,8 @@ const SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneVi
 // Update *this with alpha * A * B + beta * (*this)
 // THIS IS NEW!
 template <class ScalarType, class MV>
-void SaddleContainer<ScalarType, MV>::MvTimesMatAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV> &A, 
-                                                      const Teuchos::SerialDenseMatrix<int, ScalarType> &B, 
+void SaddleContainer<ScalarType, MV>::MvTimesMatAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV> &A,
+                                                      const Teuchos::SerialDenseMatrix<int, ScalarType> &B,
                                                       ScalarType beta)
 {
   MVT::MvTimesMatAddMv(alpha,*(A.upper_),B,beta,*upper_);
@@ -321,7 +321,7 @@ void SaddleContainer<ScalarType, MV>::MvTimesMatAddMv(ScalarType alpha, const Sa
 
 // Replace *this with alpha * A + beta * B
 template <class ScalarType, class MV>
-void SaddleContainer<ScalarType, MV>::MvAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV>& A, 
+void SaddleContainer<ScalarType, MV>::MvAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV>& A,
                                               ScalarType beta,  const SaddleContainer<ScalarType,MV>& B)
 {
   MVT::MvAddMv(alpha, *(A.upper_), beta, *(B.upper_), *upper_);
@@ -330,9 +330,9 @@ void SaddleContainer<ScalarType, MV>::MvAddMv(ScalarType alpha, const SaddleCont
   RCP<SerialDenseMatrix> Alower = A.getLower();
   RCP<SerialDenseMatrix> Blower = B.getLower();
 
-  int ncolsA = Alower->numCols();
-  int ncolsThis = lower->numCols();
-  int nrows = lower->numRows();
+  //int ncolsA = Alower->numCols(); // unused
+  //int ncolsThis = lower->numCols(); // unused
+  //int nrows = lower->numRows(); // unused
 
   // Y = alpha A
   lower->assign(*Alower);
@@ -379,7 +379,7 @@ void SaddleContainer<ScalarType, MV>::MvScale( const std::vector<ScalarType>& al
 
   int nrows = lower->numRows();
   int ncols = lower->numCols();
-  
+
   for(int c=0; c<ncols; c++)
   {
     for(int r=0; r<nrows; r++)
@@ -394,7 +394,7 @@ void SaddleContainer<ScalarType, MV>::MvScale( const std::vector<ScalarType>& al
 // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this)
 // THIS IS NEW!
 template <class ScalarType, class MV>
-void SaddleContainer<ScalarType, MV>::MvTransMv (ScalarType alpha, const SaddleContainer<ScalarType, MV>& A, 
+void SaddleContainer<ScalarType, MV>::MvTransMv (ScalarType alpha, const SaddleContainer<ScalarType, MV>& A,
                                                  Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
 {
   MVT::MvTransMv(alpha,*(A.upper_),*upper_,B);
@@ -405,7 +405,7 @@ void SaddleContainer<ScalarType, MV>::MvTransMv (ScalarType alpha, const SaddleC
 
 
 
-// Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
+// Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A.
 template <class ScalarType, class MV>
 void SaddleContainer<ScalarType, MV>::MvDot (const SaddleContainer<ScalarType, MV>& A, std::vector<ScalarType> &b) const
 {
@@ -416,7 +416,7 @@ void SaddleContainer<ScalarType, MV>::MvDot (const SaddleContainer<ScalarType, M
 
   int nrows = lower->numRows();
   int ncols = lower->numCols();
-  
+
   for(int c=0; c < ncols; c++)
   {
     for(int r=0; r < nrows; r++)
@@ -441,8 +441,8 @@ void SaddleContainer<ScalarType, MV>::MvNorm ( std::vector<typename Teuchos::Sca
 
 
 
-// Copy the vectors in A to a set of vectors in *this. The numvecs vectors in 
-// A are copied to a subset of vectors in *this indicated by the indices given 
+// Copy the vectors in A to a set of vectors in *this. The numvecs vectors in
+// A are copied to a subset of vectors in *this indicated by the indices given
 // in index.
 template <class ScalarType, class MV>
 void SaddleContainer<ScalarType, MV>::SetBlock (const SaddleContainer<ScalarType, MV>& A, const std::vector<int> &index)
@@ -453,7 +453,7 @@ void SaddleContainer<ScalarType, MV>::SetBlock (const SaddleContainer<ScalarType
   RCP<SerialDenseMatrix> Alower = A.getLower();
 
   int nrows = lower->numRows();
-  
+
   int nvecs = index.size();
   for(int c=0; c<nvecs; c++)
   {
@@ -514,14 +514,14 @@ template <class ScalarType, class MV>
 void SaddleContainer<ScalarType, MV>::MvPrint (std::ostream &os) const
 {
   RCP<SerialDenseMatrix> lower = getLower();
-  int nrows = lower->numRows();
-  int ncols = lower->numCols();
+  //int nrows = lower->numRows(); // unused
+  //int ncols = lower->numCols(); // unused
 
   os << "Object SaddleContainer" << std::endl;
   os << "X\n";
   upper_->describe(*(Teuchos::VerboseObjectBase::getDefaultOStream()),Teuchos::VERB_EXTREME);
 //  os << "X\n" << *upper_ << std::endl;
-  
+
   os << "Y\n" << *lower << std::endl;
 }
 
@@ -541,15 +541,15 @@ public:
 
   static RCP<SC > CloneCopy( const SC& mv, const std::vector<int>& index )
     { return rcp( const_cast<SC&>(mv).CloneCopy(index) ); }
- 
+
   static int GetVecLength( const SC& mv )
     { return mv.GetVecLength(); }
 
   static int GetNumberVecs( const SC& mv )
     { return mv.GetNumberVecs(); }
 
-  static void MvTimesMatAddMv( ScalarType alpha, const SC& A, 
-                               const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+  static void MvTimesMatAddMv( ScalarType alpha, const SC& A,
+                               const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
                                ScalarType beta, SC& mv )
     { mv.MvTimesMatAddMv(alpha, A, B, beta); }
 
@@ -567,7 +567,7 @@ public:
 
   static void MvScale ( SC& mv, const std::vector<ScalarType>& alpha )
     { mv.MvScale( alpha ); }
- 
+
   static void MvNorm( const SC& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> & normvec)
     { mv.MvNorm(normvec); }
 
@@ -612,15 +612,15 @@ public:
 
   static RCP<const SC> CloneView( const SC& mv, const std::vector<int> & index )
     { return rcp( mv.CloneView(index) ); }
- 
+
   static int GetVecLength( const SC& mv )
     { return mv.GetVecLength(); }
 
   static int GetNumberVecs( const SC& mv )
     { return mv.GetNumberVecs(); }
 
-  static void MvTimesMatAddMv( ScalarType alpha, const SC& A, 
-                               const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+  static void MvTimesMatAddMv( ScalarType alpha, const SC& A,
+                               const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
                                ScalarType beta, SC& mv )
     { mv.MvTimesMatAddMv(alpha, A, B, beta); }
 
@@ -638,7 +638,7 @@ public:
 
   static void MvScale ( SC& mv, const std::vector<ScalarType>& alpha )
     { mv.MvScale( alpha ); }
- 
+
   // TODO: MAKE SURE TYPE == TWONORM
   static void MvNorm( const SC& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> & normvec, NormType type=TwoNorm)
     { mv.MvNorm(normvec); }
