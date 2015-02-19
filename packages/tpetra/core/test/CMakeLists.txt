@@ -3,29 +3,26 @@
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 ADD_SUBDIRECTORIES(
-  Platform
-  Map
-  Distributor
-  Directory
-  ImportExport
-  ImportExport2
-  MultiVector
-  MultiVectorFiller
   BasicPerfTest
-  Utils
+  Block
+  BugTests
   CrsGraph
   CrsMatrix
-  BlockCrsGraph
-  BlockMap
-  BlockMultiVector
-  RowMatrixTransposer
-  MatrixMatrix
-  TypeStack
+  Directory
+  Distributor
+  ImportExport
+  ImportExport2
   inout
+  Map
+  MatrixMatrix
+  MultiVector
+  MultiVectorFiller
   PerformanceCGSolve
+  Platform
+  Utils
+  RowMatrixTransposer
+  TypeStack
   )
-
-ADD_SUBDIRECTORY(BugTests)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
