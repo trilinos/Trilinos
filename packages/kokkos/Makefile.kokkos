@@ -51,7 +51,7 @@ CUBLAS ?= no
 
 #Typically nothing should be changed after this point
 
-KOKKOS_INC = -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src -I$(KOKKOS_PATH)/linalg/src -I../ -DKOKKOS_DONT_INCLUDE_CORE_CONFIG_H 
+KOKKOS_INC = -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src -I$(KOKKOS_PATH)/algorithms/src -I$(KOKKOS_PATH)/linalg/src -I../ -DKOKKOS_DONT_INCLUDE_CORE_CONFIG_H -DKOKKOS_HAVE_SERIAL 
 
 KOKKOS_HEADERS = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
