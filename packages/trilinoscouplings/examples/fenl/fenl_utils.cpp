@@ -385,7 +385,7 @@ void connect_vtune(const int p_rank) {
   std::stringstream cmd;
   pid_t my_os_pid=getpid();
   const std::string vtune_loc =
-    "/home/software/intel/vtune_amplifier_xe_2015.1.1.380310/bin64/amplxe-cl";
+    "amplxe-cl";
   const std::string output_dir = "./vtune/vtune.";
   cmd << vtune_loc
       << " -collect hotspots -result-dir " << output_dir << p_rank
