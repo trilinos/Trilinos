@@ -495,17 +495,17 @@ public:
 
   typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
-                typename traits::execution_space ,
+                typename traits::device_type ,
                 typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::execution_space ,
+                typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::execution_space ,
+                typename traits::device_type ,
                 typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::non_const_data_type ,

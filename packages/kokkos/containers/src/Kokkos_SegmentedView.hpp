@@ -463,7 +463,7 @@ namespace Impl {
 template<class DataType, class Arg1Type, class Arg2Type, class Arg3Type>
 struct delete_segmented_view {
   typedef SegmentedView<DataType , Arg1Type , Arg2Type, Arg3Type> view_type;
-  typedef typename view_type::execution_space device_type;
+  typedef typename view_type::execution_space execution_space;
 
   view_type view_;
   delete_segmented_view(view_type view):view_(view) {

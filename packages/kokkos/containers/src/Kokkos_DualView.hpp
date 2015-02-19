@@ -173,8 +173,8 @@ public:
   //! \name Counters to keep track of changes ("modified" flags)
   //@{
 
-  View<unsigned int,LayoutLeft,HostSpace> modified_device;
-  View<unsigned int,LayoutLeft,HostSpace> modified_host;
+  View<unsigned int,LayoutLeft,typename t_host::execution_space> modified_device;
+  View<unsigned int,LayoutLeft,typename t_host::execution_space> modified_host;
 
   //@}
   //! \name Constructors
@@ -186,8 +186,8 @@ public:
   /// default constructors.  The "modified" flags are both initialized
   /// to "unmodified."
   DualView () :
-    modified_device (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_device")),
-    modified_host (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_host"))
+    modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {}
 
   /// \brief Constructor that allocates View objects on both host and device.
@@ -210,8 +210,8 @@ public:
             const size_t n7 = 0)
     : d_view (label, n0, n1, n2, n3, n4, n5, n6, n7)
     , h_view (create_mirror_view (d_view)) // without UVM, host View mirrors
-    , modified_device (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_device"))
-    , modified_host (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_host"))
+    , modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device"))
+    , modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {}
 
   //! Copy constructor (shallow copy)
@@ -236,8 +236,8 @@ public:
   DualView (const t_dev& d_view_, const t_host& h_view_) :
     d_view (d_view_),
     h_view (h_view_),
-    modified_device (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_device")),
-    modified_host (View<unsigned int,LayoutLeft,HostSpace> ("DualView::modified_host"))
+    modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {
     Impl::assert_shapes_are_equal (d_view.shape (), h_view.shape ());
   }
