@@ -46,13 +46,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 // include all the Tpetra headers twice to check if headers are protected by #ifndef FILE_HPP #define ... #endif
-#ifdef HAVE_TPETRA_CLASSIC_VBR
-#  include <Tpetra_BlockMap.hpp>
-#  include <Tpetra_BlockCrsGraph.hpp>
-#  include <Tpetra_BlockMultiVector.hpp>
-#  include <Tpetra_VbrMatrix.hpp>
-#  include <TpetraExt_BlockExtraction.hpp>
-#endif // HAVE_TPETRA_CLASSIC_VBR
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
 #include <Tpetra_Map.hpp>
@@ -66,13 +59,6 @@
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
-#ifdef HAVE_TPETRA_CLASSIC_VBR
-#  include <Tpetra_BlockMap.hpp>
-#  include <Tpetra_BlockCrsGraph.hpp>
-#  include <Tpetra_BlockMultiVector.hpp>
-#  include <Tpetra_VbrMatrix.hpp>
-#  include <TpetraExt_BlockExtraction.hpp>
-#endif // HAVE_TPETRA_CLASSIC_VBR
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrixSolveOp.hpp>
 #include <Tpetra_Map.hpp>
@@ -123,13 +109,6 @@ typedef int TransformReductionGlob;
 typedef int UnaryFunctorAdapter;
 typedef int Vector;
 typedef int ZeroOp;
-
-#ifdef HAVE_TPETRA_CLASSIC_VBR
-typedef int BlockCrsGraph;
-typedef int BlockMap;
-typedef int BlockMultiVector;
-typedef int VbrMatrix;
-#endif // HAVE_TPETRA_CLASSIC_VBR
 
 TEUCHOS_UNIT_TEST( Compilation, Bug_ClassDeclarationOutsideOfNamespace )
 {
