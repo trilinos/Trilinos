@@ -83,11 +83,6 @@ namespace KokkosClassic {
   ///   Tpetra::CrsGraph and Tpetra::CrsMatrix.  Implements local
   ///   sparse matrix-(multi)vector multiply and sparse triangular
   ///   solve, for a CrsMatrix.
-  /// - BlockSparseOps: A valid fifth template parameter for
-  ///   Tpetra::VbrMatrix.  Implements local sparse matrix-
-  ///   (multi)vector multiply and sparse triangular solve, for a
-  ///   VbrMatrix (whose entries are blocks) operating on a
-  ///   MultiVector.
   /// - Relaxations: Implements local relaxation kernels.
   ///
   /// It is not necessary to implement a DefaultKernels-like class
@@ -100,7 +95,6 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
     typedef DefaultHostSparseOps<void, Ordinal, Node> SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, Node> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
 
@@ -115,7 +109,6 @@ namespace KokkosClassic {
   struct DefaultKernels<Scalar, Ordinal, SerialNode> {
     typedef AltSparseOps<void, Ordinal, SerialNode,
                          details::AltSparseOpsDefaultAllocator<Ordinal, SerialNode> > SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, SerialNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, SerialNode> Relaxations;
   };
 #endif // defined(HAVE_TPETRACLASSIC_SERIAL)
@@ -126,7 +119,6 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar, Ordinal, TBBNode> {
     typedef DefaultHostSparseOps<void, Ordinal, TBBNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, TBBNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, TBBNode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_TBB
@@ -137,7 +129,6 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar, Ordinal, TPINode> {
     typedef DefaultHostSparseOps<void, Ordinal, TPINode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, TPINode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, TPINode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_TPI
@@ -148,7 +139,6 @@ namespace KokkosClassic {
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar, Ordinal, OpenMPNode> {
     typedef DefaultHostSparseOps<void, Ordinal, OpenMPNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultBlockSparseOps<Scalar, Ordinal, OpenMPNode> BlockSparseOps;
     typedef DefaultRelaxation<Scalar, Ordinal, OpenMPNode> Relaxations;
   };
 #endif // HAVE_TPETRACLASSIC_OPENMP

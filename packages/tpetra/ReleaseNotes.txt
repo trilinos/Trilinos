@@ -5,6 +5,10 @@ Release Notes for Trilinos Package Tpetra
 Development version (11.15):
 ----------------------------
 
+* Removed (deprecated class) Tpetra::VbrMatrix
+
+* Removed (deprecated class) Tpetra::HybridPlatform
+
 * Removed downstream support for KokkosClassic::ThrustGPUNode
 
 Trilinos 11.14:
