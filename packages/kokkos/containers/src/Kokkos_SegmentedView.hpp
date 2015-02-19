@@ -308,9 +308,7 @@ public:
   }
 
   ~SegmentedView() {
-    if (traits::execution_space::in_parallel()) return;
-    if ( !segments_.tracker().ref_counting())
-      return;
+    if ( !segments_.tracker().ref_counting()) { return; }
     size_t ref_count = segments_.tracker().ref_count();
     if(ref_count == 1u) {
       Kokkos::fence();
