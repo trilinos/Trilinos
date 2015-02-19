@@ -295,13 +295,6 @@ static NNTI_result_t repost_RTR_RTS_recv_work_request(
         mpi_work_request *mpi_wr);
 static int is_wr_complete(
         mpi_work_request *mpi_wr);
-static int8_t is_any_wr_complete(
-        mpi_work_request **wr_list,
-        const uint32_t     wr_count,
-        uint32_t          *which);
-static int8_t is_all_wr_complete(
-        mpi_work_request **wr_list,
-        const uint32_t     wr_count);
 static int8_t is_wr_complete(
         NNTI_work_request_t *wr);
 static int8_t is_any_wr_complete(
@@ -334,18 +327,6 @@ static void config_get_from_env(
 #define MPI_MEM_HDL(b) ((mpi_memory_handle *)((b)->transport_private))
 #define MPI_WORK_REQUEST(wr) ((mpi_work_request *)((wr)->transport_private))
 
-
-/* Thomas Wang's 64 bit to 32 bit Hash Function (http://www.concentric.net/~ttwang/tech/inthash.htm) */
-static uint32_t hash6432shift(uint64_t key)
-{
-  key = (~key) + (key << 18); // key = (key << 18) - key - 1;
-  key = key ^ (key >> 31);
-  key = key * 21;             // key = (key + (key << 2)) + (key << 4);
-  key = key ^ (key >> 11);
-  key = key + (key << 6);
-  key = key ^ (key >> 22);
-  return (uint32_t)key;
-}
 
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
@@ -453,10 +434,7 @@ NNTI_result_t NNTI_mpi_init (
         }
 
         nthread_counter_init(&transport_global_data.mbits);
-        for (int i=0;i<0x111;i++) {
-        	// mbits 0x000-0x110 are reserved.  increment mbits to 0x111.
-        	uint64_t v=nthread_counter_increment(&transport_global_data.mbits);
-        }
+        nthread_counter_set(&transport_global_data.mbits, 0x111);
 
         setup_atomics();
 
@@ -1543,8 +1521,6 @@ NNTI_result_t NNTI_mpi_cancelall (
 NNTI_result_t NNTI_mpi_interrupt (
         const NNTI_transport_t *trans_hdl)
 {
-    char dummy=0xAA;
-
     log_debug(nnti_debug_level, "enter");
 
     log_debug(nnti_debug_level, "exit");
@@ -2293,13 +2269,14 @@ static NNTI_result_t setup_atomics(void)
     trios_start_timer(callTime);
     transport_global_data.atomics=(mpi_atomic_t*)malloc(atomics_bytes);
     if (transport_global_data.atomics == NULL) {
-    	return(NNTI_ENOMEM);
+    	rc=NNTI_ENOMEM;
+    	goto cleanup;
     }
     memset(transport_global_data.atomics, 0, atomics_bytes);
     trios_stop_timer("malloc and memset", callTime);
 
     trios_start_timer(callTime);
-    for (int i=0;i<config.min_atomics_vars;i++) {
+    for (uint32_t i=0;i<config.min_atomics_vars;i++) {
     	nthread_lock_init(&transport_global_data.atomics[i].lock);
     	transport_global_data.atomics[i].value=0;
     }
@@ -2307,9 +2284,10 @@ static NNTI_result_t setup_atomics(void)
 
     post_atomics_recv_request();
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
-    return(NNTI_OK);
+    return(rc);
 }
 
 
@@ -3272,52 +3250,6 @@ static int is_wr_complete(
     return(rc);
 }
 
-static int8_t is_any_wr_complete(
-        mpi_work_request **wr_list,
-        const uint32_t     wr_count,
-        uint32_t          *which)
-{
-    int8_t rc=FALSE;
-
-    log_debug(nnti_debug_level, "enter");
-
-    for (uint32_t i=0;i<wr_count;i++) {
-        if ((wr_list[i] != NULL) &&
-            (is_wr_complete(wr_list[i]) == TRUE)) {
-
-            *which=i;
-            rc = TRUE;
-            break;
-        }
-    }
-
-    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-
-    return(rc);
-}
-
-static int8_t is_all_wr_complete(
-        mpi_work_request **wr_list,
-        const uint32_t     wr_count)
-{
-    int8_t rc=TRUE;
-
-    log_debug(nnti_debug_level, "enter");
-
-    for (uint32_t i=0;i<wr_count;i++) {
-        if ((wr_list[i] != NULL) &&
-            (is_wr_complete(wr_list[i]) == FALSE)) {
-
-            rc = FALSE;
-            break;
-        }
-    }
-
-    log_debug(nnti_debug_level, "exit (rc=%d)", rc);
-
-    return(rc);
-}
-
 static int8_t is_wr_complete(
         NNTI_work_request_t *wr)
 {
@@ -3397,7 +3329,6 @@ static NNTI_result_t insert_target_buffer(NNTI_buffer_t *buf)
 }
 static NNTI_buffer_t *del_target_buffer(NNTI_buffer_t *buf)
 {
-    NNTI_buffer_t             *found=NULL;
     target_buffer_queue_iter_t victim;
 
     log_level debug_level = nnti_debug_level;
