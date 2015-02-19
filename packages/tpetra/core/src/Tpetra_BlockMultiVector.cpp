@@ -50,8 +50,11 @@
 // _will_ trigger deprecated warnings, though.  Note that the push /
 // pop thing only works for GCC versions >= 4.6, hence the check.
 #if defined(GCC_VERSION) && GCC_VERSION >= 460
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 #include "Tpetra_BlockMultiVector_decl.hpp"
@@ -67,7 +70,9 @@ namespace Tpetra {
 } // namespace Tpetra
 
 #if defined(GCC_VERSION) && GCC_VERSION >= 460
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
+#elif defined(__clang__)
+#  pragma clang diagnostic pop
 #endif
 
 #endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
