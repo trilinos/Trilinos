@@ -112,18 +112,16 @@ TRIBITS_ADD_TEST(
 #    FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    taskMapper3
-    SOURCES taskMappingTest3.cpp
-    NUM_MPI_PROCS 1
-    COMM serial mpi
-    ARGS
-    "PROC=machine.txt NX=8 NY=8 NZ=8"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  taskMapper3
+  SOURCES taskMappingTest3.cpp
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  ARGS
+  "PROC=machine.txt NX=8 NY=8 NZ=8"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
 
 
@@ -148,18 +146,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_TEST(
-    pamgenMeshAdapterTest
-    NAME pamgenMeshAdapterTest_mj
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    ARGS
-      "--action=mj --nparts=6"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_mj
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=mj --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
   TRIBITS_ADD_TEST(
