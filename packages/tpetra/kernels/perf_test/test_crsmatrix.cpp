@@ -11,7 +11,7 @@
 #include <Kokkos_MV.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 
-typedef Kokkos::DefaultExecutionSpace device_type;
+typedef Kokkos::DefaultExecutionSpace execution_space;
 
 #ifdef INT64
 typedef long long int LocalOrdinalType;
@@ -210,9 +210,9 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
 
 template<typename Scalar>
 int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, LocalOrdinalType nnz, LocalOrdinalType numVecs, LocalOrdinalType test, const char* filename,const bool binaryfile) {
-        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type,void,int> matrix_type ;
-        typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
-        typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,execution_space,void,int> matrix_type ;
+        typedef typename Kokkos::MultiVectorDynamic<Scalar,execution_space>::type mv_type;
+        typedef typename Kokkos::MultiVectorDynamic<Scalar,execution_space>::random_read_type mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
 
         Scalar* val = NULL;
@@ -269,7 +269,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         Kokkos::deep_copy(A.values,h_values);
 
         Kokkos::MV_Multiply(0.0,y,1.0,A,x);
-        device_type::fence();
+        execution_space::fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error[numVecs];
         Scalar sum[numVecs];
@@ -300,7 +300,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
 
         for(LocalOrdinalType i=0;i<loop;i++)
                 Kokkos::MV_Multiply(y,A,x);
-        device_type::fence();
+        execution_space::fence();
         clock_gettime(CLOCK_REALTIME,&endtime);
         double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
@@ -314,9 +314,9 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
 
 template<typename Scalar>
 int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile) {
-        typedef Kokkos::CrsMatrix<Scalar,int,device_type,void,int> matrix_type ;
-        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
-        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomAccess > mv_random_read_type;
+        typedef Kokkos::CrsMatrix<Scalar,int,execution_space,void,int> matrix_type ;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space> mv_type;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,execution_space,Kokkos::MemoryRandomAccess > mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
 
         Scalar* val = NULL;
@@ -372,12 +372,12 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
           //error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
           printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
                 }*/
-    typename Kokkos::CrsMatrix<Scalar,int,device_type,void,int>::values_type x1("X1",numCols);
-    typename Kokkos::CrsMatrix<Scalar,int,device_type,void,int>::values_type y1("Y1",numRows);
+    typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type x1("X1",numCols);
+    typename Kokkos::CrsMatrix<Scalar,int,execution_space,void,int>::values_type y1("Y1",numRows);
     Kokkos::MV_Multiply(y1,A,x1);
 
         Kokkos::MV_Multiply(y,A,x);
-        device_type::fence();
+        execution_space::fence();
         Kokkos::deep_copy(h_y,y);
         Scalar error = 0;
         Scalar sum = 0;
@@ -401,7 +401,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
 
         for(int i=0;i<loop;i++)
                 Kokkos::MV_Multiply(y,A,x);
-        device_type::fence();
+        execution_space::fence();
         clock_gettime(CLOCK_REALTIME,&endtime);
         double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
         double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;

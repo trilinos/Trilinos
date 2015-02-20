@@ -31,9 +31,9 @@ union helper
 template <typename Device>
 struct generate_ids
 {
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<uint32_t*,device_type> local_id_view;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
+  typedef Kokkos::View<uint32_t*,execution_space> local_id_view;
 
   local_id_view local_2_global;
 
@@ -70,10 +70,10 @@ struct generate_ids
 template <typename Device>
 struct fill_map
 {
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
-  typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
+  typedef Kokkos::View<const uint32_t*,execution_space, Kokkos::MemoryRandomAccess> local_id_view;
+  typedef Kokkos::UnorderedMap<uint32_t,size_type,execution_space> global_id_view;
 
   global_id_view global_2_local;
   local_id_view local_2_global;
@@ -96,10 +96,10 @@ struct fill_map
 template <typename Device>
 struct find_test
 {
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
-  typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomAccess> local_id_view;
-  typedef Kokkos::UnorderedMap<const uint32_t, const size_type,device_type> global_id_view;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
+  typedef Kokkos::View<const uint32_t*,execution_space, Kokkos::MemoryRandomAccess> local_id_view;
+  typedef Kokkos::UnorderedMap<const uint32_t, const size_type,execution_space> global_id_view;
 
   global_id_view global_2_local;
   local_id_view local_2_global;
@@ -138,11 +138,11 @@ template <typename Device>
 size_t test_global_to_local_ids(unsigned num_ids, unsigned capacity, unsigned num_find_iterations)
 {
 
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
+  typedef Device execution_space;
+  typedef typename execution_space::size_type size_type;
 
-  typedef Kokkos::View<uint32_t*,device_type> local_id_view;
-  typedef Kokkos::UnorderedMap<uint32_t,size_type,device_type> global_id_view;
+  typedef Kokkos::View<uint32_t*,execution_space> local_id_view;
+  typedef Kokkos::UnorderedMap<uint32_t,size_type,execution_space> global_id_view;
 
   double elasped_time = 0;
   Kokkos::Impl::Timer timer;

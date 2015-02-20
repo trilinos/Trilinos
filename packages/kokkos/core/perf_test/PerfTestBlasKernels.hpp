@@ -47,22 +47,22 @@
 namespace Kokkos {
 
 template< class ConstVectorType ,
-          class Device = typename ConstVectorType::device_type >
+          class Device = typename ConstVectorType::execution_space >
 struct Dot ;
 
 template< class ConstVectorType ,
-          class Device = typename ConstVectorType::device_type >
+          class Device = typename ConstVectorType::execution_space >
 struct DotSingle ;
 
 template< class ConstScalarType ,
           class VectorType ,
-          class Device = typename VectorType::device_type >
+          class Device = typename VectorType::execution_space >
 struct Scale ;
 
 template< class ConstScalarType ,
           class ConstVectorType ,
           class VectorType ,
-          class Device = typename VectorType::device_type >
+          class Device = typename VectorType::execution_space >
 struct AXPBY ;
 
 /** \brief  Y = alpha * X + beta * Y */
@@ -121,16 +121,16 @@ namespace Kokkos {
 template< class Type , class Device >
 struct Dot
 {
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space ;
 
   typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
                             Impl::unsigned_< Type::Rank > >::type ok_rank ;
 
 
-  typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename Type::device_type >::type ok_device ;
+/*  typedef typename
+    Impl::StaticAssertSame< execution_space ,
+                            typename Type::execution_space >::type ok_device ;*/
 
   typedef double value_type ;
 
@@ -162,15 +162,15 @@ struct Dot
 template< class Type , class Device >
 struct DotSingle
 {
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space ;
 
   typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 1 > ,
                             Impl::unsigned_< Type::Rank > >::type ok_rank ;
 
-  typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename Type::device_type >::type ok_device ;
+/*  typedef typename
+    Impl::StaticAssertSame< execution_space ,
+                            typename Type::execution_space >::type ok_device ;*/
 
   typedef double value_type ;
 
@@ -202,17 +202,17 @@ struct DotSingle
 template< class ScalarType , class VectorType , class Device>
 struct Scale
 {
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space ;
 
-  typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename ScalarType::device_type >::type
+/*  typedef typename
+    Impl::StaticAssertSame< execution_space ,
+                            typename ScalarType::execution_space >::type
       ok_scalar_device ;
 
   typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename VectorType::device_type >::type
-      ok_vector_device ;
+    Impl::StaticAssertSame< execution_space ,
+                            typename VectorType::execution_space >::type
+      ok_vector_device ;*/
 
   typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 0 > ,
@@ -249,22 +249,22 @@ template< class ScalarType ,
           class Device>
 struct AXPBY
 {
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space ;
 
-  typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename ScalarType::device_type >::type
+/*  typedef typename
+    Impl::StaticAssertSame< execution_space ,
+                            typename ScalarType::execution_space >::type
       ok_scalar_device ;
 
   typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename ConstVectorType::device_type >::type
+    Impl::StaticAssertSame< execution_space ,
+                            typename ConstVectorType::execution_space >::type
       ok_const_vector_device ;
 
   typedef typename
-    Impl::StaticAssertSame< device_type ,
-                            typename VectorType::device_type >::type
-      ok_vector_device ;
+    Impl::StaticAssertSame< execution_space ,
+                            typename VectorType::execution_space >::type
+      ok_vector_device ;*/
 
   typedef typename
     Impl::StaticAssertSame< Impl::unsigned_< 0 > ,

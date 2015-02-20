@@ -45,7 +45,6 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_AltSparseOps.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
 
 namespace Kokkos {

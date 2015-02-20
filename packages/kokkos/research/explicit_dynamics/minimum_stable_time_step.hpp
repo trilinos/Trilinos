@@ -47,12 +47,12 @@ struct minimum_stable_time_step;
 template<typename Scalar>
 struct minimum_stable_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
-  typedef device_type::size_type    size_type;
+  typedef KOKKOS_MACRO_DEVICE       execution_space;
+  typedef execution_space::size_type    size_type;
 
   typedef Scalar value_type;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
     minimum_stable_time_step( const MyRegion  & arg_region)
        : region(arg_region)
@@ -89,12 +89,12 @@ struct set_next_time_step;
 template<typename Scalar>
 struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
-  typedef device_type::size_type    size_type;
+  typedef KOKKOS_MACRO_DEVICE       execution_space;
+  typedef execution_space::size_type    size_type;
 
   typedef Scalar value_type;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
     set_next_time_step(
                 const MyRegion  & arg_region,

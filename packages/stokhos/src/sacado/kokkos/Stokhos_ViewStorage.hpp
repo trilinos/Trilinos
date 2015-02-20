@@ -76,12 +76,12 @@ namespace Stokhos {
 
     typedef ordinal_t          ordinal_type;
     typedef value_t            value_type;
-    typedef device_t           device_type;
+    typedef device_t           execution_space;
     typedef value_type       & reference;
     typedef const value_type & const_reference;
     typedef value_type       * pointer;
     typedef const value_type * const_pointer;
-    // typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
+    // typedef Stokhos::DynArrayTraits<value_type,execution_space> ds;
 
     //! Turn ViewStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >

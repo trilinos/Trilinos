@@ -349,7 +349,7 @@ template <class Storage>
 struct PerformanceDriverOp {
   typedef typename Storage::value_type Scalar;
   typedef typename Storage::ordinal_type Ordinal;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   Teuchos::RCP<const Teuchos::Comm<int> > comm ;
   const int use_print ;
   const int use_trials ;

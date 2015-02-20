@@ -54,12 +54,12 @@
 template <typename Value, typename Device = Kokkos::DefaultExecutionSpace>
 struct RF {
   typedef Value value_type;
-  typedef Device device_type;
+  typedef Device execution_space;
 
-  typedef Stokhos::KL::ExponentialRandomField<value_type,device_type> rf_type;
-  typedef Kokkos::View<value_type*,device_type> point_type;
-  typedef Kokkos::View<value_type*,device_type> rv_type;
-  typedef Kokkos::View<value_type*,device_type> result_type;
+  typedef Stokhos::KL::ExponentialRandomField<value_type,execution_space> rf_type;
+  typedef Kokkos::View<value_type*,execution_space> point_type;
+  typedef Kokkos::View<value_type*,execution_space> rv_type;
+  typedef Kokkos::View<value_type*,execution_space> result_type;
   const rf_type rf;
   const point_type x;
   const rv_type rv;

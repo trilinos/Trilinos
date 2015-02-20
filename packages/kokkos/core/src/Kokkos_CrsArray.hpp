@@ -100,8 +100,8 @@ public:
 
   typedef CrsArray< DataType , Arg1Type , Arg2Type , SizeType > crsarray_type;
   typedef CrsArray< DataType , array_layout , typename traits::host_mirror_space , SizeType > HostMirror;
-  typedef View< const size_type* , array_layout, execution_space >  row_map_type;
-  typedef View<       DataType*  , array_layout, execution_space >  entries_type;
+  typedef View< const size_type* , array_layout, typename traits::device_type >  row_map_type;
+  typedef View<       DataType*  , array_layout, typename traits::device_type >  entries_type;
 
   entries_type entries;
   row_map_type row_map;

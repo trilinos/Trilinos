@@ -8,7 +8,7 @@ namespace TestTile {
 template < typename Device , typename TileLayout>
 struct ReduceTileErrors
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   typedef Kokkos::View< ptrdiff_t**, TileLayout, Device>  array_type;
   typedef Kokkos::View< ptrdiff_t[ TileLayout::N0 ][ TileLayout::N1 ], Kokkos::LayoutLeft , Device >  tile_type ;

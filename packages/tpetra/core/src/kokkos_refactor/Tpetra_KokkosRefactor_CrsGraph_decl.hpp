@@ -143,7 +143,7 @@ namespace Tpetra {
     //! This class' second template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! This class' third template parameter; the Kokkos device type.
-    typedef DeviceType device_type;
+    typedef DeviceType execution_space;
     /// \brief The Kokkos Node type used by this class.
     ///
     /// This type depends on the DeviceType template parameter.  In
@@ -153,10 +153,10 @@ namespace Tpetra {
 
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
-                                   device_type, size_t> LocalStaticCrsGraphType;
-    typedef Kokkos::View<const size_t*, device_type> t_RowPtrs;
-    typedef Kokkos::View<      size_t*, device_type> t_RowPtrsNC;
-    typedef Kokkos::View<LocalOrdinal*, device_type> t_LocalOrdinal_1D;
+                                   execution_space, size_t> LocalStaticCrsGraphType;
+    typedef Kokkos::View<const size_t*, execution_space> t_RowPtrs;
+    typedef Kokkos::View<      size_t*, execution_space> t_RowPtrsNC;
+    typedef Kokkos::View<LocalOrdinal*, execution_space> t_LocalOrdinal_1D;
 
     //! The Map specialization used by this class.
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -209,7 +209,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
               const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -283,7 +283,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
               ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 
@@ -995,7 +995,7 @@ namespace Tpetra {
 
     template<class ViewType, class OffsetViewType >
     struct pack_functor {
-      typedef typename ViewType::device_type device_type;
+      typedef typename ViewType::execution_space execution_space;
       ViewType src;
       ViewType dest;
       OffsetViewType src_offset;
@@ -1686,7 +1686,7 @@ namespace Tpetra {
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, device_type> k_numAllocPerRow_;
+    Kokkos::DualView<const size_t*, Kokkos::LayoutLeft, execution_space> k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
     ///
@@ -1712,7 +1712,7 @@ namespace Tpetra {
     t_LocalOrdinal_1D k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
-    typedef Kokkos::View<GlobalOrdinal*, device_type> t_GlobalOrdinal_1D;
+    typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;
 
     /// \brief Global column indices for all rows.
     ///
@@ -1799,7 +1799,7 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type> t_numRowEntries_;
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> t_numRowEntries_;
 
     /// \brief The number of local entries in each locally owned row.
     ///

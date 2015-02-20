@@ -62,10 +62,10 @@ class Multiply<
                      Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda                              device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Kokkos::Cuda                              execution_space ;
+  typedef execution_space::size_type                    size_type ;
   typedef View< VectorValue** , LayoutLeft , Cuda > block_vector_type ;
-  typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+  typedef BlockCrsMatrix< BlockSpec , MatrixValue , execution_space >  matrix_type ;
   typedef Impl::Multiply< BlockSpec , void , void > block_matrix_type ;
 
   const matrix_type  m_A ;

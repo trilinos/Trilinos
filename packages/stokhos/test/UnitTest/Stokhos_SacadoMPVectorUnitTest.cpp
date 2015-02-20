@@ -406,8 +406,8 @@ struct UnitTestSetup {
   SAXPY_UNIT_TEST(VEC)
 
 namespace DynamicVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
@@ -415,8 +415,8 @@ namespace DynamicVecTest {
 }
 
 namespace DynamicStridedVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::DynamicStridedStorage<int,double,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::DynamicStridedStorage<int,double,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
@@ -424,8 +424,8 @@ namespace DynamicStridedVecTest {
 }
 
 namespace StaticVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::StaticStorage<int,double,8,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::StaticStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
@@ -433,8 +433,8 @@ namespace StaticVecTest {
 }
 
 namespace StaticFixedVecTest {
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::StaticFixedStorage<int,double,8,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::StaticFixedStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;

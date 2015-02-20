@@ -64,7 +64,8 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t device_type;
+    typedef typename device_t::execution_space execution_space;
+    typedef typename device_t::memory_space memory_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -73,20 +74,19 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,execution_space> ss;
 
-    typedef typename device_type::memory_space memory_space;
     typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
+    template <typename ord_t, typename val_t = value_t , typename dev_t = typename device_t::memory_space >
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
+      typedef StaticFixedStorage<ord_t,val_t,Num,typename dev_t::memory_space> type;
     };
 
     template <int N>
     struct apply_N {
-      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
+      typedef StaticFixedStorage<ordinal_type,value_type,N,memory_space> type;
     };
 
     //! Constructor
@@ -291,7 +291,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef Kokkos::Cuda device_type;
+    typedef Kokkos::Cuda execution_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -300,20 +300,20 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,execution_space> ss;
 
-    typedef typename device_type::memory_space memory_space;
+    typedef typename execution_space::memory_space memory_space;
     typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t , typename dev_t = device_type >
+    template <typename ord_t, typename val_t = value_t , typename dev_t = execution_space >
     struct apply {
       typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
     };
 
     template <int N>
     struct apply_N {
-      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
+      typedef StaticFixedStorage<ordinal_type,value_type,N,execution_space> type;
     };
 
     //! Constructor

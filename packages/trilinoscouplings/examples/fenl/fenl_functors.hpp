@@ -387,28 +387,28 @@ template< class FiniteElementMeshType , class SparseMatrixType
 class ElementComputation ;
 
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class CoordinateMap ,
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
           class CoeffFunctionType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
-  , Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >
+  , Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
   , CoeffFunctionType >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
 
   //------------------------------------
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
@@ -429,8 +429,8 @@ public:
 
   typedef typename mesh_type::node_coord_type                                      node_coord_type ;
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount] ,                execution_space > elem_vectors_type ;
 
   typedef LocalViewTraits< elem_matrices_type > local_elem_matrices_traits;
   typedef LocalViewTraits< elem_vectors_type > local_elem_vectors_traits;
@@ -486,8 +486,8 @@ public:
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
                       const Kokkos::DeviceConfig arg_dev_config ,
-                      const QuadratureData<DeviceType>& qd =
-                        QuadratureData<DeviceType>() )
+                      const QuadratureData<ExecutionSpace>& qd =
+                        QuadratureData<ExecutionSpace>() )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -512,7 +512,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (nelem + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+      Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else {
@@ -666,7 +666,7 @@ public:
     }
   }
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & dev ) const
   {
@@ -783,25 +783,25 @@ public:
 template< class FixtureType , class SparseMatrixType >
 class DirichletComputation ;
 
-template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class CoordinateMap ,
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class DirichletComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+  Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+  Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType > >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef typename mesh_type::node_coord_type                                  node_coord_type ;
   typedef typename node_coord_type::value_type                                 scalar_coord_type ;
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , execution_space > vector_type ;
 
   //------------------------------------
 
@@ -861,7 +861,7 @@ public:
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
         (node_count + dev_config.block_dim.y-1) / dev_config.block_dim.y;
-      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+      Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
       parallel_for( config , *this );
     }
     else
@@ -870,7 +870,7 @@ public:
 
   //------------------------------------
 
-  typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+  typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
   KOKKOS_INLINE_FUNCTION
   void operator()( const team_member & dev ) const
   {
@@ -953,7 +953,7 @@ public:
 
   typedef FixtureType fixture_type ;
   typedef VectorType vector_type ;
-  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type value_type ;
 
   typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;

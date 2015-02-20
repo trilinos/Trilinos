@@ -54,10 +54,10 @@ class Multiply<
   Kokkos::View< VectorValue** , LayoutLeft , Threads > >
 {
 public:
-  typedef Threads                                      device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Threads                                      execution_space ;
+  typedef execution_space::size_type                    size_type ;
   typedef View< VectorValue** , LayoutLeft , Threads > block_vector_type ;
-  typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+  typedef BlockCrsMatrix< BlockSpec , MatrixValue , execution_space >  matrix_type ;
 
   const matrix_type  m_A ;
   const block_vector_type  m_x ;

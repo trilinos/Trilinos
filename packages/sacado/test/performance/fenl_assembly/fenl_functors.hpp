@@ -92,15 +92,15 @@ template< class ElemNodeIdView , class CrsGraphType , unsigned ElemNode >
 class NodeNodeGraph {
 public:
 
-  typedef typename ElemNodeIdView::device_type device_type ;
+  typedef typename ElemNodeIdView::execution_space execution_space ;
   typedef pair<unsigned,unsigned> key_type ;
 
-  typedef Kokkos::UnorderedMap< key_type, void , device_type > SetType ;
+  typedef Kokkos::UnorderedMap< key_type, void , execution_space > SetType ;
   typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
-  typedef Kokkos::View< unsigned ,  device_type >              UnsignedValue ;
+  typedef Kokkos::View< unsigned ,  execution_space >              UnsignedValue ;
 
   // Static dimensions of 0 generate compiler warnings or errors.
-  typedef Kokkos::View< unsigned*[ElemNode][ElemNode] , device_type >
+  typedef Kokkos::View< unsigned*[ElemNode][ElemNode] , execution_space >
     ElemGraphType ;
 
 private:
@@ -173,7 +173,7 @@ public:
         Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
       }
 
-      device_type::fence();
+      execution_space::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
       results.fill_node_set = wall_clock.seconds();
       //--------------------------------
@@ -200,14 +200,14 @@ public:
       //--------------------------------
       // Fill graph's entries from the (node,node) set.
 
-      device_type::fence();
+      execution_space::fence();
       results.scan_node_count = wall_clock.seconds();
 
       wall_clock.reset();
       phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.capacity() , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.fill_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -224,7 +224,7 @@ public:
 
       Kokkos::parallel_for( node_count , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.sort_graph_entries = wall_clock.seconds();
 
       //--------------------------------
@@ -234,7 +234,7 @@ public:
       elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
       Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
 
-      device_type::fence();
+      execution_space::fence();
       results.fill_element_graph = wall_clock.seconds();
     }
 
@@ -394,23 +394,23 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template< class DeviceType , BoxElemPart::ElemOrder Order ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order ,
           class CoordinateMap , typename ScalarType >
 class ElementComputationBase
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
 
   //------------------------------------
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef CrsMatrix< ScalarType , DeviceType >  sparse_matrix_type ;
+  typedef CrsMatrix< ScalarType , ExecutionSpace >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
@@ -424,8 +424,8 @@ public:
 
   typedef typename mesh_type::node_coord_type                                      node_coord_type ;
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type*[FunctionCount] ,                execution_space > elem_vectors_type ;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 
@@ -568,21 +568,21 @@ template< class FiniteElementMeshType ,
         >
 class ElementComputation ;
 
-template< class DeviceType , BoxElemPart::ElemOrder Order ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order ,
           class CoordinateMap , typename ScalarType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-    CrsMatrix< ScalarType , DeviceType > ,
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , ExecutionSpace > ,
     Analytic > :
-    public ElementComputationBase<DeviceType, Order, CoordinateMap,
+    public ElementComputationBase<ExecutionSpace, Order, CoordinateMap,
                                   ScalarType> {
 public:
 
-  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+  typedef ElementComputationBase<ExecutionSpace, Order, CoordinateMap,
                                  ScalarType> base_type;
 
   typedef typename base_type::scalar_type scalar_type;
-  typedef typename base_type::device_type device_type;
+  typedef typename base_type::execution_space execution_space;
 
   static const unsigned FunctionCount = base_type::FunctionCount;
   static const unsigned IntegrationCount = base_type::IntegrationCount;
@@ -758,20 +758,20 @@ public:
   }
 }; /* ElementComputation */
 
-template< class DeviceType , BoxElemPart::ElemOrder Order ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order ,
           class CoordinateMap , typename ScalarType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-    CrsMatrix< ScalarType , DeviceType > ,
-    FadElement > : public ElementComputationBase<DeviceType, Order, CoordinateMap,
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , ExecutionSpace > ,
+    FadElement > : public ElementComputationBase<ExecutionSpace, Order, CoordinateMap,
                                                  ScalarType> {
 public:
 
-  typedef ElementComputationBase<DeviceType, Order, CoordinateMap,
+  typedef ElementComputationBase<ExecutionSpace, Order, CoordinateMap,
                                  ScalarType> base_type;
 
   typedef typename base_type::scalar_type scalar_type;
-  typedef typename base_type::device_type device_type;
+  typedef typename base_type::execution_space execution_space;
 
   static const unsigned FunctionCount = base_type::FunctionCount;
   static const unsigned IntegrationCount = base_type::IntegrationCount;
@@ -921,23 +921,23 @@ public:
   }
 }; /* ElementComputation */
 
-template< class DeviceType , BoxElemPart::ElemOrder Order ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order ,
           class CoordinateMap , typename ScalarType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-    CrsMatrix< ScalarType , DeviceType > ,
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , ExecutionSpace > ,
     FadElementOptimized > :
-    public ElementComputation< Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-                               CrsMatrix< ScalarType , DeviceType > ,
+    public ElementComputation< Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+                               CrsMatrix< ScalarType , ExecutionSpace > ,
                                FadElement > {
 public:
 
-  typedef ElementComputation< Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-                              CrsMatrix< ScalarType , DeviceType > ,
+  typedef ElementComputation< Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+                              CrsMatrix< ScalarType , ExecutionSpace > ,
                               FadElement > base_type;
 
   typedef typename base_type::scalar_type scalar_type;
-  typedef typename base_type::device_type device_type;
+  typedef typename base_type::execution_space execution_space;
 
   static const unsigned FunctionCount = base_type::FunctionCount;
   static const unsigned IntegrationCount = base_type::IntegrationCount;
@@ -1072,23 +1072,23 @@ public:
   }
 }; /* ElementComputation */
 
-template< class DeviceType , BoxElemPart::ElemOrder Order ,
+template< class ExecutionSpace , BoxElemPart::ElemOrder Order ,
           class CoordinateMap , typename ScalarType >
 class ElementComputation
-  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-    CrsMatrix< ScalarType , DeviceType > ,
+  < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+    CrsMatrix< ScalarType , ExecutionSpace > ,
     FadQuadPoint > :
-    public ElementComputation< Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-                               CrsMatrix< ScalarType , DeviceType > ,
+    public ElementComputation< Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+                               CrsMatrix< ScalarType , ExecutionSpace > ,
                                Analytic > {
 public:
 
-  typedef ElementComputation< Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-                              CrsMatrix< ScalarType , DeviceType > ,
+  typedef ElementComputation< Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
+                              CrsMatrix< ScalarType , ExecutionSpace > ,
                               Analytic > base_type;
 
   typedef typename base_type::scalar_type scalar_type;
-  typedef typename base_type::device_type device_type;
+  typedef typename base_type::execution_space execution_space;
 
   static const unsigned FunctionCount = base_type::FunctionCount;
   static const unsigned IntegrationCount = base_type::IntegrationCount;

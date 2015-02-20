@@ -56,8 +56,8 @@ template<>
 class Multiply< SymmetricDiagonalSpec< Kokkos::Cuda > , void , void >
 {
 public:
-  typedef Cuda                    device_type ;
-  typedef device_type::size_type  size_type ;
+  typedef Cuda                    execution_space ;
+  typedef execution_space::size_type  size_type ;
   typedef SymmetricDiagonalSpec< Kokkos::Cuda >  block_type ;
 
   __host__

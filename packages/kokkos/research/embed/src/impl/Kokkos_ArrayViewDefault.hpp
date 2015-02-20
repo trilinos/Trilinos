@@ -90,7 +90,7 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
                   const size_t n7 = 0 )
   {
     typedef View<T,L,D,M,Specialize> DstViewType ;
-    typedef typename DstViewType::device_type   device_type ;
+    typedef typename DstViewType::execution_space   execution_space ;
     typedef typename DstViewType::scalar_type   scalar_type ;
     typedef typename DstViewType::shape_type    shape_type ;
     typedef typename DstViewType::memory_space  memory_space ;
@@ -122,7 +122,7 @@ struct ViewAssignment<LayoutEmbedArray,void,void>
     typedef View<ST,SL,SD,SM>  src_view_type ;
 
     typedef typename src_view_type::memory_space  src_memory_space ;
-    typedef typename dst_view_type::device_type   dst_device_type ;
+    typedef typename dst_view_type::execution_space   dst_execution_space ;
     typedef typename dst_view_type::memory_space  dst_memory_space ;
     typedef typename dst_view_type::scalar_type   dst_scalar_type ;
     typedef typename dst_view_type::shape_type    dst_shape_type ;
@@ -318,7 +318,7 @@ public:
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,

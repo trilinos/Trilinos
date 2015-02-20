@@ -93,21 +93,21 @@ struct PerformanceData {
   }
 };
 
-template<typename Scalar, class device_type>
+template<typename Scalar, class execution_space>
 void explicit_dynamics_app( const size_t ex,
                             const size_t ey,
                             const size_t ez,
                             const size_t steps ,
                             PerformanceData & perf )
 {
-  typedef typename Kokkos::MDArray<Scalar,device_type>::HostMirror  scalar_array_h;
-  typedef typename Kokkos::MDArray<int,device_type>::HostMirror     int_array_h;
+  typedef typename Kokkos::MDArray<Scalar,execution_space>::HostMirror  scalar_array_h;
+  typedef typename Kokkos::MDArray<int,execution_space>::HostMirror     int_array_h;
 
-  typedef typename Kokkos::MDArray<Scalar,device_type>            scalar_array_d;
-  typedef typename Kokkos::MDArray<int,device_type>               int_array_d;
+  typedef typename Kokkos::MDArray<Scalar,execution_space>            scalar_array_d;
+  typedef typename Kokkos::MDArray<int,execution_space>               int_array_d;
 
-  typedef typename Kokkos::Value<Scalar,device_type>::HostMirror   scalar_h;
-  typedef typename Kokkos::Value<Scalar,device_type>             scalar_d;
+  typedef typename Kokkos::Value<Scalar,execution_space>::HostMirror   scalar_h;
+  typedef typename Kokkos::Value<Scalar,execution_space>             scalar_d;
 
   const int NumStates = 2;
 
@@ -155,7 +155,7 @@ void explicit_dynamics_app( const size_t ex,
     }
   }
 
-  Region<Scalar,device_type>  region( NumStates,
+  Region<Scalar,execution_space>  region( NumStates,
                                       mesh,
                                       lin_bulk_visc,
                                       quad_bulk_visc,
@@ -184,11 +184,11 @@ void explicit_dynamics_app( const size_t ex,
   //--------------------------------------------------------------------------
 
   Kokkos::parallel_for( region.num_elements,
-      initialize_element<Scalar,device_type>(region)
+      initialize_element<Scalar,execution_space>(region)
       );
 
   Kokkos::parallel_for( region.num_nodes,
-      initialize_node<Scalar,device_type>(region)
+      initialize_node<Scalar,execution_space>(region)
       );
 
   perf.init_time = wall_clock.seconds(); // Initialization
@@ -215,14 +215,14 @@ void explicit_dynamics_app( const size_t ex,
     // First kernel 'grad_hgop' combines three functions:
     // gradient, velocity gradient, and hour glass operator.
     Kokkos::parallel_for( region.num_elements ,
-        grad_hgop<Scalar, device_type> ( region,
+        grad_hgop<Scalar, execution_space> ( region,
                                          current_state,
                                          previous_state
                                        ));
 
     // Combine tensor decomposition and rotation functions.
     Kokkos::parallel_for( region.num_elements ,
-        decomp_rotate<Scalar, device_type> ( region,
+        decomp_rotate<Scalar, execution_space> ( region,
                                              current_state,
                                              previous_state
                                            ));
@@ -231,14 +231,14 @@ void explicit_dynamics_app( const size_t ex,
     // Single beastly function in this last functor,
     // did not notice any opportunity for splitting.
     Kokkos::parallel_reduce( region.num_elements ,
-        divergence<Scalar, device_type> ( region,
+        divergence<Scalar, execution_space> ( region,
                                           user_dt,
                                           current_state,
                                           previous_state
                                         ),
-        set_next_time_step<Scalar,device_type>(region));
+        set_next_time_step<Scalar,execution_space>(region));
 
-    device_type::fence();
+    execution_space::fence();
 
     perf.internal_force_time += wall_clock.seconds();
     wall_clock.reset();
@@ -249,13 +249,13 @@ void explicit_dynamics_app( const size_t ex,
     // displacements.
     // The same pattern can be used for matrix-free residual computations.
     Kokkos::parallel_for( region.num_nodes ,
-        finish_step<Scalar, device_type>( region,
+        finish_step<Scalar, execution_space>( region,
                                           ex,
                                           current_state,
                                           next_state
                                         ));
 
-    device_type::fence();
+    execution_space::fence();
     perf.central_diff += wall_clock.seconds();
     wall_clock.reset();
 
@@ -269,7 +269,7 @@ void explicit_dynamics_app( const size_t ex,
     }
 #endif
 
-    device_type::fence();
+    execution_space::fence();
     perf.copy_to_host_time += wall_clock.seconds();
     wall_clock.reset();
 

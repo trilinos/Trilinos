@@ -143,7 +143,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
   using Teuchos::Array;
 
   typedef typename kokkos_cijk_type::value_type value_type;
-  typedef typename kokkos_cijk_type::device_type device_type;
+  typedef typename kokkos_cijk_type::execution_space execution_space;
   typedef Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> one_d_basis;
   typedef Stokhos::LegendreBasis<ordinal_type,value_type> legendre_basis;
   typedef Stokhos::CompletePolynomialBasis<ordinal_type,value_type> product_basis;
@@ -160,7 +160,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
 
   // Kokkos triple product tensor
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<device_type>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
 
   return kokkos_cijk;
 }
@@ -186,7 +186,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space execution_space;
+  typedef typename Storage::memory_space memory_space;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -197,8 +198,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Ensure device is initialized
   if (!Kokkos::HostSpace::execution_space::is_initialized())
     Kokkos::HostSpace::execution_space::initialize();
-  if (!Device::is_initialized())
-    Device::initialize();
+  if (!execution_space::is_initialized())
+    execution_space::initialize();
 
   // Cijk
   Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
@@ -278,7 +279,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -372,7 +373,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -473,7 +474,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -578,7 +579,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -691,7 +692,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -842,7 +843,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1001,7 +1002,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ArrayRCP;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1163,7 +1164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1339,7 +1340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1527,7 +1528,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1707,7 +1708,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -1895,7 +1896,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::getParametersFromXmlFile;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -2101,7 +2102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::ParameterList;
 
   typedef typename Storage::value_type BaseScalar;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -2304,5 +2305,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
-  typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
+  typedef Stokhos::DynamicStorage<int,double,typename Device::memory_space> DS;                \
   CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)

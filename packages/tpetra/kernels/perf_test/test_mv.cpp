@@ -13,11 +13,11 @@
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef Kokkos::Threads device_type;
+typedef Kokkos::Threads execution_space;
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
 #else
-typedef Kokkos::Cuda device_type;
+typedef Kokkos::Cuda execution_space;
 #define KokkosHost(a)
 #define KokkosCUDA(a) a
 #endif
@@ -26,9 +26,9 @@ typedef double FLOAT;
 
 #define EPSILON 1e-10
 
-typedef MultiVectorDynamic<FLOAT,device_type>::type mv_type;
+typedef MultiVectorDynamic<FLOAT,execution_space>::type mv_type;
 typedef mv_type::HostMirror h_mv_type;
-typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
 typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 typedef vector_type::HostMirror h_vector_type;
 typedef mv_type::size_type            size_type;
@@ -63,7 +63,7 @@ void test_mv_dot(int size, int numVecs, int loop)
   h_vector_type h_b = h_a;
 
   MV_Dot(a,x,y);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_a,a);
   double errorsum=0;
@@ -78,7 +78,7 @@ void test_mv_dot(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
     MV_Dot(a,x,y);
-  device_type::fence();
+  execution_space::fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
@@ -114,7 +114,7 @@ void test_mv_add(int size, int numVecs, int loop)
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(a,h_a);
   MV_Add(r,a,x,a,y);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
@@ -138,7 +138,7 @@ void test_mv_add(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
     MV_Add(r,a,x,a,y);
-  device_type::fence();
+  execution_space::fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
@@ -169,7 +169,7 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
   Kokkos::deep_copy(x,h_x);
   Kokkos::deep_copy(a,h_a);
   MV_MulScalar(r,a,x);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
@@ -193,7 +193,7 @@ void test_mv_mulscalar(int size, int numVecs, int loop)
   clock_gettime(CLOCK_REALTIME,&starttime);
   for(int i=0;i<loop;i++)
 	  MV_MulScalar(r,a,x);
-  device_type::fence();
+  execution_space::fence();
   clock_gettime(CLOCK_REALTIME,&endtime);
   double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
 
@@ -237,6 +237,6 @@ int main(int argc, char **argv)
  test_mv_mulscalar(size,numVecs,loop);
 
  KokkosCUDA(Kokkos::Threads::finalize();)
- device_type::finalize(  );
+ execution_space::finalize(  );
 }
 

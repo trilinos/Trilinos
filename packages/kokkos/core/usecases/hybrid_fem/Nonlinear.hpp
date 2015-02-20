@@ -165,8 +165,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
-  typedef typename fixture_type::device_type  device_type;
-  //typedef typename device_type::size_type     size_type ; // unused
+  typedef typename fixture_type::execution_space  execution_space;
+  //typedef typename execution_space::size_type     size_type ; // unused
 
   typedef typename fixture_type::FEMeshType mesh_type ;
   typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
@@ -209,8 +209,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef Kokkos::View< scalar_type* , device_type >     vector_type ;
-  typedef Kokkos::CrsMatrix< scalar_type , device_type >  matrix_type ;
+  typedef Kokkos::View< scalar_type* , execution_space >     vector_type ;
+  typedef Kokkos::CrsMatrix< scalar_type , execution_space >  matrix_type ;
   typedef typename matrix_type::graph_type                matrix_graph_type ;
   typedef typename matrix_type::coefficients_type         matrix_coefficients_type ;
 
@@ -252,7 +252,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   graph_factory::create( mesh , jacobian.graph , element_map );
 
-  device_type::fence();
+  execution_space::fence();
 
   perf_data.graph_time = comm::max( machine , wall_clock.seconds() );
 
@@ -305,7 +305,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
       // Import off-processor nodal solution values
       // for residual and jacobian computations
 
-      Kokkos::AsyncExchange< typename vector_type::value_type , device_type ,
+      Kokkos::AsyncExchange< typename vector_type::value_type , execution_space ,
                                   Kokkos::ParallelDataMap >
         exchange( mesh.parallel_data_map , 1 );
 
@@ -338,7 +338,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
                     nodal_solution ,
                     exact_solution.K );
 
-    device_type::fence();
+    execution_space::fence();
     perf_data.elem_time += comm::max( machine , wall_clock.seconds() );
 
     //------------------------------------
@@ -356,7 +356,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
                               elem_matrices ,
                               elem_vectors );
 
-    device_type::fence();
+    execution_space::fence();
     perf_data.matrix_gather_fill_time += comm::max( machine , wall_clock.seconds() );
 
     // Apply boundary conditions:
@@ -369,7 +369,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
                                      exact_solution.zmin ,
                                      exact_solution.zmax );
 
-    device_type::fence();
+    execution_space::fence();
     perf_data.matrix_boundary_condition_time +=
       comm::max( machine , wall_clock.seconds() );
 
@@ -484,12 +484,12 @@ void driver( const char * const label ,
              const int runs )
 {
   typedef Scalar          scalar_type ;
-  typedef Device          device_type ;
+  typedef Device          execution_space ;
   typedef double          coordinate_scalar_type ;
   typedef FixtureElement  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          device_type ,
+                          execution_space ,
                           fixture_element_type > fixture_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;

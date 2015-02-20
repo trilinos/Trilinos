@@ -153,7 +153,7 @@ private:
 
   fad_value_type                             * m_ptr_on_device ;
   offset_map_type                              m_offset_map ;
-  typename traits::device_type::size_type      m_storage_size ;
+  typename traits::execution_space::size_type      m_storage_size ;
   Impl::ViewDataManagement< traits >           m_management ;
   Impl::AllocationTracker                      m_tracker ;
 
@@ -378,7 +378,7 @@ public:
   // Assign unmanaged View to portion of Device shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::device_type ,
+                      typename traits::execution_space ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
       if_device_shmem_constructor ;
 

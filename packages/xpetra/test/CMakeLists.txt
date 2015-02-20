@@ -13,10 +13,6 @@ ADD_SUBDIRECTORIES(
 # Utils
 # CrsGraph
   CrsMatrix
-# BlockCrsGraph
-# BlockMap
-# BlockMultiVector
-# VbrMatrix
 
 # Tests specifically written for Xpetra:
   Matrix

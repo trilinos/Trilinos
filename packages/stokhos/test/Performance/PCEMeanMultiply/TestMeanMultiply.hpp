@@ -114,19 +114,19 @@ test_mean_multiply(const OrdinalType order,
 {
   typedef ScalarType value_type;
   typedef OrdinalType ordinal_type;
-  typedef Device device_type;
+  typedef Device execution_space;
 
-  typedef Stokhos::DynamicStorage<ordinal_type,value_type,device_type> storage_type;
+  typedef Stokhos::DynamicStorage<ordinal_type,value_type,execution_space> storage_type;
   typedef Sacado::UQ::PCE<storage_type> pce_type;
 
-  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type > scalar_vector_type;
-  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > scalar_left_multi_vector_type;
-   typedef Kokkos::View< value_type**, Kokkos::LayoutRight, device_type > scalar_right_multi_vector_type;
-  typedef Kokkos::View< pce_type*, Kokkos::LayoutLeft, device_type > pce_vector_type;
-  typedef Kokkos::View< pce_type**, Kokkos::LayoutLeft, device_type > pce_multi_vector_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, execution_space > scalar_vector_type;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, execution_space > scalar_left_multi_vector_type;
+   typedef Kokkos::View< value_type**, Kokkos::LayoutRight, execution_space > scalar_right_multi_vector_type;
+  typedef Kokkos::View< pce_type*, Kokkos::LayoutLeft, execution_space > pce_vector_type;
+  typedef Kokkos::View< pce_type**, Kokkos::LayoutLeft, execution_space > pce_multi_vector_type;
 
-  typedef Kokkos::CrsMatrix< value_type, ordinal_type, device_type > scalar_matrix_type;
-  typedef Kokkos::CrsMatrix< pce_type, ordinal_type, device_type > pce_matrix_type;
+  typedef Kokkos::CrsMatrix< value_type, ordinal_type, execution_space > scalar_matrix_type;
+  typedef Kokkos::CrsMatrix< pce_type, ordinal_type, execution_space > pce_matrix_type;
   typedef typename scalar_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename scalar_matrix_type::values_type scalar_matrix_values_type;
   typedef typename pce_matrix_type::values_type pce_matrix_values_type;
@@ -153,7 +153,7 @@ test_mean_multiply(const OrdinalType order,
   RCP<const product_basis_type> basis = rcp(new product_basis_type(bases));
   RCP<cijk_type> cijk = basis->computeTripleProductTensor();
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<device_type>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
   Kokkos::setGlobalCijkTensor(kokkos_cijk);
 
   //------------------------------
@@ -228,7 +228,7 @@ test_mean_multiply(const OrdinalType order,
       }
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
@@ -240,7 +240,7 @@ test_mean_multiply(const OrdinalType order,
         Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
       }
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -262,12 +262,12 @@ test_mean_multiply(const OrdinalType order,
       Kokkos::MV_Multiply( yl, scalar_matrix, xl );
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       Kokkos::MV_Multiply( yl, scalar_matrix, xl );
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -289,12 +289,12 @@ test_mean_multiply(const OrdinalType order,
       Kokkos::MV_Multiply( yr, scalar_matrix, xr );
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       Kokkos::MV_Multiply( yr, scalar_matrix, xr );
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -316,12 +316,12 @@ test_mean_multiply(const OrdinalType order,
       Kokkos::MV_Multiply( y_pce, pce_matrix, x_pce );
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       Kokkos::MV_Multiply( y_pce, pce_matrix, x_pce );
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size;
@@ -343,12 +343,12 @@ test_mean_multiply(const OrdinalType order,
       Kokkos::MV_Multiply( y_multi_pce, pce_matrix, x_multi_pce );
     }
 
-    device_type::fence();
+    execution_space::fence();
     Kokkos::Impl::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       Kokkos::MV_Multiply( y_multi_pce, pce_matrix, x_multi_pce );
     }
-    device_type::fence();
+    execution_space::fence();
 
     const double seconds_per_iter = clock.seconds() / ((double) iterCount );
     const double flops = 1.0e-9 * 2.0 * graph_length * pce_size * num_pce_col;

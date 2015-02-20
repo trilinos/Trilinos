@@ -1,5 +1,7 @@
 
 #cmakedefine HAVE_TEUCHOSCORE_KOKKOSCORE
 
+#cmakedefine HAVE_TEUCHOSCORE_CXX11
+
 /* ToDo: Move the TeuchosCore parts from Teuchos_config.h.in to here and git
  * rid of Teuchos_config.h.in */

@@ -62,6 +62,10 @@
 // Power method for estimating the eigenvalue of maximum magnitude of
 // a matrix.  This function returns the eigenvalue estimate.
 //
+// We don't intend for you to write your own eigensolvers; the Anasazi
+// package provides them.  You should instead see this class as a
+// surrogate for a Tpetra interface to a Trilinos package.
+//
 // TpetraOperatorType: the type of the Tpetra::Operator specialization
 //   used to represent the sparse matrix or operator A.
 //
@@ -78,18 +82,6 @@
 // class with a static (class) method.  I prefer the class approach
 // because one can lift typedefs out of the function into the class.
 // It tends to makes the function declaration easier to read.
-//
-// A: The sparse matrix or operator, as a Tpetra::Operator.
-// niters: Maximum number of iterations of the power method.
-// tolerance: If the 2-norm of the residual A*x-lambda*x (for the
-//   current eigenvalue estimate lambda) is less than this, stop
-//   iterating.  The complicated expression for the type ensures that
-//   if the type of entries in the matrix A (scalar_type) is complex,
-//   then we'll be using a real-valued type ("magnitude") for the
-//   tolerance.  (You can't compare complex numbers using less than,
-//   so you can't test for convergence using a complex number.)
-// out: output stream to which to print the current status of the
-//   power method.
 template <class TpetraOperatorType>
 class PowerMethod {
 public:
@@ -104,6 +96,21 @@ public:
   // The type of the norm of the above Tpetra::Vector specialization.
   typedef typename vec_type::mag_type magnitude_type;
 
+  // Run the power method and return the eigenvalue estimate.
+  //
+  // Input arguments:
+  //
+  // A: The sparse matrix or operator, as a Tpetra::Operator.
+  // niters: Maximum number of iterations of the power method.
+  // tolerance: If the 2-norm of the residual A*x-lambda*x (for the
+  //   current eigenvalue estimate lambda) is less than this, stop
+  //   iterating.  The complicated expression for the type ensures that
+  //   if the type of entries in the matrix A (scalar_type) is complex,
+  //   then we'll be using a real-valued type ("magnitude") for the
+  //   tolerance.  (You can't compare complex numbers using less than,
+  //   so you can't test for convergence using a complex number.)
+  // out: output stream to which to print the current status of the
+  //   power method.
   static scalar_type
   run (const TpetraOperatorType& A,
        const int niters,

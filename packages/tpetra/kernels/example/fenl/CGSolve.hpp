@@ -71,7 +71,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
   )>::type >
 {
   typedef typename VectorType::value_type scalar_type ;
-  typedef typename VectorType::device_type device_type;
+  typedef typename VectorType::execution_space execution_space;
 
   size_t iteration ;
   double iter_time ;
@@ -122,7 +122,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       timer.reset();
       /* import p    */  import( pAll );
       /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
-      device_type::fence();
+      execution_space::fence();
       matvec_time += timer.seconds();
 
       const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( p , Ap ) , import.comm );
@@ -141,7 +141,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       ++iteration ;
     }
 
-    device_type::fence();
+    execution_space::fence();
     iter_time = wall_clock.seconds();
   }
 };

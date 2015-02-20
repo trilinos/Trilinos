@@ -138,6 +138,7 @@ struct MPVectorAllocation<Device, Storage, false> {
   typedef Sacado::MP::Vector<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
   typedef typename Device::memory_space memory_space;
+  typedef typename Device::execution_space execution_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -161,15 +162,17 @@ struct MPVectorAllocation<Device, Storage, false> {
     // this is the best choice from a locality perspective
     // either.
     const size_t num_vec = Impl::cardinality_count( shape );
-    const size_t size_scalars =
-      num_vec * vector_size * sizeof(scalar_type);
-    const size_t size_values =
-      num_vec * sizeof(value_type);
+    const size_t count_scalars = num_vec * vector_size;
+    const size_t size_scalars = count_scalars * sizeof(scalar_type);
+    const size_t size_values = num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
     m_tracker = memory_space::allocate_and_track( label, size );
     char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
+
+     // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count_scalars );
 
     // Construct each MP::Vector using memory in ptr array,
     // setting pointer to MP::Vector values from values array
@@ -180,8 +183,6 @@ struct MPVectorAllocation<Device, Storage, false> {
     //   new (p++) value_type(vector_size, sp, false);
     //   sp += vector_size;
     // }
-    //
-    // We must always do this, regardless of Initialize
     parallel_for( num_vec, VectorInit( ptr, m_scalar_ptr_on_device,
                                        vector_size ) );
 
@@ -203,7 +204,7 @@ struct MPVectorAllocation<Device, Storage, false> {
   }
 
   struct VectorInit {
-    typedef Device device_type;
+    typedef typename Device::execution_space execution_space;
     value_type* p;
     scalar_type* sp;
     const unsigned vector_size;
@@ -291,13 +292,13 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::MPVectorAllocation<typename traits::device_type, stokhos_storage_type> allocation_type;
+  typedef Impl::MPVectorAllocation<typename traits::memory_space, stokhos_storage_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
   offset_map_type                         m_offset_map ;
   unsigned                                m_stride ;
-  typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
+  typename traits::execution_space::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
   Impl::ViewDataManagement< traits >      m_management ;
 
@@ -347,7 +348,7 @@ public:
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                   typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space >::type ,
+                  typename traits::host_mirror_space::memory_space >::type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -1719,19 +1720,19 @@ struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
 {
   typedef View<T,L,Cuda,M,ViewMPVectorContiguous> OutputView ;
   typedef typename OutputView::const_value_type   const_value_type ;
-  typedef typename OutputView::device_type        device_type ;
+  typedef typename OutputView::execution_space        execution_space ;
   typedef typename OutputView::size_type          size_type ;
 
   template <unsigned VectorLength>
   struct Kernel {
-    typedef typename OutputView::device_type device_type ;
+    typedef typename OutputView::execution_space execution_space ;
     const OutputView output;
     const_value_type input;
 
     Kernel( const OutputView & arg_out , const_value_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
-    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+    typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const team_member & dev ) const
@@ -1777,10 +1778,10 @@ struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
       const size_type n = output.dimension_0();
       const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
       const size_type team_size = rows_per_block * vector_length;
-      Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+      Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
       parallel_for( config, Kernel<vector_length>(output, input) );
-      device_type::fence();
+      execution_space::fence();
     }
   }
 
@@ -1793,7 +1794,7 @@ struct ViewFill< View<T,Cuda,L,M,ViewMPVectorContiguous> , Rank >
   typedef View<T,Cuda,L,M,ViewMPVectorContiguous>    OutputView ;
   typedef View<T,
                typename OutputView::array_layout,
-               typename OutputView::device_type,
+               typename OutputView::execution_space,
                typename OutputView::memory_traits>   OutputViewFull;
   typedef typename OutputView::const_value_type      const_value_type ;
 

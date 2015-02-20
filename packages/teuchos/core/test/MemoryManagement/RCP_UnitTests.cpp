@@ -41,6 +41,7 @@
 // @HEADER
 */
 
+#include "TeuchosCore_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_getBaseObjVoidPtr.hpp"

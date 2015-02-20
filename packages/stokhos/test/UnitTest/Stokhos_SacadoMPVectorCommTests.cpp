@@ -679,8 +679,8 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SendReceive ) {                   \
 namespace DynamicVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
@@ -690,8 +690,8 @@ namespace DynamicVecTest {
 namespace DynamicStridedVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::DynamicStridedStorage<int,double,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::DynamicStridedStorage<int,double,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
@@ -701,8 +701,8 @@ namespace DynamicStridedVecTest {
 namespace StaticVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::StaticStorage<int,double,8,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::StaticStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
@@ -712,8 +712,8 @@ namespace StaticVecTest {
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
-  typedef Kokkos::Threads device_type;
-  typedef Stokhos::StaticFixedStorage<int,double,8,device_type> storage_type;
+  typedef Kokkos::Threads execution_space;
+  typedef Stokhos::StaticFixedStorage<int,double,8,execution_space> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;

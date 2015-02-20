@@ -78,7 +78,7 @@ template< typename ValueType , typename TensorType, class Device >
 class StochasticProductTensor {
 public:
 
-  typedef Device                          device_type ;
+  typedef Device                          execution_space ;
   typedef ValueType                       value_type ;
   typedef TensorType                      tensor_type ;
   typedef typename tensor_type::size_type size_type ;
@@ -86,7 +86,7 @@ public:
 private:
 
   tensor_type                                m_tensor ;
-  Kokkos::View< size_type** , device_type >  m_degree_map ;
+  Kokkos::View< size_type** , execution_space >  m_degree_map ;
   size_type                                  m_variable ;
 
 public:
@@ -132,7 +132,7 @@ public:
   size_type aligned_dimension() const {
     const bool is_cuda =
 #if defined( KOKKOS_HAVE_CUDA )
-      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+      Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value;
 #else
       false ;
 #endif
@@ -181,7 +181,7 @@ public:
 
     // Allocate and transfer data to the device-resident object.
 
-    typedef Kokkos::View< size_type** , device_type > int_array_type ;
+    typedef Kokkos::View< size_type** , execution_space > int_array_type ;
     typedef typename int_array_type::HostMirror host_int_array_type ;
 
     OrdinalType basis_sz = basis.size();
@@ -216,13 +216,13 @@ public:
 };
 
 template<  typename TensorType, typename OrdinalType , typename ValueType, typename CijkType >
-StochasticProductTensor<ValueType, TensorType, typename TensorType::device_type>
+StochasticProductTensor<ValueType, TensorType, typename TensorType::execution_space>
 create_stochastic_product_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
   const CijkType& Cijk,
   const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
-  typedef typename TensorType::device_type Device;
+  typedef typename TensorType::execution_space Device;
   return StochasticProductTensor<ValueType, TensorType, Device>::create(
     basis, Cijk, params);
 }
@@ -231,9 +231,9 @@ template < typename ValueType , typename Device, class TensorType >
 class BlockMultiply< StochasticProductTensor< ValueType, TensorType, Device > >
 {
 public:
-  typedef Device device_type ;
-  typedef typename device_type::size_type size_type ;
-  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+  typedef Device execution_space ;
+  typedef typename execution_space::size_type size_type ;
+  typedef StochasticProductTensor< ValueType, TensorType, execution_space > block_type ;
 
   template< typename MatrixValue , typename VectorValue >
   KOKKOS_INLINE_FUNCTION

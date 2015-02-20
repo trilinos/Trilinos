@@ -65,7 +65,7 @@ private:
 
 public:
 
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -101,7 +101,7 @@ private:
 
 public:
 
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -133,7 +133,7 @@ private:
 
 public:
 
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -158,7 +158,7 @@ public:
 template< typename TypeX , typename TypeY , class Device >
 struct Dot
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
   typedef double value_type ;
 
   const TypeX * const x ;
@@ -191,7 +191,7 @@ struct Dot
 template< typename TypeX , class Device >
 struct Dot< TypeX , void , Device >
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
   typedef double value_type ;
 
   const TypeX * const x ;

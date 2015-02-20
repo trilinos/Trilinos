@@ -160,7 +160,7 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
 
   template <class CijkType>
   struct VectorInit {
-    typedef Device device_type;
+    typedef typename Device::execution_space execution_space;
     value_type* p;
     scalar_type* sp;
     CijkType cijk;
@@ -295,14 +295,14 @@ private:
                                     typename traits::array_layout > analyze_sacado_shape;
 
   typedef Impl::PCEAllocation<typename traits::value_type,
-                              typename traits::device_type> allocation_type;
+                              typename traits::memory_space> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
   offset_map_type                         m_offset_map ;
   unsigned                                m_stride ;
   cijk_type                               m_cijk ;  // Sparse 3 tensor
-  typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
+  typename traits::execution_space::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
   Impl::ViewDataManagement< traits >      m_management ;
   bool                                    m_is_contiguous ;
@@ -367,7 +367,7 @@ public:
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
                   typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space >::type ,
+                  typename traits::host_mirror_space::memory_space >::type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -1162,8 +1162,8 @@ namespace Impl {
 template< class OutputView , class InputView >
 struct DeepCopyNonContiguous
 {
-  typedef typename OutputView::device_type device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef typename OutputView::execution_space execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   const OutputView output ;
   const InputView  input ;
@@ -1173,7 +1173,7 @@ struct DeepCopyNonContiguous
     output( arg_out ), input( arg_in )
   {
     parallel_for( output.dimension_0() , *this );
-    device_type::fence();
+    execution_space::fence();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -2006,19 +2006,19 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
   typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
   typedef typename OutputView::const_value_type      const_value_type ;
   typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-  typedef typename OutputView::device_type           device_type ;
+  typedef typename OutputView::execution_space           execution_space ;
   typedef typename OutputView::size_type             size_type ;
 
   template <unsigned VectorLength>
   struct PCEKernel {
-    typedef typename OutputView::device_type device_type ;
+    typedef typename OutputView::execution_space execution_space ;
     const OutputView output;
     const_value_type input;
 
     PCEKernel( const OutputView & arg_out , const_value_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
-    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+    typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
     void operator()( const team_member & dev ) const
     {
@@ -2046,14 +2046,14 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
 
   template <unsigned VectorLength>
   struct ScalarKernel {
-    typedef typename OutputView::device_type device_type ;
+    typedef typename OutputView::execution_space execution_space ;
     const OutputView  output;
     const scalar_type input;
 
     ScalarKernel( const OutputView & arg_out , const scalar_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
-    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+    typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
     void operator()( const team_member & dev ) const
     {
@@ -2093,7 +2093,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+    Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     if (input.size() != output.sacado_size() && input.size() != 1)
       Impl::raise_error("ViewFill:  Invalid input value size");
@@ -2103,7 +2103,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
         config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
     else
       parallel_for( config, PCEKernel<vector_length>(output, input) );
-    device_type::fence();
+    execution_space::fence();
   }
 
   ViewFill( const OutputView & output , const scalar_type & input )
@@ -2120,10 +2120,10 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+    Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     parallel_for( config, ScalarKernel<vector_length>(output, input) );
-    device_type::fence();
+    execution_space::fence();
   }
 
 };

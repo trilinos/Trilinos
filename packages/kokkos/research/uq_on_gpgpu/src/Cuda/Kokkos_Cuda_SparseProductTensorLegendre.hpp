@@ -68,18 +68,18 @@ class Multiply<
 {
 public:
 
-  typedef Cuda device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef Cuda execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
 private:
 
 
-  typedef SparseProductTensorLegendre< MatrixScalar , device_type ,
+  typedef SparseProductTensorLegendre< MatrixScalar , execution_space ,
                                        SparseProductTensorLegendreVariant_Default > 
     tensor_type ;
 
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type >  matrix_type ;
-  typedef View< VectorScalar** , LayoutLeft , device_type >         vector_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space >  matrix_type ;
+  typedef View< VectorScalar** , LayoutLeft , execution_space >         vector_type ;
 
   const matrix_type m_A ;
   const vector_type m_x ;

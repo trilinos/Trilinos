@@ -59,6 +59,7 @@ template <typename ViewType,
 struct LocalMPVectorView< ViewType, LocalSize, 1, true > {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename storage_type::template apply_N<LocalSize> StorageApply;
@@ -76,6 +77,7 @@ template <typename ViewType,
 struct LocalMPVectorView<ViewType, LocalSize, 1, false> {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
 
   typedef Kokkos::View< vector_type*,
@@ -89,6 +91,7 @@ template <typename ViewType,
 struct LocalMPVectorView< ViewType, LocalSize, 2, true > {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename storage_type::template apply_N<LocalSize> StorageApply;
@@ -106,6 +109,7 @@ template <typename ViewType,
 struct LocalMPVectorView<ViewType, LocalSize, 2, false> {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
 
   typedef Kokkos::View< vector_type**,
@@ -119,6 +123,7 @@ template <typename ViewType,
 struct LocalMPVectorView< ViewType, LocalSize, 3, true > {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename storage_type::template apply_N<LocalSize> StorageApply;
@@ -136,6 +141,7 @@ template <typename ViewType,
 struct LocalMPVectorView<ViewType, LocalSize, 3, false> {
   typedef typename ViewType::value_type vector_type;
   typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::device_type device_type;
 
   typedef Kokkos::View< vector_type***,

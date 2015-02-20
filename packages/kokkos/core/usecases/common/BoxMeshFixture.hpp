@@ -131,13 +131,13 @@ template< typename Scalar , class Device , class ElementSpec >
 struct BoxMeshFixture {
 
   typedef Scalar  coordinate_scalar_type ;
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
   static const unsigned element_node_count = ElementSpec::element_node_count ;
 
   typedef HybridFEM::FEMesh< coordinate_scalar_type ,
                              element_node_count ,
-                             device_type > FEMeshType ;
+                             execution_space > FEMeshType ;
 
   typedef typename FEMeshType::node_coords_type    node_coords_type ;
   typedef typename FEMeshType::elem_node_ids_type  elem_node_ids_type ;

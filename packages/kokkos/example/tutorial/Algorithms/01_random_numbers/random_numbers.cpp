@@ -51,12 +51,36 @@
 
 typedef Kokkos::HostSpace::execution_space DefaultHostType;
 
+// Kokkos provides two different random number generators with a 64 bit and a 1024 bit state.
+// These generators are based on Vigna, Sebastiano (2014). "An experimental exploration of Marsaglia's xorshift generators, scrambled"
+// See: http://arxiv.org/abs/1402.6246
+// The generators can be used fully independently on each thread and have been tested to
+// produce good statistics for both inter and intra thread numbers.
+// Note that within a kernel NO random number operations are (team) collective operations.
+// Everything can be called within branches. This is a difference to the curand library where
+// certain operations are required to be called by all threads in a block.
+//
+// In Kokkos you are required to create a pool of generator states, so that threads can
+// grep their own. On CPU architectures the pool size is equal to the thread number,
+// on CUDA about 128k states are generated (enough to give every potentially simultaneously
+// running thread its own state). With a kernel a thread is required to aquire a state from the
+// pool and later return it.
+// On CPUs the Random number generator is deterministic if using the same number of threads.
+// On GPUs (i.e. using the CUDA backend it is not deterministic because threads aquire states via
+// atomics.
+
+// A Functor for generating uint64_t random numbers templated on the GeneratorPool type
 template<class GeneratorPool>
 struct generate_random {
+
+  // The GeneratorPool
   GeneratorPool rand_pool;
+
+  // Output View for the random numbers
   Kokkos::View<uint64_t*> vals;
   int samples;
 
+  // Initialize all members
   generate_random(Kokkos::View<uint64_t*> vals_,
                        GeneratorPool rand_pool_,
                        int samples_):
@@ -64,14 +88,14 @@ struct generate_random {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i) const {
-    // Get a random number state from the pool
+    // Get a random number state from the pool for the active thread
     typename GeneratorPool::generator_type rand_gen = rand_pool.get_state();
 
-    // Draw samples numbers from the pool
+    // Draw samples numbers from the pool as urand64 between 0 and rand_pool.MAX_URAND64
     for(int k = 0;k<samples;k++)
       vals(i*samples+k) = rand_gen.urand64();
 
-
+    // Give the state back, which will allow another thread to grep it
     rand_pool.free_state(rand_gen);
   }
 };
@@ -84,16 +108,20 @@ int main(int argc, char* args[]) {
 	printf("Please pass two integers on the command line\n");
   }
   else {
-  srand(5374857);
+
+  // Initialize Kokkos
   Kokkos::initialize(argc,args);
   int size = atoi(args[1]);
   int samples = atoi(args[2]);
 
+  // Create two random number generator pools one for 64bit states and one for 1024 bit states
+  // Both take an 64 bit unsigned integer seed to initialize a Random_XorShift64 generator which
+  // is used to fill the generators of the pool.
   Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
   Kokkos::Random_XorShift1024_Pool<> rand_pool1024(5374857);
   Kokkos::DualView<uint64_t*> vals("Vals",size*samples);
 
-  // Run some performance comparisons of the virtual and non virtual variant
+  // Run some performance comparisons
   Kokkos::Impl::Timer timer;
   Kokkos::parallel_for(size,generate_random<Kokkos::Random_XorShift64_Pool<> >(vals.d_view,rand_pool64,samples));
   Kokkos::fence();

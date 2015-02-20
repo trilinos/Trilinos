@@ -100,6 +100,16 @@ template< class C >
 struct is_memory_traits< C , typename Impl::enable_if_type< typename C::memory_traits >::type >
   : public bool_< Impl::is_same< C , typename C::memory_traits >::value > {};
 
+
+
+//----------------------------------------------------------------------------
+
+template<class ExecutionSpace, class MemorySpace>
+struct DeviceInternal {
+  typedef ExecutionSpace execution_space;
+  typedef MemorySpace memory_space;
+};
+
 //----------------------------------------------------------------------------
 
 template< class C , class Enable = void >
@@ -109,7 +119,10 @@ template< class C >
 struct is_space< C
                  , typename Impl::enable_if<(
                      Impl::is_same< C , typename C::execution_space >::value ||
-                     Impl::is_same< C , typename C::memory_space    >::value
+                     Impl::is_same< C , typename C::memory_space    >::value ||
+                     Impl::is_same< C , Impl::DeviceInternal<
+                                             typename C::execution_space,
+                                             typename C::memory_space> >::value
                    )>::type
                  >
   : public Impl::true_type
@@ -117,19 +130,32 @@ struct is_space< C
   typedef typename C::execution_space  execution_space ;
   typedef typename C::memory_space     memory_space ;
 
-  // The host_mirror_space defines a space with host-resident memory.
-  // If the execution space's memory space is HostSpace then use that execution space.
-  // Else use the HostSpace.
+  // The host_memory_space defines a space with host-resident memory.
+  // If the execution space's memory space is host accessible then use that execution space.
+  // else use the HostSpace.
   typedef
-      typename Impl::if_c< Impl::is_same< typename execution_space::memory_space , HostSpace >::value
+      typename Impl::if_c< Impl::is_same< memory_space , HostSpace >::value
 #ifdef KOKKOS_HAVE_CUDA
-                        || Impl::is_same< typename execution_space::memory_space , CudaUVMSpace>::value
-                        || Impl::is_same< typename execution_space::memory_space , CudaHostPinnedSpace>::value
+                        || Impl::is_same< memory_space , CudaUVMSpace>::value
+                        || Impl::is_same< memory_space , CudaHostPinnedSpace>::value
 #endif
-                          , execution_space , HostSpace >::type
-      host_mirror_space ;
-};
+                          , memory_space , HostSpace >::type
+      host_memory_space ;
 
+  // The host_execution_space defines a space which has access to HostSpace.
+  // If the execution space can access HostSpace then use that execution space.
+  // else use the DefaultHostExecutionSpace.
+#ifdef KOKKOS_HAVE_CUDA
+  typedef
+      typename Impl::if_c< Impl::is_same< execution_space , Cuda >::value
+                          , DefaultHostExecutionSpace , execution_space >::type
+      host_execution_space ;
+#else
+  typedef execution_space host_execution_space;
+#endif
+
+  typedef DeviceInternal<host_execution_space,host_memory_space> host_mirror_space;
+};
 }
 }
 

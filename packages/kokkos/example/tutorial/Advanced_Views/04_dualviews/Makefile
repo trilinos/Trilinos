@@ -3,8 +3,8 @@ SRC = $(wildcard *.cpp)
 
 ifeq ($(CUDA), yes)
 CC = nvcc
-CCFLAGS = -O3 -arch=sm_35  
-LINK = g++
+CCFLAGS = -O3 -arch=sm_35 -ccbin=/usr/local/gcc/4.8.3/bin/g++ 
+LINK = /usr/local/gcc/4.8.3/bin/g++
 LINKFLAGS = 
 EXE = $(SRC:.cpp=.cuda)
 else

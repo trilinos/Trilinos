@@ -112,11 +112,11 @@ bool cuda_launch_blocking()
 
 void cuda_device_synchronize()
 {
-  static const bool launch_blocking = cuda_launch_blocking();
+//  static const bool launch_blocking = cuda_launch_blocking();
 
-  if (!launch_blocking) {
+//  if (!launch_blocking) {
     CUDA_SAFE_CALL( cudaDeviceSynchronize() );
-  }
+//  }
 }
 
 void cuda_internal_error_throw( cudaError e , const char * name, const char * file, const int line )

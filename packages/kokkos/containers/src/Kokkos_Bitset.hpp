@@ -74,7 +74,7 @@ template <typename Device>
 class Bitset
 {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef unsigned size_type;
 
   enum { BIT_SCAN_REVERSE = 1u };
@@ -146,7 +146,7 @@ public:
 
     if (m_last_block_mask) {
       //clear the unused bits in the last block
-      typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > raw_deep_copy;
+      typedef Kokkos::Impl::DeepCopy< typename execution_space::memory_space, Kokkos::HostSpace > raw_deep_copy;
       raw_deep_copy( m_blocks.ptr_on_device() + (m_blocks.size() -1u), &m_last_block_mask, sizeof(unsigned));
     }
   }
@@ -291,7 +291,7 @@ private:
 
   unsigned m_size;
   unsigned m_last_block_mask;
-  View< unsigned *, device_type, MemoryTraits<RandomAccess> > m_blocks;
+  View< unsigned *, execution_space, MemoryTraits<RandomAccess> > m_blocks;
 
 private:
   template <typename DDevice>
@@ -316,7 +316,7 @@ template <typename Device>
 class ConstBitset
 {
 public:
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef unsigned size_type;
 
 private:
@@ -382,7 +382,7 @@ public:
 private:
 
   unsigned m_size;
-  View< const unsigned *, device_type, MemoryTraits<RandomAccess> > m_blocks;
+  View< const unsigned *, execution_space, MemoryTraits<RandomAccess> > m_blocks;
 
 private:
   template <typename DDevice>

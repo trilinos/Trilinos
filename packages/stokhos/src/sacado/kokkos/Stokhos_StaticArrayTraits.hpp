@@ -64,7 +64,7 @@ namespace Stokhos {
   struct StaticArrayTraits<T, D, false> {
 
     typedef T value_type;
-    typedef D device_type;
+    typedef D execution_space;
 
     //! Copy array from \c src to \c dest of length \c sz
     static
@@ -140,7 +140,7 @@ namespace Stokhos {
   struct StaticArrayTraits<T,D,true> {
 
     typedef T value_type;
-    typedef D device_type;
+    typedef D execution_space;
 
     //! Copy array from \c src to \c dest of length \c sz
     static

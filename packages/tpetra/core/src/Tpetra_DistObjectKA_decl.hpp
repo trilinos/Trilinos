@@ -96,8 +96,8 @@ namespace Tpetra {
     typedef Node node_type;
 
     //! The Kokkos Device type
-    typedef typename Kokkos::Compat::NodeDevice<node_type>::type device_type;
-    typedef typename device_type::size_type view_size_type;
+    typedef typename Kokkos::Compat::NodeDevice<node_type>::type execution_space;
+    typedef typename execution_space::size_type view_size_type;
 
     //@}
     //! @name Constructors and destructor
@@ -419,8 +419,8 @@ namespace Tpetra {
     copyAndPermute (
       const SrcDistObject& source,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs) = 0;
+      const Kokkos::View<const LocalOrdinal*, execution_space> &permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &permuteFromLIDs) = 0;
 
     /// \brief Perform any packing or preparation required for communication.
     ///
@@ -447,9 +447,9 @@ namespace Tpetra {
     virtual void
     packAndPrepare (
       const SrcDistObject& source,
-      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-      Kokkos::View<Packet*, device_type> &exports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &exportLIDs,
+      Kokkos::View<Packet*, execution_space> &exports,
+      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor) = 0;
 
@@ -476,9 +476,9 @@ namespace Tpetra {
     ///   imported entries with existing entries.
     virtual void
     unpackAndCombine (
-      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-      const Kokkos::View<const Packet*, device_type> &imports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &importLIDs,
+      const Kokkos::View<const Packet*, execution_space> &imports,
+      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM) = 0;
@@ -526,7 +526,7 @@ namespace Tpetra {
 
   private:
     //! Buffer into which packed data are imported (received from other processes).
-    Kokkos::View<packet_type*,device_type> imports_;
+    Kokkos::View<packet_type*,execution_space> imports_;
 
     /// \brief Number of packets to receive for each receive operation.
     ///
@@ -538,11 +538,11 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
-    Kokkos::View<size_t*,device_type> numImportPacketsPerLID_;
-    typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID_;
+    Kokkos::View<size_t*,execution_space> numImportPacketsPerLID_;
+    typename Kokkos::View<size_t*,execution_space>::HostMirror host_numImportPacketsPerLID_;
 
     //! Buffer from which packed data are exported (sent to other processes).
-    Kokkos::View<packet_type*,device_type> exports_;
+    Kokkos::View<packet_type*,execution_space> exports_;
 
     /// \brief Number of packets to send for each send operation.
     ///
@@ -554,7 +554,7 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
-    Kokkos::View<size_t*,device_type> numExportPacketsPerLID_;
+    Kokkos::View<size_t*,execution_space> numExportPacketsPerLID_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;

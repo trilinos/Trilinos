@@ -43,10 +43,6 @@
 #define TPETRA_BLOCKMULTIVECTOR_DEF_HPP
 
 #include <Tpetra_ConfigDefs.hpp>
-#ifndef HAVE_TPETRA_CLASSIC_VBR
-#  error "It is an error to include this file if VBR (variable-block-size) sparse matrix support is disabled in Tpetra.  If you would like to enable VBR support, please reconfigure Trilinos with the CMake option Tpetra_ENABLE_CLASSIC_VBR set to ON, and rebuild Trilinos."
-#else
-
 #include "Tpetra_BlockMultiVector_decl.hpp"
 
 namespace Tpetra {
@@ -123,5 +119,4 @@ BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(Loca
 
 }//namespace Tpetra
 
-#endif // ! HAVE_TPETRA_CLASSIC_VBR
 #endif // ! TPETRA_BLOCKMULTIVECTOR_DEF_HPP

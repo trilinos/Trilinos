@@ -221,7 +221,7 @@ namespace Ifpack2 {
     //! \name Mathematical functions.
     //@{
 
-    //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+    //! Returns the operator's communicator.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns a reference to the matrix to be preconditioned.

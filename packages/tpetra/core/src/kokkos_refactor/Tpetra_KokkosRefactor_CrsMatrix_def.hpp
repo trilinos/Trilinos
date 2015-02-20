@@ -2490,7 +2490,7 @@ namespace Tpetra {
         ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-      typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
+      typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
       subview_type sv = Kokkos::subview<subview_type> (k_values1D_, range);
       return ArrayView<const ST> (sv.ptr_on_device (), rowinfo.allocSize);
     }
@@ -3027,7 +3027,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "getLocalDiagCopy: ";
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space host_device_type;
+    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       ! hasColMap (), std::runtime_error,
@@ -3052,7 +3052,7 @@ namespace Tpetra {
     // Later, we may write a parallel kernel that works entirely on
     // device.
     dual_view_type lclVec = dvec.getDualView ();
-    lclVec.template modify<host_device_type> ();
+    lclVec.template modify<host_execution_space> ();
     typedef typename dual_view_type::t_host host_view_type;
     host_view_type lclVecHost = lclVec.h_view;
 
@@ -3088,7 +3088,7 @@ namespace Tpetra {
         }
       }
     }
-    lclVec.template sync<device_type> (); // sync changes back to device
+    lclVec.template sync<execution_space> (); // sync changes back to device
   }
 
   template <class Scalar,
@@ -3106,7 +3106,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space host_device_type;
+    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy: ";
@@ -3123,7 +3123,7 @@ namespace Tpetra {
     // Later, we may write a parallel kernel that works entirely on
     // device.
     dual_view_type lclVec = diag.getDualView ();
-    lclVec.template modify<host_device_type> ();
+    lclVec.template modify<host_execution_space> ();
     typedef typename dual_view_type::t_host host_view_type;
     host_view_type lclVecHost = lclVec.h_view;
 
@@ -3152,7 +3152,7 @@ namespace Tpetra {
         lclVecHost1d(i) = static_cast<impl_scalar_type> (val[offsets[i]]);
       }
     }
-    lclVec.template sync<device_type> (); // sync changes back to device
+    lclVec.template sync<execution_space> (); // sync changes back to device
   }
 
 

@@ -63,12 +63,12 @@ struct VerifyUnpack  ;
 template< typename DeviceType, typename T >
 struct VerifyUnpack< Kokkos::View< T*[3] , DeviceType > >
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
   typedef size_type               value_type ;
 
-  typedef Kokkos::View< T* ,    device_type > buffer_type ;
-  typedef Kokkos::View< T*[3] , device_type > array_type ;
+  typedef Kokkos::View< T* ,    execution_space > buffer_type ;
+  typedef Kokkos::View< T*[3] , execution_space > array_type ;
 
 private:
 

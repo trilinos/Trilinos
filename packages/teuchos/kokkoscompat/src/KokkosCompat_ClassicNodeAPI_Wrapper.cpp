@@ -125,7 +125,7 @@ namespace Kokkos {
       count--;
       if(count==0) {
         if(HostSpace::execution_space::is_initialized()) {
-          // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
+          // make sure that no Actual DeviceWrapper node of the mirror_execution_space is in use
           if(KokkosDeviceWrapperNode<HostSpace::execution_space>::count==0) {
             HostSpace::execution_space::finalize();
           }

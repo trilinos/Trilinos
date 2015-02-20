@@ -214,15 +214,15 @@ struct ShapeFunctionEvaluation {
 template< typename ScalarType , typename ScalarCoordType , class DeviceType >
 struct ElementComputation
 {
-  typedef DeviceType     device_type;
+  typedef DeviceType     execution_space;
   typedef ScalarType              scalar_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef typename execution_space::size_type  size_type ;
 
   static const size_type ElementNodeCount = 8 ;
 
-  typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
-  typedef Kokkos::View< scalar_type[][ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type[][ElementNodeCount] , device_type > elem_vectors_type ;
+  typedef FEMesh< ScalarCoordType , ElementNodeCount , execution_space > mesh_type ;
+  typedef Kokkos::View< scalar_type[][ElementNodeCount][ElementNodeCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type[][ElementNodeCount] , execution_space > elem_vectors_type ;
 
   typedef ShapeFunctionEvaluation< scalar_type > shape_function_data ;
 
@@ -484,15 +484,15 @@ public:
 template< typename ScalarType , typename ScalarCoordType , class DeviceType >
 struct DirichletBoundary
 {
-  typedef DeviceType     device_type;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space;
+  typedef typename execution_space::size_type  size_type ;
 
   static const size_type ElementNodeCount = 8 ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
-  typedef Kokkos::View< ScalarType[] , device_type >  vector_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , execution_space >    matrix_type ;
+  typedef Kokkos::View< ScalarType[] , execution_space >  vector_type ;
 
-  typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
+  typedef FEMesh< ScalarCoordType , ElementNodeCount , execution_space > mesh_type ;
 
   typename mesh_type::node_coords_type node_coords ;
   matrix_type     matrix ;

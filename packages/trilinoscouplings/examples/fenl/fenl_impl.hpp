@@ -102,8 +102,8 @@ class BuildLocalToGlobalMap {
   const Map m_lid_to_gid;
   const Fixture m_fixture;
 public:
-  typedef typename Map::device_type device_type;
-  typedef typename device_type::size_type size_type;
+  typedef typename Map::execution_space execution_space;
+  typedef typename execution_space::size_type size_type;
 
   BuildLocalToGlobalMap(const Map& lid_to_gid, const Fixture& fixture) :
     m_lid_to_gid(lid_to_gid),

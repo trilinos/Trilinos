@@ -67,7 +67,7 @@
 // A "functor" is just a class or struct with a public operator()
 // instance method.
 struct hello_world {
-  // If a functor has an "execution_space" (or "device_type", for
+  // If a functor has an "execution_space" (or "execution_space", for
   // backwards compatibility) public typedef, parallel_* will only run
   // the functor in that execution space.  That's a good way to mark a
   // functor as specific to an execution space.  If the functor lacks

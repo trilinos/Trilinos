@@ -135,8 +135,9 @@ namespace Details {
 template<typename S, typename D>
 struct PackTraits< Sacado::UQ::PCE<S>, D > {
   typedef Sacado::UQ::PCE<S> value_type;
+  typedef typename D::execution_space execution_space;
   typedef D device_type;
-  typedef typename device_type::size_type size_type;
+  typedef typename execution_space::size_type size_type;
 
   /// \brief Whether the number of bytes required to pack one instance
   ///   of \c value_type is fixed at compile time.

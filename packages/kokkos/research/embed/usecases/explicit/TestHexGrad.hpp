@@ -109,10 +109,10 @@ template< typename CoordScalarType ,
           class    Device >
 struct TestHexGrad
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
-  typedef Kokkos::View< CoordScalarType*[3][8] , device_type > coord_type ;
-  typedef Kokkos::View< GradScalarType *[3][8] , device_type > grad_type ;
+  typedef Kokkos::View< CoordScalarType*[3][8] , execution_space > coord_type ;
+  typedef Kokkos::View< GradScalarType *[3][8] , execution_space > grad_type ;
 
   enum { NodeCount = 8 };
 
@@ -149,7 +149,7 @@ if ( 0 && i == 0 ) {
   }
 
   struct InitCoord {
-    typedef Device device_type ;
+    typedef Device execution_space ;
 
     const coord_type coords ;
 
@@ -158,7 +158,7 @@ if ( 0 && i == 0 ) {
     KOKKOS_INLINE_FUNCTION
     void operator()( const unsigned ielem ) const
     {
-      typedef Device device_type ;
+      typedef Device execution_space ;
 
       coords(ielem,0,0) = 0.;
       coords(ielem,1,0) = 0.;

@@ -568,8 +568,8 @@ namespace Tpetra {
   copyAndPermute (
     const SrcDistObject& sourceObj,
     size_t numSameIDs,
-    const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-    const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs)
+    const Kokkos::View<const LocalOrdinal*, execution_space> &permuteToLIDs,
+    const Kokkos::View<const LocalOrdinal*, execution_space> &permuteFromLIDs)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
@@ -636,7 +636,7 @@ namespace Tpetra {
       return;
 
     if (this->isConstantStride ()) {
-      Details::PermuteArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> perm;
+      Details::PermuteArrayMultiColumnConstantStride<Scalar,LocalOrdinal,execution_space> perm;
       perm.permuteToLIDs = permuteToLIDs;
       perm.permuteFromLIDs = permuteFromLIDs;
       perm.src = sourceMV.getKokkosView();
@@ -648,15 +648,15 @@ namespace Tpetra {
       perm.permute();
     }
     else {
-      Details::PermuteArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> perm;
+      Details::PermuteArrayMultiColumnVariableStride<Scalar,LocalOrdinal,execution_space> perm;
       perm.permuteToLIDs = permuteToLIDs;
       perm.permuteFromLIDs = permuteFromLIDs;
       perm.src = sourceMV.getKokkosView();
       perm.dest = getKokkosViewNonConst();
       perm.src_whichVectors =
-        getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
+        getKokkosViewDeepCopy<execution_space>(sourceMV.whichVectors_ ());
       perm.dest_whichVectors =
-        getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+        getKokkosViewDeepCopy<execution_space>(whichVectors_ ());
       perm.src_stride = MVT::getStride (sourceMV.lclMV_);
       perm.dest_stride = stride;
       perm.numCols = numCols;
@@ -670,9 +670,9 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   packAndPrepare (
     const SrcDistObject& sourceObj,
-    const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-    Kokkos::View<Scalar*, device_type> &exports,
-    const Kokkos::View<size_t*, device_type> &numExportPacketsPerLID,
+    const Kokkos::View<const LocalOrdinal*, execution_space> &exportLIDs,
+    Kokkos::View<Scalar*, execution_space> &exports,
+    const Kokkos::View<size_t*, execution_space> &numExportPacketsPerLID,
     size_t& constantNumPackets,
     Distributor & /* distor */ )
   {
@@ -718,14 +718,14 @@ namespace Tpetra {
       // MultiVector always represents a single column with constant
       // stride, but it doesn't hurt to implement both cases anyway.
       if (sourceMV.isConstantStride ()) {
-        Details::PackArraySingleColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
+        Details::PackArraySingleColumnConstantStride<Scalar,LocalOrdinal,execution_space> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
         pack.src = sourceMV.getKokkosView();
         pack.pack();
       }
       else {
-        Details::PackArraySingleColumnOffset<Scalar,LocalOrdinal,device_type> pack;
+        Details::PackArraySingleColumnOffset<Scalar,LocalOrdinal,execution_space> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
         pack.src = sourceMV.getKokkosView();
@@ -735,7 +735,7 @@ namespace Tpetra {
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
-        Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
+        Details::PackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,execution_space> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
         pack.src = sourceMV.getKokkosView();
@@ -744,12 +744,12 @@ namespace Tpetra {
         pack.pack ();
       }
       else {
-        Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> pack;
+        Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,execution_space> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
         pack.src = sourceMV.getKokkosView();
         pack.srcWhichVectors =
-          getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
+          getKokkosViewDeepCopy<execution_space>(sourceMV.whichVectors_ ());
         pack.stride = stride;
         pack.numCols = numCols;
         pack.pack ();
@@ -762,9 +762,9 @@ namespace Tpetra {
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,true>::
   unpackAndCombine (
-    const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-    const Kokkos::View<const Scalar*, device_type> &imports,
-    const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+    const Kokkos::View<const LocalOrdinal*, execution_space> &importLIDs,
+    const Kokkos::View<const Scalar*, execution_space> &imports,
+    const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
     size_t constantNumPackets,
     Distributor & /* distor */,
     CombineMode CM)
@@ -823,7 +823,7 @@ namespace Tpetra {
       // ncview_[...] = f (ncview_[...], *impptr++);
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
-          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::InsertOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::InsertOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
@@ -834,12 +834,12 @@ namespace Tpetra {
           unpack.unpack();
         }
         else {
-          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::InsertOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::InsertOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
           unpack.whichVectors =
-            getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+            getKokkosViewDeepCopy<execution_space>(whichVectors_ ());
           unpack.stride = myStride;
           unpack.numCols = numVecs;
           unpack.op = Details::InsertOp();
@@ -849,7 +849,7 @@ namespace Tpetra {
       }
       else if (CM == ADD) {
         if (isConstantStride()) {
-          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::AddOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::AddOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
@@ -860,12 +860,12 @@ namespace Tpetra {
           unpack.unpack();
         }
         else {
-          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::AddOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::AddOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
           unpack.whichVectors =
-            getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+            getKokkosViewDeepCopy<execution_space>(whichVectors_ ());
           unpack.stride = myStride;
           unpack.numCols = numVecs;
           unpack.op = Details::AddOp();
@@ -875,7 +875,7 @@ namespace Tpetra {
       }
       else if (CM == ABSMAX) {
         if (isConstantStride()) {
-          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::AbsMaxOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnConstantStride<Scalar,LocalOrdinal,Details::AbsMaxOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
@@ -886,12 +886,12 @@ namespace Tpetra {
           unpack.unpack();
         }
         else {
-          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::AbsMaxOp,device_type> unpack;
+          Details::UnpackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,Details::AbsMaxOp,execution_space> unpack;
           unpack.importLIDs = importLIDs;
           unpack.imports = imports;
           unpack.dest = getKokkosViewNonConst();
           unpack.whichVectors =
-            getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+            getKokkosViewDeepCopy<execution_space>(whichVectors_ ());
           unpack.stride = myStride;
           unpack.numCols = numVecs;
           unpack.op = Details::AbsMaxOp();

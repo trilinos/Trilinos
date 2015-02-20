@@ -64,7 +64,7 @@ namespace Sacado {
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
-      typedef typename storage_type::device_type device_type;
+      typedef typename storage_type::execution_space execution_space;
       typedef typename storage_type::pointer pointer;
       typedef typename storage_type::volatile_pointer volatile_pointer;
       typedef typename storage_type::const_pointer const_pointer;

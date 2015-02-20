@@ -50,8 +50,8 @@ struct Invert;
 template<class Scalar , int dimension>
 struct Invert<Scalar, KOKKOS_MACRO_DEVICE, dimension>{
 
-	typedef KOKKOS_MACRO_DEVICE     device_type ;
-  	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
+	typedef KOKKOS_MACRO_DEVICE     execution_space ;
+  	typedef typename Kokkos::MDArrayView<Scalar,execution_space> array_type ;
 
 	array_type inMatrices;
 	array_type outMatrices;

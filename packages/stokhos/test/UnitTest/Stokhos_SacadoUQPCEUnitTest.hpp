@@ -101,7 +101,7 @@ namespace SacadoPCEUnitTest {
     typedef PCEType pce_type;
     typedef typename pce_type::ordinal_type ordinal_type;
     typedef typename pce_type::value_type value_type;
-    typedef typename pce_type::device_type device_type;
+    typedef typename pce_type::execution_space execution_space;
     typedef typename pce_type::cijk_type kokkos_cijk_type;
     typedef Stokhos::OrthogPolyApprox<ordinal_type,value_type> opa_type;
     value_type rtol, atol;
@@ -136,7 +136,7 @@ namespace SacadoPCEUnitTest {
       Cijk = basis->computeTripleProductTensor();
 
       // Kokkos triple product tensor
-      cijk = Stokhos::create_product_tensor<device_type>(*basis, *Cijk);
+      cijk = Stokhos::create_product_tensor<execution_space>(*basis, *Cijk);
 
       // Algebraic expansion
       exp = Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk));
