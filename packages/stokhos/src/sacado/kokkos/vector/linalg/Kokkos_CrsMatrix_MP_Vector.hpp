@@ -72,6 +72,7 @@ class MPMultiply {};
 //
 // This implementation uses overloaded operators for MP::Vector.
 template <typename Device,
+          typename ViewDevice,
           typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
@@ -85,20 +86,20 @@ template <typename Device,
           typename Update>
 class MPMultiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                      MatrixOrdinal,
-#ifdef KOKKOS_HAVE_CUDA
-    typename Kokkos::Impl::if_c<!Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value,Device,void>::type,
-#else
-                                   Device,
-#endif
+                                     Device,
                                      MatrixMemory,
                                      MatrixSize>,
                   Kokkos::View< Sacado::MP::Vector<InputStorage>*,
                                 InputLayout,
-                                Device,
+#ifdef KOKKOS_HAVE_CUDA
+    typename Kokkos::Impl::if_c<!Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value,ViewDevice,void>::type,
+#else
+                                ViewDevice,
+#endif
                                 InputMemory >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
                                 OutputLayout,
-                                Device,
+                                ViewDevice,
                                 OutputMemory >,
                   Update
                 >
@@ -176,6 +177,7 @@ public:
 //
 // This implementation uses overloaded operators for MP::Vector.
 template <typename Device,
+          typename ViewDevice,
           typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
@@ -189,20 +191,20 @@ template <typename Device,
           typename Update>
 class MPMultiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                      MatrixOrdinal,
-#ifdef KOKKOS_HAVE_CUDA
-    typename Kokkos::Impl::if_c<!Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value,Device,void>::type,
-#else
-                                   Device,
-#endif
+                                     Device,
                                      MatrixMemory,
                                      MatrixSize>,
                   Kokkos::View< Sacado::MP::Vector<InputStorage>**,
                                 InputLayout,
-                                Device,
+#ifdef KOKKOS_HAVE_CUDA
+    typename Kokkos::Impl::if_c<!Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value,ViewDevice,void>::type,
+#else
+                                ViewDevice,
+#endif
                                 InputMemory >,
                   Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
                                 OutputLayout,
-                                Device,
+                                ViewDevice,
                                 OutputMemory >,
                   Update
                   >
@@ -224,11 +226,11 @@ public:
   typedef typename matrix_type::values_type matrix_values_type;
   typedef Kokkos::View< InputVectorValue**,
                         InputLayout,
-                        Device,
+                        ViewDevice,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue**,
                         OutputLayout,
-                        Device,
+                        ViewDevice,
                         OutputMemory > output_vector_type;
   typedef Update update_type;
 
