@@ -62,7 +62,8 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t execution_space;
+    typedef typename device_t::execution_space execution_space;
+    typedef typename device_t::memory_space memory_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -74,14 +75,14 @@ namespace Stokhos {
     typedef Stokhos::DynArrayTraits<value_type,execution_space> ds;
 
     //! Turn DynamicStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
+    template <typename ord_t, typename val_t = value_t , typename dev_t = memory_space >
     struct apply {
-      typedef DynamicStorage<ord_t,val_t,dev_t> type;
+      typedef DynamicStorage<ord_t,val_t,typename dev_t::memory_space> type;
     };
 
     template <int N>
     struct apply_N {
-      typedef DynamicStorage<ordinal_type,value_type,execution_space> type;
+      typedef DynamicStorage<ordinal_type,value_type,memory_space> type;
     };
 
     //! Constructor

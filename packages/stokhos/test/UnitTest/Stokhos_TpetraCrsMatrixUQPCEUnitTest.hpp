@@ -160,7 +160,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
 
   // Kokkos triple product tensor
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<typename execution_space::memory_space>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
 
   return kokkos_cijk;
 }
@@ -187,6 +187,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   typedef typename Storage::value_type BaseScalar;
   typedef typename Storage::execution_space execution_space;
+  typedef typename Storage::memory_space memory_space;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -2304,5 +2305,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
-  typedef Stokhos::DynamicStorage<int,double,Device> DS;                \
+  typedef Stokhos::DynamicStorage<int,double,typename Device::memory_space> DS;                \
   CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)
