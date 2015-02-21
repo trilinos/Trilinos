@@ -65,7 +65,7 @@ private:
 
   typedef typename EvalT::ScalarT ScalarT;
 
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
   PHX::MDField<ScalarT,Cell,Point> dof_curl_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl_vector;
@@ -93,12 +93,12 @@ private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
 
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
   PHX::MDField<ScalarT,Cell,Point> dof_curl_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl_vector;
 
-  Kokkos::View<int*,PHX::Device> offsets_array;
+  Kokkos::View<const int*,PHX::Device> offsets_array;
   std::vector<int> offsets;
 
   std::string basis_name;

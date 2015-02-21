@@ -56,7 +56,7 @@ namespace {
 //**********************************************************************
 template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateCurlWithSens_Vector {
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl;
   Array curl_basis;
 
@@ -66,7 +66,7 @@ class EvaluateCurlWithSens_Vector {
 public:
   typedef typename PHX::Device execution_space;
 
-  EvaluateCurlWithSens_Vector(PHX::MDField<ScalarT,Cell,Point> in_dof_value,
+  EvaluateCurlWithSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
@@ -92,7 +92,7 @@ public:
 template <typename ScalarT,typename ArrayT>
 void evaluateCurl_withSens_vector(int numCells,
                            PHX::MDField<ScalarT,Cell,Point,Dim> & dof_curl, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
@@ -118,7 +118,7 @@ void evaluateCurl_withSens_vector(int numCells,
 //**********************************************************************
 template <typename ScalarT,typename Array>
 class EvaluateCurlWithSens_Scalar {
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point> dof_curl;
   Array curl_basis;
 
@@ -128,7 +128,7 @@ class EvaluateCurlWithSens_Scalar {
 public:
   typedef typename PHX::Device execution_space;
 
-  EvaluateCurlWithSens_Scalar(PHX::MDField<ScalarT,Cell,Point> in_dof_value,
+  EvaluateCurlWithSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
@@ -152,7 +152,7 @@ public:
 template <typename ScalarT,typename ArrayT>
 void evaluateCurl_withSens_scalar(int numCells,
                            PHX::MDField<ScalarT,Cell,Point> & dof_curl, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                            const ArrayT & curl_basis)
 { 
   if(numCells>0) {
@@ -175,7 +175,7 @@ void evaluateCurl_withSens_scalar(int numCells,
 //**********************************************************************
 template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateCurlFastSens_Vector {
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl;
   Kokkos::View<const int*,PHX::Device> offsets;
   Array curl_basis;
@@ -186,7 +186,7 @@ class EvaluateCurlFastSens_Vector {
 public:
   typedef typename PHX::Device execution_space;
 
-  EvaluateCurlFastSens_Vector(PHX::MDField<ScalarT,Cell,Point> in_dof_value,
+  EvaluateCurlFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
                               Kokkos::View<const int*,PHX::Device> in_offsets,
                               Array in_curl_basis) 
@@ -215,7 +215,7 @@ public:
 template <typename ScalarT,typename ArrayT>
 void evaluateCurl_fastSens_vector(int numCells,
                            PHX::MDField<ScalarT,Cell,Point,Dim> & dof_curl, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                            const std::vector<int> & offsets,
                            const ArrayT & curl_basis)
 { 
@@ -244,7 +244,7 @@ void evaluateCurl_fastSens_vector(int numCells,
 //**********************************************************************
 template <typename ScalarT,typename Array>
 class EvaluateCurlFastSens_Scalar {
-  PHX::MDField<ScalarT,Cell,Point> dof_value;
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point> dof_curl;
   Kokkos::View<const int*,PHX::Device> offsets;
   Array curl_basis;
@@ -255,7 +255,7 @@ class EvaluateCurlFastSens_Scalar {
 public:
   typedef typename PHX::Device execution_space;
 
-  EvaluateCurlFastSens_Scalar(PHX::MDField<ScalarT,Cell,Point> in_dof_value,
+  EvaluateCurlFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
                               Kokkos::View<const int*,PHX::Device> in_offsets,
                               Array in_curl_basis) 
@@ -282,7 +282,7 @@ public:
 template <typename ScalarT,typename ArrayT>
 void evaluateCurl_fastSens_scalar(int numCells,
                            PHX::MDField<ScalarT,Cell,Point> & dof_curl, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
                            const std::vector<int> & offsets,
                            const ArrayT & curl_basis)
 { 
@@ -375,14 +375,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
 
   if(basis_dimension==3) {
-    // evaluateCurl_withSens_vector(workset.num_cells,dof_curl_vector,dof_value,workset.bases[basis_index]->curl_basis_vector);
-
     EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
     Kokkos::parallel_for(workset.num_cells,functor);
   }
   else {
-    // evaluateCurl_withSens_scalar(workset.num_cells,dof_curl_scalar,dof_value,workset.bases[basis_index]->curl_basis_scalar);
-
     EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
     Kokkos::parallel_for(workset.num_cells,functor);
   }
@@ -408,13 +404,14 @@ DOFCurl(const Teuchos::ParameterList & p) :
   // do you specialize because you know where the basis functions are and can
   // skip a large number of AD calculations?
   if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
-    // const std::vector<int> & 
     offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
 
     // allocate and copy offsets vector to Kokkos array
-    offsets_array = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    Kokkos::View<int*,PHX::Device> offsets_array_nc
+        = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
-      offsets_array(i) = offsets[i];
+      offsets_array_nc(i) = offsets[i];
+    offsets_array = offsets_array_nc;
 
     accelerate_jacobian = true;  // short cut for identity matrix
   }
@@ -472,14 +469,10 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   if(!accelerate_jacobian) {
     if(basis_dimension==3) {
-      // evaluateCurl_withSens_vector(workset.num_cells,dof_curl_vector,dof_value,workset.bases[basis_index]->curl_basis_vector);
-
       EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      // evaluateCurl_withSens_scalar(workset.num_cells,dof_curl_scalar,dof_value,workset.bases[basis_index]->curl_basis_scalar);
-
       EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
@@ -489,14 +482,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   else {
 
     if(basis_dimension==3) {
-      // evaluateCurl_fastSens_vector(workset.num_cells,dof_curl_vector,dof_value,offsets,workset.bases[basis_index]->curl_basis_vector);
-
       EvaluateCurlFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,offsets_array,basisValues.curl_basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      // evaluateCurl_fastSens_scalar(workset.num_cells,dof_curl_scalar,dof_value,offsets,workset.bases[basis_index]->curl_basis_scalar);
-
       EvaluateCurlFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,offsets_array,basisValues.curl_basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }

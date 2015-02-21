@@ -62,7 +62,7 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(Sum)
   
   PHX::MDField<ScalarT> sum;
-  std::vector< PHX::MDField<ScalarT> > values;
+  std::vector< PHX::MDField<const ScalarT> > values;
   std::vector<double> scalars;
 
   std::size_t cell_data_size;
@@ -96,7 +96,7 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,Tag0> sum;
-  std::vector< PHX::MDField<ScalarT,Tag0> > values;
+  std::vector< PHX::MDField<const ScalarT,Tag0> > values;
 };
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
@@ -112,8 +112,8 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,Tag0,Tag1> sum;
-  std::vector< PHX::MDField<ScalarT,Tag0,Tag1> > values;
-  PHX::MDField<ScalarT,Tag0,Tag1> current_value;
+  std::vector< PHX::MDField<const ScalarT,Tag0,Tag1> > values;
+  PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
      // this is used in the parallel kernel
 };
 

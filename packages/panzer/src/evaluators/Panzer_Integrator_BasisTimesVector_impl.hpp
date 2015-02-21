@@ -169,6 +169,7 @@ public:
   void operator()(const unsigned cell) const
   {
     for (int lbf = 0; lbf < weighted_basis_vector.dimension_1(); lbf++) {
+      residual(cell,lbf) = 0.0;
       for (int qp = 0; qp < weighted_basis_vector.dimension_2(); qp++) {
         for (int iVec = 0; iVec < weighted_basis_vector.dimension_3(); iVec++) {
           residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, iVec)*scratch(cell, qp, iVec);
@@ -183,7 +184,7 @@ public:
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
 { 
-  residual.deep_copy(ScalarT(0.0));
+  // residual.deep_copy(ScalarT(0.0));
 
   // initialize the scratch field with vectorField times the 
   // multiplier

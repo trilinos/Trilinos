@@ -77,12 +77,12 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
   
   // determine if using scalar field for curl or a vector field (2D versus 3D)
   if(!useScalarField) {
-     flux_vector = PHX::MDField<ScalarT,Cell,IP,Dim>( p.get<std::string>("Value Name"), 
+     flux_vector = PHX::MDField<const ScalarT,Cell,IP,Dim>( p.get<std::string>("Value Name"), 
 	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
      this->addDependentField(flux_vector);
   }
   else {
-     flux_scalar = PHX::MDField<ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
+     flux_scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
    	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
      this->addDependentField(flux_scalar);
   }
@@ -98,12 +98,12 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
     for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
       name != field_multiplier_names.end(); ++name) 
     {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -120,7 +120,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
   this->utils.setFieldData(residual,fm);
 
   // initialize the input field multiplier fields
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
@@ -164,10 +164,10 @@ public:
 
   // Required for "Initialize" functor
   double multiplier;
-  PHX::MDField<ScalarT,Cell,IP,Dim> vectorField;
+  PHX::MDField<const ScalarT,Cell,IP,Dim> vectorField;
 
   // Required for "FieldMultipliers" functor
-  PHX::MDField<ScalarT,Cell,IP> field;
+  PHX::MDField<const ScalarT,Cell,IP> field;
 
   struct Initialize {};
   struct FieldMultipliers {};
@@ -199,10 +199,10 @@ public:
 
   // Required for "Initialize" functor
   double multiplier;
-  PHX::MDField<ScalarT,Cell,IP> vectorField;
+  PHX::MDField<const ScalarT,Cell,IP> vectorField;
 
   // Required for "FieldMultipliers" functor
-  PHX::MDField<ScalarT,Cell,IP> field;
+  PHX::MDField<const ScalarT,Cell,IP> field;
 
   struct Initialize {};
   struct FieldMultipliers {};
@@ -233,6 +233,7 @@ public:
   void operator()(const unsigned cell) const
   {
     for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+      residual(cell,lbf) = 0.0;
       for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
         for (int d = 0; d < spaceDim; d++) {
           residual(cell,lbf) += scratch(cell, qp, d)*weighted_curl_basis(cell, lbf, qp, d);
@@ -253,6 +254,7 @@ public:
   void operator()(const unsigned cell) const
   {
     for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+      residual(cell,lbf) = 0.0;
       for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
           residual(cell,lbf) += scratch(cell,qp)*weighted_curl_basis(cell,lbf,qp);
       } // P-loop
@@ -265,7 +267,7 @@ public:
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 { 
-  residual.deep_copy(ScalarT(0.0));
+  // residual.deep_copy(ScalarT(0.0));
 
   const BasisValues2<double> & bv = *workset.bases[basis_index];
 
@@ -280,7 +282,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::Initialize>(0,workset.num_cells), fillScratch);
 
     // multiply agains all the fields in the next one
-    for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+    for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
          field != field_multipliers.end(); ++field) {
       fillScratch.field = *field;
 
@@ -306,7 +308,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::Initialize>(0,workset.num_cells), fillScratch);
 
     // multiply agains all the fields in the next one
-    for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+    for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
          field != field_multipliers.end(); ++field) {
       fillScratch.field = *field;
 

@@ -63,10 +63,10 @@ PHX_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
-  PHX::MDField<ScalarT,Cell,IP>     flux_scalar; // note that this is used for scalar fields
-  PHX::MDField<ScalarT,Cell,IP,Dim> flux_vector; // note that this is used for vector fields
+  PHX::MDField<const ScalarT,Cell,IP>     flux_scalar; // note that this is used for scalar fields
+  PHX::MDField<const ScalarT,Cell,IP,Dim> flux_vector; // note that this is used for vector fields
     
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
   std::size_t num_nodes;
   std::size_t num_qp;

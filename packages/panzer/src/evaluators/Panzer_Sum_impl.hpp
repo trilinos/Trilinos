@@ -81,7 +81,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
  
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
-    values[i] = PHX::MDField<ScalarT>( (*value_names)[i], data_layout);
+    values[i] = PHX::MDField<const ScalarT>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
  
@@ -104,11 +104,16 @@ PHX_EVALUATE_FIELDS(Sum,workset)
 { 
 #if PANZER_USE_FAST_SUM 
   sum.deep_copy(ScalarT(0.0));
-  for (std::size_t j = 0; j < values.size(); ++j)
-    for (PHX::MDFieldIterator<ScalarT> sum_it(sum), values_it(values[j]);
+  for (std::size_t j = 0; j < values.size(); ++j) {
+    
+    PHX::MDFieldIterator<ScalarT> sum_it(sum);
+    PHX::MDFieldIterator<const ScalarT> values_it(values[j]);
+    // for (PHX::MDFieldIterator<ScalarT> sum_it(sum), values_it(values[j]);
+    for ( ;
          ! (sum_it.done() || values_it.done());
          ++sum_it, ++values_it)
       *sum_it += scalars[j]*(*values_it);
+  }
 #else
   std::size_t length = workset.num_cells * cell_data_size;
   for (std::size_t i = 0; i < length; ++i) {
@@ -141,7 +146,7 @@ SumStatic(const Teuchos::ParameterList& p)
  
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
-    values[i] = PHX::MDField<ScalarT,Tag0>( (*value_names)[i], data_layout);
+    values[i] = PHX::MDField<const ScalarT,Tag0>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
  
@@ -196,7 +201,7 @@ SumStatic(const Teuchos::ParameterList& p)
  
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
-    values[i] = PHX::MDField<ScalarT,Tag0,Tag1>( (*value_names)[i], data_layout);
+    values[i] = PHX::MDField<const ScalarT,Tag0,Tag1>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
  
