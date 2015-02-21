@@ -51,7 +51,7 @@ namespace Amesos2 {
 
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   template <class S, class LO, class GO, class D>
-  Stokhos::CrsProductTensor<typename S::value_type,D>
+  typename Sacado::UQ::PCE<S>::cijk_type
   get_pce_cijk(
     const Teuchos::RCP<const Tpetra::CrsMatrix<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& A = Teuchos::null,
     const Teuchos::RCP<Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& X = Teuchos::null,
@@ -66,7 +66,7 @@ namespace Amesos2 {
     else if (B != Teuchos::null) {
       return B->template getLocalView<D>().cijk();
     }
-    return Stokhos::CrsProductTensor<typename S::value_type,D>();
+    return typename Sacado::UQ::PCE<S>::cijk_type();
   }
 
   /// \brief Amesos2 solver adapter for UQ::PCE scalar type
@@ -105,7 +105,7 @@ namespace Amesos2 {
 
     typedef Solver<Matrix,Vector> solver_type;
     typedef typename solver_type::type type;
-    typedef Stokhos::CrsProductTensor<typename Storage::value_type,Device> cijk_type;
+    typedef typename Scalar::cijk_type cijk_type;
 
     /// Constructor
     PCESolverAdapter(
