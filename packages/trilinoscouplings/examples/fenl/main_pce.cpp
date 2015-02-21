@@ -52,7 +52,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   RCP<const product_basis> basis = rcp(new product_basis(bases));
   RCP<Cijk> cijk = basis->computeTripleProductTensor();
 
-  typedef Stokhos::DynamicStorage<int,double,Device> Storage;
+  typedef typename Device::memory_space memory_space;
+  typedef Stokhos::DynamicStorage<int,double,memory_space> Storage;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typename Scalar::cijk_type kokkos_cijk =
     Stokhos::create_product_tensor<Device>(*basis, *cijk);

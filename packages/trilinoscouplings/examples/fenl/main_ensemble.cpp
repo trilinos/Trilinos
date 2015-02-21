@@ -103,7 +103,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Perf perf_total;
   perf_total.uq_count = num_quad_points;
 
-  typedef Stokhos::DynamicStorage<int,double,Device> PCEStorage;
+  typedef typename Device::memory_space memory_space;
+  typedef Stokhos::DynamicStorage<int,double,memory_space> PCEStorage;
   typedef Sacado::UQ::PCE<PCEStorage> PCEScalar;
   PCEScalar response_pce( typename PCEScalar::cijk_type(), basis->size() );
 
@@ -111,7 +112,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   // points at a time
   if ( cmd.USE_UQ_ENSEMBLE > 0 ) {
 
-    typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> Storage;
+    typedef Stokhos::StaticFixedStorage<int,double,VectorSize,memory_space> Storage;
     typedef Sacado::MP::Vector<Storage> Scalar;
 
     // Set global vector size -- this is mandatory
