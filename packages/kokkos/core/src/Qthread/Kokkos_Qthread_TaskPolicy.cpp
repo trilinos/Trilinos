@@ -61,6 +61,7 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Experimental {
 namespace Impl {
 
 typedef TaskMember< Kokkos::Qthread , void , void > Task ;
@@ -122,7 +123,7 @@ Task::TaskMember( const function_verify_type   arg_verify
   , m_dep_capacity( arg_dependence_capacity )
   , m_dep_size( 0 )
   , m_ref_count( 0 )
-  , m_state( Kokkos::TASK_STATE_CONSTRUCTING )
+  , m_state( Kokkos::Experimental::TASK_STATE_CONSTRUCTING )
   , m_qfeb(0)
 {
   qthread_empty( & m_qfeb ); // Set to full when complete
@@ -141,7 +142,7 @@ Task::TaskMember( const function_dealloc_type  arg_dealloc
   , m_dep_capacity( arg_dependence_capacity )
   , m_dep_size( 0 )
   , m_ref_count( 0 )
-  , m_state( Kokkos::TASK_STATE_CONSTRUCTING )
+  , m_state( Kokkos::Experimental::TASK_STATE_CONSTRUCTING )
   , m_qfeb(0)
 {
   qthread_empty( & m_qfeb ); // Set to full when complete
@@ -188,7 +189,7 @@ void Task::assign( Task ** const lhs , Task * rhs , const bool no_throw )
         // Reference count at zero, delete it
 
         // Should only be deallocating a completed task
-        if ( (**lhs).m_state == Kokkos::TASK_STATE_COMPLETE ) {
+        if ( (**lhs).m_state == Kokkos::Experimental::TASK_STATE_COMPLETE ) {
 
           // A completed task should not have dependences...
           for ( int i = 0 ; i < (**lhs).m_dep_size && 0 == msg_error ; ++i ) {
@@ -240,13 +241,13 @@ aligned_t Task::qthread_func( void * arg )
 {
   Task * const task = reinterpret_cast< Task * >(arg);
 
-  task->m_state = Kokkos::TASK_STATE_EXECUTING ;
+  task->m_state = Kokkos::Experimental::TASK_STATE_EXECUTING ;
 
   (*task->m_apply)( task );
 
-  if ( task->m_state == Kokkos::TASK_STATE_EXECUTING ) {
+  if ( task->m_state == Kokkos::Experimental::TASK_STATE_EXECUTING ) {
     // Task did not respawn, is complete
-    task->m_state = Kokkos::TASK_STATE_COMPLETE ;
+    task->m_state = Kokkos::Experimental::TASK_STATE_COMPLETE ;
 
     // Release dependences before allowing dependent tasks to run.
     // Otherwise their is a thread race condition for removing dependences.
@@ -277,7 +278,7 @@ void Task::schedule()
     qprecon[i+1] = & m_dep[i]->m_qfeb ; // Qthread precondition flag
   }
 
-  m_state = Kokkos::TASK_STATE_WAITING ;
+  m_state = Kokkos::Experimental::TASK_STATE_WAITING ;
 
   qthread_spawn( & Task::qthread_func , this , 0 , NULL
                , m_dep_size , qprecon
@@ -293,6 +294,7 @@ void Task::wait( const Future< void, Kokkos::Qthread> & f )
 }
 
 } // namespace Impl
+} // namespace Experimental
 } // namespace Kokkos
 
 #endif /* #if defined( KOKKOS_HAVE_QTHREAD ) */
