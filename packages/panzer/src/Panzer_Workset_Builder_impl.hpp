@@ -74,7 +74,6 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory arrayFactory;
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   std::size_t total_num_cells = local_cell_ids.size();
@@ -165,6 +164,12 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
     std::vector<std::size_t>::const_iterator end_iter = begin_iter + wkst->num_cells;
     local_begin = end_iter;
     wkst->cell_local_ids.assign(begin_iter,end_iter);
+
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->cell_local_ids.size());
+    for(std::size_t i=0;i<wkst->cell_local_ids.size();i++)
+      cell_local_ids_k(i) = wkst->cell_local_ids[i];
+    wkst->cell_local_ids_k = cell_local_ids_k;
+    
     // wkst->cell_vertex_coordinates.resize(workset_size,
     //                                     vertex_coordinates.dimension(1),
     //                                     vertex_coordinates.dimension(2));
@@ -330,6 +335,12 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
 	  coords2(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
         }
     }
+
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",worksets[side->first].cell_local_ids.size());
+    for(std::size_t i=0;i<worksets[side->first].cell_local_ids.size();i++)
+      cell_local_ids_k(i) = worksets[side->first].cell_local_ids[i];
+    worksets[side->first].cell_local_ids_k = cell_local_ids_k;
+
     worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
     worksets[side->first].block_id = volume_pb.elementBlockID();
     worksets[side->first].subcell_dim = volume_pb.cellData().baseCellDimension() - 1;
@@ -366,7 +377,6 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory arrayFactory;
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   std::size_t total_num_cells_a = local_cell_ids_a.size();
@@ -555,6 +565,15 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
         }
       }
     }
+
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k_0 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details[0]->cell_local_ids.size());
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k_1 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details[1]->cell_local_ids.size());
+    for(std::size_t i=0;i<wkst->details[0]->cell_local_ids.size();i++) 
+      cell_local_ids_k_0(i) = wkst->details[0]->cell_local_ids[i];
+    for(std::size_t i=0;i<wkst->details[1]->cell_local_ids.size();i++) 
+      cell_local_ids_k_1(i) = wkst->details[1]->cell_local_ids[i];
+    wkst->details[0]->cell_local_ids_k = cell_local_ids_k_0;
+    wkst->details[1]->cell_local_ids_k = cell_local_ids_k_1;
 
     // fill the BasisValues and IntegrationValues arrays
     std::size_t max_workset_size = pb_a.cellData().numCells();

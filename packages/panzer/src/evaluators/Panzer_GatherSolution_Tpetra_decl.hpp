@@ -229,12 +229,20 @@ private:
 
   GatherSolution_Tpetra();
 
-  // fuctor objects
-  PHX::MDField<ScalarT,Cell,NODE> fctr_field;
-  std::vector<int> fctr_elmtOffset;
-  std::vector<std::size_t> fctr_localCellIds;
-  Teuchos::ArrayRCP<const double> fctr_x_array;
-  double fctr_seed_value;
+  Kokkos::View<int**,PHX::Device> scratch_lids_;
+  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+
+  // functor data
+  struct {
+    // input values
+    Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
+    Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
+    Teuchos::ArrayRCP<const double> x_array;      // vector data
+    double seed_value;                            // AD seed information
+
+    // output fields
+    PHX::MDField<ScalarT,Cell,NODE> field;
+  } functor_data;
 };
 
 }

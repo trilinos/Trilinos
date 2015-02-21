@@ -335,6 +335,7 @@ GatherSolution_Tpetra(
     basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
 
   gatherFields_.resize(names.size());
+  scratch_offsets_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
@@ -364,6 +365,9 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
   fieldIds_.resize(gatherFields_.size());
 
+  const Workset & workset_0 = (*d.worksets_)[0];
+  std::string blockId = workset_0.block_id;
+
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     const std::string& fieldName = (*indexerNames_)[fd];
@@ -371,7 +375,16 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
+
+    int fieldNum = fieldIds_[fd];
+    const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    for(std::size_t i=0;i<offsets.size();i++)
+      scratch_offsets_[fd](i) = offsets[i];
   }
+
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+                                                 globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
@@ -458,9 +471,27 @@ evaluateFields(typename TRAITS::EvalData workset)
      }
    }
 */
-   fctr_localCellIds = workset.cell_local_ids;
-   fctr_x_array = x->get1dView();
-   fctr_seed_value = seed_value;
+
+   // here is a temporary solution, copy all LIDs into a kokkos vector
+   //////////////////////////////////////////////////////////////////////////////////
+/*
+   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+     std::size_t cellLocalId = localCellIds[worksetCellIndex];
+     const std::vector<LO> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+     for(std::size_t b=0;b<LIDs.size();b++)
+       scratch_lids_(worksetCellIndex,b) = LIDs[b];
+   }
+*/
+ 
+   globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
+
+   // now setup the fuctor_data, and run the parallel_for loop
+   //////////////////////////////////////////////////////////////////////////////////
+
+   functor_data.x_array = x->get1dView();
+   functor_data.seed_value = seed_value;
+   functor_data.lids = scratch_lids_;
 
    // loop over the fields to be gathered
    for(std::size_t fieldIndex=0;
@@ -468,8 +499,8 @@ evaluateFields(typename TRAITS::EvalData workset)
      int fieldNum = fieldIds_[fieldIndex];
 
      // setup functor data
-     fctr_elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-     fctr_field = gatherFields_[fieldIndex];
+     functor_data.offsets = scratch_offsets_[fieldIndex];
+     functor_data.field   = gatherFields_[fieldIndex];
 
      Kokkos::parallel_for(workset.num_cells,*this);
    }
@@ -481,21 +512,15 @@ KOKKOS_INLINE_FUNCTION
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 operator()(const int worksetCellIndex) const
 {
-  std::vector<LO> LIDs;
-
-  // gather operation for each cell in workset
-  std::size_t cellLocalId = fctr_localCellIds[worksetCellIndex];
-
-  LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<fctr_elmtOffset.size();basis++) {
-    int offset = fctr_elmtOffset[basis];
-    LO lid = LIDs[offset];
+  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+    int offset = functor_data.offsets(basis);
+    LO lid    = functor_data.lids(worksetCellIndex,offset);
 
     // set the value and seed the FAD object
-    fctr_field(worksetCellIndex,basis) = ScalarT(LIDs.size(), fctr_x_array[lid]);
-    fctr_field(worksetCellIndex,basis).fastAccessDx(offset) = fctr_seed_value;
+    // functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.lids.dimension_1(), functor_data.x_array[lid]);
+    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_array[lid];
+    functor_data.field(worksetCellIndex,basis).fastAccessDx(offset) = functor_data.seed_value;
   }
 }
 

@@ -80,7 +80,6 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const panzer::Physics
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory arrayFactory;
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   // setup the integration rules and bases

@@ -55,6 +55,8 @@
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_Dimension.hpp"
 
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 
 namespace panzer {
@@ -68,6 +70,7 @@ namespace panzer {
   struct WorksetDetails {
     typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
 
+    Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
     std::vector<std::size_t> cell_local_ids;
     CellCoordArray cell_vertex_coordinates;
     std::string block_id;
