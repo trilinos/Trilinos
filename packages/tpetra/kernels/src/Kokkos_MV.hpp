@@ -419,15 +419,42 @@ struct MV_ElementWiseMultiplyFunctor
       {}
   //--------------------------------------------------------------------------
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
-  {
-    typename AVector::const_value_type Ai = m_A(i);
+  KOKKOS_INLINE_FUNCTION void operator() (const size_type i) const {
+    if (m_c == Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ()) {
+      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
+        return; // DO NOTHING (BLAS update rules)
+      }
+      else { // m_ab != 0, but m_c == 0
+        // BLAS update rules say that if m_c == 0, we must overwrite m_C.
+        // This matters only if m_C has entries that are Inf or NaN.
+        typename AVector::const_value_type Ai = m_A(i);
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-  for(size_type k=0;k<m_n;k++)
-     m_C(i,k) = m_c*m_C(i,k) + m_ab*Ai*m_B(i,k);
+        for (size_type k = 0; k < m_n; ++k) {
+          m_C(i,k) = m_ab * Ai * m_B(i,k);
+        }
+      }
+    }
+    else { // m_c != 0
+      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+        for (size_type k = 0; k < m_n; ++k) {
+          m_C(i,k) = m_c * m_C(i,k);
+        }
+      }
+      else { // m_ab != 0, and m_c != 0
+        typename AVector::const_value_type Ai = m_A(i);
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+        for (size_type k = 0; k < m_n; ++k) {
+          m_C(i,k) = m_c * m_C(i,k) + m_ab * Ai * m_B(i,k);
+        }
+      }
+    }
   }
 };
 
@@ -3252,20 +3279,34 @@ struct V_ElementWiseMultiplyFunctor
   typename AVector::const_type m_A ;
   typename BVector::const_type m_B ;
 
-  V_ElementWiseMultiplyFunctor(
-      typename CVector::const_value_type c,
-      CVector C,
-      typename AVector::const_value_type ab,
-      typename AVector::const_type A,
-      typename BVector::const_type B):
-      m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B)
-      {}
-  //--------------------------------------------------------------------------
+  V_ElementWiseMultiplyFunctor (typename CVector::const_value_type c,
+                                CVector C,
+                                typename AVector::const_value_type ab,
+                                typename AVector::const_type A,
+                                typename BVector::const_type B) :
+    m_c (c), m_C (C), m_ab (ab), m_A (A), m_B (B)
+  {}
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
-  {
-     m_C(i) = m_c*m_C(i) + m_ab*m_A(i)*m_B(i);
+  KOKKOS_INLINE_FUNCTION void operator () (const size_type i) const {
+    if (m_c == Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ()) {
+      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
+        return; // DO NOTHING (BLAS update rules)
+      }
+      else { // m_ab != 0, but m_c == 0
+        // BLAS update rules say that if m_c == 0, we must overwrite
+        // m_C.  This matters only if m_C has entries that are Inf or
+        // NaN.
+        m_C(i) = m_ab * m_A(i) * m_B(i);
+      }
+    }
+    else { // m_c != 0
+      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
+        m_C(i) = m_c * m_C(i);
+      }
+      else { // m_ab != 0, and m_c != 0
+        m_C(i) = m_c * m_C(i) + m_ab * m_A(i) * m_B(i);
+      }
+    }
   }
 };
 
