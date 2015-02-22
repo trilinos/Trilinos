@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcAss
   const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const RCP<const DefaultSpmdVectorSpace<Scalar> > vs = createZeroEleProcVS<Scalar>(localDim);
-  const Ordinal numCols = 3; 
+  const Ordinal numCols = 3;
   PRINT_VAR(numCols);
   const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, numCols);
   const Scalar val = 1.5;
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace_Parallel, emptyProcSim
   Scalar )
 {
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  //typedef Teuchos::ScalarTraits<ScalarMag> SMT; // unused
   const Ordinal localDim = g_localDim;
   PRINT_VAR(localDim);
   const Ordinal numCols1 = g_numCols1;
