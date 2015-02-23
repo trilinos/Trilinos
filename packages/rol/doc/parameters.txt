@@ -1,4 +1,4 @@
-ROL Parameter List Heirarchy
+ROL Parameter List Hierarchy
 ============================
 
 [Trust Region]
