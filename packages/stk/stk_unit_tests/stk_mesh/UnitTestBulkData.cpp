@@ -663,7 +663,11 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
             bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
         }
 
+#ifdef NDEBUG
+        EXPECT_NO_THROW(bulkData.modification_end());
+#else
         EXPECT_THROW(bulkData.modification_end(), std::runtime_error);
+#endif
 
         // EXPECT_TRUE(!bulkData.bucket(node1).member(messyPart));
     }
