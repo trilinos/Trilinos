@@ -89,15 +89,13 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < class Device, class Storage, bool is_static = Storage::is_static >
+template < class Storage, bool is_static = Storage::is_static >
 struct MPVectorAllocation;
 
-template <class Device, class Storage>
-struct MPVectorAllocation<Device, Storage, true> {
+template <class Storage>
+struct MPVectorAllocation<Storage, true> {
   typedef Sacado::MP::Vector<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
-  typedef typename Device::memory_space memory_space;
-  typedef typename Device::execution_space execution_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -106,12 +104,16 @@ struct MPVectorAllocation<Device, Storage, true> {
   MPVectorAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <bool Initialize, class LabelType, class ShapeType>
+  template <class ExecSpace, class MemSpace, bool Initialize,
+            class LabelType, class ShapeType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const unsigned vector_size) {
+    typedef MemSpace memory_space;
+    typedef ExecSpace execution_space;
+
     const size_t count = Impl::cardinality_count( shape ) * vector_size;
     m_tracker = memory_space::allocate_and_track( label ,
                                                   sizeof(scalar_type)*count );
@@ -135,12 +137,10 @@ struct MPVectorAllocation<Device, Storage, true> {
 
 };
 
-template <class Device, class Storage>
-struct MPVectorAllocation<Device, Storage, false> {
+template <class Storage>
+struct MPVectorAllocation<Storage, false> {
   typedef Sacado::MP::Vector<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
-  typedef typename Device::memory_space memory_space;
-  typedef typename Device::execution_space execution_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -149,12 +149,15 @@ struct MPVectorAllocation<Device, Storage, false> {
   MPVectorAllocation() : m_scalar_ptr_on_device(), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <bool Initialize, class LabelType, class ShapeType>
+  template <class ExecSpace, class MemSpace, bool Initialize,
+            class LabelType, class ShapeType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const unsigned vector_size) {
+    typedef MemSpace memory_space;
+    typedef ExecSpace execution_space;
 
     // Allocate space for contiguous MP::Vector values
     // and for MP::Vector itself.  We do this in one
@@ -185,8 +188,9 @@ struct MPVectorAllocation<Device, Storage, false> {
     //   new (p++) value_type(vector_size, sp, false);
     //   sp += vector_size;
     // }
-    parallel_for( num_vec, VectorInit( ptr, m_scalar_ptr_on_device,
-                                       vector_size ) );
+    parallel_for( num_vec,
+                  VectorInit<execution_space>( ptr, m_scalar_ptr_on_device,
+                                               vector_size ) );
 
     return ptr;
   }
@@ -205,8 +209,9 @@ struct MPVectorAllocation<Device, Storage, false> {
     }
   }
 
+  template <class ExecSpace>
   struct VectorInit {
-    typedef typename Device::execution_space execution_space;
+    typedef ExecSpace execution_space;
     value_type* p;
     scalar_type* sp;
     const unsigned vector_size;
@@ -294,7 +299,7 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::MPVectorAllocation<typename traits::memory_space, stokhos_storage_type> allocation_type;
+  typedef Impl::MPVectorAllocation<stokhos_storage_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
@@ -348,9 +353,7 @@ public:
                 typename traits::memory_traits > non_const_type ;
 
   // Host mirror
-  typedef View< typename Impl::RebindStokhosStorageDevice<
-                  typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space::memory_space >::type ,
+  typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -517,6 +520,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -526,9 +531,7 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<Alloc::Initialize>( Alloc::label( prop ),
-                                                           m_offset_map,
-                                                           m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>( Alloc::label( prop ), m_offset_map, m_sacado_size.value );
     }
 
   template< class AllocationProperties , typename iType >
@@ -541,6 +544,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -558,9 +563,7 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<Alloc::Initialize>( Alloc::label( prop ),
-                                                           m_offset_map,
-                                                           m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>( Alloc::label( prop ), m_offset_map, m_sacado_size.value );
     }
 
   //------------------------------------

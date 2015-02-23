@@ -187,7 +187,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   typedef typename Storage::value_type BaseScalar;
   typedef typename Storage::execution_space execution_space;
-  typedef typename Storage::memory_space memory_space;
   typedef Sacado::UQ::PCE<Storage> Scalar;
   typedef typename Scalar::cijk_type Cijk;
 
@@ -2305,5 +2304,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
-  typedef Stokhos::DynamicStorage<int,double,typename Device::memory_space> DS;                \
+  typedef Stokhos::DynamicStorage<int,double,typename Device::execution_space> DS;                \
   CRSMATRIX_UQ_PCE_TESTS_SLGN(DS, int, int, N)

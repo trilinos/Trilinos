@@ -47,7 +47,7 @@
   INSTMACRO( Sacado::UQ::PCE<STORAGE>, LO, GO, N )
 
 #define INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
-  typedef Stokhos::DynamicStorage<L,S,typename D::memory_space> DS_ ## L ## _ ## S ## _ ## _ ## D; \
+  typedef Stokhos::DynamicStorage<L,S,typename D::execution_space> DS_ ## L ## _ ## S ## _ ## _ ## D; \
   INSTANTIATE_UQ_PCE_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
 #define INSTANTIATE_UQ_PCE_S_D(INSTMACRO, D, LO, GO, N) \

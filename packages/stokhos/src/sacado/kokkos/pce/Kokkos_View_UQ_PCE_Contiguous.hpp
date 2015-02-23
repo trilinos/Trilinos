@@ -89,14 +89,13 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < typename PCEType, typename Device>
+template < typename PCEType >
 struct PCEAllocation;
 
-template < typename Storage, typename Device >
-struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
-  typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -105,13 +104,16 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const CijkType& cijk,
            const unsigned pce_size) {
+    typedef MemSpace memory_space;
+    typedef ExecSpace execution_space;
 
     // Allocate space for contiguous UQ::PCE values
     // and for UQ::PCE itself.  We do this in one
@@ -140,8 +142,10 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     //   new (p++) value_type(pce_size, sp, false);
     //   sp += pce_size;
     // }
-    parallel_for( num_vec, VectorInit<CijkType>( ptr, m_scalar_ptr_on_device,
-                                                 cijk, pce_size ) );
+    parallel_for( num_vec,
+                  VectorInit<execution_space,CijkType>( ptr,
+                                                        m_scalar_ptr_on_device,
+                                                        cijk, pce_size ) );
 
     return ptr;
   }
@@ -158,9 +162,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     }
   }
 
-  template <class CijkType>
+  template <class ExecSpace, class CijkType>
   struct VectorInit {
-    typedef typename Device::execution_space execution_space;
+    typedef ExecSpace execution_space;
     value_type* p;
     scalar_type* sp;
     CijkType cijk;
@@ -178,8 +182,8 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   };
 };
 
-template < typename Storage, typename Device >
-struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
 
@@ -189,16 +193,18 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
   KOKKOS_INLINE_FUNCTION
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
+  // Need assignment operator for const and non-const pce type
   template <typename pce_type>
   KOKKOS_INLINE_FUNCTION
-  PCEAllocation& operator=(const PCEAllocation<pce_type,Device>& rhs) {
+  PCEAllocation& operator=(const PCEAllocation<pce_type>& rhs) {
     m_scalar_ptr_on_device = rhs.m_scalar_ptr_on_device;
     m_tracker = rhs.m_tracker;
     return *this;
   }
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
@@ -294,8 +300,7 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::PCEAllocation<typename traits::value_type,
-                              typename traits::memory_space> allocation_type;
+  typedef Impl::PCEAllocation<typename traits::value_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
@@ -365,9 +370,7 @@ public:
                 typename traits::memory_traits > non_const_type ;
 
   // Host mirror
-  typedef View< typename Impl::RebindStokhosStorageDevice<
-                  typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space::memory_space >::type ,
+  typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -535,6 +538,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -545,10 +550,11 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
 
       if ( Alloc::Initialize ) {
@@ -571,6 +577,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -581,10 +589,11 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
 
       if ( Alloc::Initialize ) {
@@ -600,6 +609,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -618,10 +629,11 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
 
       if ( Alloc::Initialize ) {
@@ -638,6 +650,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -656,10 +670,11 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
 
       if ( Alloc::Initialize ) {
@@ -1237,11 +1252,11 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
 
       typedef View< typename src_type::non_const_data_type ,
                     typename src_type::array_layout ,
-                    typename src_type::device_type > tmp_src_type;
+                    typename src_type::execution_space > tmp_src_type;
       typedef typename tmp_src_type::array_type tmp_src_array_type;
       typedef View< typename dst_type::non_const_data_type ,
                     typename dst_type::array_layout ,
-                    typename dst_type::device_type > tmp_dst_type;
+                    typename dst_type::execution_space > tmp_dst_type;
       typedef typename tmp_dst_type::array_type tmp_dst_array_type;
 
       // Copy src into a contiguous view in src's memory space,
