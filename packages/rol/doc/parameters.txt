@@ -1,0 +1,91 @@
+ROL Parameter List Heirarchy
+============================
+
+[Trust Region]
+- Trust-Region Subproblem Solver Type
+    - Cauchy Point
+    - Truncated CG
+    - Dogleg
+    - Double Dogleg
+- Initial Trust-Region Radius (double)
+- Maximum Trust-Region Radius (double)
+
+     
+[Linesearch]
+- Linesearch Type
+    - Iteration Scaling
+    - Path-Based Target Level
+    - Backtracking
+    - Bisection
+    - Golden Section
+    - Cubic Interpolation
+    - Brents
+    - User Defined 
+- Linesearch Curvature Condition
+    - Wolfe Conditions
+    - Strong Wolfe Conditions
+    - Generalized Wolfe Conditions
+    - Approximate Wolfe Conditions
+    - Goldstein Conditions
+    - Null Curvature Condition
+- Sufficient Decrease Parameter (double)
+- Curvature Conditions Parameter (double)
+- Backtracking Rate (double)
+- Initial Linesearch Parameter (double)
+- User Defined Linesearch Parameter (bool)
+
+[ Need to classify? ]
+- Use Inexact Objective Function (bool)
+- Use Inexact Gradient (bool)
+- Use Inexact Hessian-Times-A-Vector (bool)
+- Gradient Update Tolerance Scaling (double)
+- Gradient Update Relative Tolerance (double)
+- Use Projected Gradient Criticality Measure (bool)
+- Maximum Number of Function Evaluations (int)
+- Initial Linesearch Parameter (double)
+- Variable Objective Function (bool)
+- Scale for Epsilon Active Sets (double)
+
+[SQP]
+- Nominal SQP Optimality Solver Tolerance (double)
+- Maximum Number of Krylov Iterations (double)
+- Absolute Krylov Tolerance (double)
+
+[Primal Dual Acive Set]
+- PDAS Maximum Number of Iterations (int)
+- PDAS Relative Step Tolerance (double)
+- PDAS Relative Gradient Tolerance (double)
+- PDAS Dual Scaling (double) 
+
+
+
+- Descent Type
+    - Steepest Descent
+    - Nonlinear CG
+        - Hestenes-Stiefel
+        - Fletcher-Reeves
+        - Daniel (uses Hessian)
+        - Polak-Ribiere
+        - Fletcher Conjugate Descent
+        - Liu-Storey
+        - Dai-Yuan
+        - Hagar-Zhang
+    - Quasi-Newton Method
+        - Secant Type
+            - Limited-Memory BFGS
+            - Limited-Memory DFP
+            - Limited-Memory SR1
+            - Barzilai-Borwein
+                - Barzilai-Borwein Type (int)
+            - User-Defined
+        - Maximum Secant Storage (int)
+    - Newton-Krylov
+        - Absolute Krylov Tolerance (double)
+        - Relative Krylov Tolerance (double)
+        - Maximum Number of Krylov Iterations (int)
+        - Krylov Type
+            - Conjugate Gradients
+            - Conjugate Residuals
+        - Use Secant Hessian-Times-A-Vector (bool)
+        - Use Secant Preconditioning (bool)
+    - Newton's Method
