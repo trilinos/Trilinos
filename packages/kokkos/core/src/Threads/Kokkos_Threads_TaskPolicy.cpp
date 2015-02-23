@@ -145,16 +145,16 @@ void Task::schedule()
 
   {
     const int old_state = atomic_compare_exchange( & m_state , int(TASK_STATE_CONSTRUCTING) , int(TASK_STATE_WAITING) );
-    Task * const wait = *((Task * volatile const *) & m_wait );
+    Task * const waitTask = *((Task * volatile const *) & m_wait );
     Task * const next = *((Task * volatile const *) & m_next );
 
-    if ( s_denied == wait || 0 != next ||
+    if ( s_denied == waitTask || 0 != next ||
          ( old_state != int(TASK_STATE_CONSTRUCTING) &&
            old_state != int(TASK_STATE_WAITING) ) ) {
       fprintf(stderr,"Task::schedule task(0x%lx) STATE ERROR: state(%d) wait(0x%lx) next(0x%lx)\n"
                     , (unsigned long) this
                     , old_state
-                    , (unsigned long) wait
+                    , (unsigned long) waitTask
                     , (unsigned long) next );
       fflush(stderr);
       Kokkos::Impl::throw_runtime_exception("Kokkos::Impl::Task spawn or respawn state error");
@@ -273,7 +273,7 @@ void Task::assign( Task ** const lhs_ptr , Task * rhs )
       fprintf( stderr , "%s task(0x%lx) m_ref_count(%d) , m_wait(0x%ld)\n"
                       , msg_error_header
                       , (unsigned long) old_lhs
-                      , count 
+                      , count
                       , (unsigned long) wait );
       fflush(stderr);
 
@@ -303,7 +303,7 @@ fprintf( stderr
        , m_state
        , m_dep_size
        , i
-       , (unsigned long) t 
+       , (unsigned long) t
        );
 fflush( stderr );
 
