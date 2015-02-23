@@ -325,6 +325,10 @@ public:
         modified_host() = modified_device() = 0;
       }
     }
+    if(Impl::is_same<typename t_host::memory_space,typename t_dev::memory_space>::value) {
+      t_dev::execution_space::fence();
+      t_host::execution_space::fence();
+    }
   }
 
   template<class Device>
