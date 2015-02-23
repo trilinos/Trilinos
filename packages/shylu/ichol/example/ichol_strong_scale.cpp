@@ -48,9 +48,9 @@ typedef Example::CrsMatrixHelper CrsMatrixHelper;
 typedef Example::TaskFactory<Example::TaskPolicy,
                              Example::Future> TaskFactory;
 #else
-typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
-                             Kokkos::Future<int,space_type> > TaskFactory;
-using Kokkos::wait;
+typedef Example::TaskFactory<Kokkos::Experimental::TaskPolicy<space_type>,
+                             Kokkos::Experimental::Future<int,space_type> > TaskFactory;
+using Kokkos::Experimental::wait;
 #endif
 
 // member submatrix with future inside
