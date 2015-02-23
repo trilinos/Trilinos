@@ -568,24 +568,28 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
       ELSEIF (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
-          " a lib in this SE package but is a library defined in the current"
-          " cmake project!  Such usage is  deprecated (and"
-          " will result in a configure error soon).  If this is a library in"
-          " a dependent upstream SE package, then simply remove it from this list."
-          "  TriBITS automatically links in libraries in upstream SE packages."
-          "  If you remove '${LIB}' from DEPLIBS and your code does"
-          " not link, then you need to add a new SE package dependency to"
-          " this SE package's dependencies file"
-          " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+        IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+          MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+            " a lib in this SE package but is a library defined in the current"
+            " cmake project!  Such usage is  deprecated (and"
+            " will result in a configure error soon).  If this is a library in"
+            " a dependent upstream SE package, then simply remove it from this list."
+            "  TriBITS automatically links in libraries in upstream SE packages."
+            "  If you remove '${LIB}' from DEPLIBS and your code does"
+            " not link, then you need to add a new SE package dependency to"
+            " this SE package's dependencies file"
+            " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+        ENDIF()
       ELSEIF (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
-          " a lib defined in the current cmake project!  Such usage is deprecated (and"
-          " will result in a configure error soon).  If this is an external"
-          " lib you are trying to link in, it should likely be handled as a TriBITS"
-          " TPL.  Otherwise, it should be passed in through IMPORTEDLIBS.  However,"
-          " the only case we have found where IMPORTEDLIBS had to be used instead of"
-          " through a proper TriBITS TPL is the C math library 'm'.")
+        IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+          MESSAGE(WARNING "WARNING: '${LIB}' in DEPSLIBS is not"
+            " a lib defined in the current cmake project!  Such usage is deprecated (and"
+            " will result in a configure error soon).  If this is an external"
+            " lib you are trying to link in, it should likely be handled as a TriBITS"
+            " TPL.  Otherwise, it should be passed in through IMPORTEDLIBS.  However,"
+            " the only case we have found where IMPORTEDLIBS had to be used instead of"
+            " through a proper TriBITS TPL is the C math library 'm'.")
+        ENDIF()
       ELSE()
         MESSAGE(WARNING "WARNING: The case PARSE_TESTONLY=${PARSE_TESTONLY},"
           " LIB_IN_SE_PKG=${LIB_IN_SE_PKG}, LIB_TESTONLY=${LIB_TESTONLY}, has"

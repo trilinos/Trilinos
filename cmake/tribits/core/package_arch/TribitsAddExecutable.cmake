@@ -430,26 +430,32 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   FOREACH(DEPLIB ${PARSE_DEPLIBS})
     SET(PREFIXED_LIB "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}${DEPLIB}")
     IF (${PREFIXED_LIB}_INCLUDE_DIRS)
-      MESSAGE(WARNING "WARNING: Passing TESTONLY lib '${DEPLIB}' through DEPLIBS"
-        " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
-        "  DEPLIBS is deprecated!")
+      IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+        MESSAGE(WARNING "WARNING: Passing TESTONLY lib '${DEPLIB}' through DEPLIBS"
+          " is deprecated!  Instead, please pass through TESTONLYLIBS instead!"
+          "  DEPLIBS is deprecated!")
+      ENDIF()
       LIST(APPEND PARSE_TESTONLYLIBS ${DEPLIB})
     ELSEIF (TARGET ${PREFIXED_LIB})
-      MESSAGE(WARNING "WARNING: Passing non-TESTONLY lib '${DEPLIB}' through DEPLIBS"
-      " is deprecated!  The library '${DEPLIB}' appears to be a"
-      " library defined in this CMake project."
-      "  TriBITS takes care of linking against libraries in dependent upstream"
-      " SE packages.  Therefore, please remove '${DEPLIB}' from this list."
-      "   If you want to link to a library from an upstream SE"
-      " package, then add the SE package name to the appropriate category"
-      " in this SE package's dependencies file: "
-      " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+        MESSAGE(WARNING "WARNING: Passing non-TESTONLY lib '${DEPLIB}' through DEPLIBS"
+        " is deprecated!  The library '${DEPLIB}' appears to be a"
+        " library defined in this CMake project."
+        "  TriBITS takes care of linking against libraries in dependent upstream"
+        " SE packages.  Therefore, please remove '${DEPLIB}' from this list."
+        "   If you want to link to a library from an upstream SE"
+        " package, then add the SE package name to the appropriate category"
+        " in this SE package's dependencies file: "
+        " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
+      ENDIF()
     ELSE()
-      MESSAGE(WARNING "WARNING: Passing external lib '${DEPLIB}' through"
-        " DEPLIBS is deprecated!  Instead, pass through IMPORTEDLIBS!"
-        "  DEPLIBS is deprecated!"
-        "  Please note that only external libs are allowed to be passed through"
-        " IMPORTEDLIBS.")
+      IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+        MESSAGE(WARNING "WARNING: Passing external lib '${DEPLIB}' through"
+          " DEPLIBS is deprecated!  Instead, pass through IMPORTEDLIBS!"
+          "  DEPLIBS is deprecated!"
+          "  Please note that only external libs are allowed to be passed through"
+          " IMPORTEDLIBS.")
+      ENDIF()
       LIST(APPEND PARSE_IMPORTEDLIBS ${DEPLIB})
     ENDIF()
   ENDFOREACH()
