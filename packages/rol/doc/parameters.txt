@@ -9,6 +9,11 @@ ROL Parameter List Hierarchy
     - Double Dogleg
 - Initial Trust-Region Radius (double)
 - Maximum Trust-Region Radius (double)
+- Gradient Update Tolerance Scaling (double)
+- Gradient Update Relative Tolerance (double)
+- Use Inexact Objective Function (bool)
+- Use Inexact Gradient (bool)
+- Use Inexact Hessian-Times-A-Vector (bool)
 
      
 [Linesearch]
@@ -28,28 +33,30 @@ ROL Parameter List Hierarchy
     - Approximate Wolfe Conditions
     - Goldstein Conditions
     - Null Curvature Condition
+- Initial Linesearch Parameter (double)
 - Sufficient Decrease Parameter (double)
 - Curvature Conditions Parameter (double)
 - Backtracking Rate (double)
 - Initial Linesearch Parameter (double)
 - User Defined Linesearch Parameter (bool)
-
-[ Need to classify? ]
-- Use Inexact Objective Function (bool)
-- Use Inexact Gradient (bool)
-- Use Inexact Hessian-Times-A-Vector (bool)
-- Gradient Update Tolerance Scaling (double)
-- Gradient Update Relative Tolerance (double)
-- Use Projected Gradient Criticality Measure (bool)
 - Maximum Number of Function Evaluations (int)
-- Initial Linesearch Parameter (double)
+- Use Inexact Hessian-Times-A-Vector (bool)
+
+
+
+[ Stochastic ]
 - Variable Objective Function (bool)
+
+[Bound constrained]
 - Scale for Epsilon Active Sets (double)
+- Use Projected Gradient Criticality Measure (bool)
+
 
 [SQP]
 - Nominal SQP Optimality Solver Tolerance (double)
 - Maximum Number of Krylov Iterations (double)
 - Absolute Krylov Tolerance (double)
+
 
 [Primal Dual Acive Set]
 - PDAS Maximum Number of Iterations (int)
