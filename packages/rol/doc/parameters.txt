@@ -8,43 +8,56 @@ ROL Parameter List Hierarchy
     - Dogleg
     - Double Dogleg
 - Initial Trust-Region Radius (double)
+- Minimum Trust-Region Radius (double)
 - Maximum Trust-Region Radius (double)
+- Trust-Region Safeguard
+
 - Gradient Update Tolerance Scaling (double)
 - Gradient Update Relative Tolerance (double)
 - Use Inexact Objective Function (bool)
 - Use Inexact Gradient (bool)
 - Use Inexact Hessian-Times-A-Vector (bool)
+- Radius Shrinking Threshold
+- Radius Growing Threshold
+- Radius Shrinking Rate (Negative rho)
+- Radius Shrinking Rate (Positive rho)
+- Radius Growing Rate
+
 
      
-[Linesearch]
-- Linesearch Type
-    - Iteration Scaling
-    - Path-Based Target Level
-    - Backtracking
-    - Bisection
-    - Golden Section
-    - Cubic Interpolation
-    - Brents
-    - User Defined 
-- Linesearch Curvature Condition
-    - Wolfe Conditions
-    - Strong Wolfe Conditions
-    - Generalized Wolfe Conditions
-    - Approximate Wolfe Conditions
-    - Goldstein Conditions
-    - Null Curvature Condition
-- Initial Linesearch Parameter (double)
-- Sufficient Decrease Parameter (double)
-- Curvature Conditions Parameter (double)
-- Backtracking Rate (double)
-- Initial Linesearch Parameter (double)
-- User Defined Linesearch Parameter (bool)
-- Maximum Number of Function Evaluations (int)
-- Use Inexact Hessian-Times-A-Vector (bool)
+- Use Line Search
+    - Linesearch Type
+        - Iteration Scaling
+        - Path-Based Target Level
+        - Backtracking
+        - Bisection
+        - Golden Section
+        - Cubic Interpolation
+        - Brents
+        - User Defined 
+    - Linesearch Curvature Condition
+        - Wolfe Conditions
+        - Strong Wolfe Conditions
+        - Generalized Wolfe Conditions
+        - Approximate Wolfe Conditions
+        - Goldstein Conditions
+        - Null Curvature Condition
+    - Initial Linesearch Parameter (double)
+    - Sufficient Decrease Parameter (double)
+    - Curvature Conditions Parameter (double)
+    - Backtracking Rate (double)
+    - Initial Linesearch Parameter (double)
+    - User Defined Linesearch Parameter (bool)
+    - Maximum Number of Function Evaluations (int)
+    - Use Inexact Hessian-Times-A-Vector (bool)
+
+
+[General]
+- Maximum Number of Iterations
 
 
 
-[ Stochastic ]
+[Stochastic]
 - Variable Objective Function (bool)
 
 [Bound constrained]
