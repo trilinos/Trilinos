@@ -91,6 +91,16 @@ int one_mb=1024*1024;
 
 #define NUM_SEGMENTS 5
 
+
+/*
+ * Can't use NNTI_REQUEST_BUFFER_SIZE or NNTI_RESULT_BUFFER_SIZE here,
+ * because the encoded NNTI buffers are too big.  Define something
+ * bigger here.
+ */
+#define NNTI_NONCONTIG_REQUEST_SIZE 2048
+#define NNTI_NONCONTIG_RESULT_SIZE  2048
+
+
 static inline uint64_t calc_checksum (char * buf, uint64_t size)
 {
     unsigned long hash = 5381;
@@ -165,12 +175,12 @@ int client_test1(void) {
     XDR send_xdrs;
 
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     NNTI_alloc(&trans_hdl, NUM_SEGMENTS*one_kb, 1, NNTI_GET_SRC,  &contig_get_src_mr);
     NNTI_alloc(&trans_hdl, NUM_SEGMENTS*one_kb, 1, NNTI_PUT_DST,  &contig_put_dst_mr);
 
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
 
     buf=NNTI_BUFFER_C_POINTER(&contig_get_src_mr);
     for (int i=0;i<NUM_SEGMENTS;i++) {
@@ -312,7 +322,7 @@ int client_test2(void) {
     XDR send_xdrs;
 
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     get_buf=(char *)malloc(NUM_SEGMENTS*one_mb);
     for (int i=0;i<NUM_SEGMENTS;i++) {
@@ -332,7 +342,7 @@ int client_test2(void) {
     }
     NNTI_register_segments(&trans_hdl, put_segments, put_segment_lengths, NUM_SEGMENTS, NNTI_PUT_DST, &noncontig_put_dst_mr);
 
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
 
     /* XDR encode the get, put and recv buffers */
     get_mr_size  = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, &noncontig_get_src_mr);
@@ -466,7 +476,7 @@ int client_test3(void) {
     XDR send_xdrs;
 
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     get_buf=(char *)malloc(NUM_SEGMENTS*one_mb);
     for (int i=0;i<NUM_SEGMENTS;i++) {
@@ -486,7 +496,7 @@ int client_test3(void) {
     }
     NNTI_register_segments(&trans_hdl, put_segments, put_segment_lengths, NUM_SEGMENTS, NNTI_PUT_DST, &noncontig_put_dst_mr);
 
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
 
     /* XDR encode the get, put and recv buffers */
     get_mr_size  = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, &noncontig_get_src_mr);
@@ -632,7 +642,7 @@ int client_test4(void) {
     XDR send_xdrs;
 
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     get_buf=(char *)malloc(NUM_SEGMENTS*one_mb);
     for (int i=0;i<NUM_SEGMENTS;i++) {
@@ -652,7 +662,7 @@ int client_test4(void) {
     }
     NNTI_register_segments(&trans_hdl, put_segments, put_segment_lengths, 2*NUM_SEGMENTS, NNTI_PUT_DST, &noncontig_put_dst_mr);
 
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
 
     /* XDR encode the get, put and recv buffers */
     get_mr_size  = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, &noncontig_get_src_mr);
@@ -798,7 +808,7 @@ int client_test5(void) {
     XDR send_xdrs;
 
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     get_buf=(char *)malloc(2*NUM_SEGMENTS*(one_mb/2));
     for (int i=0;i<2*NUM_SEGMENTS;i++) {
@@ -818,7 +828,7 @@ int client_test5(void) {
     }
     NNTI_register_segments(&trans_hdl, put_segments, put_segment_lengths, NUM_SEGMENTS, NNTI_PUT_DST, &noncontig_put_dst_mr);
 
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_RECV_DST, &contig_recv_mr);
 
     /* XDR encode the get, put and recv buffers */
     get_mr_size  = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, &noncontig_get_src_mr);
@@ -985,7 +995,7 @@ void server_test1(void) {
 
     /* XDR decode the get, put and recv buffers */
     xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
-            NNTI_REQUEST_BUFFER_SIZE, XDR_DECODE);
+            NNTI_NONCONTIG_REQUEST_SIZE, XDR_DECODE);
 
     memset(&contig_get_src_mr, 0, sizeof(NNTI_buffer_t));
     memset(&contig_put_dst_mr, 0, sizeof(NNTI_buffer_t));
@@ -1080,7 +1090,7 @@ void server_test2(void) {
 
     /* XDR decode the get, put and recv buffers */
     xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
-            NNTI_REQUEST_BUFFER_SIZE, XDR_DECODE);
+            NNTI_NONCONTIG_REQUEST_SIZE, XDR_DECODE);
 
     memset(&noncontig_get_src_mr, 0, sizeof(NNTI_buffer_t));
     memset(&noncontig_put_dst_mr, 0, sizeof(NNTI_buffer_t));
@@ -1184,7 +1194,7 @@ void server_test3(void) {
 
     /* XDR decode the get, put and recv buffers */
     xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
-            NNTI_REQUEST_BUFFER_SIZE, XDR_DECODE);
+            NNTI_NONCONTIG_REQUEST_SIZE, XDR_DECODE);
 
     memset(&noncontig_get_src_mr, 0, sizeof(NNTI_buffer_t));
     memset(&noncontig_put_dst_mr, 0, sizeof(NNTI_buffer_t));
@@ -1288,7 +1298,7 @@ void server_test4(void) {
 
     /* XDR decode the get, put and recv buffers */
     xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
-            NNTI_REQUEST_BUFFER_SIZE, XDR_DECODE);
+            NNTI_NONCONTIG_REQUEST_SIZE, XDR_DECODE);
 
     memset(&noncontig_get_src_mr, 0, sizeof(NNTI_buffer_t));
     memset(&noncontig_put_dst_mr, 0, sizeof(NNTI_buffer_t));
@@ -1392,7 +1402,7 @@ void server_test5(void) {
 
     /* XDR decode the get, put and recv buffers */
     xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
-            NNTI_REQUEST_BUFFER_SIZE, XDR_DECODE);
+            NNTI_NONCONTIG_REQUEST_SIZE, XDR_DECODE);
 
     memset(&noncontig_get_src_mr, 0, sizeof(NNTI_buffer_t));
     memset(&noncontig_put_dst_mr, 0, sizeof(NNTI_buffer_t));
@@ -1467,8 +1477,8 @@ void server_test5(void) {
 
 void server(void) {
 
-    NNTI_alloc(&trans_hdl, NNTI_REQUEST_BUFFER_SIZE, 10, NNTI_RECV_QUEUE, &contig_queue_mr);
-    NNTI_alloc(&trans_hdl, NNTI_RESULT_BUFFER_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_REQUEST_SIZE, 10, NNTI_RECV_QUEUE, &contig_queue_mr);
+    NNTI_alloc(&trans_hdl, NNTI_NONCONTIG_RESULT_SIZE, 1, NNTI_SEND_SRC, &contig_send_mr);
 
     server_test1();
     server_test2();
