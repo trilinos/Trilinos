@@ -49,7 +49,7 @@ namespace Experimental {
 
     // Constructor
     StatusTestSpecTrans(MagnitudeType tol, int quorum = -1, ResType whichNorm = RES_2NORM, bool scaled = true, bool throwExceptionOnNan = true, const RCP<const OP> Mop = Teuchos::null);
-    
+
     // Destructor
     virtual ~StatusTestSpecTrans() {};
 
@@ -65,7 +65,7 @@ namespace Experimental {
     // Get the number of vectors that passed the test
     int howMany() const { return ind_.size(); }
 
-    void setQuorum(int quorum) const {
+    void setQuorum (int quorum) {
       state_ = Undefined;
       quorum_ = quorum;
     }
@@ -119,18 +119,18 @@ namespace Experimental {
     bool throwExceptionOnNaN_;
     RCP<const OP> M_;
 
-    const MagnitudeType ONE;  
+    const MagnitudeType ONE;
   };
 
 
 
   template <class ScalarType, class MV, class OP>
   StatusTestSpecTrans<ScalarType,MV,OP>::StatusTestSpecTrans(MagnitudeType tol, int quorum, ResType whichNorm, bool scaled, bool throwExceptionOnNaN, const RCP<const OP> Mop)
-  : state_(Undefined), 
-    tol_(tol), 
-    quorum_(quorum), 
-    scaled_(scaled), 
-    whichNorm_(whichNorm), 
+  : state_(Undefined),
+    tol_(tol),
+    quorum_(quorum),
+    scaled_(scaled),
+    whichNorm_(whichNorm),
     throwExceptionOnNaN_(throwExceptionOnNaN),
     M_(Mop),
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one())
@@ -214,7 +214,7 @@ namespace Experimental {
     {
       TEUCHOS_TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), ResNormNaNError,
        "StatusTestSpecTrans::checkStatus(): residual norm is nan or inf" );
-      if(res[i] < tol_) 
+      if(res[i] < tol_)
         ind_.push_back(i);
     }
     int have = ind_.size();
