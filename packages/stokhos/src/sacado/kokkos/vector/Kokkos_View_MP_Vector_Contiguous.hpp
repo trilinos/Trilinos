@@ -119,7 +119,9 @@ struct MPVectorAllocation<Device, Storage, true> {
       reinterpret_cast<scalar_type *>(m_tracker.alloc_ptr());
 
     // Initialize data
-    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count );
+    if (count > 0) {
+      (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count );
+    }
 
     return reinterpret_cast<value_type*>(m_scalar_ptr_on_device);
   }
@@ -1715,12 +1717,15 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
 // Specialization for deep_copy( view, view::value_type ) for Cuda
 #if defined( KOKKOS_HAVE_CUDA )
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
+template< class OutputView , unsigned Rank >
+struct ViewFill< OutputView , Rank ,
+                 typename enable_if< is_same< typename OutputView::specialize,
+                                              ViewMPVectorContiguous >::value &&
+                                     is_same< typename OutputView::execution_space,
+                                              Cuda >::value >::type >
 {
-  typedef View<T,L,Cuda,M,ViewMPVectorContiguous> OutputView ;
   typedef typename OutputView::const_value_type   const_value_type ;
-  typedef typename OutputView::execution_space        execution_space ;
+  typedef typename OutputView::execution_space    execution_space ;
   typedef typename OutputView::size_type          size_type ;
 
   template <unsigned VectorLength>
@@ -1785,23 +1790,6 @@ struct ViewFill< View<T,L,Cuda,M,ViewMPVectorContiguous> , Rank >
     }
   }
 
-};
-
-// Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,Cuda,L,M,ViewMPVectorContiguous> , Rank >
-{
-  typedef View<T,Cuda,L,M,ViewMPVectorContiguous>    OutputView ;
-  typedef View<T,
-               typename OutputView::array_layout,
-               typename OutputView::execution_space,
-               typename OutputView::memory_traits>   OutputViewFull;
-  typedef typename OutputView::const_value_type      const_value_type ;
-
-  ViewFill( const OutputView & output , const_value_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
 };
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 

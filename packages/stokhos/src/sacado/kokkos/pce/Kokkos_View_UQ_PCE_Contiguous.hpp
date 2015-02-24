@@ -1998,15 +1998,18 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
+#if defined( KOKKOS_HAVE_CUDA )
+template< class OutputView , unsigned Rank >
+struct ViewFill< OutputView , Rank ,
+                 typename enable_if< is_same< typename OutputView::specialize,
+                                              ViewPCEContiguous >::value &&
+                                     is_same< typename OutputView::execution_space,
+                                              Cuda >::value >::type >
 {
-  typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
   typedef typename OutputView::const_value_type      const_value_type ;
   typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-  typedef typename OutputView::execution_space           execution_space ;
+  typedef typename OutputView::execution_space       execution_space ;
   typedef typename OutputView::size_type             size_type ;
 
   template <unsigned VectorLength>
@@ -2126,29 +2129,6 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     execution_space::fence();
   }
 
-};
-
-// Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,Cuda,L,M,ViewPCEContiguous> , Rank >
-{
-  typedef View<T,Cuda,L,M,ViewPCEContiguous>         OutputView ;
-  typedef View<T,
-               typename OutputView::array_layout,
-               typename OutputView::device_type,
-               typename OutputView::memory_traits>   OutputViewFull;
-  typedef typename OutputView::const_value_type      const_value_type ;
-  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-
-  ViewFill( const OutputView & output , const_value_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
-
-  ViewFill( const OutputView & output , const scalar_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
 };
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
