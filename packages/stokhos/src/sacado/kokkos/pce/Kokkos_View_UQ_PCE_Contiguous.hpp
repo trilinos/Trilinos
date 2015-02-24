@@ -104,7 +104,7 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class ExecSpace, class MemSpace, class LabelType,
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
             class ShapeType, class CijkType>
   inline
   value_type*
@@ -123,8 +123,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
     // this is the best choice from a locality perspective
     // either.
     const size_t num_vec = Impl::cardinality_count( shape );
+    const size_t count_scalars = num_vec * pce_size;
     const size_t size_scalars =
-      num_vec * pce_size * sizeof(scalar_type);
+      count_scalars * sizeof(scalar_type);
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
@@ -132,6 +133,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
     char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
+
+    // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count_scalars );
 
     // Construct each UQ::PCE using memory in ptr array,
     // setting pointer to UQ::PCE values from values array
@@ -155,6 +159,7 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   void assign(value_type * ptr) {
     if (ptr != 0) {
       m_scalar_ptr_on_device = ptr->coeff();
+      m_tracker.clear();
     }
     else {
       m_scalar_ptr_on_device = 0;
@@ -203,7 +208,7 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
   }
 
   // Allocate scalar_type and value_type arrays
-  template <class ExecSpace, class MemSpace, class LabelType,
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
             class ShapeType, class CijkType>
   inline
   value_type*
@@ -550,16 +555,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<execution_space,memory_space>(
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
           Alloc::label( prop ),
           m_offset_map,
           m_cijk,
           m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties >
@@ -589,16 +590,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<execution_space,memory_space>(
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
           Alloc::label( prop ),
           m_offset_map,
           m_cijk,
           m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -629,16 +626,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<execution_space,memory_space>(
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
           Alloc::label( prop ),
           m_offset_map,
           m_cijk,
           m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -670,16 +663,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.template allocate<execution_space,memory_space>(
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
           Alloc::label( prop ),
           m_offset_map,
           m_cijk,
           m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   //------------------------------------
