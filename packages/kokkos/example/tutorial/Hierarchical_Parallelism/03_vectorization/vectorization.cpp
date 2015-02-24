@@ -49,7 +49,21 @@
 
 #ifdef KOKKOS_HAVE_CXX11
 
-// Using default execution space:
+// The TeamPolicy actually supports 3D parallelism: Teams, Threads, Vector
+// Kokkos::parallel_{for/reduce/scan} calls can be completely free nested.
+// The execution policies for the nested layers are TeamThreadLoop and
+// ThreadVectorLoop.
+// The only restriction on nesting is that a given level can only be nested in a
+// higher one. e.g. a ThreadVectorLoop can be nested inside a TeamPolicy operator
+// and inside a TeamThreadLoop, but you can not nest a ThreadVectorLoop or a
+// TeamThreadLoop inside another ThreadVectorLoop.
+// As with the 2D execution of TeamPolicy the operator has to be considered as
+// a parallel region even with respect to VectorLanes. That means even outside
+// a TeamThread or VectorThread loop all threads of a team and all vector lanes
+// of a thread execute every line of the operator as long as there are no restricitons
+// on them.
+// Code lines can be restricted using Kokkos::single to either execute once PerThread
+// or execute once PerTeam.
 typedef typename Kokkos::TeamPolicy<>::member_type team_member ;
 
 struct SomeCorrelation {
@@ -67,6 +81,7 @@ struct SomeCorrelation {
   void operator() ( const team_member & thread) const {
     int i = thread.league_rank();
 
+    // Allocate a shared array for the team.
     shared_1d_int count(thread.team_shmem(),data.dimension_1());
 
     // With each team run a parallel_for with its threads
@@ -74,12 +89,13 @@ struct SomeCorrelation {
       int tsum;
       // Run a vector loop reduction over the inner dimension of data
       // Count how many values are multiples of 4
-      // Every vector lane gets the same reduction value (tsum) back
+      // Every vector lane gets the same reduction value (tsum) back, it is broadcast to all vector lanes
       Kokkos::parallel_reduce(Kokkos::ThreadVectorLoop(thread,data.dimension_2()), [=] (const int& k, int & vsum) {
         vsum+= (data(i,j,k) % 4 == 0)?1:0;
       },tsum);
 
-      // Make sure only one vector lane adds the reduction value to the shared array
+      // Make sure only one vector lane adds the reduction value to the shared array, i.e. execute
+      // the next line only once PerThread
       Kokkos::single(Kokkos::PerThread(thread),[=] () {
         count(j) = tsum;
       });
@@ -90,6 +106,7 @@ struct SomeCorrelation {
 
     // Check with one vector lane from each thread how many consecutive
     // data segments have the same number of values divisible by 4
+    // The team reduction value is again broadcast to every team member (and every vector lane)
     int team_sum = 0;
     Kokkos::parallel_reduce(Kokkos::TeamThreadLoop(thread, data.dimension_1()-1), [=] (const int& j, int& thread_sum) {
       // It is not valid to directly add to thread_sum
@@ -101,12 +118,13 @@ struct SomeCorrelation {
       },thread_sum);
     },team_sum);
 
-    // Add with one thread of the team the team_sum to the global value
+    // Add with one thread and vectorlane of the team the team_sum to the global value
     Kokkos::single(Kokkos::PerTeam(thread),[=] () {
       Kokkos::atomic_add(&gsum(),team_sum);
     });
   }
 
+  // The functor needs to define how much shared memory it requests given a team_size.
   size_t team_shmem_size( int team_size ) const {
     return shared_1d_int::shmem_size(data.dimension_1());
   }
@@ -115,7 +133,7 @@ struct SomeCorrelation {
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
-  // Produce some 3D random data
+  // Produce some 3D random data (see Algorithms/01_random_numbers for more info)
   Kokkos::View<int***,Kokkos::LayoutRight> data("Data",512,512,32);
   Kokkos::Random_XorShift64_Pool<> rand_pool64(5374857);
   Kokkos::fill_random(data,rand_pool64,100);
@@ -124,9 +142,11 @@ int main(int narg, char* args[]) {
   Kokkos::View<int> gsum("Sum");
 
   // Each team handles a slice of the data
-  // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes
+  // Set up TeamPolicy with 512 teams with maximum number of threads per team and 16 vector lanes.
   // The team_size_max function will determine the maximum number of threads taking into account
-  // shared memory requirements of the Functor
+  // shared memory requirements of the Functor.
+  // The maximum vector length is hardware dependent but can always be smaller than the hardware allows.
+  // The vector length must be a power of 2.
   const Kokkos::TeamPolicy<> policy( 512 , Kokkos::TeamPolicy<>::team_size_max(SomeCorrelation(data,gsum)) , 16);
 
   Kokkos::parallel_for( policy , SomeCorrelation(data,gsum) );

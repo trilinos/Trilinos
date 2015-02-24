@@ -85,6 +85,7 @@ bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned n
   return found_shell;
 }
 
+
 void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
   find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
