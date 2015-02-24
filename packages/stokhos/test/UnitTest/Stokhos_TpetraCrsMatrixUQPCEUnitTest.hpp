@@ -47,6 +47,7 @@
 
 // Tpetra
 #include "Stokhos_Tpetra_UQ_PCE.hpp"
+#include "Stokhos_Tpetra_Utilities.hpp"
 #include "Stokhos_Tpetra_Utilities_UQ_PCE.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -1416,6 +1417,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
+  // Create mean matrix for preconditioning
+  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
+
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
@@ -1437,7 +1441,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
   RCP<Prec> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix, *muelu_params);
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
@@ -1686,8 +1690,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if 0
-
 // Test currently doesn't work (in serial) because of our bad division strategy
 
 #if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2)
@@ -1772,6 +1774,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
+  // Create mean matrix for preconditioning
+  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
+
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
@@ -1782,7 +1787,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Create preconditioner
   typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
   Ifpack2::Factory factory;
-  RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", matrix);
+  RCP<Prec> M = factory.create<Tpetra_CrsMatrix>("RILUK", mean_matrix);
   M->initialize();
   M->compute();
 
@@ -1873,8 +1878,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_PCE, BelosGMRES_RILUK, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {}
-
-#endif
 
 #endif
 
@@ -1972,6 +1975,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
+  // Create mean matrix for preconditioning
+  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
+
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
@@ -1993,7 +1999,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
   RCP<OP> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix, *muelu_params);
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
@@ -2047,6 +2053,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
     rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,FMV,FOP>(flat_problem,
                                                                belosParams));
+  // RCP<Belos::SolverManager<BelosScalar,FMV,FOP> > flat_solver =
+  //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,FMV,FOP>(flat_problem,
+  //                                                           belosParams));
   flat_problem->setProblem();
   Belos::ReturnType flat_ret = flat_solver->solve();
   TEST_EQUALITY_CONST( flat_ret, Belos::Converged );
@@ -2295,12 +2304,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, SimpleCG, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, SimplePCG_Muelu, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, BelosGMRES, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, BelosCG_Muelu, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, Amesos2, S, LO, GO, N )
-
-#if 0
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_CrsMatrix_PCE, BelosGMRES_RILUK, S, LO, GO, N )
-#endif
 
 #define CRSMATRIX_UQ_PCE_TESTS_N(N)                                     \
   typedef Stokhos::DeviceForNode2<N>::type Device;                      \
