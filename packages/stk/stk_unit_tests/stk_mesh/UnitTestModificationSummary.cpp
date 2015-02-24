@@ -23,8 +23,6 @@ TEST(ModificationSummary, testString)
         stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
         stk::mesh::Entity node2 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 2);
 
-        writer.store_stack_trace();
-
         writer.track_destroy_entity(node1);
 
         const stk::mesh::PartVector &addParts = stkMeshBulkData.bucket(node1).supersets();
