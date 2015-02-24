@@ -58,7 +58,7 @@ ROL Parameter List Hierarchy
 - Absolute Krylov Tolerance (double)
 
 
-[Primal Dual Acive Set]
+[Primal Dual Active Set]
 - PDAS Maximum Number of Iterations (int)
 - PDAS Relative Step Tolerance (double)
 - PDAS Relative Gradient Tolerance (double)
