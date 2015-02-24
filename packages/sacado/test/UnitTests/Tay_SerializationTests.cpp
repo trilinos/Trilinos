@@ -32,7 +32,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Teuchos_Array.hpp"
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"

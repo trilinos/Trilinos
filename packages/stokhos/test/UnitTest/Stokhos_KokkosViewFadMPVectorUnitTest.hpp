@@ -44,7 +44,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
-#include "Sacado_Kokkos.hpp"
+#include "Sacado.hpp"
 
 // For computing DeviceConfig
 #include "Kokkos_Core.hpp"

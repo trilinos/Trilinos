@@ -43,7 +43,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 
 template <>
 Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;

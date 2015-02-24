@@ -27,16 +27,17 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_KOKKOS_HPP
-#define SACADO_KOKKOS_HPP
+#ifndef SACADO_NO_KOKKOS_HPP
+#define SACADO_NO_KOKKOS_HPP
 
-// Top-level Sacado include file for Sacado classes that work with Kokkos.
-// Users should use this file instead of Sacado.hpp when working with Kokkos.
-
-// Ensure "Sacado.hpp" and "Sacado_Kokkos.hpp" are not both included
+// Ensure "Sacado.hpp" and "Sacado_No_Kokkos.hpp" are not both included
 #ifdef SACADO_HPP
-#error "Do not include Sacado.hpp and Sacado_Kokkos.hpp in the same file."
+#error "Do not include Sacado.hpp and Sacado_No_Kokkos.hpp in the same file."
 #endif
+
+// Disable Kokkos-Cuda by default as several Sacado types don't work with Cuda.
+// Users should include Sacado.hpp for Sacado scalar types that work with Cuda
+#include "Sacado_DisableKokkosCuda.hpp"
 
 // Version string
 #include "Sacado_Version.hpp"
@@ -64,11 +65,22 @@
 #include "Sacado_ELRCacheFad_DFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
+#include "Sacado_LFad_LogicalSparseTraits.hpp"
+#include "Sacado_ScalarFlopCounterTraits.hpp"
+#include "Sacado_Tay_TaylorTraits.hpp"
+#include "Sacado_trad_Traits.hpp"
+#include "Sacado_trad2_Traits.hpp"
+#include "Sacado_tradvec_Traits.hpp"
 
 // Standard forward AD classes
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_Fad_SFad.hpp"
 #include "Sacado_Fad_SLFad.hpp"
+#include "Sacado_Fad_MemPoolManager.hpp"
+#include "Sacado_Fad_DMFad.hpp"
+#include "Sacado_LFad_LogicalSparse.hpp"
+#include "Sacado_Fad_DVFad.hpp"
+#include "Sacado_Fad_Vector.hpp"
 
 // Expression-level-reverse forward AD classes
 #include "Sacado_ELRFad_DFad.hpp"
@@ -85,7 +97,15 @@
 #include "Sacado_ELRCacheFad_SFad.hpp"
 #include "Sacado_ELRCacheFad_SLFad.hpp"
 
-// Kokkos::View specialization for Sacado AD classes
-#include "Kokkos_View_Fad.hpp"
+// Reverse AD classes
+#include "Sacado_trad.hpp"
+#include "Sacado_trad2.hpp"
+#include "Sacado_tradvec.hpp"
 
-#endif // SACADO_KOKKOS_HPP
+// Taylor polynomial AD classes
+#include "Sacado_Tay_Taylor.hpp"
+
+// Flop-counting classes
+#include "Sacado_ScalarFlopCounter.hpp"
+
+#endif // SACADO_HPP
