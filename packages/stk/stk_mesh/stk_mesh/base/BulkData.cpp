@@ -4853,7 +4853,8 @@ void BulkData::generate_send_list( const int p_rank, std::vector<EntityProc> & s
         i = m_entity_comm_list.begin() ; i != m_entity_comm_list.end() ; ++i ) {
 
     if ( i->owner == p_rank &&
-            m_entity_sync_counts[i->entity.local_offset()] == m_sync_count ) {
+        (m_entity_states[i->entity.local_offset()] == Modified ||
+       m_entity_states[i->entity.local_offset()] == Created) ) {
 
       for ( PairIterEntityComm ec = this->entity_comm_map(i->key); ! ec.empty(); ++ec ) {
         EntityProc tmp( i->entity , ec->proc );
