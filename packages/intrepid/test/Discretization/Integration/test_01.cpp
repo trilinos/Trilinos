@@ -151,7 +151,6 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -244,6 +243,7 @@ int main(int argc, char *argv[]) {
                            TEUCHOS_TEST_FOR_EXCEPTION( (tetCub.getDimension() != 3),
                                                std::logic_error,
                                                "Check member getCellTopology!" ) );
+                                           
     /* Tensor cubature. */
     INTREPID_TEST_COMMAND( std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(0);
                            CubatureTensor<double> quadCub(lineCubs) );
@@ -259,6 +259,7 @@ int main(int argc, char *argv[]) {
                            std::vector<int> atest(4);
                            tensorCub.getAccuracy(atest);
                            TEUCHOS_TEST_FOR_EXCEPTION( (a != atest), std::logic_error, "Check member getAccuracy!" ) );
+                          
     INTREPID_TEST_COMMAND( std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
                            lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(15));
                            lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>(11));
@@ -279,6 +280,8 @@ int main(int argc, char *argv[]) {
                            FieldContainer<double> weights(tensorCub.getNumPoints());
                            tensorCub.getCubature(points, weights)
                          )
+                                                      
+                  
     INTREPID_TEST_COMMAND( Teuchos::RCP< CubatureDirect<double> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(15));
                            Teuchos::RCP< CubatureDirect<double> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<double>(12));
                            CubatureTensor<double> tensorCub(lineCub, triCub);
@@ -297,6 +300,7 @@ int main(int argc, char *argv[]) {
                            TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 5) || (a != atest),
                                                std::logic_error,
                                                "Check constructor and members dimension and getAccuracy!" ) );
+
     INTREPID_TEST_COMMAND( Teuchos::RCP< CubatureDirect<double> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<double>(12));
                            CubatureTensor<double> tensorCub(triCub, 5);
                            std::vector<int> a(5); a[0] = 12; a[1] = 12; a[2] = 12; a[3] = 12; a[4] = 12;
@@ -338,6 +342,7 @@ int main(int argc, char *argv[]) {
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
+
     *outStream << "\n\n";
     shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
     for (int deg=0; deg<=INTREPID_CUBATURE_TRI_DEFAULT_MAX; deg++) {
@@ -349,6 +354,7 @@ int main(int argc, char *argv[]) {
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
+
     *outStream << "\n\n";
     shards::CellTopology quad(shards::getCellTopologyData< shards::Quadrilateral<> >());
     for (int deg=0; deg<=INTREPID_CUBATURE_LINE_GAUSS_MAX; deg++) {
@@ -360,6 +366,7 @@ int main(int argc, char *argv[]) {
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
+
     *outStream << "\n\n";
     shards::CellTopology tet(shards::getCellTopologyData< shards::Tetrahedron<> >());
     for (int deg=0; deg<=INTREPID_CUBATURE_TET_DEFAULT_MAX; deg++) {

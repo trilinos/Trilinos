@@ -118,9 +118,11 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
 { 
   if (workset.evaluate_transient_terms) {
     
-    for (int i=0; i < residual.size(); ++i)
-      residual[i] = 0.0;
+   // for (int i=0; i < residual.size(); ++i)
+   //   residual[i] = 0.0;
     
+   Kokkos::deep_copy (residual.get_kokkos_view(), ScalarT(0.0));
+
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
 	tmp(cell,qp) = multiplier * scalar(cell,qp);
@@ -133,15 +135,15 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     if(workset.num_cells>0)
       Intrepid::FunctionSpaceTools::
         integrate<ScalarT>(residual, tmp, 
-  			 (workset.bases[basis_index])->weighted_basis, 
-			 Intrepid::COMP_BLAS);
+			   (workset.bases[basis_index])->weighted_basis_scalar, 
+			   Intrepid::COMP_BLAS);
   }
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_TransientBasisTimesScalar<EvalT, Traits>::getValidParameters() const
+Integrator_TransientBasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Residual Name", "?");

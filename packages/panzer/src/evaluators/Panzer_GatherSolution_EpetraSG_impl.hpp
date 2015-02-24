@@ -62,8 +62,8 @@
 // Specialization: SGResidual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, TRAITS,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -96,10 +96,10 @@ GatherSolution_Epetra(
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -120,18 +120,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
    sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::SGResidual, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<GO> GIDs;
    std::vector<int> LIDs;
@@ -174,9 +174,10 @@ evaluateFields(typename Traits::EvalData workset)
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
 
-            ScalarT & field = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
-            field.reset(expansion); // jamb in expansion here
-            field.copyForWrite(); 
+            PHX::MDField<ScalarT,Cell,NODE> field = (gatherFields_[fieldIndex]);
+            // ScalarT & field = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
+            field(worksetCellIndex,basis).reset(expansion); // jamb in expansion here
+            field(worksetCellIndex,basis).copyForWrite(); 
 
             // loop over stochastic basis initialzing field gather values
             int stochIndex = 0;
@@ -189,7 +190,7 @@ evaluateFields(typename Traits::EvalData workset)
                else
                  x = (*itr)->get_x(); 
 
-               field.fastAccessCoeff(stochIndex) = (*x)[lid];
+               field(worksetCellIndex,basis).fastAccessCoeff(stochIndex) = (*x)[lid];
             }
          }
       }
@@ -200,8 +201,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: SGJacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, TRAITS,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -235,10 +236,10 @@ GatherSolution_Epetra(
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -259,18 +260,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
    sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::SGJacobian, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<GO> GIDs;
    std::vector<int> LIDs;
@@ -319,14 +320,15 @@ evaluateFields(typename Traits::EvalData workset)
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
 
-            ScalarT & field = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
+            PHX::MDField<ScalarT,Cell,NODE> field = (gatherFields_[fieldIndex]);
+            // ScalarT & field = (gatherFields_[fieldIndex])(worksetCellIndex,basis);
 
-            field = ScalarT(GIDs.size(), 0.0);
+            field(worksetCellIndex,basis) = ScalarT(GIDs.size(), 0.0);
 
             // set the value and seed the FAD object
-            field.fastAccessDx(offset) = seed_value;
-            field.val().reset(expansion);
-            field.val().copyForWrite();
+            field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+            field(worksetCellIndex,basis).val().reset(expansion);
+            field(worksetCellIndex,basis).val().copyForWrite();
 
             // loop over stochastic basis initialzing field gather values
             int stochIndex = 0;
@@ -339,7 +341,7 @@ evaluateFields(typename Traits::EvalData workset)
                else
                  x = (*itr)->get_x(); 
 
-               field.val().fastAccessCoeff(stochIndex) = (*x)[lid];
+               field(worksetCellIndex,basis).val().fastAccessCoeff(stochIndex) = (*x)[lid];
             }
          }
       }

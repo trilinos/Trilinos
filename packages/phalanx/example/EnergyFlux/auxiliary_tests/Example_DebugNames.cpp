@@ -42,8 +42,9 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -66,6 +67,8 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
+    PHX::InitializeKokkosDevice();
+
     // *********************************************************************
     // Start of debug naming testing
     // *********************************************************************
@@ -83,6 +86,8 @@ int main(int argc, char *argv[])
       cout << typeAsString< MyTensor<MyTraits::FadType> >() << endl;
     }
     
+    PHX::FinalizeKokkosDevice();
+
     // *********************************************************************
     // Finished all testing
     // *********************************************************************

@@ -1960,7 +1960,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \
-  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::memory_space> SFS; \
+  typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device::execution_space> SFS; \
   CRSMATRIX_MP_VECTOR_TESTS_SLGN(SFS, int, int, N)
 
 #define CRSMATRIX_MP_VECTOR_TESTS_N(N)                                  \

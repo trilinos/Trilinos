@@ -49,21 +49,33 @@
 #include <cstdlib>
 
 typedef Kokkos::View<double*> view_type;
-// This View has a (nondefault) memory access trait.
-// MemoryRandomAccess means two things:
+// Kokkos::Views have an MemoryTraits template parameter which
+// allows users to specify usage scenarios of a View.
+// Some of those act simply as hints, which can be used to insert
+// optimal load and store paths, others change the symantics of the
+// access. The trait Kokkos::Atomic is one of the latter. A view with
+// that MemoryTrait will perform any access atomicly (read, write, update).
 //
-//   1. Read-only access
-//   2. We don't expect to have much spatial locality
-//      when we access Views of this type
+// In this example we use a view with a usage hint for RandomAccess.
+// Kokkos::RandomAccess means that we expect to use this view
+// with indirect indexing.
 //
-// In CUDA, MemoryRandomAccess directs accesses through the texture
+// In CUDA, RandomAccess allows accesses through the texture
 // cache.  This only works if the View is read-only, which we enforce
-// through the first template parameter.  On CPUs, we reserve the
-// right to use features like a nontemporal access hint.
-typedef Kokkos::View<const double*, Kokkos::MemoryRandomAccess> view_type_rnd;
+// through the first template parameter.
+//
+// Note that we are still talking about views of the data, its not a new allocation.
+// For example you can have an atomic view of a default view. While you even
+// could use both in the same kernel, this could lead to undefined behaviour because
+// one of your access paths is not atomic. Think of it in the same way as you think of
+// pointers to const data and pointers to non-const data (i.e. const double* and double*).
+// While these pointers can point to the same data you should not use them together if that
+// brakes the const guarantee of the first pointer.
+typedef Kokkos::View<const double*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > view_type_rnd;
 typedef Kokkos::View<int**> idx_type;
 typedef idx_type::HostMirror idx_type_host;
 
+// We template this functor on the ViewTypes to show the effect of the RandomAccess trait.
 template<class DestType, class SrcType>
 struct localsum {
   idx_type::const_type idx;
@@ -73,10 +85,12 @@ struct localsum {
     idx (idx_), dest (dest_), src (src_)
   {}
 
+  // Calculate a local sum of values
   KOKKOS_INLINE_FUNCTION
   void operator() (const int i) const {
     double tmp = 0.0;
     for (int j = 0; j < (int) idx.dimension_1 (); ++j) {
+      // This is an indirect access on src
       const double val = src(idx(i,j));
       tmp += val*val + 0.5*(idx.dimension_0()*val -idx.dimension_1()*val);
     }
@@ -103,10 +117,15 @@ int main(int narg, char* arg[]) {
     }
   }
 
+  // Deep copy the initial data to the device
   Kokkos::deep_copy(idx,h_idx);
+  // Run the first kernel to warmup caches
   Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
   Kokkos::fence();
 
+  // Run the localsum functor using the RandomAccess trait. On CPUs there should
+  // not be any different in performance to not using the RandomAccess trait.
+  // On GPUs where can be a dramatic difference
   Kokkos::Impl::Timer time1;
   Kokkos::parallel_for(size,localsum<view_type,view_type_rnd>(idx,dest,src));
   Kokkos::fence();

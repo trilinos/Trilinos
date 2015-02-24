@@ -49,6 +49,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace PHX {
 
@@ -61,6 +62,8 @@ namespace PHX {
   class Evaluator {
     
   public:
+
+    typedef typename PHX::Device execution_space;
     
     //! Ctor
     Evaluator() {};

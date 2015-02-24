@@ -45,13 +45,14 @@
 
 #include "Teuchos_Assert.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -75,7 +76,7 @@ PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
   // build dependent fields
   scatterFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    scatterFields_[fd] = PHX::MDField<ScalarT,Cell>(names[fd],dl_cell);
+    scatterFields_[fd] = PHX::MDField<const ScalarT,Cell>(names[fd],dl_cell);
     this->addDependentField(scatterFields_[fd]);
   }
 
@@ -98,17 +99,20 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity,d,fm)
 
 PHX_EVALUATE_FIELDS(ScatterCellQuantity,workset)
 {
+   panzer::MDFieldArrayFactory af("",true);
+
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
    std::string blockId = workset.block_id;
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-      PHX::MDField<ScalarT,panzer::Cell> & field = scatterFields_[fieldIndex];
-      std::vector<double> value(field.dimension(0),0.0);
+      PHX::MDField<const ScalarT,panzer::Cell> & field = scatterFields_[fieldIndex];
+      // std::vector<double> value(field.dimension(0),0.0);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
 
       // write to double field
       for(int i=0; i<field.dimension(0);i++)
-         value[i] = Sacado::ScalarValue<ScalarT>::eval(field(i));
+         value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value);
    }

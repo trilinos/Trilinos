@@ -186,11 +186,7 @@ performs well and supports rapid development and extensibility.
 
 \section news News
 
-Two new capabilities are in development, but not yet released:
-<ul>
-<li> Expression templates:  We are exploring expression templates for the field objects.
-<li> We are exploring hybrid CPU/GPU support.  
-</ul>
+Phalanx has just completed the transition from shards::Array to the Kokkos::View.  Leveraging Kokkos, Phalanx is now performance portable to GPUs.
 
 \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -277,16 +273,16 @@ Suppose that we want to solve the heat equation over the physical
 space \f$ \Omega \f$:
 
 \f[
-  \nabla \cdot (-\rho k \nabla T) + s = 0
+  \nabla \cdot (-k \nabla T) + s = 0
 \f] 
 
-where \f$ T \f$ is the temparature (and our degree of freedom), \f$ \rho \f$ is the density, \f$ k \f$ is the thermal conductivity, and \f$s\f$ is a nonlinear source term.  We pose this in terms of a conservation law system:
+where \f$ T \f$ is the temparature (and our degree of freedom), \f$ k \f$ is the thermal conductivity, and \f$s\f$ is a nonlinear source term.  We pose this in terms of a conservation law system:
 
 \f[
   \nabla \cdot (\mathbf{q}) + s = 0
 \f]
 
-where \f$ \mathbf{q} = -\rho k \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) or finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+where \f$ \mathbf{q} = -k \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) or finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
 
 Using finite elements, we pose the problem in variational form:  Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
@@ -383,7 +379,8 @@ processor or you could use a workset size of one cell and wrap the
 evaluate call in a loop over the number of cells.  Be aware that this
 can result in a possibly large performance hit.
 
-Phalanx, in fact, does not restrict you to cell based iteration.  You can iterate over any entity type such as edge or face structures.    
+Phalanx, in fact, does not restrict you to cell based iteration.  You
+can iterate over any entity type such as edge or face structures.
 
 <li><b>Consistent Evaluation</b>
 
@@ -391,14 +388,14 @@ Phalanx was written to perform consistent evaluations.  By consistent,
 we mean that all dependencies of a field evaluation are current with
 respect to the current degree of freedom values.  For example, suppose
 we need to evaluate the the energy flux.  This has dependencies on the
-density, diffusivity, and the temperature gradient.  Each of these
-quantities in turn depends on the temperature.  So before the density,
-diffusivity and temperature gradient are evaluated, the temperature
-must be evaluated.  Before the energy flux can be evaluated, the
-density, diffusivity, and temperature gradient must be evaluated.
-Phalanx forces an ordered evaluation that updates fields in order to
-maintain consistency of the dependency chain.  Without this, one might
-end up with lagged values being used from a previous evaluate call.
+diffusivity, and the temperature gradient.  Each of these quantities
+in turn depends on the temperature.  So before the diffusivity and
+temperature gradient are evaluated, the temperature must be evaluated.
+Before the energy flux can be evaluated, the density, diffusivity, and
+temperature gradient must be evaluated.  Phalanx forces an ordered
+evaluation that updates fields in order to maintain consistency of the
+dependency chain.  Without this, one might end up with lagged values
+being used from a previous evaluate call.
 
 <li><b>Scalar Type</b>
 
@@ -829,7 +826,7 @@ An example for evaluating the density field is:
 #ifndef PHX_EXAMPLE_VP_DENSITY_HPP
 #define PHX_EXAMPLE_VP_DENSITY_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_Field.hpp"
@@ -1212,7 +1209,7 @@ If the user plans to use worksets, these objects are typically passed in through
 #ifndef PHX_EXAMPLE_MY_WORKSET_HPP
 #define PHX_EXAMPLE_MY_WORKSET_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Phalanx_config.hpp" // for std::vector
 #include "Cell.hpp"
 
 struct MyWorkset {

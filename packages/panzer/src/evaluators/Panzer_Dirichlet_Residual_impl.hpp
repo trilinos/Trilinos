@@ -78,17 +78,15 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual,worksets,fm)
   this->utils.setFieldData(dof,fm);
   this->utils.setFieldData(value,fm);
 
-  cell_data_size = 
-    residual.size() / residual.fieldTag().dataLayout().dimension(0);
+  cell_data_size = residual.fieldTag().dataLayout().dimension(1);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DirichletResidual,workset)
 { 
-  std::size_t length = workset.num_cells * cell_data_size;
-
-  for (std::size_t i = 0; i < length; ++i)
-    residual[i] = dof[i] - value[i];
+  for (std::size_t i = 0; i < workset.num_cells; ++i)
+    for (std::size_t j = 0; j < cell_data_size; ++j)
+      residual(i,j)=dof(i,j)-value(i,j);
 }
 
 //**********************************************************************

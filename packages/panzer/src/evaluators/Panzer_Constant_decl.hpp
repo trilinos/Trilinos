@@ -64,7 +64,7 @@ PHX_EVALUATOR_CLASS(Constant)
   
   ScalarT value;
   
-  PHX::Field<ScalarT> constant;
+  PHX::MDField<ScalarT> constant;
   
 PHX_EVALUATOR_CLASS_END
 

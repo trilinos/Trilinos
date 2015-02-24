@@ -114,7 +114,124 @@ TensorBase<T, ST>::TensorBase(
 
 //
 // Construction from array
-//
+//Kokkos data Types:
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+   Index const dimension,
+   Index const order,
+   ArrayT &data,
+   iType indx1):
+   dimension_(0)
+{
+ set_dimension(dimension, order);
+ fill(data,indx1);
+  return;
+}
+
+
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+   Index const dimension,
+   Index const order,
+   ArrayT &data,
+   iType indx1,
+   iType indx2):
+   dimension_(0)
+{
+ set_dimension(dimension, order);
+ fill(data,indx1,indx2);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT &data,
+    iType indx1, 
+    iType indx2,
+    iType indx3) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(data,indx1,indx2,indx3);
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT &data,
+    iType indx1,
+    iType indx2,
+    iType indx3,
+    iType indx4) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(data,indx1,indx2,indx3, indx4);
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT &data,
+    iType indx1,
+    iType indx2,
+    iType indx3,
+    iType indx4,
+    iType indx5) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(data,indx1,indx2,indx3, indx4, indx5);
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT &data,
+    iType indx1,
+    iType indx2,
+    iType indx3,
+    iType indx4,
+    iType indx5, 
+    iType indx6) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(data,indx1,indx2,indx3, indx4, indx5, indx6);
+
+  return;
+}
+
+
+
 template<typename T, typename ST>
 inline
 TensorBase<T, ST>::TensorBase(
@@ -129,7 +246,6 @@ TensorBase<T, ST>::TensorBase(
 
   return;
 }
-
 //
 // Copy constructor
 //
@@ -344,7 +460,336 @@ TensorBase<T, ST>::fill(T const & s)
 
 //
 // Fill components from array defined by pointer.
-//
+//#ifdef HAVE_INTREPID_KOKKOSCORE
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType indx1)
+{
+
+  Index const number_components = get_number_components();
+  Index const rank=number_components/data.dimension(0);
+
+ if (indx1==0)
+ {
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] = data(i);
+  }
+ }
+ else
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (indx1 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0");
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType indx1,iType indx2)
+{
+
+  Index const  number_components = get_number_components();
+
+  Index rank=0;
+  Index temp=number_components;
+  Index const dim=data.dimension(1);
+
+  while (temp!=1){
+   temp =temp/dim;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  }
+
+   TEUCHOS_TEST_FOR_EXCEPTION( !( (indx2 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0"); 
+
+ 
+if (rank==1){
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] = data(indx1,i);
+  }
+}
+else if (rank==2){
+  for (Index i = 0; i <dim; ++i)
+     for (Index j = 0; j <dim; ++j)
+      (*this)[dim*i+j] =data(i,j);
+}
+else  TEUCHOS_TEST_FOR_EXCEPTION( !( rank==1 || rank==2), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): method doesn't comput correct rank");
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType indx1, iType indx2, iType indx3)
+{
+
+  Index const number_components = get_number_components();
+  Index const dim = data.dimension(2);
+  
+  Index rank=0;
+  Index temp=number_components;
+
+  while (temp!=1){
+   temp =temp/dim;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  } 
+
+ TEUCHOS_TEST_FOR_EXCEPTION( !( (indx3 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0");
+  if (rank == 1){
+   for (Index i = 0; i < dim; ++i) {
+          (*this)[i] = data(indx1,indx2,i);
+   }
+  }
+  else if (rank==2)
+  {
+    for (Index i2 = 0; i2 < dim; ++i2) { 
+     for (Index i3 = 0; i3 < dim; ++i3)      
+      (*this)[i2*dim+i3] = data(indx1,i2,i3);
+     }
+  }
+  else if (rank==3)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i1*dim*dim+i2*dim+i3] = data(i1,i2,i3);
+     }
+   }
+ } 
+  else  TEUCHOS_TEST_FOR_EXCEPTION( !( rank==1)&&!( rank==2)&&!( rank==3), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): method doesn't comput correct rank");
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType  indx1,  iType  indx2, iType indx3, iType indx4)
+{
+
+  Index const
+  number_components = get_number_components();
+  Index const dim = data.dimension(3);
+
+  Index rank=0;
+  Index temp=number_components;
+
+  while (temp!=1){
+   temp =temp/dim;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  }
+
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (indx4 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0");
+   if (rank == 1){
+   for (Index i = 0; i < dim; ++i) {
+          (*this)[i] = data(indx1,indx2,indx3,i);
+   }
+  }
+  else if (rank==2)
+  {
+    for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i2*dim+i3] = data(indx1,indx2,i2,i3);
+     }
+  }
+  else if (rank==3)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i1*dim*dim+i2*dim+i3] = data(indx1,i1,i2,i3);
+     }
+   }
+ }
+ else if (rank==4)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         (*this)[i1*dim*dim*dim+i2*dim*dim+i3*dim+i4] = data(i1,i2,i3,i4);
+     }
+   }
+ }
+  else  TEUCHOS_TEST_FOR_EXCEPTION( !( rank==1)&&!( rank==2)&&!( rank==3)&&!( rank==4), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): method doesn't comput correct rank");
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5)
+{
+
+  Index const
+  number_components = get_number_components();
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (indx5 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0");
+
+  Index rank=0;
+  Index temp=number_components;
+  Index const dim = data.dimension(4);
+
+  while (temp!=1){
+   temp =temp/dim;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  }
+
+   if (rank == 1){
+   for (Index i = 0; i < dim; ++i) {
+          (*this)[i] = data(indx1,indx2,indx3,indx4,i);
+   }
+  }
+  else if (rank==2)
+  {
+    for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i2*dim+i3] = data(indx1,indx2,indx3,i2,i3);
+     }
+  }
+  else if (rank==3)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i1*dim*dim+i2*dim+i3] = data(indx1,indx2,i1,i2,i3);
+     }
+   }
+ }
+ else if (rank==4)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         (*this)[i1*dim*dim*dim+i2*dim*dim+i3*dim+i4] = data(indx1,i1,i2,i3,i4);
+     }
+   }
+ }
+ else if (rank==5)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         for (Index i5 = 0; i5 < dim; ++i5)
+           (*this)[i1*dim*dim*dim*dim+i2*dim*dim*dim+i3*dim*dim+i4*dim+i5] = data(i1,i2,i3,i4,i5);
+     }
+   }
+ }
+  else  TEUCHOS_TEST_FOR_EXCEPTION( !( rank==1)&&!( rank==2)&&!( rank==3)&&!( rank==4)&&!( rank==5), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): method doesn't comput correct rank");
+
+
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT  &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6)
+{
+
+  Index const
+  number_components = get_number_components();
+  Index const dim = data.dimension(5);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (indx6 == 0)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): las input parameter should always be 0");
+
+  Index rank=0;
+  Index temp=number_components;
+
+  while (temp!=1){
+   temp =temp/dim;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  }
+
+  if (rank == 1){
+   for (Index i = 0; i < dim; ++i) {
+          (*this)[i] = data(indx1,indx2,indx3,indx4,indx5,i);
+   }
+  }
+  else if (rank==2)
+  {
+    for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i2*dim+i3] = data(indx1,indx2,indx3,indx4,i2,i3);
+     }
+  }
+  else if (rank==3)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+      (*this)[i1*dim*dim+i2*dim+i3] = data(indx1,indx2,indx3,i1,i2,i3);
+     }
+   }
+ }
+ else if (rank==4)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         (*this)[i1*dim*dim*dim+i2*dim*dim+i3*dim+i4] = data(indx1,indx2,i1,i2,i3,i4);
+     }
+   }
+ }
+ else if (rank==5)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         for (Index i5 = 0; i5 < dim; ++i5)
+           (*this)[i1*dim*dim*dim*dim+i2*dim*dim*dim+i3*dim*dim+i4*dim+i5] = data(indx1,i1,i2,i3,i4,i5);
+     }
+   }
+ }
+ else if (rank==6)
+ {
+  for (Index i1 = 0; i1 < dim; ++i1) {
+   for (Index i2 = 0; i2 < dim; ++i2) {
+     for (Index i3 = 0; i3 < dim; ++i3)
+       for (Index i4 = 0; i4 < dim; ++i4)
+         for (Index i5 = 0; i5 < dim; ++i5)
+           for (Index i6 = 0; i6 < dim; ++i6)
+           (*this)[i1*dim*dim*dim*dim*dim+i2*dim*dim*dim*dim+i3*dim*dim*dim+i4*dim*dim+i5*dim+i6] = data(i1,i2,i3,i4,i5,i6);
+     }
+   }
+ }
+  else  TEUCHOS_TEST_FOR_EXCEPTION( !( rank==1)&&!( rank==2)&&!( rank==3)&&!( rank==4)&&!( rank==5)&&!( rank==6), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): method doesn't comput correct rank");
+
+ return;
+}
 template<typename T, typename ST>
 inline
 void
@@ -361,6 +806,7 @@ TensorBase<T, ST>::fill(T const * data_ptr)
 
   return;
 }
+
 
 //
 // Component increment

@@ -42,7 +42,7 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
 
 #include "Teuchos_RCP.hpp"

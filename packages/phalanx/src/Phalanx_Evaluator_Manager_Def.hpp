@@ -56,7 +56,7 @@
 #include <typeinfo>
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 

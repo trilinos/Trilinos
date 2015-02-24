@@ -54,7 +54,9 @@ Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
   m_global_element_index(global_element_index),
   m_local_element_index(local_element_index),
   m_global_node_ids(global_node_ids),
-  m_owns_node(4, false),
+  m_owns_node(4, false)
+
+/*,
   m_coords_mem(Teuchos::arcp<double>(4*2)),
   m_phi_mem(Teuchos::arcp<double>(4*4)),
   m_grad_phi_mem(Teuchos::arcp<double>(4*4*2)),
@@ -67,7 +69,17 @@ Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
   m_grad_phi_xy(&(m_grad_phi_xy_mem[0]),4,4,2),
   m_det_jacobian(&(m_det_jacobian_mem[0]),4),
   m_weights(&(m_weights_mem[0]),4)
-{ 
+*/
+{
+ int numQPs = this->numQuadraturePoints();
+ int numNodes = this->numNodes(); 
+ int numDims = 2;
+ m_coords = Kokkos::View<double**,PHX::Device>("mcoords", numNodes,numDims);
+ m_phi = Kokkos::View<double**,PHX::Device>("phi", numQPs, numNodes);
+ m_grad_phi = Kokkos::View<double***,PHX::Device>("m_grad_phi", numQPs, numNodes, numDims);
+ m_grad_phi_xy = Kokkos::View<double***,PHX::Device>("m_grad_phi_xy", numQPs, numNodes, numDims);
+ m_det_jacobian = Kokkos::View<double*,PHX::Device>("m_det_jacobian", numQPs);
+ m_weights = Kokkos::View<double*,PHX::Device>("m_weights", numQPs);  
   // Set node coordinatates
   m_coords(0,0) = x_node_coords[0];
   m_coords(0,1) = y_node_coords[0];
@@ -99,32 +111,25 @@ Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
 
   for (size_type qp=0; qp < this->numQuadraturePoints(); ++qp) {
     // Phi
-    shards::Array<double,shards::NaturalOrder,Node> phi_qp = 
-      m_phi.truncate(qp);
-    evaluatePhi(chi[qp], eta[qp], phi_qp);
+  
+    evaluatePhi(chi[qp], eta[qp], m_phi, qp);
     
     // Grad Phi in local element coordinates
-    shards::Array<double,shards::NaturalOrder,Node,Dim> grad_phi_qp = 
-      m_grad_phi.truncate(qp);
-    evaluateGradPhi(chi[qp], eta[qp], grad_phi_qp);
+    evaluateGradPhi(chi[qp], eta[qp], m_grad_phi, qp);
     
     // Determinant of Jacobian and basis function gradients in 
     // real space
-    shards::Array<double,shards::NaturalOrder,Node,Dim> grad_phi_xy_qp = 
-      m_grad_phi_xy.truncate(qp);
     evaluateDetJacobianAndGradients(chi[qp], eta[qp], m_det_jacobian(qp),
-				    grad_phi_qp, grad_phi_xy_qp);
+				    m_grad_phi, m_grad_phi_xy, qp);
   }
   
   
-//   for (std::size_t i=0; i < m_grad_phi_xy.size(); ++i)
-//     m_grad_phi_xy[i] = 0.0;
 
-//   for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
-//     for (std::size_t node=0; node < this->numNodes(); ++node)
-//       for (std::size_t dim=0; dim < 2; ++dim)
-// 	m_grad_phi_xy(qp,node,dim) = 
-// 	  (1.0 / m_det_jacobian(qp)) * m_grad_phi(qp,node,dim);
+   for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
+     for (std::size_t node=0; node < this->numNodes(); ++node)
+       for (std::size_t dim=0; dim < numDims; ++dim)
+ 	m_grad_phi_xy(qp,node,dim) = 
+ 	  (1.0 / m_det_jacobian(qp)) * m_grad_phi(qp,node,dim);
 
 }
 
@@ -139,12 +144,12 @@ Element_Linear2D& Element_Linear2D::operator=(const Element_Linear2D& right)
 
   m_owns_node = right.m_owns_node;
 
-  m_coords_mem = right.m_coords_mem;
-  m_phi_mem = m_phi_mem;
-  m_grad_phi_mem = right.m_grad_phi_mem;
-  m_grad_phi_xy_mem = right.m_grad_phi_xy_mem;
-  m_det_jacobian_mem = right.m_det_jacobian_mem;
-  m_weights_mem = right.m_weights_mem;
+//  m_coords_mem = right.m_coords_mem;
+//  m_phi_mem = m_phi_mem;
+//  m_grad_phi_mem = right.m_grad_phi_mem;
+//  m_grad_phi_xy_mem = right.m_grad_phi_xy_mem;
+//  m_det_jacobian_mem = right.m_det_jacobian_mem;
+//  m_weights_mem = right.m_weights_mem;
 
   m_coords = right.m_coords;
   m_phi = right.m_phi;
@@ -208,42 +213,42 @@ Element_Linear2D::setOwnsNode(size_type local_node_index, bool owns_node)
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,Node,Dim>& 
+const Kokkos::View<double**,PHX::Device> 
 Element_Linear2D::nodeCoordinates() const
 {
   return m_coords;
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
+const Kokkos::View<double**,PHX::Device> 
 Element_Linear2D::basisFunctions() const
 {
   return m_phi;
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+const Kokkos::View<double***,PHX::Device> 
 Element_Linear2D::basisFunctionGradientsLocalSpace() const
 {
   return m_grad_phi;
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+const Kokkos::View<double***,PHX::Device> 
 Element_Linear2D::basisFunctionGradientsRealSpace() const
 {
   return m_grad_phi_xy;
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
+const Kokkos::View<double*,PHX::Device>
 Element_Linear2D::detJacobian() const
 {
   return m_det_jacobian;
 }
 
 //**********************************************************************
-const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
+const Kokkos::View<double*,PHX::Device> 
 Element_Linear2D::quadratureWeights() const
 {
   return m_weights;
@@ -251,36 +256,36 @@ Element_Linear2D::quadratureWeights() const
 
 //**********************************************************************
 void Element_Linear2D::evaluatePhi(double chi, double eta, 
-		    shards::Array<double,shards::NaturalOrder,Node>& phi)
+		    Kokkos::View<double**,PHX::Device> phi, int qp)
 {
-  phi(0) = 0.25 * (1.0 - chi) * (1 - eta);
-  phi(1) = 0.25 * (1.0 + chi) * (1 - eta);
-  phi(2) = 0.25 * (1.0 + chi) * (1 + eta);
-  phi(3) = 0.25 * (1.0 - chi) * (1 + eta);
+  phi(qp,0) = 0.25 * (1.0 - chi) * (1 - eta);
+  phi(qp,1) = 0.25 * (1.0 + chi) * (1 - eta);
+  phi(qp,2) = 0.25 * (1.0 + chi) * (1 + eta);
+  phi(qp,3) = 0.25 * (1.0 - chi) * (1 + eta);
 }
 
 //**********************************************************************
 void Element_Linear2D::evaluateGradPhi(double chi, double eta,
-	   shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi)
+	   Kokkos::View<double***,PHX::Device>  grad_phi, int qp)
 {
-  grad_phi(0,0) = -0.25 * (1 - eta);
-  grad_phi(0,1) = -0.25 * (1 - chi);
+  grad_phi(qp,0,0) = -0.25 * (1 - eta);
+  grad_phi(qp,0,1) = -0.25 * (1 - chi);
 
-  grad_phi(1,0) =  0.25 * (1 - eta);
-  grad_phi(1,1) = -0.25 * (1 + chi);
+  grad_phi(qp,1,0) =  0.25 * (1 - eta);
+  grad_phi(qp,1,1) = -0.25 * (1 + chi);
 
-  grad_phi(2,0) =  0.25 * (1 + eta);
-  grad_phi(2,1) =  0.25 * (1 + chi);
+  grad_phi(qp,2,0) =  0.25 * (1 + eta);
+  grad_phi(qp,2,1) =  0.25 * (1 + chi);
 
-  grad_phi(3,0) = -0.25 * (1 + eta);
-  grad_phi(3,1) =  0.25 * (1 - chi);
+  grad_phi(qp,3,0) = -0.25 * (1 + eta);
+  grad_phi(qp,3,1) =  0.25 * (1 - chi);
 }
 
 //**********************************************************************
 void Element_Linear2D::
 evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
-	const shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi,
-	shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi_xy)
+	const Kokkos::View<double***,PHX::Device>  grad_phi,
+	Kokkos::View<double***,PHX::Device> grad_phi_xy, int qp)
 {
   double
   dx_dchi = 0.25 * ( ( m_coords(1,0) - m_coords(0,0) ) * (1.0 - eta) +
@@ -308,11 +313,11 @@ evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
 
   for (size_type node = 0; node < this->numNodes(); ++node) {
 
-    grad_phi_xy(node,0) = inv_det_jac * 
-      (dy_deta * grad_phi(node, 0) - dy_dchi * grad_phi(node, 1));
+    grad_phi_xy(qp, node,0) = inv_det_jac * 
+      (dy_deta * grad_phi(qp, node, 0) - dy_dchi * grad_phi(qp, node, 1));
 
-    grad_phi_xy(node,1) = inv_det_jac * 
-      (-dx_deta * grad_phi(node, 0) + dx_dchi * grad_phi(node, 1));
+    grad_phi_xy(qp, node,1) = inv_det_jac * 
+      (-dx_deta * grad_phi(qp, node, 0) + dx_dchi * grad_phi(qp, node, 1));
   }
 }
 

@@ -51,9 +51,9 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template<typename EvalT,typename Traits>
+template<typename EvalT,typename TRAITS>
 std::string 
-panzer::GatherIntegrationCoordinates<EvalT, Traits>::
+panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 fieldName(int degree)
 {
    std::stringstream ss; 
@@ -61,8 +61,8 @@ fieldName(int degree)
    return ss.str();
 }
 
-template<typename EvalT,typename Traits>
-panzer::GatherIntegrationCoordinates<EvalT, Traits>::
+template<typename EvalT,typename TRAITS>
+panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
 { 
   quadDegree_ = quad.cubature_degree;
@@ -75,10 +75,10 @@ GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits>
-void panzer::GatherIntegrationCoordinates<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename EvalT,typename TRAITS>
+void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(quadCoordinates_,fm);
 
@@ -86,15 +86,18 @@ postRegistrationSetup(typename Traits::SetupData sd,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits> 
-void panzer::GatherIntegrationCoordinates<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT,typename TRAITS> 
+void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
-  const Intrepid::FieldContainer<double> & quadCoords = workset.int_rules[quadIndex_]->ip_coordinates;  
+  // const Intrepid::FieldContainer<double> & quadCoords = workset.int_rules[quadIndex_]->ip_coordinates;  
+  const IntegrationValues2<double> & iv = *workset.int_rules[quadIndex_];
 
   // just copy the array
-  for(int i=0;i<quadCoords.size();i++)
-     quadCoordinates_[i] = quadCoords[i];
+  for(int i=0;i<iv.ip_coordinates.dimension(0);i++)
+    for(int j=0;j<iv.ip_coordinates.dimension(1);j++)
+      for(int k=0;k<iv.ip_coordinates.dimension(2);k++)
+	quadCoordinates_(i,j,k) = iv.ip_coordinates(i,j,k);
 }
 
 // **********************************************************************

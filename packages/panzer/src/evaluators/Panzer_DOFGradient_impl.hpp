@@ -50,6 +50,36 @@
 
 namespace panzer {
 
+namespace {
+
+template <typename ScalarT,typename ArrayT>
+void evaluateGrad_withSens(int numCells,
+                           PHX::MDField<ScalarT> & dof_grad, 
+                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
+                           const ArrayT & grad_basis)
+{ 
+  if(numCells>0) {
+    // evaluate at quadrature points
+    int numFields = grad_basis.dimension(1);
+    int numPoints = grad_basis.dimension(2);
+    int spaceDim  = grad_basis.dimension(3);
+
+    for (int cell=0; cell<numCells; cell++) {
+      for (int pt=0; pt<numPoints; pt++) {
+        for (int d=0; d<spaceDim; d++) {
+          // first initialize to the right thing (prevents over writing with 0)
+          // then loop over one less basis function
+          dof_grad(cell,pt,d) = dof_value(cell, 0) * grad_basis(cell, 0, pt, d);
+          for (int bf=1; bf<numFields; bf++)
+            dof_grad(cell,pt,d) += dof_value(cell, bf) * grad_basis(cell, bf, pt, d);
+        }
+      }
+    }
+  }
+}
+
+}
+
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOFGradient,p) :
   dof_value( p.get<std::string>("Name"), 
@@ -68,7 +98,7 @@ PHX_EVALUATOR_CTOR(DOFGradient,p) :
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
   
-  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
+  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
   this->setName(n);
 }
 
@@ -84,12 +114,14 @@ PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOFGradient,workset)
 { 
+/*
   // Zero out arrays (probably don't need this anymore)
-  for (int i = 0; i < dof_gradient.size(); ++i)
-    dof_gradient[i] = 0.0;
+  dof_gradient.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0)
-     Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(workset.bases[basis_index])->grad_basis);
+    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(workset.bases[basis_index])->grad_basis);
+*/
+  evaluateGrad_withSens(workset.num_cells,dof_gradient,dof_value,workset.bases[basis_index]->grad_basis);
 }
 
 //**********************************************************************

@@ -50,6 +50,9 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -106,6 +109,9 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(type_assoc_map, test)
   {
     typedef Sacado::mpl::vector<char,short> VecType;
+
+    PHX::KokkosDeviceSession session;
+
     TypeAssocMap<VecType,std::string> tMap;
 
     Builder builder;
@@ -130,6 +136,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library2, test)
   {
+    PHX::KokkosDeviceSession session;
+
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models("Closure Models");
@@ -233,6 +241,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library2, test_surface)
   {
+    PHX::KokkosDeviceSession session;
+
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models("Closure Models");

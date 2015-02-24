@@ -50,6 +50,8 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -109,6 +111,8 @@ int main(int argc,char * argv[])
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
+
+   PHX::InitializeKokkosDevice();
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -443,6 +447,8 @@ int main(int argc,char * argv[])
    else
       std::cout << "ALL PASSED: Epetra" << std::endl;
 
+   PHX::FinalizeKokkosDevice();
+
    return 0;
 }
 
@@ -451,8 +457,6 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    // convert generic linear object container to epetra container
    panzer::EpetraLinearObjContainer & ep_container 
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
-
-   EpetraExt::RowMatrixToMatrixMarketFile("Matrix.mm",*Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(ep_container.get_A()));
 
    // Setup the linear solve: notice A is used directly 
    Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f()); 
@@ -504,7 +508,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
   Teuchos::ParameterList belosList;
   belosList.set( "Flexible Gmres", false );               // Flexible Gmres will be used to solve this problem
-  belosList.set( "Num Blocks", 1000 );            // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", 250 );            // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", 1000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed

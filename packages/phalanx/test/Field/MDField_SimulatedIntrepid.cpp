@@ -41,156 +41,73 @@
 // ************************************************************************
 // @HEADER
 
-
-#include <vector>
-
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
+#include "Phalanx_DimTag.hpp"
+#include "Phalanx_KokkosViewFactory.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-
-typedef PHX::MDField<double>::size_type size_type;
+#include "Teuchos_UnitTestHarness.hpp"
 
 // ********************************************************
 // Dimension tags for this problem
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Dim)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Dim)
+PHX_DIM_TAG_DECLARATION(Dim)
+PHX_DIM_TAG_IMPLEMENTATION(Dim)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Quadrature)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Quadrature)
+PHX_DIM_TAG_DECLARATION(Quadrature)
+PHX_DIM_TAG_IMPLEMENTATION(Quadrature)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+PHX_DIM_TAG_DECLARATION(Node)
+PHX_DIM_TAG_IMPLEMENTATION(Node)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Point)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Point)
+PHX_DIM_TAG_DECLARATION(Point)
+PHX_DIM_TAG_IMPLEMENTATION(Point)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+PHX_DIM_TAG_DECLARATION(Cell)
+PHX_DIM_TAG_IMPLEMENTATION(Cell)
 
-// ********************************************************
-template<typename VectorType>
-void simulated_intrepid_integrate(VectorType& v) {
-  
-  if (v.rank() == 3)
-    v(0,0,0) = 1.0;
-  else
-    v(0,1) = 1.0;
-}
+namespace phalanx_test {
 
+  // ********************************************************
+  template<typename VectorType>
+  void simulated_intrepid_integrate(VectorType& v)
+  {    
+    if (v.rank() == 3)
+      v(0,0,0) = 1.0;
+    else
+      v(0,0) = 1.0;
+  }
 
-// ********************************************************
-int main(int argc, char *argv[]) 
-{
-  using namespace std;
-  using namespace Teuchos;
-  using namespace PHX;
-  
-  GlobalMPISession mpi_session(&argc, &argv);
-
-  try {
+  // ********************************************************
+  TEUCHOS_UNIT_TEST(mdfield, IntrepidIssue)
+  {
+    using namespace std;
+    using namespace Teuchos;
+    using namespace PHX;
     
-    RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
-    TimeMonitor tm(*total_time);
+    PHX::InitializeKokkosDevice();
 
-    // *********************************************************************
-    // Start of MDField Testing
-    // *********************************************************************
-    {
-
-      typedef MDField<double,Cell,Node>::size_type size_type;
-
-      std::vector<size_type> dims(3);
-      dims[0] = 10;
-      dims[1] = 4;
-      dims[2] = 3;
-
-      RCP<DataLayout> quad_vector = 
-	rcp(new MDALayout<Cell,Quadrature,Dim>(dims[0],dims[1],dims[2]));
-      
-      int size = quad_vector->size();
-
-      TEUCHOS_TEST_FOR_EXCEPTION(size != dims[0]*dims[1]*dims[2], std::runtime_error, 
-			 "Size mismatch on MDField!");
-
-      ArrayRCP<double> a_mem = arcp<double>(size);
-      ArrayRCP<double> b_mem = arcp<double>(size);
-
-      for (int i=0; i < a_mem.size(); ++i)
-	a_mem[i] = static_cast<double>(i);
-
-      for (int i=0; i < b_mem.size(); ++i)
-	b_mem[i] = static_cast<double>(i);
-
-      MDField<double,Cell,Point,Dim> a("density",quad_vector);
-      MDField<double> b("density",quad_vector);
-
-      a.setFieldData(a_mem);
-      b.setFieldData(b_mem);
-
-      simulated_intrepid_integrate(a);     
-      simulated_intrepid_integrate(b);     
-
-      // ***********************
-      // Shards tests
-      // ***********************
-
-      ArrayRCP<double> c_mem = arcp<double>(size);
-      ArrayRCP<double> d_mem = arcp<double>(size);
-
-      for (int i=0; i < c_mem.size(); ++i)
-	c_mem[i] = static_cast<double>(i);
-
-      for (int i=0; i < d_mem.size(); ++i)
-	d_mem[i] = static_cast<double>(i);
-
-      shards::Array<double,shards::NaturalOrder,Cell,Node,Dim> c(c_mem.get(),
-								 dims[0], 
-								 dims[1],
-								 dims[2]);
-
-      size_type rank = dims.size();
-
-      const ArrayRCP<const shards::ArrayDimTag*> tags = 
-	arcp<const shards::ArrayDimTag*>(rank);
-      tags[0] = &Cell::tag();
-      tags[1] = &Point::tag();
-      tags[2] = &Dim::tag();
-      
-      shards::Array<double,shards::NaturalOrder> d(d_mem.get(),rank,
-						   &dims[0],tags.get());
-      
-      simulated_intrepid_integrate(d); 
-      simulated_intrepid_integrate((const shards::Array<double,shards::NaturalOrder>&)(c));    
-
-    }
-
-    // *********************************************************************
-    // *********************************************************************
-    std::cout << "\nTest passed!\n" << std::endl; 
-    // *********************************************************************
-    // *********************************************************************
-
-  }
-  catch (const std::exception& e) {
-    std::cout << "************************************************" << endl;
-    std::cout << "************************************************" << endl;
-    std::cout << "Exception Caught!" << endl;
-    std::cout << "Error message is below\n " << e.what() << endl;
-    std::cout << "************************************************" << endl;
-  }
-  catch (...) {
-    std::cout << "************************************************" << endl;
-    std::cout << "************************************************" << endl;
-    std::cout << "Unknown Exception Caught!" << endl;
-    std::cout << "************************************************" << endl;
-  }
-
-  TimeMonitor::summarize();
+    RCP<DataLayout> dl = rcp(new MDALayout<Cell,Quadrature,Dim>(10,4,3));
     
-  return 0;
+    // Compile time array fails, runtime array passes!
+    // typedef PHX::MDField<double,Cell,Node>::size_type size_type;
+    // PHX::MDField<double,Cell,Point,Dim> b("density",dl);
+
+    typedef PHX::MDField<double>::size_type size_type;
+    PHX::MDField<double> b("density",dl);
+    b.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag()));
+    
+    for (size_type i=0; i < b.dimension(0); ++i)
+      for (size_type j=0; j < b.dimension(1); ++j)
+	for (size_type k=0; k < b.dimension(2); ++k)
+	  b(i,j,k) = 2.0;
+ 	     
+    simulated_intrepid_integrate(b);
+    
+    PHX::FinalizeKokkosDevice();
+  }
 }

@@ -92,10 +92,12 @@ struct generate_random {
     typename GeneratorPool::generator_type rand_gen = rand_pool.get_state();
 
     // Draw samples numbers from the pool as urand64 between 0 and rand_pool.MAX_URAND64
+    // Note there are function calls to get other type of scalars, and also to specify
+    // Ranges or get a normal distributed float.
     for(int k = 0;k<samples;k++)
       vals(i*samples+k) = rand_gen.urand64();
 
-    // Give the state back, which will allow another thread to grep it
+    // Give the state back, which will allow another thread to aquire it
     rand_pool.free_state(rand_gen);
   }
 };

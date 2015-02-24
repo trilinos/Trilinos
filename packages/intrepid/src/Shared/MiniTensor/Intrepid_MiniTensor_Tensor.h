@@ -48,7 +48,9 @@
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
-
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include<Kokkos_Core.hpp>
+#endif
 #include "Intrepid_MiniTensor_Vector.h"
 
 namespace Intrepid {
@@ -119,18 +121,55 @@ public:
 
   explicit
   Tensor(Index const dimension, ComponentValue const value);
-
   ///
   /// Create tensor from array
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  template <class ArrayT, typename iType>
+  Tensor( ArrayT &data, iType indx1);
+
+  template <class ArrayT, typename iType>
+  Tensor( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type  &data, iType indx1, iType indx2);
+
+  template <class ArrayT, typename iType>
+  Tensor(typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2, iType indx3);
+
+  template <class ArrayT, typename iType>
+  Tensor( ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4);
+
+  template <class ArrayT, typename iType>
+  Tensor( ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5);
+
+  template <class ArrayT, typename iType>
+  Tensor(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6);
+
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT &data, iType indx1);
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type  &data, iType indx1, iType indx2);  
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3);
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4);
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5);
+
+  template <class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6);
+#endif
+
   explicit
   Tensor(T const * data_ptr);
 
   explicit
   Tensor(Index const dimension, T const * data_ptr);
-
   ///
   /// Copy constructor
   ///
@@ -167,7 +206,6 @@ public:
   explicit
   Tensor(Index const dimension, T const * data_ptr,
       ComponentOrder const component_order);
-
   ///
   /// Simple destructor
   ///
@@ -219,6 +257,30 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+  template <class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType indx1); 
+
+  template <class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType indx1, iType indx2);
+
+  template <class ArrayT, typename iType1, typename iType2, typename iType3>
+  void
+  fill(ArrayT & data, iType1 indx1, iType2 indx2, iType3 indx3);
+
+  template <class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4);
+
+  template <class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5);
+
+  template <class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6);
+ 
   void
   fill(T const * data_ptr);
 

@@ -46,15 +46,35 @@
 #include <Kokkos_Core.hpp>
 #include <cstdio>
 
-// Using default execution space:
+// Using default execution space define a TeamPolicy and its member_type
+// The member_type is what the operator of a functor or Lambda gets, for
+// a simple RangePolicy the member_type is simply an integer
+// For a TeamPolicy its a much richer object, since it provides all information
+// to identify a thread uniquely and some team related function calls such as a
+// barrier (which will be used in a subsequent example).
+// A ThreadTeam consists of 1 to n threads where the maxmimum value of n is
+// determined by the hardware. On a dual socket CPU machine with 8 cores per socket
+// the maximum size of a team is 8. The number of teams (i.e. the league_size) is
+// not limited by physical constraints. Its a pure logical number.
+
 typedef Kokkos::TeamPolicy<>              team_policy ;
 typedef team_policy::member_type team_member ;
 
+// Define a functor which can be launched using the TeamPolicy
 struct hello_world {
   typedef int value_type; //Specify value type for reduction target, sum
+
+  // This is a reduction operator which now takes as first argument the
+  // TeamPolicy member_type. Every member of the team contributes to the
+  // total sum.
+  // It is helpful to think of this operator as a parallel region for a team
+  // (i.e. every team member is active and will execute the code).
   KOKKOS_INLINE_FUNCTION
   void operator() ( const team_member & thread, int& sum) const {
     sum+=1;
+    // The TeamPolicy<>::member_type provides functions to query the multi
+    // dimensional index of a thread as well as the number of thread-teams and the size
+    // of each team.
     printf("Hello World: %i %i // %i %i\n",thread.league_rank(),thread.team_rank(),thread.league_size(),thread.team_size());
   }
 };
@@ -62,11 +82,13 @@ struct hello_world {
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
 
-  // 12 teams of the maximum number of threads per team
+  // Launch 12 teams of the maximum number of threads per team
   const team_policy policy( 12 , team_policy::team_size_max( hello_world() ) );
   
   int sum = 0;
   Kokkos::parallel_reduce( policy , hello_world() , sum );
+
+  // The result will be 12*team_policy::team_size_max( hello_world())
   printf("Result %i\n",sum);
 
   Kokkos::finalize();

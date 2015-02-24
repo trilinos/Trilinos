@@ -45,6 +45,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_Dimension.hpp"
 #include "Shards_Array.hpp"
 
@@ -55,6 +57,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dimension, default)
   {
+    PHX::KokkosDeviceSession session;
+
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> a;
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> b;
     

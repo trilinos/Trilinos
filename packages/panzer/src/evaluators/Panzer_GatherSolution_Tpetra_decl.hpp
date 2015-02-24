@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_GATHER_SOLUTION_TPETRA_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_SOLUTION_TPETRA_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -82,10 +82,10 @@ class GatherSolution_Tpetra;
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class GatherSolution_Tpetra<panzer::Traits::Residual,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
    
   
@@ -97,15 +97,19 @@ public:
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Residual,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
+
+  // for testing purposes
+  const PHX::FieldTag & getFieldTag(int i) const
+  { TEUCHOS_ASSERT(i < Teuchos::as<int>(gatherFields_.size())); return gatherFields_[i].fieldTag(); }
   
 private:
 
@@ -130,10 +134,10 @@ private:
 // **************************************************************
 // Tangent 
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class GatherSolution_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
    
   
@@ -145,15 +149,15 @@ public:
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
   
 private:
 
@@ -178,10 +182,10 @@ private:
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-class GatherSolution_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO,NodeT>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>,
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+class GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
   
 public:
@@ -191,16 +195,18 @@ public:
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
   
+  void operator()(const int cell) const;
+
 private:
 
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
@@ -222,6 +228,13 @@ private:
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
   GatherSolution_Tpetra();
+
+  // fuctor objects
+  PHX::MDField<ScalarT,Cell,NODE> fctr_field;
+  std::vector<int> fctr_elmtOffset;
+  std::vector<std::size_t> fctr_localCellIds;
+  Teuchos::ArrayRCP<const double> fctr_x_array;
+  double fctr_seed_value;
 };
 
 }

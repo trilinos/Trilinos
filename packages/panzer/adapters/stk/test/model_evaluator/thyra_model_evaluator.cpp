@@ -51,6 +51,9 @@ using Teuchos::rcp;
 #include "Panzer_NodeType.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -126,6 +129,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
+    PHX::KokkosDeviceSession session;
+
     bool parameter_on = true;
     AssemblyPieces ap;
   
@@ -175,6 +180,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, response)
   {
+    PHX::KokkosDeviceSession session;
+
     bool parameter_on = true;
     AssemblyPieces ap;
   
@@ -236,6 +243,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
+
+    PHX::KokkosDeviceSession session;
 
     bool parameter_on = true;
     AssemblyPieces ap;
@@ -356,6 +365,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
+    PHX::KokkosDeviceSession session;
+
     bool parameter_on = true;
     AssemblyPieces ap;
   
@@ -465,6 +476,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
+    PHX::KokkosDeviceSession session;
+
     bool parameter_on = true;
     AssemblyPieces ap;
 
@@ -560,6 +573,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::rcp_const_cast;
+
+    PHX::KokkosDeviceSession session;
 
     double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
 

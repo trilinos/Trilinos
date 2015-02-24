@@ -115,8 +115,27 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  TensorBase(Index const dimension, Index const order, T const * data_ptr);
+  // TensorBase for Kokkos Data Types (we can 't use pointers with Kokkos::View)
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1);
 
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1, iType indx2);
+
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1, iType indx2, iType indx3);
+  
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4);
+
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5);
+
+  template<class ArrayT, typename iType>
+  TensorBase(Index const dimension, Index const order, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6);
+
+  //TensorBase for Shards and other data Types
+  TensorBase(Index const dimension, Index const order, T const * data_ptr);
   ///
   /// Copy constructor
   /// \param X the values of its components are copied to the new tensor
@@ -174,8 +193,30 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+//#ifdef HAVE_INTREPID_KOKKOSCORE
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1);
+
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1, iType indx2);
+
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1, iType indx2, iType indx3);
+
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4);
+
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5);
+
+template<class ArrayT, typename iType>
+void fill(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6);
+
+
+//#else
   void
   fill(T const * data_ptr);
+//#endif
 
   ///
   /// Component increment

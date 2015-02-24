@@ -89,6 +89,116 @@ TensorBase<T, Store>::TensorBase(N, ORDER, value)
 //
 // Create vector from array
 //
+#ifdef HAVE_INTREPID_KOKKOSCORE
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1)
+{
+ return;
+} 
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2, iType indx3) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4, indx5)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4, indx5, indx6)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4, indx5)
+{
+ return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4, indx5, indx6)
+{
+ return;
+}
+#endif
+
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(Index const dimension, T const * data_ptr) :

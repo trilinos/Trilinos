@@ -28,5 +28,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ic_builder2_files
   SOURCE_FILES block-decomp.exo.2.0 block-decomp.exo.2.1
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/"
-  EXEDEPS initial_condition_builder2
+  EXEDEPS initial_condition_builder
   )

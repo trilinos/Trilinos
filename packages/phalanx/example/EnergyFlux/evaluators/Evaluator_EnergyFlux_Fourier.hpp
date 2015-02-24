@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_VP_FOURIER_HPP
 #define PHX_EXAMPLE_VP_FOURIER_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "AlgebraicTypes.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"

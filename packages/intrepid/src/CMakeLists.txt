@@ -59,12 +59,53 @@ APPEND_SET(HEADERS
   Shared/Intrepid_Utils.hpp
   )
 
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
+  APPEND_SET(HEADERS ${HEADERS}
+  Kokkos/KokkosRank.hpp
+  )
+IF (HAVE_INTREPID_KOKKOSCORE AND KOKKOS_HAVE_CUDA)
+  IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+
+
+  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES} "." )
+  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES}
+                     ${KokkosCore_INCLUDE_DIRS}
+                     ${Intrepid_INCLUDE_DIRS}
+                     ${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
+
+
+
+ SET(SOURCES ${SOURCES}
+      ${OBJECTS_CUDA1}
+      ${OBJECTS_CUDA2}
+      ${OBJECTS_CUDA3}
+      )
+
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
+  APPEND_SET(HEADERS ${HEADERS}
+  Kokkos/KokkosRank.hpp
+  )	
+ENDIF()
+
+IF(HAVE_INTREPID_KOKKOSCORE)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
+  APPEND_SET(HEADERS ${HEADERS}
+  Kokkos/KokkosRank.hpp
+  )	
+ENDIF()
+
+
+
 #
 # MiniTensor headers
 #
 IF (Intrepid_ENABLE_Boost)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
-  APPEND_SET(HEADERS
+  APPEND_SET(HEADERS ${HEADERS}
     Shared/MiniTensor/Intrepid_MiniTensor.h
     Shared/MiniTensor/Intrepid_MiniTensor_TensorBase.h
     Shared/MiniTensor/Intrepid_MiniTensor_TensorBase.i.h
@@ -253,6 +294,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Cell)
 APPEND_SET(HEADERS
   Cell/Intrepid_CellTools.hpp
   Cell/Intrepid_CellToolsDef.hpp
+  Cell/Intrepid_CellTools_Kokkos.hpp
   )
 
 #

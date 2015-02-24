@@ -60,6 +60,9 @@ using Teuchos::rcp;
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_PointValues.hpp"
+#include "Panzer_Constant.hpp"
+#include "Panzer_IntegrationValues.hpp"
+#include "Panzer_BasisValues2.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -68,6 +71,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 
 #include "RandomFieldEvaluator.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -89,6 +94,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values_evaluator, eval)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
@@ -171,6 +178,10 @@ namespace panzer {
     workset.time = 0.0;
     workset.evaluate_transient_terms = false;
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(8);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     fm.postRegistrationSetup(sd);
     fm.print(out);
 
@@ -184,6 +195,18 @@ namespace panzer {
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        point_coords_basis(point_rule_basis->getName()+"_"+"point_coords",point_rule_basis->dl_vector);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(point_coords_basis);
+
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP> 
+       point_coords_jac_det(point_rule_basis->getName()+"_"+"jac_det",point_rule_basis->dl_scalar);
+    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP>(point_coords_jac_det);
+
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim> 
+       point_coords_jac(point_rule_basis->getName()+"_"+"jac",point_rule_basis->dl_tensor);
+    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac);
+
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim> 
+       point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
+    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
     typedef panzer::ArrayTraits<double,Intrepid::FieldContainer<double> >::size_type size_type;
 
@@ -203,11 +226,30 @@ namespace panzer {
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
        }
+
+       for(size_type p=0;p<num_points;p++)
+          TEST_FLOATING_EQUALITY(point_coords_jac_det(c,p),dx*dy/4.0,1e-10);
+
+       for(size_type p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,0),dx/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,1),dy/2.0,1e-10);
+       }
+
+       for(size_type p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,0),1.0/(dx/2.0),1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,1),1.0/(dy/2.0),1e-10);
+       }
     }
   }
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
@@ -265,6 +307,10 @@ namespace panzer {
        fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(8);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
     fm.print(out);
@@ -279,23 +325,153 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
-    PHX::MDField<panzer::Traits::Jacobian::ScalarT> 
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS,panzer::IP> 
        basis(basis_q1->name()+"_"+point_rule->getName()+"_"+"basis",layout->basis);
     fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(basis);
     out << basis << std::endl;
 
     std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset);
-    Teuchos::RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > bases = workset.bases[basisIndex];
+    Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
     TEST_ASSERT(bases!=Teuchos::null);
-    TEST_EQUALITY(bases->basis.size(),basis.size());
-    for(int i=0;i<basis.size();i++) {
-       panzer::Traits::Jacobian::ScalarT truth = bases->basis[i];
-       TEST_FLOATING_EQUALITY(truth,basis[i],1e-10);
+    // TEST_EQUALITY(bases->basis.size(),basis.size());
+    for(int i=0;i<4;i++) {
+      for(int j=0;j<4;j++) {
+        for(unsigned int k=0;k<bases->basis_scalar.dimension(2);k++) {
+          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k).val(),1e-10);
+        }
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(basis_values_evaluator, eval_vector)
+  {
+    PHX::KokkosDeviceSession session;
+
+    const std::size_t workset_size = 4;
+    const std::string fieldName = "U";
+
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
+
+    // build input physics block
+    Teuchos::RCP<panzer::PureBasis> basis_edge = buildBasis(workset_size,"HCurl");
+    panzer::CellData cell_data(basis_edge->numCells(), basis_edge->getCellTopology());
+
+    int integration_order = 4;
+    Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList();
+    testInitialization(ipb,integration_order);
+
+    std::string eBlockID = "eblock-0_0";    
+    Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
+    panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
+    Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+    Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
+      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,integration_order,cellData,eqset_factory,gd,false));
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk_classic::buildWorksets(*mesh,*physicsBlock);
+    panzer::Workset & workset = (*work_sets)[0];
+    TEST_EQUALITY(work_sets->size(),1);
+
+    Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
+    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    int_values.setupArrays(point_rule);
+    int_values.evaluateValues(workset.cell_vertex_coordinates);
+
+    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+
+    Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_edge,*point_rule));
+
+    // setup field manager, add evaluator under test
+    /////////////////////////////////////////////////////////////
+ 
+    PHX::FieldManager<panzer::Traits> fm;
+
+    Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
+    {
+       Teuchos::ParameterList input;
+       input.set("Name",  "HCurl:1 Orientation");
+       input.set("Value", 1.0);
+       input.set("Data Layout", basis_edge->functional);
+       Teuchos::RCP< PHX::Evaluator<panzer::Traits> > evaluator
+          = rcp(new panzer::Constant<panzer::Traits::Jacobian,panzer::Traits>(input));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+    }
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+    }
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::BasisValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,basis_edge));
+
+       TEST_EQUALITY(evaluator->evaluatedFields().size(),4);
+       evalJacFields = Teuchos::rcpFromRef(evaluator->evaluatedFields());
+
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+       fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
+       out << "REQUIRED FIELD = \"";
+       evaluator->evaluatedFields()[0]->print(out);
+       out << "\"" << std::endl;
+    }
+
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(4);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+    panzer::Traits::SetupData sd;
+    fm.postRegistrationSetup(sd);
+    fm.print(out);
+
+    // run tests
+    /////////////////////////////////////////////////////////////
+
+    workset.alpha = 0.0;
+    workset.beta = 0.0;
+    workset.time = 0.0;
+    workset.evaluate_transient_terms = false;
+
+    fm.evaluateFields<panzer::Traits::Jacobian>(workset);
+
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP,Dim> 
+       basis(basis_edge->name()+"_"+point_rule->getName()+"_basis",layout->basis_grad);
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP> 
+       curl_basis(basis_edge->name()+"_"+point_rule->getName()+"_curl_basis",layout->basis);
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,IP,Dim,Dim> 
+       jac_inv("CubaturePoints (Degree=4,volume)_jac_inv",point_rule->dl_tensor);
+
+    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,BASIS,IP,Dim>(basis);
+    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,BASIS,IP>(curl_basis);
+    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,IP,Dim,Dim>(jac_inv);
+
+    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset);
+    Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
+    TEST_ASSERT(bases!=Teuchos::null);
+    TEST_EQUALITY(bases->basis_vector.size(),basis.size());
+    TEST_EQUALITY(bases->curl_basis_scalar.size(),curl_basis.size());
+
+    for(int i=0;i<4;i++) {
+      for(int j=0;j<4;j++) {
+        for(unsigned int k=0;k<bases->curl_basis_scalar.dimension(2);k++) {
+          for(unsigned int d=0;d<bases->basis_vector.dimension(3);d++) {
+            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d).val(),1e-10);
+          }
+        }
+      }
+    }
+
+    for(int i=0;i<4;i++) {
+      for(int j=0;j<4;j++) {
+        for(unsigned int k=0;k<bases->curl_basis_scalar.dimension(2);k++) {
+          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k).val(),1e-10);
+        }
+      }
     }
   }
 
   TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
@@ -372,6 +548,10 @@ namespace panzer {
        fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]); // require DOF_PointValues
     }
 
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(8);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
     panzer::Traits::SetupData sd;
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
@@ -385,7 +565,10 @@ namespace panzer {
     workset.time = 0.0;
     workset.evaluate_transient_terms = false;
 
+    panzer::Traits::PreEvalData ped;
+    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
+    fm.postEvaluate<panzer::Traits::Jacobian>(NULL);
 
     PHX::MDField<panzer::Traits::Jacobian::ScalarT> ref_field("TEMPERATURE",point_rule->dl_scalar);
     PHX::MDField<panzer::Traits::Jacobian::ScalarT> fut_field("TEMPERATURE_"+point_rule->getName(),point_rule->dl_scalar); // "field under test"
@@ -393,8 +576,13 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fut_field);
 
     TEST_EQUALITY(ref_field.size(),fut_field.size());
-    for(int i=0;i<ref_field.size();i++) {
-       TEST_FLOATING_EQUALITY(fut_field[i],ref_field[i],1e-10);
+    // for(int i=0;i<ref_field.size();i++) {
+    //   TEST_FLOATING_EQUALITY(fut_field[i].val(),ref_field[i].val(),1e-10);
+    // }
+    for(int i=0;i<4;i++) {
+      for(int j=0;j<4;j++) { 
+        TEST_FLOATING_EQUALITY(fut_field(i,j).val(),ref_field(i,j).val(),1e-10);
+      }
     }
   }
 

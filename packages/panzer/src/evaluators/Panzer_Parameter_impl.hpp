@@ -57,8 +57,8 @@
 namespace panzer {
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-Parameter<EvalT, Traits>::
+template<typename EvalT, typename TRAITS>
+Parameter<EvalT, TRAITS>::
 Parameter(const std::string name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	  const double in_initial_value,
@@ -80,8 +80,8 @@ Parameter(const std::string name,
 //**********************************************************************
 #ifdef HAVE_STOKHOS
 
-template<typename EvalT, typename Traits>
-Parameter<EvalT, Traits>::
+template<typename EvalT, typename TRAITS>
+Parameter<EvalT, TRAITS>::
 Parameter(const std::string name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	  const std::vector<double> & in_initial_value,
@@ -104,18 +104,18 @@ Parameter(const std::string name,
 #endif
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Parameter<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData worksets,
-		      PHX::FieldManager<Traits>& fm)
+template<typename EvalT, typename TRAITS>
+void Parameter<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData worksets,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(target_field,fm);
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Parameter<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT, typename TRAITS>
+void Parameter<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
