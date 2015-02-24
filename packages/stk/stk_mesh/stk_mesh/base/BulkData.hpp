@@ -66,6 +66,7 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_mesh/base/ModificationSummary.hpp"
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -1055,6 +1056,9 @@ private: // data
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
 
+  stk::EmptyModificationSummary m_modSummary;
+  // If needing debug info for modifications, comment out above line and uncomment line below
+  // stk::ModificationSummary m_modSummary;
 #ifdef STK_MESH_MODIFICATION_COUNTERS
   static unsigned m_num_bulk_data_counter;
   unsigned m_modification_counters[NumMethodTypes][NumModificationTypes];
