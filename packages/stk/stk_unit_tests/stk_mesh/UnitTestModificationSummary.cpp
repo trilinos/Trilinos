@@ -5,15 +5,17 @@
 
 TEST(ModificationSummary, testString)
 {
-    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    const std::string generatedMeshSpecification = "generated:1x1x3";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-
-    if (stkMeshBulkData.parallel_size() == 1 )
+    int numprocs;
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    if (numprocs == 1 )
     {
+        stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+        const std::string generatedMeshSpecification = "generated:1x1x3";
+        stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+        stkMeshIoBroker.create_input_mesh();
+        stkMeshIoBroker.populate_bulk_data();
+        stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
         ////////////////////////
 
         stk::ModificationSummary writer(stkMeshBulkData);
