@@ -49,7 +49,7 @@
 
 #include <iterator>
 #include <vector>
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_TemplateManager.hpp"
 
 namespace PHX {

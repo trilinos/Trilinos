@@ -45,10 +45,13 @@
 #ifndef PHX_EXAMPLE_ELEMENT_2D_HPP
 #define PHX_EXAMPLE_ELEMENT_2D_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Dimension.hpp"
-#include "Shards_Array.hpp"
+#include "Kokkos_View.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
+//#include "Shards_Array.hpp"
 
 
 /** \brief 2D Linear Lagrangian Finite Element
@@ -133,35 +136,44 @@ public:
   void setOwnsNode(size_type local_node_index, bool owns_node=true);
 
   //! Returns nodal coordinates
-  const shards::Array<double,shards::NaturalOrder,Node,Dim>& 
-  nodeCoordinates() const;
+  const Kokkos::View<double**,PHX::Device> nodeCoordinates() const;
   
   //! Returns values of basis functions at the quadrature points
-  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
-  basisFunctions() const;
+//  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
+//  basisFunctions() const;
+  
+  const Kokkos::View<double**,PHX::Device> basisFunctions() const;
   
   //! Returns gradient of basis functions at the quadrature points
   //! in local element coordinate system, d_phi/d_chi and d_phi/d_eta
-  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
-  basisFunctionGradientsLocalSpace() const;
+ // const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+ // basisFunctionGradientsLocalSpace() const;
+
+  const  Kokkos::View<double***,PHX::Device> basisFunctionGradientsLocalSpace() const;
   
   //! Returns gradient of basis functions at the quadrature points
   //! in real coordinate system, d_phi/d_x and d_phi/d_y
-  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
-  basisFunctionGradientsRealSpace() const;
+//  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+//  basisFunctionGradientsRealSpace() const;
   
+  const  Kokkos::View<double***,PHX::Device> basisFunctionGradientsRealSpace() const; 
+
   //! Returns determinant of jacobian transform values at quadrature points
-  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
-  detJacobian() const;
+//  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
+//  detJacobian() const;
+
+  const  Kokkos::View<double*,PHX::Device> detJacobian() const;
 
   //! Returns jacobian transform values at the quadrature points
-  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
-  quadratureWeights() const;  
+//  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
+//  quadratureWeights() const;  
   
+  const  Kokkos::View<double*,PHX::Device> quadratureWeights() const;
+
   void print(std::ostream& os) const;
 
 private:
-
+/*
   void evaluatePhi(double chi, double eta, 
 		   shards::Array<double,shards::NaturalOrder,Node>& phi);
 
@@ -171,6 +183,15 @@ private:
   void evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
 	         const shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi,
 	         shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi_xy);
+*/
+
+  void evaluatePhi(double chi, double eta,  Kokkos::View<double**,PHX::Device> phi, int qp);
+
+  void evaluateGradPhi(double chi, double eta,  Kokkos::View<double***,PHX::Device>  grad_phi, int qp);
+
+  void evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
+                                       const Kokkos::View<double***,PHX::Device> grad_phi,
+                                       Kokkos::View<double***,PHX::Device>  grad_phi_xy, int qp);
   
 private:
   
@@ -182,7 +203,7 @@ private:
 
   std::vector<bool> m_owns_node;
 
-  Teuchos::ArrayRCP<double> m_coords_mem;
+  /*Teuchos::ArrayRCP<double> m_coords_mem;
   
   Teuchos::ArrayRCP<double> m_phi_mem;
   
@@ -193,6 +214,7 @@ private:
   Teuchos::ArrayRCP<double> m_det_jacobian_mem;
 
   Teuchos::ArrayRCP<double> m_weights_mem;
+
 
   shards::Array<double,shards::NaturalOrder,Node,Dim> m_coords;
   
@@ -205,7 +227,14 @@ private:
   shards::Array<double,shards::NaturalOrder,QuadPoint> m_det_jacobian;
 
   shards::Array<double,shards::NaturalOrder,QuadPoint> m_weights;
-
+*/
+ 
+  Kokkos::View<double**,PHX::Device> m_coords;//("mcoords", Node,Dim);
+  Kokkos::View<double**,PHX::Device> m_phi; //("m_phi", QuadPoint,Node);
+  Kokkos::View<double***,PHX::Device> m_grad_phi; //("m_grad_phi", QuadPoint,Node,Dim);
+  Kokkos::View<double***,PHX::Device> m_grad_phi_xy; //("m_grad_phi_xy", QuadPoint,Node,Dim);
+  Kokkos::View<double*,PHX::Device> m_det_jacobian; //("m_det_jacobian", QuadPoint);
+  Kokkos::View<double*,PHX::Device> m_weights; //("m_weights", QuadPoint);
 };
 
 std::ostream& operator<<(std::ostream& os, const Element_Linear2D& e);

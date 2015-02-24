@@ -55,14 +55,9 @@
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_config.hpp" // for std::vector
 #include "CellData.hpp"
-#include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_Allocator_New.hpp"
-
-// Debug information
-#include "Phalanx_TypeStrings.hpp"
+#include "Sacado.hpp"
 
 namespace PHX {
 
@@ -93,27 +88,16 @@ namespace PHX {
     // Create the data types for each evaluation type
     
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType, 
-				 MyVector<RealType>,
-				 MyTensor<RealType> 
-    > ResidualDataTypes;
+    typedef Sacado::mpl::vector<RealType> ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType,
-				 MyVector<FadType>,
-				 MyTensor<FadType> 
-    > JacobianDataTypes;
+    typedef Sacado::mpl::vector<RealType,FadType> JacobianDataTypes;
 
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
       boost::mpl::pair<Residual, ResidualDataTypes>,
       boost::mpl::pair<Jacobian, JacobianDataTypes>
     >::type EvalToDataMap;
-
-    // ******************************************************************
-    // *** Allocator Type
-    // ******************************************************************
-    typedef PHX::NewAllocator Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -124,39 +108,6 @@ namespace PHX {
     typedef void* PostEvalData;
 
   };
- 
-  // ******************************************************************
-  // ******************************************************************
-  // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in phalanx/src/Phalanx_TypeString.hpp.
-  // ******************************************************************
-  // ******************************************************************
-
-  // Evaluation Types
-  template<> struct TypeString<MyTraits::Residual> 
-  { static const std::string value; };
-
-  template<> struct TypeString<MyTraits::Jacobian> 
-  { static const std::string value; };
-
-  // Data Types
-  template<> struct TypeString<double> 
-  { static const std::string value; };
-
-  template<> struct TypeString< MyVector<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< MyTensor<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::Fad::DFad<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< MyVector<Sacado::Fad::DFad<double> > > 
-  { static const std::string value; };
-
-  template<> struct TypeString< MyTensor<Sacado::Fad::DFad<double> > > 
-  { static const std::string value; };
 
 }
 

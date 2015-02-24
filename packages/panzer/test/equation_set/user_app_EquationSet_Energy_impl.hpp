@@ -152,7 +152,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set< Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers",fms);
 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_TransientBasisTimesScalar<EvalT,panzer::Traits>(p));
+      // rcp(new panzer::Integrator_TransientBasisTimesScalar<EvalT,panzer::Traits>(p));
+      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }

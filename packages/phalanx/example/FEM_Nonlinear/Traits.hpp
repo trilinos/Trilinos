@@ -55,7 +55,7 @@
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Sacado.hpp"
 #include "Dimension.hpp"
 #include "Element_Linear2D.hpp"
@@ -63,7 +63,7 @@
 #include "Phalanx_Allocator_Contiguous.hpp"
 
 // Debugging information
-#include "Phalanx_TypeStrings.hpp"
+//#include "Phalanx_TypeStrings.hpp"
 
 namespace PHX {
 
@@ -131,7 +131,7 @@ namespace PHX {
   // ******************************************************************
 
   // Evaluation Types
-  template<> struct TypeString<MyTraits::Residual> 
+/*  template<> struct TypeString<MyTraits::Residual> 
   { static const std::string value; };
 
   template<> struct TypeString<MyTraits::Jacobian> 
@@ -149,7 +149,7 @@ namespace PHX {
 
   template<> struct TypeString< Sacado::Fad::SFad<double,1> > 
   { static const std::string value; };
-
+*/
 }
 
 #endif

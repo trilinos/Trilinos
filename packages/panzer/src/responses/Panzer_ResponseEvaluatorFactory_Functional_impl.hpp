@@ -74,14 +74,14 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
-  if(   PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Residual>::value 
+  if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>() 
 #ifdef HAVE_STOKHOS
-     || PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::SGResidual>::value
+     || PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::SGResidual>()
 #endif
     )
     return true;
 
-  if(PHX::TypeString<EvalT>::value==PHX::TypeString<panzer::Traits::Jacobian>::value)
+  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Jacobian>())
     return linearObjFactory_!=Teuchos::null;
 
   return false;

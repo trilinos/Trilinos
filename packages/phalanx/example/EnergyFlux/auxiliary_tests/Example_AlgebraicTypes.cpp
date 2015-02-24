@@ -42,7 +42,8 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -61,7 +62,9 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
-
+    
+    PHX::InitializeKokkosDevice();
+    
     {
       cout << "Vector Testing: a, b are vectors, c is scalar" << endl;
       MyVector<double> a;
@@ -80,6 +83,8 @@ int main(int argc, char *argv[])
       cout << "Printing c*a:\n" << c*a << endl;;
       cout << "Printing a*c:\n" << a*c << endl;
     }
+
+    PHX::FinalizeKokkosDevice();
 
     // *********************************************************************
     // Finished all testing

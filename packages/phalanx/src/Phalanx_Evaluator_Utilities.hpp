@@ -59,11 +59,11 @@ namespace PHX {
   template<typename EvalT, typename Traits> 
   struct EvaluatorUtilities {
     
-    template <typename DataT>
-    void setFieldData(PHX::Field<DataT>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+    // template <typename DataT>
+    // void setFieldData(PHX::Field<DataT>& f, PHX::FieldManager<Traits>& fm) 
+    // {
+    //   fm.template getFieldData<DataT,EvalT>(f);
+    // }
 
     template <typename DataT,
 	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,

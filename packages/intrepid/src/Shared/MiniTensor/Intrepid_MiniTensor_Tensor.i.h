@@ -42,6 +42,7 @@
 #if !defined(Intrepid_MiniTensor_Tensor_i_h)
 #define Intrepid_MiniTensor_Tensor_i_h
 
+
 namespace Intrepid {
 
 //
@@ -85,6 +86,122 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create tensor from array
 //
+//
+#ifdef HAVE_INTREPID_KOKKOSCORE
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor( ArrayT &data, iType indx1) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1)
+{
+  return;
+}
+
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type  &data, iType indx1, iType indx2) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1, indx2)
+{
+  return;
+}
+
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2, iType indx3) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1, indx2, indx3)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor( ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1, indx2, indx3, indx4)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1, indx2, indx3, indx4, indx5)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor( ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
+TensorBase<T, Store>::TensorBase(N, ORDER, data,  indx1, indx2, indx3, indx4, indx5, indx6)
+{
+  return;
+}
+
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT &data, iType indx1) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1)
+{
+  return;
+}
+
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type  &data, iType indx1, iType indx2) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1, indx2)
+{
+  return;
+}
+
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1, indx2, indx3)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1, indx2, indx3, indx4)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1, indx2, indx3, indx4, indx5)
+{
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
+TensorBase<T, Store>::TensorBase(dimension, ORDER, data,  indx1, indx2, indx3, indx4, indx5, indx6)
+{
+  return;
+}
+#endif
+//Irina TOFIX add kokkos initializations for tensor (data)  
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(T const * data_ptr) :
@@ -100,7 +217,6 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
 }
-
 //
 // Copy constructor
 //
@@ -328,6 +444,66 @@ Tensor<T, N>::fill(T const & s)
 //
 // Fill components from array defined by pointer.
 //
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType indx1)
+{
+  TensorBase<T, Store>::fill(data, indx1);
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType indx1, iType indx2)
+{
+  TensorBase<T, Store>::fill(data, indx1, indx2);
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType1, typename iType2, typename iType3>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType1 indx1, iType2 indx2, iType3 indx3)
+{
+  TensorBase<T, Store>::fill(data, indx1, indx2, indx3);
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4)
+{
+  TensorBase<T, Store>::fill(data, indx1, indx2, indx3, indx4);
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5)
+{
+  TensorBase<T, Store>::fill(data, indx1, indx2, indx3, indx4, indx5);
+  return;
+}
+
+template<typename T, Index N>
+template <class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6)
+{
+  TensorBase<T, Store>::fill(data, indx1, indx2, indx3, indx4, indx5, indx6);
+  return;
+}
+
 template<typename T, Index N>
 inline
 void

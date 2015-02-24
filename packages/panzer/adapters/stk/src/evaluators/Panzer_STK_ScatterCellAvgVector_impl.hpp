@@ -45,13 +45,14 @@
 
 #include "Teuchos_Assert.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -78,7 +79,7 @@ PHX_EVALUATOR_CTOR(ScatterCellAvgVector,p) :
   stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) 
   {
-    scatterFields_[fd] = PHX::MDField<ScalarT,Cell,Point,Dim>(names[fd],intRule->dl_vector);
+    scatterFields_[fd] = PHX::MDField<const ScalarT,Cell,Point,Dim>(names[fd],intRule->dl_vector);
     this->addDependentField(scatterFields_[fd]);
   }
 
@@ -106,6 +107,8 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector,d,fm)
 
 PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
 {
+  panzer::MDFieldArrayFactory af("",true);
+
   // for convenience pull out some objects from workset
   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
   std::string blockId = workset.block_id;
@@ -114,7 +117,7 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
   // loop over the number of vector fields requested for exodus output
   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) 
   {
-    PHX::MDField<ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
+    PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
     std::string fieldName = field.fieldTag().name();
     int numCells = field.dimension(0);
     int numPoints = field.dimension(1);  
@@ -122,15 +125,17 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
     
     for (int dim = 0; dim < numDims; dim++)
     {  
-      std::vector<double> average(numCells,0.0);
+      // std::vector<double> average(numCells,0.0);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",numCells,1);
       
       // write to double field
       for(int i = 0; i < numCells; i++)  // loop over cells
       {
+         average(i,0) = 0.0;
          for(int j = 0; j < numPoints; j++)  // loop over IPs 
-            average[i] += Sacado::ScalarValue<ScalarT>::eval(field(i,j,dim));
+            average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j,dim));
          
-         average[i] /= numPoints;
+         average(i,0) /= numPoints;
       }
 
       mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average);

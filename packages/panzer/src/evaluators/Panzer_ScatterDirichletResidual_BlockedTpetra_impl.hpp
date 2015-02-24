@@ -68,8 +68,8 @@
 
 #include <boost/unordered_map.hpp>
 
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_BlockedTpetra<EvalT, Traits,S,LO,GO,NodeT>::
+template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                        const Teuchos::ParameterList& p)
 { 
@@ -103,8 +103,8 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 // **********************************************************************
 
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -156,10 +156,10 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -180,9 +180,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
@@ -197,9 +197,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -289,8 +289,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -341,10 +341,10 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -366,9 +366,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
@@ -383,9 +383,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -507,7 +507,7 @@ evaluateFields(typename Traits::EvalData workset)
                subJac->replaceLocalValues(lid,rowIndices,rowValues);
             }
  
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             local_r[lid] = scatterField.val();
             local_dc[lid] = 1.0; // mark row as dirichlet

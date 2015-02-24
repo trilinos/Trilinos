@@ -45,12 +45,16 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(ElementBlockToPhsyicsBlockMap,basic)
   {
+    PHX::KokkosDeviceSession session;
+    
     Teuchos::ParameterList p;
     p.set("eblock-0_0", "fluid");
     p.set("eblock-0_1", "fluid");

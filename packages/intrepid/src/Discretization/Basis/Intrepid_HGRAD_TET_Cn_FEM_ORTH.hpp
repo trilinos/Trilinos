@@ -50,7 +50,11 @@
 #define INTREPID_HGRAD_TET_Cn_FEM_ORTH_HPP
 
 #include "Intrepid_Basis.hpp"
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+#include "Sacado_No_Kokkos.hpp"
+#endif
 
 namespace Intrepid {
   

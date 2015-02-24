@@ -53,6 +53,9 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -89,23 +92,6 @@ using Teuchos::rcp;
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-void pause_to_attach()
-{
-   MPI_Comm mpicomm = MPI_COMM_WORLD;
-   Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-         Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setShowProcRank(true);
-   out.setOutputToRootOnly(-1);
-
-   out << "PID = " << getpid();
-
-   if (comm->getRank() == 0)
-      getchar();
-   comm->barrier();
-}
-
-
 void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		       std::vector<panzer::BC>& bcs);
 
@@ -116,13 +102,13 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
+   PHX::InitializeKokkosDevice();
+
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
-
-   // pause_to_attach();
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -341,6 +327,8 @@ int main(int argc,char * argv[])
 
    panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ghostCont->get_x());
    mesh->writeToExodus("output.exo");
+
+   PHX::FinalizeKokkosDevice();
 
    return 0;
 }

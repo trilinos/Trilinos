@@ -46,6 +46,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_Dimension.hpp"
 #include "Shards_Array.hpp"
 
@@ -59,6 +61,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(papi, NestedPAPICounter)
   {
+    PHX::KokkosDeviceSession session;
+    
     int rank;
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);

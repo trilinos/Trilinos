@@ -69,12 +69,16 @@ using Teuchos::rcp;
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 using panzer_stk_classic::CoordMatcher;
 
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(periodic_bcs, sorted_permutation)
   {
+    PHX::InitializeKokkosDevice();
+
      std::vector<double> vec(5.0);
      std::vector<std::size_t> permute;
      vec[0] = 0.0; 
@@ -88,12 +92,16 @@ namespace panzer {
      TEST_EQUALITY(permute.size(),5);
      for(std::size_t i=0;i<permute.size();i++)  
         TEST_EQUALITY(vec[permute[i]],(double) i);
+
+     PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getSideIdsAndCoords)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
 
@@ -172,12 +180,15 @@ namespace panzer {
        TEST_FLOATING_EQUALITY(sideCoords_edge[p][1],i*1.0/4.0+1.0/8.0,1e-14);
     }
 
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getLocalSideIds)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -207,12 +218,16 @@ namespace panzer {
        TEST_EQUALITY(locallyRequiredIds->size(),0);
        TEST_EQUALITY(locallyRequiredIds_edge->size(),0);
     }
+
+    PHX::FinalizeKokkosDevice();
   }
  
   TEUCHOS_UNIT_TEST(periodic_bcs, getLocallyMatchedSideIds)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -322,12 +337,15 @@ namespace panzer {
     else {
        TEST_EQUALITY(matchedIds->size(),0)
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getGlobalPairing)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -443,12 +461,15 @@ namespace panzer {
     else {
        TEST_EQUALITY(globallyMatchedIds->size(),0);
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, matchPeriodicSides)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -679,12 +700,15 @@ namespace panzer {
        TEST_THROW(panzer_stk_classic::periodic_helpers::matchPeriodicSides("top","right",*mesh,matcherX,"edge"),std::logic_error);
        TEST_THROW(panzer_stk_classic::periodic_helpers::matchPeriodicSides("bottom","left",*mesh,matcherY,"edge"),std::logic_error);
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -837,12 +861,15 @@ namespace panzer {
        TEST_THROW(pMatch->getMatchedPair(*mesh),std::logic_error);
     }
     
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -892,13 +919,15 @@ namespace panzer {
        }
 
     }
-
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi_edge)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -1067,13 +1096,15 @@ namespace panzer {
        }
 
     }
-
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_nodes_and_edges)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -1180,7 +1211,8 @@ namespace panzer {
        }
 
     }
-
+    
+    PHX::FinalizeKokkosDevice();
   }
 
 }

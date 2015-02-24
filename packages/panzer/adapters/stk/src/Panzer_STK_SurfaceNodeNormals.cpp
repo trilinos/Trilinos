@@ -47,6 +47,7 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_Workset_Builder.hpp"
+#include "Panzer_IntegrationValues.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_CellData.hpp"
 

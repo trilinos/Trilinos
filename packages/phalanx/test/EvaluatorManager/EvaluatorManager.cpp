@@ -42,12 +42,13 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_Evaluator_Manager.hpp"
 #include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_DimTag.hpp"
 
 // Evaluators
 #include "evaluators/Evaluator_Constant.hpp"
@@ -56,119 +57,68 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 
 // From test/Utilities directory
 #include "Traits.hpp"
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+PHX_DIM_TAG_DECLARATION(Cell)
+PHX_DIM_TAG_IMPLEMENTATION(Cell)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+PHX_DIM_TAG_DECLARATION(Node)
+PHX_DIM_TAG_IMPLEMENTATION(Node)
 
-SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
-SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
+PHX_DIM_TAG_DECLARATION(QP)
+PHX_DIM_TAG_IMPLEMENTATION(QP)
 
-int main(int argc, char *argv[]) 
+TEUCHOS_UNIT_TEST(kokkos, MemoryAssignment)
 {
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
   
-  GlobalMPISession mpi_session(&argc, &argv);
-
-  try {
-    
-    RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
-    TimeMonitor tm(*total_time);
-
-    // *********************************************************************
-    // Start of EvaluatorManager Testing
-    // *********************************************************************
-    {
-      cout << "\nStarting EvaluatorManager Testing\n";
-
-      
-      cout << "\nConstructing EvaluatorManager...";
-      EvaluatorManager<MyTraits> em;
-      cout << "Passed!" << endl;
-
-      RCP<DataLayout> nodes = rcp(new MDALayout<Cell,Node>(100,4));
-      RCP<DataLayout> qp = rcp(new MDALayout<Cell,QP>(100,4));
-
-      RCP<FieldTag> den_n = rcp(new Tag<double>("Density", nodes));
-      RCP<FieldTag> den_qp = rcp(new Tag<double>("Density", qp));
-      
-      
-      cout << "\nTesting requireField()...";
-      em.requireField(*den_n);
-      em.requireField(*den_qp);
-      cout << "Passed!" << endl;
-
-      cout << "\nTesting registerEvaluator()...";
-      { 
-	ParameterList p;
-	p.set<string>("Name", "Density");
-	p.set<double>("Value", 2.0);
-	p.set< RCP<DataLayout> >("Data Layout", nodes);
-	Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
-	  rcp(new Constant<MyTraits::Residual, MyTraits>(p));
-	em.registerEvaluator(ptr);
-      }
-      { 
-	ParameterList p;
-	p.set<string>("Name", "Density");
-	p.set<double>("Value", 2.0);
-	p.set< RCP<DataLayout> >("Data Layout", qp);
-	Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
-	  rcp(new Constant<MyTraits::Residual, MyTraits>(p));
-	em.registerEvaluator(ptr);
-      }
-      cout << "Passed!" << endl;
-      
-      cout << "\nTesting setEvaluationTypeName()...";
-      em.setEvaluationTypeName(PHX::typeAsString<MyTraits::Residual>());
-      cout << "Passed!" << endl;
-
-
-      cout << "\nTesting sortAndOrderEvaluators()...";
-      em.sortAndOrderEvaluators();
-      cout << "Passed!" << endl;
-
-      cout << "\nTesting writeGraphvizFile()...";
-      em.writeGraphvizFile("graph.dot",true,true,false);
-      cout << "Passed!" << endl;
-
-      cout << "\nPrinting EvaluatorManager:\n";
-      cout << em << endl;
-
-    }
-    
-    // *********************************************************************
-    // *********************************************************************
-    std::cout << "\nTest passed!\n" << std::endl; 
-    // *********************************************************************
-    // *********************************************************************
-
+  EvaluatorManager<MyTraits> em;
+  
+  RCP<DataLayout> nodes = rcp(new MDALayout<Cell,Node>(100,4));
+  RCP<DataLayout> qp = rcp(new MDALayout<Cell,QP>(100,4));
+  
+  RCP<FieldTag> den_n = rcp(new Tag<double>("Density", nodes));
+  RCP<FieldTag> den_qp = rcp(new Tag<double>("Density", qp));
+  
+  em.requireField(*den_n);
+  em.requireField(*den_qp);
+  
+  { 
+    ParameterList p;
+    p.set<string>("Name", "Density");
+    p.set<double>("Value", 2.0);
+    p.set< RCP<DataLayout> >("Data Layout", nodes);
+    Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
+      rcp(new Constant<MyTraits::Residual, MyTraits>(p));
+    em.registerEvaluator(ptr);
   }
-  catch (const std::exception& e) {
-    std::cout << "************************************************" << endl;
-    std::cout << "************************************************" << endl;
-    std::cout << "Exception Caught!" << endl;
-    std::cout << "Error message is below\n " << e.what() << endl;
-    std::cout << "************************************************" << endl;
+  { 
+    ParameterList p;
+    p.set<string>("Name", "Density");
+    p.set<double>("Value", 2.0);
+    p.set< RCP<DataLayout> >("Data Layout", qp);
+    Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
+      rcp(new Constant<MyTraits::Residual, MyTraits>(p));
+    em.registerEvaluator(ptr);
   }
-  catch (...) {
-    std::cout << "************************************************" << endl;
-    std::cout << "************************************************" << endl;
-    std::cout << "Unknown Exception Caught!" << endl;
-    std::cout << "************************************************" << endl;
-  }
+  
+  em.setEvaluationTypeName(PHX::typeAsString<MyTraits::Residual>());
 
-  TimeMonitor::summarize();
-    
-  return 0;
+  em.sortAndOrderEvaluators();
+  
+  TEST_ASSERT(em.sortingCalled());
+
+  const std::vector< Teuchos::RCP<PHX::FieldTag> >& tags = em.getFieldTags();
+
+  TEST_EQUALITY(tags.size(),2);
+
+  em.writeGraphvizFile("graph.dot",true,true,false);
+  
+  cout << "\n" << em << endl;  
 }

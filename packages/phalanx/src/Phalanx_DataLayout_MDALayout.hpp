@@ -106,21 +106,52 @@ namespace PHX {
 
     MDALayout(size_type size1);
 
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6,
+	      size_type size7, size_type size8);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6,
+	      size_type size7);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3, 
+	      size_type size4);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2, size_type size3);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1, size_type size2);
+
+    MDALayout(const std::string& prefix,
+	      size_type size1);
+
     ~MDALayout() {}
 
     virtual bool operator==(const DataLayout& right) const;
 
-    virtual size_type rank() const; 
+    virtual PHX::Device::size_type rank() const; 
 
-    virtual size_type dimension(size_type ordinal) const;
+    virtual PHX::Device::size_type dimension(size_type ordinal) const;
 
-    virtual void dimensions(std::vector<size_type>& dim) const; 
+    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const; 
 
     virtual std::string name(size_type ordinal) const;
 
     virtual void names(std::vector<std::string>& names) const; 
 
-    virtual size_type size() const;
+    virtual PHX::Device::size_type size() const;
 
     virtual std::string identifier() const;
 
@@ -128,15 +159,15 @@ namespace PHX {
 
   private:
     
-    std::string createIdentifier();
+    std::string createIdentifier(const std::string& prefix = "");
 
   private:
 
     std::vector<const char*> m_dim_name;
 
-    size_type m_dim_size[Rank];
+    PHX::Device::size_type m_dim_size[Rank];
 
-    size_type m_size;
+    PHX::Device::size_type m_size;
 
     std::string m_identifier;
 

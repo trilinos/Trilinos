@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_VP_FOURIER_HPP
 #define PHX_EXAMPLE_VP_FOURIER_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
@@ -62,15 +62,18 @@ public:
 			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);
+
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const int i) const;
   
 private:
   
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,Cell,QuadPoint,Dim> flux;
-  PHX::MDField<ScalarT,Cell,QuadPoint> density;
-  PHX::MDField<ScalarT,Cell,QuadPoint> dc;
-  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> grad_temp;
+  PHX::MDField<const ScalarT,Cell,QuadPoint> density;
+  PHX::MDField<const ScalarT,Cell,QuadPoint> dc;
+  PHX::MDField<const ScalarT,Cell,QuadPoint,Dim> grad_temp;
   
   std::size_t num_qp;
   std::size_t num_dim;

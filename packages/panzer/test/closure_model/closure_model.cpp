@@ -46,6 +46,8 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Traits.hpp"
@@ -62,6 +64,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluator_factory, basic_construction)
   {
+    PHX::KokkosDeviceSession session;
+
     panzer::FieldLayoutLibrary fl;
     Teuchos::RCP<panzer::IntegrationRule> ir;
     {

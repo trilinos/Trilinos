@@ -129,6 +129,20 @@ public:
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
 };
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -237,6 +251,20 @@ public:
      */
    const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
    { return localIDs_[localElmtId]; }
+
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
 
 protected:
 

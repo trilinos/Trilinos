@@ -47,7 +47,7 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
-#include "Panzer_PointValues.hpp"
+#include "Panzer_PointValues2.hpp"
 
 namespace panzer {
     
@@ -55,7 +55,7 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(PointValues_Evaluator)
 
   // is anything other than ScalarT really needed here?
-  PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
+  PointValues2<ScalarT,PHX::MDField> pointValues;
  
   Intrepid::FieldContainer<double> refPointArray;
 

@@ -62,10 +62,9 @@ namespace panzer {
 PHX_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
     
-  PHX::MDField<ScalarT> flux; // note that this is used for both vector and scalar fields
-                              // but this follows the distinction between 2D and 3D curls
+  PHX::MDField<ScalarT,Cell,IP>     flux_scalar; // note that this is used for scalar fields
+  PHX::MDField<ScalarT,Cell,IP,Dim> flux_vector; // note that this is used for vector fields
     
   std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
 
@@ -80,7 +79,9 @@ PHX_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
 
   bool useScalarField;
 
-  Intrepid::FieldContainer<ScalarT> tmp;
+  // scratch space
+  PHX::MDField<ScalarT,Cell,IP>     scratch_scalar;
+  PHX::MDField<ScalarT,Cell,IP,Dim> scratch_vector;
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;

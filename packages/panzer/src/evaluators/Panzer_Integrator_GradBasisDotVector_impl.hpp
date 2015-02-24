@@ -118,13 +118,20 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
 { 
-  for (int i=0; i < residual.size(); ++i)
-    residual[i] = 0.0;
+  //for (int i=0; i < residual.size(); ++i)
+  //  residual[i] = 0.0;
+
+  Kokkos::deep_copy(residual.get_kokkos_view(), ScalarT(0.0));
 
 #if PANZER_USE_FAST_QUAD
   // do a scaled copy
-  for (int i=0; i < flux.size(); ++i)
-    tmp[i] = multiplier * flux[i];
+  for (int i=0; i < flux.dimension(0); ++i)
+    for (int j=0; j < flux.dimension(1); ++j)
+       for (int k=0; k < flux.dimension(2); ++k)
+         tmp(i,j,k) = multiplier * flux(i,j,k);
+//Irina modified
+//  for (int i=0; i < flux.size(); ++i)
+//    tmp[i] = multiplier * flux[i];
 
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field) {
@@ -140,14 +147,22 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     }
   } 
 
-  const Intrepid::FieldContainer<double> & weighted_grad_basis = workset.bases[basis_index]->weighted_grad_basis;
+  // const Intrepid::FieldContainer<double> & weighted_grad_basis = workset.bases[basis_index]->weighted_grad_basis;
+  const BasisValues2<double> & bv = *workset.bases[basis_index];
 
   // perform integration and vector dot product (at the same time! whoah!)
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < num_nodes; ++basis) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
-        for (std::size_t dim = 0; dim < num_dim; ++dim)
-          residual(cell,basis) += tmp(cell,qp,dim)*weighted_grad_basis(cell,basis,qp,dim);
+        for (std::size_t dim = 0; dim < num_dim; ++dim) {
+          residual(cell,basis) += tmp(cell,qp,dim)*bv.weighted_grad_basis(cell,basis,qp,dim);
+
+          /*
+          std::cout << residual(cell,basis) << " "  
+                    << tmp(cell,qp,dim) << " "
+                    << bv.weighted_grad_basis(cell,basis,qp,dim) << std::endl;
+          */
+        }
       }
     }
   }

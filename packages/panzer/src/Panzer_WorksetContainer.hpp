@@ -68,8 +68,8 @@ struct SideId {
 struct LessSide {
    bool operator()(const SideId & left, 
                    const SideId  right) const
-   { return   (left.ss_id+"_"+left.eblk_id 
-            < right.ss_id+"_"+right.eblk_id); }
+   { return   (left.ss_id + "_" + left.eblk_id 
+            < right.ss_id + "_" + right.eblk_id); }
 };
 
 /** \brief Class that provides access to worksets on

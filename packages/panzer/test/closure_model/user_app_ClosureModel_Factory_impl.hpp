@@ -61,6 +61,7 @@
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
 #include "Panzer_CoordinatesEvaluator.hpp"
+#include "Panzer_Constant.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_DOF.hpp"
 
@@ -211,7 +212,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       // at BASIS
@@ -222,7 +223,7 @@ buildClosureModels(const std::string& model_id,
 	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       found = true;
@@ -258,7 +259,7 @@ buildClosureModels(const std::string& model_id,
 	   input.set("Value", 1.0);
 	   input.set("Data Layout", ir->dl_scalar);
 	   RCP< Evaluator<panzer::Traits> > e = 
-   	     rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+   	     rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
    	   evaluators->push_back(e);
         }
 
