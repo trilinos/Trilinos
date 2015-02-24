@@ -12,51 +12,56 @@ TEST(ModificationSummary, testString)
     stkMeshIoBroker.populate_bulk_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    ////////////////////////
+    if (stkMeshBulkData.parallel_size() == 1 )
+    {
+        ////////////////////////
 
-    stk::ModificationSummary writer(stkMeshBulkData);
+        stk::ModificationSummary writer(stkMeshBulkData);
 
-    int mod_count = 0;
+        int mod_count = 0;
 
-    stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-    stk::mesh::Entity node2 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 2);
+        stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+        stk::mesh::Entity node2 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 2);
 
-    writer.track_destroy_entity(node1);
+        writer.store_stack_trace();
 
-    const stk::mesh::PartVector &addParts = stkMeshBulkData.bucket(node1).supersets();
-    const stk::mesh::PartVector &rmParts = stkMeshBulkData.bucket(node2).supersets();
+        writer.track_destroy_entity(node1);
 
-    writer.track_change_entity_parts(node2, addParts, rmParts);
-    writer.track_change_entity_parts(node1, addParts, rmParts);
+        const stk::mesh::PartVector &addParts = stkMeshBulkData.bucket(node1).supersets();
+        const stk::mesh::PartVector &rmParts = stkMeshBulkData.bucket(node2).supersets();
 
-    std::vector<stk::mesh::EntityProc> changes;
-    changes.push_back(std::make_pair(node1, 2));
-    changes.push_back(std::make_pair(node2, 4));
+        writer.track_change_entity_parts(node2, addParts, rmParts);
+        writer.track_change_entity_parts(node1, addParts, rmParts);
 
-    writer.track_change_entity_owner(changes);
+        std::vector<stk::mesh::EntityProc> changes;
+        changes.push_back(std::make_pair(node1, 2));
+        changes.push_back(std::make_pair(node2, 4));
 
-    stk::mesh::EntityId newId = 12;
-    writer.track_change_entity_id(newId, node1);
+        writer.track_change_entity_owner(changes);
 
-    writer.track_declare_entity(stk::topology::NODE_RANK, newId, addParts);
+        stk::mesh::EntityId newId = 12;
+        writer.track_change_entity_id(newId, node1);
 
-    stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
-    stk::mesh::Permutation permut = static_cast<stk::mesh::Permutation>(0);
-    stk::mesh::RelationIdentifier rel = 0;
+        writer.track_declare_entity(stk::topology::NODE_RANK, newId, addParts);
 
-    writer.track_declare_relation(element1, node1, rel, permut);
-    writer.track_declare_relation(element1, node2, rel, permut);
+        stk::mesh::Entity element1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
+        stk::mesh::Permutation permut = static_cast<stk::mesh::Permutation>(0);
+        stk::mesh::RelationIdentifier rel = 0;
 
-    writer.track_destroy_relation(element1, node1, rel);
+        writer.track_declare_relation(element1, node1, rel, permut);
+        writer.track_declare_relation(element1, node2, rel, permut);
 
-    const stk::mesh::Ghosting &aura = *stkMeshBulkData.ghostings()[1];
+        writer.track_destroy_relation(element1, node1, rel);
 
-    std::vector<stk::mesh::EntityKey> remove_receive;
-    remove_receive.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
-    remove_receive.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
+        const stk::mesh::Ghosting &aura = *stkMeshBulkData.ghostings()[1];
 
-    writer.track_change_ghosting(aura, changes , remove_receive);
+        std::vector<stk::mesh::EntityKey> remove_receive;
+        remove_receive.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 1));
+        remove_receive.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
 
-    writer.write_summary(mod_count);
+        writer.track_change_ghosting(aura, changes , remove_receive);
+
+        writer.write_summary(mod_count);
+    }
 }
 
