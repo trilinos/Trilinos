@@ -50,8 +50,6 @@
 #else
 #include "Sacado_No_Kokkos.hpp"
 #endif
-//#include "Sacado_mpl_disable_if.hpp"
-
 
 namespace Intrepid {
 
