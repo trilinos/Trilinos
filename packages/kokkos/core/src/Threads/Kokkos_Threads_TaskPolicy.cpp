@@ -53,8 +53,6 @@ namespace Kokkos {
 namespace Experimental {
 namespace Impl {
 
-enum { paranoid_atomic_protection = true };
-
 typedef TaskMember< Kokkos::Threads , void , void > Task ;
 
 namespace {
