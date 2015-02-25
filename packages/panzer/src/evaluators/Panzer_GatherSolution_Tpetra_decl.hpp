@@ -237,7 +237,7 @@ private:
     // input values
     Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
     Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
-    Teuchos::ArrayRCP<const double> x_array;      // vector data
+    Kokkos::View<const double**, Kokkos::LayoutLeft,PHX::Device> x_data;
     double seed_value;                            // AD seed information
 
     // output fields

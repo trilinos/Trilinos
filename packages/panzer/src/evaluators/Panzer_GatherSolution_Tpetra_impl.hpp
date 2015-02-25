@@ -436,6 +436,8 @@ evaluateFields(typename TRAITS::EvalData workset)
      TEUCHOS_ASSERT(false);
    }
 
+   x->template sync<PHX::Device>();
+
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -489,14 +491,13 @@ evaluateFields(typename TRAITS::EvalData workset)
    // now setup the fuctor_data, and run the parallel_for loop
    //////////////////////////////////////////////////////////////////////////////////
 
-   functor_data.x_array = x->get1dView();
+   functor_data.x_data = x->template getLocalView<PHX::Device>();
    functor_data.seed_value = seed_value;
    functor_data.lids = scratch_lids_;
 
    // loop over the fields to be gathered
    for(std::size_t fieldIndex=0;
        fieldIndex<gatherFields_.size();fieldIndex++) {
-     int fieldNum = fieldIds_[fieldIndex];
 
      // setup functor data
      functor_data.offsets = scratch_offsets_[fieldIndex];
@@ -518,8 +519,7 @@ operator()(const int worksetCellIndex) const
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
     // set the value and seed the FAD object
-    // functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.lids.dimension_1(), functor_data.x_array[lid]);
-    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_array[lid];
+    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
     functor_data.field(worksetCellIndex,basis).fastAccessDx(offset) = functor_data.seed_value;
   }
 }
