@@ -423,64 +423,67 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
   std::string p = name() + " : ";
   Util::printLine(out);
 
-  out << p << "Time to convert matrix to implementation format = "
-      << timers_.mtxConvTime_.totalElapsedTime() << " (s)"
-      << std::endl;
-  out << p << "Time to redistribute matrix = "
-      << timers_.mtxRedistTime_.totalElapsedTime() << " (s)"
-      << std::endl;
+  if(verbLevel != Teuchos::VERB_NONE)
+    {
+      out << p << "Time to convert matrix to implementation format = "
+          << timers_.mtxConvTime_.totalElapsedTime() << " (s)"
+          << std::endl;
+      out << p << "Time to redistribute matrix = "
+          << timers_.mtxRedistTime_.totalElapsedTime() << " (s)"
+          << std::endl;
 
-  out << p << "Time to convert vectors to implementation format = "
-      << timers_.vecConvTime_.totalElapsedTime() << " (s)"
-      << std::endl;
-  out << p << "Time to redistribute vectors = "
-      << timers_.vecRedistTime_.totalElapsedTime() << " (s)"
-      << std::endl;
+      out << p << "Time to convert vectors to implementation format = "
+          << timers_.vecConvTime_.totalElapsedTime() << " (s)"
+          << std::endl;
+      out << p << "Time to redistribute vectors = "
+          << timers_.vecRedistTime_.totalElapsedTime() << " (s)"
+          << std::endl;
 
-  out << p << "Number of pre-orderings = "
-      << status_.getNumPreOrder()
-      << std::endl;
-  out << p << "Time for pre-ordering = "
-      << preTime << " (s), avg = "
-      << preTime / status_.getNumPreOrder() << " (s)"
-      << std::endl;
+      out << p << "Number of pre-orderings = "
+          << status_.getNumPreOrder()
+          << std::endl;
+      out << p << "Time for pre-ordering = "
+          << preTime << " (s), avg = "
+          << preTime / status_.getNumPreOrder() << " (s)"
+          << std::endl;
 
-  out << p << "Number of symbolic factorizations = "
-      << status_.getNumSymbolicFact()
-      << std::endl;
-  out << p << "Time for sym fact = "
-      << symTime << " (s), avg = "
-      << symTime / status_.getNumSymbolicFact() << " (s)"
-      << std::endl;
+      out << p << "Number of symbolic factorizations = "
+          << status_.getNumSymbolicFact()
+          << std::endl;
+      out << p << "Time for sym fact = "
+          << symTime << " (s), avg = "
+          << symTime / status_.getNumSymbolicFact() << " (s)"
+          << std::endl;
 
-  out << p << "Number of numeric factorizations = "
-      << status_.getNumNumericFact()
-      << std::endl;
-  out << p << "Time for num fact = "
-      << numTime << " (s), avg = "
-      << numTime / status_.getNumNumericFact() << " (s)"
-      << std::endl;
+      out << p << "Number of numeric factorizations = "
+          << status_.getNumNumericFact()
+          << std::endl;
+      out << p << "Time for num fact = "
+          << numTime << " (s), avg = "
+          << numTime / status_.getNumNumericFact() << " (s)"
+          << std::endl;
 
-  out << p << "Number of solve phases = "
-      << status_.getNumSolve()
-      << std::endl;
-  out << p << "Time for solve = "
-      << solTime << " (s), avg = "
-      << solTime / status_.getNumSolve() << " (s)"
-      << std::endl;
+      out << p << "Number of solve phases = "
+          << status_.getNumSolve()
+          << std::endl;
+      out << p << "Time for solve = "
+          << solTime << " (s), avg = "
+          << solTime / status_.getNumSolve() << " (s)"
+          << std::endl;
 
-  out << p << "Total time spent in Amesos2 = "
-      << totTime << " (s)"
-      << std::endl;
-  out << p << "Total time spent in the Amesos2 interface = "
-      << overhead << " (s)"
-      << std::endl;
-  out << p << "  (the above time does not include solver time)"
-      << std::endl;
-  out << p << "Amesos2 interface time / total time = "
-      << overhead / totTime
-      << std::endl;
-  Util::printLine(out);
+      out << p << "Total time spent in Amesos2 = "
+          << totTime << " (s)"
+          << std::endl;
+      out << p << "Total time spent in the Amesos2 interface = "
+          << overhead << " (s)"
+          << std::endl;
+      out << p << "  (the above time does not include solver time)"
+          << std::endl;
+      out << p << "Amesos2 interface time / total time = "
+          << overhead / totTime
+          << std::endl;
+      Util::printLine(out);
+    }
 }
 
 
@@ -488,7 +491,10 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 void
 SolverCore<ConcreteSolver,Matrix,Vector>::getTiming(
   Teuchos::ParameterList& timingParameterList) const
-{}
+{
+  Teuchos::ParameterList temp;
+  timingParameterList = temp.setName("NULL");
+}
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >

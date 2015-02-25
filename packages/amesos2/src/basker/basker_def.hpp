@@ -116,7 +116,7 @@ namespace Basker{
    Int *color,
    Int *pattern, /* o/p */
    Int *top,       /* o/p */
-   Int k,
+   //Int k,
    Int *tpinv,
    Int *stack
   )
@@ -329,7 +329,7 @@ namespace Basker{
             if(color[j] == 0)
               {
                 //do dfs
-                basker_dfs(nrow, j, L->row_idx, L->col_ptr, color, pattern, &top, k, pinv, stack);
+                basker_dfs(nrow, j, L->row_idx, L->col_ptr, color, pattern, &top, pinv, stack);
 
               }
 

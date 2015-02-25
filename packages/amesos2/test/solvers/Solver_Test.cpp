@@ -558,7 +558,7 @@ do_solve_routine(const string& solver_name,
   using std::endl;
   typedef typename ArrayView<const RCP<Vector> >::iterator rhs_it_t;
   bool success = true;          // prove me wrong!
-
+ 
   solution_checker<Vector> checker;
   RCP<Amesos2::Solver<Matrix,Vector> > solver;
 
@@ -591,10 +591,11 @@ do_solve_routine(const string& solver_name,
   // declare as 'int' to allow incrementing
   int style = SOLVE_VERBOSE;
 
+  size_t count = 0;
   while (style <= SOLVE_SHORT) {
     rhs_it_t rhs_it = b.begin();
     rhs_it_t x_it = x.begin();
-
+    count++;
     // Create our solver according to the current style
     switch (style) {
     case SOLVE_VERBOSE:
@@ -606,7 +607,11 @@ do_solve_routine(const string& solver_name,
     case SOLVE_SHORT:
       solver = Amesos2::create<Matrix,Vector>(solver_name, A1);
       break;
+      
     }
+    if(num_vecs < count)
+      {}
+      
 
     solver->setParameters( rcpFromRef(solve_params) );
 
