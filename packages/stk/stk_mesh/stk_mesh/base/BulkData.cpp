@@ -315,7 +315,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_deleted_entities(),
     m_num_fields(-1), // meta data not necessarily committed yet
     m_keep_fields_updated(true),
-    m_entity_sync_counts(),
     m_local_ids(),
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
     m_field_data_manager(field_data_manager),
@@ -753,7 +752,6 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
     m_entity_states.push_back(Created);
     m_mark_entity.push_back(NOT_MARKED);
     m_closure_count.push_back(static_cast<uint16_t>(0));
-    m_entity_sync_counts.push_back(0);
     m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
 
 #ifdef SIERRA_MIGRATION
@@ -771,7 +769,6 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
     m_mark_entity[new_local_offset] = NOT_MARKED;
     m_entity_states[new_local_offset] = Created;
     m_closure_count[new_local_offset] = static_cast<uint16_t>(0);
-    m_entity_sync_counts[new_local_offset] = 0;
     m_local_ids[new_local_offset] = stk::mesh::GetInvalidLocalId();
 
 #ifdef SIERRA_MIGRATION
@@ -790,7 +787,7 @@ size_t BulkData::generate_next_local_offset(size_t preferred_offset)
 void BulkData::initialize_arrays()
 {
   ThrowRequireMsg((m_mesh_indexes.size() == 0) && (m_entity_keys.size() == 0)
-                        && (m_entity_states.size() == 0) && (m_entity_sync_counts.size() == 0),
+                        && (m_entity_states.size() == 0),
                    "BulkData::initialize_arrays() called by something other than constructor");
 
   MeshIndex mesh_index = {NULL, 0};
@@ -802,7 +799,6 @@ void BulkData::initialize_arrays()
   m_entity_states.push_back(Deleted);
   m_mark_entity.push_back(NOT_MARKED);
   m_closure_count.push_back(static_cast<uint16_t>(0));
-  m_entity_sync_counts.push_back(0);
   m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
 
 #ifdef SIERRA_MIGRATION
@@ -892,7 +888,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
   if ( result.second ) {
     this->internal_set_parallel_owner_rank_but_not_comm_lists(declared_entity, parallel_rank());
-    set_synchronized_count(declared_entity, m_sync_count);
     DiagIfWatching(LOG_ENTITY, key, "new entity: " << entity_key(declared_entity));
   }
 
@@ -1152,7 +1147,6 @@ void BulkData::addMeshEntities(stk::topology::rank_t rank, const std::vector<stk
         requested_entities.push_back(new_entity);
 
         this->internal_set_parallel_owner_rank_but_not_comm_lists(new_entity, parallel_rank());
-        set_synchronized_count(new_entity, m_sync_count);
     }
 }
 
@@ -1899,7 +1893,6 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
       ++m_closure_count[e_to.local_offset()];
     }
 
-    set_synchronized_count( e_from, sync_count );
   }
   return modified;
 }
@@ -3741,7 +3734,6 @@ void BulkData::internal_establish_new_owner(stk::mesh::Entity entity)
     {
         internal_change_owner_in_comm_data(entity_key(entity), new_owner);
     }
-    set_synchronized_count(entity, m_sync_count);
 }
 
 void BulkData::internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner)
@@ -4068,7 +4060,6 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
         {
             // Do not own it and still have it.
             // Remove the locally owned, add the globally_shared
-            set_synchronized_count(entity, m_sync_count);
             internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/);
         }
         else if(!internal_entity_comm_map_shared(entity_key(entity)).empty())

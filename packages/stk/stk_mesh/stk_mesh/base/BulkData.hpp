@@ -842,7 +842,6 @@ protected: //functions
   }
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
-  inline void set_synchronized_count(Entity entity, size_t sync_count);
   void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
 
   bool internal_destroy_relation(Entity e_from ,
@@ -1046,7 +1045,6 @@ private: // data
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> > m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<size_t> m_entity_sync_counts;
   std::vector<unsigned> m_local_ids;
 
   //  ContiguousFieldDataManager m_default_field_data_manager;

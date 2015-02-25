@@ -923,13 +923,6 @@ inline void BulkData::set_state(Entity entity, EntityState entity_state)
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
 }
 
-inline void BulkData::set_synchronized_count(Entity entity, size_t sync_count)
-{
-  entity_setter_debug_check(entity);
-
-  m_entity_sync_counts[entity.local_offset()] = sync_count;
-}
-
 inline void BulkData::set_local_id(Entity entity, unsigned id)
 {
   entity_setter_debug_check(entity);

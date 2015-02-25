@@ -172,7 +172,6 @@ bool Partition::add(Entity entity)
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
-  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
 
   // TODO - Too much tracing in this file, REMOVE
   DiagIfWatching(LOG_ENTITY, m_mesh.entity_key(entity),
@@ -232,7 +231,6 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
   remove_impl();
 
   m_updated_since_compress = m_updated_since_sort = true;
-  m_mesh.set_synchronized_count(entity, m_mesh.synchronized_count());
 
   DiagIf(LOG_PARTITION, "After move_to, src state is: " << *this);
   DiagIf(LOG_PARTITION, "After move_to, dst state is: " << dst_partition);
