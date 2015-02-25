@@ -1077,7 +1077,7 @@ namespace panzer_stk_classic {
       // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
       Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
       const std::string stepper_type = piro_params->sublist("Rythmos").get<std::string>("Stepper Type");
-      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler") {
+      if(stepper_type=="Explicit RK" || stepper_type=="Forward Euler" || stepper_type=="Explicit RK Dynamic") {
         const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
         bool lumpExplicitMass = assembly_params.get<bool>("Lump Explicit Mass");
         rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,!useDynamicCoordinates_,lumpExplicitMass)); 
