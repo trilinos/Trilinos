@@ -42,6 +42,9 @@
 #ifndef STOKHOS_CUDA_CRSMATRIX_HPP
 #define STOKHOS_CUDA_CRSMATRIX_HPP
 
+#include "Stokhos_ConfigDefs.h"
+#ifdef HAVE_STOKHOS_CUSPARSE
+
 #include <utility>
 #include <sstream>
 #include <stdexcept>
@@ -730,5 +733,7 @@ public:
 //----------------------------------------------------------------------------
 
 } // namespace Stokhos
+
+#endif /* #ifdef HAVE_STOKHOS_CUSPARSE */
 
 #endif /* #ifndef STOKHOS_CUDA_CRSMATRIX_HPP */
