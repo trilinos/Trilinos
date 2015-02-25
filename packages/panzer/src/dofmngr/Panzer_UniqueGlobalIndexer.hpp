@@ -282,10 +282,10 @@ public:
      */
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
 
-protected:
-
    class CopyCellLIDsFunctor {
    public:
+     typedef typename PHX::Device execution_space;
+
      Kokkos::View<const int*,PHX::Device> cellIds;
      Kokkos::View<const LocalOrdinalT**,PHX::Device> global_lids;
      Kokkos::View<LocalOrdinalT**,PHX::Device> local_lids;
@@ -298,6 +298,8 @@ protected:
      }
      
    };
+
+protected:
 
    /** This method is used by derived classes to the construct the local IDs from 
      * the <code>getOwnedAndSharedIndices</code> method.
