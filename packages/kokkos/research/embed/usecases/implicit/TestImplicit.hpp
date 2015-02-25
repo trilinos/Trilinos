@@ -96,8 +96,8 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
-  typedef typename fixture_type::device_type  device_type;
-  typedef typename device_type::size_type     size_type ;
+  typedef typename fixture_type::execution_space  execution_space;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;
   typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
@@ -117,8 +117,8 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
   //------------------------------------
   // Sparse linear system types:
 
-  typedef Kokkos::View< Scalar* , Kokkos::LayoutRight , device_type >   vector_type ;
-  typedef Kokkos::CrsMatrix< Scalar , device_type >     matrix_type ;
+  typedef Kokkos::View< Scalar* , Kokkos::LayoutRight , execution_space >   vector_type ;
+  typedef Kokkos::CrsMatrix< Scalar , execution_space >     matrix_type ;
   typedef typename matrix_type::graph_type    matrix_graph_type ;
   typedef typename matrix_type::values_type   matrix_coefficients_type ;
 
@@ -135,7 +135,7 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
 
   linsys_matrix.graph = create_graph_from_mesh< matrix_graph_type >( mesh );
 
-  device_type::fence();
+  execution_space::fence();
   perf_data.graph_time = comm::max( machine , wall_clock.seconds() );
 
   //------------------------------------
@@ -232,12 +232,12 @@ void implicit_driver( const char * const label ,
                       const int runs )
 {
   typedef Scalar              scalar_type ;
-  typedef Device              device_type ;
+  typedef Device              execution_space ;
   typedef double              coordinate_scalar_type ;
   typedef FixtureElementHex8  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          device_type ,
+                          execution_space ,
                           fixture_element_type > fixture_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;

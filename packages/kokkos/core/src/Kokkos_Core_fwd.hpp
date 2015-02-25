@@ -103,6 +103,22 @@ namespace Kokkos {
 #  error "At least one of the following execution spaces must be defined in order to use Kokkos: Kokkos::Cuda, Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads."
 #endif
 
+#if defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP )
+  typedef OpenMP DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
+  typedef Threads DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
+  typedef Serial DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_OPENMP )
+  typedef OpenMP DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_THREADS )
+  typedef Threads DefaultHostExecutionSpace ;
+#elif defined ( KOKKOS_HAVE_SERIAL )
+  typedef Serial DefaultHostExecutionSpace ;
+#else
+#  error "At least one of the following execution spaces must be defined in order to use Kokkos: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads."
+#endif
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

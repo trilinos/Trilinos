@@ -55,6 +55,8 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
 
+#include <KokkosRank.hpp>
+
 
 namespace Intrepid {
 
@@ -104,7 +106,10 @@ class FunctionSpaceTools {
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn>
   static void HGRADtransformVALUE(ArrayTypeOut       & outVals,
                                   const ArrayTypeIn  & inVals);
-
+/*
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeIn>
+  static void HGRADtransformVALUETemp(ArrayTypeOut       & outVals,
+                                  const ArrayTypeIn  & inVals);*/
   /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
@@ -146,7 +151,13 @@ class FunctionSpaceTools {
                                  const ArrayTypeJac & jacobianInverse,
                                  const ArrayTypeIn  & inVals,
                                  const char           transpose = 'T');
-
+                                 /*
+    template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeIn>
+  static void HGRADtransformGRADTemp(ArrayTypeOut       & outVals,
+                                 const ArrayTypeJac & jacobianInverse,
+                                 const ArrayTypeIn  & inVals,
+                                 const char           transpose = 'T');
+*/
   /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
@@ -187,7 +198,12 @@ class FunctionSpaceTools {
                                   const ArrayTypeJac  & jacobianInverse,
                                   const ArrayTypeIn   & inVals,
                                   const char            transpose = 'T');
-
+                                  /*
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeIn>
+  static void HCURLtransformVALUETemp(ArrayTypeOut        & outVals,
+                                  const ArrayTypeJac  & jacobianInverse,
+                                  const ArrayTypeIn   & inVals,
+                                  const char            transpose = 'T');*/
   /** \brief Transformation of a curl field in the H-curl space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
@@ -231,7 +247,13 @@ class FunctionSpaceTools {
                                  const ArrayTypeDet  & jacobianDet,
                                  const ArrayTypeIn   & inVals,
                                  const char            transpose = 'N');
-
+                                 /*
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+  static void HCURLtransformCURLTemp(ArrayTypeOut        & outVals,
+                                 const ArrayTypeJac  & jacobian,
+                                 const ArrayTypeDet  & jacobianDet,
+                                 const ArrayTypeIn   & inVals,
+                                 const char            transpose = 'N');*/
   /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
@@ -275,7 +297,13 @@ class FunctionSpaceTools {
                                  const ArrayTypeDet  & jacobianDet,
                                  const ArrayTypeIn   & inVals,
                                  const char            transpose = 'N');
-
+                                 /*
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+  static void HDIVtransformVALUETemp(ArrayTypeOut        & outVals,
+                                 const ArrayTypeJac  & jacobian,
+                                 const ArrayTypeDet  & jacobianDet,
+                                 const ArrayTypeIn   & inVals,
+                                 const char            transpose = 'N');*/
   /** \brief Transformation of a divergence field in the H-div space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
@@ -316,7 +344,12 @@ class FunctionSpaceTools {
   static void HDIVtransformDIV(ArrayTypeOut        & outVals,
                                const ArrayTypeDet  & jacobianDet,
                                const ArrayTypeIn   & inVals);
-
+                               /*
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeDet, class ArrayTypeIn>
+  static void HDIVtransformDIVTemp(ArrayTypeOut        & outVals,
+                               const ArrayTypeDet  & jacobianDet,
+                               const ArrayTypeIn   & inVals);                               
+*/
   /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
@@ -378,6 +411,16 @@ class FunctionSpaceTools {
                         const ArrayInRight  & rightValues,
                         const ECompEngine     compEngine,
                         const bool            sumInto = false);
+    
+  /*  template<class Scalar, class ArrayOut, class ArrayInLeft, class ArrayInRight>
+    static void integrateTemp(ArrayOut            & outputValues,
+                          const ArrayInLeft   & leftValues,
+                          const ArrayInRight  & rightValues,
+                          const ECompEngine     compEngine,
+                          const bool            sumInto = false);
+                          */
+    template<class Scalar, class ArrayOut, class ArrayInLeft, class ArrayInRight,int leftrank,int outrank>
+    struct integrateTempSpec;
 
   /** \brief   Contracts the point (and space) dimensions P (and D1 and D2) of
                two rank-3, 4, or 5 containers with dimensions (C,L,P) and (C,R,P),
@@ -408,7 +451,12 @@ class FunctionSpaceTools {
                                const ArrayInFieldsRight &  rightFields,
                                const ECompEngine           compEngine,
                                const bool                  sumInto = false);
-
+/* template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
+  static void operatorIntegralTemp(ArrayOutFields &            outputFields,
+                               const ArrayInFieldsLeft &   leftFields,
+                               const ArrayInFieldsRight &  rightFields,
+                               const ECompEngine           compEngine,
+                               const bool                  sumInto = false);*/
  /** \brief    Contracts the point (and space) dimensions P (and D1 and D2) of a
                rank-3, 4, or 5 container and a rank-2, 3, or 4 container, respectively,
                with dimensions (C,F,P) and (C,P), or (C,F,P,D1) and (C,P,D1),
@@ -437,7 +485,13 @@ class FunctionSpaceTools {
                                  const ArrayInFields &  inputFields,
                                  const ECompEngine      compEngine,
                                  const bool             sumInto = false);
-
+ /*   template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+  static void functionalIntegralTemp(ArrayOutFields &       outputFields,
+                                 const ArrayInData &    inputData,
+                                 const ArrayInFields &  inputFields,
+                                 const ECompEngine      compEngine,
+                                 const bool             sumInto = false);
+*/
   /** \brief   Contracts the point (and space) dimensions P (and D1 and D2) of two
                rank-2, 3, or 4 containers with dimensions (C,P), or (C,P,D1), or
                (C,P,D1,D2), respectively, and returns the result in a rank-1 container
@@ -463,7 +517,13 @@ class FunctionSpaceTools {
                            const ArrayInDataRight &  inputDataRight,
                            const ECompEngine         compEngine,
                            const bool                sumInto = false);
-
+   /* template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void dataIntegralTemp(ArrayOutData &            outputData,
+                           const ArrayInDataLeft &   inputDataLeft,
+                           const ArrayInDataRight &  inputDataRight,
+                           const ECompEngine         compEngine,
+                           const bool                sumInto = false);
+*/
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
                (C,P) used for the computation of cell integrals, by multiplying absolute values 
                of the user-provided cell Jacobian determinants \a <b>inDet</b> with dimensions (C,P) 
@@ -499,6 +559,10 @@ class FunctionSpaceTools {
                                  const ArrayDet       & inDet,
                                  const ArrayWeights   & inWeights);
 
+  /*template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
+  static void computeCellMeasureTemp(ArrayOut             & outVals,
+                                 const ArrayDet       & inDet,
+                                 const ArrayWeights   & inWeights);*/
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
                (C,P) used for the computation of face integrals, based on the provided
                cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
@@ -550,6 +614,12 @@ class FunctionSpaceTools {
                                  const int                    whichFace,
                                  const shards::CellTopology & parentCell);
 
+/*  template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+  static void computeFaceMeasureTemp(ArrayOut                   & outVals,
+                                 const ArrayJac             & inJac,
+                                 const ArrayWeights         & inWeights,
+                                 const int                    whichFace,
+                                 const shards::CellTopology & parentCell);*/
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
                (C,P) used for the computation of edge integrals, based on the provided
                cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
@@ -599,6 +669,12 @@ class FunctionSpaceTools {
                                  const int                    whichEdge,
                                  const shards::CellTopology & parentCell);
 
+/*  template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+  static void computeEdgeMeasureTemp(ArrayOut                   & outVals,
+                                 const ArrayJac             & inJac,
+                                 const ArrayWeights         & inWeights,
+                                 const int                    whichEdge,
+                                 const shards::CellTopology & parentCell);*/
   /** \brief   Multiplies fields \a <b>inVals</b> by weighted measures \a <b>inMeasure</b> and
                returns the field array \a <b>outVals</b>; this is a simple redirection to the call
                FunctionSpaceTools::scalarMultiplyDataField.
@@ -611,7 +687,10 @@ class FunctionSpaceTools {
   static void multiplyMeasure(ArrayTypeOut             & outVals,
                               const ArrayTypeMeasure   & inMeasure,
                               const ArrayTypeIn        & inVals);
-
+ /*   template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
+  static void multiplyMeasureTemp(ArrayTypeOut             & outVals,
+                              const ArrayTypeMeasure   & inMeasure,
+                              const ArrayTypeIn        & inVals);*/
   /** \brief Scalar multiplication of data and fields; please read the description below.
              
              There are two use cases:
@@ -947,8 +1026,15 @@ class FunctionSpaceTools {
                                      const ArrayInDataLeft &   inputDataLeft,
                                      const ArrayInDataRight &  inputDataRight,
                                      const char                transpose = 'N');
-
-
+                                     
+/* template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void tensorMultiplyDataDataTemp(ArrayOutData &            outputData,
+                                     const ArrayInDataLeft &   inputDataLeft,
+                                     const ArrayInDataRight &  inputDataRight,
+                                     const char                transpose = 'N');
+          */                           
+   template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight,int outvalRank>
+	struct tensorMultiplyDataDataTempSpec;
   /** \brief Applies left (row) signs, stored in the user-provided container
              <var><b>fieldSigns</b></var> and indexed by (C,L), to the operator
              <var><b>inoutOperator</b></var> indexed by (C,L,R).
@@ -1034,8 +1120,10 @@ class FunctionSpaceTools {
   template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
   static void applyFieldSigns(ArrayTypeInOut        & inoutFunction,
                               const ArrayTypeSign   & fieldSigns);
-
-
+ /* template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+  static void applyFieldSignsTemp(ArrayTypeInOut        & inoutFunction,
+                              const ArrayTypeSign   & fieldSigns);
+*/
   /** \brief Computes point values \a <b>outPointVals</b> of a discrete function
              specified by the basis \a <b>inFields</b> and coefficients
              \a <b>inCoeffs</b>.

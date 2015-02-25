@@ -1186,9 +1186,9 @@ namespace Belos {
       // Create flattened view's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
-      typedef typename flat_view_type::device_type device_type;
-      flat_view_type flat_A_view = Atmp->template getLocalView<device_type>();
-      flat_view_type flat_C_view = Ctmp->template getLocalView<device_type>();
+      typedef typename flat_view_type::execution_space execution_space;
+      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
+      flat_view_type flat_C_view = Ctmp->template getLocalView<execution_space>();
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -1196,14 +1196,14 @@ namespace Belos {
 
       // Create view for B on the device -- need to be careful to get the
       // right stride to match B
-      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> b_view_type;
-      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> b_1d_view_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> b_view_type;
+      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), strideB*numColsB);
       b_view_type B_view_dev( B_1d_view_dev.ptr_on_device(), strideB, numColsB);
       Kokkos::deep_copy(B_view_dev, B_view_host);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,device_type>::GEMM(
+      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
         Teuchos::NO_TRANS, Teuchos::NO_TRANS,
         alpha, flat_A_view, B_view_dev, beta, flat_C_view);
     }
@@ -1290,9 +1290,9 @@ namespace Belos {
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
-      typedef typename flat_view_type::device_type device_type;
-      flat_view_type flat_A_view = Atmp->template getLocalView<device_type>();
-      flat_view_type flat_B_view = Btmp->template getLocalView<device_type>();
+      typedef typename flat_view_type::execution_space execution_space;
+      flat_view_type flat_A_view = Atmp->template getLocalView<execution_space>();
+      flat_view_type flat_B_view = Btmp->template getLocalView<execution_space>();
 
       // Create a view for C on the host
        typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;
@@ -1300,13 +1300,13 @@ namespace Belos {
 
       // Create view for C on the device -- need to be careful to get the
       // right stride to match C (allow setting to 0 for first-touch)
-      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> c_view_type;
-      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> c_1d_view_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> c_view_type;
+      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> c_1d_view_type;
       c_1d_view_type C_1d_view_dev("C", strideC*numColsC);
       c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,device_type>::GEMM(
+      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
         Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
         alpha, flat_A_view, flat_B_view,
         Kokkos::Details::ArithTraits<dot_type>::zero(),

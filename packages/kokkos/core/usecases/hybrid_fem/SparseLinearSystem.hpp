@@ -56,11 +56,11 @@ namespace Kokkos {
 
 template< typename ScalarType , class Device >
 struct CrsMatrix {
-  typedef Device      device_type ;
+  typedef Device      execution_space ;
   typedef ScalarType  value_type ;
 
-  typedef CrsArray< int , device_type , void , int >  graph_type ;
-  typedef View< value_type* , device_type >   coefficients_type ;
+  typedef CrsArray< int , execution_space , void , int >  graph_type ;
+  typedef View< value_type* , execution_space >   coefficients_type ;
 
   graph_type         graph ;
   coefficients_type  coefficients ;
@@ -89,13 +89,13 @@ struct Multiply< CrsMatrix<AScalarType,DeviceType> ,
                  View<VScalarType*,DeviceType > ,
                  View<VScalarType*,DeviceType > >
 {
-  typedef DeviceType                       device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType                       execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef View<       VScalarType*, device_type, MemoryUnmanaged >  vector_type ;
-  typedef View< const VScalarType*, device_type, MemoryUnmanaged >  vector_const_type ;
+  typedef View<       VScalarType*, execution_space, MemoryUnmanaged >  vector_type ;
+  typedef View< const VScalarType*, execution_space, MemoryUnmanaged >  vector_const_type ;
 
-  typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
+  typedef CrsMatrix< AScalarType , execution_space >    matrix_type ;
 
 private:
 
@@ -310,11 +310,11 @@ struct Multiply< CrsMatrix<double,Cuda> ,
                  View<double*,Cuda > ,
                  View<double*,Cuda > >
 {
-  typedef Cuda                                      device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Cuda                                      execution_space ;
+  typedef execution_space::size_type                    size_type ;
   typedef double                                    scalar_type ;
-  typedef View< scalar_type* , device_type >        vector_type ;
-  typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
+  typedef View< scalar_type* , execution_space >        vector_type ;
+  typedef CrsMatrix< scalar_type , execution_space >    matrix_type ;
 
 public:
 
@@ -352,11 +352,11 @@ struct Multiply< CrsMatrix<float,Cuda> ,
                  View<float*,Cuda > ,
                  View<float*,Cuda > >
 {
-  typedef Cuda                                      device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Cuda                                      execution_space ;
+  typedef execution_space::size_type                    size_type ;
   typedef float                                     scalar_type ;
-  typedef View< scalar_type* , device_type >        vector_type ;
-  typedef CrsMatrix< scalar_type , device_type >    matrix_type ;
+  typedef View< scalar_type* , execution_space >        vector_type ;
+  typedef CrsMatrix< scalar_type , execution_space >    matrix_type ;
 
 public:
 

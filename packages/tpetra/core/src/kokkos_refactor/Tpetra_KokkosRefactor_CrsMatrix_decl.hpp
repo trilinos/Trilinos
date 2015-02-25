@@ -96,7 +96,7 @@ namespace Tpetra {
     //! This class' third template parameter; the type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! This class' fourth template parameter; the Kokkos device type.
-    typedef DeviceType device_type;
+    typedef DeviceType execution_space;
 
     /// \brief Type of a norm result.
     ///
@@ -126,8 +126,8 @@ namespace Tpetra {
 
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
-    typedef Kokkos::View<impl_scalar_type*, device_type> t_ValuesType;
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, device_type,
+    typedef Kokkos::View<impl_scalar_type*, execution_space> t_ValuesType;
+    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,
                               void, size_t> k_local_matrix_type;
     //@}
     //! @name Constructors and destructor
@@ -2826,7 +2826,7 @@ namespace Tpetra {
     // should really be declared and defined outside of CrsMatrix.
     template<class ViewType, class OffsetViewType>
     struct pack_functor {
-      typedef typename ViewType::device_type device_type;
+      typedef typename ViewType::execution_space execution_space;
       ViewType src_;
       ViewType dst_;
       OffsetViewType src_offset_;

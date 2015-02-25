@@ -254,7 +254,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Version.hpp
   Sacado_Traits.hpp
   Sacado.hpp
-  Sacado_Kokkos.hpp
+  Sacado_No_Kokkos.hpp
   Kokkos_View_Fad.hpp
   Kokkos_AnalyzeSacadoShape.hpp
   Sacado_DisableKokkosCuda.hpp

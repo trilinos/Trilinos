@@ -43,7 +43,7 @@
 #ifndef __PANZER_STK_ScatterVectorFields_decl_HPP__
 #define __PANZER_STK_ScatterVectorFields_decl_HPP__
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -70,8 +70,8 @@ PHX_EVALUATOR_CLASS(ScatterVectorFields)
   typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
 
   std::vector<std::string> names_;
-  std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> > scatterFields_;
-  PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> pointField_;
+  std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> > scatterFields_;
+  PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> pointField_;
   Teuchos::RCP<STK_Interface> mesh_;
 
   int spatialDimension_;

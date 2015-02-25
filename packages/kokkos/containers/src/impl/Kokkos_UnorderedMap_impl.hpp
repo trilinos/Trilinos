@@ -61,7 +61,7 @@ struct UnorderedMapRehash
 {
   typedef Map map_type;
   typedef typename map_type::const_map_type const_map_type;
-  typedef typename map_type::device_type device_type;
+  typedef typename map_type::execution_space execution_space;
   typedef typename map_type::size_type size_type;
 
   map_type       m_dst;
@@ -89,7 +89,7 @@ template <typename UMap>
 struct UnorderedMapErase
 {
   typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
+  typedef typename map_type::execution_space execution_space;
   typedef typename map_type::size_type size_type;
   typedef typename map_type::key_type key_type;
   typedef typename map_type::impl_value_type value_type;
@@ -150,10 +150,10 @@ template <typename UMap>
 struct UnorderedMapHistogram
 {
   typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
+  typedef typename map_type::execution_space execution_space;
   typedef typename map_type::size_type size_type;
 
-  typedef View<int[100], device_type> histogram_view;
+  typedef View<int[100], execution_space> histogram_view;
   typedef typename histogram_view::HostMirror host_histogram_view;
 
   map_type m_map;
@@ -250,7 +250,7 @@ template <typename UMap>
 struct UnorderedMapPrint
 {
   typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
+  typedef typename map_type::execution_space execution_space;
   typedef typename map_type::size_type size_type;
 
   map_type m_map;

@@ -95,7 +95,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 {
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
-  typedef typename fixture_type::device_type  device_type ;
+  typedef typename fixture_type::execution_space  execution_space ;
   //typedef typename fixture_type::FEMeshType   mesh_type ; // unused
 
   enum { ElementNodeCount = fixture_type::element_node_count };
@@ -132,7 +132,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Generate fields
 
-  typedef Fields< scalar_type , device_type > fields_type ;
+  typedef Fields< scalar_type , execution_space > fields_type ;
 
   fields_type mesh_fields( mesh ,
                            lin_bulk_visc ,
@@ -155,8 +155,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Initialization
 
-  initialize_element<Scalar,device_type>::apply( mesh_fields );
-  initialize_node<   Scalar,device_type>::apply( mesh_fields );
+  initialize_element<Scalar,execution_space>::apply( mesh_fields );
+  initialize_node<   Scalar,execution_space>::apply( mesh_fields );
 
   const Scalar x_bc = global_max_x ;
 
@@ -197,7 +197,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   const unsigned comm_value_count = 6 ;
 
-  Kokkos::AsyncExchange< comm_value_type , device_type ,
+  Kokkos::AsyncExchange< comm_value_type , execution_space ,
                               Kokkos::ParallelDataMap >
     comm_exchange( mesh.parallel_data_map , comm_value_count );
 
@@ -214,7 +214,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
       // to the ghosted nodes.
       // buffer packages: { { dx , dy , dz , vx , vy , vz }_node }
 
-      pack_state< Scalar , device_type >
+      pack_state< Scalar , execution_space >
         ::apply( comm_exchange.buffer() ,
                  mesh.parallel_data_map.count_interior ,
                  mesh.parallel_data_map.count_send ,
@@ -224,13 +224,13 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
       comm_exchange.send_receive();
 
-      unpack_state< Scalar , device_type >
+      unpack_state< Scalar , execution_space >
         ::apply( mesh_fields , next_state ,
                  comm_exchange.buffer() ,
                  mesh.parallel_data_map.count_owned ,
                  mesh.parallel_data_map.count_receive );
 
-      device_type::fence();
+      execution_space::fence();
     }
 #endif
 
@@ -248,20 +248,20 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     // First kernel 'grad_hgop' combines two functions:
     // gradient, velocity gradient
-    grad< Scalar , device_type >::apply( mesh_fields ,
+    grad< Scalar , execution_space >::apply( mesh_fields ,
                                          current_state ,
                                          previous_state );
 
     // Combine tensor decomposition and rotation functions.
-    decomp_rotate< Scalar , device_type >::apply( mesh_fields ,
+    decomp_rotate< Scalar , execution_space >::apply( mesh_fields ,
                                                   current_state ,
                                                   previous_state );
 
-    internal_force< Scalar , device_type >::apply( mesh_fields ,
+    internal_force< Scalar , execution_space >::apply( mesh_fields ,
                                                    user_dt ,
                                                    current_state );
 
-    device_type::fence();
+    execution_space::fence();
 
     perf_data.internal_force_time +=
       comm::max( machine , wall_clock.seconds() );
@@ -272,11 +272,11 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
     // a nodal force vector.  Update the accelerations, velocities,
     // displacements.
     // The same pattern can be used for matrix-free residual computations.
-    nodal_step< Scalar , device_type >::apply( mesh_fields ,
+    nodal_step< Scalar , execution_space >::apply( mesh_fields ,
                                                x_bc ,
                                                current_state,
                                                next_state );
-    device_type::fence();
+    execution_space::fence();
 
     perf_data.central_diff +=
       comm::max( machine , wall_clock.seconds() );
@@ -349,12 +349,12 @@ static void driver( const char * const label ,
                     const int runs )
 {
   typedef Scalar              scalar_type ;
-  typedef Device              device_type ;
+  typedef Device              execution_space ;
   typedef double              coordinate_scalar_type ;
   typedef FixtureElementHex8  fixture_element_type ;
 
   typedef BoxMeshFixture< coordinate_scalar_type ,
-                          device_type ,
+                          execution_space ,
                           fixture_element_type > fixture_type ;
 
   typedef typename fixture_type::FEMeshType mesh_type ;

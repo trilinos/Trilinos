@@ -466,7 +466,7 @@ namespace Tpetra {
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
-    typedef typename DO::device_type device_type;
+    typedef typename DO::execution_space execution_space;
 #else
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
 #endif
@@ -1368,23 +1368,23 @@ namespace Tpetra {
     copyAndPermute (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+      const Kokkos::View<const LocalOrdinal*, execution_space> &permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &permuteFromLIDs);
 
     virtual void
     packAndPrepare (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-      Kokkos::View<Scalar*, device_type> &exports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &exportLIDs,
+      Kokkos::View<Scalar*, execution_space> &exports,
+      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
 
     virtual void
     unpackAndCombine (
-      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-      const Kokkos::View<const Scalar*, device_type> &imports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, execution_space> &importLIDs,
+      const Kokkos::View<const Scalar*, execution_space> &imports,
+      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);
@@ -1425,18 +1425,18 @@ namespace Tpetra {
     //@}
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged>
     getKokkosView () const {
       Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
-      typedef Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> the_view_type;
+      typedef Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> the_view_type;
       the_view_type v (buff.getRawPtr (), buff.size ());
       return v;
     }
 
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged>
     getKokkosViewNonConst () {
       Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
-      typedef Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> the_view_type;
+      typedef Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged> the_view_type;
       the_view_type v (buff.getRawPtr (), buff.size ());
       return v;
     }

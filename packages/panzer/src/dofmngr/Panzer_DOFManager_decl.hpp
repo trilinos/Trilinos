@@ -227,7 +227,7 @@ public:
     * This is a per-element count. If you have a quad element with two
     * piecewise bi-linear fields this method returns 8.
     */
-  int getElementBlockGIDCount(const std::string & blockId) const
+  virtual int getElementBlockGIDCount(const std::string & blockId) const
   { return getElementBlockGIDCount(blockIdToIndex(blockId)); }
 
   /** \brief How any GIDs are associate with a particular element block.
@@ -235,7 +235,7 @@ public:
     * This is a per-element count. If you have a quad element with two
     * piecewise bi-linear fields this method returns 8.
     */
-  int getElementBlockGIDCount(const std::size_t & blockIndex) const
+  virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const
   { return elementBlockGIDCount_[blockIndex]; }
 
   /** Prints to an output stream the information about

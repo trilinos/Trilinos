@@ -39,7 +39,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 
 // The function to differentiate
 template <typename ScalarT>

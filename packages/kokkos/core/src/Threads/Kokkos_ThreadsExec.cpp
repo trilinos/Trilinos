@@ -138,6 +138,8 @@ ThreadsExec::ThreadsExec()
   , m_scratch()
   , m_scratch_reduce_end(0)
   , m_scratch_thread_end(0)
+  , m_numa_rank(0)
+  , m_numa_core_rank(0)
   , m_pool_rank(0)
   , m_pool_size(0)
   , m_pool_fan_size(0)
@@ -158,11 +160,15 @@ ThreadsExec::ThreadsExec()
     if ( entry < s_thread_pool_size[0] &&
          nil == atomic_compare_exchange( s_threads_exec + entry , nil , this ) ) {
 
-      m_pool_base     = s_threads_exec ;
-      m_pool_rank     = s_thread_pool_size[0] - ( entry + 1 );
-      m_pool_size     = s_thread_pool_size[0] ;
-      m_pool_fan_size = fan_size( m_pool_rank , m_pool_size );
-      m_pool_state    = ThreadsExec::Active ;
+      const std::pair<unsigned,unsigned> coord = Kokkos::hwloc::get_this_thread_coordinate();
+
+      m_numa_rank       = coord.first ;
+      m_numa_core_rank  = coord.second ;
+      m_pool_base       = s_threads_exec ;
+      m_pool_rank       = s_thread_pool_size[0] - ( entry + 1 );
+      m_pool_size       = s_thread_pool_size[0] ;
+      m_pool_fan_size   = fan_size( m_pool_rank , m_pool_size );
+      m_pool_state      = ThreadsExec::Active ;
 
       s_threads_pid[ m_pool_rank ] = pthread_self();
 
@@ -192,9 +198,11 @@ ThreadsExec::~ThreadsExec()
   m_scratch.clear();
   m_scratch_reduce_end = 0 ;
   m_scratch_thread_end = 0 ;
-  m_pool_rank     = 0 ;
-  m_pool_size     = 0 ;
-  m_pool_fan_size = 0 ;
+  m_numa_rank      = 0 ;
+  m_numa_core_rank = 0 ;
+  m_pool_rank      = 0 ;
+  m_pool_size      = 0 ;
+  m_pool_fan_size  = 0 ;
 
   m_pool_state  = ThreadsExec::Terminating ;
 
@@ -236,11 +244,6 @@ ThreadsExec * ThreadsExec::get_thread( const int init_thread_rank )
 }
 
 //----------------------------------------------------------------------------
-
-void ThreadsExec::execute_get_binding( ThreadsExec & exec , const void * )
-{
-  s_threads_coord[ exec.m_pool_rank ] = Kokkos::hwloc::get_this_thread_coordinate();
-}
 
 void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
 {
@@ -490,29 +493,24 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
 
     if ( detail ) {
 
-      execute_serial( & execute_get_binding );
-
       for ( int i = 0 ; i < s_thread_pool_size[0] ; ++i ) {
-        ThreadsExec * const th = s_threads_exec[i] ;
-        s << "  Thread hwloc("
-          << s_threads_coord[i].first << "."
-          << s_threads_coord[i].second << ")" ;
 
-        s_threads_coord[i].first  = ~0u ;
-        s_threads_coord[i].second = ~0u ;
+        ThreadsExec * const th = s_threads_exec[i] ;
 
         if ( th ) {
+
           const int rank_rev = th->m_pool_size - ( th->m_pool_rank + 1 );
 
-          s << " rank(" << th->m_pool_rank << ")" ;
+          s << " Thread[ " << th->m_pool_rank << " : "
+            << th->m_numa_rank << "." << th->m_numa_core_rank << " ]" ;
 
-          if ( th->m_pool_fan_size ) {
-            s << " Fan{" ;
-            for ( int j = 0 ; j < th->m_pool_fan_size ; ++j ) {
-              s << " " << th->m_pool_base[rank_rev+(1<<j)]->m_pool_rank ;
-            }
-            s << " }" ;
+          s << " Fan{" ;
+          for ( int j = 0 ; j < th->m_pool_fan_size ; ++j ) {
+            ThreadsExec * const thfan = th->m_pool_base[rank_rev+(1<<j)] ;
+            s << " [ " << thfan->m_pool_rank << " : "
+              << thfan->m_numa_rank << "." << thfan->m_numa_core_rank << " ]" ;
           }
+          s << " }" ;
 
           if ( th == & s_threads_process ) {
             s << " is_process" ;
@@ -570,7 +568,7 @@ void ThreadsExec::initialize( unsigned thread_count ,
       s_threads_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
     }
 
-    s_thread_pool_size[0]    = thread_count ;
+    s_thread_pool_size[0] = thread_count ;
     s_thread_pool_size[1] = s_thread_pool_size[0] / use_numa_count ;
     s_thread_pool_size[2] = s_thread_pool_size[1] / use_cores_per_numa ;
     s_current_function = & execute_function_noop ; // Initialization work function
@@ -616,11 +614,15 @@ void ThreadsExec::initialize( unsigned thread_count ,
       Kokkos::hwloc::bind_this_thread( proc_coord );
 
       if ( thread_spawn_begin ) { // Include process in pool.
-        s_threads_exec[0]                 = & s_threads_process ;
-        s_threads_process.m_pool_base     = s_threads_exec ;
-        s_threads_process.m_pool_rank     = thread_count - 1 ; // Reversed for scan-compatible reductions
-        s_threads_process.m_pool_size     = thread_count ;
-        s_threads_process.m_pool_fan_size = fan_size( s_threads_process.m_pool_rank , s_threads_process.m_pool_size );
+        const std::pair<unsigned,unsigned> coord = Kokkos::hwloc::get_this_thread_coordinate();
+
+        s_threads_exec[0]                   = & s_threads_process ;
+        s_threads_process.m_numa_rank       = coord.first ;
+        s_threads_process.m_numa_core_rank  = coord.second ;
+        s_threads_process.m_pool_base       = s_threads_exec ;
+        s_threads_process.m_pool_rank       = thread_count - 1 ; // Reversed for scan-compatible reductions
+        s_threads_process.m_pool_size       = thread_count ;
+        s_threads_process.m_pool_fan_size   = fan_size( s_threads_process.m_pool_rank , s_threads_process.m_pool_size );
         s_threads_pid[ s_threads_process.m_pool_rank ] = pthread_self();
       }
       else {
@@ -634,7 +636,7 @@ void ThreadsExec::initialize( unsigned thread_count ,
       ThreadsExec::resize_scratch( 1024 , 1024 );
     }
     else {
-      s_thread_pool_size[0]    = 0 ;
+      s_thread_pool_size[0] = 0 ;
       s_thread_pool_size[1] = 0 ;
       s_thread_pool_size[2] = 0 ;
     }
@@ -695,10 +697,12 @@ void ThreadsExec::finalize()
   s_thread_pool_size[2] = 0 ;
 
   // Reset master thread to run solo.
-  s_threads_process.m_pool_base     = 0 ;
-  s_threads_process.m_pool_rank     = 0 ;
-  s_threads_process.m_pool_size     = 1 ;
-  s_threads_process.m_pool_fan_size = 0 ;
+  s_threads_process.m_numa_rank       = 0 ;
+  s_threads_process.m_numa_core_rank  = 0 ;
+  s_threads_process.m_pool_base       = 0 ;
+  s_threads_process.m_pool_rank       = 0 ;
+  s_threads_process.m_pool_size       = 1 ;
+  s_threads_process.m_pool_fan_size   = 0 ;
   s_threads_process.m_pool_state = ThreadsExec::Inactive ;
 }
 

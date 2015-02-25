@@ -16,15 +16,15 @@
 
 #if DEVICE==1
 #  ifdef KOKKOS_HAVE_OPENMP
-typedef Kokkos::OpenMP device_type;
+typedef Kokkos::OpenMP execution_space;
 #  elif KOKKOS_HAVE_PTHREAD
-typedef Kokkos::Threads device_type;
+typedef Kokkos::Threads execution_space;
 #  endif
 #  define KokkosHost( yourCode ) yourCode
 #  define KokkosCUDA( yourCode )
 #else // DEVICE != 1
 #  ifdef KOKKOS_HAVE_CUDA
-typedef Kokkos::Cuda device_type;
+typedef Kokkos::Cuda execution_space;
 #    define KokkosHost(a)
 #    define KokkosCUDA(a) a
 #  else
@@ -104,11 +104,11 @@ int test_crs_matrix (test_data& test_sum,
 {
   typedef Matrix matrix_type ;
   typedef DomainVector mv_type;
-  typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+  typedef typename Kokkos::MultiVectorDynamic<Scalar,execution_space>::random_read_type mv_random_read_type;
   typedef typename mv_type::HostMirror h_mv_type;
   typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
   typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
-  typedef Kokkos::View<Scalar*,device_type> vector;
+  typedef Kokkos::View<Scalar*,execution_space> vector;
   typedef typename vector::HostMirror h_vector;
 
   int numVecs = x.dimension_1();
@@ -234,9 +234,9 @@ test_crs_matrix_test (test_data& test_sum,
                       const int test,
                       const char* typestring)
 {
-  typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
-  typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
-  typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+  typedef Kokkos::CrsMatrix<Scalar,int,execution_space> matrix_type ;
+  typedef typename Kokkos::MultiVectorDynamic<Scalar,execution_space>::type mv_type;
+  typedef typename Kokkos::MultiVectorDynamic<Scalar,execution_space>::random_read_type mv_random_read_type;
   typedef typename mv_type::HostMirror h_mv_type;
 
   Scalar* val = NULL;
@@ -394,5 +394,5 @@ int main (int argc, char **argv) {
  Kokkos::Threads::finalize ();
 #endif
  )
- device_type::finalize ();
+ execution_space::finalize ();
 }

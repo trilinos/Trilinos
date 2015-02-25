@@ -74,10 +74,10 @@ struct decomp_rotate;
 template<typename Scalar>
 struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
+  typedef KOKKOS_MACRO_DEVICE     execution_space ;
+  typedef typename Kokkos::MDArray<Scalar,execution_space> array_type ;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,execution_space>     scalar;
 
   const array_type rotation;
   const array_type vel_grad;
@@ -88,7 +88,7 @@ struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
   const int        current_state;
   const int        previous_state;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
   decomp_rotate(  const MyRegion & region,
           const int arg_current_state,

@@ -71,6 +71,10 @@ struct init_view {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (const typename ViewType::size_type i) const {
+    // On CPUs this loop could be vectorized so j should do stride 1
+    // access on a for optimal performance. I.e. a should be LayoutRight.
+    // On GPUs threads should do coalesced loads and stores. That means
+    // that i should be the stride one access for optimal performance.
     for (typename ViewType::size_type j = 0; j < a.dimension_1 (); ++j) {
       a(i,j) = 1.0*a.dimension_0()*i + 1.0*j;
     }
@@ -80,6 +84,10 @@ struct init_view {
 // Compute a contraction of v1 and v2 into a:
 //
 //   a(i) := sum_j (v1(i,j) * v2(j,i))
+//
+// Since the functor is templated on the ViewTypes itself it doesn't matter what
+// there layouts are. That means you can use different layouts on different
+// architectures.
 template<class ViewType1, class ViewType2>
 struct contraction {
   view_type a;
@@ -89,6 +97,13 @@ struct contraction {
     a (a_), v1 (v1_), v2 (v2_)
   {}
 
+  // As with the initialization functor the performance of this operator
+  // depends on the architecture and the chosen data layouts.
+  // On CPUs optimal would be to vectorize the inner loop, so j should be the
+  // stride 1 access. That means v1 should be LayoutRight and v2 LayoutLeft.
+  // In order to get coalesced access on GPUs where i corresponds closely to
+  // the thread Index, i must be the stride 1 dimension. That means v1 should be
+  // LayoutLeft and v2 LayoutRight.
   KOKKOS_INLINE_FUNCTION
   void operator() (const view_type::size_type i) const {
     for (view_type::size_type j = 0; j < v1.dimension_1 (); ++j) {
@@ -97,6 +112,7 @@ struct contraction {
   }
 };
 
+// Compute a dot product. This is used for result verification.
 struct dot {
   view_type a;
   dot (view_type a_) : a (a_) {}
@@ -115,13 +131,19 @@ int main (int narg, char* arg[]) {
 
   int size = 10000;
   view_type a("A",size);
+
+  // Define two views with LayoutLeft and LayoutRight.
   left_type l("L",size,10000);
   right_type r("R",size,10000);
 
+  // Initialize the data in the views.
   Kokkos::parallel_for(size,init_view<left_type>(l));
   Kokkos::parallel_for(size,init_view<right_type>(r));
   Kokkos::fence();
 
+  // Measure time to execute the contraction kernel when giving it a
+  // LayoutLeft view for v1 and a LayoutRight view for v2. This should be
+  // fast on GPUs and slow on CPUs
   Kokkos::Impl::Timer time1;
   Kokkos::parallel_for(size,contraction<left_type,right_type>(a,l,r));
   Kokkos::fence();
@@ -131,6 +153,9 @@ int main (int narg, char* arg[]) {
   Kokkos::parallel_reduce(size,dot(a),sum1);
   Kokkos::fence();
 
+  // Measure time to execute the contraction kernel when giving it a
+  // LayoutRight view for v1 and a LayoutLeft view for v2. This should be
+  // fast on CPUs and slow on GPUs
   Kokkos::Impl::Timer time2;
   Kokkos::parallel_for(size,contraction<right_type,left_type>(a,r,l));
   Kokkos::fence();

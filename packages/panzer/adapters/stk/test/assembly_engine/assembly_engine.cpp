@@ -50,6 +50,9 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -69,6 +72,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PauseToAttach.hpp"
+
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -109,6 +113,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(assembly_engine, basic_epetra)
   {
     using Teuchos::RCP;
+
+    PHX::InitializeKokkosDevice();
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -228,12 +234,16 @@ namespace panzer {
 
 //     std::cout << *eVector << std::endl;
 //     std::cout << *eLinearOp << std::endl;
+
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, dirichlet_only)
   {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
+
+    PHX::InitializeKokkosDevice();
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -369,11 +379,15 @@ namespace panzer {
       }
     }
     TEST_ASSERT(passed);
+
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
   {
     using Teuchos::RCP;
+
+    PHX::InitializeKokkosDevice();
 
     // build global communicator
     Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -500,10 +514,14 @@ namespace panzer {
     tLinearOp = Thyra::constTpetraLinearOp<double,int,panzer::Ordinal64>(rangeSpace, domainSpace, baseOp);
     tVector = Thyra::constTpetraVector<double,int,panzer::Ordinal64>(Thyra::tpetraVectorSpace<double,int,panzer::Ordinal64>(baseOp->getRangeMap()).getConst(),
                                                        globalCont->get_f().getConst());
+
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, z_basic_epetra_vtpetra)
   {
+    PHX::InitializeKokkosDevice();
+
      TEUCHOS_ASSERT(tLinearOp!=Teuchos::null);
      TEUCHOS_ASSERT(eLinearOp!=Teuchos::null);
 
@@ -530,6 +548,16 @@ namespace panzer {
            &out);
         TEST_ASSERT(result);
      }
+
+
+     // Need to kill global objects so that memory leaks on kokkos ref
+     // count pointing doesn't trigger test failure.
+     eLinearOp = Teuchos::null;
+     tLinearOp = Teuchos::null;
+     eVector = Teuchos::null;
+     tVector = Teuchos::null;
+
+     PHX::FinalizeKokkosDevice();
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

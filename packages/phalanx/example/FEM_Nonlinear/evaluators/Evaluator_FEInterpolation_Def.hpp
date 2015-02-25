@@ -81,18 +81,15 @@ PHX_POST_REGISTRATION_SETUP(FEInterpolation,data,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(FEInterpolation,cell_data)
 { 
-  using namespace shards;
 
   std::vector<Element_Linear2D>::iterator cell_it = cell_data.begin;
 
   // Loop over number of cells
   for (std::size_t cell = 0; cell < cell_data.num_cells; ++cell) {
     
-    const Array<double,NaturalOrder,QuadPoint,Node>& phi = 
-      cell_it->basisFunctions();
+    const Kokkos::View<double**,PHX::Device> = cell_it->basisFunctions();
 
-    const Array<double,NaturalOrder,QuadPoint,Node,Dim>& grad_phi = 
-      cell_it->basisFunctionGradientsRealSpace();
+    const Kokkos::View<double***,PHX::Device> grad_phi = cell_it->basisFunctionGradientsRealSpace();
 
     // Loop over quad points of cell
     for (int qp = 0; qp < num_qp; ++qp) {

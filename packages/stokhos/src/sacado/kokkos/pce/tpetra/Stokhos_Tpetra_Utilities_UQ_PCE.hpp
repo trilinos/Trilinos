@@ -55,10 +55,10 @@ namespace Stokhos {
 
   // Build a CRS graph from a sparse Cijk tensor
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
-            typename CijkValue>
+            typename CijkType>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
-  create_cijk_crs_graph(const CrsProductTensor<CijkValue,Device>& cijk,
+  create_cijk_crs_graph(const CijkType& cijk,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                         const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
                         const size_t matrix_pce_size) {
@@ -104,12 +104,12 @@ namespace Stokhos {
   // If flat_domain_map and/or flat_range_map are null, they will be computed,
   // otherwise they will be used as-is.
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Device,
-            typename CijkValue>
+            typename CijkType>
   Teuchos::RCP< Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_flat_pce_graph(
     const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& graph,
-    const CrsProductTensor<CijkValue,Device>& cijk,
+    const CijkType& cijk,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_domain_map,
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_range_map,
     Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
@@ -409,7 +409,7 @@ namespace Stokhos {
   // Create a flattened matrix by unrolling the UQ::PCE scalar type.  The
   // returned matrix is NOT a view of the original (and can't be)
   template <typename Storage, typename LocalOrdinal, typename GlobalOrdinal,
-            typename Device, typename CijkValue>
+            typename Device, typename CijkType>
   Teuchos::RCP< Tpetra::CrsMatrix<typename Storage::value_type,
                                   LocalOrdinal,GlobalOrdinal,
                                   Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
@@ -418,7 +418,7 @@ namespace Stokhos {
                             LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& mat,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_graph,
     const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& cijk_graph,
-    const CrsProductTensor<CijkValue,Device>& cijk) {
+    const CijkType& cijk) {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::RCP;

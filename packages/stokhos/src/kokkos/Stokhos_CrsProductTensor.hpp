@@ -74,16 +74,16 @@ namespace Stokhos {
  *    }
  *  }
  */
-template< typename ValueType, class DeviceType, class Memory = void >
+template< typename ValueType, class ExecutionSpace, class Memory = void >
 class CrsProductTensor {
 public:
 
-  typedef DeviceType  device_type;
+  typedef ExecutionSpace  execution_space;
   typedef int         size_type;
   typedef ValueType   value_type;
   typedef Memory      memory_type;
 
-  typedef typename Kokkos::ViewTraits< size_type*, device_type,void,void >::host_mirror_space host_mirror_space ;
+  typedef typename Kokkos::ViewTraits< size_type*, execution_space,void,void >::host_mirror_space host_mirror_space ;
   typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
 
 // Vectorsize used in multiply algorithm
@@ -103,7 +103,7 @@ public:
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
 #if defined( KOKKOS_HAVE_CUDA )
-    Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+    Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;
 #endif
@@ -116,12 +116,12 @@ private:
 
   template <class, class, class> friend class CrsProductTensor;
 
-  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type >  vec_type;
-  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > coord_array_type;
-  typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, device_type, memory_type > coord2_array_type;
-  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, device_type, memory_type > value_array_type;
-  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > entry_array_type;
-  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, device_type, memory_type > row_map_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, execution_space, memory_type >  vec_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, execution_space, memory_type > coord_array_type;
+  typedef Kokkos::View< size_type*[2], Kokkos::LayoutLeft, execution_space, memory_type > coord2_array_type;
+  typedef Kokkos::View< value_type*, Kokkos::LayoutLeft, execution_space, memory_type > value_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, execution_space, memory_type > entry_array_type;
+  typedef Kokkos::View< size_type*, Kokkos::LayoutLeft, execution_space, memory_type > row_map_array_type;
 
   coord_array_type   m_coord;
   coord2_array_type  m_coord2;
@@ -170,7 +170,7 @@ public:
 
   template <class M>
   KOKKOS_INLINE_FUNCTION
-  CrsProductTensor( const CrsProductTensor<value_type,device_type,M> & rhs ) :
+  CrsProductTensor( const CrsProductTensor<value_type,execution_space,M> & rhs ) :
     m_coord( rhs.m_coord ),
     m_coord2( rhs.m_coord2 ),
     m_value( rhs.m_value ),
@@ -185,7 +185,7 @@ public:
   template <class M>
   KOKKOS_INLINE_FUNCTION
   CrsProductTensor &
-  operator = ( const CrsProductTensor<value_type,device_type,M> & rhs )
+  operator = ( const CrsProductTensor<value_type,execution_space,M> & rhs )
   {
     m_coord = rhs.m_coord;
     m_coord2 = rhs.m_coord2;
@@ -569,8 +569,8 @@ class BlockMultiply< CrsProductTensor< ValueType , Device > >
 {
 public:
 
-  typedef Device device_type;
-  typedef CrsProductTensor< ValueType , device_type > tensor_type ;
+  typedef Device execution_space;
+  typedef CrsProductTensor< ValueType , execution_space > tensor_type ;
   typedef typename tensor_type::size_type size_type ;
 
 // Whether to use manual or auto-vectorization
@@ -757,12 +757,12 @@ template< typename ValueType , typename MatrixValue , typename VectorValue ,
 class MultiplyImpl {
 public:
 
-  typedef Device device_type ;
-  typedef CrsProductTensor< ValueType , device_type > tensor_type;
-  typedef StochasticProductTensor< ValueType, tensor_type, device_type > BlockSpec;
+  typedef Device execution_space ;
+  typedef CrsProductTensor< ValueType , execution_space > tensor_type;
+  typedef StochasticProductTensor< ValueType, tensor_type, execution_space > BlockSpec;
   typedef typename BlockSpec::size_type size_type ;
-  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , device_type > block_vector_type ;
-  typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
+  typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , execution_space > block_vector_type ;
+  typedef BlockCrsMatrix< BlockSpec , MatrixValue , execution_space >  matrix_type ;
 
   const matrix_type  m_A ;
   const block_vector_type  m_x ;
@@ -835,7 +835,7 @@ public:
   // A MIC-specific version of the block-multiply algorithm, where block here
   // means processing multiple FEM columns at a time
   KOKKOS_INLINE_FUNCTION
-  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
+  void operator()( const typename Kokkos::TeamPolicy< execution_space >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -955,7 +955,7 @@ public:
   // auto-vectorization of a block algorithm doesn't work, because the
   // stochastic loop is not the inner-most loop.
   KOKKOS_INLINE_FUNCTION
-  void operator()( const typename Kokkos::TeamPolicy< device_type >::member_type & device ) const
+  void operator()( const typename Kokkos::TeamPolicy< execution_space >::member_type & device ) const
   {
     const size_type iBlockRow = device.league_rank();
 
@@ -1084,7 +1084,7 @@ public:
       const size_t team_size = 2;  // 2 for everything else
 #endif
       const size_t league_size = row_count;
-      Kokkos::TeamPolicy< device_type > config(league_size, team_size);
+      Kokkos::TeamPolicy< execution_space > config(league_size, team_size);
       Kokkos::parallel_for( config , MultiplyImpl(A,x,y) );
     }
     else {

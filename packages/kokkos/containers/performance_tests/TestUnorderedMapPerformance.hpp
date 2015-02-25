@@ -15,8 +15,8 @@ namespace Perf {
 template <typename Device, bool Near>
 struct UnorderedMapTest
 {
-  typedef Device device_type;
-  typedef Kokkos::UnorderedMap<uint32_t, uint32_t, device_type> map_type;
+  typedef Device execution_space;
+  typedef Kokkos::UnorderedMap<uint32_t, uint32_t, execution_space> map_type;
   typedef typename map_type::histogram_type histogram_type;
 
   struct value_type {

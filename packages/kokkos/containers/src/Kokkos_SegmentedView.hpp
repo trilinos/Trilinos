@@ -308,9 +308,7 @@ public:
   }
 
   ~SegmentedView() {
-    if (traits::execution_space::in_parallel()) return;
-    if ( !segments_.tracker().ref_counting())
-      return;
+    if ( !segments_.tracker().ref_counting()) { return; }
     size_t ref_count = segments_.tracker().ref_count();
     if(ref_count == 1u) {
       Kokkos::fence();
@@ -332,23 +330,26 @@ public:
       printf ("Exceeding maxSize: %lu %lu\n", growSize, max_segments_*segment_length_);
       return;
     }
+
     if(team_member.team_rank()==0) {
       bool too_small = growSize > segment_length_ * nsegments_();
-      while(too_small && Kokkos::atomic_compare_exchange(&realloc_lock(),0,1) ) {
-        too_small = growSize > segment_length_ * nsegments_();
-      }
-      if(too_small) {
-        while(too_small) {
-          const size_t alloc_size = segment_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
-                              m_offset_map.N4*m_offset_map.N5*m_offset_map.N6*m_offset_map.N7;
-          typename traits::non_const_value_type* const ptr = new typename traits::non_const_value_type[alloc_size];
+      if (too_small) {
+        while(Kokkos::atomic_compare_exchange(&realloc_lock(),0,1) )
+          ; // get the lock
+        too_small = growSize > segment_length_ * nsegments_(); // Recheck once we have the lock
+        if(too_small) {
+          while(too_small) {
+            const size_t alloc_size = segment_length_*m_offset_map.N1*m_offset_map.N2*m_offset_map.N3*
+                m_offset_map.N4*m_offset_map.N5*m_offset_map.N6*m_offset_map.N7;
+            typename traits::non_const_value_type* const ptr = new typename traits::non_const_value_type[alloc_size];
 
-          segments_(nsegments_()) =
-            t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
-          nsegments_()++;
-          too_small = growSize > segment_length_ * nsegments_();
+            segments_(nsegments_()) =
+                t_dev(ptr,segment_length_,m_offset_map.N1,m_offset_map.N2,m_offset_map.N3,m_offset_map.N4,m_offset_map.N5,m_offset_map.N6,m_offset_map.N7);
+            nsegments_()++;
+            too_small = growSize > segment_length_ * nsegments_();
+          }
         }
-        realloc_lock() = 0;
+        realloc_lock() = 0; //release the lock
       }
     }
     team_member.team_barrier();
@@ -462,7 +463,7 @@ namespace Impl {
 template<class DataType, class Arg1Type, class Arg2Type, class Arg3Type>
 struct delete_segmented_view {
   typedef SegmentedView<DataType , Arg1Type , Arg2Type, Arg3Type> view_type;
-  typedef typename view_type::execution_space device_type;
+  typedef typename view_type::execution_space execution_space;
 
   view_type view_;
   delete_segmented_view(view_type view):view_(view) {

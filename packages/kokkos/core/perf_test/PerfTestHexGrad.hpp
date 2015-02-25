@@ -48,8 +48,8 @@ template< class DeviceType ,
           typename GradScalarType  = float >
 struct HexGrad
 {
-  typedef DeviceType device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   typedef HexGrad<DeviceType,CoordScalarType,GradScalarType> self_type;
 
@@ -57,10 +57,10 @@ struct HexGrad
 
   enum { NSpace = 3 , NNode = 8 };
 
-  typedef Kokkos::View< CoordScalarType*[NSpace][NNode] , device_type >
+  typedef Kokkos::View< CoordScalarType*[NSpace][NNode] , execution_space >
     elem_coord_type ;
 
-  typedef Kokkos::View< GradScalarType*[NSpace][NNode] , device_type >
+  typedef Kokkos::View< GradScalarType*[NSpace][NNode] , execution_space >
     elem_grad_type ;
 
   elem_coord_type  coords ;
@@ -192,7 +192,7 @@ struct HexGrad
   //--------------------------------------------------------------------------
 
   struct Init {
-    typedef typename self_type::device_type device_type ;
+    typedef typename self_type::execution_space execution_space ;
 
     elem_coord_type coords ;
 
@@ -249,12 +249,12 @@ struct HexGrad
     double dt_min = 0 ;
 
     Kokkos::parallel_for( count , Init( coord ) );
-    device_type::fence();
+    execution_space::fence();
 
     for ( int i = 0 ; i < iter ; ++i ) {
       Kokkos::Impl::Timer timer ;
-      Kokkos::parallel_for( count , HexGrad<device_type>( coord , grad ) );
-      device_type::fence();
+      Kokkos::parallel_for( count , HexGrad<execution_space>( coord , grad ) );
+      execution_space::fence();
       const double dt = timer.seconds();
       if ( 0 == i ) dt_min = dt ;
       else dt_min = dt < dt_min ? dt : dt_min ;

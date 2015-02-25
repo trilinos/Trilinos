@@ -54,7 +54,6 @@
 #pragma clang system_header
 #endif
 
-
 namespace Intrepid {
 
   template<class Scalar>
@@ -890,8 +889,9 @@ namespace Intrepid {
   //                     Jacobian, inverse Jacobian and Jacobian determinant                    //
   //                                                                                            //
   //============================================================================================//  
-  
-  template<class Scalar>
+
+                         
+ /* template<class Scalar>
   template<class ArrayJac, class ArrayPoint, class ArrayCell>
   void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
                                       const ArrayPoint &           points,
@@ -1007,9 +1007,15 @@ namespace Intrepid {
     FieldContainer<Scalar> basisGrads(basisCardinality, numPoints, spaceDim);
     
     // Initialize jacobian
-    for(int i = 0; i < jacobian.size(); i++){
-      jacobian[i] = 0.0;
-    }
+//    for(int i = 0; i < jacobian.size(); i++){
+//      jacobian[i] = 0.0;
+//    } 
+    for (int i=0; i< jacobian.dimension(0); i++)
+       for (int j=0; j< jacobian.dimension(1); j++)
+         for (int k=0; k< jacobian.dimension(2); k++)
+           for (int l=0; l< jacobian.dimension(3); l++)
+            jacobian(i,j,k,l)=0.0;
+
         
     // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
     switch(points.rank()) {
@@ -1103,9 +1109,376 @@ namespace Intrepid {
         TEUCHOS_TEST_FOR_EXCEPTION( !( (points.rank() == 2) && (points.rank() == 3) ), std::invalid_argument,
                             ">>> ERROR (Intrepid::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
     }//switch
-  }
-  
+  }*/
+ 
+#ifdef HAVE_INTREPID_KOKKOSCORE						
+	template<class Scalar,class ArrayJac>
+struct setJacobianZerosDim4 {
+  ArrayJac jacobian;
+  setJacobianZerosDim4(const ArrayJac& jacobian_):jacobian(jacobian_) {}
 
+  KOKKOS_INLINE_FUNCTION
+  void operator() (int i) const {
+ 
+       for (int j=0; j< jacobian.dimension(1); j++){
+         for (int k=0; k< jacobian.dimension(2); k++){
+           for (int l=0; l< jacobian.dimension(3); l++){
+            jacobian(i,j,k,l)=0.0;
+		}
+	  }
+    }
+  }
+};
+#endif
+
+#ifdef HAVE_INTREPID_KOKKOSCORE	
+	template<class Scalar,class ArrayJac>
+struct setJacobianZerosDim3 {
+  ArrayJac jacobian;
+  setJacobianZerosDim3(const ArrayJac& jacobian_):jacobian(jacobian_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (int i) const {
+
+       for (int j=0; j< jacobian.dimension(1); j++){
+         for (int k=0; k< jacobian.dimension(2); k++){
+            jacobian(i,j,k)=0.0;
+		
+	}
+   }
+  }
+};	
+#endif							
+						
+  template<class Scalar>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
+                                      const shards::CellTopology & cellTopo,
+                                      const int &                  whichCell) 
+  {
+    INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+  
+ ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>jacobianWrap(jacobian);   
+   ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
+    int spaceDim  = (int)cellTopo.getDimension();
+    int numCells  = cellWorkset.dimension(0);
+    //points can be rank-2 (P,D), or rank-3 (C,P,D)
+    int numPoints = (getrank(points) == 2) ? points.dimension(0) : points.dimension(1);
+    
+    // Jacobian is computed using gradients of an appropriate H(grad) basis function: define RCP to the base class
+    Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis;
+    
+    // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
+    switch( cellTopo.getKey() ){
+      
+      // Standard Base topologies (number of cellWorkset = number of vertices)
+      case shards::Line<2>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Triangle<3>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Quadrilateral<4>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Tetrahedron<4>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Hexahedron<8>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Wedge<6>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Pyramid<5>::key:
+	    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+	    break;
+        
+      // Standard Extended topologies
+      case shards::Triangle<6>::key:    
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+      case shards::Quadrilateral<9>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Tetrahedron<10>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Tetrahedron<11>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Hexahedron<20>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Hexahedron<27>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Wedge<15>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+        
+      case shards::Wedge<18>::key:
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+        break;
+
+      case shards::Pyramid<13>::key:
+	HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+	break;
+        
+        // These extended topologies are not used for mapping purposes
+      case shards::Quadrilateral<8>::key:
+        TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported. ");
+        break;
+        
+        // Base and Extended Line, Beam and Shell topologies  
+      case shards::Line<3>::key:
+      case shards::Beam<2>::key:
+      case shards::Beam<3>::key:
+      case shards::ShellLine<2>::key:
+      case shards::ShellLine<3>::key:
+      case shards::ShellTriangle<3>::key:
+      case shards::ShellTriangle<6>::key:
+      case shards::ShellQuadrilateral<4>::key:
+      case shards::ShellQuadrilateral<8>::key:
+      case shards::ShellQuadrilateral<9>::key:
+        TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported. ");
+        break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported.");        
+    }// switch  
+    
+    // Temp (F,P,D) array for the values of basis functions gradients at the reference points
+    int basisCardinality = HGRAD_Basis -> getCardinality();
+    FieldContainer<Scalar> basisGrads(basisCardinality, numPoints, spaceDim);
+    
+    
+if(getrank(jacobian)==4){
+	if(CheckType<ArrayJac>::value==true){
+	#ifdef HAVE_INTREPID_KOKKOSCORE 
+	  Kokkos::parallel_for (jacobian.dimension(0), setJacobianZerosDim4<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> >(jacobianWrap));
+	#endif	
+	}else{
+    for (int i=0; i< jacobian.dimension(0); i++){
+       for (int j=0; j< jacobian.dimension(1); j++){
+         for (int k=0; k< jacobian.dimension(2); k++){
+           for (int l=0; l< jacobian.dimension(3); l++){
+            jacobianWrap(i,j,k,l)=0.0;
+	        }
+		  }
+        } 
+	 }
+	}
+}
+
+if(getrank(jacobian)==3){
+	if(CheckType<ArrayJac>::value==true){
+	#ifdef HAVE_INTREPID_KOKKOSCORE
+	  	 Kokkos::parallel_for (jacobian.dimension(0), setJacobianZerosDim3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> >(jacobianWrap));
+	#endif
+    }else{
+    for (int i=0; i< jacobian.dimension(0); i++){
+       for (int j=0; j< jacobian.dimension(1); j++){
+         for (int k=0; k< jacobian.dimension(2); k++){
+            jacobianWrap(i,j,k)=0.0;
+	    }
+	   }
+	 }
+   }
+}        
+    // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
+    switch(getrank(points)) {
+      
+      // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
+      case 2:
+        {
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer<Scalar> tempPoints( points.dimension(0), points.dimension(1) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+ /*      if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	      Kokkos::parallel_for (points.dimension(0), [&] (int pt) {
+            for(int dm = 0; dm < points.dimension(1) ; dm++){
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
+            }//dm
+          });
+	    #endif
+	   }else{*/ 
+	      for(int pt = 0; pt < points.dimension(0); pt++){
+            for(int dm = 0; dm < points.dimension(1) ; dm++){
+              tempPoints(pt, dm) = points(pt, dm);
+            }//dm
+          }//pt
+          for(int pt = 0; pt < points.dimension(0); pt++){
+            for(int dm = 0; dm < points.dimension(1) ; dm++){
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
+            }//dm
+          }//pt
+         //}
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+          
+          // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
+          // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
+          int cellLoop = (whichCell == -1) ? numCells : 1 ;
+          
+          if(whichCell == -1) {
+ /*     if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+		Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {  
+          for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+             for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                    
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            }); // cellOrd
+		#endif
+	   }else{*/	  
+            for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                    
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+            
+          //}  
+            
+          }
+          else {
+/*	  if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	   		 Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {		  
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            }); // cellOrd
+	   
+	   #endif
+	   }else{		*/	  	  
+            for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+//		}
+          } // if whichcell
+        }// case 2
+        break;
+        
+        // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
+      case 3:
+        {
+          // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+          FieldContainer<Scalar> tempPoints( points.dimension(1), points.dimension(2) );
+ /*	  if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	   	Kokkos::parallel_for (numCells, [&] (int cellOrd) {         
+        
+            
+            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+            for(int pt = 0; pt < points.dimension(1); pt++){
+              for(int dm = 0; dm < points.dimension(2) ; dm++){
+                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
+              }//dm
+            }//pt
+            
+            // Compute gradients of basis functions at this set of ref. points
+            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+            
+            // Compute jacobians for the point set corresponding to the current cellordinal
+            for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                  
+                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
+                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                  } // bfOrd
+                } // col
+              } // row
+            } // pointOrd
+          });//cellOrd
+	   #endif      
+      }else{*/
+          for(int cellOrd = 0; cellOrd < numCells; cellOrd++) {
+            
+            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+            for(int pt = 0; pt < points.dimension(1); pt++){
+              for(int dm = 0; dm < points.dimension(2) ; dm++){
+                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
+              }//dm
+            }//pt
+            
+            // Compute gradients of basis functions at this set of ref. points
+            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+            
+            // Compute jacobians for the point set corresponding to the current cellordinal
+            for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                  
+                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
+                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                  } // bfOrd
+                } // col
+              } // row
+            } // pointOrd
+          }//cellOrd
+//	    }
+        }// case 3
+	
+        break;
+        
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) == 3) ), std::invalid_argument,
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
+    }//switch
+  }
 
 template<class Scalar>
 template<class ArrayJacInv, class ArrayJac>
@@ -1116,9 +1489,18 @@ void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
 
   RealSpaceTools<Scalar>::inverse(jacobianInv, jacobian);
 }
+/*
+template<class Scalar>
+template<class ArrayJacInv, class ArrayJac>
+void CellTools<Scalar>::setJacobianInvTemp(ArrayJacInv &     jacobianInv,
+                                       const ArrayJac &  jacobian) 
+{
+ 
 
-
-
+  RealSpaceTools<Scalar>::inverseTemp(jacobianInv, jacobian);
+}
+*/
+/*
 template<class Scalar>
 template<class ArrayJacDet, class ArrayJac>
 void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
@@ -1128,13 +1510,251 @@ void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
 
   RealSpaceTools<Scalar>::det(jacobianDet, jacobian);
 }
+*/
+template<class Scalar>
+template<class ArrayJacDet, class ArrayJac>
+void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
+                                       const ArrayJac &  jacobian)
+{
+  INTREPID_VALIDATE( validateArguments_setJacobianDetArgs(jacobianDet, jacobian) );
+  RealSpaceTools<Scalar>::det(jacobianDet, jacobian);
+}
 
 //============================================================================================//
 //                                                                                            //
 //                      Reference-to-physical frame mapping and its inverse                   //
 //                                                                                            //
 //============================================================================================//
+/*template<class Scalar>
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrameTemp(ArrayPhysPoint      &         physPoints,
+                                   const ArrayRefPoint &         refPoints,
+                                   const ArrayCell     &         cellWorkset,
+                                   const shards::CellTopology &  cellTopo,
+                                   const int &                   whichCell ){
+CellTools<Scalar>::mapToPhysicalFrameTempSpec<ArrayPhysPoint, ArrayRefPoint, ArrayCell, Rank<ArrayRefPoint>::value,Rank<ArrayPhysPoint>::value>(physPoints,refPoints,cellWorkset,cellTopo,whichCell);									  
+									  
+}*/
 
+template<class Scalar>
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
+                                           const ArrayRefPoint &        refPoints,
+                                           const ArrayCell     &        cellWorkset,
+                                           const shards::CellTopology & cellTopo,
+                                           const int &                  whichCell)
+{
+  INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
+
+    ArrayWrapper<Scalar,ArrayPhysPoint, Rank<ArrayPhysPoint >::value, false>physPointsWrap(physPoints);
+   ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
+
+  int spaceDim  = (int)cellTopo.getDimension();
+  int numCells  = cellWorkset.dimension(0);
+  //points can be rank-2 (P,D), or rank-3 (C,P,D)
+  int numPoints = (getrank(refPoints) == 2) ? refPoints.dimension(0) : refPoints.dimension(1);
+
+  // Mapping is computed using an appropriate H(grad) basis function: define RCP to the base class
+  Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis;
+
+  // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
+  switch( cellTopo.getKey() ){
+
+    // Standard Base topologies (number of cellWorkset = number of vertices)
+    case shards::Line<2>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Triangle<3>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Quadrilateral<4>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Tetrahedron<4>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Hexahedron<8>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Wedge<6>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Pyramid<5>::key:
+	  HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+	  break;
+
+    // Standard Extended topologies
+    case shards::Triangle<6>::key:    
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Quadrilateral<9>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Tetrahedron<10>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Tetrahedron<11>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Hexahedron<20>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Hexahedron<27>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Wedge<15>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    case shards::Wedge<18>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+
+    case shards::Pyramid<13>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    // These extended topologies are not used for mapping purposes
+    case shards::Quadrilateral<8>::key:
+      TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                          ">>> ERROR (Intrepid::CellTools::mapToPhysicalFrame): Cell topology not supported. ");
+      break;
+
+    // Base and Extended Line, Beam and Shell topologies  
+    case shards::Line<3>::key:
+    case shards::Beam<2>::key:
+    case shards::Beam<3>::key:
+    case shards::ShellLine<2>::key:
+    case shards::ShellLine<3>::key:
+    case shards::ShellTriangle<3>::key:
+    case shards::ShellTriangle<6>::key:
+    case shards::ShellQuadrilateral<4>::key:
+    case shards::ShellQuadrilateral<8>::key:
+    case shards::ShellQuadrilateral<9>::key:
+      TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                          ">>> ERROR (Intrepid::CellTools::mapToPhysicalFrame): Cell topology not supported. ");
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
+                          ">>> ERROR (Intrepid::CellTools::mapToPhysicalFrame): Cell topology not supported.");        
+  }// switch  
+
+  // Temp (F,P) array for the values of nodal basis functions at the reference points
+  int basisCardinality = HGRAD_Basis -> getCardinality();
+  FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
+
+//#ifndef HAVE_INTREPID_KOKKOSCORE 
+  // Initialize physPoints
+  if(getrank(physPoints)==3){
+for(int i = 0; i < physPoints.dimension(0); i++) {
+ for(int j = 0; j < physPoints.dimension(1); j++){
+	for(int k = 0; k < physPoints.dimension(2); k++){ 
+  physPointsWrap(i,j,k) = 0.0;
+    }
+   }
+}
+ }else if(getrank(physPoints)==2){
+	  for(int i = 0; i < physPoints.dimension(0); i++){
+	for(int j = 0; j < physPoints.dimension(1); j++){ 
+  physPointsWrap(i,j) = 0.0;
+    }
+   }
+	 
+ }
+
+//#else
+//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
+//#endif
+  // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
+  switch(getrank(refPoints)) {
+    
+    // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
+    case 2:
+      {
+
+        // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
+        FieldContainer<Scalar> tempPoints( refPoints.dimension(0), refPoints.dimension(1) );
+        // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+        for(int pt = 0; pt < refPoints.dimension(0); pt++){
+          for(int dm = 0; dm < refPoints.dimension(1) ; dm++){
+            tempPoints(pt, dm) = refPointsWrap(pt, dm);
+          }//dm
+        }//pt
+        HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+
+        // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
+        int cellLoop = (whichCell == -1) ? numCells : 1 ;
+
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(int dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                if(whichCell == -1){
+                  physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+                else{
+                  physPointsWrap(pointOrd, dim) += cellWorksetWrap(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd
+      }// case 2
+  
+      break;
+      
+    // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.  
+    case 3:
+      {
+
+        // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+        FieldContainer<Scalar> tempPoints( refPoints.dimension(1), refPoints.dimension(2) );
+        
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(int cellOrd = 0; cellOrd < numCells; cellOrd++) {
+          
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+          for(int pt = 0; pt < refPoints.dimension(1); pt++){
+            for(int dm = 0; dm < refPoints.dimension(2) ; dm++){
+              tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
+            }//dm
+          }//pt
+          
+          // Compute basis values for this set of ref. points
+          HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+          
+          for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(int dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd        
+      }// case 3
+      break;
+      
+   
+  }
+}	
+/*
 template<class Scalar>
 template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
 void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
@@ -1250,12 +1870,15 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   // Temp (F,P) array for the values of nodal basis functions at the reference points
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
-  
+ 
+//#ifndef HAVE_INTREPID_KOKKOSCORE 
   // Initialize physPoints
   for(int i = 0; i < physPoints.size(); i++){
     physPoints[i] = 0.0;
   }
-  
+//#else
+//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
+//#endif
   // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
   switch(refPoints.rank()) {
     
@@ -1332,7 +1955,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   }
 }
 
-
+*/
 
 template<class Scalar>
 template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
@@ -1347,14 +1970,14 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
   int spaceDim  = (int)cellTopo.getDimension();
   int numPoints;
   int numCells;
-  
+
   // Define initial guesses to be  the Cell centers of the reference cell topology
   FieldContainer<Scalar> cellCenter(spaceDim);
   switch( cellTopo.getKey() ){
     // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
       cellCenter(0) = 0.0;    break;
-      
+
     case shards::Triangle<3>::key:
     case shards::Triangle<6>::key:    
       cellCenter(0) = 1./3.;    cellCenter(1) = 1./3.;  break;
@@ -1372,7 +1995,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
     case shards::Hexahedron<20>::key:
     case shards::Hexahedron<27>::key:
       cellCenter(0) = 0.0;      cellCenter(1) =  0.0;       cellCenter(2) =  0.0;   break;
-      
+
     case shards::Wedge<6>::key:
     case shards::Wedge<15>::key:
     case shards::Wedge<18>::key:
@@ -1381,13 +2004,13 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
     case shards::Pyramid<5>::key:
     case shards::Pyramid<13>::key:
       cellCenter(0) = 0.;       cellCenter(1) = 0.;         cellCenter(2) = 0.25;    break;
-      
+
       // These extended topologies are not used for mapping purposes
     case shards::Quadrilateral<8>::key:
       TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::mapToReferenceFrame): Cell topology not supported. ");
       break;
-      
+
       // Base and Extended Line, Beam and Shell topologies  
     case shards::Line<3>::key:
     case shards::Beam<2>::key:
@@ -1435,9 +2058,9 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
       }// d
     }// p
   }
-  
   // Call method with initial guess
   mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell);  
+
 }
   
   
@@ -1452,7 +2075,6 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
                                                      const int &                   whichCell)
 {
   INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
-
   int spaceDim  = (int)cellTopo.getDimension();
   int numPoints;
   int numCells=0;
@@ -1499,7 +2121,6 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
     }// p
   }
   
-  
   // Newton method to solve the equation F(refPoints) - physPoints = 0:
   // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
   for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter) {
@@ -1507,28 +2128,29 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
     // Jacobians at the old iterates and their inverses. 
     setJacobian(jacobian, xOld, cellWorkset, cellTopo, whichCell);
     setJacobianInv(jacobInv, jacobian);
-        
     // The Newton step.
     mapToPhysicalFrame( xTem, xOld, cellWorkset, cellTopo, whichCell );      // xTem <- F(xOld)
     RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
     RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
     RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
-    
+
     // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
     RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
-    
+
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
     double totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)
+
       RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
       totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
     }
     //Average L2 error for a single set of physical points: error is rank-1 (P) array
     else{
-      totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE );   
+
+      totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
       totalError = totalError;
     }
     
@@ -1541,7 +2163,7 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
                       << INTREPID_MAX_NEWTON  << " iterations\n" );
       break;
     }
-    
+
     // initialize next Newton step
     xOld = refPoints;
   } // for(iter)
@@ -1627,15 +2249,14 @@ void CellTools<Scalar>::getReferenceEdgeTangent(ArrayEdgeTangent &            re
 #ifdef HAVE_INTREPID_DEBUG
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < (int)parentCell.getSubcellCount(1) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( refEdgeTangent.size() == spaceDim ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
 #endif
-  
   // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
   // (subcOrd, coordinate, coefficient)
   const FieldContainer<double>& edgeMap = getSubcellParametrization(1, parentCell);
@@ -1663,19 +2284,19 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayFaceTangentU &           u
 #ifdef HAVE_INTREPID_DEBUG
   int spaceDim  = parentCell.getDimension();
   TEUCHOS_TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (uTan.rank() == 1)  && (vTan.rank() == 1) ), std::invalid_argument,  
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(uTan) == 1)  && (getrank(vTan) == 1) ), std::invalid_argument,  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( uTan.dimension(0) == spaceDim ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 
   TEUCHOS_TEST_FOR_EXCEPTION( !( vTan.dimension(0) == spaceDim ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
   
   // Face parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
@@ -1704,16 +2325,16 @@ void CellTools<Scalar>::getReferenceSideNormal(ArraySideNormal &             ref
                                                const int &                   sideOrd,
                                                const shards::CellTopology &  parentCell){
   int spaceDim  = parentCell.getDimension();
-#ifdef HAVE_INTREPID_DEBUG
+ 
+  #ifdef HAVE_INTREPID_DEBUG
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
+			      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
   
   // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= sideOrd) && (sideOrd < (int)parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
-#endif  
-  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
+#endif 
   if(spaceDim == 2){
     
     // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
@@ -1738,20 +2359,19 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayFaceNormal &             ref
                                                const int &                   faceOrd,
                                                const shards::CellTopology &  parentCell){
   int spaceDim  = parentCell.getDimension();
-  
-#ifdef HAVE_INTREPID_DEBUG
+  #ifdef HAVE_INTREPID_DEBUG
   
   TEUCHOS_TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
   
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !( refFaceNormal.rank() == 1 ), std::invalid_argument,  
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
+  TEUCHOS_TEST_FOR_EXCEPTION( !( getrank(refFaceNormal) == 1 ), std::invalid_argument,  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
     
   TEUCHOS_TEST_FOR_EXCEPTION( !( refFaceNormal.dimension(0) == spaceDim ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
+			      ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
 
   // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
@@ -1763,8 +2383,54 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayFaceNormal &             ref
   RealSpaceTools<Scalar>::vecprod(refFaceNormal, uTan, vTan);
 }
 
-
-
+template<class Scalar>
+template<class ArrayEdgeTangent, class ArrayJac>
+void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            edgeTangents,
+                                                const ArrayJac &              worksetJacobians,
+                                                const int &                   worksetEdgeOrd,
+                                                const shards::CellTopology &  parentCell){
+  int worksetSize = worksetJacobians.dimension(0);
+  int edgePtCount = worksetJacobians.dimension(1); 
+  int pCellDim    = parentCell.getDimension();
+  #ifdef HAVE_INTREPID_DEBUG
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::getPhysicalEdgeTangents):";
+  
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (pCellDim == 3) || (pCellDim == 2) ), std::invalid_argument, 
+			      ">>> ERROR (Intrepid::CellTools::getPhysicalEdgeTangents): 2D or 3D parent cell required");  
+  
+  // (1) edgeTangents is rank-3 (C,P,D) and D=2, or 3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, edgeTangents, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, edgeTangents, 2, 2,3), std::invalid_argument, errmsg);
+ 
+  // (2) worksetJacobians in rank-4 (C,P,D,D) and D=2, or 3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 2,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 2,3), std::invalid_argument, errmsg);
+  
+  // (4) cross-check array dimensions: edgeTangents (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, edgeTangents, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
+  
+#endif
+  
+  // Temp storage for constant reference edge tangent: rank-1 (D) arrays
+  FieldContainer<double> refEdgeTan(pCellDim);
+  getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
+  
+  // Loop over workset faces and edge points
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    for(int pt = 0; pt < edgePtCount; pt++){
+      
+      // Apply parent cell Jacobian to ref. edge tangent
+      for(int i = 0; i < pCellDim; i++){
+        edgeTangents(pCell, pt, i) = 0.0;
+        for(int j = 0; j < pCellDim; j++){
+          edgeTangents(pCell, pt, i) +=  worksetJacobians(pCell, pt, i, j)*refEdgeTan(j);
+        }// for j
+      }// for i
+    }// for pt
+  }// for pCell
+}
+/*
 template<class Scalar>
 template<class ArrayEdgeTangent, class ArrayJac>
 void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            edgeTangents,
@@ -1813,8 +2479,8 @@ void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            ed
     }// for pt
   }// for pCell
 }
-
-
+*/
+/*
 
 template<class Scalar>
 template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
@@ -1878,8 +2544,69 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayFaceTangentU &           fa
       }// for dim
     }// for pt
   }// for pCell
-}
+}*/
+template<class Scalar>
+template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
+void CellTools<Scalar>::getPhysicalFaceTangents(ArrayFaceTangentU &           faceTanU,
+                                                ArrayFaceTangentV &           faceTanV,
+                                                const ArrayJac &              worksetJacobians,
+                                                const int &                   worksetFaceOrd,
+                                                const shards::CellTopology &  parentCell){
+  int worksetSize = worksetJacobians.dimension(0);
+  int facePtCount = worksetJacobians.dimension(1); 
+  int pCellDim    = parentCell.getDimension();
+  #ifdef HAVE_INTREPID_DEBUG
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::getPhysicalFaceTangents):";
 
+  TEUCHOS_TEST_FOR_EXCEPTION( !(pCellDim == 3), std::invalid_argument, 
+			      ">>> ERROR (Intrepid::CellTools::getPhysicalFaceTangents): three-dimensional parent cell required");  
+  
+  // (1) faceTanU and faceTanV are rank-3 (C,P,D) and D=3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceTanU, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceTanU, 2, 3,3), std::invalid_argument, errmsg);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceTanV, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceTanV, 2, 3,3), std::invalid_argument, errmsg);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceTanU,  faceTanV), std::invalid_argument, errmsg);      
+
+  // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 3,3), std::invalid_argument, errmsg);
+
+  // (4) cross-check array dimensions: faceTanU (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceTanU, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
+
+#endif
+    
+  // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
+  FieldContainer<double> refFaceTanU(pCellDim);
+  FieldContainer<double> refFaceTanV(pCellDim);
+  getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
+
+  // Loop over workset faces and face points
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    for(int pt = 0; pt < facePtCount; pt++){
+      
+      // Apply parent cell Jacobian to ref. face tangents
+      for(int dim = 0; dim < pCellDim; dim++){
+        faceTanU(pCell, pt, dim) = 0.0;
+        faceTanV(pCell, pt, dim) = 0.0;
+        
+        // Unroll loops: parent cell dimension can only be 3
+        faceTanU(pCell, pt, dim) = \
+          worksetJacobians(pCell, pt, dim, 0)*refFaceTanU(0) + \
+          worksetJacobians(pCell, pt, dim, 1)*refFaceTanU(1) + \
+          worksetJacobians(pCell, pt, dim, 2)*refFaceTanU(2);
+        faceTanV(pCell, pt, dim) = \
+          worksetJacobians(pCell, pt, dim, 0)*refFaceTanV(0) + \
+          worksetJacobians(pCell, pt, dim, 1)*refFaceTanV(1) + \
+          worksetJacobians(pCell, pt, dim, 2)*refFaceTanV(2);
+      }// for dim
+    }// for pt
+  }// for pCell
+}
 
 template<class Scalar>
 template<class ArraySideNormal, class ArrayJac>
@@ -1890,14 +2617,13 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArraySideNormal &             sid
   int worksetSize = worksetJacobians.dimension(0);
   int sidePtCount = worksetJacobians.dimension(1);   
   int spaceDim  = parentCell.getDimension();
-  
-#ifdef HAVE_INTREPID_DEBUG
+   #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): two or three-dimensional parent cell required");
+			      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): two or three-dimensional parent cell required");
   
   // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
   TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= worksetSideOrd) && (worksetSideOrd < (int)parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
+			      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
   
   if(spaceDim == 2){
@@ -1921,7 +2647,7 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArraySideNormal &             sid
 }
   
   
-  
+  /*
 template<class Scalar>
 template<class ArrayFaceNormal, class ArrayJac>
 void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
@@ -1960,8 +2686,45 @@ void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             fac
   RealSpaceTools<Scalar>::vecprod(faceNormals, faceTanU, faceTanV);
   
   
+}*/
+template<class Scalar>
+template<class ArrayFaceNormal, class ArrayJac>
+void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
+                                               const ArrayJac &              worksetJacobians,
+                                               const int &                   worksetFaceOrd,
+                                               const shards::CellTopology &  parentCell){
+  int worksetSize = worksetJacobians.dimension(0);
+  int facePtCount = worksetJacobians.dimension(1); 
+  int pCellDim    = parentCell.getDimension();
+  #ifdef HAVE_INTREPID_DEBUG
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::getPhysicalFaceNormals):";
+  
+  TEUCHOS_TEST_FOR_EXCEPTION( !(pCellDim == 3), std::invalid_argument, 
+			      ">>> ERROR (Intrepid::CellTools::getPhysicalFaceNormals): three-dimensional parent cell required");  
+  
+  // (1) faceNormals is rank-3 (C,P,D) and D=3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceNormals, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceNormals, 2, 3,3), std::invalid_argument, errmsg);
+  
+  // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 3,3), std::invalid_argument, errmsg);
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 3,3), std::invalid_argument, errmsg);
+  
+  // (4) cross-check array dimensions: faceNormals (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceNormals, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);        
+#endif
+  
+  // Temp storage for physical face tangents: rank-3 (C,P,D) arrays
+  FieldContainer<Scalar> faceTanU(worksetSize, facePtCount, pCellDim);
+  FieldContainer<Scalar> faceTanV(worksetSize, facePtCount, pCellDim);
+  getPhysicalFaceTangents(faceTanU, faceTanV, worksetJacobians, worksetFaceOrd, parentCell);
+  
+  // Compute the vector product of the physical face tangents:
+  RealSpaceTools<Scalar>::vecprod(faceNormals, faceTanU, faceTanV);
+  
+  
 }
-
 //============================================================================================//
 //                                                                                            //
 //                                        Inclusion tests                                     //
@@ -2068,7 +2831,7 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
   int rank = points.rank();  
   
 #ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= points.rank() ) && (points.rank() <= 3) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <=getrank(points) ) && (getrank(points) <= 3) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::checkPointsetInclusion): rank-1, 2 or 3 required for input points array. ");
 
   // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
@@ -2112,26 +2875,26 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   
   // Verify that points and inRefCell have correct ranks and dimensions
   std::string errmsg = ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion):";
-  if(points.rank() == 1) {
-    TEUCHOS_TEST_FOR_EXCEPTION( !(inRefCell.rank() == 1 ), std::invalid_argument, 
+  if(getrank(points) == 1) {
+    TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(inRefCell) == 1 ), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1 input array requires rank-1 output array.");  
     TEUCHOS_TEST_FOR_EXCEPTION( !(inRefCell.dimension(0) == 1), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1 input array requires dim0 = 1 for output array.");  
   }
-  else if(points.rank() == 2){
-    TEUCHOS_TEST_FOR_EXCEPTION( !(inRefCell.rank() == 1 ), std::invalid_argument, 
+  else if(getrank(points) == 2){
+    TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(inRefCell) == 1 ), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-2 input array requires rank-1 output array.");  
     // dimension 0 of the arrays must match
     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch( errmsg, inRefCell, 0,  points, 0), std::invalid_argument, errmsg);
   }
-  else if (points.rank() == 3) {
-    TEUCHOS_TEST_FOR_EXCEPTION( !(inRefCell.rank() == 2 ), std::invalid_argument, 
+  else if (getrank(points) == 3) {
+    TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(inRefCell) == 2 ), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-3 input array requires rank-2 output array.");  
     // dimensions 0 and 1 of the arrays must match
     TEUCHOS_TEST_FOR_EXCEPTION( !requireDimensionMatch( errmsg, inRefCell, 0,1,  points, 0,1), std::invalid_argument, errmsg);
   }
   else{
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (points.rank() == 1) || (points.rank() == 2) || (points.rank() == 3) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 1) || (getrank(points) == 2) || (getrank(points) == 3) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1, 2 or 3 required for input points array. ");      
   }    
   
@@ -2159,7 +2922,7 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
       pointDim = points.dimension(2);
       break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= points.rank() ) && (points.rank() <= 3) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= getrank(points) ) && (getrank(points) <= 3) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1, 2 or 3 required for input points array. ");      
   }// switch
   
@@ -2225,12 +2988,12 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
       {
         FieldContainer<Scalar> refPoints;
         
-        if(points.rank() == 2){
+        if(getrank(points) == 2){
           refPoints.resize(points.dimension(0), points.dimension(1) );
           mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );
         }
-        else if(points.rank() == 3){
+        else if(getrank(points) == 3){
           refPoints.resize(points.dimension(0), points.dimension(1), points.dimension(2) );
           mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );          
@@ -2260,7 +3023,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &       
                                                       const shards::CellTopology & cellTopo){
   
   // Validate cellWorkset array
-  TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 3 required for cellWorkset array");
   
   TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
@@ -2279,7 +3042,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &       
   
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
   // If rank-2: admissible jacobians: rank-3 (P,D,D) or rank-4 (C,P,D,D); admissible whichCell: -1 (default) or cell ordinal.
-  if(points.rank() == 2) {
+  if(getrank(points) == 2) {
     TEUCHOS_TEST_FOR_EXCEPTION( (points.dimension(0) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of points) >= 1 required for points array ");
     
@@ -2288,7 +3051,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &       
     
     // Validate the output array for the Jacobian: if whichCell == -1 all Jacobians are computed, rank-4 (C,P,D,D) required
     if(whichCell == -1) {
-      TEUCHOS_TEST_FOR_EXCEPTION( (jacobian.rank() != 4), std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( (getrank(jacobian) != 4), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 4 required for jacobian array");
       
       TEUCHOS_TEST_FOR_EXCEPTION( (jacobian.dimension(0) != cellWorkset.dimension(0)), std::invalid_argument,
@@ -2308,7 +3071,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &       
     }     
     // A single cell Jacobian is computed when whichCell != -1 (whichCell has been already validated), rank-3 (P,D,D) required
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION( (jacobian.rank() != 3), std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( (getrank(jacobian) != 3), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 3 required for jacobian array");
       
       TEUCHOS_TEST_FOR_EXCEPTION( (jacobian.dimension(0) != points.dimension(0)), std::invalid_argument,
@@ -2358,7 +3121,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &       
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 2 and dim 3 (spatial dimensions) must be between 1 and 3. ");
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (points.rank() == 2) && (points.rank() ==3) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) ==3) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 2 or 3 required for points array");
   }  
 }
@@ -2372,7 +3135,7 @@ void CellTools<Scalar>::validateArguments_setJacobianInv(const ArrayJacInv & jac
 {
   // Validate input jacobian array: admissible ranks & dimensions are: 
   // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-  int jacobRank = jacobian.rank();
+  int jacobRank = getrank(jacobian);
   TEUCHOS_TEST_FOR_EXCEPTION( !( (jacobRank == 4) || (jacobRank == 3) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv): rank = 4 or 3 required for jacobian array. ");
   
@@ -2400,7 +3163,7 @@ void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayJacDet &
 {
   // Validate input jacobian array: admissible ranks & dimensions are: 
   // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-  int jacobRank = jacobian.rank();
+  int jacobRank = getrank(jacobian);
   TEUCHOS_TEST_FOR_EXCEPTION( !( (jacobRank == 4) || (jacobRank == 3) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv): rank = 4 or 3 required for jacobian array. ");
   
@@ -2414,7 +3177,7 @@ void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayJacDet &
   
   // Validate output jacobianDet array: must be rank-2 with dimensions (C,P) if jacobian was rank-4:
   if(jacobRank == 4){
-    TEUCHOS_TEST_FOR_EXCEPTION( !(jacobianDet.rank() == 2), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(jacobianDet) == 2), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianDetArgs): rank = 2 required for jacobianDet if jacobian is rank-4. ");
     
     TEUCHOS_TEST_FOR_EXCEPTION( !(jacobianDet.dimension(0) == jacobian.dimension(0) ), std::invalid_argument,
@@ -2426,7 +3189,7 @@ void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayJacDet &
   
   // must be rank-1 with dimension (P) if jacobian was rank-3
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( !(jacobianDet.rank() == 1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(jacobianDet) == 1), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianDetArgs): rank = 1 required for jacobianDet if jacobian is rank-3. ");
     
     TEUCHOS_TEST_FOR_EXCEPTION( !(jacobianDet.dimension(0) == jacobian.dimension(0) ), std::invalid_argument,
@@ -2447,7 +3210,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
   std::string errmsg = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame):";
   
   // Validate cellWorkset array
-  TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for cellWorkset array");
   
   TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
@@ -2466,7 +3229,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
   
   // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
   // If rank-2: admissible output array is (P,D) or (C,P,D); admissible whichCell: -1 (default) or cell ordinal
-  if(refPoints.rank() == 2) {
+  if(getrank(refPoints) == 2) {
     TEUCHOS_TEST_FOR_EXCEPTION( (refPoints.dimension(0) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of points) >= 1 required for refPoints array ");
     
@@ -2475,7 +3238,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
 
     // Validate output array: whichCell = -1 requires rank-3 array with dimensions (C,P,D)  
     if(whichCell == -1) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (physPoints.rank() != 3) && (whichCell == -1) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(physPoints) != 3) && (whichCell == -1) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for physPoints array for the default whichCell value");
       
       TEUCHOS_TEST_FOR_EXCEPTION( (physPoints.dimension(0) != cellWorkset.dimension(0)), std::invalid_argument,
@@ -2489,7 +3252,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
     }
     // 0 <= whichCell < num cells requires rank-2 (P,D) arrays for both refPoints and physPoints
     else{
-      TEUCHOS_TEST_FOR_EXCEPTION( (physPoints.rank() != 2), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (getrank(physPoints) != 2), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 2 required for physPoints array");
       
       TEUCHOS_TEST_FOR_EXCEPTION( (physPoints.dimension(0) != refPoints.dimension(0)), std::invalid_argument,
@@ -2500,7 +3263,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
     }
   }
   // refPoints is (C,P,D): requires physPoints to be (C,P,D) and whichCell=-1  (because all cell mappings are applied)
-  else if(refPoints.rank() == 3) {
+  else if(getrank(refPoints) == 3) {
     
     // 1. validate refPoints dimensions and rank
     TEUCHOS_TEST_FOR_EXCEPTION( (refPoints.dimension(0) != cellWorkset.dimension(0) ), std::invalid_argument,
@@ -2522,7 +3285,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoin
   }
   // if rank is not 2 or 3 throw exception
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (refPoints.rank() == 2) || (refPoints.rank() == 3) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(refPoints) == 2) || (getrank(refPoints) == 3) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 2 or 3 required for refPoints array");
   }
 }
@@ -2541,7 +3304,7 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayRefPoin
   std::string errmsg1 = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame):";
   
   // Validate cellWorkset array
-  TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): rank = 3 required for cellWorkset array");
   
   TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
@@ -2603,7 +3366,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
                                                                   const shards::CellTopology &  cell)
 {
   // Validate cellWorkset array
-  TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 3 required for cellWorkset array");
   
   TEUCHOS_TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
@@ -2623,7 +3386,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
   
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
   // If rank-2: admissible inCell is rank-1 (P); admissible whichCell is valid cell ordinal but not -1.
-  if(physPoints.rank() == 2) {
+  if(getrank(physPoints) == 2) {
     
     TEUCHOS_TEST_FOR_EXCEPTION( (whichCell == -1), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = a valid cell ordinal is required with rank-2 input array.");
@@ -2635,14 +3398,14 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (spatial dimension) of physPoints array does not match cell dimension");
     
     // Validate inCell
-    TEUCHOS_TEST_FOR_EXCEPTION( (inCell.rank() != 1), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inCell) != 1), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 1 required for inCell array");
     
     TEUCHOS_TEST_FOR_EXCEPTION( (inCell.dimension(0) != physPoints.dimension(0)), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of points) of inCell array must equal dim 0 of physPoints array");
   }
   // If rank-3: admissible inCell is rank-2 (C,P); admissible whichCell = -1.
-  else if (physPoints.rank() == 3){
+  else if (getrank(physPoints) == 3){
     
     TEUCHOS_TEST_FOR_EXCEPTION( !(whichCell == -1), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 is required with rank-3 input array.");
@@ -2657,7 +3420,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 2 (spatial dimension) of physPoints array does not match cell dimension");
     
     // Validate inCell
-    TEUCHOS_TEST_FOR_EXCEPTION( (inCell.rank() != 2), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inCell) != 2), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 2 required for inCell array");
     
     TEUCHOS_TEST_FOR_EXCEPTION( (inCell.dimension(0) != physPoints.dimension(0)), std::invalid_argument,
@@ -2667,7 +3430,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of points) of inCell array must equal dim 1 of physPoints array");    
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (physPoints.rank() == 2) && (physPoints.rank() ==3) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(physPoints) == 2) && (getrank(physPoints) ==3) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 2 or 3 required for points array");
   }
 }

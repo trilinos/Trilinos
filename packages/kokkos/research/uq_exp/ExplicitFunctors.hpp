@@ -93,32 +93,32 @@ struct Fields {
   static const unsigned K_V_ZX = 2 ;
   static const unsigned K_V_SIZE = 3 ;
 
-  typedef Device  device_type ;
+  typedef Device  execution_space ;
 
   typedef double ScalarPrecise ;
   typedef float  ScalarCompact ;
 
-  typedef HybridFEM::FEMesh<double,ElemNodeCount,device_type>  FEMesh ;
+  typedef HybridFEM::FEMesh<double,ElemNodeCount,execution_space>  FEMesh ;
 
   typedef typename FEMesh::node_coords_type      node_coords_type ;
   typedef typename FEMesh::elem_node_ids_type    elem_node_ids_type ;
   typedef typename FEMesh::node_elem_ids_type    node_elem_ids_type ;
   typedef typename Kokkos::ParallelDataMap  parallel_data_map ;
 
-  typedef Kokkos::View< ScalarPrecise ** [ SpatialDim ] , device_type > spatial_precise_view ;
-  typedef Kokkos::View< ScalarCompact  ** [ SpatialDim ] , device_type > spatial_compact_view ;
+  typedef Kokkos::View< ScalarPrecise ** [ SpatialDim ] , execution_space > spatial_precise_view ;
+  typedef Kokkos::View< ScalarCompact  ** [ SpatialDim ] , execution_space > spatial_compact_view ;
 
 
-  typedef Kokkos::View< Scalar*                , device_type >  scalar_view ;
-  typedef Kokkos::View< Scalar**               , device_type >  array_view ;
-  typedef Kokkos::View< Scalar**[ K_F_SIZE ]   , device_type >  tensor_array_view ;
-  typedef Kokkos::View< Scalar**[ K_S_SIZE ]   , device_type >  sym_tensor_array_view ;
+  typedef Kokkos::View< Scalar*                , execution_space >  scalar_view ;
+  typedef Kokkos::View< Scalar**               , execution_space >  array_view ;
+  typedef Kokkos::View< Scalar**[ K_F_SIZE ]   , execution_space >  tensor_array_view ;
+  typedef Kokkos::View< Scalar**[ K_S_SIZE ]   , execution_space >  sym_tensor_array_view ;
 
-  typedef Kokkos::View< ScalarCompact**[ SpatialDim ][ ElemNodeCount ] , device_type >
+  typedef Kokkos::View< ScalarCompact**[ SpatialDim ][ ElemNodeCount ] , execution_space >
     elem_node_spatial_view ;
 
-  typedef Kokkos::View< Scalar ,   device_type > value_view ;
-  typedef Kokkos::View< Scalar* , device_type > property_view ;
+  typedef Kokkos::View< Scalar ,   execution_space > value_view ;
+  typedef Kokkos::View< Scalar* , execution_space > property_view ;
 
   // Parameters:
   const unsigned num_nodes ;
@@ -298,7 +298,7 @@ void unpack_state( const Fields< FieldsScalar , Device >  & arg_fields ,
 template< class Fields >
 struct InitializeElement
 {
-  typedef typename Fields::device_type     device_type ;
+  typedef typename Fields::execution_space     execution_space ;
 
   const typename Fields::elem_node_ids_type     elem_node_connectivity ;
   const typename Fields::node_coords_type       model_coords ;
@@ -382,9 +382,9 @@ struct InitializeElement
 template<typename Scalar, class DeviceType >
 struct InitializeNode< Explicit::Fields< Scalar, DeviceType > >
 {
-  typedef DeviceType     device_type ;
+  typedef DeviceType     execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type > Fields ;
+  typedef Explicit::Fields< Scalar , execution_space > Fields ;
 
   typename Fields::node_elem_ids_type      node_elem_connectivity ;
   typename Fields::property_view           nodal_mass ;
@@ -423,9 +423,9 @@ struct InitializeNode< Explicit::Fields< Scalar, DeviceType > >
 template< typename Scalar , class DeviceType >
 struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const unsigned ElemNodeCount = Fields::ElemNodeCount ;
   static const unsigned K_F_SIZE      = Fields::K_F_SIZE ;
@@ -556,9 +556,9 @@ struct GradFunctor< Explicit::Fields< Scalar , DeviceType > >
 template< typename Scalar , class DeviceType >
 struct DecompRotateFunctor< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const unsigned K_F_SIZE = Fields::K_F_SIZE ;
   static const unsigned K_S_SIZE = Fields::K_S_SIZE ;
@@ -622,9 +622,9 @@ struct DecompRotateFunctor< Explicit::Fields< Scalar , DeviceType > >
 template< typename Scalar , class DeviceType >
 struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const unsigned ElemNodeCount = Fields::ElemNodeCount ;
   static const unsigned SpatialDim    = Fields::SpatialDim ;
@@ -826,8 +826,8 @@ struct InternalForceFunctor< Explicit::Fields< Scalar , DeviceType > >
 template< typename Scalar , class DeviceType >
 struct NodalBoundary< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType device_type ;
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef DeviceType execution_space ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   const typename Fields::node_coords_type  model_coords ;
   const Scalar x_bc ;
@@ -860,10 +860,10 @@ struct NodalBoundary< Explicit::Fields< Scalar , DeviceType > >
 template< typename Scalar , class Boundary , class DeviceType >
 struct NodalUpdateFunctor< Fields< Scalar , DeviceType > , Boundary >
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   const Boundary                              boundary ;
   const typename Fields::node_elem_ids_type   node_elem_connectivity ;
@@ -979,13 +979,13 @@ struct NodalUpdateFunctor< Fields< Scalar , DeviceType > , Boundary >
 template< typename Scalar , class DeviceType >
 struct PackState< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   typedef typename Fields::spatial_precise_view::scalar_type    value_type ;
-  typedef Kokkos::View< value_type*, device_type >  buffer_type ;
+  typedef Kokkos::View< value_type*, execution_space >  buffer_type ;
 
   static const unsigned value_count = 6 ;
 
@@ -1029,13 +1029,13 @@ struct PackState< Explicit::Fields< Scalar , DeviceType > >
 template< typename Scalar , class DeviceType >
 struct UnpackState< Explicit::Fields< Scalar , DeviceType > >
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   typedef typename Fields::spatial_precise_view::scalar_type     value_type ;
-  typedef Kokkos::View< value_type* , device_type >  buffer_type ;
+  typedef Kokkos::View< value_type* , execution_space >  buffer_type ;
 
   static const unsigned value_count = 6 ;
 

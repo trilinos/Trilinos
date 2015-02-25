@@ -46,7 +46,9 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include<Kokkos_Core.hpp>
+#endif
 #include "Intrepid_MiniTensor_TensorBase.h"
 
 namespace Intrepid {
@@ -61,7 +63,7 @@ struct vector_store
 /// Vector class.
 ///
 template<typename T, Index N = DYNAMIC>
-class Vector : public TensorBase<T, typename vector_store<T, N>::type>
+class Vector: public TensorBase<T, typename vector_store<T, N>::type>
 {
 public:
 
@@ -90,7 +92,10 @@ public:
   ///
   static
   Index
-  get_order() {return ORDER;}
+  get_order()
+  {
+    return ORDER;
+  }
 
   ///
   /// Construction that initializes to NaNs
@@ -118,6 +123,104 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  template<class ArrayT, typename iType>
+  Vector(
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  Vector(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  Vector(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+  #endif
+
   Vector(T const * data_ptr);
 
   Vector(Index const dimension, T const * data_ptr);
@@ -228,7 +331,7 @@ operator!=(Vector<T, N> const & u, Vector<T, N> const & v);
 /// \return \f$ s u \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
 operator*(S const & s, Vector<T, N> const & u);
 
 ///
@@ -238,7 +341,7 @@ operator*(S const & s, Vector<T, N> const & u);
 /// \return \f$ s u \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
 operator*(Vector<T, N> const & u, S const & s);
 
 ///

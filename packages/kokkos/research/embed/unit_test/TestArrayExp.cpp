@@ -280,10 +280,10 @@ int testdyn< TEST_KOKKOS_SPACE >()
 template< class ValueType , class DeviceType >
 struct TestFunctor
 {
-  typedef DeviceType                       device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType                       execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef Kokkos::View< ValueType * , device_type > vector_type ;
+  typedef Kokkos::View< ValueType * , execution_space > vector_type ;
 
   const vector_type x , y , z ;
   const ValueType   a , b ;
@@ -309,7 +309,7 @@ template<>
 int test_functor< TEST_KOKKOS_SPACE >()
 {
   typedef TestDevice< TEST_KOKKOS_SPACE > TestD ;
-  typedef TestD::type device_type ;
+  typedef TestD::type execution_space ;
 
   if ( ! TestD::value ) return 0 ;
   
@@ -317,7 +317,7 @@ int test_functor< TEST_KOKKOS_SPACE >()
 
   typedef Kokkos::Array<double,Count> value_type ;
 
-  typedef TestFunctor<value_type,device_type> functor_type ;
+  typedef TestFunctor<value_type,execution_space> functor_type ;
 
   TestD device ;
 
@@ -383,12 +383,12 @@ double dot( const Kokkos::Array< ScalarType , N , ProxyX > & x ,
 template< class ScalarType , class DeviceType >
 struct TestDot
 {
-  typedef DeviceType                       device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType                       execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   typedef double value_type ;
 
-  typedef Kokkos::View< ScalarType * , device_type > vector_type ;
+  typedef Kokkos::View< ScalarType * , execution_space > vector_type ;
 
   const vector_type x , y ;
 
@@ -417,7 +417,7 @@ template<>
 int test_inner_product< TEST_KOKKOS_SPACE >()
 {
   typedef TestDevice< TEST_KOKKOS_SPACE > TestD ;
-  typedef TestD::type device_type ;
+  typedef TestD::type execution_space ;
 
   if ( ! TestD::value ) return 0 ;
 
@@ -427,7 +427,7 @@ int test_inner_product< TEST_KOKKOS_SPACE >()
 
   typedef Kokkos::Array<double,Count> value_type ;
 
-  typedef TestDot< value_type , device_type > functor_type ;
+  typedef TestDot< value_type , execution_space > functor_type ;
 
   const unsigned N = 1000 ;
 

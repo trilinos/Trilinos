@@ -534,6 +534,144 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   }
 }
 
+TEST(BulkData, inducedPartsOnFacesWorks)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(comm, &numProcs);
+
+    if(numProcs == 2)
+    {
+        const int spatial_dimension = 3;
+        MetaData meta(spatial_dimension);
+        //Part& node_part = meta.declare_part("node_part", stk::topology::NODE_RANK);
+        Part& face_part = meta.declare_part_with_topology("quad", stk::topology::QUAD_4);
+        Part& messyPart = meta.declare_part_with_topology("messyPart", stk::topology::QUAD_4);
+        meta.commit();
+
+        BulkData bulkData(meta, comm);
+        bulkData.modification_begin();
+        if (bulkData.parallel_rank() == 0)
+        {
+            stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
+            bulkData.add_node_sharing(node1, 1);
+        }
+        else
+        {
+            stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity node2 = bulkData.declare_entity(stk::topology::NODE_RANK, 2);
+            stk::mesh::Entity node3 = bulkData.declare_entity(stk::topology::NODE_RANK, 3);
+            stk::mesh::Entity node4 = bulkData.declare_entity(stk::topology::NODE_RANK, 4);
+            stk::mesh::Entity face = bulkData.declare_entity(stk::topology::FACE_RANK, 1, face_part);
+            bulkData.declare_relation(face, node1, 0);
+            bulkData.declare_relation(face, node2, 1);
+            bulkData.declare_relation(face, node3, 2);
+            bulkData.declare_relation(face, node4, 3);
+            bulkData.add_node_sharing(node1, 0);
+        }
+
+        bulkData.modification_end();
+
+        stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1);
+        EXPECT_TRUE(bulkData.bucket(node1).shared());
+
+        bulkData.modification_begin();
+
+        if ( bulkData.parallel_rank() == 1 )
+        {
+            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
+            stk::mesh::PartVector addParts;
+            addParts.push_back(&messyPart);
+            bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
+        }
+
+        bulkData.modification_end();
+
+        EXPECT_TRUE(bulkData.bucket(node1).member(messyPart));
+
+        bulkData.modification_begin();
+
+        if ( bulkData.parallel_rank() == 1 )
+        {
+            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
+            stk::mesh::PartVector rmParts;
+            rmParts.push_back(&messyPart);
+            bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
+        }
+
+        bulkData.modification_end();
+
+        EXPECT_TRUE(!bulkData.bucket(node1).member(messyPart));
+    }
+}
+
+TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(comm, &numProcs);
+
+    if(numProcs == 2)
+    {
+        const int spatial_dimension = 3;
+        MetaData meta(spatial_dimension);
+        Part& face_part = meta.declare_part_with_topology("quad", stk::topology::QUAD_4);
+        Part& messyPart = meta.declare_part_with_topology("messyPart", stk::topology::QUAD_4);
+        meta.commit();
+
+        BulkData bulkData(meta, comm);
+        bulkData.modification_begin();
+        if (bulkData.parallel_rank() == 0)
+        {
+            stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
+            bulkData.add_node_sharing(node1, 1);
+        }
+        else
+        {
+            stk::mesh::Entity node1 = bulkData.declare_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity node2 = bulkData.declare_entity(stk::topology::NODE_RANK, 2);
+            stk::mesh::Entity node3 = bulkData.declare_entity(stk::topology::NODE_RANK, 3);
+            stk::mesh::Entity node4 = bulkData.declare_entity(stk::topology::NODE_RANK, 4);
+            stk::mesh::Entity face = bulkData.declare_entity(stk::topology::FACE_RANK, 1, face_part);
+            bulkData.declare_relation(face, node1, 0);
+            bulkData.declare_relation(face, node2, 1);
+            bulkData.declare_relation(face, node3, 2);
+            bulkData.declare_relation(face, node4, 3);
+            bulkData.add_node_sharing(node1, 0);
+        }
+
+        bulkData.modification_end();
+
+        stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1);
+        EXPECT_TRUE(bulkData.bucket(node1).shared());
+
+        bulkData.modification_begin();
+
+        if ( bulkData.parallel_rank() == 1 )
+        {
+            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
+            stk::mesh::PartVector addParts;
+            addParts.push_back(&messyPart);
+            bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
+        }
+
+        if ( bulkData.parallel_rank() == 1 )
+        {
+            stk::mesh::Entity face = bulkData.get_entity(stk::topology::FACE_RANK, 1);
+            stk::mesh::PartVector rmParts;
+            rmParts.push_back(&messyPart);
+            bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
+        }
+
+#ifdef NDEBUG
+        EXPECT_NO_THROW(bulkData.modification_end());
+#else
+        EXPECT_THROW(bulkData.modification_end(), std::runtime_error);
+#endif
+
+        // EXPECT_TRUE(!bulkData.bucket(node1).member(messyPart));
+    }
+}
 
 //----------------------------------------------------------------------
 TEST(BulkData, testBulkDataRankBeginEnd)

@@ -114,11 +114,7 @@ public:
 
   /// \typedef t_host
   /// \brief The type of a Kokkos::View host mirror of \c t_dev.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-  typedef t_dev t_host;
-#else
   typedef typename t_dev::HostMirror t_host ;
-#endif
 
   //! The type of a const View on the device.
   //! The type of a Kokkos::View on the device.
@@ -129,11 +125,7 @@ public:
 
   /// \typedef t_host_const
   /// \brief The type of a const View host mirror of \c t_dev_const.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-  typedef t_dev_const t_host_const;
-#else
   typedef typename t_dev_const::HostMirror t_host_const;
-#endif
 
   //! The type of a const, random-access View on the device.
   typedef View< typename traits::const_data_type ,
@@ -144,11 +136,7 @@ public:
   /// \typedef t_host_const_randomread
   /// \brief The type of a const, random-access View host mirror of
   ///   \c t_dev_const_randomread.
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-  typedef t_dev_const_randomread t_host_const_randomread;
-#else
   typedef typename t_dev_const_randomread::HostMirror t_host_const_randomread;
-#endif
 
   //! The type of an unmanaged View on the device.
   typedef View< typename traits::data_type ,
@@ -185,8 +173,8 @@ public:
   //! \name Counters to keep track of changes ("modified" flags)
   //@{
 
-  View<unsigned int,LayoutLeft,host_mirror_space> modified_device;
-  View<unsigned int,LayoutLeft,host_mirror_space> modified_host;
+  View<unsigned int,LayoutLeft,typename t_host::execution_space> modified_device;
+  View<unsigned int,LayoutLeft,typename t_host::execution_space> modified_host;
 
   //@}
   //! \name Constructors
@@ -198,8 +186,8 @@ public:
   /// default constructors.  The "modified" flags are both initialized
   /// to "unmodified."
   DualView () :
-    modified_device (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_device")),
-    modified_host (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_host"))
+    modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {}
 
   /// \brief Constructor that allocates View objects on both host and device.
@@ -221,13 +209,9 @@ public:
             const size_t n6 = 0,
             const size_t n7 = 0)
     : d_view (label, n0, n1, n2, n3, n4, n5, n6, n7)
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-    , h_view (d_view) // with UVM, host View is _always_ a shallow copy
-#else
     , h_view (create_mirror_view (d_view)) // without UVM, host View mirrors
-#endif
-    , modified_device (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_device"))
-    , modified_host (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_host"))
+    , modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device"))
+    , modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {}
 
   //! Copy constructor (shallow copy)
@@ -252,8 +236,8 @@ public:
   DualView (const t_dev& d_view_, const t_host& h_view_) :
     d_view (d_view_),
     h_view (h_view_),
-    modified_device (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_device")),
-    modified_host (View<unsigned int,LayoutLeft,host_mirror_space> ("DualView::modified_host"))
+    modified_device (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,typename t_host::execution_space> ("DualView::modified_host"))
   {
     Impl::assert_shapes_are_equal (d_view.shape (), h_view.shape ());
   }
@@ -341,6 +325,10 @@ public:
         modified_host() = modified_device() = 0;
       }
     }
+    if(Impl::is_same<typename t_host::memory_space,typename t_dev::memory_space>::value) {
+      t_dev::execution_space::fence();
+      t_host::execution_space::fence();
+    }
   }
 
   template<class Device>
@@ -410,11 +398,8 @@ public:
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
     ::Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-     h_view = d_view ;
-#else
      h_view = create_mirror_view( d_view );
-#endif
+
      /* Reset dirty flags */
      modified_device() = modified_host() = 0;
   }
@@ -434,11 +419,7 @@ public:
    if(modified_device() >= modified_host()) {
      /* Resize on Device */
      ::Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-     h_view = d_view ;
-#else
      h_view = create_mirror_view( d_view );
-#endif
 
      /* Mark Device copy as modified */
      modified_device() = modified_device()+1;
@@ -447,11 +428,7 @@ public:
      /* Realloc on Device */
 
      ::Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
-#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM)
-     t_host temp_view = d_view ;
-#else
      t_host temp_view = create_mirror_view( d_view );
-#endif
 
      /* Remap on Host */
      Impl::ViewRemap< t_host , t_host >( temp_view , h_view );

@@ -725,28 +725,41 @@ getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,Glo
 
   TEUCHOS_ASSERT(indexer!=Teuchos::null);
 
-  // standard version
-  {
-    RCP<DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManager<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+  return indexer->getElementBlockGIDCount(elementBlock);
+}
 
-    if(dofManager!=Teuchos::null) 
-      return dofManager->getElementBlockGIDCount(elementBlock);
-  }
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::size_t & elementBlock) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
 
-#ifdef PANZER_HAVE_FEI
-  // now the FEI version
-  {
-    RCP<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> > dofManager = rcp_dynamic_cast<DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT> >(indexer);
+  TEUCHOS_ASSERT(indexer!=Teuchos::null);
 
-    if(dofManager!=Teuchos::null)
-      return dofManager->getElementBlockGIDCount(elementBlock);
-  }
-#endif
+  return indexer->getElementBlockGIDCount(elementBlock);
+}
 
-  // you should never get here!
-  TEUCHOS_ASSERT(false);
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::string & elementBlock) const
+{
+  int gidCount = 0;
+  for(std::size_t i=0;i<fieldBlockManagers_.size();i++)
+    gidCount += fieldBlockManagers_[i]->getElementBlockGIDCount(elementBlock);
+ 
+  return gidCount;
+}
 
-  return -1;
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::size_t & elementBlock) const
+{
+  int gidCount = 0;
+  for(std::size_t i=0;i<fieldBlockManagers_.size();i++)
+    gidCount += fieldBlockManagers_[i]->getElementBlockGIDCount(elementBlock);
+ 
+  return gidCount;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

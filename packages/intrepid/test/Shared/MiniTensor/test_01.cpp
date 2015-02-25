@@ -43,7 +43,11 @@
 #include <vector>
 
 #include "Intrepid_FieldContainer.hpp"
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+#include "Sacado_No_Kokkos.hpp"
+#endif
 #include "Intrepid_MiniTensor.h"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
@@ -145,6 +149,57 @@ test_fundamentals(Index const dimension)
   bool const
   decremented = error <= machine_epsilon<Scalar>();
   passed = passed && decremented;
+
+ 
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  //test Tensor fill and create for Kokkos data types
+  Kokkos::View<Scalar*, Kokkos::Serial> X1_k ("X1_kokkos",dimension);
+  Kokkos::View<Scalar**, Kokkos::Serial> X2_k ("X2_kokkos",dimension,dimension);
+  Kokkos::View<Scalar***, Kokkos::Serial> X3_k ("X3_kokkos",dimension,dimension,dimension);
+  Kokkos::View<Scalar****, Kokkos::Serial> X4_k ("X4_kokkos",dimension,dimension, dimension, dimension);
+
+  Kokkos::deep_copy(X1_k, 3.1);
+  Kokkos::deep_copy(X2_k, 3.2);
+  Kokkos::deep_copy(X3_k, 3.3);
+  Kokkos::deep_copy(X4_k, 3.4);
+
+  Tensor  A1_k(dimension); //(X1_k,0);
+
+ // Index const  number_components = A1_k.get_number_components();
+  Index rank=0;
+  Index temp=number_components;
+
+  while (temp!=1){
+   temp =temp/dimension;
+   rank=rank +1;
+   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
+                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  }
+
+  if (rank==1)
+   A1_k.fill(X1_k,0);
+
+  if (rank==2)
+   A1_k.fill(X2_k,0,0);
+ 
+  if (rank==3)
+   A1_k.fill(X3_k,0,0,0);
+
+  if (rank==4)
+   A1_k.fill(X4_k,0,0,0,0);
+
+  Tensor B1_k=A1_k;
+
+  Tensor C1_k;
+  C1_k = B1_k - A1_k;
+
+  error = norm_f(C1_k);
+
+  bool const
+  tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
+  passed = passed && tensor_create_from_1d_kokkos;
+#endif 
+
 
   return passed;
 }

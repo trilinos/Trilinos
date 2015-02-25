@@ -57,10 +57,10 @@ class Multiply<
   Kokkos::View< VectorValue[] , Threads > >
 {
 public:
-  typedef Threads                                      device_type ;
-  typedef device_type::size_type                    size_type ;
-  typedef View< VectorValue[] , device_type >  vector_type ;
-  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+  typedef Threads                                      execution_space ;
+  typedef execution_space::size_type                    size_type ;
+  typedef View< VectorValue[] , execution_space >  vector_type ;
+  typedef CrsMatrix< MatrixValue , execution_space >    matrix_type ;
 
   const matrix_type  m_A ;
   const vector_type  m_x ;
@@ -107,10 +107,10 @@ class MMultiply<
   Kokkos::View< VectorValue** , LayoutLeft, Threads > >
 {
 public:
-  typedef Threads                                             device_type ;
-  typedef device_type::size_type                           size_type ;
-  typedef View< VectorValue** , LayoutLeft, device_type >  multi_vector_type ;
-  typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
+  typedef Threads                                             execution_space ;
+  typedef execution_space::size_type                           size_type ;
+  typedef View< VectorValue** , LayoutLeft, execution_space >  multi_vector_type ;
+  typedef CrsMatrix< MatrixValue , execution_space >           matrix_type ;
   typedef VectorValue                                      value_type ;
   typedef int                                              Ordinal ;
 
@@ -190,10 +190,10 @@ class MMultiply<
   Kokkos::View< VectorValue[] , Threads > >
 {
 public:
-  typedef Threads                                             device_type ;
-  typedef device_type::size_type                           size_type ;
-  typedef View< VectorValue[] , device_type >              vector_type ;
-  typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
+  typedef Threads                                             execution_space ;
+  typedef execution_space::size_type                           size_type ;
+  typedef View< VectorValue[] , execution_space >              vector_type ;
+  typedef CrsMatrix< MatrixValue , execution_space >           matrix_type ;
   typedef VectorValue                                      value_type ;
 
   const matrix_type  m_A ;
@@ -246,9 +246,9 @@ template< typename MatrixValue>
 class MatrixMarketWriter<MatrixValue,Threads>
 {
 public:
-  typedef Threads                                      device_type ;
-  typedef device_type::size_type                    size_type ;
-  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+  typedef Threads                                      execution_space ;
+  typedef execution_space::size_type                    size_type ;
+  typedef CrsMatrix< MatrixValue , execution_space >    matrix_type ;
 
   static void write(const matrix_type & A ,
 		    const std::string& filename) {

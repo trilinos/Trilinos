@@ -171,7 +171,7 @@ buildInverseMassMatrix() const
   // request only the mass matrix from the physics
   // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
   MEB::InArgs<Scalar>  inArgs  = me->createInArgs();
-  inArgs.set_x(createMember(me->get_x_space()));
+  inArgs.set_x(zero_);
   inArgs.set_x_dot(zero_);
   inArgs.set_alpha(-1.0);
   inArgs.set_beta(0.0);

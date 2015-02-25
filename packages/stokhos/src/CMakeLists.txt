@@ -559,8 +559,10 @@ IF (Stokhos_ENABLE_Sacado)
   IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
-    SET(TPETRA_HEADERS "")
-    SET(TPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
+    SET(TPETRA_HEADERS
+      sacado/kokkos/Stokhos_Tpetra_Utilities.hpp)
+    SET(TPETRA_CPP_SOURCES
+      Stokhos_Dummy.cpp)
     APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
     APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
     IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)

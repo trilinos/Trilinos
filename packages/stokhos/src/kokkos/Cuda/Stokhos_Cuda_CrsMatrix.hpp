@@ -42,6 +42,9 @@
 #ifndef STOKHOS_CUDA_CRSMATRIX_HPP
 #define STOKHOS_CUDA_CRSMATRIX_HPP
 
+#include "Stokhos_ConfigDefs.h"
+#ifdef HAVE_STOKHOS_CUSPARSE
+
 #include <utility>
 #include <sstream>
 #include <stdexcept>
@@ -104,10 +107,10 @@ class Multiply<
   IntegralRank<1> >
 {
 public:
-  typedef Kokkos::Cuda                        device_type ;
-  typedef device_type::size_type              size_type ;
-  typedef Kokkos::View< float* , device_type >  vector_type ;
-  typedef CrsMatrix< float , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                        execution_space ;
+  typedef execution_space::size_type              size_type ;
+  typedef Kokkos::View< float* , execution_space >  vector_type ;
+  typedef CrsMatrix< float , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -148,10 +151,10 @@ class Multiply<
   IntegralRank<1> >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef Kokkos::View< double* , device_type >  vector_type ;
-  typedef CrsMatrix< double , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef Kokkos::View< double* , execution_space >  vector_type ;
+  typedef CrsMatrix< double , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -192,11 +195,11 @@ class Multiply<
   IntegralRank<2> >
 {
 public:
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
-  typedef Kokkos::View< float*, Kokkos::LayoutLeft, device_type > vector_type;
-  typedef Kokkos::View< float**, Kokkos::LayoutLeft, device_type > multi_vector_type;
-  typedef CrsMatrix< float , device_type > matrix_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
+  typedef Kokkos::View< float*, Kokkos::LayoutLeft, execution_space > vector_type;
+  typedef Kokkos::View< float**, Kokkos::LayoutLeft, execution_space > multi_vector_type;
+  typedef CrsMatrix< float , execution_space > matrix_type;
 
   //--------------------------------------------------------------------------
 
@@ -266,11 +269,11 @@ class Multiply<
   IntegralRank<2> >
 {
 public:
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
-  typedef Kokkos::View< double*, Kokkos::LayoutLeft, device_type > vector_type;
-  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
-  typedef CrsMatrix< double , device_type > matrix_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
+  typedef Kokkos::View< double*, Kokkos::LayoutLeft, execution_space > vector_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, execution_space > multi_vector_type;
+  typedef CrsMatrix< double , execution_space > matrix_type;
 
   //--------------------------------------------------------------------------
 
@@ -282,17 +285,17 @@ public:
   // slower????
 
   struct GatherTranspose {
-    typedef Kokkos::Cuda device_type;
-    typedef device_type::size_type size_type;
+    typedef Kokkos::Cuda execution_space;
+    typedef execution_space::size_type size_type;
 
     multi_vector_type m_xt;
     const multi_vector_type m_x;
-    const Kokkos::View<Ordinal*,device_type> m_col;
+    const Kokkos::View<Ordinal*,execution_space> m_col;
     const size_type m_ncol;
 
     GatherTranspose( multi_vector_type& xt,
                      const multi_vector_type& x,
-                     const Kokkos::View<Ordinal*,device_type>& col ) :
+                     const Kokkos::View<Ordinal*,execution_space>& col ) :
       m_xt(xt), m_x(x), m_col(col), m_ncol(col.dimension_0()) {}
 
     __device__
@@ -303,7 +306,7 @@ public:
 
     static void apply( multi_vector_type& xt,
                        const multi_vector_type& x,
-                       const Kokkos::View<Ordinal*,device_type>& col ) {
+                       const Kokkos::View<Ordinal*,execution_space>& col ) {
       const size_type n = x.dimension_0();
       Kokkos::parallel_for( n , GatherTranspose(xt,x,col) );
     }
@@ -321,9 +324,9 @@ public:
     const size_t ncol = col_indices.size();
 
     // Copy col_indices to the device
-    Kokkos::View<Ordinal*,device_type> col_indices_dev(
+    Kokkos::View<Ordinal*,execution_space> col_indices_dev(
       Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
-    typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
+    typename Kokkos::View<Ordinal*,execution_space>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
       col_indices_host(i) = col_indices[i];
@@ -433,10 +436,10 @@ class Multiply<
   IntegralRank<2> >
 {
 public:
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
-  typedef Kokkos::View< float**, Kokkos::LayoutLeft, device_type > multi_vector_type;
-  typedef CrsMatrix< float , device_type > matrix_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
+  typedef Kokkos::View< float**, Kokkos::LayoutLeft, execution_space > multi_vector_type;
+  typedef CrsMatrix< float , execution_space > matrix_type;
 
   //--------------------------------------------------------------------------
 
@@ -481,10 +484,10 @@ class Multiply<
   IntegralRank<2> >
 {
 public:
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
-  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
-  typedef CrsMatrix< double , device_type > matrix_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, execution_space > multi_vector_type;
+  typedef CrsMatrix< double , execution_space > matrix_type;
 
   //--------------------------------------------------------------------------
 
@@ -532,12 +535,12 @@ class Multiply<
   IntegralRank<2> >
 {
 public:
-  typedef Kokkos::Cuda device_type;
-  typedef device_type::size_type size_type;
-  typedef Kokkos::View< double*, Kokkos::LayoutLeft, device_type > vector_type;
-  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
-  typedef CrsMatrix< double , device_type > matrix_type;
-  typedef Kokkos::View< size_type*, device_type > column_indices_type;
+  typedef Kokkos::Cuda execution_space;
+  typedef execution_space::size_type size_type;
+  typedef Kokkos::View< double*, Kokkos::LayoutLeft, execution_space > vector_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, execution_space > multi_vector_type;
+  typedef CrsMatrix< double , execution_space > matrix_type;
+  typedef Kokkos::View< size_type*, execution_space > column_indices_type;
 
   const matrix_type m_A;
   const multi_vector_type m_x;
@@ -582,9 +585,9 @@ public:
                      const std::vector<Ordinal> & col_indices )
   {
     // Copy col_indices to the device
-    Kokkos::View<Ordinal*,device_type> col_indices_dev(
+    Kokkos::View<Ordinal*,execution_space> col_indices_dev(
       Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
-    typename Kokkos::View<Ordinal*,device_type>::HostMirror col_indices_host =
+    typename Kokkos::View<Ordinal*,execution_space>::HostMirror col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
       col_indices_host(i) = col_indices[i];
@@ -606,10 +609,10 @@ class Multiply<
   IntegralRank<1> >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef Kokkos::View< float* , device_type >  vector_type ;
-  typedef CrsMatrix< float , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef Kokkos::View< float* , execution_space >  vector_type ;
+  typedef CrsMatrix< float , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -671,10 +674,10 @@ class Multiply<
   IntegralRank<1> >
 {
 public:
-  typedef Kokkos::Cuda                         device_type ;
-  typedef device_type::size_type               size_type ;
-  typedef Kokkos::View< double* , device_type >  vector_type ;
-  typedef CrsMatrix< double , device_type >    matrix_type ;
+  typedef Kokkos::Cuda                         execution_space ;
+  typedef execution_space::size_type               size_type ;
+  typedef Kokkos::View< double* , execution_space >  vector_type ;
+  typedef CrsMatrix< double , execution_space >    matrix_type ;
 
   //--------------------------------------------------------------------------
 
@@ -730,5 +733,7 @@ public:
 //----------------------------------------------------------------------------
 
 } // namespace Stokhos
+
+#endif /* #ifdef HAVE_STOKHOS_CUSPARSE */
 
 #endif /* #ifndef STOKHOS_CUDA_CRSMATRIX_HPP */

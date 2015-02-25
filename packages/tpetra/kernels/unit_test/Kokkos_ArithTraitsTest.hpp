@@ -135,8 +135,8 @@ namespace {
 template<class ScalarType, class DeviceType>
 class ArithTraitsTesterBase {
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -405,8 +405,8 @@ private:
   typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -439,8 +439,8 @@ private:
   typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -519,8 +519,8 @@ private:
   }
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -809,8 +809,8 @@ private:
   typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -841,8 +841,8 @@ private:
   typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -911,8 +911,8 @@ private:
   typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -1021,8 +1021,8 @@ private:
                                        DeviceType,
                                        Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -1053,8 +1053,8 @@ private:
                                        DeviceType,
                                        Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -1172,8 +1172,8 @@ private:
                                        DeviceType,
                                        Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 
@@ -1253,8 +1253,8 @@ template<class ScalarType, class DeviceType>
 class ArithTraitsTester :
   public ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType> {
 public:
-  typedef DeviceType device_type;
-  typedef typename device_type::size_type size_type;
+  typedef DeviceType execution_space;
+  typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
 

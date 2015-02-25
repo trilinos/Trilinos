@@ -45,6 +45,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ScalarParameterEntry.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
@@ -56,6 +58,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+
+    PHX::KokkosDeviceSession session;
 
     // Residual
     { 
@@ -115,6 +119,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using panzer::ParamLib;
+
+    PHX::KokkosDeviceSession session;
     
     RCP<ParamLib> pl = rcp(new ParamLib);
     

@@ -51,6 +51,8 @@
 
 #include <Kokkos_CrsArray.hpp>
 
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
+
 //----------------------------------------------------------------------------
 
 #include <TestViewImpl.hpp>
@@ -73,6 +75,8 @@
 #include <TestMemorySpaceTracking.hpp>
 #include <TestTemplateMetaFunctions.hpp>
 
+#include <TestTaskPolicy.hpp>
+
 namespace Test {
 
 class threads : public ::testing::Test {
@@ -86,36 +90,37 @@ protected:
     const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
     const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    unsigned team_count = 0 ;
-    unsigned threads_per_team = 0 ;
+    unsigned threads_count = 0 ;
 
     // Initialize and finalize with no threads:
     Kokkos::Threads::initialize( 1u );
     Kokkos::Threads::finalize();
 
-    team_count       = std::max( 1u , numa_count );
-    threads_per_team = std::max( 2u , cores_per_numa * threads_per_core );
+    threads_count = std::max( 1u , numa_count )
+                  * std::max( 2u , cores_per_numa * threads_per_core );
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    Kokkos::Threads::initialize( threads_count );
     Kokkos::Threads::finalize();
 
-    team_count       = std::max( 1u , numa_count * 2 );
-    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    
+    threads_count = std::max( 1u , numa_count * 2 )
+                  * std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+
+    Kokkos::Threads::initialize( threads_count );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
-    team_count       = std::max( 1u , numa_count );
-    threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+    threads_count = std::max( 1u , numa_count )
+                  * std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
-      Kokkos::Threads::initialize( team_count * threads_per_team );
+      Kokkos::Threads::initialize( threads_count );
       Kokkos::Threads::sleep();
       Kokkos::Threads::wake();
       Kokkos::Threads::finalize();
     }
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
-    Kokkos::Threads::print_configuration( std::cout );
+    Kokkos::Threads::initialize( threads_count );
+    Kokkos::Threads::print_configuration( std::cout , true /* detailed */ );
   }
 
   static void TearDownTestCase()
@@ -366,6 +371,7 @@ TEST_F( threads , cxx11 )
 #endif
 
 #if defined (KOKKOS_HAVE_CXX11)
+
 TEST_F( threads , reduction_deduction )
 {
   TestCXX11::test_reduction_deduction< Kokkos::Threads >();
@@ -385,7 +391,17 @@ TEST_F( threads , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(9) ) );
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(10) ) );
 }
+
 #endif
+
+TEST_F( threads , task_policy )
+{
+  TestTaskPolicy::test_task_dep< Kokkos::Threads >( 10 );
+  // TestTaskPolicy::test_norm2< Kokkos::Threads >( 1000 );
+  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Threads >(i);
+  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
+}
+
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

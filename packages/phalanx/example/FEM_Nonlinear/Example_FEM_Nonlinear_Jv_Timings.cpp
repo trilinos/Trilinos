@@ -42,8 +42,9 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -67,7 +68,7 @@
 #include "Epetra_Export.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "MeshBuilder.hpp"
+//#include "MeshBuilder.hpp"
 #include "LinearObjectFactory.hpp"
 
 // Linear solver
@@ -182,6 +183,8 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
+
+    PHX::InitializeKokkosDevice();
 
     RCP<Time> residual_eval_time = 
       TimeMonitor::getNewTimer("Residual Evaluation Time");
@@ -894,6 +897,8 @@ int main(int argc, char *argv[])
 
 
     */
+
+    PHX::FinalizeKokkosDevice();
 
     // *********************************************************************
     // Finished all testing

@@ -25,13 +25,13 @@ SET(example_SOURCES
   evaluators/Evaluator_NonlinearSource_Def.hpp
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  example
-  SOURCES ${example_SOURCES}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
-  )
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  example
+#  SOURCES ${example_SOURCES}
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
+#  )
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
 

@@ -86,15 +86,15 @@ struct divergence;
 template<typename Scalar>
 struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
-  typedef typename Kokkos::MDArray<int,device_type>    int_array_type ;
+  typedef KOKKOS_MACRO_DEVICE     execution_space ;
+  typedef typename Kokkos::MDArray<Scalar,execution_space> array_type ;
+  typedef typename Kokkos::MDArray<int,execution_space>    int_array_type ;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,execution_space>     scalar;
 
   typedef Scalar value_type;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
   const int_array_type elem_node_connectivity;
 
@@ -753,12 +753,12 @@ struct set_next_time_step;
 template<typename Scalar>
 struct set_next_time_step<Scalar ,KOKKOS_MACRO_DEVICE>{
 
-  typedef KOKKOS_MACRO_DEVICE       device_type;
-  typedef device_type::size_type    size_type;
+  typedef KOKKOS_MACRO_DEVICE       execution_space;
+  typedef execution_space::size_type    size_type;
 
   typedef Scalar value_type;
 
-  typedef Region<Scalar,device_type> MyRegion;
+  typedef Region<Scalar,execution_space> MyRegion;
 
     set_next_time_step( const MyRegion  & arg_region )
        : region(arg_region)

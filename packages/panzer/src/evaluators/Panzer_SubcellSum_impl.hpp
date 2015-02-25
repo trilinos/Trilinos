@@ -111,9 +111,9 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-SubcellSum<EvalT, Traits>::getValidParameters() const
+SubcellSum<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Sum Name", "?");

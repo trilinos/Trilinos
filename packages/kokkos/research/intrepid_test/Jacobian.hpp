@@ -52,10 +52,10 @@ struct Jacobian;
 template<class Scalar >
 struct Jacobian<Scalar , KOKKOS_MACRO_DEVICE , shards::Hexahedron<8> >
 {
-	typedef KOKKOS_MACRO_DEVICE 		device_type;
-	typedef device_type::size_type 		size_type;
+	typedef KOKKOS_MACRO_DEVICE 		execution_space;
+	typedef execution_space::size_type 		size_type;
 	
-	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type;
+	typedef typename Kokkos::MDArrayView<Scalar,execution_space> array_type;
 	typedef typename Kokkos::MDArrayView<Scalar,Kokkos::DeviceHost> host_array;
 	
   private:

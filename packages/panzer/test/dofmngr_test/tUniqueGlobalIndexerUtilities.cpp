@@ -51,6 +51,8 @@
 #include <vector>
 #include <set>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
@@ -75,6 +77,8 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       RCP<Epetra_Comm> eComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -174,6 +178,8 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
@@ -257,6 +263,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
@@ -334,6 +342,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
@@ -401,6 +411,8 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
+   PHX::KokkosDeviceSession session;
+
    typedef Intrepid::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)

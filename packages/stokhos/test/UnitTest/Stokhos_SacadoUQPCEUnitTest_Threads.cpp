@@ -47,8 +47,8 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-typedef Kokkos::Threads device_type;
-typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
+typedef Kokkos::Threads execution_space;
+typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
 typedef Sacado::UQ::PCE<storage_type> pce_type;
 
 #include "Stokhos_SacadoUQPCEUnitTest.hpp"

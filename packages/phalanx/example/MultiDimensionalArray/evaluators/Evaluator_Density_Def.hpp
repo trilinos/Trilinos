@@ -67,12 +67,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void Density<EvalT, Traits>:: operator () (const int i) const
+ {
+    for (int ip=0; ip< density.dimension(1); ip++)
+    density(i,ip) =  temp(i,ip) * temp(i,ip);  
+}
+
+//*********************************************************************
+template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
-{ 
-  std::size_t size = d.num_cells * cell_data_size;
-  
-  for (std::size_t i = 0; i < size; ++i)
-    density[i] =  temp[i] * temp[i];
+{
+   Kokkos::parallel_for (d.num_cells, *this);
 }
 
 //**********************************************************************

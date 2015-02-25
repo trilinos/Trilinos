@@ -1,3 +1,5 @@
+#ifndef INTREPID_ARRAYTOOLSDEFSCALAR_HPP
+#define INTREPID_ARRAYTOOLSDEFSCALAR_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -46,27 +48,49 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
+
 namespace Intrepid {
+//Kokkos Only Implementation of scalarMultiplyDataData
+
+
+/* template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+ void ArrayTools::scalarMultiplyDataDataTemp( ArrayOutData&         outputData,
+                                              ArrayInDataLeft&      inputDataLeft,
+                                              ArrayInDataRight&     inputDataRight,
+                                              const  bool           reciprocal){
+     ArrayTools::scalarMultiplyDataData2<ArrayOutData,ArrayInDataLeft,ArrayInDataRight, void, void, Rank<ArrayInDataRight>::value,Rank<ArrayOutData>::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
+ 
+     }
+ #ifdef HAVE_INTREPID_KOKKOSCORE  
+ template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, class Layout, class MemorySpace>
+ void ArrayTools::scalarMultiplyDataDataTemp(Kokkos::View<ArrayOutData,Layout,MemorySpace>     &outputData,
+                                             Kokkos::View<ArrayInDataLeft,Layout,MemorySpace>  &inputDataLeft,
+                                             Kokkos::View<ArrayInDataRight,Layout,MemorySpace> &inputDataRight,
+                                             const bool                                        reciprocal){
+									
+	ArrayTools::scalarMultiplyDataData2Kokkos<Kokkos::View<ArrayOutData,Layout,MemorySpace>, Kokkos::View<ArrayInDataLeft,Layout,MemorySpace> , Kokkos::View<ArrayInDataRight,Layout,MemorySpace> , Layout, MemorySpace, Rank<Kokkos::View<ArrayInDataRight,Layout,MemorySpace> >::value,Rank<Kokkos::View<ArrayOutData,Layout,MemorySpace> >::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
+	
+	}
+#endif    */                       
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
 void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                                          const ArrayInData &  inputData,
-                                         ArrayInFields &      inputFields,
+                                         const ArrayInFields &      inputFields,
                                          const bool           reciprocal) {
-
 #ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( (inputData.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input data container must have rank 2.");
-  if (outputFields.rank() <= inputFields.rank()) {
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 3) || (inputFields.rank() > 5) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 3, 4, or 5.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input and output fields containers must have the same rank.");
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputData) != 2), std::invalid_argument,
+			      ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input data container must have rank 2.");
+  if (getrank(outputFields) <= getrank(inputFields)) {
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inputFields) < 3) || (getrank(inputFields) > 5) ), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 3, 4, or 5.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputFields) != getrank(inputFields)), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Input and output fields containers must have the same rank.");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-    for (int i=0; i<inputFields.rank(); i++) {
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
+    for (int i=0; i<getrank(inputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
@@ -74,15 +98,15 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
     }
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.rank() < 2) || (inputFields.rank() > 4) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 2, 3, or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != inputFields.rank()+1), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): The rank of the input fields container must be one less than the rank of the output fields container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inputFields) < 2) || (getrank(inputFields) > 4) ), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 2, 3, or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputFields) != getrank(inputFields)+1), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): The rank of the input fields container must be one less than the rank of the output fields container.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): First dimensions of fields input container and data input container (number of integration points) must agree or first data dimension must be 1!");
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): First dimensions of fields input container and data input container (number of integration points) must agree or first data dimension must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( inputData.dimension(0) != outputFields.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions of fields output container and data input containers (number of integration domains) must agree!");
-    for (int i=0; i<inputFields.rank(); i++) {
+				">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions of fields output container and data input containers (number of integration domains) must agree!");
+    for (int i=0; i<getrank(inputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -92,10 +116,13 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
     }
   }
 #endif
+   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);
+   ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
+   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);
 
   // get sizes
-  int invalRank      = inputFields.rank();
-  int outvalRank     = outputFields.rank();
+  int invalRank      = getrank(inputFields);
+  int outvalRank     = getrank(outputFields);
   int numCells       = outputFields.dimension(0);
   int numFields      = outputFields.dimension(1);
   int numPoints      = outputFields.dimension(2);
@@ -112,26 +139,28 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
   if (outvalRank == invalRank) {
 
     if (numDataPoints != 1) { // nonconstant data
-
       switch(invalRank) {
         case 3: {
           if (reciprocal) {
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)/inputData(cl, pt);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)/inputDataWrap(cl, pt);
                 } // P-loop
               } // F-loop
             } // C-loop
           }
           else {
+			  
+			
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)*inputData(cl, pt);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)*inputDataWrap(cl, pt);
                 } // P-loop
               } // F-loop
             } // C-loop
+ 
           }
         }// case 3
         break;
@@ -142,7 +171,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)/inputData(cl, pt);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)/inputDataWrap(cl, pt);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -153,7 +182,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)*inputData(cl, pt);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)*inputDataWrap(cl, pt);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -169,7 +198,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)/inputData(cl, pt);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)/inputDataWrap(cl, pt);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -182,7 +211,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)*inputData(cl, pt);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)*inputDataWrap(cl, pt);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -206,7 +235,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)/inputData(cl, 0);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)/inputDataWrap(cl, 0);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -215,7 +244,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)*inputData(cl, 0);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)*inputDataWrap(cl, 0);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -229,7 +258,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)/inputData(cl, 0);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)/inputDataWrap(cl, 0);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -240,7 +269,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)*inputData(cl, 0);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)*inputDataWrap(cl, 0);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -256,7 +285,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)/inputData(cl, 0);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)/inputDataWrap(cl, 0);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -269,7 +298,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)*inputData(cl, 0);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)*inputDataWrap(cl, 0);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -297,7 +326,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(bf, pt)/inputData(cl, pt);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)/inputDataWrap(cl, pt);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -306,7 +335,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(bf, pt)*inputData(cl, pt);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)*inputDataWrap(cl, pt);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -320,7 +349,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)/inputData(cl, pt);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)/inputDataWrap(cl, pt);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -331,7 +360,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)*inputData(cl, pt);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)*inputDataWrap(cl, pt);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -347,7 +376,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)/inputData(cl, pt);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)/inputDataWrap(cl, pt);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -360,7 +389,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)*inputData(cl, pt);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)*inputDataWrap(cl, pt);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -384,7 +413,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(bf, pt)/inputData(cl, 0);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)/inputDataWrap(cl, 0);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -393,7 +422,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
             for(int cl = 0; cl < numCells; cl++) {
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
-                  outputFields(cl, bf, pt) = inputFields(bf, pt)*inputData(cl, 0);
+                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)*inputDataWrap(cl, 0);
                 } // P-loop
               } // F-loop
             } // C-loop
@@ -407,7 +436,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)/inputData(cl, 0);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)/inputDataWrap(cl, 0);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -418,7 +447,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
               for(int bf = 0; bf < numFields; bf++) {
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)*inputData(cl, 0);
+                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)*inputDataWrap(cl, 0);
                   } // D1-loop
                 } // P-loop
               } // F-loop
@@ -434,7 +463,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)/inputData(cl, 0);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)/inputDataWrap(cl, 0);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -447,7 +476,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
                 for(int pt = 0; pt < numPoints; pt++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)*inputData(cl, 0);
+                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)*inputDataWrap(cl, 0);
                     } // D2-loop
                   } // D1-loop
                 } // F-loop
@@ -468,27 +497,25 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
 
 } // scalarMultiplyDataField
 
-
-
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
 void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
-                                        ArrayInDataLeft &        inputDataLeft,
-                                        ArrayInDataRight &       inputDataRight,
+                                        const ArrayInDataLeft &        inputDataLeft,
+                                        const ArrayInDataRight &       inputDataRight,
                                         const bool               reciprocal) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (ArrayTools::scalarMultiplyDataData): Left input data container must have rank 2.");
-  if (outputData.rank() <= inputDataRight.rank()) {
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 2) || (inputDataRight.rank() > 4) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 2, 3, or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input and output data containers must have the same rank.");
+  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft) != 2), std::invalid_argument,
+			      ">>> ERROR (ArrayTools::scalarMultiplyDataData): Left input data container must have rank 2.");
+  if (getrank(outputData) <= getrank(inputDataRight)) {
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inputDataRight) < 2) || (getrank(inputDataRight) > 4) ), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 2, 3, or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputData) != getrank(inputDataRight)), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input and output data containers must have the same rank.");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != inputDataLeft.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions (number of integration domains) of the left and right data input containers must agree!");
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions (number of integration domains) of the left and right data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree or first dimension of the left data input container must be 1!");
-    for (int i=0; i<inputDataRight.rank(); i++) {
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree or first dimension of the left data input container must be 1!");
+    for (int i=0; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimension ";
       errmsg += (char)(48+i);
       errmsg += " of the right input and output data containers must agree!";
@@ -496,15 +523,15 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
     }
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.rank() < 1) || (inputDataRight.rank() > 3) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 1, 2, or 3.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != inputDataRight.rank()+1), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): The rank of the right input data container must be one less than the rank of the output data container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inputDataRight) < 1) || (getrank(inputDataRight) > 3) ), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 1, 2, or 3.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputData) != getrank(inputDataRight)+1), std::invalid_argument,
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): The rank of the right input data container must be one less than the rank of the output data container.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimension of the right input data container and first dimension of the left data input container (number of integration points) must agree or first dimension of the left data input container must be 1!");
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimension of the right input data container and first dimension of the left data input container (number of integration points) must agree or first dimension of the left data input container must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( inputDataLeft.dimension(0) != outputData.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions of data output and left data input containers (number of integration domains) must agree!");
-    for (int i=0; i<inputDataRight.rank(); i++) {
+				">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions of data output and left data input containers (number of integration domains) must agree!");
+    for (int i=0; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::scalarMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -515,10 +542,16 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
   }
 #endif
 
+
+   ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
+   ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
+   ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value,true>inputDataRightWrap(inputDataRight);										
+
+
   // get sizes
-  int invalRank      = inputDataRight.rank();
-  int outvalRank     = outputData.rank();
-  int numCells       = outputData.dimension(0);
+  int invalRank      = getrank(inputDataRight);
+  int outvalRank     = getrank(outputData);
+  int numCells      = outputData.dimension(0);
   int numPoints      = outputData.dimension(1);
   int numDataPoints  = inputDataLeft.dimension(1);
   int dim1Tens       = 0;
@@ -539,14 +572,14 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
           if (reciprocal) {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(cl, pt)/inputDataLeft(cl, pt);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(cl, pt)/inputDataLeftWrap(cl, pt);
               } // P-loop
             } // C-loop
           }
           else {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(cl, pt)*inputDataLeft(cl, pt);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(cl, pt)*inputDataLeftWrap(cl, pt);
               } // P-loop
             } // C-loop
           }
@@ -558,7 +591,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(cl, pt, iVec)/inputDataLeft(cl, pt);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(cl, pt, iVec)/inputDataLeftWrap(cl, pt);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -567,7 +600,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(cl, pt, iVec)*inputDataLeft(cl, pt);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(cl, pt, iVec)*inputDataLeftWrap(cl, pt);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -581,7 +614,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(cl, pt, iTens1, iTens2)/inputDataLeft(cl, pt);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(cl, pt, iTens1, iTens2)/inputDataLeftWrap(cl, pt);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -592,7 +625,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(cl, pt, iTens1, iTens2)*inputDataLeft(cl, pt);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(cl, pt, iTens1, iTens2)*inputDataLeftWrap(cl, pt);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -614,14 +647,14 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
           if (reciprocal) {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(cl, pt)/inputDataLeft(cl, 0);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(cl, pt)/inputDataLeftWrap(cl, 0);
               } // P-loop
             } // C-loop
           }
           else {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(cl, pt)*inputDataLeft(cl, 0);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(cl, pt)*inputDataLeftWrap(cl, 0);
               } // P-loop
             } // C-loop
           }
@@ -633,7 +666,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(cl, pt, iVec)/inputDataLeft(cl, 0);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(cl, pt, iVec)/inputDataLeftWrap(cl, 0);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -642,7 +675,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(cl, pt, iVec)*inputDataLeft(cl, 0);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(cl, pt, iVec)*inputDataLeftWrap(cl, 0);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -656,7 +689,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(cl, pt, iTens1, iTens2)/inputDataLeft(cl, 0);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(cl, pt, iTens1, iTens2)/inputDataLeftWrap(cl, 0);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -667,7 +700,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(cl, pt, iTens1, iTens2)*inputDataLeft(cl, 0);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(cl, pt, iTens1, iTens2)*inputDataLeftWrap(cl, 0);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -693,14 +726,14 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
           if (reciprocal) {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(pt)/inputDataLeft(cl, pt);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(pt)/inputDataLeftWrap(cl, pt);
               } // P-loop
             } // C-loop
           }
           else {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(pt)*inputDataLeft(cl, pt);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(pt)*inputDataLeftWrap(cl, pt);
               } // P-loop
             } // C-loop
           }
@@ -712,7 +745,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(pt, iVec)/inputDataLeft(cl, pt);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(pt, iVec)/inputDataLeftWrap(cl, pt);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -721,7 +754,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(pt, iVec)*inputDataLeft(cl, pt);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(pt, iVec)*inputDataLeftWrap(cl, pt);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -735,7 +768,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(pt, iTens1, iTens2)/inputDataLeft(cl, pt);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(pt, iTens1, iTens2)/inputDataLeftWrap(cl, pt);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -746,7 +779,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(pt, iTens1, iTens2)*inputDataLeft(cl, pt);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(pt, iTens1, iTens2)*inputDataLeftWrap(cl, pt);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -768,14 +801,14 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
           if (reciprocal) {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(pt)/inputDataLeft(cl, 0);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(pt)/inputDataLeftWrap(cl, 0);
               } // P-loop
             } // C-loop
           }
           else {
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                  outputData(cl, pt) = inputDataRight(pt)*inputDataLeft(cl, 0);
+                  outputDataWrap(cl, pt) = inputDataRightWrap(pt)*inputDataLeftWrap(cl, 0);
               } // P-loop
             } // C-loop
           }
@@ -787,7 +820,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                   for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(pt, iVec)/inputDataLeft(cl, 0);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(pt, iVec)/inputDataLeftWrap(cl, 0);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -796,7 +829,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
             for(int cl = 0; cl < numCells; cl++) {
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputData(cl, pt, iVec) = inputDataRight(pt, iVec)*inputDataLeft(cl, 0);
+                    outputDataWrap(cl, pt, iVec) = inputDataRightWrap(pt, iVec)*inputDataLeftWrap(cl, 0);
                 } // D1-loop
               } // P-loop
             } // C-loop
@@ -810,7 +843,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(pt, iTens1, iTens2)/inputDataLeft(cl, 0);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(pt, iTens1, iTens2)/inputDataLeftWrap(cl, 0);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -821,7 +854,7 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
               for(int pt = 0; pt < numPoints; pt++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                   for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputData(cl, pt, iTens1, iTens2) = inputDataRight(pt, iTens1, iTens2)*inputDataLeft(cl, 0);
+                      outputDataWrap(cl, pt, iTens1, iTens2) = inputDataRightWrap(pt, iTens1, iTens2)*inputDataLeftWrap(cl, 0);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -840,5 +873,6 @@ void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
   } // end if (outvalRank = invalRank)
 
 } // scalarMultiplyDataData
-
 } // end namespace Intrepid
+#endif
+

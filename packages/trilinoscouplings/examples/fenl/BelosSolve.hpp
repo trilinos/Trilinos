@@ -74,7 +74,7 @@ namespace Example {
 // have potentially different layouts.
 template <typename coords_type, typename coords_vec_type>
 struct FillCoords {
-  typedef typename coords_type::device_type device_type;
+  typedef typename coords_type::execution_space execution_space;
   typedef typename coords_type::size_type size_type;
 
   const coords_type m_coords;

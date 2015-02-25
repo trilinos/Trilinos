@@ -51,7 +51,7 @@ namespace Intrepid
 template<typename T, typename ST>
 inline
 TensorBase<T, ST>::TensorBase() :
-dimension_(0)
+    dimension_(0)
 {
   if (ST::IS_DYNAMIC == true) {
     set_number_components(0);
@@ -67,12 +67,10 @@ dimension_(0)
 template<typename T, typename ST>
 inline
 TensorBase<T, ST>::TensorBase(Index const dimension, Index const order) :
-dimension_(0)
+    dimension_(0)
 {
   set_dimension(dimension, order);
-
   fill(NANS);
-
   return;
 }
 
@@ -88,9 +86,7 @@ TensorBase<T, ST>::TensorBase(
     dimension_(0)
 {
   set_dimension(dimension, order);
-
   fill(value);
-
   return;
 }
 
@@ -106,15 +102,118 @@ TensorBase<T, ST>::TensorBase(
     dimension_(0)
 {
   set_dimension(dimension, order);
-
   fill(s);
-
   return;
 }
 
 //
 // Construction from array
-//
+//Kokkos data Types:
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1,
+    iType index2) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1, index2);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1, index2, index3);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1, index2, index3, index4);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1, index2, index3, index4, index5);
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+TensorBase<T, ST>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+  fill(data, index1, index2, index3, index4, index5, index6);
+  return;
+}
+
 template<typename T, typename ST>
 inline
 TensorBase<T, ST>::TensorBase(
@@ -124,19 +223,16 @@ TensorBase<T, ST>::TensorBase(
     dimension_(0)
 {
   set_dimension(dimension, order);
-
   fill(data_ptr);
-
   return;
 }
-
 //
 // Copy constructor
 //
 template<typename T, typename ST>
 inline
 TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
-dimension_(X.dimension_)
+    dimension_(X.dimension_)
 {
   Index const
   number_components = X.get_number_components();
@@ -154,8 +250,7 @@ dimension_(X.dimension_)
 // Copy assignment
 //
 template<typename T, typename ST>
-inline
-TensorBase<T, ST> &
+inline TensorBase<T, ST> &
 TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 {
   if (this == &X) return *this;
@@ -188,12 +283,10 @@ TensorBase<T, ST>::~TensorBase()
 // Get dimension
 //
 template<typename T, typename ST>
-inline
-Index
+inline Index
 TensorBase<T, ST>::get_dimension() const
 {
   assert(ST::IS_DYNAMIC == true);
-
   return dimension_;
 }
 
@@ -221,8 +314,7 @@ TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 // Linear access to components
 //
 template<typename T, typename ST>
-inline
-T const &
+inline T const &
 TensorBase<T, ST>::operator[](Index const i) const
 {
   return components_[i];
@@ -232,8 +324,7 @@ TensorBase<T, ST>::operator[](Index const i) const
 // Linear access to components
 //
 template<typename T, typename ST>
-inline
-T &
+inline T &
 TensorBase<T, ST>::operator[](Index const i)
 {
   return components_[i];
@@ -243,8 +334,7 @@ TensorBase<T, ST>::operator[](Index const i)
 // Get total number of components
 //
 template<typename T, typename ST>
-inline
-Index
+inline Index
 TensorBase<T, ST>::get_number_components() const
 {
   return components_.size();
@@ -259,7 +349,6 @@ void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
   components_.resize(number_components);
-
   return;
 }
 
@@ -276,49 +365,49 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 
   switch (value) {
 
-    case ZEROS:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = 0;
-      }
-      break;
+  case ZEROS:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = 0;
+    }
+    break;
 
-    case ONES:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = 1;
-      }
-      break;
+  case ONES:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = 1;
+    }
+    break;
 
-    case SEQUENCE:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = static_cast<T>(i);
-      }
-      break;
+  case SEQUENCE:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = static_cast<T>(i);
+    }
+    break;
 
-    case RANDOM_UNIFORM:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = random_uniform<T>();
-      }
-      break;
+  case RANDOM_UNIFORM:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = random_uniform<T>();
+    }
+    break;
 
-    case RANDOM_NORMAL:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = random_normal<T>();
-      }
-      break;
+  case RANDOM_NORMAL:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = random_normal<T>();
+    }
+    break;
 
-    case NANS:
-      for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = not_a_number<T>();
-      }
-      break;
+  case NANS:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = not_a_number<T>();
+    }
+    break;
 
-    default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Unknown specification of value for filling components.";
-      std::cerr << std::endl;
-      exit(1);
-      break;
+  default:
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Unknown specification of value for filling components.";
+    std::cerr << std::endl;
+    exit(1);
+    break;
   }
 
   return;
@@ -344,7 +433,497 @@ TensorBase<T, ST>::fill(T const & s)
 
 //
 // Fill components from array defined by pointer.
-//
+//#ifdef HAVE_INTREPID_KOKKOSCORE
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT & data, iType index1)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index1 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be 0.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  rank = number_components / data.dimension(0);
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 1 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index i = 0; i < number_components; ++i) {
+      (*this)[i] = data(i);
+    }
+    break;
+  }
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index2 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be zero.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index
+  rank = 0;
+
+  Index
+  sub_dimension = number_components;
+
+  Index const
+  dim = data.dimension(1);
+
+  while (sub_dimension != 1) {
+
+    sub_dimension /= dim;
+    ++rank;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (sub_dimension < 1),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+
+  }
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 2 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index j = 0; j < number_components; ++j) {
+      (*this)[j] = data(index1, j);
+    }
+    break;
+
+  case 2:
+    for (Index i = 0; i < dim; ++i) {
+      for (Index j = 0; j < dim; ++j) {
+        (*this)[dim * i + j] = data(i, j);
+      }
+    }
+    break;
+  }
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index3 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be zero.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dim = data.dimension(2);
+
+  Index
+  rank = 0;
+
+  Index
+  sub_dimension = number_components;
+
+  while (sub_dimension != 1) {
+
+    sub_dimension /= dim;
+    ++rank;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (sub_dimension < 1),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+
+  }
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 3 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index k = 0; k < number_components; ++k) {
+      (*this)[k] = data(index1, index2, k);
+    }
+    break;
+
+  case 2:
+    for (Index j = 0; j < dim; ++j) {
+      for (Index k = 0; k < dim; ++k) {
+        (*this)[dim * j + k] = data(index1, j, k);
+      }
+    }
+    break;
+
+  case 3:
+    for (Index i = 0; i < dim; ++i) {
+      for (Index j = 0; j < dim; ++j) {
+        for (Index k = 0; k < dim; ++k) {
+          (*this)[dim * (dim * i + j) + k] = data(i, j, k);
+        }
+      }
+    }
+    break;
+  }
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index4 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be zero.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dim = data.dimension(2);
+
+  Index
+  rank = 0;
+
+  Index
+  sub_dimension = number_components;
+
+  while (sub_dimension != 1) {
+
+    sub_dimension /= dim;
+    ++rank;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (sub_dimension < 1),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+
+  }
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 4 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index l = 0; l < number_components; ++l) {
+      (*this)[l] = data(index1, index2, index3, l);
+    }
+    break;
+
+  case 2:
+    for (Index k = 0; k < dim; ++k) {
+      for (Index l = 0; l < dim; ++l) {
+        (*this)[dim * k + l] = data(index1, index2, k, l);
+      }
+    }
+    break;
+
+  case 3:
+    for (Index j = 0; j < dim; ++j) {
+      for (Index k = 0; k < dim; ++k) {
+        for (Index l = 0; l < dim; ++l) {
+          (*this)[dim * (dim * j + k) + l] = data(index1, j, k, l);
+        }
+      }
+    }
+    break;
+
+  case 4:
+    for (Index i = 0; i < dim; ++i) {
+      for (Index j = 0; j < dim; ++j) {
+        for (Index k = 0; k < dim; ++k) {
+          for (Index l = 0; l < dim; ++l) {
+            (*this)[dim * (dim * (dim * i + j) + k) + l] =
+                data(i, j, k, l);
+          }
+        }
+      }
+    }
+    break;
+  }
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index5 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be zero.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dim = data.dimension(2);
+
+  Index
+  rank = 0;
+
+  Index
+  sub_dimension = number_components;
+
+  while (sub_dimension != 1) {
+
+    sub_dimension /= dim;
+    ++rank;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (sub_dimension < 1),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+
+  }
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 5 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index m = 0; m < number_components; ++m) {
+      (*this)[m] = data(index1, index2, index3, index4, m);
+    }
+    break;
+
+  case 2:
+    for (Index l = 0; l < dim; ++l) {
+      for (Index m = 0; m < dim; ++m) {
+        (*this)[dim * l + m] = data(index1, index2, index3, l, m);
+      }
+    }
+    break;
+
+  case 3:
+    for (Index k = 0; k < dim; ++k) {
+      for (Index l = 0; l < dim; ++l) {
+        for (Index m = 0; m < dim; ++m) {
+          (*this)[dim * (dim * k + l) + m] = data(index1, index2, k, l, m);
+        }
+      }
+    }
+    break;
+
+  case 4:
+    for (Index j = 0; j < dim; ++j) {
+      for (Index k = 0; k < dim; ++k) {
+        for (Index l = 0; l < dim; ++l) {
+          for (Index m = 0; m < dim; ++m) {
+            (*this)[dim * (dim * (dim * j + k) + l) + m] =
+                data(index1, j, k, l, m);
+          }
+        }
+      }
+    }
+    break;
+
+  case 5:
+    for (Index i = 0; i < dim; ++i) {
+      for (Index j = 0; j < dim; ++j) {
+        for (Index k = 0; k < dim; ++k) {
+          for (Index l = 0; l < dim; ++l) {
+            for (Index m = 0; m < dim; ++m) {
+              (*this)[dim * (dim * (dim * (dim * i + j) + k) + l) + m] =
+                  data(i, j, k, l, m);
+            }
+          }
+        }
+      }
+    }
+    break;
+  }
+
+  return;
+}
+
+template<typename T, typename ST>
+template<class ArrayT, typename iType>
+inline
+void
+TensorBase<T, ST>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      (index6 != 0),
+      std::invalid_argument,
+      "ERROR: last argument must be zero.");
+
+  Index const
+  number_components = get_number_components();
+
+  Index const
+  dim = data.dimension(2);
+
+  Index
+  rank = 0;
+
+  Index
+  sub_dimension = number_components;
+
+  while (sub_dimension != 1) {
+
+    sub_dimension /= dim;
+    ++rank;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (sub_dimension < 1),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+
+  }
+
+  switch (rank) {
+
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        (rank < 1 || 6 < rank),
+        std::invalid_argument,
+        "ERROR: rank calculation.");
+    break;
+
+  case 1:
+    for (Index n = 0; n < number_components; ++n) {
+      (*this)[n] = data(index1, index2, index3, index4, index5, n);
+    }
+    break;
+
+  case 2:
+    for (Index m = 0; m < dim; ++m) {
+      for (Index n = 0; n < dim; ++n) {
+        (*this)[dim * m + n] = data(index1, index2, index3, index4, m, n);
+      }
+    }
+    break;
+
+  case 3:
+    for (Index l = 0; l < dim; ++l) {
+      for (Index m = 0; m < dim; ++m) {
+        for (Index n = 0; n < dim; ++n) {
+          (*this)[dim * (dim * l + m) + n] =
+              data(index1, index2, index3, l, m, n);
+        }
+      }
+    }
+    break;
+
+  case 4:
+    for (Index k = 0; k < dim; ++k) {
+      for (Index l = 0; l < dim; ++l) {
+        for (Index m = 0; m < dim; ++m) {
+          for (Index n = 0; n < dim; ++n) {
+            (*this)[dim * (dim * (dim * k + l) + m) + n] =
+                data(index1, index2, k, l, m, n);
+          }
+        }
+      }
+    }
+    break;
+
+  case 5:
+    for (Index j = 0; j < dim; ++j) {
+      for (Index k = 0; k < dim; ++k) {
+        for (Index l = 0; l < dim; ++l) {
+          for (Index m = 0; m < dim; ++m) {
+            for (Index n = 0; n < dim; ++n) {
+              (*this)[dim * (dim * (dim * (dim * j + k) + l) + m) + n] =
+                  data(index1, j, k, l, m, n);
+            }
+          }
+        }
+      }
+    }
+    break;
+
+  case 6:
+    for (Index i = 0; i < dim; ++i) {
+      for (Index j = 0; j < dim; ++j) {
+        for (Index k = 0; k < dim; ++k) {
+          for (Index l = 0; l < dim; ++l) {
+            for (Index m = 0; m < dim; ++m) {
+              for (Index n = 0; n < dim; ++n) {
+                (*this)[dim * (dim * (dim * (dim * (dim *
+                    i + j) + k) + l) + m) + n] = data(i, j, k, l, m, n);
+              }
+            }
+          }
+        }
+      }
+    }
+    break;
+  }
+
+  return;
+}
 template<typename T, typename ST>
 inline
 void
@@ -367,8 +946,7 @@ TensorBase<T, ST>::fill(T const * data_ptr)
 //
 template<typename T, typename ST>
 template<typename S, typename SS>
-inline
-TensorBase<T, ST> &
+inline TensorBase<T, ST> &
 TensorBase<T, ST>::operator+=(TensorBase<S, SS> const & X)
 {
   Index const
@@ -388,8 +966,7 @@ TensorBase<T, ST>::operator+=(TensorBase<S, SS> const & X)
 //
 template<typename T, typename ST>
 template<typename S, typename SS>
-inline
-TensorBase<T, ST> &
+inline TensorBase<T, ST> &
 TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
 {
   Index const
@@ -409,8 +986,7 @@ TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
 //
 template<typename T, typename ST>
 template<typename S>
-inline
-TensorBase<T, ST> &
+inline TensorBase<T, ST> &
 TensorBase<T, ST>::operator*=(S const & X)
 {
   Index const
@@ -427,8 +1003,7 @@ TensorBase<T, ST>::operator*=(S const & X)
 //
 template<typename T, typename ST>
 template<typename S>
-inline
-TensorBase<T, ST> &
+inline TensorBase<T, ST> &
 TensorBase<T, ST>::operator/=(S const & X)
 {
   Index const
@@ -483,13 +1058,13 @@ norm_f(TensorBase<T, ST> const & X)
 // Base addition
 //
 template<typename R, typename S, typename T, typename SR, typename SS,
-typename ST>
+    typename ST>
 void
 add(
     TensorBase<R, SR> const & A,
     TensorBase<S, SS> const & B,
     TensorBase<T, ST> & C
-)
+    )
 {
   Index const
   number_components = A.get_number_components();
@@ -508,7 +1083,7 @@ add(
 // Base subtraction
 //
 template<typename R, typename S, typename T, typename SR, typename SS,
-typename ST>
+    typename ST>
 void
 subtract(
     TensorBase<R, SR> const & A,
@@ -541,7 +1116,7 @@ minus(TensorBase<T, ST> const & A, TensorBase<T, ST> & B)
   assert(B.get_number_components() == number_components);
 
   for (Index i = 0; i < number_components; ++i) {
-    B[i] = - A[i];
+    B[i] = -A[i];
   }
 
   return;

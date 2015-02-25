@@ -955,7 +955,7 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
   if (residual_field_name != "")
     p.set("Sum Name", residual_field_name);
   else
-    p.set("Sum Name", "RESIDUAL_"+dof_name);
+    p.set("Sum Name", "RESIDUAL_" + dof_name);
   
   RCP<std::vector<std::string> > rcp_residual_contributions = rcp(new std::vector<std::string>);
   *rcp_residual_contributions = residual_contributions;
@@ -966,8 +966,8 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
   TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
   
   p.set("Data Layout", desc_it->second.basis->functional);
-  
-  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+
+  RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
   
   fm.template registerEvaluator<EvalT>(op);
 }

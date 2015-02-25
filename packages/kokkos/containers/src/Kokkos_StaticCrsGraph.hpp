@@ -94,6 +94,7 @@ private:
 public:
   typedef DataType                                            data_type;
   typedef typename traits::array_layout                       array_layout;
+  typedef typename traits::execution_space                    execution_space;
   typedef typename traits::device_type                        device_type;
   typedef SizeType                                            size_type;
 
@@ -181,7 +182,7 @@ namespace Impl {
 template< class GraphType >
 struct StaticCrsGraphMaximumEntry {
 
-  typedef typename GraphType::device_type device_type ;
+  typedef typename GraphType::execution_space execution_space ;
   typedef typename GraphType::data_type value_type ;
 
   const typename GraphType::entries_type entries ;

@@ -205,14 +205,14 @@ namespace Tpetra {
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
-    //! The type of the Kokkos Node (less useful than device_type).
+    //! The type of the Kokkos Node (less useful than execution_space).
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
     //! The type of the Kokkos Device (more useful than node_type).
-    typedef DeviceType device_type;
+    typedef DeviceType execution_space;
 
   private:
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
-    typedef typename Kokkos::ViewTraits<LocalOrdinal,device_type>::host_mirror_space host_mirror_space;
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, execution_space> device_impl_type;
+    typedef typename Kokkos::ViewTraits<LocalOrdinal,execution_space>::host_mirror_space host_mirror_space;
     typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_space> host_impl_type;
 
   public:
@@ -345,7 +345,7 @@ namespace Tpetra {
      *   object must match the type of the Node template parameter.
      */
     Map (const global_size_t globalNumIndices,
-         const Kokkos::View<const GlobalOrdinal*, device_type>& myGlobalIndices,
+         const Kokkos::View<const GlobalOrdinal*, execution_space>& myGlobalIndices,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const Teuchos::RCP<node_type> &node = KokkosClassic::Details::getNode<node_type> ());
@@ -564,7 +564,7 @@ namespace Tpetra {
     ///
     /// This method will only compile if one of two conditions is met:
     /// <ol>
-    /// <li> \c OutDeviceType is the same as \c device_type (this Map's
+    /// <li> \c OutDeviceType is the same as \c execution_space (this Map's
     ///      original Kokkos device type) </il>
     /// <li> \c OutDeviceType is compatible with
     ///      <tt>host_mirror_space</tt> </li>

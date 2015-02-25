@@ -50,6 +50,8 @@
 #include <vector>
 #include <set>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
@@ -86,6 +88,8 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -133,10 +137,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    TEST_ASSERT(dofManager.getElementBlock("block_0")==connManager->getElementBlock("block_0"));
    TEST_ASSERT(dofManager.getElementBlock("block_1")==connManager->getElementBlock("block_1"));
    TEST_ASSERT(dofManager.getElementBlock("block_2")==connManager->getElementBlock("block_2"));
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -261,10 +269,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    TEST_EQUALITY(blk2fn[0],4);
    TEST_EQUALITY(blk2fn[1],5);
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -376,10 +388,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
       TEST_EQUALITY(fb1,0);
       TEST_EQUALITY(fb2,0);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -551,10 +567,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       for(std::size_t i=0;i<vec->first.size();i++) 
          TEST_EQUALITY(vec->first[i],dofManager.getBlockGIDOffset("block_2",2)+sub_vec->first[i]);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
+  PHX::InitializeKokkosDevice();
+
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
 
@@ -644,10 +664,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
  
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
 {
+  PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -809,6 +833,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
        }
      }
    }
+   PHX::FinalizeKokkosDevice();
 }
 
 }

@@ -71,17 +71,17 @@ struct GatherFill<
   FEMesh< CoordScalarType , ElemNode , DeviceType > ,
   elem_matrices_type , elem_vectors_type >
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   static const size_type ElemNodeCount = ElemNode ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , execution_space >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;
-  typedef Kokkos::View< ScalarType[] , device_type >  vector_type ;
-  typedef Kokkos::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
+  typedef Kokkos::View< ScalarType[] , execution_space >  vector_type ;
+  typedef Kokkos::View< size_type[][ElemNodeCount][ElemNodeCount] , execution_space >       elem_graph_type ;
 
-  typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
+  typedef FEMesh< CoordScalarType , ElemNodeCount , execution_space > mesh_type ;
   typedef typename mesh_type::node_elem_ids_type node_elem_ids_type ;
 
 private:
@@ -154,12 +154,12 @@ template< class GraphType , class MeshType >
 struct GraphFactory {
   typedef GraphType                         graph_type ;
   typedef MeshType                          mesh_type ;
-  typedef typename graph_type::execution_space  device_type ;
-  typedef typename device_type::size_type   size_type  ;
+  typedef typename graph_type::execution_space  execution_space ;
+  typedef typename execution_space::size_type   size_type  ;
 
   static const unsigned ElemNodeCount = mesh_type::element_node_count ;
 
-  typedef Kokkos::View< size_type[][ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
+  typedef Kokkos::View< size_type[][ElemNodeCount][ElemNodeCount] , execution_space >         element_map_type ;
 
   static
   void

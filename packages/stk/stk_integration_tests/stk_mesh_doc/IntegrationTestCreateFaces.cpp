@@ -953,6 +953,21 @@ TEST(StkIo, CreateFacesCheckFaceElemConnectivity)
     }
 }
 
+TEST(StkIo, DISABLED_FixSidesetIssues) {
+    const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (numprocs == 1) {
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALA.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeRA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALeDfRA.e", false, 3, 3));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALe.e",     false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ADe.e",     false, 2, 1));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ALReA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AeLRA.e",   false, 2, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("ARReA.e",   false, 2));
+        EXPECT_TRUE(read_file_check_face_elem_connectivity("AReRA.e",   false, 2));
+    }
+}
+
 TEST(StkIo, NoCreateFacesCheckFaceElemConnectivity)
 {
     const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);

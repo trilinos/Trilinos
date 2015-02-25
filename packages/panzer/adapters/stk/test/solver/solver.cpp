@@ -52,6 +52,9 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -102,6 +105,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(solver, NOX_steady_state)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
@@ -379,6 +384,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(solver, Rythmos_transient)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);

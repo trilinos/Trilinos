@@ -80,7 +80,7 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const panzer::Physics
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory arrayFactory;
+  panzer::MDFieldArrayFactory mdArrayFactory("",true);
 
   // setup the integration rules and bases
       
@@ -102,13 +102,13 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const panzer::Physics
 
     details.ir_degrees->push_back(ir_itr->first);
       
-    RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > iv = 
-        rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
-    
-    iv->setupArrays(ir_itr->second);
-    iv->evaluateValues(details.cell_vertex_coordinates);
+    RCP<panzer::IntegrationValues2<double> > iv2 = 
+        rcp(new panzer::IntegrationValues2<double>("",true));
+    iv2->setupArrays(ir_itr->second);
+    iv2->evaluateValues(details.cell_vertex_coordinates);
       
-    details.int_rules.push_back(iv);
+    // details.int_rules.push_back(iv);
+    details.int_rules.push_back(iv2);
       
     // Need to create all combinations of basis/ir pairings 
     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases = pb->getBases();
@@ -118,25 +118,22 @@ void populateValueArrays(std::size_t num_cells,bool isSide,const panzer::Physics
 	
       RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(b_itr->second,*ir_itr->second));
       details.basis_names->push_back(b_layout->name());
-      
-      RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > bv = 
-          rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
-	
-      bv->setupArrays(b_layout,arrayFactory);
-	
+
       std::size_t int_degree_index = std::distance(details.ir_degrees->begin(), 
                                                    std::find(details.ir_degrees->begin(), 
                                                              details.ir_degrees->end(), 
 				                             ir_itr->second->order()));
-	
-      bv->evaluateValues(details.int_rules[int_degree_index]->cub_points,
+      RCP<panzer::BasisValues2<double> > bv2 = 
+          rcp(new panzer::BasisValues2<double>("",true,true));
+      bv2->setupArrays(b_layout);
+      bv2->evaluateValues(details.int_rules[int_degree_index]->cub_points,
                          details.int_rules[int_degree_index]->jac,
                          details.int_rules[int_degree_index]->jac_det,
                          details.int_rules[int_degree_index]->jac_inv,
                          details.int_rules[int_degree_index]->weighted_measure,
                          details.cell_vertex_coordinates);
 
-      details.bases.push_back(bv);
+      details.bases.push_back(bv2);
     }
   }
 }

@@ -143,9 +143,9 @@ template< typename ScalarType , class DeviceType >
 class ReduceTeamFunctor
 {
 public:
-  typedef DeviceType device_type ;
-  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
-  typedef typename device_type::size_type        size_type ;
+  typedef DeviceType execution_space ;
+  typedef Kokkos::TeamPolicy< execution_space >  policy_type ;
+  typedef typename execution_space::size_type        size_type ;
 
   struct value_type {
     ScalarType value[3] ;
@@ -201,9 +201,9 @@ template< typename ScalarType , class DeviceType >
 class TestReduceTeam
 {
 public:
-  typedef DeviceType    device_type ;
-  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
-  typedef typename device_type::size_type    size_type ;
+  typedef DeviceType    execution_space ;
+  typedef Kokkos::TeamPolicy< execution_space >  policy_type ;
+  typedef typename execution_space::size_type    size_type ;
 
   //------------------------------------
 
@@ -214,7 +214,7 @@ public:
 
   void run_test( const size_type & nwork )
   {
-    typedef Test::ReduceTeamFunctor< ScalarType , device_type > functor_type ;
+    typedef Test::ReduceTeamFunctor< ScalarType , execution_space > functor_type ;
     typedef typename functor_type::value_type value_type ;
     typedef Kokkos::View< value_type, Kokkos::HostSpace, Kokkos::MemoryUnmanaged > result_type ;
 
@@ -237,7 +237,7 @@ public:
       Kokkos::parallel_reduce( team_exec , functor_type(nwork) , tmp );
     }
 
-    device_type::fence();
+    execution_space::fence();
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       for ( unsigned j = 0 ; j < Count ; ++j ) {
@@ -258,12 +258,12 @@ template< class DeviceType >
 class ScanTeamFunctor
 {
 public:
-  typedef DeviceType  device_type ;
-  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
+  typedef DeviceType  execution_space ;
+  typedef Kokkos::TeamPolicy< execution_space >  policy_type ;
 
   typedef long int    value_type ;
-  Kokkos::View< value_type , device_type > accum ;
-  Kokkos::View< value_type , device_type > total ;
+  Kokkos::View< value_type , execution_space > accum ;
+  Kokkos::View< value_type , execution_space > total ;
 
   ScanTeamFunctor() : accum("accum"), total("total") {}
 
@@ -330,10 +330,10 @@ template< class DeviceType >
 class TestScanTeam
 {
 public:
-  typedef DeviceType  device_type ;
+  typedef DeviceType  execution_space ;
   typedef long int    value_type ;
 
-  typedef Kokkos::TeamPolicy< device_type > policy_type ;
+  typedef Kokkos::TeamPolicy< execution_space > policy_type ;
   typedef Test::ScanTeamFunctor<DeviceType> functor_type ;
 
   //------------------------------------
@@ -368,7 +368,7 @@ public:
       ASSERT_EQ( total , accum );
     }
 
-    device_type::fence();
+    execution_space::fence();
   }
 };
 
@@ -381,9 +381,9 @@ namespace Test {
 template< class ExecSpace >
 struct SharedTeamFunctor {
 
-  typedef ExecSpace  device_type ;
+  typedef ExecSpace  execution_space ;
   typedef int        value_type ;
-  typedef Kokkos::TeamPolicy< device_type >  policy_type ;
+  typedef Kokkos::TeamPolicy< execution_space >  policy_type ;
 
   enum { SHARED_COUNT = 1000 };
 

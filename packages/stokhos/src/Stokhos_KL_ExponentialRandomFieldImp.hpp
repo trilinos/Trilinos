@@ -45,8 +45,8 @@
 
 #include "Stokhos_KL_OneDExponentialCovarianceFunction.hpp"
 
-template <typename value_type, typename device_type>
-Stokhos::KL::ExponentialRandomField<value_type,device_type>::
+template <typename value_type, typename execution_space>
+Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 ExponentialRandomField(Teuchos::ParameterList& solverParams)
 {
   // Get required parameters
@@ -136,7 +136,7 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
 
   // Sort product eigenfunctions based on product eigenvalue
   std::sort(product_eig_pairs.begin(), product_eig_pairs.end(),
-            ProductEigenPairGreater<one_d_eigen_func_type, device_type>());
+            ProductEigenPairGreater<one_d_eigen_func_type, execution_space>());
 
   // Copy eigenpairs into view
   product_eigen_funcs =
@@ -159,11 +159,11 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
   Kokkos::deep_copy(product_eigen_values, host_product_eigen_values);
 }
 
-template <typename value_type, typename device_type>
+template <typename value_type, typename execution_space>
 template <typename point_type, typename rv_type>
 KOKKOS_INLINE_FUNCTION
 typename Teuchos::PromotionTraits<typename rv_type::value_type, value_type>::promote
-Stokhos::KL::ExponentialRandomField<value_type,device_type>::
+Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 evaluate(const point_type& point, const rv_type& random_variables) const
 {
   typedef typename Teuchos::PromotionTraits<typename rv_type::value_type, value_type>::promote result_type;
@@ -177,11 +177,11 @@ evaluate(const point_type& point, const rv_type& random_variables) const
   return result;
 }
 
-template <typename value_type, typename device_type>
+template <typename value_type, typename execution_space>
 template <typename point_type>
 KOKKOS_INLINE_FUNCTION
 value_type
-Stokhos::KL::ExponentialRandomField<value_type,device_type>::
+Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 evaluate_standard_deviation(const point_type& point) const
 {
   value_type result = 0.0;
@@ -194,11 +194,11 @@ evaluate_standard_deviation(const point_type& point) const
   return std::sqrt(result);
 }
 
-template <typename value_type, typename device_type>
+template <typename value_type, typename execution_space>
 template <typename point_type>
 KOKKOS_INLINE_FUNCTION
 value_type
-Stokhos::KL::ExponentialRandomField<value_type,device_type>::
+Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 evaluate_eigenfunction(const point_type& point, int i) const
 {
   value_type t = std_dev*std::sqrt(product_eigen_values(i));
@@ -207,9 +207,9 @@ evaluate_eigenfunction(const point_type& point, int i) const
   return t;
 }
 
-template <typename value_type, typename device_type>
+template <typename value_type, typename execution_space>
 void
-Stokhos::KL::ExponentialRandomField<value_type,device_type>::
+Stokhos::KL::ExponentialRandomField<value_type,execution_space>::
 print(std::ostream& os) const
 {
   os << "KL expansion using " << num_KL << " terms in " << dim

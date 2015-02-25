@@ -54,11 +54,11 @@ namespace Kokkos {
 template< typename ValueType , class Device >
 class CrsMatrix {
 public:
-  typedef Device     device_type ;
+  typedef Device     execution_space ;
   typedef ValueType  value_type ;
 
-  View< value_type[] , device_type >   values ;
-  CrsArray< int , device_type , void , int >  graph ;
+  View< value_type[] , execution_space >   values ;
+  CrsArray< int , execution_space , void , int >  graph ;
 };
 
 template< typename MatrixValueType ,

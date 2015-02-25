@@ -33,7 +33,7 @@
 #define FADLAPACKUNITTESTS_HPP
 
 // Sacado includes
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Fad_LAPACK.hpp"
 #include "Sacado_Random.hpp"
 

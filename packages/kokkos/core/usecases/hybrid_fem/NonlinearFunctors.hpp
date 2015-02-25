@@ -76,12 +76,12 @@ template< typename ScalarCoordType , unsigned ElemNode , class DeviceType ,
 struct ElementComputation<
   FEMesh< ScalarCoordType , ElemNode , DeviceType > , ScalarType >
 {
-  typedef DeviceType  device_type;
+  typedef DeviceType  execution_space;
   typedef ScalarType           scalar_type ;
 
   static const unsigned ElementNodeCount = ElemNode ;
 
-  typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
+  typedef FEMesh< ScalarCoordType , ElementNodeCount , execution_space > mesh_type ;
 
   typedef HexElement_Data< ElementNodeCount > element_data_type ;
 
@@ -90,9 +90,9 @@ struct ElementComputation<
   static const unsigned IntegrationCount = element_data_type::integration_count ;
   static const unsigned TensorDim        = SpatialDim * SpatialDim ;
 
-  typedef Kokkos::View< scalar_type[][FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::View< scalar_type[][FunctionCount] , device_type > elem_vectors_type ;
-  typedef Kokkos::View< scalar_type[] , device_type > value_vector_type ;
+  typedef Kokkos::View< scalar_type[][FunctionCount][FunctionCount] , execution_space > elem_matrices_type ;
+  typedef Kokkos::View< scalar_type[][FunctionCount] , execution_space > elem_vectors_type ;
+  typedef Kokkos::View< scalar_type[] , execution_space > value_vector_type ;
 
 
 private:
@@ -329,13 +329,13 @@ struct DirichletSolution<
   FEMesh< ScalarCoordType , ElemNode , DeviceType > ,
   ScalarType >
 {
-  typedef DeviceType  device_type;
+  typedef DeviceType  execution_space;
 
   static const unsigned ElementNodeCount = ElemNode ;
 
-  typedef Kokkos::View< ScalarType[] , device_type >  vector_type ;
+  typedef Kokkos::View< ScalarType[] , execution_space >  vector_type ;
 
-  typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
+  typedef FEMesh< ScalarCoordType , ElementNodeCount , execution_space > mesh_type ;
 
   typename mesh_type::node_coords_type node_coords ;
 
@@ -391,15 +391,15 @@ template< typename ScalarCoordType , unsigned ElemNode , class DeviceType ,
 struct DirichletResidual<
   FEMesh< ScalarCoordType , ElemNode , DeviceType > , ScalarType >
 {
-  typedef DeviceType     device_type;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space;
+  typedef typename execution_space::size_type  size_type ;
 
   static const unsigned ElementNodeCount = ElemNode ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
-  typedef Kokkos::View< ScalarType[] , device_type >  vector_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , execution_space >    matrix_type ;
+  typedef Kokkos::View< ScalarType[] , execution_space >  vector_type ;
 
-  typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
+  typedef FEMesh< ScalarCoordType , ElementNodeCount , execution_space > mesh_type ;
 
   typename mesh_type::node_coords_type node_coords ;
   matrix_type     matrix ;

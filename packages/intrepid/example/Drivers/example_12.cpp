@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
   *outStream << "Building local stiffness matrices...\n\n";
   typedef CellTools<double>  CellTools;
   typedef FunctionSpaceTools fst;
-  int numCells = numElems; 
+//  int numCells = numElems; 
 
 
   // jacobian information

@@ -395,10 +395,10 @@ namespace Belos {
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev view_type;
-      typedef typename view_type::device_type device_type;
+      typedef typename view_type::execution_space execution_space;
       typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
-      view_type A_view = Atmp->template getLocalView<device_type>();
-      view_type C_view = Ctmp->template getLocalView<device_type>();
+      view_type A_view = Atmp->template getLocalView<execution_space>();
+      view_type C_view = Ctmp->template getLocalView<execution_space>();
       DKMV A_mv(A.getMap()->getNode());
       DKMV C_mv(A.getMap()->getNode());
       size_t A_stride[8], C_stride[8];
@@ -418,13 +418,13 @@ namespace Belos {
                             LDC);
 
       // Create a view for B
-      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> b_view_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> b_view_type;
       typedef typename b_view_type::HostMirror b_host_view_type;
       b_host_view_type B_view( B.values(), strideB, numColsB);
 
       // Create view for B on the device -- need to be careful to get the
       // right stride to match B
-      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> b_1d_view_type;
+      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> b_1d_view_type;
       b_1d_view_type B_1d_view_dev(Kokkos::ViewAllocateWithoutInitializing("B"), strideB*numColsB);
       b_view_type B_view_dev( B_1d_view_dev.ptr_on_device(), strideB, numColsB);
       Kokkos::deep_copy(B_view_dev, B_view);
@@ -523,10 +523,10 @@ namespace Belos {
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev view_type;
-      typedef typename view_type::device_type device_type;
+      typedef typename view_type::execution_space execution_space;
       typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
-      view_type A_view = Atmp->template getLocalView<device_type>();
-      view_type B_view = Btmp->template getLocalView<device_type>();
+      view_type A_view = Atmp->template getLocalView<execution_space>();
+      view_type B_view = Btmp->template getLocalView<execution_space>();
       DKMV A_mv(A.getMap()->getNode());
       DKMV B_mv(A.getMap()->getNode());
       size_t A_stride[8], B_stride[8];
@@ -546,13 +546,13 @@ namespace Belos {
                             LDB);
 
       // Create a view for C
-      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> c_view_type;
+      typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, execution_space> c_view_type;
       typedef typename c_view_type::HostMirror c_host_view_type;
       c_host_view_type C_view( C.values(), strideC, numColsC);
 
       // Create view for C on the device -- need to be careful to get the
       // right stride to match C (allow setting to 0 for first-touch)
-      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, device_type> c_1d_view_type;
+      typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft, execution_space> c_1d_view_type;
       c_1d_view_type C_1d_view_dev("C", strideC*numColsC);
       c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
 

@@ -53,6 +53,8 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
@@ -81,6 +83,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, basic_construction)
   {
+    PHX::KokkosDeviceSession session;
 
     std::size_t bc_id = 0;
     panzer::BCType dirichlet = BCT_Dirichlet;
@@ -105,6 +108,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, constant_bc_strategy)
   {
+    PHX::KokkosDeviceSession session;
 
     using std::cout;
     using std::endl;

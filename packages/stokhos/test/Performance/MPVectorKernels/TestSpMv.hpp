@@ -107,11 +107,11 @@ test_mpvector_spmv(const int ensemble_length,
   typedef StorageType storage_type;
   typedef typename storage_type::value_type value_type;
   typedef typename storage_type::ordinal_type ordinal_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Sacado::MP::Vector<StorageType> VectorType;
   typedef Kokkos::LayoutRight Layout;
-  typedef Kokkos::View< VectorType*, Layout, device_type > vector_type;
-  typedef Kokkos::CrsMatrix< VectorType, ordinal_type, device_type > matrix_type;
+  typedef Kokkos::View< VectorType*, Layout, execution_space > vector_type;
+  typedef Kokkos::CrsMatrix< VectorType, ordinal_type, execution_space > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -161,12 +161,12 @@ test_mpvector_spmv(const int ensemble_length,
   // One iteration to warm up
   Stokhos::multiply( matrix, x, y, tag );
 
-  device_type::fence();
+  execution_space::fence();
   Kokkos::Impl::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     Stokhos::multiply( matrix, x, y, tag );
   }
-  device_type::fence();
+  execution_space::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -189,9 +189,9 @@ test_scalar_spmv(const int ensemble_length,
 {
   typedef ScalarType value_type;
   typedef OrdinalType ordinal_type;
-  typedef Device device_type;
-  typedef Kokkos::View< value_type*, device_type > vector_type;
-  typedef Kokkos::CrsMatrix< value_type, ordinal_type, device_type > matrix_type;
+  typedef Device execution_space;
+  typedef Kokkos::View< value_type*, execution_space > vector_type;
+  typedef Kokkos::CrsMatrix< value_type, ordinal_type, execution_space > matrix_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename matrix_type::values_type matrix_values_type;
 
@@ -238,14 +238,14 @@ test_scalar_spmv(const int ensemble_length,
     }
   }
 
-  device_type::fence();
+  execution_space::fence();
   Kokkos::Impl::Timer clock ;
   for (int iter = 0; iter < iterCount; ++iter) {
     for (int e=0; e<ensemble_length; ++e) {
       Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
     }
   }
-  device_type::fence();
+  execution_space::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops = 1.0e-9 * 2.0 * graph_length * ensemble_length;
@@ -263,7 +263,7 @@ template <class Storage>
 struct PerformanceDriverOp {
   typedef typename Storage::value_type Scalar;
   typedef typename Storage::ordinal_type Ordinal;
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   const int nGrid, nIter;
   Kokkos::DeviceConfig dev_config;
 

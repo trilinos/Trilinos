@@ -13,7 +13,7 @@ template <typename Bitset, bool Set>
 struct TestBitset
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -24,7 +24,7 @@ struct TestBitset
 
   unsigned testit(unsigned collisions)
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size()*collisions, *this, count);
@@ -61,7 +61,7 @@ template <typename Bitset>
 struct TestBitsetTest
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -72,7 +72,7 @@ struct TestBitsetTest
 
   unsigned testit()
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size(), *this, count);
@@ -98,7 +98,7 @@ template <typename Bitset, bool Set>
 struct TestBitsetAny
 {
   typedef Bitset bitset_type;
-  typedef typename bitset_type::device_type device_type;
+  typedef typename bitset_type::execution_space execution_space;
   typedef uint32_t value_type;
 
   bitset_type m_bitset;
@@ -109,7 +109,7 @@ struct TestBitsetAny
 
   unsigned testit()
   {
-    device_type::fence();
+    execution_space::fence();
 
     unsigned count = 0;
     Kokkos::parallel_reduce( m_bitset.size(), *this, count);

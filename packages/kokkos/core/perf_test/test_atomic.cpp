@@ -52,10 +52,10 @@
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef Kokkos::Threads device_type;
+typedef Kokkos::Threads execution_space;
 #endif
 #if DEVICE==2
-typedef Kokkos::Cuda device_type;
+typedef Kokkos::Cuda execution_space;
 #endif
 
 #define RESET		0
@@ -88,9 +88,9 @@ void textcolor_standard() {textcolor(RESET, BLACK, WHITE);}
 
 template<class T,class DEVICE_TYPE>
 struct ZeroFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef typename Kokkos::View<T,device_type> type;
-  typedef typename Kokkos::View<T,device_type>::HostMirror h_type;
+  typedef DEVICE_TYPE execution_space;
+  typedef typename Kokkos::View<T,execution_space> type;
+  typedef typename Kokkos::View<T,execution_space>::HostMirror h_type;
   type data;
   KOKKOS_INLINE_FUNCTION
   void operator()(int i) const {
@@ -104,8 +104,8 @@ struct ZeroFunctor{
 
 template<class T,class DEVICE_TYPE>
 struct AddFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data;
 
   KOKKOS_INLINE_FUNCTION
@@ -116,17 +116,17 @@ struct AddFunctor{
 
 template<class T>
 T AddLoop(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct AddFunctor<T,device_type> f_add;
+  struct AddFunctor<T,execution_space> f_add;
   f_add.data = data;
   Kokkos::parallel_for(loop,f_add);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   T val = h_data();
@@ -135,8 +135,8 @@ T AddLoop(int loop) {
 
 template<class T,class DEVICE_TYPE>
 struct AddNonAtomicFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data;
 
   KOKKOS_INLINE_FUNCTION
@@ -147,18 +147,18 @@ struct AddNonAtomicFunctor{
 
 template<class T>
 T AddLoopNonAtomic(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
 
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct AddNonAtomicFunctor<T,device_type> f_add;
+  struct AddNonAtomicFunctor<T,execution_space> f_add;
   f_add.data = data;
   Kokkos::parallel_for(loop,f_add);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   T val = h_data();
@@ -181,8 +181,8 @@ T AddLoopSerial(int loop) {
 
 template<class T,class DEVICE_TYPE>
 struct CASFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data;
 
   KOKKOS_INLINE_FUNCTION
@@ -200,17 +200,17 @@ struct CASFunctor{
 
 template<class T>
 T CASLoop(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct CASFunctor<T,device_type> f_cas;
+  struct CASFunctor<T,execution_space> f_cas;
   f_cas.data = data;
   Kokkos::parallel_for(loop,f_cas);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   T val = h_data();
@@ -220,8 +220,8 @@ T CASLoop(int loop) {
 
 template<class T,class DEVICE_TYPE>
 struct CASNonAtomicFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data;
 
   KOKKOS_INLINE_FUNCTION
@@ -243,17 +243,17 @@ struct CASNonAtomicFunctor{
 
 template<class T>
 T CASLoopNonAtomic(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct CASNonAtomicFunctor<T,device_type> f_cas;
+  struct CASNonAtomicFunctor<T,execution_space> f_cas;
   f_cas.data = data;
   Kokkos::parallel_for(loop,f_cas);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   T val = h_data();
@@ -286,8 +286,8 @@ T CASLoopSerial(int loop) {
 
 template<class T,class DEVICE_TYPE>
 struct ExchFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data, data2;
 
   KOKKOS_INLINE_FUNCTION
@@ -299,24 +299,24 @@ struct ExchFunctor{
 
 template<class T>
 T ExchLoop(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  typename ZeroFunctor<T,device_type>::type data2("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data2("HData");
+  typename ZeroFunctor<T,execution_space>::type data2("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data2("HData");
   f_zero.data = data2;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct ExchFunctor<T,device_type> f_exch;
+  struct ExchFunctor<T,execution_space> f_exch;
   f_exch.data = data;
   f_exch.data2 = data2;
   Kokkos::parallel_for(loop,f_exch);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   Kokkos::deep_copy(h_data2,data2);
@@ -327,8 +327,8 @@ T ExchLoop(int loop) {
 
 template<class T,class DEVICE_TYPE>
 struct ExchNonAtomicFunctor{
-  typedef DEVICE_TYPE device_type;
-  typedef Kokkos::View<T,device_type> type;
+  typedef DEVICE_TYPE execution_space;
+  typedef Kokkos::View<T,execution_space> type;
   type data, data2;
 
   KOKKOS_INLINE_FUNCTION
@@ -342,24 +342,24 @@ struct ExchNonAtomicFunctor{
 
 template<class T>
 T ExchLoopNonAtomic(int loop) {
-  struct ZeroFunctor<T,device_type> f_zero;
-  typename ZeroFunctor<T,device_type>::type data("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data("HData");
+  struct ZeroFunctor<T,execution_space> f_zero;
+  typename ZeroFunctor<T,execution_space>::type data("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data("HData");
   f_zero.data = data;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  typename ZeroFunctor<T,device_type>::type data2("Data");
-  typename ZeroFunctor<T,device_type>::h_type h_data2("HData");
+  typename ZeroFunctor<T,execution_space>::type data2("Data");
+  typename ZeroFunctor<T,execution_space>::h_type h_data2("HData");
   f_zero.data = data2;
   Kokkos::parallel_for(1,f_zero);
-  device_type::fence();
+  execution_space::fence();
 
-  struct ExchNonAtomicFunctor<T,device_type> f_exch;
+  struct ExchNonAtomicFunctor<T,execution_space> f_exch;
   f_exch.data = data;
   f_exch.data2 = data2;
   Kokkos::parallel_for(loop,f_exch);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_data,data);
   Kokkos::deep_copy(h_data2,data2);

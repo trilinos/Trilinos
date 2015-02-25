@@ -69,7 +69,7 @@ namespace Example {
   class GetMeanValsFunc {
   public:
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals)
@@ -94,7 +94,7 @@ namespace Example {
     typedef Sacado::UQ::PCE<Storage> Scalar;
     typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
@@ -127,7 +127,7 @@ namespace Example {
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Kokkos::View< Scalar*, Layout, Memory, Device > ViewType;
     typedef ViewType MeanViewType;
-    typedef typename ViewType::device_type device_type;
+    typedef typename ViewType::execution_space execution_space;
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals_) :
@@ -183,7 +183,7 @@ namespace Example {
       typedef Tpetra::Map<LO,GO,N> Map;
       typedef MueLu::TpetraOperator<Scalar,LO,GO,N> PreconditionerType;
 
-      typedef Kokkos::CrsMatrix<Scalar, LO, typename N::device_type, void, size_t> KokkosMatrixType;
+      typedef Kokkos::CrsMatrix<Scalar, LO, typename N::execution_space, void, size_t> KokkosMatrixType;
 
       typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
       typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;

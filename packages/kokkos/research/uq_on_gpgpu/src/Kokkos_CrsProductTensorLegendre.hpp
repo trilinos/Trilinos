@@ -76,10 +76,10 @@ namespace Kokkos {
 
 template< typename TensorScalar , class Device , CrsProductTensorLegendreVariant Variant >
 struct CrsProductTensorLegendre {
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
-  typedef View< unsigned* ,     device_type >  array_unsigned_type ;
-  typedef View< TensorScalar* , device_type >  array_scalar_type ;
+  typedef View< unsigned* ,     execution_space >  array_unsigned_type ;
+  typedef View< TensorScalar* , execution_space >  array_scalar_type ;
 
   typedef typename array_unsigned_type::HostMirror array_unsigned_host_type ;
   typedef typename array_scalar_type  ::HostMirror array_scalar_host_type ;
@@ -147,7 +147,7 @@ struct CrsProductTensorLegendre {
   , m_nonzero_count(0)
   , m_multiply_add_flops(0)
   {
-    enum { Align = Impl::is_same<device_type,Cuda>::value ? 32 : 1 };
+    enum { Align = Impl::is_same<execution_space,Cuda>::value ? 32 : 1 };
 
     const Kokkos::TripleProductTensorLegendreCombinatorialEvaluation
       combinatorial( variable_poly_degree , maximum_poly_degree );
@@ -409,8 +409,8 @@ private:
 
 public:
 
-  typedef Threads                          device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef Threads                          execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type iy ) const

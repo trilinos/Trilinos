@@ -125,20 +125,20 @@ void dot_neg( const VectorView & x ,
 template< typename Scalar , class DeviceType >
 struct ModifiedGramSchmidt
 {
-  typedef DeviceType  device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType  execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   typedef Kokkos::View< Scalar** ,
                         Kokkos::LayoutLeft ,
-                        device_type > multivector_type ;
+                        execution_space > multivector_type ;
 
   typedef Kokkos::View< Scalar* ,
                         Kokkos::LayoutLeft ,
-                        device_type > vector_type ;
+                        execution_space > vector_type ;
 
   typedef Kokkos::View< Scalar ,
                         Kokkos::LayoutLeft ,
-                        device_type > value_view ;
+                        execution_space > value_view ;
 
 
   multivector_type Q ;
@@ -180,7 +180,7 @@ struct ModifiedGramSchmidt
       }
     }
 
-    device_type::fence();
+    execution_space::fence();
 
     return timer.seconds();
   }

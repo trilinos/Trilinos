@@ -17,7 +17,7 @@ namespace Impl {
     typedef test_vector_combinations<Scalar,Device> self_type;
 
     typedef Scalar scalar_type;
-    typedef Device device_type;
+    typedef Device execution_space;
 
     Scalar reference;
     Scalar result;

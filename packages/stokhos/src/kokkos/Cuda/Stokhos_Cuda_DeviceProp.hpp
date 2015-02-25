@@ -109,7 +109,14 @@ namespace Stokhos {
 
       // These come from the CUDA occupancy calculator
       if (compute_capability_major == 3) {
-        shared_memory_capacity = 48 * 1024;
+        if (compute_capability_minor >= 7) {
+          shared_memory_capacity = 112 * 1024;
+          max_regs_per_sm = 128 * 1024;
+        }
+        else {
+          shared_memory_capacity = 48 * 1024;
+          max_regs_per_sm = 64 * 1024;
+        }
         shared_memory_granularity = 256;
         max_threads_per_block = 1024;
         max_threads_per_sm = 2048;
@@ -117,7 +124,6 @@ namespace Stokhos {
         max_warps_per_sm = 64;
         warp_size = 32;
         warp_granularity = 4;
-        max_regs_per_sm = 64 * 1024;
         reg_bank_size = 256;
         has_shuffle = true;
         has_ldg = true;

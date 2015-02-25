@@ -66,12 +66,12 @@ size_t allocation_count( const Kokkos::View<T,L,D,M,S> & view )
 template< typename T, class DeviceType>
 struct TestViewOperator
 {
-  typedef DeviceType  device_type ;
+  typedef DeviceType  execution_space ;
 
   static const unsigned N = 100 ;
   static const unsigned D = 3 ;
 
-  typedef Kokkos::View< T*[D] , device_type > view_type ;
+  typedef Kokkos::View< T*[D] , execution_space > view_type ;
 
   const view_type v1 ;
   const view_type v2 ;
@@ -117,9 +117,9 @@ struct TestViewOperator_LeftAndRight ;
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -134,13 +134,13 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+    View< DataType, Kokkos::LayoutStride, execution_space > stride_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -231,9 +231,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -248,10 +248,10 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -326,9 +326,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 7 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -343,10 +343,10 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -419,9 +419,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 6 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -436,13 +436,13 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+    View< DataType, Kokkos::LayoutStride, execution_space > stride_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -523,9 +523,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -540,10 +540,10 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -612,9 +612,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 4 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -629,13 +629,13 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+    View< DataType, Kokkos::LayoutStride, execution_space > stride_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -718,9 +718,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -735,10 +735,10 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
@@ -810,9 +810,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
 template< class DataType , class DeviceType >
 struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
 {
-  typedef DeviceType                          device_type ;
-  typedef typename device_type::memory_space  memory_space ;
-  typedef typename device_type::size_type     size_type ;
+  typedef DeviceType                          execution_space ;
+  typedef typename execution_space::memory_space  memory_space ;
+  typedef typename execution_space::size_type     size_type ;
 
   typedef int value_type ;
 
@@ -827,13 +827,13 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
 
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutLeft, device_type > left_view ;
+    View< DataType, Kokkos::LayoutLeft, execution_space > left_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutRight, device_type > right_view ;
+    View< DataType, Kokkos::LayoutRight, execution_space > right_view ;
 
   typedef Kokkos::
-    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+    View< DataType, Kokkos::LayoutStride, execution_space > stride_view ;
 
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;

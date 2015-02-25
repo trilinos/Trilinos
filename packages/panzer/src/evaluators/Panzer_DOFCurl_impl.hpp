@@ -47,50 +47,265 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
 namespace {
 
 //**********************************************************************
-template<typename ScalarT>                   
-void evaluateCurl_withSens(int numCells,
-                           int basis_dimension,
-                           PHX::MDField<ScalarT> & dof_curl, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
-                           const Intrepid::FieldContainer<double> & curl_basis)
+template <typename ScalarT,typename Array,int spaceDim>
+class EvaluateCurlWithSens_Vector {
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
+  PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl;
+  Array curl_basis;
+
+  int numFields;
+  int numPoints;
+
+public:
+  typedef typename PHX::Device execution_space;
+
+  EvaluateCurlWithSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
+                              PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
+                              Array in_curl_basis) 
+    : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
+  {
+    numFields = curl_basis.dimension(1);
+    numPoints = curl_basis.dimension(2);
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+    for (int pt=0; pt<numPoints; pt++) {
+      for (int d=0; d<spaceDim; d++) {
+        // first initialize to the right thing (prevents over writing with 0)
+        // then loop over one less basis function
+        dof_curl(cell,pt,d) = dof_value(cell, 0) * curl_basis(cell, 0, pt, d);
+        for (int bf=1; bf<numFields; bf++)
+          dof_curl(cell,pt,d) += dof_value(cell, bf) * curl_basis(cell, bf, pt, d);
+      }
+    }
+  }
+};
+
+template <typename ScalarT,typename ArrayT>
+void evaluateCurl_withSens_vector(int numCells,
+                           PHX::MDField<ScalarT,Cell,Point,Dim> & dof_curl, 
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
+                           const ArrayT & curl_basis)
 { 
   if(numCells>0) {
     // evaluate at quadrature points
-    if(basis_dimension==3) {
+    int numFields = curl_basis.dimension(1);
+    int numPoints = curl_basis.dimension(2);
+    int spaceDim  = curl_basis.dimension(3);
 
-      int numFields = curl_basis.dimension(1);
-      int numPoints = curl_basis.dimension(2);
-      int spaceDim  = curl_basis.dimension(3);
-
-      for (int cell=0; cell<numCells; cell++) {
-        for (int pt=0; pt<numPoints; pt++) {
-          for (int d=0; d<spaceDim; d++) {
-            // first initialize to the right thing (prevents over writing with 0)
-            // then loop over one less basis function
-            ScalarT & curl = dof_curl(cell,pt,d);
-            curl = dof_value(cell, 0) * curl_basis(cell, 0, pt, d);
-            for (int bf=1; bf<numFields; bf++)
-              curl += dof_value(cell, bf) * curl_basis(cell, bf, pt, d);
-          }
+    for (int cell=0; cell<numCells; cell++) {
+      for (int pt=0; pt<numPoints; pt++) {
+        for (int d=0; d<spaceDim; d++) {
+          // first initialize to the right thing (prevents over writing with 0)
+          // then loop over one less basis function
+          dof_curl(cell,pt,d) = dof_value(cell, 0) * curl_basis(cell, 0, pt, d);
+          for (int bf=1; bf<numFields; bf++)
+            dof_curl(cell,pt,d) += dof_value(cell, bf) * curl_basis(cell, bf, pt, d);
         }
       }
-
-    }
-    else {
-      // Zero out arrays
-      for (int i = 0; i < dof_curl.size(); ++i)
-        dof_curl[i] = 0.0;
-
-      Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,curl_basis);
     }
   }
 }
+
+//**********************************************************************
+template <typename ScalarT,typename Array>
+class EvaluateCurlWithSens_Scalar {
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
+  PHX::MDField<ScalarT,Cell,Point> dof_curl;
+  Array curl_basis;
+
+  int numFields;
+  int numPoints;
+
+public:
+  typedef typename PHX::Device execution_space;
+
+  EvaluateCurlWithSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
+                              PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
+                              Array in_curl_basis) 
+    : dof_value(in_dof_value), dof_curl(in_dof_curl), curl_basis(in_curl_basis)
+  {
+    numFields = curl_basis.dimension(1);
+    numPoints = curl_basis.dimension(2);
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+    for (int pt=0; pt<numPoints; pt++) {
+      // first initialize to the right thing (prevents over writing with 0)
+      // then loop over one less basis function
+      dof_curl(cell,pt) = dof_value(cell, 0) * curl_basis(cell, 0, pt);
+      for (int bf=1; bf<numFields; bf++)
+        dof_curl(cell,pt) += dof_value(cell, bf) * curl_basis(cell, bf, pt);
+    }
+  }
+};
+
+template <typename ScalarT,typename ArrayT>
+void evaluateCurl_withSens_scalar(int numCells,
+                           PHX::MDField<ScalarT,Cell,Point> & dof_curl, 
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
+                           const ArrayT & curl_basis)
+{ 
+  if(numCells>0) {
+    // evaluate at quadrature points
+    int numFields = curl_basis.dimension(1);
+    int numPoints = curl_basis.dimension(2);
+
+    for (int cell=0; cell<numCells; cell++) {
+      for (int pt=0; pt<numPoints; pt++) {
+        // first initialize to the right thing (prevents over writing with 0)
+        // then loop over one less basis function
+        dof_curl(cell,pt) = dof_value(cell, 0) * curl_basis(cell, 0, pt);
+        for (int bf=1; bf<numFields; bf++)
+          dof_curl(cell,pt) += dof_value(cell, bf) * curl_basis(cell, bf, pt);
+      }
+    }
+  }
+}
+
+//**********************************************************************
+template <typename ScalarT,typename Array,int spaceDim>
+class EvaluateCurlFastSens_Vector {
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
+  PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl;
+  Kokkos::View<const int*,PHX::Device> offsets;
+  Array curl_basis;
+
+  int numFields;
+  int numPoints;
+
+public:
+  typedef typename PHX::Device execution_space;
+
+  EvaluateCurlFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
+                              PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
+                              Kokkos::View<const int*,PHX::Device> in_offsets,
+                              Array in_curl_basis) 
+    : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
+  {
+    numFields = curl_basis.dimension(1);
+    numPoints = curl_basis.dimension(2);
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+    for (int pt=0; pt<numPoints; pt++) {
+      for (int d=0; d<spaceDim; d++) {
+        // first initialize to the right thing (prevents over writing with 0)
+        // then loop over one less basis function
+        dof_curl(cell,pt,d) = dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d);
+        dof_curl(cell,pt,d).fastAccessDx(offsets(0)) = dof_value(cell, 0).fastAccessDx(offsets(0)) * curl_basis(cell, 0, pt, d);
+        for (int bf=1; bf<numFields; bf++) {
+          dof_curl(cell,pt,d).val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);
+          dof_curl(cell,pt,d).fastAccessDx(offsets(bf)) += dof_value(cell, bf).fastAccessDx(offsets(bf)) * curl_basis(cell, bf, pt, d);
+        }
+      }
+    }
+  }
+};
+template <typename ScalarT,typename ArrayT>
+void evaluateCurl_fastSens_vector(int numCells,
+                           PHX::MDField<ScalarT,Cell,Point,Dim> & dof_curl, 
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
+                           const std::vector<int> & offsets,
+                           const ArrayT & curl_basis)
+{ 
+  if(numCells>0) {
+    int numFields = curl_basis.dimension(1);
+    int numPoints = curl_basis.dimension(2);
+    int spaceDim  = curl_basis.dimension(3);
+
+    for (int cell=0; cell<numCells; cell++) {
+      for (int pt=0; pt<numPoints; pt++) {
+        for (int d=0; d<spaceDim; d++) {
+          // first initialize to the right thing (prevents over writing with 0)
+          // then loop over one less basis function
+          dof_curl(cell,pt,d) = ScalarT(numFields, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
+          dof_curl(cell,pt,d).fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt, d);
+          for (int bf=1; bf<numFields; bf++) {
+            dof_curl(cell,pt,d).val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);
+            dof_curl(cell,pt,d).fastAccessDx(offsets[bf]) += dof_value(cell, bf).fastAccessDx(offsets[bf]) * curl_basis(cell, bf, pt, d);
+          }
+        }
+      }
+    }
+  }
+}
+
+//**********************************************************************
+template <typename ScalarT,typename Array>
+class EvaluateCurlFastSens_Scalar {
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
+  PHX::MDField<ScalarT,Cell,Point> dof_curl;
+  Kokkos::View<const int*,PHX::Device> offsets;
+  Array curl_basis;
+
+  int numFields;
+  int numPoints;
+
+public:
+  typedef typename PHX::Device execution_space;
+
+  EvaluateCurlFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
+                              PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
+                              Kokkos::View<const int*,PHX::Device> in_offsets,
+                              Array in_curl_basis) 
+    : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
+  {
+    numFields = curl_basis.dimension(1);
+    numPoints = curl_basis.dimension(2);
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+    for (int pt=0; pt<numPoints; pt++) {
+      // first initialize to the right thing (prevents over writing with 0)
+      // then loop over one less basis function
+      dof_curl(cell,pt) = dof_value(cell, 0).val() * curl_basis(cell, 0, pt);
+      dof_curl(cell,pt).fastAccessDx(offsets(0)) = dof_value(cell, 0).fastAccessDx(offsets(0)) * curl_basis(cell, 0, pt);
+      for (int bf=1; bf<numFields; bf++) {
+        dof_curl(cell,pt).val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt);
+        dof_curl(cell,pt).fastAccessDx(offsets(bf)) += dof_value(cell, bf).fastAccessDx(offsets(bf)) * curl_basis(cell, bf, pt);
+      }
+    }
+  }
+};
+template <typename ScalarT,typename ArrayT>
+void evaluateCurl_fastSens_scalar(int numCells,
+                           PHX::MDField<ScalarT,Cell,Point> & dof_curl, 
+                           PHX::MDField<const ScalarT,Cell,Point> & dof_value,
+                           const std::vector<int> & offsets,
+                           const ArrayT & curl_basis)
+{ 
+  if(numCells>0) {
+    int numFields = curl_basis.dimension(1);
+    int numPoints = curl_basis.dimension(2);
+
+    for (int cell=0; cell<numCells; cell++) {
+      for (int pt=0; pt<numPoints; pt++) {
+        // first initialize to the right thing (prevents over writing with 0)
+        // then loop over one less basis function
+        dof_curl(cell,pt) = ScalarT(numFields, dof_value(cell, 0).val() * curl_basis(cell, 0, pt));
+        dof_curl(cell,pt).fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt);
+        for (int bf=1; bf<numFields; bf++) {
+          dof_curl(cell,pt).val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt);
+          dof_curl(cell,pt).fastAccessDx(offsets[bf]) += dof_value(cell, bf).fastAccessDx(offsets[bf]) * curl_basis(cell, bf, pt);
+        }
+      }
+    }
+  }
+}
+
+//**********************************************************************
 
 }
 
@@ -99,8 +314,8 @@ void evaluateCurl_withSens(int numCells,
 //**********************************************************************
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-DOFCurl<EvalT, Traits>::
+template<typename EvalT, typename TRAITS>                   
+DOFCurl<EvalT, TRAITS>::
 DOFCurl(const Teuchos::ParameterList & p) :
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
@@ -117,41 +332,56 @@ DOFCurl(const Teuchos::ParameterList & p) :
 
   // build dof_curl
   basis_dimension = basis->dimension();
-  if(basis_dimension==2)
-     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+  if(basis_dimension==2) {
+     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
-  else if(basis_dimension==3)
-     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+     this->addEvaluatedField(dof_curl_scalar);
+  }
+  else if(basis_dimension==3) {
+     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
+     this->addEvaluatedField(dof_curl_vector);
+  }
   else
   { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
-  this->addEvaluatedField(dof_curl);
   this->addDependentField(dof_value);
   
-  std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
+  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " ()";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-void DOFCurl<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+template<typename EvalT, typename TRAITS>                   
+void DOFCurl<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_value,fm);
-  this->utils.setFieldData(dof_curl,fm);
+  if(basis_dimension==3)
+    this->utils.setFieldData(dof_curl_vector,fm);
+  else
+    this->utils.setFieldData(dof_curl_scalar,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-void DOFCurl<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT, typename TRAITS>                   
+void DOFCurl<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
-  evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
+  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+
+  if(basis_dimension==3) {
+    EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
+    Kokkos::parallel_for(workset.num_cells,functor);
+  }
+  else {
+    EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
+    Kokkos::parallel_for(workset.num_cells,functor);
+  }
 }
 
 //**********************************************************************
@@ -161,8 +391,8 @@ evaluateFields(typename Traits::EvalData workset)
 //**********************************************************************
 
 //**********************************************************************
-template<typename Traits>                   
-DOFCurl<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>                   
+DOFCurl<typename TRAITS::Jacobian, TRAITS>::
 DOFCurl(const Teuchos::ParameterList & p) :
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
@@ -175,6 +405,14 @@ DOFCurl(const Teuchos::ParameterList & p) :
   // skip a large number of AD calculations?
   if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
     offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+
+    // allocate and copy offsets vector to Kokkos array
+    Kokkos::View<int*,PHX::Device> offsets_array_nc
+        = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    for(std::size_t i=0;i<offsets.size();i++)
+      offsets_array_nc(i) = offsets[i];
+    offsets_array = offsets_array_nc;
+
     accelerate_jacobian = true;  // short cut for identity matrix
   }
   else
@@ -188,82 +426,68 @@ DOFCurl(const Teuchos::ParameterList & p) :
 
   // build dof_curl
   basis_dimension = basis->dimension();
-  if(basis_dimension==2)
-     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+  if(basis_dimension==2) {
+     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
-  else if(basis_dimension==3)
-     dof_curl = PHX::MDField<ScalarT>(p.get<std::string>("Curl Name"), 
+     this->addEvaluatedField(dof_curl_scalar);
+  }
+  else if(basis_dimension==3) {
+     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>("Curl Name"), 
       	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
+     this->addEvaluatedField(dof_curl_vector);
+  }
   else
   { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
-  this->addEvaluatedField(dof_curl);
   this->addDependentField(dof_value);
   
-  std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<panzer::Traits::Jacobian>::value+")";
+  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " (Jacobian)";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename Traits>                   
-void DOFCurl<panzer::Traits::Jacobian, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS>                   
+void DOFCurl<typename TRAITS::Jacobian, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_value,fm);
-  this->utils.setFieldData(dof_curl,fm);
+  if(basis_dimension==3)
+    this->utils.setFieldData(dof_curl_vector,fm);
+  else
+    this->utils.setFieldData(dof_curl_scalar,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
 
-template<typename Traits>                   
-void DOFCurl<panzer::Traits::Jacobian,Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS>                   
+void DOFCurl<typename TRAITS::Jacobian,TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
+  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+
   if(!accelerate_jacobian) {
-    // do the case where we use the AD types to determine the derivatives
-    evaluateCurl_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
-    return;
-  }
-
-  if(workset.num_cells>0) {
-    // evaluate at quadrature points
     if(basis_dimension==3) {
-      const Intrepid::FieldContainer<double> & curl_basis = workset.bases[basis_index]->curl_basis;
-
-      int numCells  = workset.num_cells;
-      int numFields = curl_basis.dimension(1);
-      int numPoints = curl_basis.dimension(2);
-      int spaceDim  = curl_basis.dimension(3);
-
-      int fadSize = dof_value(0,0).size(); // this is supposed to be fast
-                                           // so assume that everything is the
-                                           // same size!
-
-      for (int cell=0; cell<numCells; cell++) {
-        for (int pt=0; pt<numPoints; pt++) {
-          for (int d=0; d<spaceDim; d++) {
-            // first initialize to the right thing (prevents over writing with 0)
-            // then loop over one less basis function
-            ScalarT & curl = dof_curl(cell,pt,d);
-            curl = ScalarT(fadSize, dof_value(cell, 0).val() * curl_basis(cell, 0, pt, d));
-            curl.fastAccessDx(offsets[0]) = dof_value(cell, 0).fastAccessDx(offsets[0]) * curl_basis(cell, 0, pt, d);
-            for (int bf=1; bf<numFields; bf++) {
-              curl.val() += dof_value(cell, bf).val() * curl_basis(cell, bf, pt, d);
-              curl.fastAccessDx(offsets[bf]) += dof_value(cell, bf).fastAccessDx(offsets[bf]) * curl_basis(cell, bf, pt, d);
-            }
-          }
-        }
-      }
-
+      EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
+      Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      // Zero out arrays
-      for (int i = 0; i < dof_curl.size(); ++i)
-        dof_curl[i] = 0.0;
+      EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
 
-      Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
+    return;
+  }
+  else {
+
+    if(basis_dimension==3) {
+      EvaluateCurlFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,offsets_array,basisValues.curl_basis_vector);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+    else {
+      EvaluateCurlFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,offsets_array,basisValues.curl_basis_scalar);
+      Kokkos::parallel_for(workset.num_cells,functor);
     }
   }
 }

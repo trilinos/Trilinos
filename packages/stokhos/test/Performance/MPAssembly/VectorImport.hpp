@@ -141,7 +141,7 @@ public:
   const unsigned         count_receive ;
 
   struct Pack {
-    typedef typename VectorType::device_type device_type ;
+    typedef typename VectorType::execution_space execution_space ;
     const CommIdentType  index ;
     const VectorType     source ;
     const VectorType     buffer ;
@@ -158,7 +158,7 @@ public:
       , buffer( arg_buffer )
     {
       Kokkos::parallel_for( index.dimension_0() , *this );
-      device_type::fence();
+      execution_space::fence();
     }
   };
 

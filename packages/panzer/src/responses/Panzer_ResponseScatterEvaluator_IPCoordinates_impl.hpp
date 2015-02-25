@@ -103,10 +103,11 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index_])->ip_coordinates;
+  // Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index_])->ip_coordinates;
+  IntegrationValues2<double> & iv = *workset.int_rules[ir_index_];
 
-  if (tmpCoords_.size() != Teuchos::as<std::size_t>(workset_coords.dimension(2))) {
-    tmpCoords_.resize(workset_coords.dimension(2));
+  if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.dimension(2))) {
+    tmpCoords_.resize(iv.ip_coordinates.dimension(2));
     for(std::size_t dim=0;dim<tmpCoords_.size();dim++)
       tmpCoords_[dim].clear();
   }
@@ -114,10 +115,10 @@ evaluateFields(typename Traits::EvalData workset)
   // This ordering is for the DataTransferKit.  It blocks all x
   // coordinates for a set of points, then all y coordinates and if
   // required all z coordinates.
-  for (int dim = 0; dim < workset_coords.dimension(2); ++dim)
+  for (int dim = 0; dim < iv.ip_coordinates.dimension(2); ++dim)
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
-      for (int ip = 0; ip < workset_coords.dimension(1); ++ip)
-        tmpCoords_[dim].push_back(workset_coords(static_cast<int>(cell),ip,dim));
+      for (int ip = 0; ip < iv.ip_coordinates.dimension(1); ++ip)
+        tmpCoords_[dim].push_back(iv.ip_coordinates(static_cast<int>(cell),ip,dim));
 }
 
 //**********************************************************************

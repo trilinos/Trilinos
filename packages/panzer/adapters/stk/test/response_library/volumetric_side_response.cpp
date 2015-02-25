@@ -50,6 +50,9 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -111,6 +114,8 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst)
   {
+    PHX::KokkosDeviceSession session;
+
   #ifdef HAVE_MPI
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
   #else
@@ -187,6 +192,8 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst2)
   {
+    PHX::KokkosDeviceSession session;
+
   #ifdef HAVE_MPI
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
   #else
@@ -260,6 +267,8 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_eval)
   {
+    PHX::KokkosDeviceSession session;
+
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models("Closure Models");

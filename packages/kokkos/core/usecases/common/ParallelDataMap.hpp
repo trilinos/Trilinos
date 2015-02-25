@@ -111,10 +111,10 @@ struct PackArray ;
 template< typename DeviceType, typename ValueType >
 struct PackArray< View< ValueType* , DeviceType > , void >
 {
-  typedef DeviceType                         device_type ;
+  typedef DeviceType                         execution_space ;
   typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType* , device_type >  array_type ;
-  typedef View< ValueType* , device_type >  buffer_type ;
+  typedef View< ValueType* , execution_space >  array_type ;
+  typedef View< ValueType* , execution_space >  buffer_type ;
 
 private:
 
@@ -146,10 +146,10 @@ public:
 template< typename DeviceType, typename ValueType , unsigned N1 >
 struct PackArray< View< ValueType*[N1] , DeviceType > , void >
 {
-  typedef DeviceType                                  device_type ;
+  typedef DeviceType                                  execution_space ;
   typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType*[N1] , device_type >       array_type ;
-  typedef View< ValueType* , device_type >           buffer_type ;
+  typedef View< ValueType*[N1] , execution_space >       array_type ;
+  typedef View< ValueType* , execution_space >           buffer_type ;
 
 private:
 
@@ -191,10 +191,10 @@ template< class ArrayType , class Rank = void > struct UnpackArray ;
 template< typename DeviceType, typename ValueType >
 struct UnpackArray< View< ValueType* , DeviceType > , void >
 {
-  typedef DeviceType                         device_type ;
+  typedef DeviceType                         execution_space ;
   typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType* , device_type >  array_type ;
-  typedef View< ValueType* , device_type >  buffer_type ;
+  typedef View< ValueType* , execution_space >  array_type ;
+  typedef View< ValueType* , execution_space >  buffer_type ;
 
 private:
 
@@ -226,10 +226,10 @@ public:
 template< typename DeviceType, typename ValueType , unsigned N1 >
 struct UnpackArray< View< ValueType*[N1] , DeviceType > , void >
 {
-  typedef DeviceType                                  device_type ;
+  typedef DeviceType                                  execution_space ;
   typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType* , device_type >           buffer_type ;
-  typedef View< ValueType*[N1] , device_type >       array_type ;
+  typedef View< ValueType* , execution_space >           buffer_type ;
+  typedef View< ValueType*[N1] , execution_space >       array_type ;
 
 private:
 
@@ -290,9 +290,9 @@ template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
 public:
 
-  typedef Device                                    device_type ;
+  typedef Device                                    execution_space ;
   typedef Kokkos::ParallelDataMap                   data_map_type ;
-  typedef Kokkos::View< ValueType* , device_type >  buffer_dev_type ;
+  typedef Kokkos::View< ValueType* , execution_space >  buffer_dev_type ;
   typedef typename buffer_dev_type::HostMirror      buffer_host_type ;
 
 private:
@@ -484,9 +484,9 @@ template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
 public:
 
-  typedef Device                                    device_type ;
+  typedef Device                                    execution_space ;
   typedef Kokkos::ParallelDataMap                   data_map_type ;
-  typedef Kokkos::View< ValueType* , device_type >  buffer_dev_type ;
+  typedef Kokkos::View< ValueType* , execution_space >  buffer_dev_type ;
   typedef typename buffer_dev_type::HostMirror      buffer_host_type ;
 
   buffer_dev_type      dev_buffer ;

@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_GATHER_ORIENTATION_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_ORIENTATION_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -61,10 +61,10 @@ class UniqueGlobalIndexer; //forward declaration
 /** \brief Gathers orientations per field from the global indexer and
     stores them in the field manager.
 */
-template<typename EvalT, typename Traits,typename LO,typename GO> 
+template<typename EvalT, typename TRAITS,typename LO,typename GO> 
 class GatherOrientation
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<EvalT, Traits>,
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<EvalT, TRAITS>,
     public panzer::CloneableEvaluator  {
    
 public:
@@ -75,13 +75,13 @@ public:
   GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherOrientation<EvalT,TRAITS,LO,GO>(globalIndexer_,pl)); }
   
 private:
 

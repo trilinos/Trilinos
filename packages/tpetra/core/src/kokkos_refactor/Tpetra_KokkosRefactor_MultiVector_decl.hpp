@@ -561,7 +561,7 @@ namespace Tpetra {
     /// parallel_for, parallel_reduce, and parallel_scan.  It also has
     /// a default memory space, in which the Tpetra object's data
     /// live.
-    typedef DeviceType device_type;
+    typedef DeviceType execution_space;
 
     /// \brief Kokkos::DualView specialization used by this class.
     ///
@@ -579,9 +579,9 @@ namespace Tpetra {
     /// the default execution space for host memory is Kokkos::OpenMP,
     /// even if the user-specified DeviceType is Kokkos::Serial.  That
     /// is why we go through the trouble of asking for the
-    /// device_type's execution space.
+    /// execution_space's execution space.
     typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
-      typename device_type::execution_space> dual_view_type;
+      typename execution_space::execution_space> dual_view_type;
 
     //! The type of the Map specialization used by this class.
     typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
@@ -1346,14 +1346,14 @@ namespace Tpetra {
     /// \endcode
     /// and if you want to get the host mirror of that View, do this:
     /// \code
-    /// typedef typename dual_view_type::host_mirror_space host_device_type;
+    /// typedef typename dual_view_type::host_mirror_space host_execution_space;
     /// typedef typename dual_view_type::t_host host_view_type;
-    /// host_view_type hostView = DV.getLocalView<host_device_type> ();
+    /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
     /// \endcode
     template<class TargetDeviceType>
     typename Kokkos::Impl::if_c<
       Kokkos::Impl::is_same<
-        typename device_type::memory_space,
+        typename execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
       typename dual_view_type::t_dev,
       typename dual_view_type::t_host>::type
@@ -1441,7 +1441,7 @@ namespace Tpetra {
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
-         const Kokkos::View<dot_type*, device_type>& dots) const;
+         const Kokkos::View<dot_type*, execution_space>& dots) const;
 
     /// \brief Compute the dot product of each corresponding pair of
     ///   vectors (columns) in A and B, storing the result in a device
@@ -1458,11 +1458,11 @@ namespace Tpetra {
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
     dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
-         const Kokkos::View<T*, device_type>& dots) const
+         const Kokkos::View<T*, execution_space>& dots) const
     {
       const size_t numDots = dots.dimension_0 ();
-      Kokkos::View<dot_type*, device_type> dts ("MV::dot tmp", numDots);
-      // Call overload that takes a Kokkos::View<dot_type*, device_type>.
+      Kokkos::View<dot_type*, execution_space> dts ("MV::dot tmp", numDots);
+      // Call overload that takes a Kokkos::View<dot_type*, execution_space>.
       this->dot (A, dts);
       // FIXME (mfh 14 Jul 2014) Does this actually work if dot_type
       // and T differ?  We would need a test for this, but only the
@@ -1506,7 +1506,7 @@ namespace Tpetra {
     /// the entries of alpha are zero.  That means, for example, that
     /// if \c *this contains NaN entries before calling this method,
     /// the NaN entries will remain after this method finishes.
-    void scale (const Kokkos::View<const impl_scalar_type*, device_type> alpha);
+    void scale (const Kokkos::View<const impl_scalar_type*, execution_space> alpha);
 
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
@@ -1555,7 +1555,7 @@ namespace Tpetra {
     ///
     /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
-    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    void norm1 (const Kokkos::View<mag_type*, execution_space>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1572,11 +1572,11 @@ namespace Tpetra {
     /// \c void, as above.
     template <typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
-    norm1 (const Kokkos::View<T*, device_type>& norms) const
+    norm1 (const Kokkos::View<T*, execution_space>& norms) const
     {
       const size_t numNorms = norms.dimension_0 ();
-      Kokkos::View<mag_type*, device_type> tmpNorms ("MV::norm1 tmp", numNorms);
-      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      Kokkos::View<mag_type*, execution_space> tmpNorms ("MV::norm1 tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, execution_space>.
       this->norm1 (tmpNorms);
       // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
@@ -1632,7 +1632,7 @@ namespace Tpetra {
     ///
     /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
-    void norm2 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    void norm2 (const Kokkos::View<mag_type*, execution_space>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1647,11 +1647,11 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template<typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
-    norm2 (const Kokkos::View<T*, device_type>& norms) const
+    norm2 (const Kokkos::View<T*, execution_space>& norms) const
     {
       const size_t numNorms = norms.dimension_0 ();
-      Kokkos::View<mag_type*, device_type> theNorms ("MV::norm2 tmp", numNorms);
-      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      Kokkos::View<mag_type*, execution_space> theNorms ("MV::norm2 tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, execution_space>.
       this->norm2 (theNorms);
       // FIXME (mfh 14 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
@@ -1701,7 +1701,7 @@ namespace Tpetra {
     /// The infinity-norm of a vector is the maximum of the magnitudes
     /// of the vector's entries.  On exit, norms(j) is the
     /// infinity-norm of column j of this MultiVector.
-    void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
+    void normInf (const Kokkos::View<mag_type*, execution_space>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1716,11 +1716,11 @@ namespace Tpetra {
     /// different types; the method still returns \c void, as above.
     template<typename T>
     typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
-    normInf (const Kokkos::View<T*, device_type>& norms) const
+    normInf (const Kokkos::View<T*, execution_space>& norms) const
     {
       const size_t numNorms = norms.dimension_0 ();
-      Kokkos::View<mag_type*, device_type> theNorms ("MV::normInf tmp", numNorms);
-      // Call overload that takes a Kokkos::View<mag_type*, device_type>.
+      Kokkos::View<mag_type*, execution_space> theNorms ("MV::normInf tmp", numNorms);
+      // Call overload that takes a Kokkos::View<mag_type*, execution_space>.
       this->normInf (theNorms);
       // FIXME (mfh 15 Jul 2014) Does this actually work if mag_type
       // and T differ?  We would need a test for this, but only the
@@ -2070,7 +2070,7 @@ namespace Tpetra {
     /// norms(j) is the norm (of the selected type) of column j of
     /// this MultiVector.
     void
-    normImpl (const Kokkos::View<mag_type*, device_type>& norms,
+    normImpl (const Kokkos::View<mag_type*, execution_space>& norms,
               const EWhichNorm whichNorm) const;
 
     //@}
@@ -2120,23 +2120,23 @@ namespace Tpetra {
     copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const local_ordinal_type*, device_type>& permuteToLIDs,
-      const Kokkos::View<const local_ordinal_type*, device_type>& permuteFromLIDs);
+      const Kokkos::View<const local_ordinal_type*, execution_space>& permuteToLIDs,
+      const Kokkos::View<const local_ordinal_type*, execution_space>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const local_ordinal_type*, device_type>& exportLIDs,
-      Kokkos::View<impl_scalar_type*, device_type>& exports,
-      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
+      const Kokkos::View<const local_ordinal_type*, execution_space>& exportLIDs,
+      Kokkos::View<impl_scalar_type*, execution_space>& exports,
+      const Kokkos::View<size_t*, execution_space>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
 
     virtual void
     unpackAndCombineNew (
-      const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
-      const Kokkos::View<const impl_scalar_type*, device_type>& imports,
-      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, execution_space>& importLIDs,
+      const Kokkos::View<const impl_scalar_type*, execution_space>& imports,
+      const Kokkos::View<size_t*, execution_space>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);

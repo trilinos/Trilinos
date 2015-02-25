@@ -88,25 +88,25 @@ struct Fields {
   static const int K_V_ZX = 2 ;
 
 
-  typedef Device                           device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef Device                           execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef HybridFEM::FEMesh<double,ElemNodeCount,device_type>  FEMesh ;
+  typedef HybridFEM::FEMesh<double,ElemNodeCount,execution_space>  FEMesh ;
 
   typedef typename FEMesh::node_coords_type    node_coords_type ;
   typedef typename FEMesh::elem_node_ids_type  elem_node_ids_type ;
   typedef typename FEMesh::node_elem_ids_type  node_elem_ids_type ;
   typedef typename Kokkos::ParallelDataMap   parallel_data_map ;
 
-  typedef Kokkos::View< double[][ SpatialDim ][ NumStates ] , device_type > geom_state_array_type ;
-  typedef Kokkos::View< Scalar[][ SpatialDim ] , device_type > geom_array_type ;
-  typedef Kokkos::View< Scalar[] ,               device_type > array_type ;
-  typedef Kokkos::View< Scalar ,                 device_type >  scalar_type ;
+  typedef Kokkos::View< double[][ SpatialDim ][ NumStates ] , execution_space > geom_state_array_type ;
+  typedef Kokkos::View< Scalar[][ SpatialDim ] , execution_space > geom_array_type ;
+  typedef Kokkos::View< Scalar[] ,               execution_space > array_type ;
+  typedef Kokkos::View< Scalar ,                 execution_space >  scalar_type ;
 
-  typedef Kokkos::View< Scalar[][  6 ] ,    device_type >  elem_sym_tensor_type ;
-  typedef Kokkos::View< Scalar[][  9 ] ,    device_type >  elem_tensor_type ;
-  typedef Kokkos::View< Scalar[][  9 ][ NumStates ] , device_type >  elem_tensor_state_type ;
-  typedef Kokkos::View< Scalar[][ SpatialDim ][ ElemNodeCount ] , device_type > elem_node_geom_type ;
+  typedef Kokkos::View< Scalar[][  6 ] ,    execution_space >  elem_sym_tensor_type ;
+  typedef Kokkos::View< Scalar[][  9 ] ,    execution_space >  elem_tensor_type ;
+  typedef Kokkos::View< Scalar[][  9 ][ NumStates ] , execution_space >  elem_tensor_state_type ;
+  typedef Kokkos::View< Scalar[][ SpatialDim ][ ElemNodeCount ] , execution_space > elem_node_geom_type ;
 
   // Parameters:
   const int num_nodes ;
@@ -322,9 +322,9 @@ void comp_grad( const Scalar * const x ,
 template< typename Scalar , class DeviceType >
 struct initialize_element
 {
-  typedef DeviceType     device_type ;
+  typedef DeviceType     execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type > Fields ;
+  typedef Explicit::Fields< Scalar , execution_space > Fields ;
 
   typename Fields::elem_node_ids_type      elem_node_connectivity ;
   typename Fields::node_coords_type        model_coords ;
@@ -366,7 +366,7 @@ struct initialize_element
       z[i]  = model_coords( n , 2 );
     }
 
-    comp_grad<Scalar,device_type>( x, y, z, grad_x, grad_y, grad_z);
+    comp_grad<Scalar,execution_space>( x, y, z, grad_x, grad_y, grad_z);
 
     stretch(ielem,K_XX) = 1 ;
     stretch(ielem,K_YY) = 1 ;
@@ -381,7 +381,7 @@ struct initialize_element
     rotation(ielem,K_ZZ,1) = 1 ;
 
     elem_mass(ielem) = ONE12TH * density *
-                                 dot8<Scalar,device_type>( x , grad_x );
+                                 dot8<Scalar,execution_space>( x , grad_x );
   }
 
   static void apply( const Fields & mesh_fields )
@@ -395,9 +395,9 @@ struct initialize_element
 template<typename Scalar , class DeviceType >
 struct initialize_node
 {
-  typedef DeviceType     device_type ;
+  typedef DeviceType     execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type > Fields ;
+  typedef Explicit::Fields< Scalar , execution_space > Fields ;
 
   typename Fields::node_elem_ids_type      node_elem_connectivity ;
   typename Fields::array_type              nodal_mass ;
@@ -441,9 +441,9 @@ struct initialize_node
 template<typename Scalar, class DeviceType >
 struct grad
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const int ElemNodeCount = Fields::ElemNodeCount ;
 
@@ -503,17 +503,17 @@ struct grad
       const int K_F_ZY = Fields::K_F_ZY ;
       const int K_F_XZ = Fields::K_F_XZ ;
 
-      vel_grad(ielem, K_F_XX) = inv_vol * dot8<Scalar,device_type>( vx , grad_x );
-      vel_grad(ielem, K_F_YX) = inv_vol * dot8<Scalar,device_type>( vy , grad_x );
-      vel_grad(ielem, K_F_ZX) = inv_vol * dot8<Scalar,device_type>( vz , grad_x );
+      vel_grad(ielem, K_F_XX) = inv_vol * dot8<Scalar,execution_space>( vx , grad_x );
+      vel_grad(ielem, K_F_YX) = inv_vol * dot8<Scalar,execution_space>( vy , grad_x );
+      vel_grad(ielem, K_F_ZX) = inv_vol * dot8<Scalar,execution_space>( vz , grad_x );
 
-      vel_grad(ielem, K_F_XY) = inv_vol * dot8<Scalar,device_type>( vx , grad_y );
-      vel_grad(ielem, K_F_YY) = inv_vol * dot8<Scalar,device_type>( vy , grad_y );
-      vel_grad(ielem, K_F_ZY) = inv_vol * dot8<Scalar,device_type>( vz , grad_y );
+      vel_grad(ielem, K_F_XY) = inv_vol * dot8<Scalar,execution_space>( vx , grad_y );
+      vel_grad(ielem, K_F_YY) = inv_vol * dot8<Scalar,execution_space>( vy , grad_y );
+      vel_grad(ielem, K_F_ZY) = inv_vol * dot8<Scalar,execution_space>( vz , grad_y );
 
-      vel_grad(ielem, K_F_XZ) = inv_vol * dot8<Scalar,device_type>( vx , grad_z );
-      vel_grad(ielem, K_F_YZ) = inv_vol * dot8<Scalar,device_type>( vy , grad_z );
-      vel_grad(ielem, K_F_ZZ) = inv_vol * dot8<Scalar,device_type>( vz , grad_z );
+      vel_grad(ielem, K_F_XZ) = inv_vol * dot8<Scalar,execution_space>( vx , grad_z );
+      vel_grad(ielem, K_F_YZ) = inv_vol * dot8<Scalar,execution_space>( vy , grad_z );
+      vel_grad(ielem, K_F_ZZ) = inv_vol * dot8<Scalar,execution_space>( vz , grad_z );
     }
 
   //--------------------------------------------------------------------------
@@ -564,11 +564,11 @@ struct grad
               dt_scale * vz[i];
     }
 
-    comp_grad<Scalar,device_type>( x, y, z, grad_x, grad_y, grad_z);
+    comp_grad<Scalar,execution_space>( x, y, z, grad_x, grad_y, grad_z);
 
     //  Calculate hexahedral volume from x model_coords and gradient information
 
-    const Scalar inv_vol = 1.0 / dot8<Scalar,device_type>( x , grad_x );
+    const Scalar inv_vol = 1.0 / dot8<Scalar,execution_space>( x , grad_x );
 
     v_grad(ielem, vx, vy, vz, grad_x, grad_y, grad_z, inv_vol);
   }
@@ -587,9 +587,9 @@ struct grad
 template<typename Scalar, class DeviceType >
 struct decomp_rotate
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const int ElemNodeCount = Fields::ElemNodeCount ;
 
@@ -911,9 +911,9 @@ struct decomp_rotate
 template<typename Scalar, class DeviceType >
 struct internal_force
 {
-  typedef DeviceType device_type ;
+  typedef DeviceType execution_space ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   static const int ElemNodeCount = Fields::ElemNodeCount ;
 
@@ -1158,18 +1158,18 @@ struct internal_force
 
     // Gradient:
 
-    comp_grad<Scalar,device_type>( x , y , z , grad_x , grad_y , grad_z );
+    comp_grad<Scalar,execution_space>( x , y , z , grad_x , grad_y , grad_z );
 
 
-    const Scalar mid_vol = dot8<Scalar,device_type>( x , grad_x );
+    const Scalar mid_vol = dot8<Scalar,execution_space>( x , grad_x );
 
     const Scalar shr = two_mu ;
     const Scalar dil = bulk_modulus + ((2.0*shr)/3.0);
 
     const Scalar aspect = 6.0 * mid_vol /
-                          ( dot8<Scalar,device_type>( grad_x , grad_x ) +
-                            dot8<Scalar,device_type>( grad_y , grad_y ) +
-                            dot8<Scalar,device_type>( grad_z , grad_z ) );
+                          ( dot8<Scalar,execution_space>( grad_x , grad_x ) +
+                            dot8<Scalar,execution_space>( grad_y , grad_y ) +
+                            dot8<Scalar,execution_space>( grad_z , grad_z ) );
 
     const Scalar dtrial = sqrt(elem_mass(ielem) * aspect / dil);
     const Scalar traced = (rot_stretch(ielem, 0) + rot_stretch(ielem, 1) + rot_stretch(ielem, 2));
@@ -1214,10 +1214,10 @@ struct internal_force
 template<typename Scalar, class DeviceType >
 struct nodal_step
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   const typename Fields::scalar_type            dt ;
   const typename Fields::scalar_type            prev_dt ;
@@ -1353,13 +1353,13 @@ struct nodal_step
 template< typename Scalar , class DeviceType >
 struct pack_state
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   typedef typename Fields::geom_state_array_type::value_type  value_type ;
-  typedef Kokkos::View< value_type* , device_type >     buffer_type ;
+  typedef Kokkos::View< value_type* , execution_space >     buffer_type ;
 
   static const unsigned value_count = 6 ;
 
@@ -1410,13 +1410,13 @@ struct pack_state
 template< typename Scalar , class DeviceType >
 struct unpack_state
 {
-  typedef DeviceType     device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef DeviceType     execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
-  typedef Explicit::Fields< Scalar , device_type >  Fields ;
+  typedef Explicit::Fields< Scalar , execution_space >  Fields ;
 
   typedef typename Fields::geom_state_array_type::value_type  value_type ;
-  typedef Kokkos::View< value_type* , device_type >     buffer_type ;
+  typedef Kokkos::View< value_type* , execution_space >     buffer_type ;
 
   static const unsigned value_count = 6 ;
 

@@ -44,8 +44,9 @@
 
 #ifndef PHX_TRAITS_BASE_HPP
 #define PHX_TRAITS_BASE_HPP
-
-#include "Phalanx_ConfigDefs.hpp"
+#include "Kokkos_View.hpp"
+#include "Kokkos_View_Fad.hpp"
+#include "Phalanx_config.hpp"
 
 namespace PHX {
   

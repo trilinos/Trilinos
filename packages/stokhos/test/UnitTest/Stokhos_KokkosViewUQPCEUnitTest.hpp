@@ -64,7 +64,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
   using Teuchos::Array;
 
   typedef typename kokkos_cijk_type::value_type value_type;
-  typedef typename kokkos_cijk_type::device_type device_type;
+  typedef typename kokkos_cijk_type::execution_space execution_space;
   typedef Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> one_d_basis;
   typedef Stokhos::LegendreBasis<ordinal_type,value_type> legendre_basis;
   typedef Stokhos::CompletePolynomialBasis<ordinal_type,value_type> product_basis;
@@ -81,7 +81,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
 
   // Kokkos triple product tensor
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<device_type>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
 
   return kokkos_cijk;
 }
@@ -183,15 +183,15 @@ checkConstantPCEView(const ViewType& v,
   return success;
 }
 
-template <typename DataType, typename LayoutType, typename DeviceType>
+template <typename DataType, typename LayoutType, typename ExecutionSpace>
 struct ApplyView {
-  typedef Kokkos::View<DataType,LayoutType,DeviceType> type;
+  typedef Kokkos::View<DataType,LayoutType,ExecutionSpace> type;
 };
 
 struct NoLayout {};
-template <typename DataType, typename DeviceType>
-struct ApplyView<DataType,NoLayout,DeviceType> {
-  typedef Kokkos::View<DataType,DeviceType> type;
+template <typename DataType, typename ExecutionSpace>
+struct ApplyView<DataType,NoLayout,ExecutionSpace> {
+  typedef Kokkos::View<DataType,ExecutionSpace> type;
 };
 
 //
@@ -203,7 +203,7 @@ const int global_num_cols = 9;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Size, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Size, Storage, Layout )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -264,7 +264,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Stor
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantScalar, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -322,7 +322,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantScalar, Sto
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -347,7 +347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE, Storag
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE2, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -374,7 +374,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantPCE2, Stora
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Storage )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE**,Kokkos::LayoutLeft,Device>::type ViewType;
@@ -426,7 +426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_HostArray, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -466,7 +466,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_HostArray, Storage,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_DeviceArray, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -499,7 +499,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_DeviceArray, Storag
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
@@ -546,7 +546,7 @@ namespace Test {
 
 template< class ViewType >
 struct PCEAtomicFunctor {
-  typedef typename ViewType::device_type device_type ;
+  typedef typename ViewType::execution_space execution_space ;
 
   typedef typename ViewType::value_type pce_type ;
   typedef typename pce_type::storage_type::value_type scalar_type ;
@@ -572,7 +572,7 @@ struct PCEAtomicFunctor {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layout )
 {
-  typedef typename Storage::device_type Device;
+  typedef typename Storage::execution_space Device;
   typedef typename Storage::value_type Scalar;
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;

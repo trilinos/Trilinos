@@ -43,7 +43,7 @@
 #ifndef __PANZER_STK_GatherFields_decl_HPP__
 #define __PANZER_STK_GatherFields_decl_HPP__
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 

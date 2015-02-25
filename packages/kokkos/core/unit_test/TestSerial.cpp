@@ -316,7 +316,6 @@ TEST_F( serial , memory_space )
 TEST_F( serial , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Serial >( 10 );
-  TestTaskPolicy::test_future_array< Kokkos::Serial >( 40 );
   TestTaskPolicy::test_norm2< Kokkos::Serial >( 1000 );
   for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Serial >(i);
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Serial >(i);

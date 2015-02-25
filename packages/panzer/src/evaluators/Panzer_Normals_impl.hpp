@@ -89,32 +89,33 @@ PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Normals,workset)
 { 
-   if(workset.num_cells>0) {
-      Intrepid::CellTools<ScalarT>::getPhysicalSideNormals(normals,
-                                        workset.int_rules[quad_index]->jac,
-                                        side_id, *workset.int_rules[quad_index]->int_rule->topology);
+  // ECC Fix: Get Physical Side Normals
+
+  if(workset.num_cells>0) {
+    Intrepid::CellTools<ScalarT>::getPhysicalSideNormals(normals,
+                                                         workset.int_rules[quad_index]->jac,
+                                                         side_id, *workset.int_rules[quad_index]->int_rule->topology);
       
-      if(normalize) {
-         // normalize vector: getPhysicalSideNormals does not 
-         // return normalized vectors
-         for(std::size_t c=0;c<workset.num_cells;c++) {
-            for(std::size_t q=0;q<num_qp;q++) {
-               ScalarT norm = 0.0;
+    if(normalize) {
+      // normalize vector: getPhysicalSideNormals does not 
+      // return normalized vectors
+      for(std::size_t c=0;c<workset.num_cells;c++) {
+        for(std::size_t q=0;q<num_qp;q++) {
+          ScalarT norm = 0.0;
    
-               // compute squared norm
-               for(std::size_t d=0;d<num_dim;d++)
-                  norm += normals(c,q,d)*normals(c,q,d);
+          // compute squared norm
+          for(std::size_t d=0;d<num_dim;d++)
+            norm += normals(c,q,d)*normals(c,q,d);
     
-               // adjust for length of vector, now unit vectors
-               norm = sqrt(norm);
-               for(std::size_t d=0;d<num_dim;d++)
-                  normals(c,q,d) /= norm;
-            }
-         }
+          // adjust for length of vector, now unit vectors
+          norm = sqrt(norm);
+          for(std::size_t d=0;d<num_dim;d++)
+            normals(c,q,d) /= norm;
+        }
       }
-      // else normals correspond to differential
-   }
- 
+    }
+    // else normals correspond to differential
+  }
 }
 
 //**********************************************************************

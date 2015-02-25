@@ -28,7 +28,7 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Sacado_Kokkos.hpp"
+#include "Sacado.hpp"
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
@@ -70,16 +70,16 @@ fadtype generate_fad( const ordinal num_rows,
   return x;
 }
 
-template <typename DataType, typename LayoutType, typename DeviceType,
+template <typename DataType, typename LayoutType, typename ExecutionSpace,
           typename Memory = void>
 struct ApplyView {
-  typedef Kokkos::View<DataType,LayoutType,DeviceType,Memory> type;
+  typedef Kokkos::View<DataType,LayoutType,ExecutionSpace,Memory> type;
 };
 
 struct NoLayout {};
-template <typename DataType, typename DeviceType, typename Memory>
-struct ApplyView<DataType,NoLayout,DeviceType,Memory> {
-  typedef Kokkos::View<DataType,DeviceType,Memory> type;
+template <typename DataType, typename ExecutionSpace, typename Memory>
+struct ApplyView<DataType,NoLayout,ExecutionSpace,Memory> {
+  typedef Kokkos::View<DataType,ExecutionSpace,Memory> type;
 };
 
 const int global_num_rows = 11;
@@ -91,7 +91,7 @@ template <typename InputViewType1,
           typename InputViewType2 = InputViewType1,
           typename OutputViewType = InputViewType1>
 struct MultiplyKernel {
-  typedef typename InputViewType1::device_type device_type;
+  typedef typename InputViewType1::execution_space execution_space;
   typedef typename InputViewType1::size_type size_type;
 
   const InputViewType1 m_v1;
@@ -127,7 +127,7 @@ struct MultiplyKernel {
 // Kernel to assign a constant to a view
 template <typename ViewType, typename ScalarType>
 struct ScalarAssignKernel {
-  typedef typename ViewType::device_type device_type;
+  typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::size_type size_type;
 
   const ViewType   m_v;

@@ -50,6 +50,8 @@
 #include <vector>
 #include <map>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_ScatterResidual_Epetra.hpp"
 
 #include "Panzer_PureBasis.hpp"
@@ -60,6 +62,8 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 {
+   PHX::KokkosDeviceSession session;
+
    using Teuchos::RCP;
    using Teuchos::rcp;
 

@@ -49,8 +49,8 @@ struct computeCellMeasure;
 template<typename Scalar>
 struct computeCellMeasure<Scalar, KOKKOS_MACRO_DEVICE>{
 
-	typedef KOKKOS_MACRO_DEVICE     							device_type ;
-  	typedef typename Kokkos::MDArrayView<Scalar,device_type> 	array_type ;
+	typedef KOKKOS_MACRO_DEVICE     							execution_space ;
+  	typedef typename Kokkos::MDArrayView<Scalar,execution_space> 	array_type ;
 
 	array_type inDet;
 	array_type inWeights;

@@ -301,7 +301,7 @@ private:
 
 public:
 
-  typedef typename vector_const_type::device_type  device_type ; // Manycore device
+  typedef typename vector_const_type::execution_space  execution_space ; // Manycore device
   typedef double      value_type ;  // Reduction value
 
   template< class ArgX , class ArgY >
@@ -340,7 +340,7 @@ private:
 
 public:
 
-  typedef typename vector_const_type::device_type  device_type ; // Manycore device
+  typedef typename vector_const_type::execution_space  execution_space ; // Manycore device
   typedef double      value_type ;  // Reduction value
 
   template< class ArgX >
@@ -391,7 +391,7 @@ private:
 
 public:
 
-  typedef typename ViewW::device_type  device_type ;
+  typedef typename ViewW::execution_space  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -430,7 +430,7 @@ private:
 
 public:
 
-  typedef typename ViewW::device_type  device_type ;
+  typedef typename ViewW::execution_space  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -460,7 +460,7 @@ private:
 
 public:
 
-  typedef typename ViewW::device_type  device_type ;
+  typedef typename ViewW::execution_space  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -496,7 +496,7 @@ private:
 
 public:
 
-  typedef typename ViewW::device_type  device_type ;
+  typedef typename ViewW::execution_space  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
@@ -533,7 +533,7 @@ private:
 
 public:
 
-  typedef typename ViewW::device_type  device_type ;
+  typedef typename ViewW::execution_space  execution_space ;
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION

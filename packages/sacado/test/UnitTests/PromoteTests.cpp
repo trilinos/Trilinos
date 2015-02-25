@@ -36,7 +36,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_mpl_apply.hpp"

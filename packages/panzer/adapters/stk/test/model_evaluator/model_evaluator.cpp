@@ -51,6 +51,9 @@ using Teuchos::rcp;
 #include "Panzer_NodeType.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
@@ -150,6 +153,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(model_evaluator, basic)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
 
     // panzer::pauseToAttach();
 
@@ -264,6 +269,8 @@ namespace panzer {
   {
     bool parameter_on = true;
     AssemblyPieces ap;
+
+    PHX::KokkosDeviceSession session;
   
     buildAssemblyPieces(parameter_on,ap);
 
@@ -313,6 +320,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+
+    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb_off;  
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary_off; 
@@ -441,6 +450,8 @@ namespace panzer {
     // ss_me is created!
     // RCP<panzer::ModelEvaluator_Epetra> me = ss_me; This appears to cause seg faults for some reason!!!!
 
+    PHX::KokkosDeviceSession session;
+
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
       bool parameter_on = true;
@@ -541,6 +552,7 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
+    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     int distributed_parameter_index = -1;
@@ -622,6 +634,8 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
+
+    PHX::KokkosDeviceSession session;
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 

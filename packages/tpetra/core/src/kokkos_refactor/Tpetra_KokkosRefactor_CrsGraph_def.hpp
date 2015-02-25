@@ -182,7 +182,7 @@ namespace Tpetra {
     // Create a nonowning Kokkos::View of it, copy into
     // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
     // (which is a const view, so we can't copy into it directly).
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type>
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space>
       dual_view_type;
     typedef typename dual_view_type::host_mirror_space host_type;
     typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
@@ -192,7 +192,7 @@ namespace Tpetra {
                                      lclNumRows);
     k_numAllocPerRow.template modify<host_type> ();
     Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
-    k_numAllocPerRow.template sync<device_type> ();
+    k_numAllocPerRow.template sync<execution_space> ();
     k_numAllocPerRow_ = k_numAllocPerRow;
 
     resumeFill (params);
@@ -204,7 +204,7 @@ namespace Tpetra {
     LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+            const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
             const ProfileType pftype,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -259,7 +259,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
+            const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
             const ProfileType pftype,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -365,7 +365,7 @@ namespace Tpetra {
     // Create a nonowning Kokkos::View of it, copy into
     // k_numAllocPerRow, and sync.  Then assign to k_numAllocPerRow_
     // (which is a const view, so we can't copy into it directly).
-    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, device_type>
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space>
       dual_view_type;
     typedef typename dual_view_type::host_mirror_space host_type;
     typedef Kokkos::View<const size_t*, Kokkos::LayoutLeft, host_type,
@@ -375,7 +375,7 @@ namespace Tpetra {
                                      lclNumRows);
     k_numAllocPerRow.template modify<host_type> ();
     Kokkos::deep_copy (k_numAllocPerRow.h_view, numAllocPerRowIn);
-    k_numAllocPerRow.template sync<device_type> ();
+    k_numAllocPerRow.template sync<execution_space> ();
     k_numAllocPerRow_ = k_numAllocPerRow;
 
     resumeFill (params);
@@ -1118,7 +1118,7 @@ namespace Tpetra {
         //
         // FIXME (mfh 11 Aug 2014) This assumes UVM, since k_rowPtrs_
         // is currently a device View.  Should instead use a DualView.
-        typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
+        typename Kokkos::DualView<const size_t*, execution_space>::t_host h_numAllocPerRow =
           k_numAllocPerRow_.h_view; // use a host view for now, since we compute on host
         bool anyInvalidAllocSizes = false;
         for (size_t i = 0; i < numRows; ++i) {
@@ -1180,7 +1180,7 @@ namespace Tpetra {
 
       // Use the host view of k_numAllocPerRow_, since we have to
       // allocate 2-D storage on the host.
-      typename Kokkos::DualView<const size_t*, device_type>::t_host h_numAllocPerRow =
+      typename Kokkos::DualView<const size_t*, execution_space>::t_host h_numAllocPerRow =
         k_numAllocPerRow_.h_view;
       const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
 
@@ -1224,12 +1224,12 @@ namespace Tpetra {
       k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
       size_t* const hostPtr = k_numRowEntries_.h_view.ptr_on_device ();
       std::fill (hostPtr, hostPtr + numRows, static_cast<size_t> (0));
-      k_numRowEntries_.template sync<device_type> ();
+      k_numRowEntries_.template sync<execution_space> ();
     }
 
     // done with these
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
+    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, execution_space> ();
     indicesAreAllocated_ = true;
     checkInternalState ();
   }
@@ -1282,7 +1282,7 @@ namespace Tpetra {
     using Kokkos::subview;
     using Kokkos::View;
     typedef LocalOrdinal LO;
-    typedef View<const LO*, device_type, Kokkos::MemoryUnmanaged> row_view_type;
+    typedef View<const LO*, execution_space, Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
@@ -1316,7 +1316,7 @@ namespace Tpetra {
     using Kokkos::subview;
     using Kokkos::View;
     typedef LocalOrdinal LO;
-    typedef View<LO*, device_type, Kokkos::MemoryUnmanaged> row_view_type;
+    typedef View<LO*, execution_space, Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) { // nothing in the row to view
       return Teuchos::ArrayView<LO> ();
@@ -1558,7 +1558,7 @@ namespace Tpetra {
     // but for now, for correctness, do the modify-sync cycle here.
     k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) += numNewInds;
-    k_numRowEntries_.template sync<device_type> ();
+    k_numRowEntries_.template sync<execution_space> ();
 
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
@@ -1605,7 +1605,7 @@ namespace Tpetra {
     // but for now, for correctness, do the modify-sync cycle here.
     k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(myRow) += numNewInds;
-    k_numRowEntries_.template sync<device_type> ();
+    k_numRowEntries_.template sync<execution_space> ();
 
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
@@ -1653,8 +1653,8 @@ namespace Tpetra {
 
     // Store the new indices at the end of row myRow.
     if (k_lclInds1D_.dimension_0 () != 0) {
-      typedef View<const LO*, device_type, MemoryUnmanaged> input_view_type;
-      typedef View<LO*, device_type> row_view_type;
+      typedef View<const LO*, execution_space, MemoryUnmanaged> input_view_type;
+      typedef View<LO*, execution_space> row_view_type;
 
       input_view_type inputInds (indices.getRawPtr (), indices.size ());
       const size_t start = rowInfo.offset1D + rowInfo.numEntries; // end of row
@@ -1671,7 +1671,7 @@ namespace Tpetra {
     // but for now, for correctness, do the modify-sync cycle here.
     k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(myRow) += numNewInds;
-    k_numRowEntries_.template sync<device_type> ();
+    k_numRowEntries_.template sync<execution_space> ();
 
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
@@ -1869,7 +1869,7 @@ namespace Tpetra {
     // but for now, for correctness, do the modify-sync cycle here.
     k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
-    k_numRowEntries_.template sync<device_type> ();
+    k_numRowEntries_.template sync<execution_space> ();
 
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
@@ -1938,7 +1938,7 @@ namespace Tpetra {
     // but for now, for correctness, do the modify-sync cycle here.
     k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
     k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
-    k_numRowEntries_.template sync<device_type> ();
+    k_numRowEntries_.template sync<execution_space> ();
 
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
@@ -2848,7 +2848,7 @@ namespace Tpetra {
       // but for now, for correctness, do the modify-sync cycle here.
       k_numRowEntries_.template modify<typename t_numRowEntries_::host_mirror_space> ();
       k_numRowEntries_.h_view(lrow) = 0;
-      k_numRowEntries_.template sync<device_type> ();
+      k_numRowEntries_.template sync<execution_space> ();
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2905,7 +2905,7 @@ namespace Tpetra {
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
     numAllocForAllRows_ = 0;
-    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, device_type> ();
+    k_numAllocPerRow_ = Kokkos::DualView<const size_t*, execution_space> ();
 
     checkInternalState ();
   }
@@ -2919,9 +2919,9 @@ namespace Tpetra {
   setAllIndices (const Teuchos::ArrayRCP<size_t>& rowPointers,
                  const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
   {
-    Kokkos::View<size_t*, device_type> k_ptr =
+    Kokkos::View<size_t*, execution_space> k_ptr =
       Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (rowPointers ());
-    Kokkos::View<LocalOrdinal*, device_type> k_ind =
+    Kokkos::View<LocalOrdinal*, execution_space> k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<DeviceType> (columnIndices ());
 
     setAllIndices (k_ptr, k_ind);
@@ -3561,7 +3561,7 @@ namespace Tpetra {
     // lazily on first insert.  That will make both
     // numAllocForAllRows_ and k_numAllocPerRow_ obsolete.
     numAllocForAllRows_  = 0;
-    k_numAllocPerRow_    = Kokkos::DualView<const size_t*, device_type> ();
+    k_numAllocPerRow_    = Kokkos::DualView<const size_t*, execution_space> ();
     indicesAreAllocated_ = true;
 
     // Constants from makeIndicesLocal

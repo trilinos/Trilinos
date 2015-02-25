@@ -88,6 +88,8 @@
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "Example_EquationSetFactory.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "AztecOO.h"
 
 using Teuchos::RCP;
@@ -149,6 +151,8 @@ int main(int argc,char * argv[])
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
+
+   PHX::KokkosDeviceSession session;
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -339,6 +343,8 @@ int main(int argc,char * argv[])
    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
+   // fmb->writeVolumeGraphvizDependencyFiles("out",physicsBlocks);
+   //fmb->writeBCGraphvizDependencyFiles("bc_");
 
    // setup assembly engine
    /////////////////////////////////////////////////////////////
@@ -571,4 +577,5 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		  strategy, p);
     bcs.push_back(bc);
   }    
+
 }

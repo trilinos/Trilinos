@@ -44,7 +44,7 @@
 
 #include <iostream>
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 
 // Function implementing RHS of ODE
 template <typename ScalarT>
