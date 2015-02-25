@@ -222,11 +222,12 @@ namespace panzer_stk_classic {
     TEUCHOS_ASSERT(nonnull(global_data->os));
     TEUCHOS_ASSERT(nonnull(global_data->pl));
 
-    Teuchos::FancyOStream& fout = *global_data->os;
 
-    // for convience cast to an MPI comm
-    const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm =
-      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // Parse input file, setup parameters
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     // this function will need to be broken up eventually and probably
     // have parts moved back into panzer.  Just need to get something
@@ -243,29 +244,7 @@ namespace panzer_stk_classic {
     Teuchos::ParameterList & user_data_params = p.sublist("User Data");
     Teuchos::ParameterList & panzer_data_params = user_data_params.sublist("Panzer Data");
 
-    // Build mesh factory and uncommitted mesh
-    Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
-    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
-    m_mesh = mesh;
-
-    m_eqset_factory = eqset_factory;
-
-    // setup physical mappings and boundary conditions
-    std::map<std::string,std::string> block_ids_to_physics_ids;
-    panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
-
-    // build cell ( block id -> cell topology ) mapping
-    std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
-    for(std::map<std::string,std::string>::const_iterator itr=block_ids_to_physics_ids.begin();
-        itr!=block_ids_to_physics_ids.end();++itr) {
-       block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
-       TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
-    }
-
     Teuchos::RCP<Teuchos::ParameterList> physics_block_plist = Teuchos::sublist(this->getMyNonconstParamList(),"Physics Blocks");
-
-    std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     // extract assembly information
     std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
@@ -294,105 +273,151 @@ namespace panzer_stk_classic {
 
     bool useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
 
-    // build physics blocks
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // Do stuff
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    Teuchos::FancyOStream& fout = *global_data->os;
+
+    // for convience cast to an MPI comm
+    const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm =
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+
+    // Build mesh factory and uncommitted mesh
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
+    m_mesh = mesh;
+
+    m_eqset_factory = eqset_factory;
+
+    // setup the physcs blocks
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
-                               block_ids_to_cell_topo,
-			       physics_block_plist,
-			       assembly_params.get<int>("Default Integration Order"),
-			       workset_size,
-			       eqset_factory,
-			       global_data,
-			       is_transient,
-			       physicsBlocks);
-    m_physics_blocks = physicsBlocks; // hold onto physics blocks for safe keeping
+    {
+      // setup physical mappings and boundary conditions
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
+  
+      // build cell ( block id -> cell topology ) mapping
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      for(std::map<std::string,std::string>::const_iterator itr=block_ids_to_physics_ids.begin();
+          itr!=block_ids_to_physics_ids.end();++itr) {
+         block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
+         TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
+      }
+  
+      // build physics blocks
+  
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+  			       physics_block_plist,
+  			       assembly_params.get<int>("Default Integration Order"),
+  			       workset_size,
+  			       eqset_factory,
+  			       global_data,
+  			       is_transient,
+  			       physicsBlocks);
+      m_physics_blocks = physicsBlocks; // hold onto physics blocks for safe keeping
+    }
+
+    // setup the closure model for automatic writing (during residual/jacobian update)
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     panzer_stk_classic::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,output_list);
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(io_cm_builder);
 
-    // register cell averaged scalar fields
-    Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
-    for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
-        itr!=cellAvgQuants.end();++itr) {
-       const std::string & blockId = itr->first;
-       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-       std::vector<std::string> tokens;
+    { // add fields automatically written through the closure model
+      ////////////////////////////////////////////////////////////////////////////////////////
 
-       // break up comma seperated fields
-       panzer::StringTokenizer(tokens,fields,",",true);
-
-       for(std::size_t i=0;i<tokens.size();i++)
-          mesh->addCellField(tokens[i],blockId);
-    }
-
-    // register cell averaged components of vector fields 
-    // just allocate space for the fields here. The actual calculation and writing 
-    // are done by panzer_stk_classic::ScatterCellAvgVector.
-    Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
-    for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
-        itr != cellAvgVectors.end(); ++itr) {
-       const std::string & blockId = itr->first;
-       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-       std::vector<std::string> tokens;
-
-       // break up comma seperated fields
-       panzer::StringTokenizer(tokens,fields,",",true);
-
-       for(std::size_t i = 0; i < tokens.size(); i++) {
-          std::string d_mod[3] = {"X","Y","Z"};
-          for(std::size_t d = 0; d < mesh->getDimension(); d++) 
-              mesh->addCellField(tokens[i]+d_mod[d],blockId);  
-       }   
-    }
-
-    // register cell quantities
-    Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
-    for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
-        itr!=cellQuants.end();++itr) {
-       const std::string & blockId = itr->first;
-       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-       std::vector<std::string> tokens;
-
-       // break up comma seperated fields
-       panzer::StringTokenizer(tokens,fields,",",true);
-
-       for(std::size_t i=0;i<tokens.size();i++)
-          mesh->addCellField(tokens[i],blockId);
-    }
-
-    // register ndoal quantities
-    Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
-    for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
-        itr!=nodalQuants.end();++itr) {
-       const std::string & blockId = itr->first;
-       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-       std::vector<std::string> tokens;
-
-       // break up comma seperated fields
-       panzer::StringTokenizer(tokens,fields,",",true);
-
-       for(std::size_t i=0;i<tokens.size();i++)
-          mesh->addSolutionField(tokens[i],blockId);
-    }
-
-    Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
-    for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
-        itr!=allocNodalQuants.end();++itr) {
-       const std::string & blockId = itr->first;
-       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-       std::vector<std::string> tokens;
-
-       // break up comma seperated fields
-       panzer::StringTokenizer(tokens,fields,",",true);
-
-       for(std::size_t i=0;i<tokens.size();i++)
-          mesh->addSolutionField(tokens[i],blockId);
-    }
+      // register cell averaged scalar fields
+      Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
+      for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
+          itr!=cellAvgQuants.end();++itr) {
+         const std::string & blockId = itr->first;
+         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+         std::vector<std::string> tokens;
+  
+         // break up comma seperated fields
+         panzer::StringTokenizer(tokens,fields,",",true);
+  
+         for(std::size_t i=0;i<tokens.size();i++)
+            mesh->addCellField(tokens[i],blockId);
+      }
+  
+      // register cell averaged components of vector fields 
+      // just allocate space for the fields here. The actual calculation and writing 
+      // are done by panzer_stk_classic::ScatterCellAvgVector.
+      Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
+      for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
+          itr != cellAvgVectors.end(); ++itr) {
+         const std::string & blockId = itr->first;
+         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+         std::vector<std::string> tokens;
+  
+         // break up comma seperated fields
+         panzer::StringTokenizer(tokens,fields,",",true);
+  
+         for(std::size_t i = 0; i < tokens.size(); i++) {
+            std::string d_mod[3] = {"X","Y","Z"};
+            for(std::size_t d = 0; d < mesh->getDimension(); d++) 
+                mesh->addCellField(tokens[i]+d_mod[d],blockId);  
+         }   
+      }
+  
+      // register cell quantities
+      Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
+      for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
+          itr!=cellQuants.end();++itr) {
+         const std::string & blockId = itr->first;
+         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+         std::vector<std::string> tokens;
+  
+         // break up comma seperated fields
+         panzer::StringTokenizer(tokens,fields,",",true);
+  
+         for(std::size_t i=0;i<tokens.size();i++)
+            mesh->addCellField(tokens[i],blockId);
+      }
+  
+      // register ndoal quantities
+      Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
+      for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
+          itr!=nodalQuants.end();++itr) {
+         const std::string & blockId = itr->first;
+         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+         std::vector<std::string> tokens;
+  
+         // break up comma seperated fields
+         panzer::StringTokenizer(tokens,fields,",",true);
+  
+         for(std::size_t i=0;i<tokens.size();i++)
+            mesh->addSolutionField(tokens[i],blockId);
+      }
+  
+      Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
+      for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
+          itr!=allocNodalQuants.end();++itr) {
+         const std::string & blockId = itr->first;
+         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+         std::vector<std::string> tokens;
+  
+         // break up comma seperated fields
+         panzer::StringTokenizer(tokens,fields,",",true);
+  
+         for(std::size_t i=0;i<tokens.size();i++)
+            mesh->addSolutionField(tokens[i],blockId);
+      }
+    } 
 
     // finish building mesh, set required field variables and mesh bulk data
-    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+
     try {
        // this throws some exceptions, catch them as neccessary
        this->finalizeMeshConstruction(*mesh_factory,physicsBlocks,*mpi_comm,*mesh);
@@ -420,15 +445,23 @@ namespace panzer_stk_classic {
     if(p.sublist("Output").get<bool>("Write to Exodus"))
       mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name"));
 
-    // build DOF Manager
-    /////////////////////////////////////////////////////////////
+    // build a workset factory that depends on STK
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
     // build the connection manager
+    ////////////////////////////////////////////////////////////////////////////////////////
+
     Teuchos::RCP<panzer::ConnManagerBase<int> > conn_manager;
     if(useTpetra)
       conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
     else
       conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+
+    // build DOF Manager
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> globalIndexer;
@@ -568,8 +601,7 @@ namespace panzer_stk_classic {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -585,6 +617,9 @@ namespace panzer_stk_classic {
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
+
+    std::vector<panzer::BC> bcs;
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
