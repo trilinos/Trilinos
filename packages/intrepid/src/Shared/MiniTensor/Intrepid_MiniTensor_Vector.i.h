@@ -51,7 +51,7 @@ namespace Intrepid
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector() :
-TensorBase<T, Store>::TensorBase()
+    TensorBase<T, Store>::TensorBase()
 {
   return;
 }
@@ -62,7 +62,7 @@ TensorBase<T, Store>::TensorBase()
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(Index const dimension) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
 }
@@ -73,7 +73,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(Index const dimension, ComponentValue const value) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
 }
@@ -81,7 +81,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(ComponentValue const value) :
-TensorBase<T, Store>::TensorBase(N, ORDER, value)
+    TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
@@ -91,118 +91,237 @@ TensorBase<T, Store>::TensorBase(N, ORDER, value)
 //
 #ifdef HAVE_INTREPID_KOKKOSCORE
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1)
+Vector<T, N>::Vector(
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    iType index1) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
 {
- return;
-} 
-
-template<typename T, Index N>
-template <class ArrayT, typename iType>
-inline
-Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2)
-{
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector( typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2, iType indx3) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3)
+Vector<T, N>::Vector(
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    iType index1,
+    iType index2) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4)
+Vector<T, N>::Vector(
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    iType index1,
+    iType index2,
+    iType index3) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2, index3)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4, indx5)
+Vector<T, N>::Vector(
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data, indx1, indx2, indx3, indx4, indx5, indx6)
+Vector<T, N>::Vector(
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1)
+Vector<T, N>::Vector(
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5,
+        index6)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, typename Kokkos::Impl::enable_if<!Kokkos::Impl::is_same<ArrayT,Index>::value,ArrayT>::type &data, iType indx1, iType indx2) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2)
+Vector<T, N>::Vector(
+    Index const dimension,
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    iType index1) :
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3)
+Vector<T, N>::Vector(
+    Index const dimension,
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type &data,
+    iType index1,
+    iType index2) :
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4)
+Vector<T, N>::Vector(
+    Index const dimension,
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4, indx5)
+Vector<T, N>::Vector(
+    Index const dimension,
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4)
 {
- return;
+  return;
 }
 
 template<typename T, Index N>
-template <class ArrayT, typename iType>
+template<class ArrayT, typename iType>
 inline
-Vector<T, N>::Vector(Index const dimension, ArrayT &data, iType indx1, iType indx2, iType indx3, iType indx4, iType indx5, iType indx6) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data, indx1, indx2, indx3, indx4, indx5, indx6)
+Vector<T, N>::Vector(
+    Index const dimension,
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5)
 {
- return;
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Vector<T, N>::Vector(
+    Index const dimension,
+    ArrayT &data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5,
+        index6)
+{
+  return;
 }
 #endif
 
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(Index const dimension, T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
 }
@@ -210,7 +329,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
+    TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
@@ -221,7 +340,7 @@ TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 template<typename T, Index N>
 inline
 Vector<T, N>::Vector(Vector<T, N> const & v) :
-TensorBase<T, Store>::TensorBase(v)
+    TensorBase<T, Store>::TensorBase(v)
 {
   return;
 }
@@ -233,8 +352,8 @@ template<typename T, Index N>
 inline
 Vector<T, N>::Vector(T const & s0, T const & s1)
 {
-  Vector<T, N> &
-  self = (*this);
+  Vector < T, N > &
+      self = (*this);
 
   self.set_dimension(2);
 
@@ -251,8 +370,8 @@ template<typename T, Index N>
 inline
 Vector<T, N>::Vector(T const & s0, T const & s1, T const & s2)
 {
-  Vector<T, N> &
-  self = (*this);
+  Vector < T, N > &
+      self = (*this);
 
   self.set_dimension(3);
 
@@ -277,8 +396,7 @@ Vector<T, N>::~Vector()
 // Get dimension
 //
 template<typename T, Index N>
-inline
-Index
+inline Index
 Vector<T, N>::get_dimension() const
 {
   return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
@@ -306,10 +424,9 @@ Vector<T, N>::set_dimension(Index const dimension)
 // Indexing for constant vector
 //
 template<typename T, Index N>
-inline
-T const &
+inline T const &
 Vector<T, N>::operator()(Index const i) const
-{
+    {
   return (*this)[i];
 }
 
@@ -317,8 +434,7 @@ Vector<T, N>::operator()(Index const i) const
 // Vector indexing
 //
 template<typename T, Index N>
-inline
-T &
+inline T &
 Vector<T, N>::operator()(Index const i)
 {
   return (*this)[i];
@@ -328,8 +444,7 @@ Vector<T, N>::operator()(Index const i)
 // Vector addition
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator+(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -344,8 +459,7 @@ operator+(Vector<S, N> const & u, Vector<T, N> const & v)
 // Vector subtraction
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator-(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -360,8 +474,7 @@ operator-(Vector<S, N> const & u, Vector<T, N> const & v)
 // Vector minus
 //
 template<typename T, Index N>
-inline
-Vector<T, N>
+inline Vector<T, N>
 operator-(Vector<T, N> const & u)
 {
   Vector<T, N>
@@ -376,8 +489,7 @@ operator-(Vector<T, N> const & u)
 // Vector dot product
 //
 template<typename S, typename T, Index N>
-inline
-typename Promote<S, T>::type
+inline typename Promote<S, T>::type
 operator*(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   return dot(u, v);
@@ -409,8 +521,8 @@ operator!=(Vector<T, N> const & u, Vector<T, N> const & v)
 // Scalar vector product
 //
 template<typename S, typename T, Index N>
-inline
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
+inline typename
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
 operator*(S const & s, Vector<T, N> const & u)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -425,8 +537,8 @@ operator*(S const & s, Vector<T, N> const & u)
 // Vector scalar product
 //
 template<typename S, typename T, Index N>
-inline
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N> >::type
+inline typename
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
 operator*(Vector<T, N> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -441,8 +553,7 @@ operator*(Vector<T, N> const & u, S const & s)
 // Vector scalar division
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator/(Vector<T, N> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -457,8 +568,7 @@ operator/(Vector<T, N> const & u, S const & s)
 // Scalar vector division
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator/(S const & s, Vector<T, N> const & u)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -473,8 +583,7 @@ operator/(S const & s, Vector<T, N> const & u)
 // Vector dot product
 //
 template<typename S, typename T, Index N>
-inline
-typename Promote<S, T>::type
+inline typename Promote<S, T>::type
 dot(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Index const
@@ -487,19 +596,19 @@ dot(Vector<S, N> const & u, Vector<T, N> const & v)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        s += u(i) * v(i);
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      s += u(i) * v(i);
+    }
+    break;
 
-    case 3:
-      s = u(0) * v(0) + u(1) * v(1) + u(2) * v(2);
-      break;
+  case 3:
+    s = u(0) * v(0) + u(1) * v(1) + u(2) * v(2);
+    break;
 
-    case 2:
-      s = u(0) * v(0) + u(1) * v(1);
-      break;
+  case 2:
+    s = u(0) * v(0) + u(1) * v(1);
+    break;
 
   }
 
@@ -510,8 +619,7 @@ dot(Vector<S, N> const & u, Vector<T, N> const & v)
 // Cross product only valid for R^3.
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 cross(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Index const
@@ -524,19 +632,19 @@ cross(Vector<S, N> const & u, Vector<T, N> const & v)
 
   switch (dimension) {
 
-    case 3:
-      w(0) = u(1) * v(2) - u(2) * v(1);
-      w(1) = u(2) * v(0) - u(0) * v(2);
-      w(2) = u(0) * v(1) - u(1) * v(0);
-      break;
+  case 3:
+    w(0) = u(1) * v(2) - u(2) * v(1);
+    w(1) = u(2) * v(0) - u(0) * v(2);
+    w(2) = u(0) * v(1) - u(1) * v(0);
+    break;
 
-    default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Cross product undefined for R^" << dimension;
-      std::cerr << std::endl;
-      exit(1);
-      break;
+  default:
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Cross product undefined for R^" << dimension;
+    std::cerr << std::endl;
+    exit(1);
+    break;
 
   }
 
@@ -548,8 +656,7 @@ cross(Vector<S, N> const & u, Vector<T, N> const & v)
 // \return \f$ \sqrt{u \cdot u} \f$
 //
 template<typename T, Index N>
-inline
-T
+inline T
 norm(Vector<T, N> const & u)
 {
   Index const
@@ -560,17 +667,17 @@ norm(Vector<T, N> const & u)
 
   switch (dimension) {
 
-    default:
-      s = std::sqrt(dot(u, u));
-      break;
+  default:
+    s = std::sqrt(dot(u, u));
+    break;
 
-    case 3:
-      s = std::sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
-      break;
+  case 3:
+    s = std::sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
+    break;
 
-    case 2:
-      s = std::sqrt(u(0) * u(0) + u(1) * u(1));
-      break;
+  case 2:
+    s = std::sqrt(u(0) * u(0) + u(1) * u(1));
+    break;
 
   }
 
@@ -582,8 +689,7 @@ norm(Vector<T, N> const & u)
 // \return \f$ u \cdot u \f$
 //
 template<typename T, Index N>
-inline
-T
+inline T
 norm_square(Vector<T, N> const & u)
 {
   Index const
@@ -594,17 +700,17 @@ norm_square(Vector<T, N> const & u)
 
   switch (dimension) {
 
-    default:
-      s = dot(u, u);
-      break;
+  default:
+    s = dot(u, u);
+    break;
 
-    case 3:
-      s = u(0) * u(0) + u(1) * u(1) + u(2) * u(2);
-      break;
+  case 3:
+    s = u(0) * u(0) + u(1) * u(1) + u(2) * u(2);
+    break;
 
-    case 2:
-      s = u(0) * u(0) + u(1) * u(1);
-      break;
+  case 2:
+    s = u(0) * u(0) + u(1) * u(1);
+    break;
 
   }
 
@@ -616,8 +722,7 @@ norm_square(Vector<T, N> const & u)
 // \return \f$ \sum_i |u_i| \f$
 //
 template<typename T, Index N>
-inline
-T
+inline T
 norm_1(Vector<T, N> const & u)
 {
   Index const
@@ -628,19 +733,19 @@ norm_1(Vector<T, N> const & u)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        s += std::abs(u(i));
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      s += std::abs(u(i));
+    }
+    break;
 
-    case 3:
-      s = std::abs(u(0)) + std::abs(u(1)) + std::abs(u(2));
-      break;
+  case 3:
+    s = std::abs(u(0)) + std::abs(u(1)) + std::abs(u(2));
+    break;
 
-    case 2:
-      s = std::abs(u(0)) + std::abs(u(1));
-      break;
+  case 2:
+    s = std::abs(u(0)) + std::abs(u(1));
+    break;
 
   }
 
@@ -652,8 +757,7 @@ norm_1(Vector<T, N> const & u)
 // \return \f$ \max(|u_0|,...|u_i|,...|u_N|) \f$
 //
 template<typename T, Index N>
-inline
-T
+inline T
 norm_infinity(Vector<T, N> const & u)
 {
   Index const
@@ -664,19 +768,19 @@ norm_infinity(Vector<T, N> const & u)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        s = std::max(s, std::abs(u(i)));
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      s = std::max(s, std::abs(u(i)));
+    }
+    break;
 
-    case 3:
-      s = std::max(std::max(std::abs(u(0)), std::abs(u(1))), std::abs(u(2)));
-      break;
+  case 3:
+    s = std::max(std::max(std::abs(u(0)), std::abs(u(1))), std::abs(u(2)));
+    break;
 
-    case 2:
-      s = std::max(std::abs(u(0)), std::abs(u(1)));
-      break;
+  case 2:
+    s = std::max(std::abs(u(0)), std::abs(u(1)));
+    break;
 
   }
 
@@ -687,8 +791,7 @@ norm_infinity(Vector<T, N> const & u)
 // \return u / |u|, fails for |u| = 0
 //
 template<typename T, Index N>
-inline
-Vector<T, N>
+inline Vector<T, N>
 unit(Vector<T, N> const & u)
 {
   return u / norm(u);
