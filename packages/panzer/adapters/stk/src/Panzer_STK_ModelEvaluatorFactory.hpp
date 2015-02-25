@@ -312,6 +312,9 @@ namespace panzer_stk_classic {
     void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const;
 #endif
 
+    bool useDynamicCoordinates() const
+    { return useDynamicCoordinates_; }
+
   private:
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;
