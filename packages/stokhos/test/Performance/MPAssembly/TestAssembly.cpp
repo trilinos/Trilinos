@@ -59,7 +59,6 @@ template <typename Storage>
 void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_print ,
               const int use_trials ,
-              const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
               Kokkos::Example::FENL::DeviceConfig dev_config) {
@@ -77,14 +76,13 @@ void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
 #endif
 
   performance_test_driver<Storage,entry_min,entry_max,entry_step>(
-    comm, use_print, use_trials, use_atomic, use_nodes, check, dev_config);
+    comm, use_print, use_trials, use_nodes, check, dev_config);
 }
 
 template <typename Storage>
 void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
               const int use_print ,
               const int use_trials ,
-              const int use_atomic ,
               const int use_nodes[] ,
               const bool check ,
               Kokkos::Example::FENL::DeviceConfig dev_config) {
@@ -92,7 +90,7 @@ void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int entry_max = 64;
   const int entry_step = 16;
   performance_test_driver<Storage,entry_min,entry_max,entry_step>(
-    comm, use_print, use_trials, use_atomic, use_nodes, check, dev_config);
+    comm, use_print, use_trials, use_nodes, check, dev_config);
 }
 
 int main(int argc, char *argv[])
@@ -121,8 +119,6 @@ int main(int argc, char *argv[])
     CLP.setOption("n", &nGrid, "Number of mesh points in the each direction");
     int nIter = 10;
     CLP.setOption("ni", &nIter, "Number of assembly iterations");
-    bool atomic = true;
-    CLP.setOption("atomics", "no-atomics", &atomic, "Use atomics");
     bool print = false;
     CLP.setOption("print", "no-print", &print, "Print debugging output");
     bool check = false;
@@ -186,7 +182,7 @@ int main(int argc, char *argv[])
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
-      mainHost<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
       Kokkos::Threads::finalize();
@@ -210,7 +206,7 @@ int main(int argc, char *argv[])
                                        threads_per_vector,
                                        num_hyper_threads / threads_per_vector);
 
-      mainHost<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainHost<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
       Kokkos::OpenMP::finalize();
@@ -258,7 +254,7 @@ int main(int argc, char *argv[])
         cuda_threads_per_vector,
         cuda_threads_per_vector == 0 ? 0 : cuda_block_size / cuda_threads_per_vector);
 
-      mainCuda<Storage>(comm, print, nIter, atomic, use_nodes, check,
+      mainCuda<Storage>(comm, print, nIter, use_nodes, check,
                         dev_config);
 
       Kokkos::HostSpace::execution_space::finalize();
