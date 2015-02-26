@@ -49,6 +49,7 @@
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Piro_config.hpp"
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_RythmosStepperFactory.hpp"
