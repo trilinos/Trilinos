@@ -226,6 +226,7 @@ namespace Amesos2 {
 				     no_special_impl nsi) const
   {
   
+    //Added void to remove parameter not used warning
     ((void)nsi);
     do_getCrs(nzval, colind, rowptr,
 	      nnz, rowmap, ordering,
