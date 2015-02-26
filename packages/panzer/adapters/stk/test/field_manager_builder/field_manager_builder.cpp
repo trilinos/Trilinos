@@ -63,6 +63,9 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalData.hpp"
+
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -82,6 +85,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(field_manager_builder, incremental_setup_interface)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);

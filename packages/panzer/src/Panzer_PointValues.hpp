@@ -94,9 +94,9 @@ namespace panzer {
     
     copyPointCoords(in_point_coords);
     copyNodeCoords(in_node_coords);
-
+    
     Intrepid::CellTools<Scalar> cell_tools;
-
+    
     cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
     cell_tools.setJacobianInv(jac_inv, jac);
     cell_tools.setJacobianDet(jac_det, jac);

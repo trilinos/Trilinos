@@ -1,3 +1,6 @@
+#ifndef INTREPID_CELTOOLS_HPP
+#define INTREPID_CELTOOLS_HPP
+
 // @HEADER
 // ************************************************************************
 //
@@ -81,9 +84,13 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include <KokkosRank.hpp>
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include "Kokkos_Core.hpp"
+#endif
 namespace Intrepid {
   
-  
+//nn  
   //============================================================================================//
   //                                                                                            //
   //                                          CellTools                                         //
@@ -98,6 +105,8 @@ namespace Intrepid {
     \li     computation of edge and face tangents and face normals on both reference and physical frames
     \li     inclusion tests for point sets in reference and physical cells.  
 */
+ 
+
 template<class Scalar>
 class CellTools {
 private:
@@ -338,6 +347,32 @@ public:
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
+/*
+ #ifdef HAVE_INTREPID_KOKKOSCORE
+
+    
+template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
+	struct setJacobianTempSpecKokkos;
+	
+	
+	template<class Scalar1,class Scalar2,class Scalar3,class Layout,class MemorySpace>
+	static void setJacobianTemp(Kokkos::View<Scalar1,Layout,MemorySpace> &               jacobian,
+                            const Kokkos::View<Scalar2,Layout,MemorySpace> &           points,
+                            const Kokkos::View<Scalar3,Layout,MemorySpace>  &           cellWorkset,
+                            const shards::CellTopology & cellTopo,
+                            const int &                  whichCell = -1);
+                            
+ #endif */                          
+    template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
+	struct setJacobianTempSpec;
+	
+	
+	/*template<class ArrayJac, class ArrayPoint, class ArrayCell>
+	static void setJacobianTemp(ArrayJac &               jacobian,
+                            const ArrayPoint &           points,
+                            const ArrayCell  &           cellWorkset,
+                            const shards::CellTopology & cellTopo,
+                            const int &                  whichCell = -1);*/
     template<class ArrayJac, class ArrayPoint, class ArrayCell>
     static void setJacobian(ArrayJac &                   jacobian,
                             const ArrayPoint &           points,
@@ -362,8 +397,11 @@ public:
     template<class ArrayJacInv, class ArrayJac>
     static void setJacobianInv(ArrayJacInv &     jacobianInv,
                                const ArrayJac &  jacobian);
-    
-    
+                               
+ /*   template<class ArrayJacInv, class ArrayJac>
+    static void setJacobianInvTemp(ArrayJacInv &     jacobianInv,
+                               const ArrayJac &  jacobian);   
+    */
     
     /** \brief  Computes the determinant of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
       
@@ -380,6 +418,10 @@ public:
     template<class ArrayJacDet, class ArrayJac>
     static void setJacobianDet(ArrayJacDet &     jacobianDet,
                                const ArrayJac &  jacobian);
+                               
+  /*  template<class ArrayJacDet, class ArrayJac>
+    static void setJacobianDetTemp(ArrayJacDet &     jacobianDet,
+                               const ArrayJac &  jacobian);*/
     
     //============================================================================================//
     //                                                                                            //
@@ -448,9 +490,72 @@ public:
                                    const ArrayCell     &         cellWorkset,
                                    const shards::CellTopology &  cellTopo,
                                    const int &                   whichCell = -1);
-
-    
-    
+                                   
+     /** \brief  Computes \e F, the reference-to-physical frame map.
+      
+                There are 3 use cases:
+        \li     Applies \f$ F_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a cell 
+                workset to a \b single point set stored in a rank-2 (P,D) array;
+        \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to a \b single point set stored 
+                in a rank-2 (P,D) array;
+        \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to \b multiple point sets having  
+                the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+      
+                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+                relative to \c cellWorkset returns a rank-2 (P,D) array such that
+        \f[  
+                \mbox{physPoints}(p,d)   = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad \mbox{for $0\le c < C$ - fixed}    
+        \f]
+                For a single point set in a rank-2 array (P,D) and \c whichCell=-1 (default value) returns
+                a rank-3 (C,P,D) array such that
+        \f[
+                \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C 
+        \f]
+                For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that 
+        \f[  
+                \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(c,p,*)) \Big)_d \quad c=0,\ldots, C 
+        \f]
+                This corresponds to mapping multiple sets of reference points to a matching number of 
+                physical cells and requires the default value \c whichCell=-1.
+      
+                Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
+                for definition of the mapping function. Presently supported cell topologies are
+        
+        \li     1D:   \c Line<2>
+        \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+        \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
+      
+                The default \c whichCell = -1 requires rank-3 output array and
+                forces application of all reference-to-physical frame mappings corresponding to the
+                cells stored in \c cellWorkset. Application of a single mapping is forced by selecting 
+                a valid cell ordinal \c whichCell and requires rank-2 input/output point arrays.  
+      
+        \warning
+                The array \c refPoints represents an arbitrary set of points in the reference
+                frame that are not required to be in the reference cell corresponding to the
+                specified cell topology. As a result, the images of these points under a given 
+                reference-to-physical map are not necessarily contained in the physical cell that
+                is the image of the reference cell under that map. CellTools provides several 
+                inclusion tests methods to check whether or not the points are inside a reference cell.
+       
+        \param  physPoints        [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the ref. points
+        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1 
+      
+        \todo   Implement method for non-standard (shell, beam, etc) topologies.
+     */                                  
+ /*       template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+    static void mapToPhysicalFrameTemp(ArrayPhysPoint      &         physPoints,
+                                   const ArrayRefPoint &         refPoints,
+                                   const ArrayCell     &         cellWorkset,
+                                   const shards::CellTopology &  cellTopo,
+                                   const int &                   whichCell = -1);
+                */                   
+	    template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell, int refRank,int phyptsrank>
+	struct mapToPhysicalFrameTempSpec;
+	
     /** \brief  Computes \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
                 using a default initial guess. 
       
@@ -857,7 +962,11 @@ public:
                                         const int &                   worksetEdgeOrd,
                                         const shards::CellTopology &  parentCell);
     
-    
+  /*  template<class ArrayEdgeTangent, class ArrayJac>
+    static void getPhysicalEdgeTangentsTemp(ArrayEdgeTangent &            edgeTangents,
+                                        const ArrayJac &              worksetJacobians,
+                                        const int &                   worksetEdgeOrd,
+                                        const shards::CellTopology &  parentCell);    */
     
     /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset 
                 \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
@@ -905,8 +1014,13 @@ public:
                                         const int &                   worksetFaceOrd,
                                         const shards::CellTopology &  parentCell);
     
-    
-    
+ /*   template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
+    static void getPhysicalFaceTangentsTemp(ArrayFaceTangentU &           faceTanU,
+                                        ArrayFaceTangentV &           faceTanV,
+                                        const ArrayJac &              worksetJacobians,
+                                        const int &                   worksetFaceOrd,
+                                        const shards::CellTopology &  parentCell);    
+    */
     /** \brief  Computes non-normalized normal vectors to physical sides in a side workset 
                 \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. 
       
@@ -1018,8 +1132,13 @@ public:
                                        const ArrayJac &              worksetJacobians,
                                        const int &                   worksetFaceOrd,
                                        const shards::CellTopology &  parentCell);
-    
-    
+
+  /*  template<class ArrayFaceNormal, class ArrayJac>
+    static void getPhysicalFaceNormalsTemp(ArrayFaceNormal &             faceNormals,
+                                       const ArrayJac &              worksetJacobians,
+                                       const int &                   worksetFaceOrd,
+                                       const shards::CellTopology &  parentCell);    
+    */
     //============================================================================================//
     //                                                                                            //
     //                                        Inclusion tests                                     //
@@ -1262,7 +1381,9 @@ public:
 } // namespace Intrepid
 
 // include templated function definitions
-
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include <Intrepid_CellTools_Kokkos.hpp>
+#endif
 #include "Intrepid_CellToolsDef.hpp"
 
 #endif
@@ -1553,3 +1674,4 @@ Therefore, a subcell workset is defined by
   by all subcells in the workset. 
 
   */
+#endif

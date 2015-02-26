@@ -91,40 +91,40 @@ global node num  i=6, val=7
 global node num  i=7, val=8
 global node num  i=8, val=9
 global node num  i=9, val=10
-block i = 0 has id 1 
+block i = 0 has id 10 
 block i = 0
-block id 1
+block id 10
 element_type HEX
 num elements 96
 nodes per element 8
 element attributes 0
-block i = 1 has id 2 
+block i = 1 has id 20 
 block i = 1
-block id 2
+block id 20
 element_type HEX
 num elements 96
 nodes per element 8
 element attributes 0
-block 1 element 0 connectivty 1 2 5 4 20 21 24 23 
-block 1 element 1 connectivty 2 3 6 5 21 22 25 24 
-block 1 element 2 connectivty 4 5 8 7 23 24 27 26 
-block 1 element 3 connectivty 5 6 9 8 24 25 28 27 
-block 1 element 4 connectivty 20 21 24 23 39 40 43 42 
-block 1 element 5 connectivty 21 22 25 24 40 41 44 43 
-block 1 element 6 connectivty 23 24 27 26 42 43 46 45 
-block 1 element 7 connectivty 24 25 28 27 43 44 47 46 
-block 1 element 8 connectivty 39 40 43 42 58 59 62 61 
-block 1 element 9 connectivty 40 41 44 43 59 60 63 62 
-block 2 element 0 connectivty 172 173 176 175 191 192 195 194 
-block 2 element 1 connectivty 173 174 177 176 192 193 196 195 
-block 2 element 2 connectivty 175 176 179 178 194 195 198 197 
-block 2 element 3 connectivty 176 177 180 179 195 196 199 198 
-block 2 element 4 connectivty 191 192 195 194 210 211 214 213 
-block 2 element 5 connectivty 192 193 196 195 211 212 215 214 
-block 2 element 6 connectivty 194 195 198 197 213 214 217 216 
-block 2 element 7 connectivty 195 196 199 198 214 215 218 217 
-block 2 element 8 connectivty 210 211 214 213 229 230 233 232 
-block 2 element 9 connectivty 211 212 215 214 230 231 234 233 
+block 10 element 0 connectivty 1 2 5 4 20 21 24 23 
+block 10 element 1 connectivty 2 3 6 5 21 22 25 24 
+block 10 element 2 connectivty 4 5 8 7 23 24 27 26 
+block 10 element 3 connectivty 5 6 9 8 24 25 28 27 
+block 10 element 4 connectivty 20 21 24 23 39 40 43 42 
+block 10 element 5 connectivty 21 22 25 24 40 41 44 43 
+block 10 element 6 connectivty 23 24 27 26 42 43 46 45 
+block 10 element 7 connectivty 24 25 28 27 43 44 47 46 
+block 10 element 8 connectivty 39 40 43 42 58 59 62 61 
+block 10 element 9 connectivty 40 41 44 43 59 60 63 62 
+block 20 element 0 connectivty 172 173 176 175 191 192 195 194 
+block 20 element 1 connectivty 173 174 177 176 192 193 196 195 
+block 20 element 2 connectivty 175 176 179 178 194 195 198 197 
+block 20 element 3 connectivty 176 177 180 179 195 196 199 198 
+block 20 element 4 connectivty 191 192 195 194 210 211 214 213 
+block 20 element 5 connectivty 192 193 196 195 211 212 215 214 
+block 20 element 6 connectivty 194 195 198 197 213 214 217 216 
+block 20 element 7 connectivty 195 196 199 198 214 215 218 217 
+block 20 element 8 connectivty 210 211 214 213 229 230 233 232 
+block 20 element 9 connectivty 211 212 215 214 230 231 234 233 
 Side set index 0 id 20 has 12 elements
 element 33 and face 5
 element 34 and face 5

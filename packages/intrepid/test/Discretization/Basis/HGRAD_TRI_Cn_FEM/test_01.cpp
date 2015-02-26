@@ -64,7 +64,6 @@ using namespace Intrepid;
     \param argv [in] - command-line arguments
 */
 int main(int argc, char *argv[]) {
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -77,11 +76,11 @@ int main(int argc, char *argv[]) {
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
-  
+
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
+
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
@@ -103,12 +102,16 @@ int main(int argc, char *argv[]) {
   // Let's instantiate a basis
   try {
     const int deg = 10;
+
     Basis_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
 
     // Get a lattice
     const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
+
     const int nbf = myBasis.getCardinality();
+
     FieldContainer<double> lattice( np_lattice , 2 );
+
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
                                                             myBasis.getBaseCellTopology() , 
                                                             deg , 
@@ -141,6 +144,7 @@ int main(int argc, char *argv[]) {
 
   try {
     const int deg = 3;
+
     Basis_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
     const std::vector<std::vector<std::vector<int> > >& dofdata = myBasis.getDofOrdinalData();
     for (unsigned d=0;d<dofdata.size();d++) {
@@ -160,18 +164,23 @@ int main(int argc, char *argv[]) {
   }
 
   try {
+
     const int deg = 1;
     Basis_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
-    
+
     // Get a lattice
     const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
+
     const int nbf = myBasis.getCardinality();
+
     FieldContainer<double> lattice( np_lattice , 2 );
+
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
                                                             myBasis.getBaseCellTopology() , 
                                                             deg , 
                                                             0 , 
-                                                            POINTTYPE_WARPBLEND );         
+                                                            POINTTYPE_WARPBLEND );     
+                                                            
     FieldContainer<double> vals( nbf , np_lattice , 2 );
 
     myBasis.getValues( vals , lattice , OPERATOR_CURL );

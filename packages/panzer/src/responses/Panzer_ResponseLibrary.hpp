@@ -331,7 +331,7 @@ private:
      std::ostream & os_;
      Printer(const Response_TemplateManager & tm,std::ostream & os) : tm_(tm), os_(os) {}
      template <typename T> void operator()(T) const { 
-       os_ << PHX::TypeString<T>::value << "=";
+//       os_ << PHX::TypeString<T>::value << "=";
        if(tm_.get<T>()!=Teuchos::null) 
          os_ << "ON ";
        else

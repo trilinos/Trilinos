@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
@@ -91,6 +93,8 @@ typedef Intrepid::FieldContainer<double> FieldContainer;
 
 TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from
@@ -199,6 +203,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
 
 TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from
@@ -316,6 +322,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from
@@ -424,6 +432,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from
@@ -541,6 +551,8 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
 {
+   PHX::KokkosDeviceSession session;
+
    out << note << std::endl;
 
    // basis to build patterns from

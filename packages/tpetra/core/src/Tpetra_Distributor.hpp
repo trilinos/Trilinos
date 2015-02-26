@@ -1977,7 +1977,10 @@ namespace Tpetra {
     // back to the GPU must occur after the waits.
     typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
     typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
-    if (! enable_cuda_rdma_ && ! exports_view::is_hostspace) {
+    const bool can_access_from_host =
+      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace,
+      typename exports_view::memory_space >::value;
+    if (! enable_cuda_rdma_ && ! can_access_from_host) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view (exports);
       typename imports_view::HostMirror host_imports =

@@ -285,6 +285,12 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   using Teuchos::ParameterEntryValidator;
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+  
+  if(parameterList->isParameter("Trans"))
+    {}
+      
+   
+  
 
   // The KLU2 transpose option can override the Amesos2 option
   //if( parameterList->isParameter("Trans") ){
@@ -322,6 +328,8 @@ bool
 KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
+
+  if(current_phase == SOLVE)return(false);
 
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);

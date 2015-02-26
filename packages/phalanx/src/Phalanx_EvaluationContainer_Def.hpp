@@ -48,6 +48,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
+#include "Phalanx_KokkosViewFactoryFunctor.hpp"
+#include <boost/mpl/for_each.hpp>
+#include <boost/mpl/at.hpp>
 #include <sstream>
 
 // *************************************************************************
@@ -56,7 +59,6 @@ PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
   post_registration_setup_called_(false)
 {
   this->vp_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
-  this->data_container_template_manager_.buildObjects();
 }
 
 // *************************************************************************
@@ -91,47 +93,21 @@ postRegistrationSetup(typename Traits::SetupData d,
   // Figure out all evaluator dependencies
   if ( !(this->vp_manager_.sortingCalled()) )
     this->vp_manager_.sortAndOrderEvaluators();
-
-  // Determine total amount of memory for all variables
-  allocator_.reset();
   
   const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list = 
     this->vp_manager_.getFieldTags();
 
-  std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var = 
-    var_list.begin();
-  for (; var != var_list.end(); ++var) {
+  std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
-    typename DCTM::iterator it = data_container_template_manager_.begin();
-    for (; it != data_container_template_manager_.end(); ++it) {
-      
-      if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
-
-	std::size_t size_of_data_type = it->getSizeOfDataType();
-
-	std::size_t num_elements = (*var)->dataLayout().size();
-
-	allocator_.addRequiredChunk(size_of_data_type, num_elements);
-      }
-    }
-  }
-
-  allocator_.setup();
-
-  // Allocate field data arrays
-  //std::vector<PHX::FieldTag>::const_iterator  var = var_list.begin();
   for (var = var_list.begin(); var != var_list.end(); ++var) {
+    typedef typename boost::mpl::at<typename Traits::EvalToDataMap,EvalT>::type EvalDataTypes;
+    Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
 
-    typename DCTM::iterator it = data_container_template_manager_.begin();
-    for (; it != data_container_template_manager_.end(); ++it) {
-      
-      if ((*var)->dataTypeInfo() == it->dataTypeInfo())
-	it->allocateField(*var, allocator_);
-
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
+			       "Error: PHX::EvaluationContainer::postRegistrationSetup(): could not build a Kokkos::View for field named \"" << (*var)->name() << "\" of type \"" << (*var)->dataTypeInfo().name() << "\" for the evaluation type \"" << PHX::typeAsString<EvalT>() << "\".");
   }
 
-  // Allow field evaluators to grab pointers to relevant field data
+  // Allow fields in evaluators to grab pointers to relevant field data
   this->vp_manager_.postRegistrationSetup(d,fm);
 
   post_registration_setup_called_ = true;
@@ -177,14 +153,36 @@ postEvaluate(typename Traits::PostEvalData d)
 }
 
 // *************************************************************************
-template <typename EvalT, typename Traits> template <typename DataT>
-Teuchos::ArrayRCP<DataT> 
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
+{
+  kokkos_extended_data_type_dimensions_ = dims;
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+const std::vector<PHX::index_size_type> & PHX::EvaluationContainer<EvalT, Traits>::
+getKokkosExtendedDataTypeDimensions() const 
+{
+#ifdef PHX_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call post registration setup for each evaluation type before calling the postEvaluate() method for that type!");
+#endif
+  return kokkos_extended_data_type_dimensions_;
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+boost::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
-  Teuchos::ArrayRCP<DataT> r = 
-    data_container_template_manager_.template getAsObject<DataT>()->
-    getFieldData(f);
-  return r;
+  //return fields_[f.identifier()];
+  boost::unordered_map<std::string,boost::any>::iterator a= fields_.find(f.identifier());
+   if (a==fields_.end()){
+    std::cout << " PHX::EvaluationContainer<EvalT, Traits>::getFieldData can't find an f.identifier() "<<  f.identifier() << std::endl;
+   }
+  return a->second;
 }
 
 
@@ -214,9 +212,9 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->vp_manager_ << std::endl;
-  typename DCTM::const_iterator it = data_container_template_manager_.begin();
-  for (; it != data_container_template_manager_.end(); ++it)
-    os << *it << std::endl;
+  for (boost::unordered_map<std::string,boost::any>::const_iterator i = 
+	 fields_.begin(); i != fields_.end(); ++i)
+    os << i->first << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Finished PHX::EvaluationContainer Output" << std::endl;
   os << "Evaluation Type = " << type << std::endl;

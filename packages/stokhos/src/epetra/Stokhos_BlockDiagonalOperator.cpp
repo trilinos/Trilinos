@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -50,7 +50,7 @@ BlockDiagonalOperator(
   const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
   const Teuchos::RCP<const Epetra_Map>& domain_mp_map_,
-  const Teuchos::RCP<const Epetra_Map>& range_mp_map_) : 
+  const Teuchos::RCP<const Epetra_Map>& range_mp_map_) :
   label("Stokhos Block Diagonal Operator"),
   mp_comm(mp_comm_),
   num_mp_blocks(num_mp_blocks_),
@@ -68,7 +68,7 @@ Stokhos::BlockDiagonalOperator::
 {
 }
 
-void 
+void
 Stokhos::BlockDiagonalOperator::
 setupOperator(
    const Teuchos::RCP<Stokhos::ProductEpetraOperator >& ops)
@@ -76,32 +76,32 @@ setupOperator(
   block_ops = ops;
 }
 
-Teuchos::RCP< Stokhos::ProductEpetraOperator > 
+Teuchos::RCP< Stokhos::ProductEpetraOperator >
 Stokhos::BlockDiagonalOperator::
 getMPOps()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::ProductEpetraOperator > 
+Teuchos::RCP<const Stokhos::ProductEpetraOperator >
 Stokhos::BlockDiagonalOperator::
 getMPOps() const
 {
   return block_ops;
 }
 
-int 
+int
 Stokhos::BlockDiagonalOperator::
-SetUseTranspose(bool UseTranspose) 
+SetUseTranspose(bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   for (int i=0; i<num_mp_blocks; i++)
     (*block_ops)[i].SetUseTranspose(useTranspose);
 
   return 0;
 }
 
-int 
+int
 Stokhos::BlockDiagonalOperator::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -123,9 +123,9 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-int 
-Stokhos::BlockDiagonalOperator::ApplyInverse(const Epetra_MultiVector& Input, 
-					     Epetra_MultiVector& Result) const
+int
+Stokhos::BlockDiagonalOperator::ApplyInverse(const Epetra_MultiVector& Input,
+                                             Epetra_MultiVector& Result) const
 {
   Teuchos::RCP<const Epetra_BlockMap> input_base_map, result_base_map;
   if (useTranspose) {
@@ -139,14 +139,14 @@ Stokhos::BlockDiagonalOperator::ApplyInverse(const Epetra_MultiVector& Input,
   EpetraExt::BlockMultiVector mp_input(View, *input_base_map, Input);
   EpetraExt::BlockMultiVector mp_result(View, *range_base_map, Result);
   for (int i=0; i<num_mp_blocks; i++) {
-    (*block_ops)[i].ApplyInverse(*(mp_input.GetBlock(i)), 
-				 *(mp_result.GetBlock(i)));
+    (*block_ops)[i].ApplyInverse(*(mp_input.GetBlock(i)),
+                                 *(mp_result.GetBlock(i)));
   }
 
   return 0;
 }
 
-double 
+double
 Stokhos::BlockDiagonalOperator::NormInf() const
 {
   double product_nrm = 0.0;
@@ -160,19 +160,19 @@ Stokhos::BlockDiagonalOperator::NormInf() const
 }
 
 
-const char* 
+const char*
 Stokhos::BlockDiagonalOperator::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 Stokhos::BlockDiagonalOperator::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::BlockDiagonalOperator::HasNormInf() const
 {
   if (num_mp_blocks == 0)
@@ -180,12 +180,12 @@ Stokhos::BlockDiagonalOperator::HasNormInf() const
   return (*block_ops)[0].HasNormInf();
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::BlockDiagonalOperator::Comm() const
 {
   return *mp_comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::BlockDiagonalOperator::OperatorDomainMap() const
 {
   if (useTranspose)
@@ -193,7 +193,7 @@ Stokhos::BlockDiagonalOperator::OperatorDomainMap() const
   return *domain_mp_map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::BlockDiagonalOperator::OperatorRangeMap() const
 {
   if (useTranspose)

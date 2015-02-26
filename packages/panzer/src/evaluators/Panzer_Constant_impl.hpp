@@ -62,9 +62,8 @@ PHX_POST_REGISTRATION_SETUP(Constant,worksets,fm)
 {
   using namespace PHX;
   this->utils.setFieldData(constant,fm);
-
-  for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
-    constant[i] = value;
+  
+  constant.deep_copy(value);
 }
 
 //**********************************************************************

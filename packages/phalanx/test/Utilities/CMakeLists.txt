@@ -1,15 +1,15 @@
-
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TribitsAddExecutableAndTest)
 
 SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+
 APPEND_SET(HEADERS
   CellData.hpp
-  AlgebraicTypes.hpp
   Traits.hpp
-  Traits_ContiguousAllocator.hpp
   FactoryTraits.hpp
   evaluators/Evaluator_Constant.hpp
   evaluators/Evaluator_Constant_Def.hpp
@@ -21,13 +21,40 @@ APPEND_SET(HEADERS
   evaluators/Evaluator_FEInterpolation_Def.hpp
   evaluators/Evaluator_NonlinearSource.hpp
   evaluators/Evaluator_NonlinearSource_Def.hpp
-  ) 
+  )
+
+
+IF(PHX_KOKKOS_DEVICE_TYPE_CUDA2)
+  IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS}
+                            ${Phalanx_INCLUDE_DIRS} )
+  CUDA_COMPILE( OBJECTS_CUDA CellData_CU.cu )
+
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+
+#SET_PROPERTY(TARGET phalanx_test_utilities APPEND PROPERTY LINKER_LANGUAGE CXX)
+
+ TRIBITS_ADD_LIBRARY(
+  phalanx_test_utilities
+  ${OBJECTS_CUDA}
+  HEADERS ${HEADERS}
+  TESTONLY
+  )
+ 
+ SET_PROPERTY(TARGET phalanx_test_utilities APPEND PROPERTY LINKER_LANGUAGE CXX)
+
+ELSE()
+
 
 APPEND_SET(SOURCES
   CellData.cpp
-  Traits.cpp
-  Traits_ContiguousAllocator.cpp
   )
+
+#ENDIF ()
 
 TRIBITS_ADD_LIBRARY(
   phalanx_test_utilities
@@ -35,12 +62,4 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   TESTONLY
   )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  test_utilitites_algebraic_types
-  SOURCES Test_Utilities_AlgebraicTypes.cpp
-  TESTONLYLIBS phalanx_test_utilities
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Test passed!"
-  )
+ENDIF()

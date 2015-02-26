@@ -54,11 +54,16 @@ FEInterpolation(const Teuchos::ParameterList& p) :
   val_qp(p.get<std::string>("QP Variable Name"), 
 	 p.get< Teuchos::RCP<PHX::DataLayout> >("QP Scalar Data Layout") ),
   val_grad_qp(p.get<std::string>("Gradient QP Variable Name"), 
-	      p.get< Teuchos::RCP<PHX::DataLayout> >("QP Vector Data Layout") )
+	      p.get< Teuchos::RCP<PHX::DataLayout> >("QP Vector Data Layout") ),
+  dummy("Dummy", 
+	p.get< Teuchos::RCP<PHX::DataLayout> >("QP Vector Data Layout") )
 { 
   this->addDependentField(val_node);
   this->addEvaluatedField(val_qp);
   this->addEvaluatedField(val_grad_qp);
+
+  // for unit testing
+  this->addEvaluatedField(dummy);
   
   this->setName("FEInterpolation");
 }
@@ -72,6 +77,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);
   this->utils.setFieldData(val_grad_qp,fm);
+  this->utils.setFieldData(dummy,fm);
 
   // Get dimensions of MDArray
   typename std::vector< typename PHX::template MDField<ScalarT,Cell,Node>::size_type > dims;
@@ -82,25 +88,36 @@ postRegistrationSetup(typename Traits::SetupData d,
   num_qp = dims[1];
   num_dim = dims[2];
 }
-
+//**********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void FEInterpolation<EvalT, Traits>::operator () (const int i) const
+{
+  for (int qp = 0; qp < num_qp; ++qp) {
+    val_qp(i,qp) = 0.0;
+    for (int dim = 0; dim < num_dim; ++dim)
+       val_grad_qp(i,qp,dim) = 0.0;
+     // Sum nodal contributions to qp
+     for (int node = 0; node < num_nodes; ++node) {
+       val_qp(i,qp) += phi(qp, node) * val_node(i,node);
+       for (int dim = 0; dim < num_dim; ++dim)
+           val_grad_qp(i,qp,dim) += grad_phi(qp, node, dim) * val_node(i,node);
+       }
+  }
+}
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
-  using shards::Array;
-  using shards::NaturalOrder;
-
   std::vector<MyCell>::iterator cell_it = cell_data.begin;
 
   // Loop over number of cells
-  for (std::size_t cell = 0; cell < cell_data.num_cells; ++cell) {
+ /* for (std::size_t cell = 0; cell < cell_data.num_cells; ++cell) {
     
-    Array<double,NaturalOrder,QuadPoint,Node>& phi = 
-      cell_it->getBasisFunctions();
+    Kokkos::View<double**,PHX::Device> phi = cell_it->getBasisFunctions();
 
-    Array<double,NaturalOrder,QuadPoint,Node,Dim>& grad_phi = 
-      cell_it->getBasisFunctionGradients();
+    Kokkos::View<double***,PHX::Device> grad_phi = cell_it->getBasisFunctionGradients();
 
     // Loop over quad points of cell
     for (int qp = 0; qp < num_qp; ++qp) {
@@ -112,19 +129,22 @@ evaluateFields(typename Traits::EvalData cell_data)
 
       // Sum nodal contributions to qp
       for (int node = 0; node < num_nodes; ++node) {
-
 	val_qp(cell,qp) += phi(qp,node) * val_node(cell,node);
 	
 	for (int dim = 0; dim < num_dim; ++dim)
 	  val_grad_qp(cell,qp,dim) += 
 	    grad_phi(qp,node,dim) * val_node(cell,node);
-       
       }
     }
     
     ++cell_it;
  
   }
+*/
+//   Kokkos_FEInterpolation< PHX::MDField<ScalarT,Cell,QuadPoint>, PHX::MDField<ScalarT,Cell,Node>, PHX::MDField<ScalarT,Cell,QuadPoint,Dim>  >  fEInterpolation_functor(val_qp, val_node, val_grad_qp, num_qp, num_dim, num_nodes);
+  phi = cell_it->getBasisFunctions();
+  grad_phi = cell_it->getBasisFunctionGradients();
+  Kokkos::parallel_for (cell_data.num_cells, *this);
     
 }
 

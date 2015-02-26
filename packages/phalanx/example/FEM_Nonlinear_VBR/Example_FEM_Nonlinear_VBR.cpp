@@ -42,8 +42,9 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -187,6 +188,8 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
+
+    PHX::InitializeKokkosDevice();
 
     RCP<Time> residual_eval_time = 
       TimeMonitor::getNewTimer("Residual Evaluation Time");
@@ -848,6 +851,8 @@ int main(int argc, char *argv[])
     TEUCHOS_TEST_FOR_EXCEPTION(num_gmres_iterations != 10, std::runtime_error,
 		       "Incorrect number of GMRES iterations!");
 #endif
+
+    PHX::FinalizeKokkosDevice();
 
     // *********************************************************************
     // Finished all testing

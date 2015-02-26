@@ -45,11 +45,10 @@
 #ifndef PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 #define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
-
 /** \brief Finite Element Interpolation Evaluator
 
     This object evaluates a scalar field and it's gradient at the
@@ -68,23 +67,33 @@ public:
 			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);
+
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const int i) const;
   
 private:
 
   typedef typename EvalT::ScalarT ScalarT;
 
   //! Values at nodes
-  PHX::MDField<ScalarT,Cell,Node> val_node;
+  PHX::MDField<const ScalarT,Cell,Node> val_node;
 
   //! Values at quadrature points
   PHX::MDField<ScalarT,Cell,QuadPoint> val_qp;
 
   //! Gradient values at quadrature points
   PHX::MDField<ScalarT,Cell,QuadPoint,Dim> val_grad_qp;
-  
+   
   int num_nodes;
   int num_qp;
   int num_dim;
+
+  // dummy field for unit testing mixed scalar types (double field in
+  // Jacobian evaluation
+  PHX::MDField<double,Cell,QuadPoint,Dim> dummy;
+ 
+  Kokkos::View<double**,PHX::Device> phi;
+  Kokkos::View<double***,PHX::Device> grad_phi;
 
 };
 

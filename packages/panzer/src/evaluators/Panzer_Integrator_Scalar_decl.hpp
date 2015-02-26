@@ -66,7 +66,7 @@ namespace panzer {
   */
 PHX_EVALUATOR_CLASS(Integrator_Scalar)
   
-  PHX::MDField<ScalarT,Cell> integral;  // result
+  PHX::MDField<ScalarT> integral;  // result
     
   PHX::MDField<ScalarT,Cell,IP> scalar; // function to be integrated
 

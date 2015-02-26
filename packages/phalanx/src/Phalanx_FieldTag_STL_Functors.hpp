@@ -45,7 +45,7 @@
 #ifndef PHX_FIELDTAG_STL_FUNCTORS_HPP
 #define PHX_FIELDTAG_STL_FUNCTORS_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
 

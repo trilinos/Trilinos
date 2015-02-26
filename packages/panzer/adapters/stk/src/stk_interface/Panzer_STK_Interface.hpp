@@ -910,7 +910,7 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
       double * solnData = stk_classic::mesh::field_data(*field,*element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*solutionValues[cell];
+      solnData[0] = scaleValue*solutionValues(cell,0);
    }
 }
 

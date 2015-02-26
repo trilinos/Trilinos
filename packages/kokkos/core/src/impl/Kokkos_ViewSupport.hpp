@@ -331,7 +331,8 @@ struct ViewDefaultConstruct< ExecSpace , Type , true >
     }
 };
 
-template< class OutputView , unsigned Rank = OutputView::Rank >
+template< class OutputView , unsigned Rank = OutputView::Rank ,
+          class Enabled = void >
 struct ViewFill
 {
   typedef typename OutputView::const_value_type  const_value_type ;

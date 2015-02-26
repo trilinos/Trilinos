@@ -446,6 +446,11 @@ typedef struct {
     nnti_gni_request_queue_handle_t req_queue;
 } nnti_gni_transport_global_t;
 
+typedef struct {
+    nnti_gni_connection_t *conn; /* the connection where the request arrived */
+    uint64_t queue_index;        /* the receive queue index where the request will go */
+    uint64_t mbox_index;         /* the mbox index where the request is waiting */
+} nnti_gni_mbox_backlog_t;
 
 
 
@@ -488,6 +493,7 @@ static int process_event(
         gni_cq_handle_t        cq_hdl,
         gni_cq_entry_t        *ev_data,
         gni_post_descriptor_t *post_desc_ptr);
+static NNTI_result_t execute_mbox_backlog(void);
 static NNTI_result_t post_recv_queue_work_requests(
         NNTI_buffer_t *reg_buf);
 static NNTI_result_t post_recv_work_request(
@@ -773,10 +779,15 @@ typedef std::map<NNTI_instance_id, wr_queue_t *>           wr_queue_map_t;
 typedef std::map<NNTI_instance_id, wr_queue_t *>::iterator wr_queue_map_iter_t;
 static nthread_lock_t nnti_wr_queue_map_lock;
 
+typedef std::deque<nnti_gni_mbox_backlog_t *>           mbox_backlog_t;
+typedef std::deque<nnti_gni_mbox_backlog_t *>::iterator mbox_backlog_iter_t;
+static nthread_lock_t nnti_mbox_backlog_lock;
+
 static wr_pool_t target_wr_pool;
 static wr_pool_t initiator_wr_pool;
 
 static wr_queue_map_t wr_resend_map;
+static mbox_backlog_t mbox_backlog;
 
 static nnti_gni_config_t config;
 
@@ -894,6 +905,7 @@ NNTI_result_t NNTI_gni_init (
 
         nthread_lock_init(&nnti_gni_lock);
         nthread_lock_init(&nnti_resend_lock);
+        nthread_lock_init(&nnti_mbox_backlog_lock);
         nthread_lock_init(&nnti_mem_lock);
 
         nthread_lock_init(&nnti_progress_lock);
@@ -3307,7 +3319,11 @@ NNTI_result_t NNTI_gni_wait (
     }
 
     gni_wr=GNI_WORK_REQUEST(wr);
-    assert(gni_wr);
+    if (gni_wr == NULL) {
+        // this work request is "inactive".
+        nnti_rc=NNTI_EINVAL;
+        goto cleanup;
+    }
 
     check_listen_socket_for_new_connections();
 
@@ -3359,6 +3375,7 @@ NNTI_result_t NNTI_gni_wait (
             }
 
             resend_all();
+            execute_mbox_backlog();
 
             if (is_wr_complete(gni_wr) == TRUE) {
                 log_debug(nnti_debug_level, "wr completed (wr=%p ; gni_wr=%p)", wr, GNI_WORK_REQUEST(wr));
@@ -3470,6 +3487,7 @@ NNTI_result_t NNTI_gni_wait (
         }
     }
 
+cleanup:
     log_debug(nnti_ee_debug_level, "exit (wr=%p)", wr);
     return(nnti_rc);
 }
@@ -3542,7 +3560,11 @@ NNTI_result_t NNTI_gni_waitany (
         for (uint32_t i=0;i<wr_count;i++) {
             if (wr_list[i] != NULL) {
                 gni_wr=GNI_WORK_REQUEST(wr_list[i]);
-                assert(gni_wr);
+                if (gni_wr == NULL) {
+                    // this work request is "inactive".
+                    nnti_rc=NNTI_EINVAL;
+                    goto cleanup;
+                }
                 if (is_wr_canceling(gni_wr)) {
                     cancel_wr(gni_wr);
                 }
@@ -3590,6 +3612,7 @@ NNTI_result_t NNTI_gni_waitany (
             }
 
             resend_all();
+            execute_mbox_backlog();
 
             if (is_any_wr_complete(wr_list, wr_count, which) == TRUE) {
                 log_debug(nnti_debug_level, "wr complete (wr_list[%d]=%p ; gni_wr=%p)", *which, wr_list[*which], GNI_WORK_REQUEST(wr_list[*which]));
@@ -3750,7 +3773,11 @@ NNTI_result_t NNTI_gni_waitall (
         for (uint32_t i=0;i<wr_count;i++) {
             if (wr_list[i] != NULL) {
                 gni_wr=GNI_WORK_REQUEST(wr_list[i]);
-                assert(gni_wr);
+                if (gni_wr == NULL) {
+                    // this work request is "inactive".
+                    nnti_rc=NNTI_EINVAL;
+                    goto cleanup;
+                }
                 if (is_wr_canceling(gni_wr)) {
                     cancel_wr(gni_wr);
                 }
@@ -3796,6 +3823,7 @@ NNTI_result_t NNTI_gni_waitall (
             }
 
             resend_all();
+            execute_mbox_backlog();
 
             if (is_all_wr_complete(wr_list, wr_count) == TRUE) {
                 log_debug(nnti_debug_level, "all work requests complete");
@@ -3935,6 +3963,7 @@ NNTI_result_t NNTI_gni_fini (
 
     nthread_lock_fini(&nnti_gni_lock);
     nthread_lock_fini(&nnti_resend_lock);
+    nthread_lock_fini(&nnti_mbox_backlog_lock);
     nthread_lock_fini(&nnti_mem_lock);
 
     nthread_lock_fini(&nnti_progress_lock);
@@ -4620,39 +4649,21 @@ static int process_event(
             break;
         case REQUEST_BUFFER:
             {
-            nnti_gni_request_queue_handle_t *q=&transport_global_data.req_queue;
-            nnti_gni_credit_msg_t credit_return_msg;
-            int64_t req_count=0, req_index=0, mbox_offset=0;
+            int64_t req_count=0;
 
-            nnti_gni_connection_t *conn=get_conn_instance((uint32_t)gni_cq_get_inst_id(*ev_data));
-            assert(conn);
+            nnti_gni_mbox_backlog_t *backlog_element=(nnti_gni_mbox_backlog_t*)malloc(sizeof(nnti_gni_mbox_backlog_t));
 
-            gni_wr->last_op=GNI_OP_NEW_REQUEST;
+            backlog_element->conn=get_conn_instance((uint32_t)gni_cq_get_inst_id(*ev_data));
+            assert(backlog_element->conn);
+            backlog_element->queue_index=gni_wr->index;
+            req_count=nthread_counter_increment(&backlog_element->conn->reqs_received);
+            backlog_element->mbox_index=req_count % backlog_element->conn->recv_mbox->max_credits;
 
-            int64_t req_buffer_offset=GNI_ELEMENT_OFFSET(q->reg_buf, gni_wr->index);
+            nthread_lock(&nnti_mbox_backlog_lock);
+            mbox_backlog.push_back(backlog_element);
+            nthread_unlock(&nnti_mbox_backlog_lock);
 
-            req_count=nthread_counter_increment(&conn->reqs_received);
-            req_index=req_count % conn->recv_mbox->max_credits;
-            mbox_offset=conn->recv_mbox->msg_maxsize*req_index;
-
-            log_debug(nnti_debug_level, "&q->req_buffer[req_buffer_offset=%lld] = %p, mbox req_index = %llu",
-                    req_buffer_offset, &q->req_buffer[req_buffer_offset], req_index);
-
-            memcpy(&q->req_buffer[req_buffer_offset], conn->recv_mbox->mbox_buf+mbox_offset, q->req_size);
-
-            send_back_credits(conn, 1);
-
-            log_debug(debug_level, "recv completion - event_buf=%p index=%llu", event_buf, gni_wr->index);
-
-            gni_wr->wc->ack_received=1;
-            gni_wr->wc->inst_id     =(uint32_t)gni_cq_get_inst_id(*ev_data);
-            gni_wr->wc->op          =GNI_OP_SEND_REQUEST;
-            gni_wr->wc->byte_len    =q->req_size;
-            gni_wr->wc->byte_offset =req_buffer_offset;
-            gni_wr->wc->src_offset  =0;
-            gni_wr->wc->dest_offset =req_buffer_offset;
-
-            gni_wr->state=NNTI_GNI_WR_STATE_RDMA_COMPLETE;
+            execute_mbox_backlog();
 
             }
             break;
@@ -4785,6 +4796,83 @@ static int process_event(
 
     log_debug(nnti_ee_debug_level, "exit");
     return (rc);
+}
+
+static NNTI_result_t execute_mbox_copy(nnti_gni_mbox_backlog_t *backlog_element)
+{
+    int64_t mbox_offset=0;
+
+    nnti_gni_request_queue_handle_t *q=&transport_global_data.req_queue;
+    nnti_gni_memory_handle_t *gni_mem_hdl=GNI_MEM_HDL(transport_global_data.req_queue.reg_buf);
+    nnti_gni_work_request_t *gni_wr=gni_mem_hdl->wr_queue->at(backlog_element->queue_index);
+
+    if ((gni_wr->state != NNTI_GNI_WR_STATE_POSTED) && (gni_wr->state != NNTI_GNI_WR_STATE_ATTACHED)) {
+        return NNTI_EAGAIN;
+    }
+    gni_wr->last_op=GNI_OP_NEW_REQUEST;
+
+    int64_t req_buffer_offset=GNI_ELEMENT_OFFSET(q->reg_buf, gni_wr->index);
+
+    mbox_offset=backlog_element->conn->recv_mbox->msg_maxsize*backlog_element->mbox_index;
+
+    log_debug(nnti_debug_level, "&q->req_buffer[req_buffer_offset=%lld] = %p, mbox req_index = %llu",
+            req_buffer_offset, &q->req_buffer[req_buffer_offset], backlog_element->mbox_index);
+
+    memcpy(&q->req_buffer[req_buffer_offset], backlog_element->conn->recv_mbox->mbox_buf+mbox_offset, q->req_size);
+
+    send_back_credits(backlog_element->conn, 1);
+
+    log_debug(nnti_debug_level, "recv completion - gni_wr->index=%llu", gni_wr->index);
+
+    gni_wr->wc->ack_received=1;
+    gni_wr->wc->inst_id     =backlog_element->conn->peer_instance;
+    gni_wr->wc->op          =GNI_OP_SEND_REQUEST;
+    gni_wr->wc->byte_len    =q->req_size;
+    gni_wr->wc->byte_offset =req_buffer_offset;
+    gni_wr->wc->src_offset  =0;
+    gni_wr->wc->dest_offset =req_buffer_offset;
+
+    gni_wr->state=NNTI_GNI_WR_STATE_RDMA_COMPLETE;
+
+    return NNTI_OK;
+
+}
+static NNTI_result_t execute_mbox_backlog(void)
+{
+    NNTI_result_t rc=NNTI_OK;
+
+    mbox_backlog_iter_t backlog_iter;
+
+    trios_declare_timer(call_time);
+
+    nthread_lock(&nnti_mbox_backlog_lock);
+    log_debug(nnti_debug_level, "mbox_backlog.size()=%d", mbox_backlog.size());
+
+    backlog_iter=mbox_backlog.begin();
+    while (backlog_iter != mbox_backlog.end()) {
+        nnti_gni_mbox_backlog_t *backlog_element=*backlog_iter;
+
+        rc=execute_mbox_copy(backlog_element);
+        if (rc == NNTI_OK) {
+            log_debug(nnti_debug_level, "execute_mbox_copy() success: %d", rc);
+
+            backlog_iter = mbox_backlog.erase(backlog_iter);
+
+        } else if (rc == NNTI_EAGAIN) {
+            log_warn(nnti_debug_level, "execute_mbox_copy() receive queue is full: %d", rc);
+
+            break;
+
+        } else {
+            log_warn(nnti_debug_level, "execute_mbox_copy() unknown error: %d", rc);
+
+            break;
+        }
+    }
+
+    nthread_unlock(&nnti_mbox_backlog_lock);
+
+    return rc;
 }
 
 static NNTI_result_t post_recv_queue_work_requests(
@@ -7891,7 +7979,7 @@ static NNTI_result_t progress(
 
                 case REQ_RECV_MEM_CQ_INDEX:
                     print_cq_event(&ev_data, false);
-                    log_debug(nnti_debug_level, "CqVectorMonitor(req_send_ep_cq_hdl) request receive complete event received at receiver");
+                    log_debug(nnti_debug_level, "CqVectorMonitor(req_recv_mem_cq_hdl) request receive complete event received at receiver");
                     break;
 
                 case REQ_SEND_EP_CQ_INDEX:

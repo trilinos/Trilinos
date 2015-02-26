@@ -44,6 +44,20 @@
 // #include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
 //#include "Teuchos_Assert.hpp"
+#include "KokkosRank.hpp"
+/*template<class arg1, class arg2, class arg3, class arg4,class arg5 ,class arg6, class arg7, class arg8,class arg9, class arg10>
+struct Rank<const shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10> >{
+static const int value=shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10>::Rank;
+};
+
+template<class arg1, class arg2, class arg3, class arg4,class arg5 ,class arg6, class arg7, class arg8,class arg9, class arg10>
+struct Rank<shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10> >{
+static const int value=shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10>::Rank;
+};*/
+template<class Scalar,shards::ArrayOrder Order,class arg1, class arg2, class arg3, class arg4,class arg5 ,class arg6, class arg7, class arg8>
+struct Rank<shards::ArrayVector<Scalar,Order,arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8> >{
+static const int value=shards::ArrayVector<Scalar, Order,arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8>::Rank;
+};
 
 
 //using namespace std;
@@ -317,8 +331,12 @@ namespace stk_classic
         double m_dummy;
         double&       operator()(int i1, int i2, int i3) { tni(); return m_dummy;}
         const double& operator()(int i1, int i2, int i3) const { tni(); return m_dummy;}
+        
         using BaseType::operator();
 #endif
+        double m_dummy;
+        double&       operator()(int i1, int i2, int i3, int i4)       { tni(); return m_dummy;}
+        const double& operator()(int i1, int i2, int i3, int i4) const { tni(); return m_dummy;}
       };
 
       /// ([C], [P])
@@ -552,6 +570,91 @@ namespace stk_classic
 
   }
 }
+/*
+template<class Scalar,shards::ArrayOrder Order,class arg1, class arg2, class arg3, class arg4,class arg5 ,class arg6, class arg7, class arg8>
+struct Rank<stk_classic::percept::IntrepidManager::CubaturePoints<Scalar,Order,arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8> >{
+	
+static const int value=stk_classic::percept::IntrepidManager::CubaturePoints::ArrayVector<Scalar,Order,arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8>::Rank;
+};*/
 
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::CubaturePoints>{
 
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag, Spatial_Dim_Tag>::Rank;
+//static const int value=2;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::WeightedMeasure>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>::Rank;		
+//static const int value=2;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::Jacobian>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>::Rank;	
+//static const int value=3;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::CellWorkSet>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( NodesPerElem_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, NodesPerElem_Tag, Spatial_Dim_Tag>::Rank;
+//static const int value=3;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::JacobianDet>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>::Rank;	
+//static const int value=2;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::CubatureWeights>{
+
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Cub_Points_Tag>::Rank;	
+//static const int value=2;
+//stk_classic::percept::IntrepidManager::CubaturePoints::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::JacobianInverse>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::PhysicalCoords>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag>::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::Integral>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag>::Rank;
+};
+template<>
+struct Rank<stk_classic::percept::IntrepidManager::IntegrandValues>{
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Cub_Points_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Elements_Tag );
+IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( Spatial_Dim_Tag );
+static const int value=shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag>::Rank;
+};
 #endif

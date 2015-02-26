@@ -48,112 +48,11 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_DOF_Functors.hpp"
+
 #include "Intrepid_FunctionSpaceTools.hpp"
 
 namespace panzer {
-
-//**********************************************************************
-
-// This hides the evaluateDOF function outside of this file (if ETI is on)
-namespace {
-
-// A function for evaluating the DOFs. This is useful because 
-// this code is needed twice, once for a DOF evaluator pulling from
-// the workset and once for a DOF evaluator pulling from the field
-// manager.
-template <typename ScalarT,typename ArrayT>
-inline void evaluateDOF_withSens(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
-                                 PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,
-                                 bool is_vector_basis,
-                                 int num_cells,
-                                 ArrayT & basis)
-{ 
-
-  if(num_cells>0) {
-    if(is_vector_basis) {
-      int numCells  = basis.dimension(0);
-      int numFields = basis.dimension(1);
-      int numPoints = basis.dimension(2);
-      int spaceDim  = basis.dimension(3);
-
-      for (int cell=0; cell<numCells; cell++) {
-        for (int pt=0; pt<numPoints; pt++) {
-          for (int d=0; d<spaceDim; d++) {
-            // first initialize to the right thing (prevents over writing with 0)
-            // then loop over one less basis function
-            ScalarT & val = dof_ip(cell,pt,d);
-            val = dof_basis(cell, 0) * basis(cell, 0, pt, d);
-            for (int bf=1; bf<numFields; bf++)
-              val += dof_basis(cell, bf) * basis(cell, bf, pt, d);
-          }
-        }
-      } // for numCells
-
-    }
-    else { // no orientation needed
-      // Zero out arrays (intrepid does a sum! 1/17/2012)
-      for (int i = 0; i < dof_ip.size(); ++i)
-        dof_ip[i] = 0.0;
-
-      Intrepid::FunctionSpaceTools::
-        evaluate<ScalarT>(dof_ip,dof_basis,basis);
-    }
-  }
-}
-
-template <typename ScalarT,typename ArrayT>
-inline void evaluateDOF_fastSens(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
-                                 PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,
-                                 bool is_vector_basis,
-                                 int num_cells,
-                                 const std::vector<int> & offsets,
-                                 ArrayT & basis)
-{ 
-
-  if(num_cells>0) {
-    if(is_vector_basis) {
-      int numCells  = basis.dimension(0);
-      int numFields = basis.dimension(1);
-      int numPoints = basis.dimension(2);
-      int spaceDim  = basis.dimension(3);
-
-      int fadSize = dof_basis(0,0).size(); // this is supposed to be fast
-                                           // so assume that everything is the
-                                           // same size!
-      for (int cell=0; cell<numCells; cell++) {
-        for (int pt=0; pt<numPoints; pt++) {
-          for (int d=0; d<spaceDim; d++) {
-
-            // first initialize to the right thing (prevents over writing with 0)
-            // then loop over one less basis function
-            ScalarT & val = dof_ip(cell,pt,d);
-
-            // This is a possible issue if you need sensitivity to coordinates (you will need to
-            // change basis and then use the product rule!)
-            val = ScalarT(fadSize,dof_basis(cell, 0).val() * basis(cell, 0, pt, d).val());
-            val.fastAccessDx(offsets[0]) = dof_basis(cell, 0).fastAccessDx(offsets[0]) * basis(cell, 0, pt, d).val();
-
-            for (int bf=1; bf<numFields; bf++) {
-              val.val() += dof_basis(cell, bf).val() * basis(cell, bf, pt, d).val();
-              val.fastAccessDx(offsets[bf]) += dof_basis(cell, bf).fastAccessDx(offsets[bf]) * basis(cell, bf, pt, d).val();
-            }
-          }
-        }
-      } // for numCells
-
-    }
-    else { // no orientation needed
-      // Zero out arrays (intrepid does a sum! 1/17/2012)
-      for (int i = 0; i < dof_ip.size(); ++i)
-        dof_ip[i] = 0.0;
-
-      Intrepid::FunctionSpaceTools::
-        evaluate<ScalarT>(dof_ip,dof_basis,basis);
-    }
-  }
-}
-
-}
 
 //**********************************************************************
 //* DOF_PointValues evaluator
@@ -164,8 +63,8 @@ inline void evaluateDOF_fastSens(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PH
 //**********************************************************************
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-DOF_PointValues<EvalT, Traits>::
+template<typename EvalT, typename TRAITS>                   
+DOF_PointValues<EvalT, TRAITS>::
 DOF_PointValues(const Teuchos::ParameterList & p)
 {
   const std::string fieldName = p.get<std::string>("Name");
@@ -181,55 +80,86 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 
   dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
 
-  // swap between scalar basis value, or vector basis value
-  if(basis->isScalarBasis())
-     dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_scalar);
-  else if(basis->isVectorBasis())
-     dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_vector);
-  else
-  { TEUCHOS_ASSERT(false); }
-
-  this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
-  MDFieldArrayFactory af_bv(basis->name()+"_"+pointRule->getName()+"_");
-  basisValues.setupArrays(layout,af_bv,false);
+  basisValues = Teuchos::rcp(new BasisValues2<ScalarT>(basis->name()+"_"+pointRule->getName()+"_"));
+  basisValues->setupArrays(layout,false);
 
   // the field manager will allocate all of these field
+  // swap between scalar basis value, or vector basis value
+  if(basis->isScalarBasis()) {
+     dof_ip_scalar = PHX::MDField<ScalarT,Cell,Point>(
+                evalName,
+     	        pointRule->dl_scalar);
+     this->addEvaluatedField(dof_ip_scalar);
 
-  this->addDependentField(basisValues.basis_ref);      
-  this->addDependentField(basisValues.basis);           
+     this->addDependentField(basisValues->basis_ref_scalar); 
+     this->addDependentField(basisValues->basis_scalar); 
+  }
+  else if(basis->isVectorBasis()) {
+     dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
+                evalName,
+     	        pointRule->dl_vector);
+     this->addEvaluatedField(dof_ip_vector);
 
-  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
+     this->addDependentField(basisValues->basis_ref_vector); 
+     this->addDependentField(basisValues->basis_vector); 
+  }
+  else
+  { TEUCHOS_ASSERT(false); }
+
+  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name();
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-void DOF_PointValues<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+template<typename EvalT, typename TRAITS>                   
+void DOF_PointValues<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
-  this->utils.setFieldData(dof_ip,fm);
 
-  // setup the pointers for the basis values data structure
-  this->utils.setFieldData(basisValues.basis_ref,fm);      
-  this->utils.setFieldData(basisValues.basis,fm);           
+  if(!is_vector_basis) {
+    this->utils.setFieldData(dof_ip_scalar,fm);
+
+    // setup the pointers for the basis values data structure
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
+    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+  }
+  else {
+    this->utils.setFieldData(dof_ip_vector,fm);
+
+    // setup the pointers for the basis values data structure
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
+    this->utils.setFieldData(basisValues->basis_vector,fm);           
+  }
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>                   
-void DOF_PointValues<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT, typename TRAITS>                   
+void DOF_PointValues<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
-  evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
+  // evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
+
+  if(is_vector_basis) {
+    int spaceDim  = basisValues->basis_vector.dimension(3);
+    if(spaceDim==3) {
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+    else {
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  }
+  else {
+    dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
+    Kokkos::parallel_for(workset.num_cells,functor);
+  }
 }
 
 //**********************************************************************
@@ -239,8 +169,8 @@ evaluateFields(typename Traits::EvalData workset)
 //**********************************************************************
 
 //**********************************************************************
-template<typename Traits>                   
-DOF_PointValues<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>                   
+DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
 DOF_PointValues(const Teuchos::ParameterList & p)
 {
   const std::string fieldName = p.get<std::string>("Name");
@@ -249,7 +179,13 @@ DOF_PointValues(const Teuchos::ParameterList & p)
   is_vector_basis = basis->isVectorBasis();
 
   if(p.isType<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector")) {
-    offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+    const std::vector<int> & offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
+
+    // allocate and copy offsets vector to Kokkos array
+    offsets_array = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    for(std::size_t i=0;i<offsets.size();i++)
+      offsets_array(i) = offsets[i];
+
     accelerate_jacobian = true;  // short cut for identity matrix
   }
   else
@@ -263,58 +199,103 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 
   dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
 
-  // swap between scalar basis value, or vector basis value
-  if(basis->isScalarBasis())
-     dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_scalar);
-  else if(basis->isVectorBasis())
-     dof_ip = PHX::MDField<ScalarT>(
-                evalName,
-     	        pointRule->dl_vector);
-  else
-  { TEUCHOS_ASSERT(false); }
-
-  this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
-  MDFieldArrayFactory af_bv(basis->name()+"_"+pointRule->getName()+"_");
-  basisValues.setupArrays(layout,af_bv,false);
+  basisValues = Teuchos::rcp(new BasisValues2<ScalarT>(basis->name()+"_"+pointRule->getName()+"_"));
+  basisValues->setupArrays(layout,false);
 
   // the field manager will allocate all of these field
+  // swap between scalar basis value, or vector basis value
+  if(basis->isScalarBasis()) {
+     dof_ip_scalar = PHX::MDField<ScalarT,Cell,Point>(
+                evalName,
+     	        pointRule->dl_scalar);
+     this->addEvaluatedField(dof_ip_scalar);
 
-  this->addDependentField(basisValues.basis_ref);      
-  this->addDependentField(basisValues.basis);           
+     this->addDependentField(basisValues->basis_ref_scalar); 
+     this->addDependentField(basisValues->basis_scalar); 
+  }
+  else if(basis->isVectorBasis()) {
+     dof_ip_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(
+                evalName,
+     	        pointRule->dl_vector);
+     this->addEvaluatedField(dof_ip_vector);
 
-  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<panzer::Traits::Jacobian>::value+")";
+     this->addDependentField(basisValues->basis_ref_vector); 
+     this->addDependentField(basisValues->basis_vector); 
+  }
+  else
+  { TEUCHOS_ASSERT(false); }
+
+  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name() + " Jacobian";
   this->setName(n);
 }
 
 //**********************************************************************
-template<typename Traits>                   
-void DOF_PointValues<panzer::Traits::Jacobian, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS>                   
+void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
-  this->utils.setFieldData(dof_ip,fm);
 
-  // setup the pointers for the basis values data structure
-  this->utils.setFieldData(basisValues.basis_ref,fm);      
-  this->utils.setFieldData(basisValues.basis,fm);           
+  if(!is_vector_basis) {
+    this->utils.setFieldData(dof_ip_scalar,fm);
+
+    // setup the pointers for the basis values data structure
+    this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
+    this->utils.setFieldData(basisValues->basis_scalar,fm);           
+  }
+  else {
+    this->utils.setFieldData(dof_ip_vector,fm);
+
+    // setup the pointers for the basis values data structure
+    this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
+    this->utils.setFieldData(basisValues->basis_vector,fm);           
+  }
 }
 
 //**********************************************************************
-template<typename Traits>                   
-void DOF_PointValues<panzer::Traits::Jacobian, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS>                   
+void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
-  if(accelerate_jacobian)
-    evaluateDOF_fastSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,offsets,basisValues.basis);
-  else
-    evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
+  if(is_vector_basis) {
+    if(accelerate_jacobian) {
+      int spaceDim  = basisValues->basis_vector.dimension(3);
+      if(spaceDim==3) {
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
+        Kokkos::parallel_for(workset.num_cells,functor);
+      }
+      else {
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
+        Kokkos::parallel_for(workset.num_cells,functor);
+      }
+    }
+    else {
+      int spaceDim  = basisValues->basis_vector.dimension(3);
+      if(spaceDim==3) {
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+        Kokkos::parallel_for(workset.num_cells,functor);
+      }
+      else {
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+        Kokkos::parallel_for(workset.num_cells,functor);
+      }
+    }
+  }
+  else {
+    if(accelerate_jacobian) {
+      dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,offsets_array,basisValues->basis_scalar);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+    else {
+      dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  }
 }
 
 }

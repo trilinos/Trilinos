@@ -854,6 +854,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
     int block_count = 0;
     int block_offset = 0;
+    int tblock_offset = 0;
 
     Mesh_Specification * ms = this;
     while(ms){
@@ -868,8 +869,9 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
                                        snpe[bct],
                                        0,// attributes
                                        the_element_type);
-          }
-      block_offset += snb;
+	tblock_offset = sbids[bct]+block_offset;
+      }
+      block_offset = tblock_offset;
       ms = ms->Next();
     }
   }

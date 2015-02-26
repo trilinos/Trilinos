@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -48,7 +48,7 @@ ProductEpetraOperator(
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
   const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) :
   ProductContainer<Epetra_Operator>(block_map),
   domain_base_map(domain_base_map_),
   range_base_map(range_base_map_),
@@ -73,7 +73,7 @@ ProductEpetraOperator(
   useTranspose(false)
 {
 }
-    
+
 Stokhos::ProductEpetraOperator::
 ProductEpetraOperator(const Stokhos::ProductEpetraOperator& v) :
   ProductContainer<Epetra_Operator>(v),
@@ -88,7 +88,7 @@ ProductEpetraOperator(const Stokhos::ProductEpetraOperator& v) :
 Stokhos::ProductEpetraOperator::
 ~ProductEpetraOperator() {}
 
-Stokhos::ProductEpetraOperator& 
+Stokhos::ProductEpetraOperator&
 Stokhos::ProductEpetraOperator::
 operator=(const Stokhos::ProductEpetraOperator& v) {
   ProductContainer<Epetra_Operator>::operator=(v);
@@ -100,24 +100,24 @@ operator=(const Stokhos::ProductEpetraOperator& v) {
   return *this;
 }
 
-Teuchos::RCP<const EpetraExt::MultiComm> 
+Teuchos::RCP<const EpetraExt::MultiComm>
 Stokhos::ProductEpetraOperator::
 productComm() const {
   return product_comm;
 }
 
-int 
+int
 Stokhos::ProductEpetraOperator::
-SetUseTranspose(bool UseTranspose) 
+SetUseTranspose(bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   for (int i=0; i<coeff_.size(); i++)
     coeff_[i]->SetUseTranspose(useTranspose);
 
   return 0;
 }
 
-int 
+int
 Stokhos::ProductEpetraOperator::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -139,16 +139,16 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-int 
+int
 Stokhos::ProductEpetraOperator::
-ApplyInverse(const Epetra_MultiVector& Input, 
-	     Epetra_MultiVector& Result) const
+ApplyInverse(const Epetra_MultiVector& Input,
+             Epetra_MultiVector& Result) const
 {
   throw "ProductEpetraOperator::ApplyInverse not defined!";
   return -1;
 }
 
-double 
+double
 Stokhos::ProductEpetraOperator::
 NormInf() const
 {
@@ -156,34 +156,34 @@ NormInf() const
 }
 
 
-const char* 
+const char*
 Stokhos::ProductEpetraOperator::
 Label () const
 {
   return "Stokhos::ProductEpetraOperator";
 }
-  
-bool 
+
+bool
 Stokhos::ProductEpetraOperator::
 UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::ProductEpetraOperator::
 HasNormInf() const
 {
   return false;
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::ProductEpetraOperator::
 Comm() const
 {
   return *product_comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::ProductEpetraOperator::
 OperatorDomainMap() const
 {
@@ -192,7 +192,7 @@ OperatorDomainMap() const
   return *domain_base_map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::ProductEpetraOperator::
 OperatorRangeMap() const
 {
@@ -204,7 +204,7 @@ OperatorRangeMap() const
 Stokhos::ProductEpetraOperator::
 ProductEpetraOperator(
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
+  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) :
   ProductContainer<Epetra_Operator>(block_map),
   product_comm(product_comm_),
   useTranspose(false)
@@ -218,8 +218,8 @@ setup(const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
 {
   domain_base_map = domain_base_map_;
   range_base_map = range_base_map_;
-  product_range_map = 
-    Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map, 
-							   *(this->map_), 
-							   *product_comm));
+  product_range_map =
+    Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map,
+                                                           *(this->map_),
+                                                           *product_comm));
 }

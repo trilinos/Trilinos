@@ -205,6 +205,16 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    }
 
    return fieldNums;
+
+}
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::string & block) const
+{
+   return 8;
+}
+
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::size_t & block) const
+{
+   return 8;
 }
 
 } // end unit test

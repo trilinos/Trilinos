@@ -440,6 +440,24 @@ protected:
      */
    int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::string & elementBlock) const;
 
+   /** Do appropriate casting below and call getElementBlockGIDCount for a particular indexer. (handles FEI versus standard DOFManager)
+     */
+   int getElementBlockGIDCount(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,const std::size_t & blockIndex) const;
+
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const;
+
    /** Do appropriate casting below and call printFieldInformation for a particular indexer. (handles FEI versus standard DOFManager)
      */
    void printFieldInformation(const Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & indexer,std::ostream & os) const;

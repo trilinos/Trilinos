@@ -115,30 +115,6 @@ namespace panzer {
     }
   }
 
-/*
-  template <typename Scalar,typename Array>
-  template <typename NodeCoordinateArray,typename PointCoordinateArray>
-  void PointValues<Scalar,Array>::
-  evaluateValues(const NodeCoordinateArray& in_node_coords,
-                 const PointCoordinateArray & in_point_coords)
-  {
-    if (point_rule->isSide()) {
-       TEUCHOS_ASSERT(false); // not implemented!!!!
-    }
-    
-    copyPointCoords(in_point_coords);
-    copyNodeCoords(in_node_coords);
-
-    Intrepid::CellTools<Scalar> cell_tools;
-
-    cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
-    cell_tools.setJacobianInv(jac_inv, jac);
-    cell_tools.setJacobianDet(jac_det, jac);
-    
-    // IP coordinates
-    cell_tools.mapToPhysicalFrame(point_coords, coords_ref, node_coordinates, *(point_rule->topology));
-  }
-*/
 }
 
 #endif

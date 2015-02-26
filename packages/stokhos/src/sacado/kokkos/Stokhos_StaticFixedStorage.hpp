@@ -79,14 +79,14 @@ namespace Stokhos {
     typedef typename Stokhos::MemoryTraits<memory_space> MemTraits;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t = value_t , typename dev_t = typename device_t::memory_space >
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,typename dev_t::memory_space> type;
+      typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
     };
 
     template <int N>
     struct apply_N {
-      typedef StaticFixedStorage<ordinal_type,value_type,N,memory_space> type;
+      typedef StaticFixedStorage<ordinal_type,value_type,N,device_t> type;
     };
 
     //! Constructor

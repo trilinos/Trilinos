@@ -51,6 +51,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 namespace panzer {
 
 class UniqueGlobalIndexerBase {
@@ -129,6 +131,20 @@ public:
    virtual const std::pair<std::vector<int>,std::vector<int> > & 
    getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                               int subcellDim,int subcellId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
 };
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -238,7 +254,50 @@ public:
    const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
    { return localIDs_[localElmtId]; }
 
+   /** Access the local IDs for an element. The local ordering is according to
+     * the <code>getOwnedAndSharedIndices</code> method. Note
+     */
+   void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
+                       Kokkos::View<LocalOrdinalT**,PHX::Device> lids) const
+   { 
+     CopyCellLIDsFunctor functor;
+     functor.cellIds = cellIds;
+     functor.global_lids = localIDs_k_;
+     functor.local_lids = lids; // we assume this array is sized correctly!
+
+     Kokkos::parallel_for(cellIds.dimension_0(),functor);
+   }
+
+   /** \brief How any GIDs are associate with a particular element block
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::string & blockId) const = 0;
+
+   /** \brief How any GIDs are associate with a particular element block.
+     *
+     * This is a per-element count. If you have a quad element with two
+     * piecewise bi-linear fields this method returns 8.
+     */
+   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
+
 protected:
+
+   class CopyCellLIDsFunctor {
+   public:
+     Kokkos::View<const int*,PHX::Device> cellIds;
+     Kokkos::View<const LocalOrdinalT**,PHX::Device> global_lids;
+     Kokkos::View<LocalOrdinalT**,PHX::Device> local_lids;
+
+     KOKKOS_INLINE_FUNCTION
+     void operator()(const int cell) const
+     {
+       for(int i=0;i<local_lids.dimension_1();i++) 
+         local_lids(cell,i) = global_lids(cellIds(cell),i);
+     }
+     
+   };
 
    /** This method is used by derived classes to the construct the local IDs from 
      * the <code>getOwnedAndSharedIndices</code> method.
@@ -265,10 +324,28 @@ protected:
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
-   { localIDs_ = localIDs; }
+   { localIDs_ = localIDs; 
+ 
+     // determine the maximium second dimension of the local IDs
+     std::size_t max = 0;
+     for(std::size_t i=0;i<localIDs.size();i++)
+       max = localIDs[i].size() > max ? localIDs[i].size() : max;
+
+     // allocate for the kokkos size
+     Kokkos::View<LocalOrdinalT**,PHX::Device> localIDs_k 
+         = Kokkos::View<LocalOrdinalT**,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     for(std::size_t i=0;i<localIDs.size();i++) {
+       for(std::size_t j=0;j<localIDs[i].size();j++)
+         localIDs_k(i,j) = localIDs[i][j];
+     }
+
+     // store in Kokkos type
+     localIDs_k_ = localIDs_k;
+   }
 
 private:
    std::vector<std::vector<LocalOrdinalT> > localIDs_; 
+   Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
 };
 
 // prevents a warning because a destructor does not exist

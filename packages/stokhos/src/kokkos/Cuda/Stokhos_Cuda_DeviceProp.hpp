@@ -61,6 +61,7 @@ namespace Stokhos {
 
     size_type shared_memory_capacity;
     size_type shared_memory_granularity;
+    size_type max_shmem_per_block;
     size_type max_threads_per_block;
     size_type max_threads_per_sm;
     size_type max_blocks_per_sm;
@@ -68,6 +69,7 @@ namespace Stokhos {
     size_type warp_size;
     size_type warp_granularity;
     size_type max_regs_per_sm;
+    size_type max_regs_per_block;
     size_type reg_bank_size;
 
     bool has_shuffle;
@@ -78,6 +80,7 @@ namespace Stokhos {
       compute_capability_minor(0),
       shared_memory_capacity(0),
       shared_memory_granularity(0),
+      max_shmem_per_block(0),
       max_threads_per_block(0),
       max_threads_per_sm(0),
       max_blocks_per_sm(0),
@@ -85,6 +88,7 @@ namespace Stokhos {
       warp_size(0),
       warp_granularity(0),
       max_regs_per_sm(0),
+      max_regs_per_block(0),
       reg_bank_size(0),
       has_shuffle(false),
       has_ldg(false)
@@ -109,7 +113,18 @@ namespace Stokhos {
 
       // These come from the CUDA occupancy calculator
       if (compute_capability_major == 3) {
-        shared_memory_capacity = 48 * 1024;
+        if (compute_capability_minor >= 7) {
+          shared_memory_capacity = 112 * 1024;
+          max_shmem_per_block = 48 * 1024;
+          max_regs_per_sm = 128 * 1024;
+          max_regs_per_block = 64 * 1024;
+        }
+        else {
+          shared_memory_capacity = 48 * 1024;
+          max_shmem_per_block = 48 * 1024;
+          max_regs_per_sm = 64 * 1024;
+          max_regs_per_block = 64 * 1024;
+        }
         shared_memory_granularity = 256;
         max_threads_per_block = 1024;
         max_threads_per_sm = 2048;
@@ -117,7 +132,6 @@ namespace Stokhos {
         max_warps_per_sm = 64;
         warp_size = 32;
         warp_granularity = 4;
-        max_regs_per_sm = 64 * 1024;
         reg_bank_size = 256;
         has_shuffle = true;
         has_ldg = true;
@@ -126,6 +140,7 @@ namespace Stokhos {
       else if (compute_capability_major == 2) {
         shared_memory_capacity = 48 * 1024;
         shared_memory_granularity = 64;
+        max_shmem_per_block = 48 * 1024;
         max_threads_per_block = 1024;
         max_threads_per_sm = 1536;
         max_blocks_per_sm = 8;
@@ -133,6 +148,7 @@ namespace Stokhos {
         warp_size = 32;
         warp_granularity = 2;
         max_regs_per_sm = 32 * 1024;
+        max_regs_per_block = 32 * 1024;
         reg_bank_size = 64;
         has_shuffle = false;
         has_ldg = false;

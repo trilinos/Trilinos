@@ -54,6 +54,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Assert.hpp"
 
+
+#include <KokkosRank.hpp>
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include "Kokkos_Core.hpp"
+#endif
 namespace Intrepid {
   
 /** \class Intrepid::RealSpaceTools
@@ -143,7 +148,9 @@ class RealSpaceTools {
     template<class ArrayNorm, class ArrayIn>
     static void vectorNorm(ArrayNorm & normArray, const ArrayIn & inVecs, const ENorm normType);
 
-
+  /*  template<class ArrayNorm, class ArrayIn>
+    static void vectorNormTemp(ArrayNorm & normArray, const ArrayIn & inVecs, const ENorm normType);
+*/
     /** \brief Computes transpose of the square matrix <b><var>inMat</var></b>
                of size <b><var>dim</var></b> by <b><var>dim</var></b>.
 
@@ -152,8 +159,9 @@ class RealSpaceTools {
         \param dim            [in] - matrix dimension
     */
     static void transpose(Scalar* transposeMat, const Scalar* inMat, const int dim);
-
-
+    
+  /*  template<class ArrayTranspose, class ArrayIn>
+	static void transpose(ArrayTranspose transposeMat, const ArrayIn inMat, const int dim);*/
     /** \brief Computes transposes of square matrices stored in
                an array of total rank 2 (single matrix), indexed by (D, D),
                3 (array of matrices), indexed by (i0, D, D),
@@ -171,7 +179,8 @@ class RealSpaceTools {
     template<class ArrayTranspose, class ArrayIn>
     static void transpose(ArrayTranspose & transposeMats, const ArrayIn & inMats);
 
-
+   /* template<class ArrayTranspose, class ArrayIn>
+    static void transposeTemp(ArrayTranspose & transposeMats, const ArrayIn & inMats);*/
     /** \brief Computes inverse of the square matrix <b><var>inMat</var></b>
                of size <b><var>dim</var></b> by <b><var>dim</var></b>.
 
@@ -199,14 +208,8 @@ class RealSpaceTools {
     */
     template<class ArrayInverse, class ArrayIn>
     static void inverse(ArrayInverse & inverseMats, const ArrayIn & inMats);
+    
 
-
-    /** \brief Computes determinant of the square matrix <b><var>inMat</var></b>
-               of size <b><var>dim</var></b> by <b><var>dim</var></b>.
-
-        \param inMat  [in]  - matrix
-        \param dim    [in]  - matrix dimension
-    */
     static Scalar det(const Scalar* inMat, const int dim);
 
 
@@ -239,8 +242,14 @@ class RealSpaceTools {
     */
     template<class ArrayDet, class ArrayIn>
     static void det(ArrayDet & detArray, const ArrayIn & inMats);
-
-
+    
+/*    #ifdef HAVE_INTREPID_KOKKOSCORE
+    template<class ArrayDet, class ArrayIn>
+    static void detTemp(ArrayDet & inverseMats, const ArrayIn & inMats);
+    #endif
+    */
+    template<class ArrayDet, class ArrayIn, int matRank>
+	struct detTempSpec;
     /** \brief Adds contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
                of size <b><var>size</var></b>:\n
                <b><var>sumArray</var></b> = <b><var>inArray1</var></b> + <b><var>inArray2</var></b>.
@@ -344,7 +353,8 @@ class RealSpaceTools {
     template<class ArrayDiff, class ArrayIn>
     static void subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray);
 
-
+    template<class ArrayDiff, class ArrayIn>
+    static void subtractTemp(ArrayDiff & inoutDiffArray, const ArrayIn & inArray);
     /** \brief Multiplies contiguous data <b><var>inArray</var></b> of size
                <b><var>size</var></b> by a scalar (componentwise):\n
                <b><var>scaledArray</var></b> = <b><var>scalar</var></b> * <b><var>inArray</var></b>.
@@ -487,7 +497,8 @@ class RealSpaceTools {
     template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>
     static void vecprod(ArrayVecProd & vecProd, const ArrayIn1 & inLeft, const ArrayIn2 & inRight);
     
-    
+   /* template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>
+    static void vecprodTemp(ArrayVecProd & vecProd, const ArrayIn1 & inLeft, const ArrayIn2 & inRight); */   
     
 }; // class RealSpaceTools
 
@@ -496,4 +507,5 @@ class RealSpaceTools {
 // include templated definitions
 #include <Intrepid_RealSpaceToolsDef.hpp>
 
+//#include <Intrepid_RealSpaceToolsDef_Kokkos.hpp>
 #endif

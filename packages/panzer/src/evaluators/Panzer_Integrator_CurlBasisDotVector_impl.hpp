@@ -47,6 +47,8 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
@@ -74,25 +76,18 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
   useScalarField = (basis->dimension()==2);
   
   // determine if using scalar field for curl or a vector field (2D versus 3D)
-  if(!useScalarField)
-     flux = PHX::MDField<ScalarT>( p.get<std::string>("Value Name"), 
+  if(!useScalarField) {
+     flux_vector = PHX::MDField<const ScalarT,Cell,IP,Dim>( p.get<std::string>("Value Name"), 
 	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
-  else 
-     flux = PHX::MDField<ScalarT>( p.get<std::string>("Value Name"), 
+     this->addDependentField(flux_vector);
+  }
+  else {
+     flux_scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Value Name"), 
    	                                  p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
-
-  // build dof_orientation
-/*
-  dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Test Field Name")+" Orientation", 
-                                                     basis->functional);
-*/
-
+     this->addDependentField(flux_scalar);
+  }
 
   this->addEvaluatedField(residual);
-  this->addDependentField(flux);
-/*
-  this->addDependentField(dof_orientation);
-*/
   
   multiplier = p.get<double>("Multiplier");
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) 
@@ -103,12 +98,12 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
     for (std::vector<std::string>::const_iterator name = field_multiplier_names.begin(); 
       name != field_multiplier_names.end(); ++name) 
     {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
       field_multipliers.push_back(tmp_field);
     }
   }
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->addDependentField(*field);
 
@@ -121,32 +116,215 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
 //**********************************************************************
 PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
 {
+  // setup the output field
   this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(flux,fm);
-  // this->utils.setFieldData(dof_orientation,fm);
 
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+  // initialize the input field multiplier fields
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
        field != field_multipliers.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
-  num_nodes = residual.dimension(1);
-  num_qp = flux.dimension(1);
-  num_dim = (useScalarField ? 2 : 3);  // this only works in 2D or 3D
+  // setup the input fields, mainly differentiate between 2D and 3D
+  MDFieldArrayFactory af("",fm.template getKokkosExtendedDataTypeDimensions<EvalT>(),true);
+  if(!useScalarField) {
+    this->utils.setFieldData(flux_vector,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+    num_nodes = residual.dimension(1);
+    num_qp = flux_vector.dimension(1);
+    num_dim = 3;
 
-  if(!useScalarField)
-     tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
-  else
-     tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp); 
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+
+    scratch_vector = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",flux_vector.dimension(0),num_qp,num_dim);
+    // tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
+  }
+  else {
+    this->utils.setFieldData(flux_scalar,fm);
+
+    num_nodes = residual.dimension(1);
+    num_qp = flux_scalar.dimension(1);
+    num_dim = 2;
+
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+
+    scratch_scalar = af.buildStaticArray<ScalarT,Cell,IP>("btv_scratch",flux_scalar.dimension(0),num_qp);
+    // tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp); 
+  }
 }
+
+namespace {
+
+template <typename ScalarT>
+class FillScratchVector {
+public:
+  typedef typename PHX::Device execution_space;
+
+  // Required for all functors
+  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
+
+  // Required for "Initialize" functor
+  double multiplier;
+  PHX::MDField<const ScalarT,Cell,IP,Dim> vectorField;
+
+  // Required for "FieldMultipliers" functor
+  PHX::MDField<const ScalarT,Cell,IP> field;
+
+  struct Initialize {};
+  struct FieldMultipliers {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const Initialize,const unsigned cell) const
+  {
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+      for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
+        scratch(cell,qp,d) = multiplier * vectorField(cell,qp,d);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FieldMultipliers,const unsigned cell) const
+  {
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+      for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
+        scratch(cell,qp,d) *= field(cell,qp)*scratch(cell,qp,d);  
+  }
+};
+
+template <typename ScalarT>
+class FillScratchScalar {
+public:
+  typedef typename PHX::Device execution_space;
+
+  // Required for all functors
+  PHX::MDField<ScalarT,Cell,IP> scratch;
+
+  // Required for "Initialize" functor
+  double multiplier;
+  PHX::MDField<const ScalarT,Cell,IP> vectorField;
+
+  // Required for "FieldMultipliers" functor
+  PHX::MDField<const ScalarT,Cell,IP> field;
+
+  struct Initialize {};
+  struct FieldMultipliers {};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const Initialize,const unsigned cell) const
+  {
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+      scratch(cell,qp) *= vectorField(cell,qp);  
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const FieldMultipliers,const unsigned cell) const
+  {
+    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
+      scratch(cell,qp) *= field(cell,qp)*scratch(cell,qp);  
+  }
+};
+
+template <typename ScalarT,int spaceDim>
+class IntegrateValuesVector {
+public:
+  typedef typename PHX::Device execution_space;
+  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
+  PHX::MDField<ScalarT,Cell,BASIS> residual;
+  PHX::MDField<double,Cell,BASIS,IP,Dim> weighted_curl_basis;
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned cell) const
+  {
+    for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+      residual(cell,lbf) = 0.0;
+      for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
+        for (int d = 0; d < spaceDim; d++) {
+          residual(cell,lbf) += scratch(cell, qp, d)*weighted_curl_basis(cell, lbf, qp, d);
+        } // D-loop
+      } // P-loop
+    } // F-loop
+  }
+};
+
+template <typename ScalarT>
+class IntegrateValuesScalar {
+public:
+  typedef typename PHX::Device execution_space;
+  PHX::MDField<ScalarT,Cell,IP> scratch;
+  PHX::MDField<ScalarT,Cell,BASIS> residual;
+  PHX::MDField<double,Cell,BASIS,IP> weighted_curl_basis;
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned cell) const
+  {
+    for (int lbf = 0; lbf < weighted_curl_basis.dimension_1(); lbf++) {
+      residual(cell,lbf) = 0.0;
+      for (int qp = 0; qp < weighted_curl_basis.dimension_2(); qp++) {
+          residual(cell,lbf) += scratch(cell,qp)*weighted_curl_basis(cell,lbf,qp);
+      } // P-loop
+    } // F-loop
+  }
+};
+
+} // end internal namespace
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 { 
-  for (int i=0; i < residual.size(); ++i)
-    residual[i] = 0.0;
-  
+  // residual.deep_copy(ScalarT(0.0));
+
+  const BasisValues2<double> & bv = *workset.bases[basis_index];
+
+  if(!useScalarField) {
+    typedef FillScratchVector<ScalarT> FillScratch;
+    FillScratch fillScratch;
+    fillScratch.scratch     = scratch_vector;
+    fillScratch.multiplier  = multiplier;
+    fillScratch.vectorField = flux_vector;
+
+    // initialize in first pass (basically a scaled copy)
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::Initialize>(0,workset.num_cells), fillScratch);
+
+    // multiply agains all the fields in the next one
+    for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+         field != field_multipliers.end(); ++field) {
+      fillScratch.field = *field;
+
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::FieldMultipliers>(0,workset.num_cells), fillScratch);
+    }
+
+    // Build integrate values functor (hard code spatial dimensions)
+    IntegrateValuesVector<ScalarT,3> intValues;
+    intValues.scratch     = scratch_vector;
+    intValues.residual    = residual;
+    intValues.weighted_curl_basis = bv.weighted_curl_basis_vector;
+    
+    Kokkos::parallel_for(workset.num_cells, intValues);
+  }
+  else {
+    typedef FillScratchScalar<ScalarT> FillScratch;
+    FillScratch fillScratch;
+    fillScratch.scratch     = scratch_scalar;
+    fillScratch.multiplier  = multiplier;
+    fillScratch.vectorField = flux_scalar;
+
+    // initialize in first pass (basically a scaled copy)
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::Initialize>(0,workset.num_cells), fillScratch);
+
+    // multiply agains all the fields in the next one
+    for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+         field != field_multipliers.end(); ++field) {
+      fillScratch.field = *field;
+
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,typename FillScratch::FieldMultipliers>(0,workset.num_cells), fillScratch);
+    }
+
+    // Build integrate values functor
+    IntegrateValuesScalar<ScalarT> intValues;
+    intValues.scratch     = scratch_scalar;
+    intValues.residual    = residual;
+    intValues.weighted_curl_basis = bv.weighted_curl_basis_scalar;
+
+    Kokkos::parallel_for(workset.num_cells, intValues);
+  }
+
+/*
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
   {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
@@ -159,28 +337,42 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
       if(!useScalarField) {
         // for vector fields loop over dimension
         for (std::size_t dim = 0; dim < num_dim; ++dim)
-          tmp(cell,qp,dim) = multiplier * tmpVar * flux(cell,qp,dim);
+          scratch_vector(cell,qp,dim) = multiplier * tmpVar * flux_vector(cell,qp,dim);
       }
       else {
         // no dimension to loop over for scalar fields
-        tmp(cell,qp) = multiplier * tmpVar * flux(cell,qp);
+        scratch_scalar(cell,qp) = multiplier * tmpVar * flux_scalar(cell,qp);
       }
     }
   }
-  
-  if(workset.num_cells>0) {
-     Intrepid::FunctionSpaceTools::
-       integrate<ScalarT>(residual, tmp, 
-                       workset.bases[basis_index]->weighted_curl_basis, 
-		       Intrepid::COMP_BLAS);
+*/
+
+/*
+  if(!useScalarField) {
+    auto weighted_curl_basis_vector = bv.weighted_curl_basis_vector;
+
+    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+      for (std::size_t basis = 0; basis < num_nodes; ++basis)
+        for (std::size_t qp = 0; qp < num_qp; ++qp)
+          for (std::size_t dim = 0; dim < num_dim; ++dim)
+            residual(cell,basis) += scratch_vector(cell,qp,dim)*weighted_curl_basis_vector(cell,basis,qp,dim);
   }
+  else { // useScalarField
+    auto weighted_curl_basis_scalar = bv.weighted_curl_basis_scalar;
+
+    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+      for (std::size_t basis = 0; basis < num_nodes; ++basis)
+        for (std::size_t qp = 0; qp < num_qp; ++qp)
+          residual(cell,basis) += scratch_scalar(cell,qp)*weighted_curl_basis_scalar(cell,basis,qp);
+  }
+*/
 }
 
 //**********************************************************************
 
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_CurlBasisDotVector<EvalT, Traits>::getValidParameters() const
+Integrator_CurlBasisDotVector<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Residual Name", "?");

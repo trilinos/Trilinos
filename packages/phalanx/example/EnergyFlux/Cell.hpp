@@ -46,7 +46,7 @@
 #define PHX_EXAMPLE_CELL_HPP
 
 #include <vector>
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "AlgebraicTypes.hpp"
 
 //! A representation of a finite element cell.  This is not a realistic element, but is meant to represent what an element would act like (the actual basis functions values and node coordinates are fake).

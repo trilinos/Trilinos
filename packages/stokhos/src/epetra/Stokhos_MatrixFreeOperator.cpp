@@ -195,9 +195,9 @@ getSGPolynomial() const
 
 int
 Stokhos::MatrixFreeOperator::
-SetUseTranspose(bool UseTranspose)
+SetUseTranspose (bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   for (int i=0; i<num_blocks; i++)
     (*block_ops)[i].SetUseTranspose(useTranspose);
 

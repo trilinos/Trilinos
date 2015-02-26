@@ -49,7 +49,7 @@
 
 #include <string>
 #include "Panzer_Traits.hpp"
-
+/*
 const std::string PHX::TypeString<panzer::Traits::Residual>::value = "Residual";
 
 const std::string PHX::TypeString<panzer::Traits::Jacobian>::value = "Jacobian";
@@ -69,13 +69,13 @@ const std::string PHX::TypeString< Sacado::ELRFad::DFad<double> >::value =
 
 const std::string PHX::TypeString< Sacado::ELRCacheFad::DFad<double> >::value = 
   "Sacado::ELRCacheFad::DFad<double>";
-
+*/
 /*
 const std::string PHX::TypeString<panzer::Traits::Value>::value = "Value";
 
 const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivative";
 */
-
+/*
 #ifdef HAVE_STOKHOS
 
    const std::string PHX::TypeString<panzer::Traits::SGResidual>::value = "SGResidual";
@@ -89,3 +89,4 @@ const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivati
 #endif
 
 const std::string PHX::TypeString<bool>::value = "bool";
+*/

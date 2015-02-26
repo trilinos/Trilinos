@@ -198,7 +198,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   //CONNECTIVITY
   for(long long i = 0;i <nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);i++ ){
     nemesis_db->Specify_Block_Information(i,//index
-        i+1,//id
+        i+imd->inline_block_start,//id
         imd->element_block_lists[i].size(),//number of elements
         num_nodes_per_element,//num nodes per element
         0,//number of element_attributes
@@ -252,7 +252,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   }
 
   long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
-  for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
+  for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct + imd->inline_block_start;// add 1 for block index
 
   long long* elem_blk_cnts_global =   nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
   imd->getGlobal_Element_Block_Totals(elem_blk_cnts_global);

@@ -204,14 +204,14 @@ namespace Amesos2 {
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The \c XX and \c BB given at construction time (if any) are unchanged.
      */
-    virtual void solve(const Teuchos::Ptr<Vector>       X,
-                       const Teuchos::Ptr<const Vector> B) const {
+    virtual void solve(const Teuchos::Ptr<Vector>       XX,
+                       const Teuchos::Ptr<const Vector> BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
 
@@ -226,13 +226,13 @@ namespace Amesos2 {
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The \c XX and \c BB given at construction time (if any) are unchanged.
      */
-    virtual void solve(Vector* X, const Vector* B) const {
+    virtual void solve(Vector* XX, const Vector* BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
     //@} End Mathematical Functions

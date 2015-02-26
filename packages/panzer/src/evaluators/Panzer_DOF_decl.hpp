@@ -48,29 +48,30 @@
 #include "Phalanx_Field.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_BasisValues.hpp"
 
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-template<typename EvalT, typename Traits>                   
-class DOF : public PHX::EvaluatorWithBaseImpl<Traits>,      
-            public PHX::EvaluatorDerived<EvalT, Traits>  {   
+template<typename EvalT, typename TRAITS>                   
+class DOF : public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+            public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
 public:
 
   DOF(const Teuchos::ParameterList& p);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
 
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 
   typedef typename EvalT::ScalarT ScalarT;
   
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT> dof_ip;
+
+  PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
+  PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;
 
   std::string basis_name;
   std::size_t basis_index;
@@ -82,34 +83,37 @@ private:
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
   * Allows short cut for simple jacobian to dof structure.
   */
-template<typename Traits>                   
-class DOF<panzer::Traits::Jacobian,Traits> : 
-            public PHX::EvaluatorWithBaseImpl<Traits>,      
-            public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
+template<typename TRAITS>                   
+class DOF<typename TRAITS::Jacobian,TRAITS> : 
+            public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+            public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
 public:
 
   DOF(const Teuchos::ParameterList& p);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
 
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
   
   PHX::MDField<ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT> dof_ip;
+
+  PHX::MDField<ScalarT,Cell,Point> dof_ip_scalar;
+  PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip_vector;
+
 
   std::string basis_name;
   std::size_t basis_index;
 
   bool accelerate_jacobian_enabled;
   bool accelerate_jacobian;
-  std::vector<int> offsets;
+  Kokkos::View<int*,PHX::Device> offsets_array;
   std::string sensitivities_name; // This sets which gather operations have sensitivities
                                   // and thus which DOF operations can use accelerated jacobians
 

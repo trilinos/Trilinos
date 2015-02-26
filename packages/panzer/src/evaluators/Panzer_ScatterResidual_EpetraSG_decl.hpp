@@ -51,10 +51,10 @@ namespace panzer {
 // **************************************************************
 // SGResidual 
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::SGResidual, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class ScatterResidual_Epetra<panzer::Traits::SGResidual,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::SGResidual, TRAITS>,
     public panzer::CloneableEvaluator {
   
 public:
@@ -68,15 +68,15 @@ public:
                          const Teuchos::ParameterList& p,
                          bool=false);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGResidual,Traits,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGResidual,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
   typedef typename panzer::Traits::SGResidual::ScalarT ScalarT;
@@ -107,10 +107,10 @@ private:
 // **************************************************************
 // SGJacobian
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::SGJacobian, Traits>, 
+template<typename TRAITS,typename LO,typename GO>
+class ScatterResidual_Epetra<panzer::Traits::SGJacobian,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::SGJacobian, TRAITS>, 
     public panzer::CloneableEvaluator {
   
 public:
@@ -125,15 +125,15 @@ public:
                          const Teuchos::ParameterList& pl,
                          bool=false);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGJacobian,Traits,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::SGJacobian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
 

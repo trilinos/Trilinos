@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
@@ -98,6 +100,8 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
 
 TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 {
+   PHX::KokkosDeviceSession session;
+
    panzer::BlockedEpetraLinearObjContainer container;
 
    TEST_ASSERT(container.checkCompatibility());
@@ -105,6 +109,8 @@ TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
 {
+   PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else
@@ -254,6 +260,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -327,6 +335,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -381,6 +391,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -566,6 +578,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -789,6 +803,8 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
 {
+   PHX::KokkosDeviceSession session;
+
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    #else

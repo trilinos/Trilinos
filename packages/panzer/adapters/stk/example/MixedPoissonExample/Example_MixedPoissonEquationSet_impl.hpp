@@ -213,7 +213,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     fm.template registerEvaluator<EvalT>(op);
   }
   
-
   // Use a sum operator to form the overall residual for the equation
   {
     std::vector<std::string> sum_names;
