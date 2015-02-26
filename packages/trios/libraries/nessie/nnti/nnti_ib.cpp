@@ -1693,14 +1693,14 @@ NNTI_result_t NNTI_ib_unregister_memory (
 
         nthread_lock_fini(&ib_mem_hdl->wr_queue_lock);
 
-        if (ib_mem_hdl) delete ib_mem_hdl;
-
         if (reg_buf->buffer_segments.NNTI_remote_addr_array_t_val != NULL) {
             free(reg_buf->buffer_segments.NNTI_remote_addr_array_t_val);
         }
         if ((ib_mem_hdl->mr_count > 1) && (ib_mem_hdl->mr_list != NULL)) {
             free(ib_mem_hdl->mr_list);
         }
+
+        if (ib_mem_hdl) delete ib_mem_hdl;
 
         reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
         IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
