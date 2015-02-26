@@ -2878,10 +2878,10 @@ namespace Tpetra {
     typedef typename dual_view_type::t_dev dev_view_type;
     typedef Kokkos::View<IST*,
       typename host_view_type::array_layout,
-      typename host_view_type::execution_space> host_col_type;
+      typename host_view_type::memory_space> host_col_type;
     typedef Kokkos::View<IST*,
       typename dev_view_type::array_layout,
-      typename dev_view_type::execution_space> dev_col_type;
+      typename dev_view_type::memory_space> dev_col_type;
     const char tfecfFuncName[] = "get1dCopy: ";
 
     const size_t numRows = this->getLocalLength ();
