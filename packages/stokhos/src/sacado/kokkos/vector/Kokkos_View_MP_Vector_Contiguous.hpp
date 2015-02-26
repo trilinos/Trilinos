@@ -1359,7 +1359,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                   ), unsigned >::type i1 )
   {
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
-    dst.m_stride        = 0 ;
+    dst.m_stride        = 1 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
@@ -1432,7 +1432,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                   ), unsigned >::type i1 )
   {
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
-    dst.m_stride        = 0 ;
+    dst.m_stride        = 1 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
@@ -1475,7 +1475,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                   ) >::type * = 0 )
   {
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
-    dst.m_stride        = 0 ;
+    dst.m_stride        = 1 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range1.first < range1.second ) {
@@ -1521,7 +1521,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                   ) >::type * = 0 )
   {
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
-    dst.m_stride        = 0 ;
+    dst.m_stride        = 1 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range0.first < range0.second ) {
@@ -1567,7 +1567,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                   ) >::type * = 0 )
   {
     dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
-    dst.m_stride        = 0 ;
+    dst.m_stride        = 1 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( (range0.first < range0.second && range1.first < range1.second) ) {
