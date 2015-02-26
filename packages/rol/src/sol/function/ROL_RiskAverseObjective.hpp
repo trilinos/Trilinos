@@ -82,6 +82,10 @@ public:
     gradient_storage_.clear();
   }
 
+  RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
+                       SampleGenerator<Real> &sampler, bool storage = true ) 
+    : RiskAverseObjective(pObj,rm,sampler,sampler,storage) {}
+
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     pObj_->update(x,flag,iter);
     vsampler_->update(x);

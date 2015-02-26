@@ -71,6 +71,8 @@ protected:
 public:
   virtual ~SampleGenerator() {}
   SampleGenerator(Teuchos::RCP<BatchManager<Real> > &bman) : begin_(0), bman_(bman) {}
+  SampleGenerator(const SampleGenerator<Real> &sampler) 
+    : begin_(sampler.begin_), bman_(sampler.bman_), points_(sampler.points_), weights_(sampler.weights_) {}
 
   virtual void update(const Vector<Real> &x) {
     begin_ = 0;
@@ -94,35 +96,35 @@ public:
 
   virtual void setSamples(bool inConstructor = false) {}
 
-  virtual int numMySamples(void) {
+  virtual int numMySamples(void) const {
     return weights_.size();
   }
 
-  virtual std::vector<Real> getMyPoint(const int i) {
+  virtual std::vector<Real> getMyPoint(const int i) const {
     return points_[i];
   }  
 
-  virtual Real getMyWeight(const int i) {
+  virtual Real getMyWeight(const int i) const {
     return weights_[i];
   }
 
-  int batchID(void) {
+  int batchID(void) const {
     return bman_->batchID();
   }
 
-  int numBatches(void) {
+  int numBatches(void) const {
     return bman_->numBatches();
   }
 
-  void sumAll(Real *input, Real *output, int dim) {
+  void sumAll(Real *input, Real *output, int dim) const {
     bman_->sumAll(input, output, dim);
   }
 
-  void sumAll(Vector<Real> &input, Vector<Real> &output) {
+  void sumAll(Vector<Real> &input, Vector<Real> &output) const {
     bman_->sumAll(input,output);
   }
 
-  void barrier(void) {
+  void barrier(void) const {
     bman_->barrier();
   }
 };

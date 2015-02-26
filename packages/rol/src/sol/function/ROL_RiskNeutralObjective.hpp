@@ -76,6 +76,9 @@ public:
     firstUpdate_ = true;
   }
 
+  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) 
+    : RiskNeutralObjective(pObj,sampler,sampler) {}
+
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if ( firstUpdate_ ) {
       gradient_ = (x.dual()).clone();
