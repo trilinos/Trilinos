@@ -19,7 +19,9 @@
 namespace PAMGEN_NEVADA {
 
 
-  enum ParamType { P_OFFSET = 0,
+  enum ParamType { 
+    P_STARTING_BLOCK_NUMBER = 0,
+    P_OFFSET,
     P_GMIN,
     P_GMAX ,
     P_NTHETA,
@@ -336,6 +338,7 @@ namespace PAMGEN_NEVADA {
 
 
     Keyword parameter_table[] = {
+      {"STARTING BLOCK ID OFFSET", P_STARTING_BLOCK_NUMBER, Get_Real_Token},
       {"OFFSET", P_OFFSET, Get_Real_Token},
       {"GMIN", P_GMIN, Get_Real_Token},
       {"GMAX", P_GMAX, Get_Real_Token},
@@ -428,6 +431,17 @@ namespace PAMGEN_NEVADA {
       long long param_id = match->argument;
 
       switch(param_id){
+        case P_STARTING_BLOCK_NUMBER:{
+			 int start_block_id = token_stream->Parse_Integer();
+
+                         if(start_block_id <=0){
+                           std::stringstream ss;
+                           ss << "The  starting block number " << start_block_id << " must be positive.";
+                           token_stream->Semantics_Error(ss.str());
+                         }
+			 Inline_Mesh_Desc::im_static_storage->inline_block_start = start_block_id;
+
+                        break;}
         case P_OFFSET:{
                         Inline_Mesh_Desc::im_static_storage->inline_offset[0] = token_stream->Parse_Real();
                         Inline_Mesh_Desc::im_static_storage->inline_offset[1] = token_stream->Parse_Real();
