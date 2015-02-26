@@ -433,7 +433,7 @@ TensorBase<T, ST>::fill(T const & s)
 
 //
 // Fill components from array defined by pointer.
-//#ifdef HAVE_INTREPID_KOKKOSCORE
+//
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
 inline
