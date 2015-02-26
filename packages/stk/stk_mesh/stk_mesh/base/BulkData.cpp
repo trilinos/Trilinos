@@ -4321,20 +4321,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
     {
       internal_regenerate_aura();
     }
-    // ------------------------------
-    // Verify parallel consistency of mesh entities.
-    // Unique ownership, communication lists, sharing part membership,
-    // application part membership consistency.
-
-    m_modSummary.write_summary(m_sync_count);
-
-#ifndef NDEBUG
-    std::ostringstream msg ;
-    bool is_consistent = true;
-    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
-    std::string error_msg = msg.str();
-    ThrowErrorMsgIf( !is_consistent, error_msg );
-#endif
+    check_mesh_consistency();
   }
   else {
       std::vector<Entity> shared_modified ;
@@ -4370,6 +4357,24 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
   update_deleted_entities_container();
 
   return true ;
+}
+
+void BulkData::check_mesh_consistency()
+{
+    // ------------------------------
+    // Verify parallel consistency of mesh entities.
+    // Unique ownership, communication lists, sharing part membership,
+    // application part membership consistency.
+
+    m_modSummary.write_summary(m_sync_count);
+
+#ifndef NDEBUG
+    std::ostringstream msg ;
+    bool is_consistent = true;
+    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
+    std::string error_msg = msg.str();
+    ThrowErrorMsgIf( !is_consistent, error_msg );
+#endif
 }
 
 bool BulkData::internal_modification_end( bool regenerate_aura, modification_optimization opt)
@@ -4410,24 +4415,14 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 
     internal_resolve_send_ghost_membership();
 
-    // ------------------------------
-    // Verify parallel consistency of mesh entities.
-    // Unique ownership, communication lists, sharing part membership,
-    // application part membership consistency.
-
-    m_modSummary.write_summary(m_sync_count);
-
-#ifndef NDEBUG
-    std::ostringstream msg ;
-    bool is_consistent = true;
-    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
-    std::string error_msg = msg.str();
-    ThrowErrorMsgIf( !is_consistent, error_msg );
-#endif
+    check_mesh_consistency();
   }
   else {
-    std::vector<Entity> shared_modified ;
-    internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_modified );
+      if ( !add_fmwk_data() )
+      {
+          std::vector<Entity> shared_modified ;
+          internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_modified );
+      }
   }
 
   // ------------------------------
@@ -4791,15 +4786,7 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
 
     connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank);
 
-    m_modSummary.write_summary(m_sync_count);
-
-#ifndef NDEBUG
-    std::ostringstream msg ;
-    bool is_consistent = true;
-    is_consistent = impl::comm_mesh_verify_parallel_consistency( *this , msg );
-    std::string error_msg = msg.str();
-    ThrowErrorMsgIf( !is_consistent, error_msg );
-#endif
+    check_mesh_consistency();
   }
   else {
       std::vector<Entity> shared_modified ;

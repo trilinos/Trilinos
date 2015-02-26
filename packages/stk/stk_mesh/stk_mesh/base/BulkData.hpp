@@ -803,7 +803,7 @@ protected: //functions
                                      NewOwnerMap & new_owner_map);
 
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
-  bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
+  virtual bool internal_modification_end( bool regenerate_aura, modification_optimization opt );
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
   void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
@@ -847,6 +847,9 @@ protected: //functions
   bool internal_destroy_relation(Entity e_from ,
                                  Entity e_to,
                                  const RelationIdentifier local_id );
+
+  void check_mesh_consistency();
+
 private: //functions
 
 
