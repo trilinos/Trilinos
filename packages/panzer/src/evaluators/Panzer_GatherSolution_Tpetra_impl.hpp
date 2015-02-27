@@ -444,43 +444,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    else {
      TEUCHOS_ASSERT(false);
    }
-
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
-
-/*
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   Teuchos::ArrayRCP<const double> x_array = x->get1dView();
-
-   // loop over the fields to be gathered
-   for(std::size_t fieldIndex=0;
-       fieldIndex<gatherFields_.size();fieldIndex++) {
-     int fieldNum = fieldIds_[fieldIndex];
-     const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-     PHX::MDField<ScalarT,Cell,NODE> field = gatherFields_[fieldIndex];
-
-     // gather operation for each cell in workset
-     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-       std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-
-       // loop over basis functions and fill the fields
-       for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-         int offset = elmtOffset[basis];
-         LO lid = LIDs[offset];
-
-         // set the value and seed the FAD object
-         field(worksetCellIndex,basis) = ScalarT(LIDs.size(), x_array[lid]);
-         field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
-       }
-     }
-   }
-*/
  
+   // switch to a faster assembly
+   bool use_seed = true;
+   if(seed_value==0.0)
+     use_seed = false;
+
    globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
 
    // now setup the fuctor_data, and run the parallel_for loop
@@ -498,7 +467,10 @@ evaluateFields(typename TRAITS::EvalData workset)
      functor_data.offsets = scratch_offsets_[fieldIndex];
      functor_data.field   = gatherFields_[fieldIndex];
 
-     Kokkos::parallel_for(workset.num_cells,*this);
+     if(use_seed)
+       Kokkos::parallel_for(workset.num_cells,*this);
+     else
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoSeed>(0,workset.num_cells),*this);
    }
 }
 
@@ -516,6 +488,22 @@ operator()(const int worksetCellIndex) const
     // set the value and seed the FAD object
     functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
     functor_data.field(worksetCellIndex,basis).fastAccessDx(offset) = functor_data.seed_value;
+  }
+}
+
+// **********************************************************************
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+KOKKOS_INLINE_FUNCTION
+void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+operator()(const NoSeed,const int worksetCellIndex) const
+{
+  // loop over basis functions and fill the fields
+  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+    int offset = functor_data.offsets(basis);
+    LO lid    = functor_data.lids(worksetCellIndex,offset);
+
+    // set the value and seed the FAD object
+    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
   }
 }
 
