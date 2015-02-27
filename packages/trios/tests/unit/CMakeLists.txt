@@ -141,6 +141,17 @@ IF (TPL_ENABLE_MPI)
 ENDIF (TPL_ENABLE_MPI)
 
 
+IF (TPL_ENABLE_MPI)
+  TRIBITS_ADD_EXECUTABLE(
+    MultiUseBufferTest
+    SOURCES MultiUseBufferTest.cpp
+    COMM serial mpi
+#    NUM_MPI_PROCS 2
+    NOEXEPREFIX
+  )
+ENDIF (TPL_ENABLE_MPI)
+
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NssiSelfSendTest
   SOURCES NssiSelfSendTest.cpp
