@@ -113,14 +113,9 @@ int main(int argc, char *argv[])
   // A simple identifier map.
 
   zgno_t *myGids = new zgno_t [numIdsPerProc];
-  for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++){
+  for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++)
     myGids[i] = x++;
-  }
 
-  ArrayRCP<const zgno_t> gidArray(myGids, 0, numIdsPerProc, true);
-
-  RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
-    rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
 
   /////////////
   // TEST:
@@ -162,7 +157,6 @@ int main(int argc, char *argv[])
     solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
       env,                // application environment info
       comm,               // problem communicator
-      idMap,              // problem identifiers (global Ids, local Ids)
       nWeights,                  // number of weights
       ids.view(0,nWeights),      // part ids
       sizes.view(0,nWeights))); // part sizes
@@ -269,4 +263,5 @@ int main(int argc, char *argv[])
   }
   delete [] idLists;
   delete [] sizeLists;
+  delete [] myGids;
 }

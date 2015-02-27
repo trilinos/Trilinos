@@ -109,7 +109,6 @@ public:
  *    \param env the environment for the application
  *    \param comm the communicator for the problem associated with
  *             this solution
- *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied by the
  *         application for each object.
  *    \param algorithm  Algorithm, if any, used to compute the solution.
@@ -121,7 +120,6 @@ public:
 
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, 
     const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
 
@@ -133,7 +131,6 @@ public:
  *    \param env the environment for the application
  *    \param comm the communicator for the problem associated with
  *                        this solution
- *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param nUserWeights  the number of weights supplied
  *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
@@ -157,7 +154,6 @@ public:
 
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
@@ -525,7 +521,6 @@ private:
 
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
-  RCP<const IdentifierMap<user_t> > idMap_;
 
   //part box boundaries as a result of geometric partitioning algorithm.
   RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
@@ -637,9 +632,9 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
+    int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
-    : env_(env), comm_(comm), idMap_(idMap),
+    : env_(env), comm_(comm), 
       partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
@@ -670,11 +665,11 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
+    int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm)
-    : env_(env), comm_(comm), idMap_(idMap),
+    : env_(env), comm_(comm), 
       partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),

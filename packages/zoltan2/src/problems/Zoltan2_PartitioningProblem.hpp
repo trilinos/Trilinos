@@ -510,13 +510,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // TODO: If hierarchical_
 
   // Create the solution. The algorithm will query the Solution
-  //   for part and weight information. The algorithm will
-  //   update the solution with part assignments and quality
-  //   metrics.  The Solution object itself will convert our internal
-  //   global numbers back to application global Ids if needed.
-
-  RCP<const IdentifierMap<user_t> > idMap = 
-    this->baseModel_->getIdentifierMap();
+  // for part and weight information. The algorithm will
+  // update the solution with part assignments and quality metrics. 
 
   // Create the algorithm
   try {
@@ -560,7 +555,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try{
     soln = new PartitioningSolution<Adapter>( 
-      this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
+      this->envConst_, problemCommConst_, numberOfWeights_, 
       partIds_.view(0, numberOfCriteria_), 
       partSizes_.view(0, numberOfCriteria_), this->algorithm_);
   }
