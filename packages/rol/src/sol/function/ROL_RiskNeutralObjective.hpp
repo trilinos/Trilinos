@@ -98,7 +98,7 @@ public:
     std::vector<Real> ptvals;
     while ( error > tol ) {
       vsampler_->refine();
-      for ( unsigned i = vsampler_->start(); i < vsampler_->numMySamples(); i++ ) {
+      for ( int i = vsampler_->start(); i < vsampler_->numMySamples(); i++ ) {
         pObj_->setParameter(vsampler_->getMyPoint(i));
         ptval  = pObj_->value(x,tol);
         myval += vsampler_->getMyWeight(i)*ptval;
@@ -158,7 +158,7 @@ public:
     hv.zero();
     Teuchos::RCP<Vector<Real> > pth = hv.clone(); pth->zero();
     Teuchos::RCP<Vector<Real> > myh = hv.clone(); myh->zero();
-    for ( unsigned i = 0; i < gsampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
       pObj_->setParameter(gsampler_->getMyPoint(i));
       pObj_->hessVec(*pth,v,x,tol);
       myh->axpy(gsampler_->getMyWeight(i),*pth);
