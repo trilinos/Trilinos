@@ -82,9 +82,22 @@ public:
     gradient_storage_.clear();
   }
 
+  // Delegating constructors require C++11; can't use yet:
+  //RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
+  //                     SampleGenerator<Real> &sampler, bool storage = true ) 
+  //  : RiskAverseObjective(pObj,rm,sampler,sampler,storage) {}
+
   RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
                        SampleGenerator<Real> &sampler, bool storage = true ) 
-    : RiskAverseObjective(pObj,rm,sampler,sampler,storage) {}
+    : storage_(storage) {
+    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
+    vsampler_ = Teuchos::rcp(&sampler,false);  // Objective Function Value Sampler Object
+    gsampler_ = Teuchos::rcp(&sampler,false);  // Gradient Sampler Object
+    rm_       = Teuchos::rcp(&rm,false);       // Risk Measure Object
+
+    value_storage_.clear();
+    gradient_storage_.clear();
+  }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     pObj_->update(x,flag,iter);
