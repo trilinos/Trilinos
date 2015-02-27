@@ -404,6 +404,21 @@ preEvaluate(typename TRAITS::PreEvalData d)
       Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
+
+   if (useTimeDerivativeSolutionVector_) {
+     x_vector = tpetraContainer_->get_dxdt();
+   }
+   else if (gatherSeedIndex_<0) {
+     x_vector = tpetraContainer_->get_x();
+   }
+   else if(!useTimeDerivativeSolutionVector_) {
+     x_vector = tpetraContainer_->get_x();
+   }
+   else {
+     TEUCHOS_ASSERT(false);
+   }
+
+   x_vector->template sync<PHX::Device>();
 }
 
 // **********************************************************************
@@ -413,30 +428,22 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<LO> LIDs;
-
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
 
-   Teuchos::RCP<typename LOC::VectorType> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = tpetraContainer_->get_dxdt();
      seed_value = workset.alpha;
    }
    else if (gatherSeedIndex_<0) {
-     x = tpetraContainer_->get_x();
      seed_value = workset.beta;
    }
    else if(!useTimeDerivativeSolutionVector_) {
-     x = tpetraContainer_->get_x();
      seed_value = workset.gather_seeds[gatherSeedIndex_];
    }
    else {
      TEUCHOS_ASSERT(false);
    }
-
-   x->template sync<PHX::Device>();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -473,25 +480,13 @@ evaluateFields(typename TRAITS::EvalData workset)
      }
    }
 */
-
-   // here is a temporary solution, copy all LIDs into a kokkos vector
-   //////////////////////////////////////////////////////////////////////////////////
-/*
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-     std::size_t cellLocalId = localCellIds[worksetCellIndex];
-     const std::vector<LO> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-     for(std::size_t b=0;b<LIDs.size();b++)
-       scratch_lids_(worksetCellIndex,b) = LIDs[b];
-   }
-*/
  
    globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
 
    // now setup the fuctor_data, and run the parallel_for loop
    //////////////////////////////////////////////////////////////////////////////////
 
-   functor_data.x_data = x->template getLocalView<PHX::Device>();
+   functor_data.x_data = x_vector->template getLocalView<PHX::Device>();
    functor_data.seed_value = seed_value;
    functor_data.lids = scratch_lids_;
 
