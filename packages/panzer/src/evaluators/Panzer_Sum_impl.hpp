@@ -204,6 +204,8 @@ SumStatic(const Teuchos::ParameterList& p)
     values[i] = PHX::MDField<const ScalarT,Tag0,Tag1>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
+  numValues = value_names->size();
+  TEUCHOS_ASSERT(numValues<=MAX_VALUES);
  
   std::string n = "SumStatic Rank 2 Evaluator";
   this->setName(n);
@@ -217,8 +219,10 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
+  for (std::size_t i=0; i < values.size(); ++i) {
     this->utils.setFieldData(values[i],fm);
+    value_views[i] = values[i].get_kokkos_view();
+  }
 }
 
 //**********************************************************************
@@ -228,18 +232,8 @@ void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 evaluateFields(typename TRAITS::EvalData d)
 {
   sum.deep_copy(ScalarT(0.0));
-  
-  for (std::size_t d = 0; d < values.size(); ++d) {
-    current_value = values[d];
-    Kokkos::parallel_for(sum.dimension_0(), *this);
-  }
 
-/*
-  for (std::size_t d = 0; d < values.size(); ++d)
-    for (std::size_t i = 0; i < sum.dimension_0(); ++i)
-      for (std::size_t j = 0; j < sum.dimension_1(); ++j)
-        sum(i,j) += (values[d])(i,j);
-*/
+  Kokkos::parallel_for(sum.dimension_0(), *this);
 }
 
 //**********************************************************************
@@ -249,8 +243,10 @@ KOKKOS_INLINE_FUNCTION
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 operator()( const unsigned c ) const
 {
-  for (std::size_t j = 0; j < sum.dimension_1(); ++j)
-    sum(c,j) += current_value(c,j);
+  for (int i=0;i<numValues;i++) {
+    for (int j = 0; j < sum.dimension_1(); ++j)
+      sum(c,j) += value_views[i](c,j);
+  }
 }
 
 

@@ -107,13 +107,20 @@ public:
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
+  KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned c) const;
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
   PHX::MDField<ScalarT,Tag0,Tag1> sum;
   std::vector< PHX::MDField<const ScalarT,Tag0,Tag1> > values;
+
+  // Functor members
+  //////////////////////////////////////////////
+  enum {MAX_VALUES=20};
   PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
+  Kokkos::View<const ScalarT**,PHX::Device> value_views[MAX_VALUES];
+  int numValues;
      // this is used in the parallel kernel
 };
 
