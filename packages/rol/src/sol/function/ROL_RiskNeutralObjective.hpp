@@ -76,8 +76,15 @@ public:
     firstUpdate_ = true;
   }
 
-  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) 
-    : RiskNeutralObjective(pObj,sampler,sampler) {}
+  // Delegating constructors require C++11.
+  //RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) 
+  //  : RiskNeutralObjective(pObj,sampler,sampler) {}
+  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) {
+    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
+    vsampler_ = Teuchos::rcp(&sampler,false); // Objective Function Value Sampler Object
+    gsampler_ = Teuchos::rcp(&sampler,false); // Gradient Sampler Object
+    firstUpdate_ = true;
+  }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if ( firstUpdate_ ) {
