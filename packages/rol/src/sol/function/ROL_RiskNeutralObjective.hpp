@@ -137,7 +137,7 @@ public:
     Real error = 2.0*tol + 1.0;
     while ( error > tol ) {
       gsampler_->refine();
-      for ( unsigned i = gsampler_->start(); i < gsampler_->numMySamples(); i++ ) {
+      for ( int i = gsampler_->start(); i < gsampler_->numMySamples(); i++ ) {
         pObj_->setParameter(gsampler_->getMyPoint(i));
         pObj_->gradient(*ptg,x,tol);
         myg->axpy(gsampler_->getMyWeight(i),*ptg); 

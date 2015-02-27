@@ -191,8 +191,8 @@ public:
       @param[in] storage      is a flag whether or not to store computed states and adjoints.
       @param[in] useFDhessVec is a flag whether or not to use a finite-difference Hessian approximation.
   */
-  Reduced_ParametrizedObjective_SimOpt(Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                                       Teuchos::RCP<EqualityConstraint_SimOpt<Real> > &con,
+  Reduced_ParametrizedObjective_SimOpt(Teuchos::RCP<ParametrizedObjective_SimOpt<Real> > &obj,
+                                       Teuchos::RCP<ParametrizedEqualityConstraint_SimOpt<Real> > &con,
                                        Teuchos::RCP<Vector<Real> > &state,
                                        Teuchos::RCP<Vector<Real> > &adjoint,
                                        Teuchos::RCP<Vector<Real> > &dualstate,
