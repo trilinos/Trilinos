@@ -30,9 +30,7 @@ export http_proxy="http://sonproxy.sandia.gov:80"
 
 module load openmpi/1.8.4
 module load gcc/4.9.2
-
-export OMPI_MPICC=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc
-export OMPI_MPICXX=/home/aprokop/local/opt/gcc-4.9.2/bin/g++
+module load valgrind/3.10.1
 
 env
 
