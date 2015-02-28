@@ -237,6 +237,12 @@ def getCmndLineOptions(cmndLineArgs, skipEchoCmndLine=False):
     help="Gives the base URL <url_base> for the git repos to object the source from.")
 
   clp.add_option(
+    "--load-dev-env-file-base-name", dest="loadDevEnvFileBaseName",
+    type="string", default="load_dev_env",
+    help="Base name of the load dev env script that will be installed." \
+      "  (Default = 'load_dev_env')" )
+
+  clp.add_option(
     "--common-tools", dest="commonTools", type="string", default="all",
     help="Specifies the common tools to download and install under common_tools/." \
       "  Can be 'all', or empty '', or any combination of" \
@@ -308,6 +314,7 @@ def getCmndLineOptions(cmndLineArgs, skipEchoCmndLine=False):
     cmndLine +=  "  --install-dir='"+options.installDir+"' \\\n"
     cmndLine += InstallProgramDriver.echoInsertPermissionsOptions(options)
     cmndLine +=  "  --source-git-url-base='"+options.sourceGitUrlBase+"' \\\n"
+    cmndLine +=  "  --load-dev-env-file-base-name='"+options.loadDevEnvFileBaseName+"' \\\n"
     cmndLine +=  "  --common-tools='"+options.commonTools+"' \\\n"
     cmndLine +=  "  --compiler-toolset='"+options.compilerToolset+"' \\\n"
     cmndLine +=  "  --parallel='"+options.parallelLevel+"' \\\n"
@@ -425,16 +432,18 @@ def writeLoadDevEnvFiles(devEnvBaseDir, compilersToolsetBaseDir, inOptions):
     ("@MPICH_VERSION@", mpich_version_default)
     ]
 
+  load_dev_env_base = inOptions.loadDevEnvFileBaseName
+
   configureFile(
     os.path.join(devtools_install_dir, "load_dev_env.sh.in"),
     subPairArray,
-    os.path.join(compilersToolsetBaseDir, "load_dev_env.sh")
+    os.path.join(compilersToolsetBaseDir, load_dev_env_base+".sh")
     )
 
   configureFile(
     os.path.join(devtools_install_dir, "load_dev_env.csh.in"),
     subPairArray,
-    os.path.join(compilersToolsetBaseDir, "load_dev_env.csh")
+    os.path.join(compilersToolsetBaseDir, load_dev_env_base+".csh")
     )
 
 
@@ -572,7 +581,7 @@ def main(cmndLineArgs):
       if not inOptions.skipOp:
         os.makedirs(compiler_toolset_dir)
 
-    print "Writing new files load_dev_env.[sh,csh] ..."
+    print "Writing new files "+inOptions.loadDevEnvFileBaseName+".[sh,csh] ..."
     if not inOptions.skipOp:
       writeLoadDevEnvFiles(dev_env_base_dir, compiler_toolset_base_dir, inOptions)
 

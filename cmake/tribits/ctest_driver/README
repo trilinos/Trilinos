@@ -143,7 +143,7 @@ overridding CTEST_DASHBOARD_ROOT for example as:
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
      CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
-     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Running the above will clone <Project> into MOCK_MPI_OPT/<Project> and will
 create the build directory in MOCK_MPI_OPT/BUILD.  After the initial clone is
@@ -175,7 +175,7 @@ you can avoid pulling commits by creating a symbolic link and running as:
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
      CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
-     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Note that above it is critical that you set CTEST_DO_UPDATES=OFF so that it
 will not try to reset your repos and wipe out your changes or have merge
@@ -195,7 +195,7 @@ submit works, you can run a final trial build with:
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-     ctest -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+     ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
 in good shape for the nightly test.  If you can't find you

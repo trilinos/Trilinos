@@ -27,8 +27,8 @@ type:
 
 This will distribute git commands across all git repos listed, including the
 base git repo.  The options in [gitdist options] are prefixed with '--dist-'
-and are are pulled out off before passing the remaining arguments in [git
-arguments] to all the git repos.  See --help to see the [gitdist options].
+and are pulled out before passing the remaining arguments in [git arguments]
+to all the git repos.  See --help to see the [gitdist options].
 
 For example, consider the following git repos with other git repos cloned
 under it:
@@ -47,7 +47,7 @@ The set of repos processed is determined by the argument --dist-extra-repos or
 the files .gitdist or .gitdist.default.  If --dist-extra-repos="", then the
 list of extra repos will be read from the file '.gitdist' in the current
 working directory.  If the file '.gitdist' does not exist, then the list of
-extra repos will be read from the file '.gitdist.default in' the current
+extra repos will be read from the file '.gitdist.default' in the current
 working directory.  The format of this files '.gitdist' and '.gitdist.default'
 is to have one repo directory/name per line as in:
 
@@ -57,11 +57,14 @@ is to have one repo directory/name per line as in:
 
 where each repo is the relative path to the repo under the base git repo
 (e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
-to the base git repo so that gitdist is ready to use right away.
+to the base git repo so that gitdist is ready to use right away after the
+extra repos are cloned (see the tool clone_extra_repos.py).
 
-If an extra repository does not exist, then it will be ignored.  Therefore, be
-careful to manually verify that the script recognizes the repositories that
-you list.  The best way to do that is to type 'gitdist status'.
+If an extra repository directory listed in the .gitdist file (or specified
+using --dist-extra-repos does) not exist, then it will be ignored by the
+script.  Therefore, be careful to manually verify that the script recognizes
+the repositories that you list.  The best way to do that is to run 'gitdist
+dist-repo-status' and see which repos are listed.
 
 This script has no dependencies other than standard python 2.4 packages so it
 can be copied to anywhere and used.
@@ -71,14 +74,9 @@ TIPS:
  - To see the status of all repos in a compact way, use the speical
    'dist-repo-status' command (see below).
 
- - To process only changed repos w.r.t. their tracking branch, run
-   'gitdist --dist-mod-only [git arguments]'.  For example, to see
-   the status of only changed repos use 'gitdist --dist-mod-only status'.
-
- - Use 'gitdist --no-pager <command> ...' to get the full output from
-   all extra repos in one contiguous stream which can then be piped
-   to 'less' or to a file to be read with emacs or vi (may also want
-   to use --dist-no-color as well).
+ - To process only repos that are changed w.r.t. their tracking branch, run
+   'gitdist --dist-mod-only [git arguments]'.  For example, to see the status
+   of only changed repos use 'gitdist --dist-mod-only status'.
 
  - 'gitdist --help' will run gitdist help, not git help.  If you want git
    help, run raw 'git --help'.
@@ -87,16 +85,14 @@ TIPS:
    'git' in the environment, it will require that the user specify the git
    command to run with --dist-use-git=<the command>.
 
- - To exclude processing either the base git repo and/or other git repos
-   listed in .gitdist, pass in --dist-not-base-repo and/or
-   --dist-not-extra-repos=RepoX,RepoZ,...  This provides complete control over
-   what git repos the given git command is run.
+ - Pass in --dist-not-base-repo and/or
+   --dist-not-extra-repos=RepoX,RepoZ,... to exclude the processing of either
+   the base git repo and/or other git repos listed in .gitdist, respectively.
 
 SUMMARY OF REPO STATUS:
 
 This script supports the special command 'dist-repo-status' which prints a
-nice table showing the current status of all the repos.  For example, for the
-repos shown above:
+table showing the current status of all the repos.  For the repos shown above:
 
   $ gitdist dist-repo-status
 
@@ -116,12 +112,12 @@ If the option --dist-legend is passed in, it will print the legend:
 r"""
 REPO VERSION FILES:
 
-This script also supports the options --dist-version-file=<versionFile> and
+This script supports the options --dist-version-file=<versionFile> and
 --dist-version-file2=<versionFile2> which are used to provide different SHA1
 versions for each repo.  Each of these version files is expected to represent
 a compatible set of versions of the repos.
 
-The format of these repo version files is a follows:
+The format of these repo version files is shown in the following example:
 
 -----------------------------------------------------
 *** Base Git Repo: BaseRepo
@@ -133,8 +129,9 @@ Second summary message
 *** Git Repo: ExtraRepo2
 97cf1ac [Thu Dec 1 23:34:06 2011 -0500] <author3@someurl.com>
 Third summary message
-...
 -----------------------------------------------------
+
+(the lines '---------' are *not* included in the file.)
 
 Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
@@ -153,46 +150,35 @@ using two lines per repo in the output file.
 This allows checking out consistent versions of the repos, diffing two
 consistent versions of the repos, etc.
 
-To checkout an older set of consistent versions of the set of repos, use:
+To checkout an older set of consistent versions of the set of repos
+represented by the set of versions given in the file RepoVersion.<date>.txt,
+use:
 
   $ gitdist fetch origin
-  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt checkout _VERSION_
+  $ gitdist --dist-version-file=RepoVersion.<date>.txt checkout _VERSION_
 
 The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
 
 To tag and branch the set of repos using a consistent set of versions, use:
 
-  $ gitdist --dist-version-file=RepoVersion.SomeDate.txt \
-    tag -a some_tag _VERSION_
+  $ gitdist --dist-version-file=RepoVersion.<date>.txt \
+      tag -a <some_tag> _VERSION_
 
 To diff two sets of versions of the repos, for example, use:
 
-  $ gitdist --dist-version-file=RepoVersion.NewerDate.txt \
-     --dist-version-file2=RepoVersion.OlderDate.txt \
-     diff _VERSION_ ^_VERSION2_
+  $ gitdist --dist-version-file=RepoVersion.<new-date>.txt \
+      --dist-version-file2=RepoVersion.<old-date>.txt \
+      diff _VERSION_ ^_VERSION2_
 
-Here, _VERSION_ is replaced by the SHA1s listed in RepoVersion.NewerDate.txt
-and _VERSION2_ is replaced by the SHA1s listed in RepoVersion.OlderDate.txt.
+Here, _VERSION_ is replaced by the SHA1s listed in RepoVersion.<new-date>.txt
+and _VERSION2_ is replaced by the SHA1s listed in RepoVersion.<old-date>.txt.
 
 One can construct any git commit taking one or two different repo version
-arguments (SHA1s).
+arguments (SHA1s) using this approach.
 
 Note that the set of repos listed in the RepoVersion.txt file must be a
 super-set of those processed by this script or an error will occur and the
 script will stop.
-
-Note that this Python script only depends on the Python 2.4+ standard modules
-'sys', 'os', 'subprocess', and 're'. Also, it requires some compatible version
-of 'git' at the very minimum as well of course.
-
-COMPARISONS TO GIT SUBMODULE:
-
-The purpose and functioning of gitdist has a lot in common with the build-in
-git submodule command.  While git submodule is well suited for pulling in
-externally developed git repos, git submodules are not well suited for
-managing the co-development of multiple git repos.  A more detailed discussion
-of different approaches to managing the development and integration of
-multiple git repos, see the TriBITS Developers Guide.
 
 USEFUL ALIASES:
 
@@ -216,6 +202,13 @@ or
 
 (where 'local-stat' is a useful git alias defined in the script
 'git-config-alias.sh').
+
+SCRIPT DEPENDENCIES:
+
+This Python script only depends on the Python 2.4+ standard modules 'sys',
+'os', 'subprocess', and 're'. Also, of course, it requires some compatible
+version of 'git' in your path.
+
 """
 
 import sys

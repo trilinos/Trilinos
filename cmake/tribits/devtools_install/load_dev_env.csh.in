@@ -30,4 +30,8 @@ setenv LD_LIBRARY_PATH ${TRIBITS_DEV_ENV_MPICH_DIR}/lib:$LD_LIBRARY_PATH
 
 setenv LOADED_TRIBITS_DEV_ENV $TRIBITS_DEV_ENV_GCC_VERSION
 
+# Shortcut for gitdist dist-repo-status and --dist-mod-only
+alias gitdist-status="gitdist dist-repo-status"
+alias gitdist-mod="gitdist --dist-mod-only"
+
 rehash

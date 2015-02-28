@@ -1000,6 +1000,24 @@ Also, it is possible that the enable process for the TPL may pass, but the
 TPL may not work correctly on the given platform.  In this case, one would
 also want to explicitly disable the TPL as shown above.
 
+
+Disable warnings from TPL header files
+--------------------------------------
+
+To disable warnings coming from included TPL header files for C and C++ code,
+set::
+
+  -D<Project>_TPL_SYSTEM_INCLUDE_DIRS=TRUE
+
+On some systems and compilers (e.g. GNU), that will result is include
+directories for all TPLs to be passed in to the compiler using ``-isystem``
+instead of ``-I``.
+
+WARNING: On some systems this will result in build failures involving gfortran
+and module files.  Therefore, don't enable this if Fortran code in your
+project is pulling in module files from TPLs.
+
+
 Generating verbose output
 -------------------------
 

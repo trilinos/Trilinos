@@ -56,7 +56,11 @@ def tree(dir, padding, options, depth, top_level=False):
       if count == len(files):
         tree(path, padding + ' ', options, depth)
       else:
-        tree(path, padding + verticalLineChar, options, depth)
+        if (depth == None) or (depth > 0):
+          tree(path, padding + verticalLineChar, options, depth)
+        else:
+          print padding + fileDirPrefix + file + "/" 
+          
     else:
       print padding + fileDirPrefix + file
 

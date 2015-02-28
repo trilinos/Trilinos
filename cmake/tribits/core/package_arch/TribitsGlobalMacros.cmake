@@ -304,10 +304,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Make the ${PROJECT_NAME} configure process verbose."
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_VERBOSE_CONFIGURE}
+  IF ("${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT  ${${PROJECT_NAME}_VERBOSE_CONFIGURE})
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}
     CACHE BOOL
-    "Show a configure time trace of every test added or not added any why (one line)."
-    )
+    "Show a configure time trace of every test added or not added any why (one line)." )
 
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_LINK_LIBS
     "Dump the link libraries for every library and executable created."
@@ -325,6 +327,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     )
 
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+
+  IF ("${${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  FALSE)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS
+    ${${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT}
+    CACHE BOOL
+    "If set TRUE, then 'SYSTEM' will be passed into INCLUDE_DIRECTORIES() for TPL includes.")
 
   ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )

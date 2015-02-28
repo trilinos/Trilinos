@@ -25,3 +25,7 @@ export PATH=${TRIBITS_DEV_ENV_MPICH_DIR}/bin:$PATH
 export LD_LIBRARY_PATH=${TRIBITS_DEV_ENV_MPICH_DIR}/lib:$LD_LIBRARY_PATH
 
 export LOADED_TRIBITS_DEV_ENV=$TRIBITS_DEV_ENV_GCC_VERSION
+
+# Shortcut for gitdist dist-repo-status and --dist-mod-only
+alias gitdist-status="gitdist dist-repo-status"
+alias gitdist-mod="gitdist --dist-mod-only"

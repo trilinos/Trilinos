@@ -6846,6 +6846,8 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
+* `${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`_
+* `${PROJECT_NAME}_TRACE_ADD_TEST`_
 * `${PROJECT_NAME}_USE_GNUINSTALLDIRS`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 
@@ -7131,6 +7133,38 @@ These options are described below.
   in making their test suites run fast and keeping the cost of running the
   tests down.  See the section `TriBITS Automated Testing`_ for a more
   detailed discussion.
+
+.. _${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS:
+.. _${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT:
+
+**${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS**
+
+  If ``${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`` is set to ``TRUE``, then the
+  ``SYSTEM`` flag will be passed into the ``INCLUDE_DIRECTORIES()`` command
+  for TPL include directories.  On some systems this will result in include
+  directories being passed to the compiler with ``-isystem`` instead of
+  ``-I``.  This helps to avoid compiler warning coming from TPL header files
+  for C and C++.  However, with CMake version 2.8.11, this also results in
+  ``-isystem`` being passed to the Fortran compiler (e.g. gfortran) as well.
+  This breaks the reading of Fortran module files (perhaps a bug in gfortran).
+  Because if the issue with Fortran, the default for this option is ``FALSE``
+  but project can override the default using::
+
+    SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  TRUE)
+
+.. _${PROJECT_NAME}_TRACE_ADD_TEST:
+.. _${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT:
+
+**${PROJECT_NAME}_TRACE_ADD_TEST**
+
+  If ``${PROJECT_NAME}_TRACE_ADD_TEST`` is set to ``TRUE``, then a single line
+  will be printed for each call to `TRIBITS_ADD_TEST()`_ and
+  `TRIBITS_ADD_ADVANCED_TEST()`_ for if the test is added or not and if not
+  then why.  The default is set based on the value of
+  ``${PROJECT_NAME}_VERBOSE_CONFIGURE`` but a project can override the default
+  by setting::
+
+    SET(${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT  TRUE)
 
 .. _${PROJECT_NAME}_USE_GNUINSTALLDIRS:
 
