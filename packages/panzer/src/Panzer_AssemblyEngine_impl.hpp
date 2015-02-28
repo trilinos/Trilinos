@@ -71,7 +71,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
   GlobalEvaluationDataContainer gedc;
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
@@ -86,7 +86,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // Volumetric fill
   // *********************
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
     this->evaluateVolume(in);
   }
 
@@ -98,18 +98,18 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // sure all neumann are done before dirichlet.
 
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
     this->evaluateNeumannBCs(in);
   }
 
   // Dirchlet conditions require a global matrix
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
     this->evaluateDirichletBCs(in);
   }
 
   {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::TypeString<EvalT>::value+")");
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);

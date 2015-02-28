@@ -58,7 +58,7 @@
 
 #include "boost/mpl/apply.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 
 namespace PHX {
 

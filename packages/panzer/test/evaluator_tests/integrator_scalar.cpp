@@ -59,14 +59,13 @@ using Teuchos::rcp;
 #include "Panzer_CellData.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Panzer_Normals.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-#include "Panzer_Integrator_Scalar_impl.hpp"
-#endif
 
 #include "Phalanx_FieldManager.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -83,6 +82,8 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 {
+  PHX::KokkosDeviceSession session;
+
   // build global (or serial communicator)
   #ifdef HAVE_MPI
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -101,8 +102,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   typedef Intrepid::FieldContainer<double> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  FieldArray & coords = workset->cell_vertex_coordinates;
-  coords.resize(numCells,numVerts,dim);
+  // FieldArray & coords = workset->cell_vertex_coordinates;
+  // coords.resize(numCells,numVerts,dim);
+  MDFieldArrayFactory af("",true);
+  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
   coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
   coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
   coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
@@ -120,7 +124,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   panzer::CellData cellData(2,1,topo);
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   out << "num quad points = " << quadRule->num_points << std::endl;
-  Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues = Teuchos::rcp(new panzer::IntegrationValues<double,FieldArray>);
+  Teuchos::RCP<panzer::IntegrationValues2<double> > quadValues = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
   quadValues->setupArrays(quadRule);
   quadValues->evaluateValues(coords);
 
@@ -175,6 +179,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
+  std::vector<PHX::index_size_type> derivative_dimensions;
+  derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -193,6 +200,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 {
+  PHX::KokkosDeviceSession session;
+
   // build global (or serial communicator)
   #ifdef HAVE_MPI
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -211,8 +220,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   typedef Intrepid::FieldContainer<double> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  FieldArray & coords = workset->cell_vertex_coordinates;
-  coords.resize(numCells,numVerts,dim);
+  // FieldArray & coords = workset->cell_vertex_coordinates;
+  // coords.resize(numCells,numVerts,dim);
+  MDFieldArrayFactory af("",true);
+  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
   coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
   coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
   coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
@@ -238,7 +250,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   panzer::CellData cellData(2,0,topo);
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   out << "num quad points = " << quadRule->num_points << std::endl;
-  Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues = Teuchos::rcp(new panzer::IntegrationValues<double,FieldArray>);
+  Teuchos::RCP<panzer::IntegrationValues2<double> > quadValues = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
   quadValues->setupArrays(quadRule);
   quadValues->evaluateValues(coords);
 
@@ -293,6 +305,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
+  std::vector<PHX::index_size_type> derivative_dimensions;
+  derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;
@@ -311,6 +326,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 {
+  PHX::KokkosDeviceSession session;
+
   // build global (or serial communicator)
   #ifdef HAVE_MPI
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -329,8 +346,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   typedef Intrepid::FieldContainer<double> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  FieldArray & coords = workset->cell_vertex_coordinates;
-  coords.resize(numCells,numVerts,dim);
+  // FieldArray & coords = workset->cell_vertex_coordinates;
+  // coords.resize(numCells,numVerts,dim);
+  MDFieldArrayFactory af("",true);
+  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
+  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
   coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
   coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
   coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
@@ -356,7 +376,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   panzer::CellData cellData(2,topo);
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
   out << "num quad points = " << quadRule->num_points << std::endl;
-  Teuchos::RCP<panzer::IntegrationValues<double,FieldArray> > quadValues = Teuchos::rcp(new panzer::IntegrationValues<double,FieldArray>);
+  Teuchos::RCP<panzer::IntegrationValues2<double> > quadValues = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
   quadValues->setupArrays(quadRule);
   quadValues->evaluateValues(coords);
 
@@ -411,6 +431,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   panzer::Traits::SetupData setupData;
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
+  std::vector<PHX::index_size_type> derivative_dimensions;
+  derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
   fm->postRegistrationSetup(setupData);
 
   panzer::Traits::PreEvalData preEvalData;

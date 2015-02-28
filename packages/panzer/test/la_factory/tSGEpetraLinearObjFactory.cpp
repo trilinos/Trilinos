@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_SGEpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
@@ -94,6 +96,8 @@ Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDi
 
 TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
 {
+   PHX::KokkosDeviceSession session;
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -149,6 +153,8 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
 TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
 {
    typedef EpetraLinearObjContainer ELOC;
+
+   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

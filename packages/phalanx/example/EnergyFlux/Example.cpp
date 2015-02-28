@@ -42,8 +42,9 @@
 // @HEADER
 
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -131,6 +132,8 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
+
+    PHX::InitializeKokkosDevice();
 
     bool print_debug_info = false;
 
@@ -390,6 +393,8 @@ int main(int argc, char *argv[])
       cout << endl;
 
     }
+
+    PHX::FinalizeKokkosDevice();
     
     // *********************************************************************
     // Finished all testing

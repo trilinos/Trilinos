@@ -85,7 +85,7 @@ namespace stk_classic {
 
       // at() with range check
       reference at(size_type i) { rangecheck(i); return m_data[i]; }
-      const_reference at(size_type i) const { rangecheck(i); return m_data[i]; }
+      const_reference at(size_type i) const { return m_data[i]; }
     
       // front() and back()
       reference front() 

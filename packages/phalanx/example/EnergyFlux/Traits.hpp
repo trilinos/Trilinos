@@ -55,7 +55,7 @@
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Phalanx_config.hpp" // for std::vector
 #include "AlgebraicTypes.hpp"
 #include "Workset.hpp"
 #include "Cell.hpp"

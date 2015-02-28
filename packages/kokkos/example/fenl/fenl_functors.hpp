@@ -92,11 +92,11 @@ public:
 
 private:
 
-  enum PhaseType { PHASE_NONE = 0 ,
-                   SCAN_NODE_COUNT    = 1 ,
-                   FILL_GRAPH_ENTRIES = 2 ,
-                   SORT_GRAPH_ENTRIES = 4 ,
-                   FILL_ELEMENT_GRAPH = 8 };
+  enum PhaseType { FILL_NODE_SET ,
+                   SCAN_NODE_COUNT ,
+                   FILL_GRAPH_ENTRIES ,
+                   SORT_GRAPH_ENTRIES ,
+                   FILL_ELEMENT_GRAPH };
 
   const unsigned        node_count ;
   const ElemNodeIdView  elem_node_id ;
@@ -131,7 +131,7 @@ public:
     , row_count(Kokkos::ViewAllocateWithoutInitializing("row_count") , node_count ) // will deep_copy to 0 inside loop
     , row_map( "graph_row_map" , node_count + 1 )
     , node_node_set()
-    , phase( PHASE_NONE )
+    , phase( FILL_NODE_SET )
     , graph()
     , elem_graph()
    {
@@ -141,6 +141,7 @@ public:
       Kokkos::Impl::Timer wall_clock ;
 
       wall_clock.reset();
+      phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
       size_t set_capacity = (28ull * node_count) / 2;
@@ -335,6 +336,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned iwork ) const
   {
+/*
+    if ( phase == FILL_NODE_SET ) {
+      operator()( TagFillNodeSet() , iwork );
+    }
+    else */  
     if ( phase == FILL_GRAPH_ENTRIES ) {
       fill_graph_entries( iwork );
     }

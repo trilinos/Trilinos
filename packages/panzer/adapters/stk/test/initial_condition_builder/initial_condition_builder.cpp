@@ -67,6 +67,8 @@ using Teuchos::rcp;
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_InitialCondition_Builder.hpp"
 
 #include "Epetra_Comm.h"
@@ -84,6 +86,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(initial_condition_builder, exodus_restart)
   {
     using Teuchos::RCP;
+
+    PHX::KokkosDeviceSession session;
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);

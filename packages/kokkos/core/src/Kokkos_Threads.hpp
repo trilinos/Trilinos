@@ -203,6 +203,7 @@ struct VerifyExecutionCanAccessMemorySpace
 #include <Kokkos_ExecPolicy.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Threads/Kokkos_ThreadsExec.hpp>
+#include <Threads/Kokkos_ThreadsTeam.hpp>
 #include <Threads/Kokkos_Threads_Parallel.hpp>
 
 //----------------------------------------------------------------------------

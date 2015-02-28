@@ -221,11 +221,14 @@ typedef struct {
     NNTI_buffer_t *reg_buf;
     ib_connection *conn;
 
-    struct ibv_send_wr sq_wr;
-    struct ibv_recv_wr rq_wr;
-    struct ibv_sge     sge;
-    struct ibv_sge    *sge_list;
-    uint32_t           sge_count;
+    struct ibv_send_wr  sq_wr;
+    struct ibv_send_wr *sq_wr_list;
+    uint32_t            sq_wr_count;
+    uint32_t            sq_wr_completed_count;
+    struct ibv_recv_wr  rq_wr;
+    struct ibv_sge      sge;
+    struct ibv_sge     *sge_list;
+    uint32_t            sge_count;
 
     struct ibv_comp_channel *comp_channel;
     struct ibv_cq           *cq;
@@ -1821,6 +1824,9 @@ NNTI_result_t NNTI_ib_send (
 
     ib_wr->state=NNTI_IB_WR_STATE_STARTED;
 
+    ib_wr->sq_wr_list =&ib_wr->sq_wr;
+    ib_wr->sq_wr_count=1;
+
     if ((dest_hdl == NULL) || (dest_hdl->ops == NNTI_RECV_QUEUE)) {
         ib_wr->comp_channel=transport_global_data.req_comp_channel;
         ib_wr->cq          =transport_global_data.req_cq;
@@ -1928,12 +1934,27 @@ NNTI_result_t NNTI_ib_put (
 {
     NNTI_result_t rc=NNTI_OK;
 
+    NNTI_remote_addr_t *dst_remote_addr;
+    NNTI_remote_addr_t *src_remote_addr;
+
     trios_declare_timer(call_time);
 
     struct ibv_send_wr *bad_wr=NULL;
 
     ib_memory_handle *ib_mem_hdl=NULL;
     ib_work_request  *ib_wr=NULL;
+
+    uint64_t remaining=0;
+
+    struct {
+        uint32_t segment_index;     // index of the current segment
+        uint64_t segment_offset;    // offset into the current segment
+        uint64_t segment_remaining; // bytes remaining in the current segment
+        uint32_t last_segment;      // index of the last segment in this transfer
+    } src_params, dst_params, src_copy, dst_copy;
+
+    uint32_t wr_index=0;
+
 
     log_debug(nnti_debug_level, "enter");
 
@@ -1961,8 +1982,6 @@ NNTI_result_t NNTI_ib_put (
     ib_wr->nnti_wr = wr;
     ib_wr->reg_buf = (NNTI_buffer_t *)src_buffer_hdl;
 
-    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
-
     ib_wr->state=NNTI_IB_WR_STATE_STARTED;
 
     ib_wr->comp_channel=transport_global_data.data_comp_channel;
@@ -1971,8 +1990,13 @@ NNTI_result_t NNTI_ib_put (
     ib_wr->qpn         =(uint64_t)ib_wr->conn->data_qp.qpn;
     ib_wr->peer_qpn    =(uint64_t)ib_wr->conn->data_qp.peer_qpn;
 
+    ib_wr->sq_wr_completed_count=0;
+
     if (dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len == 1) {
         // this is the easy case.  the destination (remote) buffer is contiguous so we can complete this PUT with one ibv_send_wr.
+
+        ib_wr->sq_wr_list =&ib_wr->sq_wr;
+        ib_wr->sq_wr_count=1;
 
         // the src_offset could exclude some local segments from this operation.  find the first segment.
         uint64_t segment_offset=src_offset;
@@ -2018,15 +2042,242 @@ NNTI_result_t NNTI_ib_put (
         ib_wr->sq_wr.wr.rdma.rkey        = dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.key;
         ib_wr->sq_wr.wr.rdma.remote_addr = dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf+dest_offset;
 
+        ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+
         ib_wr->sq_wr.opcode    =IBV_WR_RDMA_WRITE;
         ib_wr->sq_wr.send_flags=IBV_SEND_SIGNALED;
         ib_wr->sq_wr.wr_id     =(uint64_t)ib_wr->key;
         ib_wr->sq_wr.imm_data  =hash6432shift((uint64_t)dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf);
         ib_wr->sq_wr.next      =NULL;  // RAOLDFI ADDED
 
-    } else {
-        // this is the hard case.  the destination (remote) buffer is non-contiguous so we need multiple ibv_send_wr to complete this PUT.
+        log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
+        nthread_lock(&nnti_wrmap_lock);
+        assert(wrmap.find(ib_wr->key) == wrmap.end());
+        wrmap[ib_wr->key] = ib_wr;
+        nthread_unlock(&nnti_wrmap_lock);
 
+    } else {
+        // the src_offset could exclude some local segments from this operation.  find the first segment.
+        src_params.segment_offset   =src_offset;
+        src_params.segment_remaining=0;
+        src_params.segment_index    =0;
+        for (uint32_t i=0;i<src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            log_debug(nnti_debug_level, "src_offset=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu, src_buffer.segment[%llu].size==%llu",
+                    src_offset, src_params.segment_offset, src_params.segment_remaining,
+                    (uint64_t)i, (uint64_t)src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size);
+            if (src_params.segment_offset > src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                src_params.segment_offset -= src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+
+                log_debug(nnti_debug_level, "src_params.segment_index=%lu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu",
+                        src_params.segment_index, src_params.segment_offset, src_params.segment_remaining);
+
+                continue;
+            } else {
+                src_params.segment_index     = i;
+                src_params.segment_remaining = src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size - src_params.segment_offset;
+
+                log_debug(nnti_debug_level, "src_params.segment_index=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu",
+                        (uint64_t)src_params.segment_index, src_params.segment_offset, src_params.segment_remaining);
+
+                break;
+            }
+        }
+        remaining=src_length;
+        for (uint32_t i=src_params.segment_index;i<src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            if (remaining > src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                remaining -= src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+            } else {
+                src_params.last_segment = i;
+                break;
+            }
+        }
+
+        log_debug(nnti_debug_level, "src_params.segment_index=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu, src_params.last_segment=%llu",
+                (uint64_t)src_params.segment_index, src_params.segment_offset, src_params.segment_remaining, (uint64_t)src_params.last_segment);
+
+        // the dest_offset could exclude some remote segments from this operation.  find the first segment.
+        dst_params.segment_offset   =dest_offset;
+        dst_params.segment_remaining=0;
+        dst_params.segment_index    =0;
+        for (uint32_t i=0;i<dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            log_debug(nnti_debug_level, "dest_offset=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu, dest_buffer.segment[%llu].size==%llu",
+                    dest_offset, dst_params.segment_offset, dst_params.segment_remaining,
+                    (uint64_t)i, (uint64_t)dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size);
+            if (dst_params.segment_offset > dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                dst_params.segment_offset -= dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+
+                log_debug(nnti_debug_level, "dst_params.segment_index=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu",
+                        (uint64_t)dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining);
+
+                continue;
+            } else {
+                dst_params.segment_index     = i;
+                dst_params.segment_remaining = dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size - dst_params.segment_offset;
+
+                log_debug(nnti_debug_level, "dst_params.segment_index=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu",
+                        (uint64_t)dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining);
+
+                break;
+            }
+        }
+        remaining=src_length;
+        for (uint32_t i=dst_params.segment_index;i<dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            if (remaining > dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                remaining -= dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+            } else {
+                dst_params.last_segment = i;
+                break;
+            }
+        }
+
+        log_debug(nnti_debug_level, "dst_params.segment_index=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu, dst_params.last_segment=%llu",
+                (uint64_t)dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining, (uint64_t)dst_params.last_segment);
+
+        /* START calculate the number of SGEs required */
+        {
+        src_copy=src_params;
+        dst_copy=dst_params;
+
+        src_remote_addr=&src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[src_copy.segment_index];
+        dst_remote_addr=&dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[dst_copy.segment_index];
+
+        ib_wr->sq_wr_count=0;
+
+        while (src_copy.segment_index <= src_copy.last_segment) {
+
+            ib_wr->sq_wr_count++;
+
+            if (src_copy.segment_remaining < dst_copy.segment_remaining) {
+                log_debug(nnti_debug_level, "the remaining source segment fits in the remaining destination segment with extra space in the destination");
+                // the remaining source segment fits in the remaining destination segment with extra space
+                dst_copy.segment_offset    += src_copy.segment_remaining;
+                dst_copy.segment_remaining -= src_copy.segment_remaining;
+
+                src_remote_addr++;
+                src_copy.segment_index++;
+                src_copy.segment_offset=0;
+                src_copy.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else if (src_copy.segment_remaining == dst_copy.segment_remaining) {
+                log_debug(nnti_debug_level, "the remaining source segment fits in the remaining destination segment EXACTLY");
+                // the remaining source segment fits EXACTLY in the remaining destination segment
+                src_remote_addr++;
+                src_copy.segment_index++;
+                src_copy.segment_offset=0;
+                src_copy.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+                dst_remote_addr++;
+                dst_copy.segment_index++;
+                dst_copy.segment_offset=0;
+                dst_copy.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else {
+                log_debug(nnti_debug_level, "the remaining source segment DOES NOT fit in the remaining destination segment");
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                src_copy.segment_offset    += dst_copy.segment_remaining;
+                src_copy.segment_remaining -= dst_copy.segment_remaining;
+
+                dst_remote_addr++;
+                dst_copy.segment_index++;
+                dst_copy.segment_offset=0;
+                dst_copy.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            }
+
+            log_debug(nnti_debug_level, "src_copy.segment_index=%llu, src_copy.segment_offset=%llu, src_copy.segment_remaining=%llu, src_copy.last_segment=%llu",
+                    (uint64_t)src_copy.segment_index, src_copy.segment_offset, (uint64_t)src_copy.segment_remaining, (uint64_t)src_copy.last_segment);
+            log_debug(nnti_debug_level, "dst_copy.segment_index=%llu, dst_copy.segment_offset=%llu, dst_copy.segment_remaining=%llu, dst_copy.last_segment=%llu",
+                    (uint64_t)dst_copy.segment_index, dst_copy.segment_offset, (uint64_t)dst_copy.segment_remaining, (uint64_t)dst_copy.last_segment);
+        }
+        }
+        /* END   calculate the number of SGEs required */
+
+        src_remote_addr=&src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[src_params.segment_index];
+        dst_remote_addr=&dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[dst_params.segment_index];
+
+        ib_wr->sq_wr_list =(struct ibv_send_wr *)malloc(ib_wr->sq_wr_count*sizeof(struct ibv_send_wr));
+
+        ib_wr->sge_count  =ib_wr->sq_wr_count;
+        ib_wr->sge_list   =(struct ibv_sge *)malloc(ib_wr->sge_count*sizeof(struct ibv_sge));
+
+        log_debug(nnti_debug_level, "this get requires %d WRs", ib_wr->sq_wr_count);
+
+        wr_index=0;
+
+        while (src_params.segment_index <= src_params.last_segment) {
+
+            ib_wr->sq_wr_list[wr_index].sg_list = &ib_wr->sge_list[wr_index];
+            ib_wr->sq_wr_list[wr_index].num_sge = 1;
+
+            ib_wr->sq_wr_list[wr_index].sg_list[0].addr=(uint64_t)ib_mem_hdl->mr_list[src_params.segment_index]->addr + src_params.segment_offset;
+            ib_wr->sq_wr_list[wr_index].sg_list[0].lkey=ib_mem_hdl->mr_list[src_params.segment_index]->lkey;
+
+            if (src_params.segment_remaining <= dst_params.segment_remaining) {
+                // the remaining source segment fits in the remaining destination segment with extra space
+                ib_wr->sq_wr_list[wr_index].sg_list[0].length=src_params.segment_remaining;
+            } else {
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                ib_wr->sq_wr_list[wr_index].sg_list[0].length=dst_params.segment_remaining;
+            }
+
+            ib_wr->sq_wr_list[wr_index].wr.rdma.rkey        = dst_remote_addr->NNTI_remote_addr_t_u.ib.key;
+            ib_wr->sq_wr_list[wr_index].wr.rdma.remote_addr = dst_remote_addr->NNTI_remote_addr_t_u.ib.buf+dst_params.segment_offset;
+
+            ib_wr->sq_wr_list[wr_index].opcode    =IBV_WR_RDMA_WRITE;
+            ib_wr->sq_wr_list[wr_index].send_flags=IBV_SEND_SIGNALED;
+            ib_wr->sq_wr_list[wr_index].wr_id     =(uint64_t)nthread_counter_increment(&nnti_wrmap_counter);
+            ib_wr->sq_wr_list[wr_index].imm_data  =hash6432shift((uint64_t)dst_remote_addr->NNTI_remote_addr_t_u.ib.buf);
+            ib_wr->sq_wr_list[wr_index].next      =NULL;  // RAOLDFI ADDED
+
+            log_debug(nnti_debug_level, "ib_wr->sq_wr_list[%d].sg_list[0].addr=0x%lX ; ib_wr->sq_wr_list[%d].sg_list[0].length=%u ; ib_wr->sq_wr_list[%d].sg_list[0].lkey=0x%X",
+                    wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].addr, wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].length, wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].lkey);
+            log_debug(nnti_debug_level, "ib_wr->sq_wr_list[%d].wr.rdma._remote_addr=0x%lX ; ib_wr->sq_wr_list[%d].wr.rdma.rkey=0x%X",
+                    wr_index, ib_wr->sq_wr_list[wr_index].wr.rdma.remote_addr, wr_index, ib_wr->sq_wr_list[wr_index].wr.rdma.rkey);
+
+            ib_wr->state=NNTI_IB_WR_STATE_STARTED;
+
+            log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->sq_wr_list[wr_index].wr_id, ib_wr);
+            nthread_lock(&nnti_wrmap_lock);
+            assert(wrmap.find(ib_wr->sq_wr_list[wr_index].wr_id) == wrmap.end());
+            wrmap[ib_wr->sq_wr_list[wr_index].wr_id] = ib_wr;
+            nthread_unlock(&nnti_wrmap_lock);
+
+            if (src_params.segment_remaining < dst_params.segment_remaining) {
+                // the remaining source segment fits in the remaining destination segment with extra space
+                dst_params.segment_offset    += src_params.segment_remaining;
+                dst_params.segment_remaining -= src_params.segment_remaining;
+
+                src_remote_addr++;
+                src_params.segment_index++;
+                src_params.segment_offset=0;
+                src_params.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else if (src_params.segment_remaining == dst_params.segment_remaining) {
+                // the remaining source segment fits EXACTLY in the remaining destination segment
+                src_remote_addr++;
+                src_params.segment_index++;
+                src_params.segment_offset=0;
+                src_params.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+                dst_remote_addr++;
+                dst_params.segment_index++;
+                dst_params.segment_offset=0;
+                dst_params.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else {
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                src_params.segment_offset    += dst_params.segment_remaining;
+                src_params.segment_remaining -= dst_params.segment_remaining;
+
+                dst_remote_addr++;
+                dst_params.segment_index++;
+                dst_params.segment_offset=0;
+                dst_params.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            }
+
+            wr_index++;
+        }
     }
 
     if (config.use_rdma_target_ack) {
@@ -2068,32 +2319,33 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
-    nthread_lock(&nnti_wrmap_lock);
-    assert(wrmap.find(ib_wr->key) == wrmap.end());
-    wrmap[ib_wr->key] = ib_wr;
-    nthread_unlock(&nnti_wrmap_lock);
-
     wr->transport_id     =src_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)src_buffer_hdl;
     wr->ops              =NNTI_PUT_SRC;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
-    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
-    trios_start_timer(call_time);
-    if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
-        rc=NNTI_EIO;
-    }
-    trios_stop_timer("NNTI_ib_put - ibv_post_send", call_time);
+    for (int i=0;i<ib_wr->sq_wr_count;i++) {
+        log_debug(nnti_debug_level, "posting ib_wr->sq_wr_list[%d]=%p (key=%lx)", i, ib_wr->sq_wr_list[i], ib_wr->sq_wr_list[i].wr_id);
+        trios_start_timer(call_time);
+        if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr_list[i], &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
+            rc=NNTI_EIO;
+        }
+        trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
 
-    if (config.use_rdma_target_ack) {
-        send_ack(ib_wr);
+        if (config.use_rdma_target_ack) {
+            send_ack(ib_wr);
+        }
+
+    //    print_wr(ib_wr);
     }
 
     if (ib_wr->sge_list != &ib_wr->sge) {
         free(ib_wr->sge_list);
+    }
+    if (ib_wr->sq_wr_list != &ib_wr->sq_wr) {
+        free(ib_wr->sq_wr_list);
     }
 
     log_debug(nnti_debug_level, "exit");
@@ -2120,6 +2372,9 @@ NNTI_result_t NNTI_ib_get (
     NNTI_result_t rc=NNTI_OK;
     log_level debug_level = nnti_debug_level;
 
+    NNTI_remote_addr_t *dst_remote_addr;
+    NNTI_remote_addr_t *src_remote_addr;
+
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
 
@@ -2127,6 +2382,17 @@ NNTI_result_t NNTI_ib_get (
 
     ib_memory_handle *ib_mem_hdl=NULL;
     ib_work_request  *ib_wr=NULL;
+
+    uint64_t remaining=0;
+
+    struct {
+        uint32_t segment_index;     // index of the current segment
+        uint64_t segment_offset;    // offset into the current segment
+        uint64_t segment_remaining; // bytes remaining in the current segment
+        uint32_t last_segment;      // index of the last segment in this transfer
+    } src_params, dst_params, src_copy, dst_copy;
+
+    uint32_t wr_index=0;
 
     trios_start_timer(total_time);
 
@@ -2156,8 +2422,6 @@ NNTI_result_t NNTI_ib_get (
     ib_wr->nnti_wr = wr;
     ib_wr->reg_buf = (NNTI_buffer_t *)dest_buffer_hdl;
 
-    ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
-
     ib_wr->state=NNTI_IB_WR_STATE_STARTED;
 
     ib_wr->comp_channel=transport_global_data.data_comp_channel;
@@ -2166,8 +2430,13 @@ NNTI_result_t NNTI_ib_get (
     ib_wr->qpn         =(uint64_t)ib_wr->conn->data_qp.qpn;
     ib_wr->peer_qpn    =(uint64_t)ib_wr->conn->data_qp.peer_qpn;
 
+    ib_wr->sq_wr_completed_count=0;
+
     if (src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len == 1) {
         // this is the easy case.  the source (remote) buffer is contiguous so we can complete this GET with one ibv_send_wr.
+
+        ib_wr->sq_wr_list =&ib_wr->sq_wr;
+        ib_wr->sq_wr_count=1;
 
         // the src_offset could exclude some local segments from this operation.  find the first segment.
         uint64_t segment_offset=dest_offset;
@@ -2223,15 +2492,242 @@ NNTI_result_t NNTI_ib_get (
         ib_wr->sq_wr.wr.rdma.rkey        = src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.key;
         ib_wr->sq_wr.wr.rdma.remote_addr = src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf+src_offset;
 
+        ib_wr->key = nthread_counter_increment(&nnti_wrmap_counter);
+
         ib_wr->sq_wr.opcode    =IBV_WR_RDMA_READ;
         ib_wr->sq_wr.send_flags=IBV_SEND_SIGNALED;
         ib_wr->sq_wr.wr_id     =(uint64_t)ib_wr->key;
         ib_wr->sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.ib.buf);
         ib_wr->sq_wr.next      =NULL;  // RAOLDFI ADDED
 
-    } else {
-        // this is the hard case.  the source (remote) buffer is non-contiguous so we need multiple ibv_send_wr to complete this GET.
+        log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
+        nthread_lock(&nnti_wrmap_lock);
+        assert(wrmap.find(ib_wr->key) == wrmap.end());
+        wrmap[ib_wr->key] = ib_wr;
+        nthread_unlock(&nnti_wrmap_lock);
 
+    } else {
+        // the dest_offset could exclude some local segments from this operation.  find the first segment.
+        dst_params.segment_offset   =dest_offset;
+        dst_params.segment_remaining=0;
+        dst_params.segment_index    =0;
+        for (uint32_t i=0;i<dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            log_debug(nnti_debug_level, "dest_offset=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu, dest_buffer.segment[%llu].size==%llu",
+                    dest_offset, dst_params.segment_offset, dst_params.segment_remaining,
+                    (uint64_t)i, (uint64_t)dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size);
+            if (dst_params.segment_offset > dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                dst_params.segment_offset -= dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+
+                log_debug(nnti_debug_level, "dst_params.segment_index=%lu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu",
+                        dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining);
+
+                continue;
+            } else {
+                dst_params.segment_index     = i;
+                dst_params.segment_remaining = dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size - dst_params.segment_offset;
+
+                log_debug(nnti_debug_level, "dst_params.segment_index=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu",
+                        (uint64_t)dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining);
+
+                break;
+            }
+        }
+        remaining=src_length;
+        for (uint32_t i=dst_params.segment_index;i<dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            if (remaining > dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                remaining -= dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+            } else {
+                dst_params.last_segment = i;
+                break;
+            }
+        }
+
+        log_debug(nnti_debug_level, "dst_params.segment_index=%llu, dst_params.segment_offset=%llu, dst_params.segment_remaining=%llu, dst_params.last_segment=%llu",
+                (uint64_t)dst_params.segment_index, dst_params.segment_offset, dst_params.segment_remaining, (uint64_t)dst_params.last_segment);
+
+        // the src_offset could exclude some remote segments from this operation.  find the first segment.
+        src_params.segment_offset   =src_offset;
+        src_params.segment_remaining=0;
+        src_params.segment_index    =0;
+        for (uint32_t i=0;i<src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            log_debug(nnti_debug_level, "src_offset=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu, src_buffer.segment[%llu].size==%llu",
+                    src_offset, src_params.segment_offset, src_params.segment_remaining,
+                    (uint64_t)i, (uint64_t)src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size);
+            if (src_params.segment_offset > src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                src_params.segment_offset -= src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+
+                log_debug(nnti_debug_level, "src_params.segment_index=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu",
+                        (uint64_t)src_params.segment_index, src_params.segment_offset, src_params.segment_remaining);
+
+                continue;
+            } else {
+                src_params.segment_index     = i;
+                src_params.segment_remaining = src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size - src_params.segment_offset;
+
+                log_debug(nnti_debug_level, "src_params.segment_index=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu",
+                        (uint64_t)src_params.segment_index, src_params.segment_offset, src_params.segment_remaining);
+
+                break;
+            }
+        }
+        remaining=src_length;
+        for (uint32_t i=src_params.segment_index;i<src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_len;i++) {
+            if (remaining > src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size) {
+                remaining -= src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[i].NNTI_remote_addr_t_u.ib.size;
+            } else {
+                src_params.last_segment = i;
+                break;
+            }
+        }
+
+        log_debug(nnti_debug_level, "src_params.segment_index=%llu, src_params.segment_offset=%llu, src_params.segment_remaining=%llu, src_params.last_segment=%llu",
+                (uint64_t)src_params.segment_index, src_params.segment_offset, src_params.segment_remaining, (uint64_t)src_params.last_segment);
+
+        /* START calculate the number of SGEs required */
+        {
+        dst_copy=dst_params;
+        src_copy=src_params;
+
+        dst_remote_addr=&dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[dst_copy.segment_index];
+        src_remote_addr=&src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[src_copy.segment_index];
+
+        ib_wr->sq_wr_count=0;
+
+        while (src_copy.segment_index <= src_copy.last_segment) {
+
+            ib_wr->sq_wr_count++;
+
+            if (src_copy.segment_remaining < dst_copy.segment_remaining) {
+                log_debug(nnti_debug_level, "the remaining source segment fits in the remaining destination segment with extra space in the destination");
+                // the remaining source segment fits in the remaining destination segment with extra space
+                dst_copy.segment_offset    += src_copy.segment_remaining;
+                dst_copy.segment_remaining -= src_copy.segment_remaining;
+
+                src_remote_addr++;
+                src_copy.segment_index++;
+                src_copy.segment_offset=0;
+                src_copy.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else if (src_copy.segment_remaining == dst_copy.segment_remaining) {
+                log_debug(nnti_debug_level, "the remaining source segment fits in the remaining destination segment EXACTLY");
+                // the remaining source segment fits EXACTLY in the remaining destination segment
+                src_remote_addr++;
+                src_copy.segment_index++;
+                src_copy.segment_offset=0;
+                src_copy.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+                dst_remote_addr++;
+                dst_copy.segment_index++;
+                dst_copy.segment_offset=0;
+                dst_copy.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else {
+                log_debug(nnti_debug_level, "the remaining source segment DOES NOT fit in the remaining destination segment");
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                src_copy.segment_offset    += dst_copy.segment_remaining;
+                src_copy.segment_remaining -= dst_copy.segment_remaining;
+
+                dst_remote_addr++;
+                dst_copy.segment_index++;
+                dst_copy.segment_offset=0;
+                dst_copy.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            }
+
+            log_debug(nnti_debug_level, "src_copy.segment_index=%llu, src_copy.segment_offset=%llu, src_copy.segment_remaining=%llu, src_copy.last_segment=%llu",
+                    (uint64_t)src_copy.segment_index, src_copy.segment_offset, (uint64_t)src_copy.segment_remaining, (uint64_t)src_copy.last_segment);
+            log_debug(nnti_debug_level, "dst_copy.segment_index=%llu, dst_copy.segment_offset=%llu, dst_copy.segment_remaining=%llu, dst_copy.last_segment=%llu",
+                    (uint64_t)dst_copy.segment_index, dst_copy.segment_offset, (uint64_t)dst_copy.segment_remaining, (uint64_t)dst_copy.last_segment);
+        }
+        }
+        /* END   calculate the number of SGEs required */
+
+        dst_remote_addr=&dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[dst_params.segment_index];
+        src_remote_addr=&src_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[src_params.segment_index];
+
+        ib_wr->sq_wr_list =(struct ibv_send_wr *)malloc(ib_wr->sq_wr_count*sizeof(struct ibv_send_wr));
+
+        ib_wr->sge_count  =ib_wr->sq_wr_count;
+        ib_wr->sge_list   =(struct ibv_sge *)malloc(ib_wr->sge_count*sizeof(struct ibv_sge));
+
+        log_debug(nnti_debug_level, "this get requires %d WRs", ib_wr->sq_wr_count);
+
+        wr_index=0;
+
+        while (src_params.segment_index <= src_params.last_segment) {
+
+            ib_wr->sq_wr_list[wr_index].sg_list = &ib_wr->sge_list[wr_index];
+            ib_wr->sq_wr_list[wr_index].num_sge = 1;
+
+            ib_wr->sq_wr_list[wr_index].sg_list[0].addr=(uint64_t)ib_mem_hdl->mr_list[dst_params.segment_index]->addr + dst_params.segment_offset;
+            ib_wr->sq_wr_list[wr_index].sg_list[0].lkey=ib_mem_hdl->mr_list[dst_params.segment_index]->lkey;
+
+            if (src_params.segment_remaining <= dst_params.segment_remaining) {
+                // the remaining source segment fits in the remaining destination segment with extra space
+                ib_wr->sq_wr_list[wr_index].sg_list[0].length=src_params.segment_remaining;
+            } else {
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                ib_wr->sq_wr_list[wr_index].sg_list[0].length=dst_params.segment_remaining;
+            }
+
+            ib_wr->sq_wr_list[wr_index].wr.rdma.rkey        = src_remote_addr->NNTI_remote_addr_t_u.ib.key;
+            ib_wr->sq_wr_list[wr_index].wr.rdma.remote_addr = src_remote_addr->NNTI_remote_addr_t_u.ib.buf+src_params.segment_offset;
+
+            ib_wr->sq_wr_list[wr_index].opcode    =IBV_WR_RDMA_READ;
+            ib_wr->sq_wr_list[wr_index].send_flags=IBV_SEND_SIGNALED;
+            ib_wr->sq_wr_list[wr_index].wr_id     =(uint64_t)nthread_counter_increment(&nnti_wrmap_counter);
+            ib_wr->sq_wr_list[wr_index].imm_data  =hash6432shift((uint64_t)src_remote_addr->NNTI_remote_addr_t_u.ib.buf);
+            ib_wr->sq_wr_list[wr_index].next      =NULL;  // RAOLDFI ADDED
+
+            log_debug(nnti_debug_level, "ib_wr->sq_wr_list[%d].sg_list[0].addr=0x%lX ; ib_wr->sq_wr_list[%d].sg_list[0].length=%u ; ib_wr->sq_wr_list[%d].sg_list[0].lkey=0x%X",
+                    wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].addr, wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].length, wr_index, ib_wr->sq_wr_list[wr_index].sg_list[0].lkey);
+            log_debug(nnti_debug_level, "ib_wr->sq_wr_list[%d].wr.rdma._remote_addr=0x%lX ; ib_wr->sq_wr_list[%d].wr.rdma.rkey=0x%X",
+                    wr_index, ib_wr->sq_wr_list[wr_index].wr.rdma.remote_addr, wr_index, ib_wr->sq_wr_list[wr_index].wr.rdma.rkey);
+
+            ib_wr->state=NNTI_IB_WR_STATE_STARTED;
+
+            log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->sq_wr_list[wr_index].wr_id, ib_wr);
+            nthread_lock(&nnti_wrmap_lock);
+            assert(wrmap.find(ib_wr->sq_wr_list[wr_index].wr_id) == wrmap.end());
+            wrmap[ib_wr->sq_wr_list[wr_index].wr_id] = ib_wr;
+            nthread_unlock(&nnti_wrmap_lock);
+
+            if (src_params.segment_remaining < dst_params.segment_remaining) {
+                // the remaining source segment fits in the remaining destination segment with extra space
+                dst_params.segment_offset    += src_params.segment_remaining;
+                dst_params.segment_remaining -= src_params.segment_remaining;
+
+                src_remote_addr++;
+                src_params.segment_index++;
+                src_params.segment_offset=0;
+                src_params.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else if (src_params.segment_remaining == dst_params.segment_remaining) {
+                // the remaining source segment fits EXACTLY in the remaining destination segment
+                src_remote_addr++;
+                src_params.segment_index++;
+                src_params.segment_offset=0;
+                src_params.segment_remaining=src_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+                dst_remote_addr++;
+                dst_params.segment_index++;
+                dst_params.segment_offset=0;
+                dst_params.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            } else {
+                // the remaining source segment DOES NOT fit in the remaining destination segment
+                src_params.segment_offset    += dst_params.segment_remaining;
+                src_params.segment_remaining -= dst_params.segment_remaining;
+
+                dst_remote_addr++;
+                dst_params.segment_index++;
+                dst_params.segment_offset=0;
+                dst_params.segment_remaining=dst_remote_addr->NNTI_remote_addr_t_u.ib.size;
+
+            }
+
+            wr_index++;
+        }
     }
 
     if (config.use_rdma_target_ack) {
@@ -2273,31 +2769,34 @@ NNTI_result_t NNTI_ib_get (
     ib_mem_hdl->wr_queue.push_back(ib_wr);
     nthread_unlock(&ib_mem_hdl->wr_queue_lock);
 
-    log_debug(nnti_debug_level, "wrmap[key(%lx)]=ib_wr(%p)", ib_wr->key, ib_wr);
-    nthread_lock(&nnti_wrmap_lock);
-    assert(wrmap.find(ib_wr->key) == wrmap.end());
-    wrmap[ib_wr->key] = ib_wr;
-    nthread_unlock(&nnti_wrmap_lock);
-
     wr->transport_id     =dest_buffer_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)dest_buffer_hdl;
     wr->ops              =NNTI_GET_DST;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
-    log_debug(nnti_debug_level, "posting ib_wr=%p (key=%lx)", ib_wr, ib_wr->key);
-    trios_start_timer(call_time);
-    if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr, &bad_wr)) {
-        log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
-        rc=NNTI_EIO;
-    }
-    trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
+    for (int i=0;i<ib_wr->sq_wr_count;i++) {
+        log_debug(nnti_debug_level, "posting ib_wr->sq_wr_list[%d]=%p (key=%lx)", i, ib_wr->sq_wr_list[i], ib_wr->sq_wr_list[i].wr_id);
+        trios_start_timer(call_time);
+        if (ibv_post_send_wrapper(ib_wr->qp, &ib_wr->sq_wr_list[i], &bad_wr)) {
+            log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
+            rc=NNTI_EIO;
+        }
+        trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
 
-    if (config.use_rdma_target_ack) {
-        send_ack(ib_wr);
+        if (config.use_rdma_target_ack) {
+            send_ack(ib_wr);
+        }
+
+    //    print_wr(ib_wr);
     }
 
-//    print_wr(ib_wr);
+    if (ib_wr->sge_list != &ib_wr->sge) {
+        free(ib_wr->sge_list);
+    }
+    if (ib_wr->sq_wr_list != &ib_wr->sq_wr) {
+        free(ib_wr->sq_wr_list);
+    }
 
     log_debug(nnti_debug_level, "exit");
 
@@ -2427,6 +2926,9 @@ NNTI_result_t NNTI_ib_atomic_fop (
 
     ib_wr->last_op=IB_OP_FETCH_ADD;
 
+    ib_wr->sq_wr_list =&ib_wr->sq_wr;
+    ib_wr->sq_wr_count=1;
+
     ib_wr->sq_wr.wr.atomic.rkey       =ib_wr->conn->atomics_rkey;
     ib_wr->sq_wr.wr.atomic.remote_addr=ib_wr->conn->atomics_addr+(target_atomic*sizeof(int64_t));
     ib_wr->sq_wr.wr.atomic.compare_add=operand;
@@ -2531,6 +3033,9 @@ NNTI_result_t NNTI_ib_atomic_cswap (
     ib_wr->peer_qpn    =(uint64_t)ib_wr->conn->data_qp.peer_qpn;
 
     ib_wr->last_op=IB_OP_COMPARE_SWAP;
+
+    ib_wr->sq_wr_list =&ib_wr->sq_wr;
+    ib_wr->sq_wr_count=1;
 
     ib_wr->sq_wr.wr.atomic.rkey       =ib_wr->conn->atomics_rkey;
     ib_wr->sq_wr.wr.atomic.remote_addr=ib_wr->conn->atomics_addr+(target_atomic*sizeof(int64_t));
@@ -3979,6 +4484,10 @@ static int process_event(
                 if (wc->wc_flags==0) {
                     if (ib_wr->state==NNTI_IB_WR_STATE_STARTED) {
                         log_debug(debug_level, "RDMA write (initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
+                        ib_wr->sq_wr_completed_count++;
+                        log_debug(nnti_debug_level, "ib_wr->sq_wr_completed_count=%d", ib_wr->sq_wr_completed_count);
+                    }
+                    if (ib_wr->sq_wr_completed_count==ib_wr->sq_wr_count) {
                         ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
                         if (!config.use_rdma_target_ack) {
                             ib_wr->nnti_wr->result=NNTI_OK;
@@ -4006,6 +4515,10 @@ static int process_event(
                 (wc->wc_flags==0)) {
                 if (ib_wr->state==NNTI_IB_WR_STATE_STARTED) {
                     log_debug(debug_level, "RDMA read (initiator) completion - wc==%p, ib_wr==%p", wc, ib_wr);
+                    ib_wr->sq_wr_completed_count++;
+                    log_debug(nnti_debug_level, "ib_wr->sq_wr_completed_count=%d", ib_wr->sq_wr_completed_count);
+                }
+                if (ib_wr->sq_wr_completed_count==ib_wr->sq_wr_count) {
                     ib_wr->state=NNTI_IB_WR_STATE_RDMA_COMPLETE;
                     if (!config.use_rdma_target_ack) {
                         ib_wr->nnti_wr->result=NNTI_OK;

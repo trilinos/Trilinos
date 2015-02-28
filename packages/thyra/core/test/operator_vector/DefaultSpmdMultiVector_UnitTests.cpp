@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -80,7 +80,7 @@ const int g_numCols = 5;  // ToDo: Make variable!
 
 
 template<class Scalar>
-RCP<VectorSpaceBase<Scalar> > 
+RCP<VectorSpaceBase<Scalar> >
 createSpmdVectorSpace(const Teuchos_Ordinal localDim)
 {
   return defaultSpmdVectorSpace<Scalar>(
@@ -97,13 +97,14 @@ createSpmdVectorSpace(const Teuchos_Ordinal localDim)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, defaultConstruct,
   Scalar )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
   RCP<const MultiVectorBase<Scalar> > mv = createMembers(*vs, g_numCols);
   Teuchos::Array<Scalar> mv_sums(g_numCols);
   Thyra::sums<Scalar>(*mv, mv_sums());
   out << "sums(mv) = " << mv_sums << "\n";
+
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   for (int i = 0; i < g_numCols; ++i) {
     TEST_ASSERT(ST::isnaninf(mv_sums[i]));
   }
@@ -117,7 +118,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, defaultTester,
   Scalar )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  //typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
   Thyra::MultiVectorTester<Scalar> mvTester;
   const bool mvTesterResult = mvTester.checkMultiVector(*vs, inOutArg(out));
@@ -136,7 +137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, memberAccess,
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
   RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
   Thyra::assign<Scalar>(mv.ptr(), ST::zero());
-  RCP<DefaultSpmdMultiVector<Scalar> > spmdMv = 
+  RCP<DefaultSpmdMultiVector<Scalar> > spmdMv =
     rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mv, true);
   TEST_ASSERT(nonnull(spmdMv->spmdSpace()));
 }
@@ -157,7 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, constContigSubViewImp
   RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
   Thyra::assign<Scalar>(mv.ptr(), ST::zero());
   RCP<const MultiVectorBase<Scalar> > mvv = mv.getConst()->subView(Range1D(0, 1));
-  RCP<const DefaultSpmdMultiVector<Scalar> > spmdMvv = 
+  RCP<const DefaultSpmdMultiVector<Scalar> > spmdMvv =
     rcp_dynamic_cast<const DefaultSpmdMultiVector<Scalar> >(mvv, true);
   TEST_ASSERT(nonnull(spmdMvv->spmdSpace()));
 }
@@ -178,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, nonconstContigSubView
   RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
   Thyra::assign<Scalar>(mv.ptr(), ST::zero());
   RCP<MultiVectorBase<Scalar> > mvv = mv->subView(Range1D(0, 1));
-  RCP<DefaultSpmdMultiVector<Scalar> > spmdMvv = 
+  RCP<DefaultSpmdMultiVector<Scalar> > spmdMvv =
     rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mvv, true);
   TEST_ASSERT(nonnull(spmdMvv->spmdSpace()));
 }
@@ -196,7 +197,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, danglingSubViews,
   Scalar )
 {
   using Teuchos::tuple;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  //typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
   RCP<MultiVectorBase<Scalar> > mv = createMembers(*vs, g_numCols);
   RCP<MultiVectorBase<Scalar> > mvView = mv->subView(tuple<int>(0, 1));

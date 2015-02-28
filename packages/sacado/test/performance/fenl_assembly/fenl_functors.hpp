@@ -63,7 +63,7 @@
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
 
-#include "Sacado_Kokkos.hpp"
+#include "Sacado.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

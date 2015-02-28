@@ -98,9 +98,9 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 #ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
-  int endThrowNumber = beginThrowNumber + 50;
+  int endThrowNumber = beginThrowNumber + 49;
 #ifndef HAVE_INTREPID_DEBUG_INF_CHECK
-  endThrowNumber = beginThrowNumber + 45;
+  endThrowNumber = beginThrowNumber + 44;
 #endif
 
 #endif
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> b_10_14_3(10, 14, 3);
     FieldContainer<double> b_10_15_3(10, 15, 3);
     
-
+   
 #ifdef HAVE_INTREPID_DEBUG
 
     *outStream << "-> inverse with multidimensional arrays:\n";
@@ -614,7 +614,6 @@ int main(int argc, char *argv[]) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-
 #ifdef HAVE_INTREPID_DEBUG
   if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
@@ -663,7 +662,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
         errorFlag = -1000;
       }
-
+    
       rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_ONE);
       *outStream << va_x_x_d;
       *outStream << vnorms_x_x;
@@ -726,7 +725,7 @@ int main(int argc, char *argv[]) {
       }
 
       /******************************************/
-
+   
 
       *outStream << "\n************ Checking transpose and subtract ************\n";
      
@@ -796,20 +795,21 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<va_x_x_d.size(); i++) {
         va_x_x_d[i] = 2.0;
       }
+    
       rst::dot(vdot_x_x, va_x_x_d, va_x_x_d); // dot = a'*a
       *outStream << vdot_x_x;
-
+   
       rst::vectorNorm(vnorms_x, vdot_x_x, NORM_ONE);
       if (rst::vectorNorm(vnorms_x, NORM_ONE) - (double)(4.0*dim*i0*i1) > zero) {
         *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
         errorFlag = -1000;
       }
-
+    
       /******************************************/
 
       *outStream << "\n";
     }
-
+    
     // one-dimensional base containers
     for (int dim=3; dim>0; dim--) {
       int i0=7;
@@ -830,7 +830,7 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<va_x_d.size(); i++) {
         va_x_d[i] = Teuchos::ScalarTraits<double>::random();
       }
-
+    
       *outStream << "\n************ Checking vectorNorm ************\n";
      
       rst::vectorNorm(vnorms_x, va_x_d, NORM_TWO);
@@ -862,7 +862,7 @@ int main(int argc, char *argv[]) {
 
       /******************************************/
 
-
+    
       *outStream << "\n************ Checking inverse, subtract, and vectorNorm ************\n";
      
       rst::inverse(mb_x_d_d, ma_x_d_d); // B = inv(A)
@@ -905,7 +905,7 @@ int main(int argc, char *argv[]) {
 
       /******************************************/
 
-
+   
       *outStream << "\n************ Checking transpose and subtract ************\n";
      
       rst::transpose(mb_x_d_d, ma_x_d_d); // B = A^T
@@ -953,7 +953,7 @@ int main(int argc, char *argv[]) {
       rst::absval(vc_x_d, vb_x_d); // c = |b|
       rst::add(vc_x_d, vb_x_d); // c = c + b === 0
       *outStream << vc_x_d;
-
+    
       rst::vectorNorm(vnorms_x, vc_x_d, NORM_ONE);
       if (rst::vectorNorm(vnorms_x, NORM_TWO) > (double)0) {
         *outStream << "\n\nSign flips combined with std::abs might not be invertible on this platform!\n"
@@ -965,7 +965,7 @@ int main(int argc, char *argv[]) {
       }
  
       /******************************************/
-
+    
 
       *outStream << "\n************ Checking dot and vectorNorm ************\n";
 

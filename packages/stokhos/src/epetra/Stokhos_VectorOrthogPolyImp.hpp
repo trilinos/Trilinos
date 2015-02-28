@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -43,7 +43,7 @@
 
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
-VectorOrthogPoly() : 
+VectorOrthogPoly() :
   ProductContainer<coeff_type>(),
   basis_()
 {
@@ -52,27 +52,27 @@ VectorOrthogPoly() :
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
 VectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-  const Teuchos::RCP<const Epetra_BlockMap>& map) :
-  ProductContainer<coeff_type>(map),
-  basis_(basis)
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& theBasis,
+  const Teuchos::RCP<const Epetra_BlockMap>& theMap) :
+  ProductContainer<coeff_type>(theMap),
+  basis_(theBasis)
 {
 }
 
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
 VectorOrthogPoly(
-  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis, 
-  const Teuchos::RCP<const Epetra_BlockMap>& map,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& theBasis,
+  const Teuchos::RCP<const Epetra_BlockMap>& theMap,
   const typename traits_type::cloner_type& cloner)
-  : ProductContainer<coeff_type>(map, cloner),
-    basis_(basis)
+  : ProductContainer<coeff_type>(theMap, cloner),
+    basis_(theBasis)
 {
 }
 
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
-VectorOrthogPoly(const Stokhos::VectorOrthogPoly<coeff_type>& v) : 
+VectorOrthogPoly(const Stokhos::VectorOrthogPoly<coeff_type>& v) :
   ProductContainer<coeff_type>(v),
   basis_(v.basis_)
 {
@@ -97,7 +97,7 @@ operator=(const Stokhos::VectorOrthogPoly<coeff_type>& v)
 }
 
 template <typename coeff_type>
-void 
+void
 Stokhos::VectorOrthogPoly<coeff_type>::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis,
@@ -111,37 +111,37 @@ reset(
 template <typename coeff_type>
 Teuchos::RCP<const Stokhos::OrthogPolyBasis<typename Stokhos::VectorOrthogPoly<coeff_type>::ordinal_type, typename Stokhos::VectorOrthogPoly<coeff_type>::value_type> >
 Stokhos::VectorOrthogPoly<coeff_type>::
-basis() const 
+basis() const
 {
   return basis_;
 }
 
 
-template <typename coeff_type> 
+template <typename coeff_type>
 coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
 term(ordinal_type dimension, ordinal_type order)
 {
-  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> >
     product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = product_basis->dimension();
-  MultiIndex<ordinal_type> term(d);
-  term[dimension] = order;
-  ordinal_type index = product_basis->index(term);
+  MultiIndex<ordinal_type> theTerm(d);
+  theTerm[dimension] = order;
+  ordinal_type index = product_basis->index(theTerm);
   return *(this->coeff_[this->map_->LID(index)]);
 }
 
-template <typename coeff_type> 
+template <typename coeff_type>
 const coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
 term(ordinal_type dimension, ordinal_type order) const
 {
-  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> >
     product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = product_basis->dimension();
-  MultiIndex<ordinal_type> term(d);
-  term[dimension] = order;
-  ordinal_type index = product_basis->index(term);
+  MultiIndex<ordinal_type> theTerm(d);
+  theTerm[dimension] = order;
+  ordinal_type index = product_basis->index(theTerm);
   return *(this->coeff_[this->map_->LID(index)]);
 }
 
@@ -160,17 +160,17 @@ template <typename coeff_type>
 void
 Stokhos::VectorOrthogPoly<coeff_type>::
 sumIntoAllTerms(const value_type& weight,
-		const Teuchos::Array<value_type>& basis_values,
-		const Teuchos::Array<value_type>& basis_norms,
-		const coeff_type& vec)
+                const Teuchos::Array<value_type>& basis_values,
+                const Teuchos::Array<value_type>& basis_norms,
+                const coeff_type& vec)
 {
   ordinal_type sz = this->coeff_.size();
   int i_gid;
   for (ordinal_type i=0; i<sz; i++) {
     i_gid = this->map_->GID(i);
-    traits_type::update(*(this->coeff_[i]), 
-			weight*basis_values[i_gid]/basis_norms[i_gid], 
-			vec);
+    traits_type::update(*(this->coeff_[i]),
+                        weight*basis_values[i_gid]/basis_norms[i_gid],
+                        vec);
   }
 }
 
@@ -180,11 +180,11 @@ Stokhos::VectorOrthogPoly<coeff_type>::
 print(std::ostream& os) const
 {
   ordinal_type sz = this->coeff_.size();
-  os << "Stokhos::VectorOrthogPoly of global size " 
+  os << "Stokhos::VectorOrthogPoly of global size "
      << this->map_->NumGlobalElements() << ", local size " << sz << " in basis "
      << "\n" << basis_->getName() << ":" << std::endl;
 
-  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> >
     product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_);
 
   if (product_basis != Teuchos::null) {
@@ -192,7 +192,7 @@ print(std::ostream& os) const
       const MultiIndex<ordinal_type>& trm = product_basis->term(i);
       os << "Term " << i << " (";
       for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
-	os << trm[j] << ", ";
+        os << trm[j] << ", ";
       os << trm[trm.size()-1] << "):" << std::endl;
       traits_type::print(os, *(this->coeff_[this->map_->LID(i)]));
     }

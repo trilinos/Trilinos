@@ -67,7 +67,8 @@ PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(CoordinatesEvaluator,d)
 { 
-  const Intrepid::FieldContainer<double> & coords = d.cell_vertex_coordinates;
+  PHX::MDField<double,Cell,NODE,Dim> coords = d.cell_vertex_coordinates;
+  // const Intrepid::FieldContainer<double> & coords = d.cell_vertex_coordinates;
 
   // copy coordinates directly into the field
   for(std::size_t i=0;i<d.num_cells;i++)

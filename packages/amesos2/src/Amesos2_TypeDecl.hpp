@@ -79,28 +79,36 @@ namespace Amesos2 {
    * indicating that the concrete adapter has a special
    * implementation for either the \c getCrs or \c getCcs functions.
    */
-  struct has_special_impl {};
+  struct has_special_impl {
+    bool set;
+  };
 
   /** \internal
    *
    * \brief Indicates that the concrete class can use the generic
    * getC{c|r}s methods implemented in MatrixAdapter.
    */
-  struct no_special_impl {};
+  struct no_special_impl {
+    bool set;
+  };
 
   /** \internal
    * 
    * \brief Indicates that the object of an adapter provides row
    * access to its data.
    */
-  struct row_access {};
+  struct row_access {
+    bool set;
+  };
     
   /** \internal
    *
    * \brief Indicates that the object of an adapter provides column
    * access to its data.
    */
-  struct col_access {};
+  struct col_access {
+    bool set;
+  };
 
   /** \internal
    *

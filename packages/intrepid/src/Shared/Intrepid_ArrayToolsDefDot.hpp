@@ -52,20 +52,19 @@ template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFie
 void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
                                       const ArrayInData &    inputData,
                                       const ArrayInFields &  inputFields) {
-
 #ifdef HAVE_INTREPID_DEBUG
-  if (inputFields.rank() > inputData.rank()) {
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()+1), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Input fields container must have rank one larger than the rank of the input data container.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
+  if (getrank(inputFields) > getrank(inputData)) {
+    TEUCHOS_TEST_FOR_EXCEPTION( ((getrank(inputData) < 2) || (getrank(inputData) > 4)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields) != getrank(inputData)+1), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Input fields container must have rank one larger than the rank of the input data container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputFields) != 3), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != inputData.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(2) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
-    for (int i=2; i<inputData.rank(); i++) {
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
+    for (int i=2; i<getrank(inputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " and ";
@@ -73,29 +72,28 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
       errmsg += " of the input data and fields containers must agree!";
       TEUCHOS_TEST_FOR_EXCEPTION( (inputData.dimension(i) != inputFields.dimension(i+1)), std::invalid_argument, errmsg );
     }
-    for (int i=0; i<outputFields.rank(); i++) {
+    for (int i=0; i<getrank(outputFields); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input and output fields containers must agree!";
       TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(i) != outputFields.dimension(i)), std::invalid_argument, errmsg );
     }
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inputData.rank() < 2) || (inputData.rank() > 4)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.rank() != inputData.rank()), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): The rank of fields input container must equal the rank of data input container.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.rank() != 3), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
+  }else {
+    TEUCHOS_TEST_FOR_EXCEPTION( ((getrank(inputData) < 2) || (getrank(inputData) > 4)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Input data container must have rank 2, 3 or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields) != getrank(inputData)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): The rank of fields input container must equal the rank of data input container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputFields) != 3), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputFields.dimension(1) != inputData.dimension(1)) && (inputData.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the fields and data input containers (number of integration points) must agree or first data dimension must be 1!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the fields and data input containers (number of integration points) must agree or first data dimension must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(0) != outputFields.dimension(1)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the fields input container and first dimension of the fields output container (number of fields) must agree!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the fields input container and first dimension of the fields output container (number of fields) must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputFields.dimension(1) != outputFields.dimension(2)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimension of the fields input container and second dimension of the fields output container (number of integration points) must agree!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): First dimension of the fields input container and second dimension of the fields output container (number of integration points) must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( (outputFields.dimension(0) != inputData.dimension(0)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
-    for (int i=2; i<inputData.rank(); i++) {
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
+    for (int i=2; i<getrank(inputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataField): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the input data and fields containers must agree!";
@@ -104,9 +102,15 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
   }
 #endif
 
+
+   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);
+   ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
+   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);
+
+
   // get sizes
-  int invalRank      = inputFields.rank();
-  int dataRank       = inputData.rank();
+  int invalRank      = getrank(inputFields);
+  int dataRank       = getrank(inputData);
   int numCells       = outputFields.dimension(0);
   int numFields      = outputFields.dimension(1);
   int numPoints      = outputFields.dimension(2);
@@ -131,7 +135,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
           for(int cl = 0; cl < numCells; cl++) {
             for(int bf = 0; bf < numFields; bf++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                outputFields(cl, bf, pt) = inputData(cl, pt)*inputFields(cl, bf, pt);
+                outputFieldsWrap(cl, bf, pt) = inputDataWrap(cl, pt)*inputFieldsWrap(cl, bf, pt);
               } // P-loop
             } // F-loop
           } // C-loop
@@ -144,9 +148,9 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
               for(int pt = 0; pt < numPoints; pt++) {
                 temp = 0;
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputData(cl, pt, iVec)*inputFields(cl, bf, pt, iVec);
+                  temp += inputDataWrap(cl, pt, iVec)*inputFieldsWrap(cl, bf, pt, iVec);
                 } // D1-loop
-                outputFields(cl, bf, pt) = temp;
+                outputFieldsWrap(cl, bf, pt) = temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -160,10 +164,10 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
                 temp = 0;
                 for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputData(cl, pt, iTens1, iTens2)*inputFields(cl, bf, pt, iTens1, iTens2);
+                    temp += inputDataWrap(cl, pt, iTens1, iTens2)*inputFieldsWrap(cl, bf, pt, iTens1, iTens2);
                   } // D1-loop
                 } // D2-loop
-                outputFields(cl, bf, pt) =  temp;
+                outputFieldsWrap(cl, bf, pt) =  temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -183,7 +187,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
           for(int cl = 0; cl < numCells; cl++) {
             for(int bf = 0; bf < numFields; bf++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                outputFields(cl, bf, pt) = inputData(cl, 0)*inputFields(cl, bf, pt);
+                outputFieldsWrap(cl, bf, pt) = inputDataWrap(cl, 0)*inputFieldsWrap(cl, bf, pt);
               } // P-loop
             } // F-loop
           } // C-loop
@@ -196,9 +200,9 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
               for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputData(cl, 0, iVec)*inputFields(cl, bf, pt, iVec);
+                  temp += inputDataWrap(cl, 0, iVec)*inputFieldsWrap(cl, bf, pt, iVec);
                 } // D1-loop
-                outputFields(cl, bf, pt) = temp;
+                outputFieldsWrap(cl, bf, pt) = temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -212,10 +216,10 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
                 temp = 0;
                 for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputData(cl, 0, iTens1, iTens2)*inputFields(cl, bf, pt, iTens1, iTens2);
+                    temp += inputDataWrap(cl, 0, iTens1, iTens2)*inputFieldsWrap(cl, bf, pt, iTens1, iTens2);
                   } // D1-loop
                 } // D2-loop
-                outputFields(cl, bf, pt) =  temp;
+                outputFieldsWrap(cl, bf, pt) =  temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -239,7 +243,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
           for(int cl = 0; cl < numCells; cl++) {
             for(int bf = 0; bf < numFields; bf++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                outputFields(cl, bf, pt) = inputData(cl, pt)*inputFields(bf, pt);
+                outputFieldsWrap(cl, bf, pt) = inputDataWrap(cl, pt)*inputFieldsWrap(bf, pt);
               } // P-loop
             } // F-loop
           } // C-loop
@@ -252,9 +256,9 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
               for(int pt = 0; pt < numPoints; pt++) {
                 temp = 0;
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputData(cl, pt, iVec)*inputFields(bf, pt, iVec);
+                  temp += inputDataWrap(cl, pt, iVec)*inputFieldsWrap(bf, pt, iVec);
                 } // D1-loop
-                outputFields(cl, bf, pt) = temp;
+                outputFieldsWrap(cl, bf, pt) = temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -268,10 +272,10 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
                 temp = 0;
                 for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputData(cl, pt, iTens1, iTens2)*inputFields(bf, pt, iTens1, iTens2);
+                    temp += inputDataWrap(cl, pt, iTens1, iTens2)*inputFieldsWrap(bf, pt, iTens1, iTens2);
                   } // D1-loop
                 } // D2-loop
-                outputFields(cl, bf, pt) =  temp;
+                outputFieldsWrap(cl, bf, pt) =  temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -291,7 +295,7 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
           for(int cl = 0; cl < numCells; cl++) {
             for(int bf = 0; bf < numFields; bf++) {
               for(int pt = 0; pt < numPoints; pt++) {
-                outputFields(cl, bf, pt) = inputData(cl, 0)*inputFields(bf, pt);
+                outputFieldsWrap(cl, bf, pt) = inputDataWrap(cl, 0)*inputFieldsWrap(bf, pt);
               } // P-loop
             } // F-loop
           } // C-loop
@@ -304,9 +308,9 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
               for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
                 for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputData(cl, 0, iVec)*inputFields(bf, pt, iVec);
+                  temp += inputDataWrap(cl, 0, iVec)*inputFieldsWrap(bf, pt, iVec);
                 } // D1-loop
-                outputFields(cl, bf, pt) = temp;
+                outputFieldsWrap(cl, bf, pt) = temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -320,10 +324,10 @@ void ArrayTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
                 temp = 0;
                 for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                   for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputData(cl, 0, iTens1, iTens2)*inputFields(bf, pt, iTens1, iTens2);
+                    temp += inputDataWrap(cl, 0, iTens1, iTens2)*inputFieldsWrap(bf, pt, iTens1, iTens2);
                   } // D1-loop
                 } // D2-loop
-                outputFields(cl, bf, pt) =  temp;
+                outputFieldsWrap(cl, bf, pt) =  temp;
               } // P-loop
             } // F-loop
           } // C-loop
@@ -347,26 +351,25 @@ template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInD
 void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
                                      const ArrayInDataLeft  &  inputDataLeft,
                                      const ArrayInDataRight &  inputDataRight) {
-
 #ifdef HAVE_INTREPID_DEBUG
-  if (inputDataRight.rank() >= inputDataLeft.rank()) {
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): The rank of the right data input container must equal the rank of the left data input container.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
+  if (getrank(inputDataRight) >= getrank(inputDataLeft)) {
+    TEUCHOS_TEST_FOR_EXCEPTION( ((getrank(inputDataLeft) < 2) || (getrank(inputDataLeft) > 4)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataRight) != getrank(inputDataLeft)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): The rank of the right data input container must equal the rank of the left data input container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputData) != 2), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(1) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the left and right data input containers (number of integration points) must agree or first left data dimension must be 1!");
-    for (int i=0; i<inputDataLeft.rank(); i++) {
+				">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the left and right data input containers (number of integration points) must agree or first left data dimension must be 1!");
+    for (int i=0; i<getrank(inputDataLeft); i++) {
       if (i != 1) {
-        std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
+	std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
         errmsg += (char)(48+i);
         errmsg += " of the left and right data input containers must agree!";
         TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(i) != inputDataRight.dimension(i)), std::invalid_argument, errmsg );
       }
     }
-    for (int i=0; i<outputData.rank(); i++) {
+    for (int i=0; i<getrank(outputData); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i);
       errmsg += " of the output and right input data containers must agree!";
@@ -374,19 +377,19 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
     }
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inputDataLeft.rank() < 2) || (inputDataLeft.rank() > 4)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.rank() != inputDataLeft.rank()-1), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outputData.rank() != 2), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
+    TEUCHOS_TEST_FOR_EXCEPTION( ((getrank(inputDataLeft) < 2) || (getrank(inputDataLeft) > 4)), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataRight) != getrank(inputDataLeft)-1), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputData) != 2), std::invalid_argument,
+				">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
     TEUCHOS_TEST_FOR_EXCEPTION( ( (inputDataRight.dimension(0) != inputDataLeft.dimension(1)) && (inputDataLeft.dimension(1) != 1) ), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of left data input container (number of integration points) must agree or first left data dimension must be 1!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of left data input container (number of integration points) must agree or first left data dimension must be 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputDataRight.dimension(0) != outputData.dimension(1)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of output data container (number of integration points) must agree!");
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the right data input container and first dimension of output data container (number of integration points) must agree!");
     TEUCHOS_TEST_FOR_EXCEPTION( (inputDataLeft.dimension(0) != outputData.dimension(0)), std::invalid_argument,
-                        ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the left data input and data output containers (number of integration domains) must agree!");
-    for (int i=1; i<inputDataRight.rank(); i++) {
+				">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the left data input and data output containers (number of integration domains) must agree!");
+    for (int i=1; i<getrank(inputDataRight); i++) {
       std::string errmsg  = ">>> ERROR (ArrayTools::dotMultiplyDataData): Dimensions ";
       errmsg += (char)(48+i+1);
       errmsg += " and ";
@@ -397,9 +400,16 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
   }
 #endif
 
+
+
+   ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
+   ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
+   ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
+
+
   // get sizes
-  int rightDataRank  = inputDataRight.rank();
-  int leftDataRank   = inputDataLeft.rank();
+  int rightDataRank  = getrank(inputDataRight);
+  int leftDataRank   = getrank(inputDataLeft);
   int numCells       = outputData.dimension(0);
   int numPoints      = outputData.dimension(1);
   int numDataPoints  = inputDataLeft.dimension(1);
@@ -422,7 +432,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         case 2: {
           for(int cl = 0; cl < numCells; cl++) {
             for(int pt = 0; pt < numPoints; pt++) {
-                outputData(cl, pt) = inputDataLeft(cl, pt)*inputDataRight(cl, pt);
+                outputDataWrap(cl, pt) = inputDataLeftWrap(cl, pt)*inputDataRightWrap(cl, pt);
             } // P-loop
           } // C-loop
         }// case 2
@@ -433,9 +443,9 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
             for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
               for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputDataLeft(cl, pt, iVec)*inputDataRight(cl, pt, iVec);
+                  temp += inputDataLeftWrap(cl, pt, iVec)*inputDataRightWrap(cl, pt, iVec);
               } // D1-loop
-              outputData(cl, pt) = temp;
+              outputDataWrap(cl, pt) = temp;
             } // P-loop
           } // C-loop
         }// case 3
@@ -447,10 +457,10 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
               temp = 0;
               for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputDataLeft(cl, pt, iTens1, iTens2)*inputDataRight(cl, pt, iTens1, iTens2);
+                    temp += inputDataLeftWrap(cl, pt, iTens1, iTens2)*inputDataRightWrap(cl, pt, iTens1, iTens2);
                 } // D1-loop
               } // D2-loop
-              outputData(cl, pt) =  temp;
+              outputDataWrap(cl, pt) =  temp;
             } // P-loop
           } // C-loop
         }// case 4
@@ -468,7 +478,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         case 2: {
           for(int cl = 0; cl < numCells; cl++) {
             for(int pt = 0; pt < numPoints; pt++) {
-                outputData(cl, pt) = inputDataLeft(cl, 0)*inputDataRight(cl, pt);
+                outputDataWrap(cl, pt) = inputDataLeftWrap(cl, 0)*inputDataRightWrap(cl, pt);
             } // P-loop
           } // C-loop
         }// case 2
@@ -479,9 +489,9 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
             for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
               for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputDataLeft(cl, 0, iVec)*inputDataRight(cl, pt, iVec);
+                  temp += inputDataLeftWrap(cl, 0, iVec)*inputDataRightWrap(cl, pt, iVec);
               } // D1-loop
-              outputData(cl, pt) = temp;
+              outputDataWrap(cl, pt) = temp;
             } // P-loop
           } // C-loop
         }// case 3
@@ -493,10 +503,10 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
               temp = 0;
               for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputDataLeft(cl, 0, iTens1, iTens2)*inputDataRight(cl, pt, iTens1, iTens2);
+                    temp += inputDataLeftWrap(cl, 0, iTens1, iTens2)*inputDataRightWrap(cl, pt, iTens1, iTens2);
                 } // D1-loop
               } // D2-loop
-              outputData(cl, pt) =  temp;
+              outputDataWrap(cl, pt) =  temp;
             } // P-loop
           } // C-loop
         }// case 4
@@ -518,7 +528,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         case 1: {
           for(int cl = 0; cl < numCells; cl++) {
             for(int pt = 0; pt < numPoints; pt++) {
-                outputData(cl, pt) = inputDataLeft(cl, pt)*inputDataRight(pt);
+                outputDataWrap(cl, pt) = inputDataLeftWrap(cl, pt)*inputDataRightWrap(pt);
             } // P-loop
           } // C-loop
         }// case 1
@@ -529,9 +539,9 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
             for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
               for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputDataLeft(cl, pt, iVec)*inputDataRight(pt, iVec);
+                  temp += inputDataLeftWrap(cl, pt, iVec)*inputDataRightWrap(pt, iVec);
               } // D1-loop
-              outputData(cl, pt) = temp;
+              outputDataWrap(cl, pt) = temp;
             } // P-loop
           } // C-loop
         }// case 2
@@ -543,10 +553,10 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
               temp = 0;
               for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputDataLeft(cl, pt, iTens1, iTens2)*inputDataRight(pt, iTens1, iTens2);
+                    temp += inputDataLeftWrap(cl, pt, iTens1, iTens2)*inputDataRightWrap(pt, iTens1, iTens2);
                 } // D1-loop
               } // D2-loop
-              outputData(cl, pt) =  temp;
+              outputDataWrap(cl, pt) =  temp;
             } // P-loop
           } // C-loop
         }// case 3
@@ -564,7 +574,7 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
         case 1: {
           for(int cl = 0; cl < numCells; cl++) {
             for(int pt = 0; pt < numPoints; pt++) {
-                outputData(cl, pt) = inputDataLeft(cl, 0)*inputDataRight(pt);
+                outputDataWrap(cl, pt) = inputDataLeftWrap(cl, 0)*inputDataRightWrap(pt);
             } // P-loop
           } // C-loop
         }// case 1
@@ -575,9 +585,9 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
             for(int pt = 0; pt < numPoints; pt++) {
               temp = 0;
               for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                  temp += inputDataLeft(cl, 0, iVec)*inputDataRight(pt, iVec);
+                  temp += inputDataLeftWrap(cl, 0, iVec)*inputDataRightWrap(pt, iVec);
               } // D1-loop
-              outputData(cl, pt) = temp;
+              outputDataWrap(cl, pt) = temp;
             } // P-loop
           } // C-loop
         }// case 2
@@ -589,10 +599,10 @@ void ArrayTools::dotMultiplyDataData(ArrayOutData &            outputData,
               temp = 0;
               for(int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
                 for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    temp += inputDataLeft(cl, 0, iTens1, iTens2)*inputDataRight(pt, iTens1, iTens2);
+                    temp += inputDataLeftWrap(cl, 0, iTens1, iTens2)*inputDataRightWrap(pt, iTens1, iTens2);
                 } // D1-loop
               } // D2-loop
-              outputData(cl, pt) =  temp;
+              outputDataWrap(cl, pt) =  temp;
             } // P-loop
           } // C-loop
         }// case 3

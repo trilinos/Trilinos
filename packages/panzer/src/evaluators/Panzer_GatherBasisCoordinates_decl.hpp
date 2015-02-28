@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_GATHER_BASIS_COORDINATES_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_BASIS_COORDINATES_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -60,18 +60,18 @@ namespace panzer {
 /** \brief Gathers coordinates for the basis function from the
     workset and stores them in the field manager.
 */
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 class GatherBasisCoordinates
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<EvalT, Traits> {
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<EvalT, TRAITS> {
 public:
   
   GatherBasisCoordinates(const panzer::PureBasis & basis);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
   static std::string fieldName(const std::string & basisName);
 

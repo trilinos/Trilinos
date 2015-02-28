@@ -65,8 +65,8 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -89,7 +89,7 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -105,10 +105,10 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -123,9 +123,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
@@ -140,9 +140,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
@@ -185,8 +185,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Tangent
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -209,7 +209,7 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -225,10 +225,10 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
@@ -243,9 +243,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
@@ -260,9 +260,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);
 
@@ -307,8 +307,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO,typename NodeT>
-panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -330,8 +330,9 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
+  scratch_offsets_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -347,12 +348,15 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT> 
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO,typename NodeT> 
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
+
+  const Workset & workset_0 = (*d.worksets_)[0];
+  std::string blockId = workset_0.block_id;
 
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -362,13 +366,22 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    int fieldNum = fieldIds_[fd];
+    const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    for(std::size_t i=0;i<offsets.size();i++)
+      scratch_offsets_[fd](i) = offsets[i];
   }
+
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",scatterFields_[0].dimension_0(),
+                                                 globalIndexer_->getElementBlockGIDCount(blockId));
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
@@ -382,13 +395,66 @@ preEvaluate(typename Traits::PreEvalData d)
   }
 }
 
+
 // **********************************************************************
-template<typename Traits,typename LO,typename GO,typename NodeT>
-void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, Traits,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+namespace panzer {
+namespace {
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT,typename LocalMatrixT>
+class ScatterResidual_Jacobian_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
+
+  bool fillResidual;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+  LocalMatrixT jac; // Kokkos jacobian type
+
+  Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
+  Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
+  FieldType field;
+
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+    LO cLIDs[256];
+    typename Sacado::ScalarType<ScalarT>::type vals[256];
+    int numIds = lids.dimension_1();
+
+    for(int i=0;i<numIds;i++)
+      cLIDs[i] = lids(cell,i);
+    
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.dimension_0(); basis++) {
+       typename FieldType::array_type::reference_type scatterField = field(cell,basis);
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+
+       // Sum residual
+       if(fillResidual)
+         Kokkos::atomic_add(&r_data(lid,0), scatterField.val());
+
+       // loop over the sensitivity indices: all DOFs on a cell
+       for(int sensIndex=0;sensIndex<numIds;++sensIndex)
+          vals[sensIndex] = scatterField.fastAccessDx(sensIndex);
+    
+       // Sum Jacobian
+       jac.sumIntoValues(lid, cLIDs,numIds, vals, true);
+    } // end basis
+  }
+};
+}
+}
+
+// **********************************************************************
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterResidual_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
+#if 0
    std::vector<GO> GIDs;
    std::vector<LO> cLIDs, rLIDs;
    std::vector<double> jacRow;
@@ -420,7 +486,7 @@ evaluateFields(typename Traits::EvalData workset)
         
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
+            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             LO row = rLIDs[rowOffset];
     
@@ -440,6 +506,32 @@ evaluateFields(typename Traits::EvalData workset)
          } // end rowBasisNum
       } // end fieldIndex
    }
+#else
+   typedef typename LOC::CrsMatrixType::k_local_matrix_type LocalMatrixT;
+
+   // for convenience pull out some objects from workset
+   std::string blockId = workset.block_id;
+
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
+
+   globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
+
+   ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
+   functor.fillResidual = (r!=Teuchos::null);
+   if(functor.fillResidual)
+     functor.r_data = r->template getLocalView<PHX::Device>();
+   functor.jac = Jac->getLocalMatrix();
+   functor.lids = scratch_lids_;
+
+   // for each field, do a parallel for loop
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     functor.offsets = scratch_offsets_[fieldIndex];
+     functor.field = scatterFields_[fieldIndex];
+
+     Kokkos::parallel_for(workset.num_cells,functor);
+   }
+#endif
 }
 
 // **********************************************************************

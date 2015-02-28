@@ -190,6 +190,9 @@ namespace panzer_stk_classic {
                               bool is_transient,bool is_explicit,
                               const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
 
+    bool useDynamicCoordinates() const
+    { return useDynamicCoordinates_; }
+
   protected:
  
     /** This method is to assist with construction of the model evaluators  internally.

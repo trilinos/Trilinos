@@ -1,5 +1,5 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos Sacado Phalanx Intrepid ThyraCore ThyraTpetraAdapters ThyraEpetraAdapters Tpetra Epetra EpetraExt Zoltan Stratimikos Piro NOX Rythmos)
-SET(LIB_OPTIONAL_DEP_PACKAGES STKClassic SEACASIoss SEACASExodus Teko Stokhos MueLu Ifpack2 FEI)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos Sacado Phalanx Intrepid ThyraCore ThyraTpetraAdapters ThyraEpetraAdapters Tpetra Epetra EpetraExt Zoltan Stratimikos Piro NOX Rythmos KokkosCore)
+SET(LIB_OPTIONAL_DEP_PACKAGES STKClassic SEACASIoss SEACASExodus Teko MueLu Ifpack2 FEI)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Stratimikos Piro NOX Rythmos)
 SET(LIB_REQUIRED_DEP_TPLS MPI BoostLib)

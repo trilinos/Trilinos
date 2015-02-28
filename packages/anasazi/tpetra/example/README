@@ -1,0 +1,9 @@
+All of the examples in this directory use Tpetra sparse matrices and
+dense vectors.
+
+CustomStatusTest shows how to create custom convergence critera
+(StatusTest subclasses) for Anasazi's eigensolvers.
+
+TraceMinDavidson shows how to use Anasazi's TraceMinDavidson
+eigensolver.  (This algorithm implements a superset of the TraceMin
+and Jacobi-Davidson eigensolvers.)

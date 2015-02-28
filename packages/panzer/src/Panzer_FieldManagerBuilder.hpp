@@ -191,6 +191,10 @@ namespace panzer {
                               const LinearObjFactory<panzer::Traits> & lo_factory,
 			      const Teuchos::ParameterList& user_data);
 
+    void setKokkosExtendedDataTypeDimensions(const std::string & eblock, 
+                                             const panzer::UniqueGlobalIndexerBase & globalIndexer,
+                                             PHX::FieldManager<panzer::Traits> & fm) const;
+
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >
       phx_volume_field_managers_;

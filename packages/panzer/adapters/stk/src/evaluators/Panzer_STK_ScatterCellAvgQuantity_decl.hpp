@@ -43,7 +43,7 @@
 #ifndef __PANZER_STK_ScatterCellAvgQuantity_decl_HPP__
 #define __PANZER_STK_ScatterCellAvgQuantity_decl_HPP__
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -73,7 +73,7 @@ PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
 
   std::size_t numValues_;
  
-  std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::Point> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;
 
   std::vector<VariableField*> stkFields_;

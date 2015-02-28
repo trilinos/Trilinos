@@ -496,9 +496,17 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 
           if (par_dimen == 1) {
             stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
+            // TSC:  TODO:  Do we need to fix 2D sidesets also?
             bulk.change_entity_parts( side, add_parts );
           }
           else if (par_dimen == 2) {
+            // TSC:  TODO:  Add logic here to use an existing face if it exists.
+            // Assume all elements are defined already at this point.
+            // Q:  Do node-sets have the same problem?
+            // if not a shell and face exists:  hook it up!
+            // if not a shell and no face exists:  create new face and hook it up
+            // if shell and no face exists:  create new face and hook it up
+            // if shell and face exists:  if "right" face, then hook up, if "wrong" face, then create new face and hook it up
             stk::mesh::Entity side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
             bulk.change_entity_parts( side, add_parts );
           }

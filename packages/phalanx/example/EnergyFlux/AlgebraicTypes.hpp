@@ -46,7 +46,7 @@
 #define PHX_ENTITY_TEMPLATES
 
 #include <iostream>
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Sacado.hpp"
 
 // *********************************************************************

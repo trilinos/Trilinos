@@ -56,7 +56,7 @@
 namespace ROL {
 
 template <class Real>
-class Objective_SimOpt : public Objective<Real> {
+class Objective_SimOpt : public virtual Objective<Real> {
 public:
 
   /** \brief Update objective function.  

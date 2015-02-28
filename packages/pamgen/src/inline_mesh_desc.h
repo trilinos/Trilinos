@@ -261,6 +261,7 @@ namespace PAMGEN_NEVADA {
       double ** first_size;
       double ** last_size;
       long long ** interval;
+      long long inline_block_start;
       double inline_offset[3];
       double inline_gmin[3];
       double inline_gmax[3];

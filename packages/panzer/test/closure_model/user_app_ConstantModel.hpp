@@ -44,7 +44,7 @@
 #define USER_APP_CONSTANT_MODEL_HPP
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
 namespace user_app {
     
@@ -52,7 +52,7 @@ PHX_EVALUATOR_CLASS(ConstantModel)
   
   ScalarT value;
   
-  PHX::Field<ScalarT> constant;
+  PHX::MDField<ScalarT> constant;
   
 PHX_EVALUATOR_CLASS_END
 
@@ -76,7 +76,7 @@ private:
 
   ScalarT value;
   
-  PHX::Field<ScalarT> constant;
+  PHX::MDField<ScalarT> constant;
   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion;
 };
 
@@ -97,7 +97,7 @@ private:
 
   ScalarT value;
   
-  PHX::Field<ScalarT> constant;
+  PHX::MDField<ScalarT> constant;
   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion;
 };
 

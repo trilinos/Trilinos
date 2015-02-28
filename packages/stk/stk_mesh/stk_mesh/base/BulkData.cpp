@@ -327,7 +327,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
         bucket_capacity),
-    m_use_identifiers_for_resolving_sharing(false)
+    m_use_identifiers_for_resolving_sharing(false),
+    m_modSummary(*this)
 #ifdef STK_MESH_MODIFICATION_COUNTERS
     , m_num_bulk_data_counter++,
     m_modification_counters(),
@@ -861,6 +862,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
     m_check_invalid_rels = false;
 
   require_ok_to_modify();
+  m_modSummary.track_declare_entity(ent_rank, ent_id, parts);
 
   require_good_rank_and_id(ent_rank, ent_id);
 
@@ -913,6 +915,8 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
   INCREMENT_ENTITY_MODIFICATION_COUNTER(PUBLIC, e_rank, CHANGE_ENTITY_ID);
 
   require_ok_to_modify();
+  m_modSummary.track_change_entity_id(id, entity);
+
   require_good_rank_and_id(e_rank, id);
 
   EntityKey new_key(e_rank,id);
@@ -945,6 +949,7 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   DiagIfWatching(LOG_ENTITY, key, "entity state: " << key);
 
   require_ok_to_modify();
+  m_modSummary.track_destroy_entity(entity);
 
   m_check_invalid_rels = false;
 
@@ -1869,6 +1874,8 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 
   TraceIfWatching("stk::mesh::BuilkData::internal_declare_relation", LOG_ENTITY, entity_key(e_from));
 
+  m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
+
   const MeshIndex& idx = mesh_index(e_from);
 
   bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id), permut);
@@ -2050,6 +2057,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
                  "id: " << local_id);
 
   require_ok_to_modify();
+  m_modSummary.track_destroy_relation(e_from, e_to, local_id);
 
   require_valid_relation( "destroy" , *this , e_from , e_to );
 
@@ -2456,6 +2464,7 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   DiagIf(LOG_ENTITY, "arg_change: " << arg_change);
 
   require_ok_to_modify();
+  m_modSummary.track_change_entity_owner(arg_change);
 
   const MetaData  & meta = m_mesh_meta_data ;
   const int       p_rank = parallel_rank() ;
@@ -3102,6 +3111,7 @@ void BulkData::internal_change_ghosting(
   bool is_full_regen)
 {
   Trace_("stk::mesh::BulkData::internal_change_ghosting");
+  m_modSummary.track_change_ghosting(ghosting, add_send, remove_receive);
 
   INCREMENT_MODIFICATION_COUNTER(INTERNAL, CHANGE_GHOSTING);
 
@@ -4324,6 +4334,9 @@ bool BulkData::internal_modification_end_for_change_entity_owner( bool regenerat
     // Verify parallel consistency of mesh entities.
     // Unique ownership, communication lists, sharing part membership,
     // application part membership consistency.
+
+    m_modSummary.write_summary(m_sync_count);
+
 #ifndef NDEBUG
     std::ostringstream msg ;
     bool is_consistent = true;
@@ -4410,6 +4423,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
     // Verify parallel consistency of mesh entities.
     // Unique ownership, communication lists, sharing part membership,
     // application part membership consistency.
+
+    m_modSummary.write_summary(m_sync_count);
+
 #ifndef NDEBUG
     std::ostringstream msg ;
     bool is_consistent = true;
@@ -4783,6 +4799,8 @@ bool BulkData::internal_modification_end_for_entity_creation( EntityRank entity_
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
 
     connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(*this, entity_rank);
+
+    m_modSummary.write_summary(m_sync_count);
 
 #ifndef NDEBUG
     std::ostringstream msg ;
@@ -5375,6 +5393,7 @@ void BulkData::internal_change_entity_parts(
   bool always_propagate_internal_changes )
 {
   require_ok_to_modify();
+  m_modSummary.track_change_entity_parts(entity, add_parts, remove_parts);
 
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity_key(entity));
   DiagIfWatching(LOG_ENTITY, entity_key(entity), "entity state: " << entity_key(entity));
@@ -5639,6 +5658,7 @@ void BulkData::internal_propagate_part_changes(
 
         if ( parallel_size() < 2 || !bucket(e_to).shared() ) {
           // Entirely local, ok to remove memberships now
+          m_modSummary.track_induced_parts(entity, e_to, addParts, delParts);
           internal_change_entity_parts( e_to , addParts , delParts );
         }
         else {
@@ -5648,6 +5668,7 @@ void BulkData::internal_propagate_part_changes(
           {
             mark_entity_and_upward_related_entities_as_modified(e_to);
           }
+          m_modSummary.track_induced_parts(entity, e_to, addParts, emptyParts);
           internal_change_entity_parts( e_to , addParts , emptyParts );
         }
       }

@@ -44,34 +44,33 @@
 
 #ifndef PHX_DIMENSION_HPP
 #define PHX_DIMENSION_HPP
+#include "Phalanx_DimTag.hpp"
 
-#include "Shards_Array.hpp"
-
-struct Dim : public shards::ArrayDimTag {
+struct Dim : public PHX::DimTag {
   Dim(){};
   const char * name() const ;
   static const Dim& tag();
 };
 
-struct QuadPoint : public shards::ArrayDimTag {
+struct QuadPoint : public PHX::DimTag {
   QuadPoint(){};
   const char * name() const ;
   static const QuadPoint& tag();
 };
 
-struct Node : public shards::ArrayDimTag {
+struct Node : public PHX::DimTag {
   Node(){};
   const char * name() const ;
   static const Node& tag();
 };
 
-struct Point : public shards::ArrayDimTag {
+struct Point : public PHX::DimTag {
   Point(){};
   const char * name() const ;
   static const Point& tag();
 };
 
-struct Cell : public shards::ArrayDimTag {
+struct Cell : public PHX::DimTag {
   Cell(){};
   const char * name() const ;
   static const Cell& tag();

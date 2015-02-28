@@ -61,8 +61,8 @@
 // Specialization: Residual
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -100,15 +100,15 @@ GatherSolution_Epetra(
   if(names.size()>0)
     firstName = names[0];
 
-  std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+  std::string n = "GatherSolution (Epetra): "+firstName+" ()";
   this->setName(n);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -134,9 +134,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -173,9 +173,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<int> LIDs;
  
@@ -223,8 +223,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Tangent
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -262,15 +262,15 @@ GatherSolution_Epetra(
   if(names.size()>0)
     firstName = names[0];
 
-  std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+  std::string n = "GatherSolution (Epetra): "+firstName+" ()";
   this->setName(n);
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -296,9 +296,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -335,9 +335,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<int> LIDs;
  
@@ -377,8 +377,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template<typename Traits,typename LO,typename GO>
-panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+template<typename TRAITS,typename LO,typename GO>
+panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -434,20 +434,20 @@ GatherSolution_Epetra(
 
   // print out convenience
   if(disableSensitivities_) {
-    std::string n = "GatherSolution (Epetra, No Sensitivities): "+firstName+" ("+PHX::TypeString<EvalT>::value+")";
+    std::string n = "GatherSolution (Epetra, No Sensitivities): "+firstName+" ()";
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::TypeString<EvalT>::value+") ";
+    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
     this->setName(n);
   }
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO> 
-void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS,typename LO,typename GO> 
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -474,9 +474,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-preEvaluate(typename Traits::PreEvalData d)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -526,9 +526,9 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 // **********************************************************************
-template<typename Traits,typename LO,typename GO>
-void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
@@ -593,9 +593,8 @@ evaluateFields(typename Traits::EvalData workset)
              int lid = LIDs[offset];
 
              // set the value and seed the FAD object
-             ScalarT & dest = field(worksetCellIndex,basis);
-             dest = ScalarT(LIDs.size(), x[lid]);
-             dest.fastAccessDx(offset) = seed_value;
+             field(worksetCellIndex,basis) = ScalarT(LIDs.size(), x[lid]);
+             field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
            }
          }
       }

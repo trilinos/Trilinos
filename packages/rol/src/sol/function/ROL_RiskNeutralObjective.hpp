@@ -76,6 +76,16 @@ public:
     firstUpdate_ = true;
   }
 
+  // Delegating constructors require C++11.
+  //RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) 
+  //  : RiskNeutralObjective(pObj,sampler,sampler) {}
+  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) {
+    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
+    vsampler_ = Teuchos::rcp(&sampler,false); // Objective Function Value Sampler Object
+    gsampler_ = Teuchos::rcp(&sampler,false); // Gradient Sampler Object
+    firstUpdate_ = true;
+  }
+
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if ( firstUpdate_ ) {
       gradient_ = (x.dual()).clone();
@@ -95,7 +105,7 @@ public:
     std::vector<Real> ptvals;
     while ( error > tol ) {
       vsampler_->refine();
-      for ( unsigned i = vsampler_->start(); i < vsampler_->numMySamples(); i++ ) {
+      for ( int i = vsampler_->start(); i < vsampler_->numMySamples(); i++ ) {
         pObj_->setParameter(vsampler_->getMyPoint(i));
         ptval  = pObj_->value(x,tol);
         myval += vsampler_->getMyWeight(i)*ptval;
@@ -127,7 +137,7 @@ public:
     Real error = 2.0*tol + 1.0;
     while ( error > tol ) {
       gsampler_->refine();
-      for ( unsigned i = gsampler_->start(); i < gsampler_->numMySamples(); i++ ) {
+      for ( int i = gsampler_->start(); i < gsampler_->numMySamples(); i++ ) {
         pObj_->setParameter(gsampler_->getMyPoint(i));
         pObj_->gradient(*ptg,x,tol);
         myg->axpy(gsampler_->getMyWeight(i),*ptg); 
@@ -155,7 +165,7 @@ public:
     hv.zero();
     Teuchos::RCP<Vector<Real> > pth = hv.clone(); pth->zero();
     Teuchos::RCP<Vector<Real> > myh = hv.clone(); myh->zero();
-    for ( unsigned i = 0; i < gsampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
       pObj_->setParameter(gsampler_->getMyPoint(i));
       pObj_->hessVec(*pth,v,x,tol);
       myh->axpy(gsampler_->getMyWeight(i),*pth);

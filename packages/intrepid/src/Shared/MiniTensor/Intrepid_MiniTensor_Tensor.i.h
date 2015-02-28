@@ -50,7 +50,7 @@ namespace Intrepid {
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor() :
-TensorBase<T, Store>::TensorBase()
+    TensorBase<T, Store>::TensorBase()
 {
   return;
 }
@@ -58,7 +58,7 @@ TensorBase<T, Store>::TensorBase()
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(Index const dimension) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
 }
@@ -69,7 +69,7 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(ComponentValue const value) :
-TensorBase<T, Store>::TensorBase(N, ORDER, value)
+    TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
@@ -77,7 +77,7 @@ TensorBase<T, Store>::TensorBase(N, ORDER, value)
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
 }
@@ -85,10 +85,234 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create tensor from array
 //
+//
+#ifdef HAVE_INTREPID_KOKKOSCORE
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(ArrayT & data, iType index1) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    iType index1,
+    iType index2) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    iType index1,
+    iType index2,
+    iType index3) :
+    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2, index3)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6) :
+    TensorBase<T, Store>::TensorBase(
+        N,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5,
+        index6)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(Index const dimension, ArrayT & data, iType index1) :
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    typename Kokkos::Impl::enable_if<
+        !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    iType index1,
+    iType index2) :
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1, index2)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5)
+{
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+Tensor<T, N>::Tensor(
+    Index const dimension,
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6) :
+    TensorBase<T, Store>::TensorBase(
+        dimension,
+        ORDER,
+        data,
+        index1,
+        index2,
+        index3,
+        index4,
+        index5,
+        index6)
+{
+  return;
+}
+#endif
+
+//FIXME: Irina D. add kokkos initializations for tensor (data)
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
+    TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
@@ -96,18 +320,17 @@ TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(Index const dimension, T const * data_ptr) :
-TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
+    TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
 }
-
 //
 // Copy constructor
 //
 template<typename T, Index N>
 inline
 Tensor<T, N>::Tensor(Tensor<T, N> const & A) :
-TensorBase<T, Store>::TensorBase(A)
+    TensorBase<T, Store>::TensorBase(A)
 {
   return;
 }
@@ -242,8 +465,7 @@ Tensor<T, N>::~Tensor()
 // Get dimension
 //
 template<typename T, Index N>
-inline
-Index
+inline Index
 Tensor<T, N>::get_dimension() const
 {
   return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
@@ -271,10 +493,9 @@ Tensor<T, N>::set_dimension(Index const dimension)
 // Indexing for constant tensor
 //
 template<typename T, Index N>
-inline
-T const &
+inline T const &
 Tensor<T, N>::operator()(Index const i, Index const j) const
-{
+    {
   Tensor<T, N> const &
   self = (*this);
 
@@ -288,8 +509,7 @@ Tensor<T, N>::operator()(Index const i, Index const j) const
 //Tensor indexing
 //
 template<typename T, Index N>
-inline
-T &
+inline T &
 Tensor<T, N>::operator()(Index const i, Index const j)
 {
   Tensor<T, N> &
@@ -329,6 +549,91 @@ Tensor<T, N>::fill(T const & s)
 // Fill components from array defined by pointer.
 //
 template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType index1)
+{
+  TensorBase<T, Store>::fill(data, index1);
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType index1, iType index2)
+{
+  TensorBase<T, Store>::fill(data, index1, index2);
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType1, typename iType2, typename iType3>
+inline
+void
+Tensor<T, N>::fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3)
+{
+  TensorBase<T, Store>::fill(data, index1, index2, index3);
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4)
+{
+  TensorBase<T, Store>::fill(data, index1, index2, index3, index4);
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5)
+{
+  TensorBase<T, Store>::fill(data, index1, index2, index3, index4, index5);
+  return;
+}
+
+template<typename T, Index N>
+template<class ArrayT, typename iType>
+inline
+void
+Tensor<T, N>::fill(
+    ArrayT & data,
+    iType index1,
+    iType index2,
+    iType index3,
+    iType index4,
+    iType index5,
+    iType index6)
+{
+  TensorBase<T, Store>::fill(
+      data,
+      index1,
+      index2,
+      index3,
+      index4,
+      index5,
+      index6);
+  return;
+}
+
+template<typename T, Index N>
 inline
 void
 Tensor<T, N>::fill(T const * data_ptr)
@@ -355,61 +660,60 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
 
   switch (dimension) {
 
-    default:
+  default:
+    TensorBase<T, Store>::fill(data_ptr);
+    break;
+
+  case 3:
+
+    switch (component_order) {
+
+    case CANONICAL:
       TensorBase<T, Store>::fill(data_ptr);
       break;
 
-    case 3:
+    case SIERRA_FULL:
+      //  0  1  2  3  4  5  6  7  8
+      // XX YY ZZ XY YZ ZX YX ZY XZ
+      //  0  4  8  1  5  6  3  7  2
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
 
-      switch (component_order) {
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
 
-        case CANONICAL:
-          TensorBase<T, Store>::fill(data_ptr);
-          break;
-
-        case SIERRA_FULL:
-
-          //  0  1  2  3  4  5  6  7  8
-          // XX YY ZZ XY YZ ZX YX ZY XZ
-          //  0  4  8  1  5  6  3  7  2
-          self[0] = data_ptr[0];
-          self[4] = data_ptr[1];
-          self[8] = data_ptr[2];
-
-          self[1] = data_ptr[3];
-          self[5] = data_ptr[4];
-          self[6] = data_ptr[5];
-
-          self[3] = data_ptr[6];
-          self[7] = data_ptr[7];
-          self[2] = data_ptr[8];
-          break;
-
-        case SIERRA_SYMMETRIC:
-          self[0] = data_ptr[0];
-          self[4] = data_ptr[1];
-          self[8] = data_ptr[2];
-
-          self[1] = data_ptr[3];
-          self[5] = data_ptr[4];
-          self[6] = data_ptr[5];
-
-          self[3] = data_ptr[3];
-          self[7] = data_ptr[4];
-          self[2] = data_ptr[5];
-          break;
-
-        default:
-          std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-          std::cerr << std::endl;
-          std::cerr << "Unknown component order.";
-          std::cerr << std::endl;
-          exit(1);
-          break;
-
-      }
-
+      self[3] = data_ptr[6];
+      self[7] = data_ptr[7];
+      self[2] = data_ptr[8];
       break;
+
+    case SIERRA_SYMMETRIC:
+      self[0] = data_ptr[0];
+      self[4] = data_ptr[1];
+      self[8] = data_ptr[2];
+
+      self[1] = data_ptr[3];
+      self[5] = data_ptr[4];
+      self[6] = data_ptr[5];
+
+      self[3] = data_ptr[3];
+      self[7] = data_ptr[4];
+      self[2] = data_ptr[5];
+      break;
+
+    default:
+      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+      std::cerr << std::endl;
+      std::cerr << "Unknown component order.";
+      std::cerr << std::endl;
+      exit(1);
+      break;
+
+    }
+
+    break;
   }
 
   return;
@@ -419,8 +723,7 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
 // Tensor addition
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -435,8 +738,7 @@ operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // Tensor subtraction
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -451,8 +753,7 @@ operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // Tensor minus
 //
 template<typename T, Index N>
-inline
-Tensor<T, N>
+inline Tensor<T, N>
 operator-(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -489,8 +790,8 @@ operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B)
 // Scalar tensor product
 //
 template<typename S, typename T, Index N>
-inline
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+inline typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
 operator*(S const & s, Tensor<T, N> const & A)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -505,8 +806,8 @@ operator*(S const & s, Tensor<T, N> const & A)
 // Tensor scalar product
 //
 template<typename S, typename T, Index N>
-inline
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+inline typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
 operator*(Tensor<T, N> const & A, S const & s)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -521,8 +822,7 @@ operator*(Tensor<T, N> const & A, S const & s)
 // Tensor scalar division
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 operator/(Tensor<T, N> const & A, S const & s)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -537,8 +837,7 @@ operator/(Tensor<T, N> const & A, S const & s)
 // Scalar tensor division
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 operator/(S const & s, Tensor<T, N> const & A)
 {
   Tensor<typename Promote<S, T>::type, N>
@@ -553,8 +852,7 @@ operator/(S const & s, Tensor<T, N> const & A)
 // Tensor vector product v = A u
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
 {
   return dot(A, u);
@@ -564,8 +862,7 @@ operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
 // Vector tensor product v = u A
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
 {
   return dot(u, A);
@@ -575,8 +872,7 @@ operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
 // Tensor dot product C = A B
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 operator*(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   return dot(A, B);
@@ -605,7 +901,7 @@ sort_permutation(Vector<T, N> const & u)
   Index const
   dimension = u.get_dimension();
 
-  std::vector<std::pair<T, Index > >
+  std::vector <std::pair<T, Index> >
   s(dimension);
 
   for (Index i = 0; i < dimension; ++i) {
@@ -613,7 +909,7 @@ sort_permutation(Vector<T, N> const & u)
     s[i].second = i;
   }
 
-  std::sort(s.begin(), s.end(), greater_than< std::pair<T, Index > > );
+  std::sort(s.begin(), s.end(), greater_than<std::pair<T, Index> >);
 
   Vector<T, N> v(dimension);
 
@@ -643,22 +939,22 @@ row(Tensor<T, N> const & A, Index const i)
   v(dimension);
 
   switch (dimension) {
-    default:
-      for (Index j = 0; j < dimension; ++j) {
-        v(j) = A(i,j);
-      }
-      break;
+  default:
+    for (Index j = 0; j < dimension; ++j) {
+      v(j) = A(i, j);
+    }
+    break;
 
-    case 2:
-      v(0) = A(i,0);
-      v(1) = A(i,1);
-      break;
+  case 2:
+    v(0) = A(i, 0);
+    v(1) = A(i, 1);
+    break;
 
-    case 3:
-      v(0) = A(i,0);
-      v(1) = A(i,1);
-      v(2) = A(i,2);
-      break;
+  case 3:
+    v(0) = A(i, 0);
+    v(1) = A(i, 1);
+    v(2) = A(i, 2);
+    break;
   }
 
   return v;
@@ -678,22 +974,22 @@ col(Tensor<T, N> const & A, Index const j)
   v(dimension);
 
   switch (dimension) {
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        v(i) = A(i,j);
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      v(i) = A(i, j);
+    }
+    break;
 
-    case 2:
-      v(0) = A(0,j);
-      v(1) = A(1,j);
-      break;
+  case 2:
+    v(0) = A(0, j);
+    v(1) = A(1, j);
+    break;
 
-    case 3:
-      v(0) = A(0,j);
-      v(1) = A(1,j);
-      v(2) = A(2,j);
-      break;
+  case 3:
+    v(0) = A(0, j);
+    v(1) = A(1, j);
+    v(2) = A(2, j);
+    break;
   }
 
   return v;
@@ -706,8 +1002,7 @@ col(Tensor<T, N> const & A, Index const j)
 // \return \f$ A u \f$
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 dot(Tensor<T, N> const & A, Vector<S, N> const & u)
 {
   Index const
@@ -720,29 +1015,29 @@ dot(Tensor<T, N> const & A, Vector<S, N> const & u)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
 
-        typename Promote<S, T>::type
-        s = 0.0;
+      typename Promote<S, T>::type
+      s = 0.0;
 
-        for (Index p = 0; p < dimension; ++p) {
-          s += A(i, p) * u(p);
-        }
-        v(i) = s;
+      for (Index p = 0; p < dimension; ++p) {
+        s += A(i, p) * u(p);
       }
-      break;
+      v(i) = s;
+    }
+    break;
 
-    case 3:
-      v(0) = A(0,0)*u(0) + A(0,1)*u(1) + A(0,2)*u(2);
-      v(1) = A(1,0)*u(0) + A(1,1)*u(1) + A(1,2)*u(2);
-      v(2) = A(2,0)*u(0) + A(2,1)*u(1) + A(2,2)*u(2);
-      break;
+  case 3:
+    v(0) = A(0, 0) * u(0) + A(0, 1) * u(1) + A(0, 2) * u(2);
+    v(1) = A(1, 0) * u(0) + A(1, 1) * u(1) + A(1, 2) * u(2);
+    v(2) = A(2, 0) * u(0) + A(2, 1) * u(1) + A(2, 2) * u(2);
+    break;
 
-    case 2:
-      v(0) = A(0,0)*u(0) + A(0,1)*u(1);
-      v(1) = A(1,0)*u(0) + A(1,1)*u(1);
-      break;
+  case 2:
+    v(0) = A(0, 0) * u(0) + A(0, 1) * u(1);
+    v(1) = A(1, 0) * u(0) + A(1, 1) * u(1);
+    break;
 
   }
 
@@ -756,8 +1051,7 @@ dot(Tensor<T, N> const & A, Vector<S, N> const & u)
 // \return \f$ u A = A^T u \f$
 //
 template<typename S, typename T, Index N>
-inline
-Vector<typename Promote<S, T>::type, N>
+inline Vector<typename Promote<S, T>::type, N>
 dot(Vector<S, N> const & u, Tensor<T, N> const & A)
 {
   Index const
@@ -770,29 +1064,29 @@ dot(Vector<S, N> const & u, Tensor<T, N> const & A)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
 
-        typename Promote<S, T>::type
-        s = 0.0;
+      typename Promote<S, T>::type
+      s = 0.0;
 
-        for (Index p = 0; p < dimension; ++p) {
-          s += A(p, i) * u(p);
-        }
-        v(i) = s;
+      for (Index p = 0; p < dimension; ++p) {
+        s += A(p, i) * u(p);
       }
-      break;
+      v(i) = s;
+    }
+    break;
 
-    case 3:
-      v(0) = A(0,0)*u(0) + A(1,0)*u(1) + A(2,0)*u(2);
-      v(1) = A(0,1)*u(0) + A(1,1)*u(1) + A(2,1)*u(2);
-      v(2) = A(0,2)*u(0) + A(1,2)*u(1) + A(2,2)*u(2);
-      break;
+  case 3:
+    v(0) = A(0, 0) * u(0) + A(1, 0) * u(1) + A(2, 0) * u(2);
+    v(1) = A(0, 1) * u(0) + A(1, 1) * u(1) + A(2, 1) * u(2);
+    v(2) = A(0, 2) * u(0) + A(1, 2) * u(1) + A(2, 2) * u(2);
+    break;
 
-    case 2:
-      v(0) = A(0,0)*u(0) + A(1,0)*u(1);
-      v(1) = A(0,1)*u(0) + A(1,1)*u(1);
-      break;
+  case 2:
+    v(0) = A(0, 0) * u(0) + A(1, 0) * u(1);
+    v(1) = A(0, 1) * u(0) + A(1, 1) * u(1);
+    break;
 
   }
 
@@ -806,8 +1100,7 @@ dot(Vector<S, N> const & u, Tensor<T, N> const & A)
 // \return a tensor \f$ A \cdot B \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -820,42 +1113,42 @@ dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        for (Index j = 0; j < dimension; ++j) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
 
-          typename Promote<S, T>::type
-          s = 0.0;
+        typename Promote<S, T>::type
+        s = 0.0;
 
-          for (Index p = 0; p < dimension; ++p) {
-            s += A(i, p) * B(p, j);
-          }
-          C(i, j) = s;
+        for (Index p = 0; p < dimension; ++p) {
+          s += A(i, p) * B(p, j);
         }
+        C(i, j) = s;
       }
-      break;
+    }
+    break;
 
-    case 3:
-      C(0,0) = A(0,0)*B(0,0) + A(0,1)*B(1,0) + A(0,2)*B(2,0);
-      C(0,1) = A(0,0)*B(0,1) + A(0,1)*B(1,1) + A(0,2)*B(2,1);
-      C(0,2) = A(0,0)*B(0,2) + A(0,1)*B(1,2) + A(0,2)*B(2,2);
+  case 3:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0) + A(0, 2) * B(2, 0);
+    C(0, 1) = A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1) + A(0, 2) * B(2, 1);
+    C(0, 2) = A(0, 0) * B(0, 2) + A(0, 1) * B(1, 2) + A(0, 2) * B(2, 2);
 
-      C(1,0) = A(1,0)*B(0,0) + A(1,1)*B(1,0) + A(1,2)*B(2,0);
-      C(1,1) = A(1,0)*B(0,1) + A(1,1)*B(1,1) + A(1,2)*B(2,1);
-      C(1,2) = A(1,0)*B(0,2) + A(1,1)*B(1,2) + A(1,2)*B(2,2);
+    C(1, 0) = A(1, 0) * B(0, 0) + A(1, 1) * B(1, 0) + A(1, 2) * B(2, 0);
+    C(1, 1) = A(1, 0) * B(0, 1) + A(1, 1) * B(1, 1) + A(1, 2) * B(2, 1);
+    C(1, 2) = A(1, 0) * B(0, 2) + A(1, 1) * B(1, 2) + A(1, 2) * B(2, 2);
 
-      C(2,0) = A(2,0)*B(0,0) + A(2,1)*B(1,0) + A(2,2)*B(2,0);
-      C(2,1) = A(2,0)*B(0,1) + A(2,1)*B(1,1) + A(2,2)*B(2,1);
-      C(2,2) = A(2,0)*B(0,2) + A(2,1)*B(1,2) + A(2,2)*B(2,2);
-      break;
+    C(2, 0) = A(2, 0) * B(0, 0) + A(2, 1) * B(1, 0) + A(2, 2) * B(2, 0);
+    C(2, 1) = A(2, 0) * B(0, 1) + A(2, 1) * B(1, 1) + A(2, 2) * B(2, 1);
+    C(2, 2) = A(2, 0) * B(0, 2) + A(2, 1) * B(1, 2) + A(2, 2) * B(2, 2);
+    break;
 
-    case 2:
-      C(0,0) = A(0,0)*B(0,0) + A(0,1)*B(1,0);
-      C(0,1) = A(0,0)*B(0,1) + A(0,1)*B(1,1);
+  case 2:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0);
+    C(0, 1) = A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1);
 
-      C(1,0) = A(1,0)*B(0,0) + A(1,1)*B(1,0);
-      C(1,1) = A(1,0)*B(0,1) + A(1,1)*B(1,1);
-      break;
+    C(1, 0) = A(1, 0) * B(0, 0) + A(1, 1) * B(1, 0);
+    C(1, 1) = A(1, 0) * B(0, 1) + A(1, 1) * B(1, 1);
+    break;
 
   }
 
@@ -869,8 +1162,7 @@ dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // \return a tensor \f$ A^T \cdot B \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -883,42 +1175,42 @@ t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        for (Index j = 0; j < dimension; ++j) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
 
-          typename Promote<S, T>::type
-          s = 0.0;
+        typename Promote<S, T>::type
+        s = 0.0;
 
-          for (Index p = 0; p < dimension; ++p) {
-            s += A(p, i) * B(p, j);
-          }
-          C(i, j) = s;
+        for (Index p = 0; p < dimension; ++p) {
+          s += A(p, i) * B(p, j);
         }
+        C(i, j) = s;
       }
-      break;
+    }
+    break;
 
-    case 3:
-      C(0,0) = A(0,0)*B(0,0) + A(1,0)*B(1,0) + A(2,0)*B(2,0);
-      C(0,1) = A(0,0)*B(0,1) + A(1,0)*B(1,1) + A(2,0)*B(2,1);
-      C(0,2) = A(0,0)*B(0,2) + A(1,0)*B(1,2) + A(2,0)*B(2,2);
+  case 3:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0) + A(2, 0) * B(2, 0);
+    C(0, 1) = A(0, 0) * B(0, 1) + A(1, 0) * B(1, 1) + A(2, 0) * B(2, 1);
+    C(0, 2) = A(0, 0) * B(0, 2) + A(1, 0) * B(1, 2) + A(2, 0) * B(2, 2);
 
-      C(1,0) = A(0,1)*B(0,0) + A(1,1)*B(1,0) + A(2,1)*B(2,0);
-      C(1,1) = A(0,1)*B(0,1) + A(1,1)*B(1,1) + A(2,1)*B(2,1);
-      C(1,2) = A(0,1)*B(0,2) + A(1,1)*B(1,2) + A(2,1)*B(2,2);
+    C(1, 0) = A(0, 1) * B(0, 0) + A(1, 1) * B(1, 0) + A(2, 1) * B(2, 0);
+    C(1, 1) = A(0, 1) * B(0, 1) + A(1, 1) * B(1, 1) + A(2, 1) * B(2, 1);
+    C(1, 2) = A(0, 1) * B(0, 2) + A(1, 1) * B(1, 2) + A(2, 1) * B(2, 2);
 
-      C(2,0) = A(0,2)*B(0,0) + A(1,2)*B(1,0) + A(2,2)*B(2,0);
-      C(2,1) = A(0,2)*B(0,1) + A(1,2)*B(1,1) + A(2,2)*B(2,1);
-      C(2,2) = A(0,2)*B(0,2) + A(1,2)*B(1,2) + A(2,2)*B(2,2);
-      break;
+    C(2, 0) = A(0, 2) * B(0, 0) + A(1, 2) * B(1, 0) + A(2, 2) * B(2, 0);
+    C(2, 1) = A(0, 2) * B(0, 1) + A(1, 2) * B(1, 1) + A(2, 2) * B(2, 1);
+    C(2, 2) = A(0, 2) * B(0, 2) + A(1, 2) * B(1, 2) + A(2, 2) * B(2, 2);
+    break;
 
-    case 2:
-      C(0,0) = A(0,0)*B(0,0) + A(1,0)*B(1,0);
-      C(0,1) = A(0,0)*B(0,1) + A(1,0)*B(1,1);
+  case 2:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0);
+    C(0, 1) = A(0, 0) * B(0, 1) + A(1, 0) * B(1, 1);
 
-      C(1,0) = A(0,1)*B(0,0) + A(1,1)*B(1,0);
-      C(1,1) = A(0,1)*B(0,1) + A(1,1)*B(1,1);
-      break;
+    C(1, 0) = A(0, 1) * B(0, 0) + A(1, 1) * B(1, 0);
+    C(1, 1) = A(0, 1) * B(0, 1) + A(1, 1) * B(1, 1);
+    break;
 
   }
 
@@ -932,8 +1224,7 @@ t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // \return a tensor \f$ A \cdot B^T \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -946,42 +1237,42 @@ dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        for (Index j = 0; j < dimension; ++j) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
 
-          typename Promote<S, T>::type
-          s = 0.0;
+        typename Promote<S, T>::type
+        s = 0.0;
 
-          for (Index p = 0; p < dimension; ++p) {
-            s += A(i, p) * B(j, p);
-          }
-          C(i, j) = s;
+        for (Index p = 0; p < dimension; ++p) {
+          s += A(i, p) * B(j, p);
         }
+        C(i, j) = s;
       }
-      break;
+    }
+    break;
 
-    case 3:
-      C(0,0) = A(0,0)*B(0,0) + A(0,1)*B(0,1) + A(0,2)*B(0,2);
-      C(0,1) = A(0,0)*B(1,0) + A(0,1)*B(1,1) + A(0,2)*B(1,2);
-      C(0,2) = A(0,0)*B(2,0) + A(0,1)*B(2,1) + A(0,2)*B(2,2);
+  case 3:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1) + A(0, 2) * B(0, 2);
+    C(0, 1) = A(0, 0) * B(1, 0) + A(0, 1) * B(1, 1) + A(0, 2) * B(1, 2);
+    C(0, 2) = A(0, 0) * B(2, 0) + A(0, 1) * B(2, 1) + A(0, 2) * B(2, 2);
 
-      C(1,0) = A(1,0)*B(0,0) + A(1,1)*B(0,1) + A(1,2)*B(0,2);
-      C(1,1) = A(1,0)*B(1,0) + A(1,1)*B(1,1) + A(1,2)*B(1,2);
-      C(1,2) = A(1,0)*B(2,0) + A(1,1)*B(2,1) + A(1,2)*B(2,2);
+    C(1, 0) = A(1, 0) * B(0, 0) + A(1, 1) * B(0, 1) + A(1, 2) * B(0, 2);
+    C(1, 1) = A(1, 0) * B(1, 0) + A(1, 1) * B(1, 1) + A(1, 2) * B(1, 2);
+    C(1, 2) = A(1, 0) * B(2, 0) + A(1, 1) * B(2, 1) + A(1, 2) * B(2, 2);
 
-      C(2,0) = A(2,0)*B(0,0) + A(2,1)*B(0,1) + A(2,2)*B(0,2);
-      C(2,1) = A(2,0)*B(1,0) + A(2,1)*B(1,1) + A(2,2)*B(1,2);
-      C(2,2) = A(2,0)*B(2,0) + A(2,1)*B(2,1) + A(2,2)*B(2,2);
-      break;
+    C(2, 0) = A(2, 0) * B(0, 0) + A(2, 1) * B(0, 1) + A(2, 2) * B(0, 2);
+    C(2, 1) = A(2, 0) * B(1, 0) + A(2, 1) * B(1, 1) + A(2, 2) * B(1, 2);
+    C(2, 2) = A(2, 0) * B(2, 0) + A(2, 1) * B(2, 1) + A(2, 2) * B(2, 2);
+    break;
 
-    case 2:
-      C(0,0) = A(0,0)*B(0,0) + A(0,1)*B(0,1);
-      C(0,1) = A(0,0)*B(1,0) + A(0,1)*B(1,1);
+  case 2:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1);
+    C(0, 1) = A(0, 0) * B(1, 0) + A(0, 1) * B(1, 1);
 
-      C(1,0) = A(1,0)*B(0,0) + A(1,1)*B(0,1);
-      C(1,1) = A(1,0)*B(1,0) + A(1,1)*B(1,1);
-      break;
+    C(1, 0) = A(1, 0) * B(0, 0) + A(1, 1) * B(0, 1);
+    C(1, 1) = A(1, 0) * B(1, 0) + A(1, 1) * B(1, 1);
+    break;
 
   }
 
@@ -995,8 +1286,7 @@ dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // \return a tensor \f$ A^T \cdot B^T \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -1009,42 +1299,42 @@ t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        for (Index j = 0; j < dimension; ++j) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
 
-          typename Promote<S, T>::type
-          s = 0.0;
+        typename Promote<S, T>::type
+        s = 0.0;
 
-          for (Index p = 0; p < dimension; ++p) {
-            s += A(p, i) * B(j, p);
-          }
-          C(i, j) = s;
+        for (Index p = 0; p < dimension; ++p) {
+          s += A(p, i) * B(j, p);
         }
+        C(i, j) = s;
       }
-      break;
+    }
+    break;
 
-    case 3:
-      C(0,0) = A(0,0)*B(0,0) + A(1,0)*B(0,1) + A(2,0)*B(0,2);
-      C(0,1) = A(0,0)*B(1,0) + A(1,0)*B(1,1) + A(2,0)*B(1,2);
-      C(0,2) = A(0,0)*B(2,0) + A(1,0)*B(2,1) + A(2,0)*B(2,2);
+  case 3:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(1, 0) * B(0, 1) + A(2, 0) * B(0, 2);
+    C(0, 1) = A(0, 0) * B(1, 0) + A(1, 0) * B(1, 1) + A(2, 0) * B(1, 2);
+    C(0, 2) = A(0, 0) * B(2, 0) + A(1, 0) * B(2, 1) + A(2, 0) * B(2, 2);
 
-      C(1,0) = A(0,1)*B(0,0) + A(1,1)*B(0,1) + A(2,1)*B(0,2);
-      C(1,1) = A(0,1)*B(1,0) + A(1,1)*B(1,1) + A(2,1)*B(1,2);
-      C(1,2) = A(0,1)*B(2,0) + A(1,1)*B(2,1) + A(2,1)*B(2,2);
+    C(1, 0) = A(0, 1) * B(0, 0) + A(1, 1) * B(0, 1) + A(2, 1) * B(0, 2);
+    C(1, 1) = A(0, 1) * B(1, 0) + A(1, 1) * B(1, 1) + A(2, 1) * B(1, 2);
+    C(1, 2) = A(0, 1) * B(2, 0) + A(1, 1) * B(2, 1) + A(2, 1) * B(2, 2);
 
-      C(2,0) = A(0,2)*B(0,0) + A(1,2)*B(0,1) + A(2,2)*B(0,2);
-      C(2,1) = A(0,2)*B(1,0) + A(1,2)*B(1,1) + A(2,2)*B(1,2);
-      C(2,2) = A(0,2)*B(2,0) + A(1,2)*B(2,1) + A(2,2)*B(2,2);
-      break;
+    C(2, 0) = A(0, 2) * B(0, 0) + A(1, 2) * B(0, 1) + A(2, 2) * B(0, 2);
+    C(2, 1) = A(0, 2) * B(1, 0) + A(1, 2) * B(1, 1) + A(2, 2) * B(1, 2);
+    C(2, 2) = A(0, 2) * B(2, 0) + A(1, 2) * B(2, 1) + A(2, 2) * B(2, 2);
+    break;
 
-    case 2:
-      C(0,0) = A(0,0)*B(0,0) + A(1,0)*B(0,1);
-      C(0,1) = A(0,0)*B(1,0) + A(1,0)*B(1,1);
+  case 2:
+    C(0, 0) = A(0, 0) * B(0, 0) + A(1, 0) * B(0, 1);
+    C(0, 1) = A(0, 0) * B(1, 0) + A(1, 0) * B(1, 1);
 
-      C(1,0) = A(0,1)*B(0,0) + A(1,1)*B(0,1);
-      C(1,1) = A(0,1)*B(1,0) + A(1,1)*B(1,1);
-      break;
+    C(1, 0) = A(0, 1) * B(0, 0) + A(1, 1) * B(0, 1);
+    C(1, 1) = A(0, 1) * B(1, 0) + A(1, 1) * B(1, 1);
+    break;
 
   }
 
@@ -1058,8 +1348,7 @@ t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // \return a scalar \f$ A : B \f$
 //
 template<typename S, typename T, Index N>
-inline
-typename Promote<S, T>::type
+inline typename Promote<S, T>::type
 dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -1072,24 +1361,24 @@ dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 
   switch (dimension) {
 
-    default:
-      for (Index p = 0; p < dimension; ++p) {
-        for (Index q = 0; q < dimension; ++q) {
-          s += A(p, q) * B(p, q);
-        }
+  default:
+    for (Index p = 0; p < dimension; ++p) {
+      for (Index q = 0; q < dimension; ++q) {
+        s += A(p, q) * B(p, q);
       }
-      break;
+    }
+    break;
 
-    case 3:
-      s+= A(0,0)*B(0,0) + A(0,1)*B(0,1) + A(0,2)*B(0,2);
-      s+= A(1,0)*B(1,0) + A(1,1)*B(1,1) + A(1,2)*B(1,2);
-      s+= A(2,0)*B(2,0) + A(2,1)*B(2,1) + A(2,2)*B(2,2);
-      break;
+  case 3:
+    s += A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1) + A(0, 2) * B(0, 2);
+    s += A(1, 0) * B(1, 0) + A(1, 1) * B(1, 1) + A(1, 2) * B(1, 2);
+    s += A(2, 0) * B(2, 0) + A(2, 1) * B(2, 1) + A(2, 2) * B(2, 2);
+    break;
 
-    case 2:
-      s+= A(0,0)*B(0,0) + A(0,1)*B(0,1);
-      s+= A(1,0)*B(1,0) + A(1,1)*B(1,1);
-      break;
+  case 2:
+    s += A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1);
+    s += A(1, 0) * B(1, 0) + A(1, 1) * B(1, 1);
+    break;
 
   }
 
@@ -1103,8 +1392,7 @@ dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 // \return \f$ u \otimes v \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   Index const
@@ -1117,39 +1405,39 @@ dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
+  default:
+    for (Index i = 0; i < dimension; ++i) {
 
-        typename Promote<S, T>::type const
-        s = u(i);
+      typename Promote<S, T>::type const
+      s = u(i);
 
-        for (Index j = 0; j < dimension; ++j) {
-          A(i, j) = s * v(j);
-        }
+      for (Index j = 0; j < dimension; ++j) {
+        A(i, j) = s * v(j);
       }
-      break;
+    }
+    break;
 
-    case 3:
-      A(0,0) = u(0) * v(0);
-      A(0,1) = u(0) * v(1);
-      A(0,2) = u(0) * v(2);
+  case 3:
+    A(0, 0) = u(0) * v(0);
+    A(0, 1) = u(0) * v(1);
+    A(0, 2) = u(0) * v(2);
 
-      A(1,0) = u(1) * v(0);
-      A(1,1) = u(1) * v(1);
-      A(1,2) = u(1) * v(2);
+    A(1, 0) = u(1) * v(0);
+    A(1, 1) = u(1) * v(1);
+    A(1, 2) = u(1) * v(2);
 
-      A(2,0) = u(2) * v(0);
-      A(2,1) = u(2) * v(1);
-      A(2,2) = u(2) * v(2);
-      break;
+    A(2, 0) = u(2) * v(0);
+    A(2, 1) = u(2) * v(1);
+    A(2, 2) = u(2) * v(2);
+    break;
 
-    case 2:
-      A(0,0) = u(0) * v(0);
-      A(0,1) = u(0) * v(1);
+  case 2:
+    A(0, 0) = u(0) * v(0);
+    A(0, 1) = u(0) * v(1);
 
-      A(1,0) = u(1) * v(0);
-      A(1,1) = u(1) * v(1);
-      break;
+    A(1, 0) = u(1) * v(0);
+    A(1, 1) = u(1) * v(1);
+    break;
 
   }
 
@@ -1163,8 +1451,7 @@ dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 // \return \f$ u \otimes v \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 bun(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   return dyad(u, v);
@@ -1177,8 +1464,7 @@ bun(Vector<S, N> const & u, Vector<T, N> const & v)
 // \return \f$ u \otimes v \f$
 //
 template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
+inline Tensor<typename Promote<S, T>::type, N>
 tensor(Vector<S, N> const & u, Vector<T, N> const & v)
 {
   return dyad(u, v);
@@ -1201,22 +1487,22 @@ diag(Vector<T, N> const & v)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        A(i, i) = v(i);
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      A(i, i) = v(i);
+    }
+    break;
 
-    case 3:
-      A(0,0) = v(0);
-      A(1,1) = v(1);
-      A(2,2) = v(2);
-      break;
+  case 3:
+    A(0, 0) = v(0);
+    A(1, 1) = v(1);
+    A(2, 2) = v(2);
+    break;
 
-    case 2:
-      A(0,0) = v(0);
-      A(1,1) = v(1);
-      break;
+  case 2:
+    A(0, 0) = v(0);
+    A(1, 1) = v(1);
+    break;
 
   }
 
@@ -1240,22 +1526,22 @@ diag(Tensor<T, N> const & A)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        v(i) = A(i, i);
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      v(i) = A(i, i);
+    }
+    break;
 
-    case 3:
-      v(0) = A(0,0);
-      v(1) = A(1,1);
-      v(2) = A(2,2);
-      break;
+  case 3:
+    v(0) = A(0, 0);
+    v(1) = A(1, 1);
+    v(2) = A(2, 2);
+    break;
 
-    case 2:
-      v(0) = A(0,0);
-      v(1) = A(1,1);
-      break;
+  case 2:
+    v(0) = A(0, 0);
+    v(1) = A(1, 1);
+    break;
 
   }
 
@@ -1267,24 +1553,21 @@ diag(Tensor<T, N> const & A)
 // All components are zero
 //
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 zero()
 {
   return Tensor<T, N>(N, ZEROS);
 }
 
 template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+inline Tensor<T, DYNAMIC> const
 zero(Index const dimension)
 {
   return Tensor<T, DYNAMIC>(dimension, ZEROS);
 }
 
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 zero(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
@@ -1296,7 +1579,7 @@ zero(Index const dimension)
 //
 namespace {
 
-template< typename T, Index N>
+template<typename T, Index N>
 inline
 void ones_in_diagonal(Tensor<T, N> & A)
 {
@@ -1305,22 +1588,22 @@ void ones_in_diagonal(Tensor<T, N> & A)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        A(i, i) = 1.0;
-      }
-      break;
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      A(i, i) = 1.0;
+    }
+    break;
 
-    case 3:
-      A(0,0) = 1.0;
-      A(1,1) = 1.0;
-      A(2,2) = 1.0;
-      break;
+  case 3:
+    A(0, 0) = 1.0;
+    A(1, 1) = 1.0;
+    A(2, 2) = 1.0;
+    break;
 
-    case 2:
-      A(0,0) = 1.0;
-      A(1,1) = 1.0;
-      break;
+  case 2:
+    A(0, 0) = 1.0;
+    A(1, 1) = 1.0;
+    break;
 
   }
 
@@ -1330,8 +1613,7 @@ void ones_in_diagonal(Tensor<T, N> & A)
 } // anonymous namespace
 
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 identity()
 {
   Tensor<T, N> A(N, ZEROS);
@@ -1340,8 +1622,7 @@ identity()
 }
 
 template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+inline Tensor<T, DYNAMIC> const
 identity(Index const dimension)
 {
   Tensor<T, DYNAMIC> A(dimension, ZEROS);
@@ -1350,8 +1631,7 @@ identity(Index const dimension)
 }
 
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 identity(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
@@ -1365,24 +1645,21 @@ identity(Index const dimension)
 // R^N 2nd-order identity tensor, à la Matlab
 //
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 eye()
 {
   return identity<T, N>();
 }
 
 template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+inline Tensor<T, DYNAMIC> const
 eye(Index const dimension)
 {
   return identity<T>(dimension);
 }
 
 template<typename T, Index N>
-inline
-Tensor<T, N> const
+inline Tensor<T, N> const
 eye(Index const dimension)
 {
   return identity<T, N>(dimension);
@@ -1392,8 +1669,7 @@ eye(Index const dimension)
 // R^N 2nd-order tensor transpose
 //
 template<typename T, Index N>
-inline
-Tensor<T, N>
+inline Tensor<T, N>
 transpose(Tensor<T, N> const & A)
 {
   Index const
@@ -1404,26 +1680,26 @@ transpose(Tensor<T, N> const & A)
 
   switch (dimension) {
 
-    default:
-      for (Index i = 0; i < dimension; ++i) {
-        for (Index j = i + 1; j < dimension; ++j) {
-          std::swap(B(i, j), B(j, i));
-        }
+  default:
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = i + 1; j < dimension; ++j) {
+        std::swap(B(i, j), B(j, i));
       }
-      break;
+    }
+    break;
 
-    case 3:
-      std::swap(B(0,1), B(1,0));
-      std::swap(B(0,2), B(2,0));
+  case 3:
+    std::swap(B(0, 1), B(1, 0));
+    std::swap(B(0, 2), B(2, 0));
 
-      std::swap(B(1,2), B(2,1));
+    std::swap(B(1, 2), B(2, 1));
 
-      break;
+    break;
 
-    case 2:
-      std::swap(B(0,1), B(1,0));
+  case 2:
+    std::swap(B(0, 1), B(1, 0));
 
-      break;
+    break;
 
   }
 
@@ -1435,8 +1711,7 @@ transpose(Tensor<T, N> const & A)
 // \return \f$ \frac{1}{2}(A + A^T) \f$
 //
 template<typename T, Index N>
-inline
-Tensor<T, N>
+inline Tensor<T, N>
 sym(Tensor<T, N> const & A)
 {
   Index const
@@ -1447,46 +1722,46 @@ sym(Tensor<T, N> const & A)
 
   switch (dimension) {
 
-    default:
-      B = 0.5 * (A + transpose(A));
-      break;
+  default:
+    B = 0.5 * (A + transpose(A));
+    break;
 
-    case 3:
+  case 3:
     {
-      T const & s00 = A(0,0);
-      T const & s11 = A(1,1);
-      T const & s22 = A(2,2);
+      T const & s00 = A(0, 0);
+      T const & s11 = A(1, 1);
+      T const & s22 = A(2, 2);
 
-      T const s01 = 0.5 * (A(0,1) + A(1,0));
-      T const s02 = 0.5 * (A(0,2) + A(2,0));
-      T const s12 = 0.5 * (A(1,2) + A(2,1));
+      T const s01 = 0.5 * (A(0, 1) + A(1, 0));
+      T const s02 = 0.5 * (A(0, 2) + A(2, 0));
+      T const s12 = 0.5 * (A(1, 2) + A(2, 1));
 
-      B(0,0) = s00;
-      B(0,1) = s01;
-      B(0,2) = s02;
+      B(0, 0) = s00;
+      B(0, 1) = s01;
+      B(0, 2) = s02;
 
-      B(1,0) = s01;
-      B(1,1) = s11;
-      B(1,2) = s12;
+      B(1, 0) = s01;
+      B(1, 1) = s11;
+      B(1, 2) = s12;
 
-      B(2,0) = s02;
-      B(2,1) = s12;
-      B(2,2) = s22;
+      B(2, 0) = s02;
+      B(2, 1) = s12;
+      B(2, 2) = s22;
     }
     break;
 
-    case 2:
+  case 2:
     {
-      T const & s00 = A(0,0);
-      T const & s11 = A(1,1);
+      T const & s00 = A(0, 0);
+      T const & s11 = A(1, 1);
 
-      T const s01 = 0.5 * (A(0,1) + A(1,0));
+      T const s01 = 0.5 * (A(0, 1) + A(1, 0));
 
-      B(0,0) = s00;
-      B(0,1) = s01;
+      B(0, 0) = s00;
+      B(0, 1) = s01;
 
-      B(1,0) = s01;
-      B(1,1) = s11;
+      B(1, 0) = s01;
+      B(1, 1) = s11;
     }
     break;
 
@@ -1500,8 +1775,7 @@ sym(Tensor<T, N> const & A)
 // \return \f$ \frac{1}{2}(A - A^T) \f$
 //
 template<typename T, Index N>
-inline
-Tensor<T, N>
+inline Tensor<T, N>
 skew(Tensor<T, N> const & A)
 {
   Index const
@@ -1512,39 +1786,39 @@ skew(Tensor<T, N> const & A)
 
   switch (dimension) {
 
-    default:
-      B = 0.5 * (A - transpose(A));
-      break;
+  default:
+    B = 0.5 * (A - transpose(A));
+    break;
 
-    case 3:
+  case 3:
     {
-      T const s01 = 0.5*(A(0,1)-A(1,0));
-      T const s02 = 0.5*(A(0,2)-A(2,0));
-      T const s12 = 0.5*(A(1,2)-A(2,1));
+      T const s01 = 0.5 * (A(0, 1) - A(1, 0));
+      T const s02 = 0.5 * (A(0, 2) - A(2, 0));
+      T const s12 = 0.5 * (A(1, 2) - A(2, 1));
 
-      B(0,0) = 0.0;
-      B(0,1) = s01;
-      B(0,2) = s02;
+      B(0, 0) = 0.0;
+      B(0, 1) = s01;
+      B(0, 2) = s02;
 
-      B(1,0) = -s01;
-      B(1,1) = 0.0;
-      B(1,2) = s12;
+      B(1, 0) = -s01;
+      B(1, 1) = 0.0;
+      B(1, 2) = s12;
 
-      B(2,0) = -s02;
-      B(2,1) = -s12;
-      B(2,2) = 0.0;
+      B(2, 0) = -s02;
+      B(2, 1) = -s12;
+      B(2, 2) = 0.0;
     }
     break;
 
-    case 2:
+  case 2:
     {
-      T const s01 = 0.5*(A(0,1)-A(1,0));
+      T const s01 = 0.5 * (A(0, 1) - A(1, 0));
 
-      B(0,0) = 0.0;
-      B(0,1) = s01;
+      B(0, 0) = 0.0;
+      B(0, 1) = s01;
 
-      B(1,0) = -s01;
-      B(1,1) = 0.0;
+      B(1, 0) = -s01;
+      B(1, 1) = 0.0;
     }
     break;
 
@@ -1559,8 +1833,7 @@ skew(Tensor<T, N> const & A)
 // \param u vector
 //
 template<typename T, Index N>
-inline
-Tensor<T, N>
+inline Tensor<T, N>
 skew(Vector<T, N> const & u)
 {
   Index const
@@ -1571,27 +1844,27 @@ skew(Vector<T, N> const & u)
 
   switch (dimension) {
 
-    case 3:
-      A(0,0) = 0.0;
-      A(0,1) = -u(2);
-      A(0,2) = u(1);
+  case 3:
+    A(0, 0) = 0.0;
+    A(0, 1) = -u(2);
+    A(0, 2) = u(1);
 
-      A(1,0) = u(2);
-      A(1,1) = 0.0;
-      A(1,2) = -u(0);
+    A(1, 0) = u(2);
+    A(1, 1) = 0.0;
+    A(1, 2) = -u(0);
 
-      A(2,0) = -u(1);
-      A(2,1) = u(0);
-      A(2,2) = 0.0;
-      break;
+    A(2, 0) = -u(1);
+    A(2, 1) = u(0);
+    A(2, 2) = 0.0;
+    break;
 
-    default:
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Skew from vector undefined for R^" << N;
-      std::cerr << std::endl;
-      exit(1);
-      break;
+  default:
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Skew from vector undefined for R^" << N;
+    std::cerr << std::endl;
+    exit(1);
+    break;
 
   }
 

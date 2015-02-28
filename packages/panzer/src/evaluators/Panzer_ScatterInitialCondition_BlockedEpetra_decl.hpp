@@ -43,7 +43,7 @@
 #ifndef PANZER_SCATTER_INITIAL_CONDITION_BLOCKEDEPETRA_DECL_HPP
 #define PANZER_SCATTER_INITIAL_CONDITION_BLOCKEDEPETRA_DECL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -71,9 +71,9 @@ class BlockedDOFManager; //forward declaration
     Default implementation throws exceptions.  Residual specialization will be used for setting solution.
 
 */
-template<typename EvalT, typename Traits,typename LO,typename GO> class ScatterInitialCondition_BlockedEpetra
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<EvalT, Traits>,
+template<typename EvalT, typename TRAITS,typename LO,typename GO> class ScatterInitialCondition_BlockedEpetra
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<EvalT, TRAITS>,
     public panzer::CloneableEvaluator {
 public:
    typedef typename EvalT::ScalarT ScalarT;
@@ -83,12 +83,12 @@ public:
                                          const Teuchos::ParameterList& p);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<EvalT,Traits,LO,GO>(Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<EvalT,TRAITS,LO,GO>(Teuchos::null,pl)); }
 
-  void postRegistrationSetup(typename Traits::SetupData d, PHX::FieldManager<Traits>& vm)
+  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm)
   { }
-  void evaluateFields(typename Traits::EvalData workset)
-  { std::cout << "unspecialized version of \"ScatterInitialCondition_BlockedEpetra::evaluateFields\" on \""+PHX::TypeString<EvalT>::value+"\" should not be used!" << std::endl;
+  void evaluateFields(typename TRAITS::EvalData workset)
+  { std::cout << "unspecialized version of \"ScatterInitialCondition_BlockedEpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
     TEUCHOS_ASSERT(false); }
   
 };
@@ -103,10 +103,10 @@ public:
 // **************************************************************
 // Residual 
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator {
   
 public:
@@ -115,15 +115,15 @@ public:
   ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
                                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
@@ -147,10 +147,10 @@ private:
 // **************************************************************
 // Tangent 
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+template<typename TRAITS,typename LO,typename GO>
+class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator {
   
 public:
@@ -159,15 +159,15 @@ public:
   ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
                                         const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void preEvaluate(typename Traits::PreEvalData d);
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
@@ -191,10 +191,10 @@ private:
 // **************************************************************
 // Jacobian
 // **************************************************************
-template<typename Traits,typename LO,typename GO>
-class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Jacobian,Traits,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>, 
+template<typename TRAITS,typename LO,typename GO>
+class ScatterInitialCondition_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
+  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>, 
     public panzer::CloneableEvaluator {
   
 public:
@@ -205,13 +205,13 @@ public:
   ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
                          const Teuchos::ParameterList& pl);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+			     PHX::FieldManager<TRAITS>& vm);
   
-  void evaluateFields(typename Traits::EvalData workset);
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
 private:
 

@@ -598,6 +598,7 @@ public:
           } else {
             row_view.value(j) += vals[i];
           }
+          break;
         }
       }
     }

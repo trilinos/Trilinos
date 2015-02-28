@@ -61,7 +61,8 @@ enum ComponentValue {
   SEQUENCE,
   RANDOM_UNIFORM,
   RANDOM_NORMAL,
-  NANS};
+  NANS
+};
 
 ///
 /// Base class for all vector and tensor types.
@@ -115,8 +116,66 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  TensorBase(Index const dimension, Index const order, T const * data_ptr);
+  // TensorBase for Kokkos Data Types (we can 't use pointers with Kokkos::View)
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1);
 
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
+
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  TensorBase(
+      Index const dimension,
+      Index const order,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+
+  //TensorBase for Shards and other data Types
+  TensorBase(Index const dimension, Index const order, T const * data_ptr);
   ///
   /// Copy constructor
   /// \param X the values of its components are copied to the new tensor
@@ -174,6 +233,51 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1);
+
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
+
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  void fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+
   void
   fill(T const * data_ptr);
 
@@ -268,7 +372,7 @@ norm_f_square(TensorBase<T, ST> const & X);
 /// Base addition
 ///
 template<typename R, typename S, typename T, typename SR, typename SS,
-typename ST>
+    typename ST>
 void
 add(
     TensorBase<R, SR> const & A,
@@ -279,7 +383,7 @@ add(
 /// Base subtraction
 ///
 template<typename R, typename S, typename T, typename SR, typename SS,
-typename ST>
+    typename ST>
 void
 subtract(
     TensorBase<R, SR> const & A,

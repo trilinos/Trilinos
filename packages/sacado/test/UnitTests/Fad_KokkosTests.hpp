@@ -28,7 +28,7 @@
 // @HEADER
 #include "Teuchos_TestingHelpers.hpp"
 
-#include "Sacado_Kokkos.hpp"
+#include "Sacado.hpp"
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,

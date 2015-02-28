@@ -89,14 +89,13 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < typename PCEType, typename Device>
+template < typename PCEType >
 struct PCEAllocation;
 
-template < typename Storage, typename Device >
-struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
-  typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -105,13 +104,16 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const CijkType& cijk,
            const unsigned pce_size) {
+    typedef MemSpace memory_space;
+    typedef ExecSpace execution_space;
 
     // Allocate space for contiguous UQ::PCE values
     // and for UQ::PCE itself.  We do this in one
@@ -121,8 +123,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     // this is the best choice from a locality perspective
     // either.
     const size_t num_vec = Impl::cardinality_count( shape );
+    const size_t count_scalars = num_vec * pce_size;
     const size_t size_scalars =
-      num_vec * pce_size * sizeof(scalar_type);
+      count_scalars * sizeof(scalar_type);
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
@@ -130,6 +133,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
+
+    // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count_scalars );
 
     // Construct each UQ::PCE using memory in ptr array,
     // setting pointer to UQ::PCE values from values array
@@ -140,8 +146,10 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     //   new (p++) value_type(pce_size, sp, false);
     //   sp += pce_size;
     // }
-    parallel_for( num_vec, VectorInit<CijkType>( ptr, m_scalar_ptr_on_device,
-                                                 cijk, pce_size ) );
+    parallel_for( num_vec,
+                  VectorInit<execution_space,CijkType>( ptr,
+                                                        m_scalar_ptr_on_device,
+                                                        cijk, pce_size ) );
 
     return ptr;
   }
@@ -151,6 +159,7 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   void assign(value_type * ptr) {
     if (ptr != 0) {
       m_scalar_ptr_on_device = ptr->coeff();
+      m_tracker.clear();
     }
     else {
       m_scalar_ptr_on_device = 0;
@@ -158,9 +167,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     }
   }
 
-  template <class CijkType>
+  template <class ExecSpace, class CijkType>
   struct VectorInit {
-    typedef typename Device::execution_space execution_space;
+    typedef ExecSpace execution_space;
     value_type* p;
     scalar_type* sp;
     CijkType cijk;
@@ -178,8 +187,8 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   };
 };
 
-template < typename Storage, typename Device >
-struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
 
@@ -189,16 +198,18 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
   KOKKOS_INLINE_FUNCTION
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
+  // Need assignment operator for const and non-const pce type
   template <typename pce_type>
   KOKKOS_INLINE_FUNCTION
-  PCEAllocation& operator=(const PCEAllocation<pce_type,Device>& rhs) {
+  PCEAllocation& operator=(const PCEAllocation<pce_type>& rhs) {
     m_scalar_ptr_on_device = rhs.m_scalar_ptr_on_device;
     m_tracker = rhs.m_tracker;
     return *this;
   }
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
@@ -294,8 +305,7 @@ private:
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::PCEAllocation<typename traits::value_type,
-                              typename traits::memory_space> allocation_type;
+  typedef Impl::PCEAllocation<typename traits::value_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
@@ -365,9 +375,7 @@ public:
                 typename traits::memory_traits > non_const_type ;
 
   // Host mirror
-  typedef View< typename Impl::RebindStokhosStorageDevice<
-                  typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space::memory_space >::type ,
+  typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -535,6 +543,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -545,15 +555,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties >
@@ -571,6 +578,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -581,15 +590,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -600,6 +606,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -618,15 +626,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -638,6 +643,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -656,15 +663,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   //------------------------------------
@@ -1237,11 +1241,11 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
 
       typedef View< typename src_type::non_const_data_type ,
                     typename src_type::array_layout ,
-                    typename src_type::device_type > tmp_src_type;
+                    typename src_type::execution_space > tmp_src_type;
       typedef typename tmp_src_type::array_type tmp_src_array_type;
       typedef View< typename dst_type::non_const_data_type ,
                     typename dst_type::array_layout ,
-                    typename dst_type::device_type > tmp_dst_type;
+                    typename dst_type::execution_space > tmp_dst_type;
       typedef typename tmp_dst_type::array_type tmp_dst_array_type;
 
       // Copy src into a contiguous view in src's memory space,
@@ -1998,15 +2002,18 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
+#if defined( KOKKOS_HAVE_CUDA )
+template< class OutputView , unsigned Rank >
+struct ViewFill< OutputView , Rank ,
+                 typename enable_if< is_same< typename OutputView::specialize,
+                                              ViewPCEContiguous >::value &&
+                                     is_same< typename OutputView::execution_space,
+                                              Cuda >::value >::type >
 {
-  typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
   typedef typename OutputView::const_value_type      const_value_type ;
   typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-  typedef typename OutputView::execution_space           execution_space ;
+  typedef typename OutputView::execution_space       execution_space ;
   typedef typename OutputView::size_type             size_type ;
 
   template <unsigned VectorLength>
@@ -2126,29 +2133,6 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     execution_space::fence();
   }
 
-};
-
-// Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,Cuda,L,M,ViewPCEContiguous> , Rank >
-{
-  typedef View<T,Cuda,L,M,ViewPCEContiguous>         OutputView ;
-  typedef View<T,
-               typename OutputView::array_layout,
-               typename OutputView::device_type,
-               typename OutputView::memory_traits>   OutputViewFull;
-  typedef typename OutputView::const_value_type      const_value_type ;
-  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-
-  ViewFill( const OutputView & output , const_value_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
-
-  ViewFill( const OutputView & output , const scalar_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
 };
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 

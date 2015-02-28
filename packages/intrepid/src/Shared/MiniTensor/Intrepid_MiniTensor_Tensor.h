@@ -48,7 +48,9 @@
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
-
+#ifdef HAVE_INTREPID_KOKKOSCORE
+#include<Kokkos_Core.hpp>
+#endif
 #include "Intrepid_MiniTensor_Vector.h"
 
 namespace Intrepid {
@@ -56,7 +58,9 @@ namespace Intrepid {
 ///
 /// Component ordering convention
 ///
-enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
+enum ComponentOrder {
+  CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC
+};
 
 template<typename T, Index N>
 struct tensor_store
@@ -68,7 +72,7 @@ struct tensor_store
 /// Second order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor : public TensorBase<T, typename tensor_store<T, N>::type>
+class Tensor: public TensorBase<T, typename tensor_store<T, N>::type>
 {
 public:
 
@@ -97,7 +101,10 @@ public:
   ///
   static
   Index
-  get_order() {return ORDER;}
+  get_order()
+  {
+    return ORDER;
+  }
 
   ///
   /// Constructor that initializes to NaNs
@@ -119,18 +126,107 @@ public:
 
   explicit
   Tensor(Index const dimension, ComponentValue const value);
-
   ///
   /// Create tensor from array
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  template<class ArrayT, typename iType>
+  Tensor(ArrayT & data, iType index1);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  Tensor(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+
+  template<class ArrayT, typename iType>
+  Tensor(Index const dimension, ArrayT & data, iType index1);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      Index const dimension,
+      typename Kokkos::Impl::enable_if<
+          !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1,
+      iType index2);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  Tensor(
+      Index const dimension,
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+  #endif
+
   explicit
   Tensor(T const * data_ptr);
 
   explicit
   Tensor(Index const dimension, T const * data_ptr);
-
   ///
   /// Copy constructor
   ///
@@ -167,7 +263,6 @@ public:
   explicit
   Tensor(Index const dimension, T const * data_ptr,
       ComponentOrder const component_order);
-
   ///
   /// Simple destructor
   ///
@@ -219,6 +314,43 @@ public:
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
+  template<class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType index1);
+
+  template<class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType index1, iType index2);
+
+  template<class ArrayT, typename iType1, typename iType2, typename iType3>
+  void
+  fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3);
+
+  template<class ArrayT, typename iType>
+  void
+  fill(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
+
+  template<class ArrayT, typename iType>
+  void
+  fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5);
+
+  template<class ArrayT, typename iType>
+  void
+  fill(
+      ArrayT & data,
+      iType index1,
+      iType index2,
+      iType index3,
+      iType index4,
+      iType index5,
+      iType index6);
+
   void
   fill(T const * data_ptr);
 
@@ -309,7 +441,7 @@ operator*(Tensor<S, N> const & A, Tensor<T, N> const & B);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
 operator*(S const & s, Tensor<T, N> const & A);
 
 ///
@@ -319,7 +451,7 @@ operator*(S const & s, Tensor<T, N> const & A);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
 operator*(Tensor<T, N> const & A, S const & s);
 
 ///

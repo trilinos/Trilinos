@@ -77,16 +77,26 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   cell_data_size = source.size() / source.dimension(0);
 }
+//*********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void NonlinearSource<EvalT, Traits>::operator () (const int i) const
+ {
+    for (int ip = 0; ip < density.dimension(1); ++ip)
+      source(i,ip) =  density(i,ip) * temp(i,ip) * temp(i,ip);
+  }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.num_cells * cell_data_size;
+/*  for (std::size_t cell = 0; cell < d.num_cells; ++cell)
+    for (std::size_t ip = 0; ip < density.dimension(1); ++ip)
+      source(cell,ip) =  density(cell,ip) * temp(cell,ip) * temp(cell,ip);
+*/
   
-  for (std::size_t i = 0; i < size; ++i)
-    source[i] = density[i] * temp[i] * temp[i];
+ Kokkos::parallel_for (d.num_cells, *this);
 }
 
 //**********************************************************************

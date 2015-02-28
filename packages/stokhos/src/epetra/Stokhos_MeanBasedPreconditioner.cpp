@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -73,33 +73,33 @@ Stokhos::MeanBasedPreconditioner::
 
 void
 Stokhos::MeanBasedPreconditioner::
-setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
-		    const Epetra_Vector& x)
+setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op,
+                    const Epetra_Vector& x)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(prec_factory == Teuchos::null, std::logic_error,
-		      "Error!  setupPreconditioner() cannot be called when " <<
-		      "prec_factory is null!" << std::endl);
+                      "Error!  setupPreconditioner() cannot be called when " <<
+                      "prec_factory is null!" << std::endl);
 
-   Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > sg_poly = 
+   Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > sg_poly =
      sg_op->getSGPolynomial();
    mean_prec = prec_factory->compute(sg_poly->getCoeffPtr(0));
-   label = std::string("Stokhos Mean-Based Preconditioner:\n") + 
-     std::string("		***** ") + 
+   label = std::string("Stokhos Mean-Based Preconditioner:\n") +
+     std::string("              ***** ") +
      std::string(mean_prec->Label());
    num_blocks = sg_basis()->size();
 }
 
-int 
+int
 Stokhos::MeanBasedPreconditioner::
-SetUseTranspose(bool UseTranspose) 
+SetUseTranspose(bool UseTheTranspose)
 {
-  useTranspose = UseTranspose;
+  useTranspose = UseTheTranspose;
   mean_prec->SetUseTranspose(useTranspose);
 
   return 0;
 }
 
-int 
+int
 Stokhos::MeanBasedPreconditioner::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -116,10 +116,10 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   else {
     int m = Input.NumVectors();
     Epetra_MultiVector input_block(
-      View, *base_map, Input.Values(), base_map->NumMyElements(), 
+      View, *base_map, Input.Values(), base_map->NumMyElements(),
       m*myBlockRows);
     Epetra_MultiVector result_block(
-      View, *base_map, Result.Values(), base_map->NumMyElements(), 
+      View, *base_map, Result.Values(), base_map->NumMyElements(),
       m*myBlockRows);
     mean_prec->Apply(input_block, result_block);
   }
@@ -127,7 +127,7 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-int 
+int
 Stokhos::MeanBasedPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -137,18 +137,18 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
     EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
     for (int i=0; i<myBlockRows; i++) {
-      mean_prec->ApplyInverse(*(sg_input.GetBlock(i)), 
-			      *(sg_result.GetBlock(i)));
+      mean_prec->ApplyInverse(*(sg_input.GetBlock(i)),
+                              *(sg_result.GetBlock(i)));
     }
   }
- 
+
   else {
     int m = Input.NumVectors();
     Epetra_MultiVector input_block(
-      View, *base_map, Input.Values(), base_map->NumMyElements(), 
+      View, *base_map, Input.Values(), base_map->NumMyElements(),
       m*myBlockRows);
     Epetra_MultiVector result_block(
-      View, *base_map, Result.Values(), base_map->NumMyElements(), 
+      View, *base_map, Result.Values(), base_map->NumMyElements(),
       m*myBlockRows);
     mean_prec->ApplyInverse(input_block, result_block);
   }
@@ -156,7 +156,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-double 
+double
 Stokhos::MeanBasedPreconditioner::
 NormInf() const
 {
@@ -164,41 +164,41 @@ NormInf() const
 }
 
 
-const char* 
+const char*
 Stokhos::MeanBasedPreconditioner::
 Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 Stokhos::MeanBasedPreconditioner::
 UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::MeanBasedPreconditioner::
 HasNormInf() const
 {
   return true;
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::MeanBasedPreconditioner::
 Comm() const
 {
   return *sg_comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MeanBasedPreconditioner::
 OperatorDomainMap() const
 {
   return *sg_map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MeanBasedPreconditioner::
 OperatorRangeMap() const
 {

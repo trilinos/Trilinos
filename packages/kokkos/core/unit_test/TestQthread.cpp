@@ -72,7 +72,12 @@ class qthread : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    int threads_count = 4 ;
+    const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+    const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+    const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
+
+    int threads_count = std::max( 1u , numa_count )
+                      * std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
     Kokkos::Qthread::initialize( threads_count );
     Kokkos::Qthread::print_configuration( std::cout , true );
   }
@@ -266,8 +271,7 @@ TEST_F( qthread , team_vector )
 TEST_F( qthread , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Qthread >( 10 );
-  TestTaskPolicy::test_future_array< Kokkos::Qthread >( 40 );
-  TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
+  // TestTaskPolicy::test_norm2< Kokkos::Qthread >( 1000 );
   for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Qthread >(i);
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Qthread >(i);
 }

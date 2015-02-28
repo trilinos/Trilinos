@@ -1,5 +1,258 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.12 Release Notes                                        #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.12 general release contains 55 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS,
+Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool,
+Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan,
+Zoltan2.
+
+
+Framework Release Notes:
+
+  - Changed minimum version of CMake from 2.7 to 2.8.11.
+
+MueLu 
+
+  Trilinos 11.12 is the initial release of MueLu.
+
+  MueLu is an extensible multigrid library that is part of the Trilinos project.
+  MueLu works with Epetra (32- and 64-bit versions) and Tpetra matrix types. The
+  library is written in C++ and allows for different ordinal (index) and scalar
+  types. MueLu is designed to be efficient on many different computer
+  architectures, from workstations to supercomputers. While it is MPI based,
+  MueLu is relies on the "MPI+X" principle, where "X" can be threading or CUDA.
+
+  MueLu's software design allows for the rapid introduction of new multigrid
+  algorithms.
+
+  MueLu provides a number of different multigrid algorithms:
+   - smoothed aggregation algebraic multigrid (AMG), appropriate for
+     Poisson-like
+     and elasticity problems
+   - Petrov-Galerkin aggregation AMG for convection-diffusion problems
+   - aggregation-based AMG for problems arising from the eddy current
+     formulation of Maxwell's equations
+
+  A PDF user's guide is located in muelu/doc/UsersGuide.  To compile it, simply
+  run "make".
+
+
+PyTrilinos
+
+  - General
+
+    * Got rid of NestedEpetra paradigm and now use relative imports to
+      address the problem that NestedEpetra wass supposed to solve.
+    * Changed build system for docstrings.  The docstrings are no longer
+      stored in the repository.  If the user wants docstrings, then
+      doxygen needs to be installed.  Docstrings are built during the
+      configuration phase.
+    * Fixed warnings due to Epetra 32/64 bit handling
+    * Added mpi4py support.  Specifically, the Eptra_MpiComm
+      constructors and Teuchos::MpiComm<> constructors can now take MPI
+      sub-communicators, provided by mpi4py.MPI.Comm class.  Ignored if
+      mpi4py is not found.
+    * Updated Developers Guide
+
+  - Teuchos module
+
+    * Support for the Teuchos::DataAccess enumeration.  This enables
+      certain Tpetra and Domi constructors
+    * Add Teuchos::Arrays of int, long, float and double, as valid types
+      for PyTrilinos ParameterLists
+
+  - DistArray Protocol
+
+    * Added support for the DistArray Protocol.  This is preliminary and
+      unfortunatley, does not provide any functionality with this
+      release.
+
+  - LOCA module
+
+    * Re-instated the LOCA wrappers.  These are still experimentaland
+      require SWIG 3.0.0 and Python 2.5.
+    * Re-introduction of the LOCA interface required the introduction of
+      relative imports, which require Python 2.5 or higher.
+
+  - Isorropia module
+
+    * Refactor of Isorropia directory structure.  This should not affect
+      users.
+
+
+Tpetra
+
+  - Kokkos refactor version of Tpetra
+
+    The "Kokkos refactor" version of Tpetra is the new version of Tpetra,
+    based on the new Kokkos programming model in the KokkosCore
+    subpackage.  It coexists with the "classic" version of Tpetra, which
+    is currently the default version.  We plan to deprecate the "classic"
+    version of Tpetra in the 11.14 minor release in January, and to remove
+    it entirely in the 12.0 major release.  Thus, the "Kokkos refactor"
+    version of Tpetra will become the /only/ version of Tpetra at that
+    time.
+
+    The implementation of the Kokkos refactor version of Tpetra currently
+    lives in src/kokkos_refactor.  It works by partial specialization on
+    the Node template parameter.  If you would like to enable this version
+    of Tpetra, here is a suggested set of CMake options:
+
+    # Enable OpenMP, and enable Kokkos' OpenMP backend
+    -D Trilinos_ENABLE_OpenMP:BOOL=ON
+
+    # Set Tpetra's default Node type to use new Kokkos with OpenMP.
+    # You could also use KokkosThreadsWrapperNode or even 
+    # KokkosSerialWrapperNode here.  
+    -D KokkosClassic_DefaultNode:STRING="Kokkos::Compat::KokkosOpenMPWrapperNode"
+
+    # Enable the Kokkos refactor version of Tpetra.
+    -D Tpetra_ENABLE_Kokkos_Refactor:BOOL=ON
+
+    In a debug build, you might like to enable Kokkos' run-time bounds
+    checking.  Here's how you do that.  These are _optional_ parameters
+    and their default values are both OFF (not enabled).
+
+    -D Kokkos_ENABLE_BOUNDS_CHECK:BOOL=ON
+    -D Kokkos_ENABLE_DEBUG:BOOL=ON
+
+    The following options may reduce build times if ETI is enabled:
+
+    # Disable KokkosClassic::OpenMPNode
+    -D KokkosClassic_ENABLE_OpenMP:BOOL=OFF
+    # Disable KokkosClassic::TPINode
+    -D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
+    # Shut off Kokkos' Pthreads back-end in favor of OpenMP
+    -D Kokkos_ENABLE_Pthread:BOOL=OFF
+
+    You must also enable the following subpackages explicitly, since they
+    are not Primary Tested at the moment:
+
+      - KokkosCore
+      - KokkosCompat
+      - KokkosContainers
+      - KokkosLinAlg
+      - KokkosAlgorithms
+      - KokkosMpiComm
+
+    If Tpetra_ENABLE_Kokkos_Refactor is ON but any of those subpackages
+    are not enabled, CMake will stop with an error message that tells you
+    what subpackages to enable.
+
+    If you would like to build with the above subpackages enabled, but
+    would /not/ like to build Tpetra with any of the new Kokkos Nodes, you
+    may try setting the CMake KokkosClassic_ENABLE_KokkosCompat to OFF.
+    This works for me as of 07 Oct 2014, but I do not recommend it, and it
+    is not supported.
+
+    Fun fact: there are three relevant combinations of (new Kokkos
+    enabled?, Kokkos refactor enabled?), and we test them all!  You can
+    use the new Kokkos Node types with "classic" Tpetra, or you can use
+    them with "Kokkos refactor" Tpetra.
+
+    Most Tpetra tests exercise all enabled Node types, or just use the
+    default Node type.  Ifpack2 tests only use the default Node type
+    currently.  That's why the above build configuration changes the
+    default Node type.  That way, all packages that depend on Tpetra will
+    use the Kokkos refactor version of Tpetra in /their/ tests by default.
+
+
+  - Full set of default values of template parameters
+
+    Usability improvement!  Most Tpetra classes now come with a full set
+    of default values of template parameters.  In many cases, you need no
+    longer specify _any_ template parameters' values, if you only intend
+    to use their defaults.  For example, you may now write the following:
+
+      // All default template parameters!
+      Tpetra::Map<> map (...);
+
+      // No "typename" because Map<> is a concrete type.
+      typedef Tpetra::Map<>::local_ordinal_type LO;
+      typedef Tpetra::Map<>::global_ordinal_type GO;
+
+      for (LO i_lcl = map.getMinLocalIndex (); 
+           i_lcl <= map.getMaxLocalIndex (); ++i_lcl) {
+        const GO i_gbl = map.getGlobalElement (i_lcl);
+        // ...
+      }
+
+      // All default template parameters!
+      // Scalar defaults to double.
+      // LocalOrdinal, GlobalOrdinal, and Node default
+      // to the same values as those of Map<> above.
+      Tpetra::MultiVector<> X (...);
+
+    Also, if you need to specify (say) GlobalOrdinal explicitly, you don't
+    have to specify Node explicitly.  For example:
+
+      // Don't need to specify Node; it takes its default value.
+      Tpetra::Map<int, long long> map (...);
+      Tpetra::MultiVector<double, int, long long> X (...);
+
+    You may specify the default value of Node at Trilinos configure time
+    (that is, when running CMake).  The current default is
+    KokkosClassic::SerialNode (no threads; MPI only).  This will change,
+    but it will always have a reasonable value for conventional multicore
+    processors.
+
+    Please, _please_ prefer default values of template parameters!  This
+    will make your code shorter, allow more flexibility at configure time,
+    and might even make builds a bit faster.  All Tpetra classes come with
+    public typedefs, so you can pick up scalar_type (if applicable),
+    local_ordinal_type, global_ordinal_type, and node_type from Tpetra
+    directly, rather than specifying them explicitly.
+
+  - Removed the LocalMatOps template parameter
+
+    CrsGraph, CrsMatrix, VbrMatrix, and other classes used to have a
+    LocalMatOps template parameter.  This was the fourth template
+    parameter of CrsGraph and the fifth template parameter of CrsMatrix.
+    It was always optional.  Chris Baker intended it as an extension point
+    for users or third-party vendors to insert their own sparse
+    matrix-vector multiply or triangular solve routines.  However, no one
+    ever used it for this purpose as far as we know.  When it started to
+    hinder the Kokkos refactor effort (see release notes for Trilinos
+    11.10 below), we removed it.  This should speed up compilation times.
+
+    Lesson: It's always easier to _add_ a template parameter (at the end,
+    if it's optional) than it is to remove one.
+
+    Getting rid of LocalMatOps does amount to a backwards incompatible
+    interface change.  However, we deemed it a harmless change, for the
+    following reasons:
+
+      1. LocalMatOps has a reasonable default value.
+      2. As far as I know, no one other than Chris Baker and myself ever
+         wrote or used alternate implementations of LocalMatOps.
+      3. Trilinos packages or applications which bothered to specify
+         LocalMatOps never used anything other than the default value.
+
+    Thus, it never even crossed my mind that applications would bother to
+    specify this thing.  Unfortunately, some applications may still
+    LocalMatOps explicitly.  This typedef is unnecessary.  You do not need
+    to specify this template parameter.  The default value was always
+    perfectly fine and has been for years.
+
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.10 Release Notes                                         #
 #                                                                             #
 ###############################################################################
