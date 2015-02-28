@@ -265,7 +265,6 @@ public:
     size_t nadj = 0;
     if (availAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
-      using Tpetra::global_size_t;
       using Teuchos::Array;
       using Teuchos::as;
       using Teuchos::RCP;
@@ -356,7 +355,7 @@ public:
       for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
 
         //globalRow for Tpetra Graph
-        global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
+        gno_t globalRowT = as<gno_t> (Ids[localElement]);
 
 // KDD can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
