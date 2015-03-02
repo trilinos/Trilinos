@@ -61,17 +61,23 @@
 #include <Xpetra_RowMatrix.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 namespace Zoltan2{
 
+// Default local ordinal
 typedef int default_lno_t;
 
-typedef int default_part_t;  // Default part number type.
-                             // Restrictions in MPI interface will make it
+// Default part number type.
+typedef int default_part_t;  // Restrictions in MPI interface will make it
                              // somewhat difficult to change default_part_t to
                              // long long, since we use part_t for ranks
                              // and we sometimes broadcast arrays whose
                              // size has type part_t.
+
+// Until Kokkos node types are supported, use default
+typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t; 
+
 
 #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
 typedef float default_scalar_t;
@@ -207,9 +213,9 @@ struct InputTraits {
   typedef default_part_t part_t;
 
   /*! \brief  The Kokkos node type.  This is only meaningful for users
-   *             of Tpetra objects.
+   *          of Tpetra objects.
    */
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+  typedef default_node_t node_t;
 
   /*! \brief  The name of the user's input object.
    */
@@ -271,7 +277,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int gno_t;
   typedef int zgid_t;
   typedef Zoltan2::default_part_t  part_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_CrsMatrix";}
 };
 
@@ -341,7 +347,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef int   gno_t;
   typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_CrsGraph";}
 };
 
@@ -386,7 +392,7 @@ struct InputTraits<Epetra_Vector>
   typedef int   gno_t;
   typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_Vector";}
 };
 
@@ -428,7 +434,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef int   gno_t;
   typedef int   zgid_t;
   typedef Zoltan2::default_part_t  part_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+  typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_MultiVector";}
 };
 
