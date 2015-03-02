@@ -1,10 +1,10 @@
 #!/usr/bin/python
 import glob
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
-import re
 import optparse
+import re
 
 
 def sort_nicely(l):
@@ -63,6 +63,9 @@ def main():
   min_color = 0
   max_color = len(cvals)-1
 
+  plt.ion()
+  fig = plt.figure()
+
   k = 0
   for file in sort_nicely(glob.glob(data + "-l" + str(L) + "-" + V + "-*" + ("" if V == 'p' else ".1"))):
     k = k+1
@@ -73,7 +76,7 @@ def main():
     assert len(colors) == len(x)
 
     # one can use any key on keyboard to progress to the next plot
-    cid = plt.figure().canvas.mpl_connect('key_press_event', moveon)
+    cid = fig.canvas.mpl_connect('key_press_event', moveon)
 
     if V == 'v':
       plt.subplot(121)
@@ -96,7 +99,10 @@ def main():
     if ui == False:
       plt.savefig(file + '.png', format='png')
     else:
-      plt.show()
+      fig.canvas.draw()
+
+    raw_input('>')
+    plt.clf()
 
 if __name__ == '__main__':
     main()
