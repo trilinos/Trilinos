@@ -53,6 +53,7 @@
 
 int main( int argc , char ** argv )
 {
+#if defined( KOKKOS_HAVE_CUDA ) || defined( KOKKOS_HAVE_PTHREAD ) || defined( KOKKOS_HAVE_OPENMP )
   Kokkos::initialize( argc , argv );
 
   int length_array = 100000 ;
@@ -87,6 +88,7 @@ int main( int argc , char ** argv )
 #endif
 
   Kokkos::finalize();
+#endif
 
   return 0 ;
 }
