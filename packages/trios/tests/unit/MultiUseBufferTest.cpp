@@ -98,8 +98,10 @@ int one_mb=1024*1024;
 
 int client_test1(NNTI_buffer_t *local_multiuse_mr);
 int client_test2(NNTI_buffer_t *local_multiuse_mr);
+int client_test3(NNTI_buffer_t *local_multiuse_mr);
 void server_test1(NNTI_buffer_t *local_multiuse_mr);
 void server_test2(NNTI_buffer_t *local_multiuse_mr);
+void server_test3(NNTI_buffer_t *local_multiuse_mr);
 
 
 
@@ -132,7 +134,7 @@ int client_test1(NNTI_buffer_t *local_multiuse_mr)
     int multiuse_mr_size;
     int recv_mr_size;
 
-    NNTI_buffer_t        send_mr, recv_mr; /* contiguous send/recv registered memory regions */
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
     NNTI_work_request_t  send_wr, recv_wr; /* work requests */
 
     XDR send_xdrs;
@@ -167,6 +169,7 @@ int client_test1(NNTI_buffer_t *local_multiuse_mr)
 
     NNTI_create_work_request(&recv_mr, &recv_wr);
     NNTI_wait(&recv_wr, 1000, &wait_status1);
+    NNTI_destroy_work_request(&recv_wr);
 
     server_checksums=(uint64_t*)NNTI_BUFFER_C_POINTER(&recv_mr);
 
@@ -208,7 +211,7 @@ int client_test2(NNTI_buffer_t *local_multiuse_mr)
     int multiuse_mr_size;
     int recv_mr_size;
 
-    NNTI_buffer_t        send_mr, recv_mr; /* contiguous send/recv registered memory regions */
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
     NNTI_work_request_t  send_wr, recv_wr; /* work requests */
 
     XDR send_xdrs;
@@ -243,12 +246,132 @@ int client_test2(NNTI_buffer_t *local_multiuse_mr)
 
     NNTI_create_work_request(&recv_mr, &recv_wr);
     NNTI_wait(&recv_wr, 1000, &wait_status1);
+    NNTI_destroy_work_request(&recv_wr);
 
     server_checksums=(uint64_t*)NNTI_BUFFER_C_POINTER(&recv_mr);
 
     /* checksums PUT */
     buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
     for (int i=0;i<NUM_SEGMENTS;i++) {
+        std::stringstream out(std::stringstream::out);
+        for (int j=0;j<5;j++) {
+            out << (buf + (i*one_mb))[j];
+        }
+        log_debug(multiuse_debug_level, "client PUT segments[%d]=%s", i, out.str().c_str());
+
+        uint64_t my_checksum=calc_checksum(buf + (i*one_mb), one_mb);
+        log_debug(multiuse_debug_level, "server_checksums[%d]=%X ; my_checksum=%X", i, server_checksums[i], my_checksum);
+        if (server_checksums[i] != my_checksum) {
+            success=FALSE;
+        }
+    }
+
+    NNTI_free(&send_mr);
+    NNTI_free(&recv_mr);
+
+    log_debug(multiuse_debug_level, "exit");
+
+    return success;
+}
+
+/*
+ *  PUT target and GET initiator
+ */
+int client_test3(NNTI_buffer_t *local_multiuse_mr)
+{
+    int success=TRUE;
+
+    uint64_t *server_checksums=NULL;
+
+    char *buf=NULL;
+
+    int multiuse_mr_size;
+    int recv_mr_size;
+
+    NNTI_buffer_t        remote_multiuse_mr; /* registered memory regions */
+    NNTI_work_request_t  multiuse_wr;
+
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
+    NNTI_work_request_t  send_wr, recv_wr; /* work requests */
+
+    XDR send_xdrs;
+    XDR recv_xdrs;
+
+
+    log_debug(multiuse_debug_level, "enter");
+
+    NNTI_alloc(&trans_hdl, NNTI_MULTIUSE_REQUEST_SIZE, 1, NNTI_SEND_SRC, &send_mr);
+    NNTI_alloc(&trans_hdl, NNTI_MULTIUSE_RESULT_SIZE, 1, NNTI_RECV_DST, &recv_mr);
+
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=0;i<NUM_SEGMENTS;i++) {
+        memset(buf + (i*one_mb), 'C'+i, one_mb);
+    }
+
+    /* XDR encode the get, put and recv buffers */
+    multiuse_mr_size  = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, local_multiuse_mr);
+    recv_mr_size = xdr_sizeof((xdrproc_t)&xdr_NNTI_buffer_t, &recv_mr);
+
+    log_debug(multiuse_debug_level, "multiuse_mr_size=%d ; recv_mr_size=%d", multiuse_mr_size, recv_mr_size);
+
+    xdrmem_create(&send_xdrs, NNTI_BUFFER_C_POINTER(&send_mr),
+            NNTI_BUFFER_SIZE(&send_mr), XDR_ENCODE);
+    xdr_NNTI_buffer_t(&send_xdrs, local_multiuse_mr);
+
+    xdrmem_create(&send_xdrs, NNTI_BUFFER_C_POINTER(&send_mr)+multiuse_mr_size,
+            NNTI_BUFFER_SIZE(&send_mr)-multiuse_mr_size, XDR_ENCODE);
+    xdr_NNTI_buffer_t(&send_xdrs, &recv_mr);
+
+    NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+    NNTI_wait(&send_wr, 1000, &wait_status1);
+
+    NNTI_create_work_request(&recv_mr, &recv_wr);
+    NNTI_wait(&recv_wr, 1000, &wait_status1);
+    NNTI_destroy_work_request(&recv_wr);
+
+    xdrmem_create(&recv_xdrs, (char *)wait_status1.start+wait_status1.offset,
+            NNTI_MULTIUSE_REQUEST_SIZE, XDR_DECODE);
+
+    memset(&remote_multiuse_mr, 0, sizeof(NNTI_buffer_t));
+    xdr_NNTI_buffer_t(&recv_xdrs, &remote_multiuse_mr);
+
+    /*
+     * this is just an ACK that we are done with the recv_mr.
+     */
+    NNTI_send(&server_hdl, &send_mr, NULL, &send_wr);
+    NNTI_wait(&send_wr, 1000, &wait_status1);
+
+    /*
+     * Getting the bottom half of server buffer into my bottom half.
+     */
+    NNTI_get(&remote_multiuse_mr, 0, (NUM_SEGMENTS/2)*one_mb, local_multiuse_mr, 0, &multiuse_wr);
+    NNTI_wait(&multiuse_wr, 1000, &wait_status1);
+
+    NNTI_create_work_request(&recv_mr, &recv_wr);
+    NNTI_wait(&recv_wr, 1000, &wait_status1);
+    NNTI_destroy_work_request(&recv_wr);
+
+    server_checksums=(uint64_t*)NNTI_BUFFER_C_POINTER(&recv_mr);
+
+    /* checksums GET */
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=0;i<NUM_SEGMENTS/2;i++) {
+        std::stringstream out(std::stringstream::out);
+        for (int j=0;j<5;j++) {
+            out << (buf + (i*one_mb))[j];
+        }
+        log_debug(multiuse_debug_level, "client GET segments[%d]=%s", i, out.str().c_str());
+
+        uint64_t my_checksum=calc_checksum(buf + (i*one_mb), one_mb);
+        log_debug(multiuse_debug_level, "server_checksums[%d]=%X ; my_checksum=%X", i, server_checksums[i], my_checksum);
+        if (server_checksums[i] != my_checksum) {
+            success=FALSE;
+        }
+    }
+
+    /* checksums PUT */
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=NUM_SEGMENTS/2;i<NUM_SEGMENTS;i++) {
         std::stringstream out(std::stringstream::out);
         for (int j=0;j<5;j++) {
             out << (buf + (i*one_mb))[j];
@@ -302,6 +425,14 @@ int client(void)
     }
     fprintf(stdout, "TEST #2 passed\n");
 
+    /* I am the PUT target and the GET initiator */
+    success = client_test3(&local_multiuse_mr);
+    if (success == FALSE) {
+        fprintf(stdout, "TEST #3 failed.  Aborting...\n");
+        goto out;
+    }
+    fprintf(stdout, "TEST #3 passed\n");
+
     NNTI_get_url(&trans_hdl, url, NNTI_URL_LEN);
     MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
     log_debug(multiuse_debug_level, "multiuse client url is %s", url);
@@ -311,6 +442,9 @@ int client(void)
 
     /* I play the initiator role here */
     server_test2(&local_multiuse_mr);
+
+    /* I am the PUT initiator and the GET target */
+    server_test3(&local_multiuse_mr);
 
 out:
     NNTI_free(&local_multiuse_mr);
@@ -329,10 +463,10 @@ void server_test1(NNTI_buffer_t *local_multiuse_mr)
 {
     char *buf;
 
-    NNTI_buffer_t        remote_multiuse_mr; /* contiguous registered memory regions */
+    NNTI_buffer_t        remote_multiuse_mr; /* registered memory regions */
     NNTI_work_request_t  multiuse_wr; /* work requests */
 
-    NNTI_buffer_t        send_mr, recv_mr; /* contiguous send/recv registered memory regions */
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
     NNTI_work_request_t  send_wr;          /* work requests */
 
     XDR recv_xdrs;
@@ -349,6 +483,7 @@ void server_test1(NNTI_buffer_t *local_multiuse_mr)
 
     NNTI_create_work_request(&queue_mr, &queue_wr);
     NNTI_wait(&queue_wr, -1, &queue_status);
+    NNTI_destroy_work_request(&queue_wr);
 
 
     /* XDR decode the get, put and recv buffers */
@@ -403,10 +538,10 @@ void server_test2(NNTI_buffer_t *local_multiuse_mr)
 {
     char *buf;
 
-    NNTI_buffer_t        remote_multiuse_mr; /* contiguous registered memory regions */
+    NNTI_buffer_t        remote_multiuse_mr; /* registered memory regions */
     NNTI_work_request_t  multiuse_wr; /* work requests */
 
-    NNTI_buffer_t        send_mr, recv_mr; /* contiguous send/recv registered memory regions */
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
     NNTI_work_request_t  send_wr;          /* work requests */
 
     XDR recv_xdrs;
@@ -423,6 +558,7 @@ void server_test2(NNTI_buffer_t *local_multiuse_mr)
 
     NNTI_create_work_request(&queue_mr, &queue_wr);
     NNTI_wait(&queue_wr, -1, &queue_status);
+    NNTI_destroy_work_request(&queue_wr);
 
 
     /* XDR decode the get, put and recv buffers */
@@ -470,6 +606,109 @@ void server_test2(NNTI_buffer_t *local_multiuse_mr)
     log_debug(multiuse_debug_level, "exit");
 }
 
+/*
+ *  PUT initiator and GET target
+ */
+void server_test3(NNTI_buffer_t *local_multiuse_mr)
+{
+    char *buf;
+
+    NNTI_buffer_t        remote_multiuse_mr; /* registered memory regions */
+    NNTI_work_request_t  multiuse_wr; /* work requests */
+
+    NNTI_buffer_t        send_mr, recv_mr; /* send/recv registered memory regions */
+    NNTI_work_request_t  send_wr;          /* work requests */
+
+    XDR send_xdrs;
+    XDR recv_xdrs;
+
+
+    log_debug(multiuse_debug_level, "enter");
+
+    NNTI_alloc(&trans_hdl, NNTI_MULTIUSE_REQUEST_SIZE, 1, NNTI_SEND_SRC, &send_mr);
+
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=0;i<NUM_SEGMENTS;i++) {
+        memset(buf + (i*one_mb), 'M'+i, one_mb);
+    }
+
+    NNTI_create_work_request(&queue_mr, &queue_wr);
+    NNTI_wait(&queue_wr, -1, &queue_status);
+    NNTI_destroy_work_request(&queue_wr);
+
+
+    /* XDR decode the get, put and recv buffers */
+    xdrmem_create(&recv_xdrs, (char *)queue_status.start+queue_status.offset,
+            NNTI_MULTIUSE_REQUEST_SIZE, XDR_DECODE);
+
+    memset(&remote_multiuse_mr, 0, sizeof(NNTI_buffer_t));
+    memset(&recv_mr, 0, sizeof(NNTI_buffer_t));
+    xdr_NNTI_buffer_t(&recv_xdrs, &remote_multiuse_mr);
+    xdr_NNTI_buffer_t(&recv_xdrs, &recv_mr);
+
+    xdrmem_create(&send_xdrs, NNTI_BUFFER_C_POINTER(&send_mr),
+            NNTI_BUFFER_SIZE(&send_mr), XDR_ENCODE);
+    xdr_NNTI_buffer_t(&send_xdrs, local_multiuse_mr);
+
+    NNTI_send(&queue_status.src, &send_mr, &recv_mr, &send_wr);
+    NNTI_wait(&send_wr, 1000, &wait_status1);
+
+    if (logging_debug(multiuse_debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "remote_multiuse_mr",
+                "after XDR decode", &remote_multiuse_mr);
+        fprint_NNTI_buffer(logger_get_file(), "recv_mr",
+                "after XDR decode", &recv_mr);
+
+        fprint_NNTI_buffer(logger_get_file(), "local_multiuse_mr",
+                "before PUT", local_multiuse_mr);
+    }
+
+    NNTI_create_work_request(&queue_mr, &queue_wr);
+    NNTI_wait(&queue_wr, -1, &queue_status);
+    NNTI_destroy_work_request(&queue_wr);
+
+    /*
+     * Putting the top half of my buffer into clients top half.
+     */
+    NNTI_put(local_multiuse_mr, (NUM_SEGMENTS/2)*one_mb, (NUM_SEGMENTS/2)*one_mb, &remote_multiuse_mr, (NUM_SEGMENTS/2)*one_mb, &multiuse_wr);
+    NNTI_wait(&multiuse_wr, 1000, &wait_status1);
+
+    uint64_t *server_checksums=(uint64_t*)NNTI_BUFFER_C_POINTER(&send_mr);
+
+    /* checksum GET target bytes */
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=0;i<NUM_SEGMENTS/2;i++) {
+        std::stringstream out(std::stringstream::out);
+        for (int j=0;j<5;j++) {
+            out << (buf + (i*one_mb))[j];
+        }
+        log_debug(multiuse_debug_level, "server GET segments[%d]=%s", i, out.str().c_str());
+
+        server_checksums[i]=calc_checksum((buf + (i*one_mb)), one_mb);
+        log_debug(multiuse_debug_level, "server GET checksums[%d]=%X", i, server_checksums[i]);
+    }
+
+    /* checksum PUT initiator bytes */
+    buf=NNTI_BUFFER_C_POINTER(local_multiuse_mr);
+    for (int i=NUM_SEGMENTS/2;i<NUM_SEGMENTS;i++) {
+        std::stringstream out(std::stringstream::out);
+        for (int j=0;j<5;j++) {
+            out << (buf + (i*one_mb))[j];
+        }
+        log_debug(multiuse_debug_level, "server PUT segments[%d]=%s", i, out.str().c_str());
+
+        server_checksums[i]=calc_checksum((buf + (i*one_mb)), one_mb);
+        log_debug(multiuse_debug_level, "server PUT checksums[%d]=%X", i, server_checksums[i]);
+    }
+
+    NNTI_send(&queue_status.src, &send_mr, &recv_mr, &send_wr);
+    NNTI_wait(&send_wr, 1000, &wait_status1);
+
+    NNTI_free(&send_mr);
+
+    log_debug(multiuse_debug_level, "exit");
+}
+
 void server(void)
 {
     int success=TRUE;
@@ -493,24 +732,35 @@ void server(void)
     /* I play the initiator role here */
     server_test2(&local_multiuse_mr);
 
+    /* I am the PUT initiator and the GET target */
+    server_test3(&local_multiuse_mr);
+
     MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
     NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
     /* I play the target role here */
     success = client_test1(&local_multiuse_mr);
     if (success == FALSE) {
-        fprintf(stdout, "TEST #3 failed.  Aborting...\n");
-        goto out;
-    }
-    fprintf(stdout, "TEST #3 passed\n");
-
-    /* I play the target role here */
-    success = client_test2(&local_multiuse_mr);
-    if (success == FALSE) {
         fprintf(stdout, "TEST #4 failed.  Aborting...\n");
         goto out;
     }
     fprintf(stdout, "TEST #4 passed\n");
+
+    /* I play the target role here */
+    success = client_test2(&local_multiuse_mr);
+    if (success == FALSE) {
+        fprintf(stdout, "TEST #5 failed.  Aborting...\n");
+        goto out;
+    }
+    fprintf(stdout, "TEST #5 passed\n");
+
+    /* I am the PUT target and the GET initiator */
+    success = client_test3(&local_multiuse_mr);
+    if (success == FALSE) {
+        fprintf(stdout, "TEST #6 failed.  Aborting...\n");
+        goto out;
+    }
+    fprintf(stdout, "TEST #6 passed\n");
 
 out:
     NNTI_free(&local_multiuse_mr);
