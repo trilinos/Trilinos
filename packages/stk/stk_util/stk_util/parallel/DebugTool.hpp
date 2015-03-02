@@ -141,7 +141,10 @@ inline std::string getStackTrace()
     trace_size = backtrace(trace, 16);
     mangledFunctionNames = backtrace_symbols(trace, trace_size);
 
-    return demangleFunctionNames(mangledFunctionNames, trace_size);
+    std::string demangledNames = demangleFunctionNames(mangledFunctionNames, trace_size);
+    free(mangledFunctionNames);
+
+    return demangledNames;
 #else
     return "none";
 #endif
@@ -175,6 +178,8 @@ inline void receiveString(int source, MPI_Comm localComm, MPI_Comm globalComm)
     {
         std::cerr << "Stack Trace from proc " << source << ":\n" << receiveString << std::endl;
     }
+
+    delete[] receiveString;
 }
 
 inline void receiveStackTrace(MPI_Comm localComm, MPI_Comm globalComm)
