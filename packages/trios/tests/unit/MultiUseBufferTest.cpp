@@ -273,6 +273,7 @@ int client_test2(NNTI_buffer_t *local_multiuse_mr)
 int client(void)
 {
     int success=TRUE;
+    char url[NNTI_URL_LEN];
 
     NNTI_buffer_t local_multiuse_mr;
 
@@ -281,6 +282,9 @@ int client(void)
     NNTI_alloc(&trans_hdl, NNTI_MULTIUSE_REQUEST_SIZE, 10, NNTI_RECV_QUEUE, &queue_mr);
 
     NNTI_alloc(&trans_hdl, NUM_SEGMENTS*one_mb, 1, (NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_LOCAL_WRITE|NNTI_BOP_REMOTE_READ|NNTI_BOP_REMOTE_WRITE), &local_multiuse_mr);
+
+    MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+    NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
     /* I play the target role here */
     success = client_test1(&local_multiuse_mr);
@@ -297,6 +301,10 @@ int client(void)
         goto out;
     }
     fprintf(stdout, "TEST #2 passed\n");
+
+    NNTI_get_url(&trans_hdl, url, NNTI_URL_LEN);
+    MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
+    log_debug(multiuse_debug_level, "multiuse client url is %s", url);
 
     /* I play the initiator role here */
     server_test1(&local_multiuse_mr);
@@ -465,6 +473,7 @@ void server_test2(NNTI_buffer_t *local_multiuse_mr)
 void server(void)
 {
     int success=TRUE;
+    char url[NNTI_URL_LEN];
 
     NNTI_buffer_t local_multiuse_mr;
 
@@ -474,11 +483,18 @@ void server(void)
 
     NNTI_alloc(&trans_hdl, NUM_SEGMENTS*one_mb, 1, (NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_LOCAL_WRITE|NNTI_BOP_REMOTE_READ|NNTI_BOP_REMOTE_WRITE), &local_multiuse_mr);
 
+    NNTI_get_url(&trans_hdl, url, NNTI_URL_LEN);
+    MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
+    log_debug(multiuse_debug_level, "multiuse server url is %s", url);
+
     /* I play the initiator role here */
     server_test1(&local_multiuse_mr);
 
     /* I play the initiator role here */
     server_test2(&local_multiuse_mr);
+
+    MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
+    NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
     /* I play the target role here */
     success = client_test1(&local_multiuse_mr);
@@ -506,13 +522,33 @@ out:
     return;
 }
 
+NNTI_transport_id_t get_transport_from_env()
+{
+    char                *transport=NULL;
+    NNTI_transport_id_t  trans_id=NNTI_DEFAULT_TRANSPORT;
+
+    transport=getenv("NNTI_TRANSPORT");
+    if (transport != NULL) {
+        if (!strcmp(transport, "GEMINI")) {
+            trans_id = NNTI_TRANSPORT_GEMINI;
+        } else if (!strcmp(transport, "IB")) {
+            trans_id = NNTI_TRANSPORT_IB;
+        } else if (!strcmp(transport, "MPI")) {
+            trans_id = NNTI_TRANSPORT_MPI;
+        }
+    }
+
+    return(trans_id);
+}
+
 int main(int argc, char *argv[])
 {
 	int success=0;
     int nprocs, rank;
 
+    NNTI_transport_id_t trans_id=NNTI_DEFAULT_TRANSPORT;
+
     char logname[1024];
-    char url[NNTI_URL_LEN];
 
     MPI_Init(&argc, &argv);
 
@@ -522,35 +558,9 @@ int main(int argc, char *argv[])
     sprintf(logname, "multiuse.%03d.log", rank);
     logger_init(LOG_ERROR, NULL /*logname*/);
 
-    NNTI_init(NNTI_DEFAULT_TRANSPORT, NULL, &trans_hdl);
+    trans_id = get_transport_from_env();
 
-    if (rank==0) {
-
-        NNTI_get_url(&trans_hdl, url, NNTI_URL_LEN);
-        MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
-        log_debug(multiuse_debug_level, "multiuse server url is %s", url);
-
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
-        NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
-
-        MPI_Barrier(MPI_COMM_WORLD);
-
-    } else {
-
-        MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
-        NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
-
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        NNTI_get_url(&trans_hdl, url, NNTI_URL_LEN);
-        MPI_Bcast(&url[0], NNTI_URL_LEN, MPI_CHAR, 1, MPI_COMM_WORLD);
-        log_debug(multiuse_debug_level, "multiuse client url is %s", url);
-
-        MPI_Barrier(MPI_COMM_WORLD);
-
-    }
+    NNTI_init(trans_id, NULL, &trans_hdl);
 
     if (rank==0) {
         server();
