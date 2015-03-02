@@ -513,7 +513,7 @@ void server(void)
     fprintf(stdout, "TEST #4 passed\n");
 
 out:
-    NNTI_unregister_memory(&local_multiuse_mr);
+    NNTI_free(&local_multiuse_mr);
 
     NNTI_free(&queue_mr);
 
