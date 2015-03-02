@@ -107,6 +107,7 @@ struct EnvData
   bool                  m_checkSubCycle;
   bool                  m_checkSmRegion;
   bool                  m_isZapotec;
+  bool                  m_usingDiffingTool;
 
   MPI_Comm		m_worldComm;
 

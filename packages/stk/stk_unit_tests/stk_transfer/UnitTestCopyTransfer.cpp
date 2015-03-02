@@ -2635,5 +2635,22 @@ void runDiffingTool()
 //    receiveMeshData(localComm, globalComm);
 }
 
+TEST(ParallelDebugTool, mockDiffingTool)
+{
+    MPI_Comm globalComm = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(globalComm, &numProcs);
+
+    int myColor = 2;
+    MPI_Comm localComm = splitComm(myColor, globalComm);
+
+    int localProcs = -1;
+    MPI_Comm_size(localComm, &localProcs);
+    if ( localProcs == numProcs/3 )
+    {
+        expectWorldSetupCorrectly(localComm, globalComm);
+    }
+}
+
 } // namespace
 
