@@ -225,7 +225,8 @@ int main( int argc , char ** argv )
   MPI_Comm_size( comm , & comm_size );
 #else
   MPI_Comm comm = 0 ;
-  (void)comm_size;
+  (void) comm;
+  (void) comm_size;
 #endif
 
   int cmdline[ CMD_COUNT ] ;
