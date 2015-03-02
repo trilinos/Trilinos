@@ -194,25 +194,24 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   MultiVector () :
-    base_type (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, node_type> ()))
+    base_type (Teuchos::rcp (new map_type ()))
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
-               size_t NumVectors,
-               bool zeroOut) : /* default is true */
+  MultiVector (const Teuchos::RCP<const map_type>& map,
+               const size_t numVecs,
+               const bool zeroOut) : /* default is true */
     base_type (map)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
-    (void) zeroOut; // View allocation does first touch automatically.
-
-    TEUCHOS_TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
-      "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
+   TEUCHOS_TEST_FOR_EXCEPTION(
+     numVecs < 1, std::invalid_argument, "Tpetra::MultiVector::MultiVector"
+     "(map,numVecs,zeroOut): numVecs = " << numVecs << " < 1.");
     const size_t myLen = this->getLocalLength ();
-    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (myLen, NumVectors, zeroOut);
+    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (myLen, numVecs, zeroOut);
     origView_ = view_;
   }
 
@@ -290,6 +289,41 @@ namespace Tpetra {
     //   << numVecs << ".");
   }
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
+  MultiVector (const Teuchos::RCP<const map_type>& map,
+               const typename dual_view_type::t_dev& d_view) :
+    base_type (map)
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    const char tfecfFuncName[] = "Tpetra::MultiVector(map,d_view): ";
+
+    // Get stride of view: if second dimension is 0, the stride might
+    // be 0, so take view_dimension instead.
+    size_t stride[8];
+    d_view.stride (stride);
+    const size_t LDA = (d_view.dimension_1 () > 1) ? stride[1] :
+      d_view.dimension_0 ();
+    const size_t lclNumRows = this->getLocalLength (); // comes from the Map
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      LDA < lclNumRows, std::invalid_argument, "The input Kokkos::View's "
+      "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
+      << ".  This may also mean that the input view's first dimension (number "
+      "of rows = " << d_view.dimension_0 () << ") does not not match the "
+      "number of entries in the Map on the calling process.");
+
+    // The difference between create_mirror and create_mirror_view, is
+    // that the latter copies to host.  We don't necessarily want to
+    // do that; we just want to allocate the memory.
+    view_ = dual_view_type (d_view, Kokkos::create_mirror (d_view));
+    // The user gave us a device view.  We take it as canonical, which
+    // means we mark it as "modified," so that the next sync will
+    // synchronize it with the host view.
+    view_.template modify<execution_space> ();
+    origView_ = view_;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::

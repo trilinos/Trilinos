@@ -3140,6 +3140,134 @@ namespace {
   }
 
 
+  // Test constructor that takes a Kokkos::View (on device).
+  //
+  // Create a Kokkos::View X_lcl, and fill it with some characteristic
+  // number.  Create a Tpetra::MultiVector X_gbl that views X_lcl, and
+  // modify X_lcl's data.  Then, test whether X_gbl saw the change.
+  //
+  // This tests whether the Tpetra::MultiVector constructor that takes
+  // a Kokkos::View actually views the Kokkos::View.  (It must NOT
+  // make a deep copy.)
+  //
+  // NOTE: It is undefined for users to modify the device View without
+  // respecting Tpetra::MultiVector's DualView semantics.  That is,
+  // they need to use modify() and sync() correctly for the
+  // Tpetra::MultiVector (or the underlying Kokkos::DualView).
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ViewCtor, LO, GO, Scalar, Node )
+  {
+    out << "Tpetra::MultiVector View constructor test" << endl;
+    Teuchos::OSTab tab0 (out);
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    const Scalar ONE = STS::one ();
+    const Scalar TWO = ONE + ONE;
+    const Scalar THREE = TWO + ONE;
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+
+    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
+    typedef typename MV::dual_view_type dual_view_type;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    typedef typename dual_view_type::t_host::memory_space HMS;
+
+    // We'll need this for error checking before we need it in Tpetra.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+
+    // Create the Kokkos::View X_lcl.
+    const size_t numLclRows = 10;
+    const size_t numVecs = 3;
+    typename dual_view_type::t_dev X_lcl ("X_lcl", numLclRows, numVecs);
+
+    // Modify the Kokkos::View's data.
+    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl, ONE);
+
+    // Hand off the Kokkos::View to a Tpetra::MultiVector.
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLclRows, indexBase, comm));
+    MV X_gbl (map, X_lcl);
+
+    // Make sure (using an independent mechanism, in this case the
+    // inf-norm) that X_gbl's constructor didn't change the values in
+    // X_lcl.
+    typedef typename MV::mag_type mag_type;
+    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
+    norms.template modify<DMS> ();
+    X_gbl.normInf (norms.template view<DMS> ());
+    norms.template sync<HMS> ();
+    for (size_t k = 0; k < numVecs; ++k) {
+      TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+    }
+
+    // Now change the values in X_lcl.  X_gbl should see them.  Be
+    // sure to tell X_gbl that we want to modify its data on device.
+    X_gbl.template modify<DMS> ();
+    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl, TWO);
+
+    // Tpetra::MultiVector::normInf _should_ either read from the most
+    // recently modified memory space, or do a sync to device first.
+    // In either case, we don't need to do an explicit sync of X_gbl
+    // before calling normInf.
+
+    // Make sure that X_gbl saw the changes made to X_lcl's data.
+    norms.template modify<DMS> ();
+    X_gbl.normInf (norms.template view<DMS> ());
+    norms.template sync<HMS> ();
+    for (size_t k = 0; k < numVecs; ++k) {
+      TEST_EQUALITY_CONST( norms.h_view(k), TWO );
+    }
+
+    // Just as X_gbl views X_lcl, X_lcl should also view X_gbl.  Thus,
+    // if we modify X_gbl in host memory, and sync to device memory,
+    // X_lcl should also be changed.
+
+    typename dual_view_type::t_host X_host =
+      X_gbl.template getLocalView<HMS> ();
+    X_gbl.template modify<HMS> ();
+    Kokkos::Impl::ViewFill<typename dual_view_type::t_host> (X_host, THREE);
+
+    // FIXME (mfh 01 Mar 2015) We avoid writing a separate functor to
+    // check the contents of X_lcl, by copying to host and checking
+    // there.  Once Tpetra can use C++11, we should instead check on
+    // device, by using a parallel_reduce functor.
+    typename dual_view_type::t_dev::HostMirror X_lcl_host =
+      Kokkos::create_mirror_view (X_lcl);
+    bool same = true;
+    for (size_t j = 0; j < numVecs; ++j) {
+      for (size_t i = 0; i < numLclRows; ++i) {
+        if (X_lcl_host(i,j) != X_host(i,j)) {
+          same = false;
+          break;
+        }
+      }
+    }
+    lclSuccess = same ? 1 : 0;
+    gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST(gblSuccess, 1);
+    if (gblSuccess != 1) {
+      out << "We modified X_gbl in host memory, and sync'd to device memory, "
+        "but X_lcl did not change!" << endl;
+    }
+
+#else // NOT TPETRA_HAVE_KOKKOS_REFACTOR
+    out << "Test disabled, because it only works if the Kokkos refactor "
+      "version of Tpetra is enabled.  If you wish to exercise this feature of "
+      "Tpetra::MultiVector, please check your Trilinos configuration and make "
+      "sure that the CMake option Tpetra_ENABLE_Kokkos_Refactor is either not "
+      "set at all, or set to OFF." << endl;
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+  }
+
+
 //
 // INSTANTIATIONS
 //
@@ -3176,8 +3304,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE )
-
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
