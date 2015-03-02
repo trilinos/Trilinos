@@ -138,7 +138,7 @@ int main (int argc, char* argv[]) {
   Kokkos::parallel_for (N, InitView (a));
   double sum = 0;
   Kokkos::parallel_reduce (N, ReduceFunctor (a), sum);
-  printf ("Result: %lf\n", sum);
+  printf ("Result: %f\n", sum);
   Kokkos::finalize ();
 }
 
