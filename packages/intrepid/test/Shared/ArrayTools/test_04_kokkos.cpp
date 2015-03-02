@@ -2348,7 +2348,6 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
     }
   }// test 6.c scope
   
-  std::cout <<errorFlag<<std::endl;
 
   *outStream \
     << "\n"
@@ -3254,7 +3253,6 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
   {// test 8.b scope
     int c=5, p=9, d1=3;
     double zero = INTREPID_TOL*10000.0;
-    std::cout <<errorFlag<<std::endl;
 
     Kokkos::View<double***> in_p_d_d("in_p_d_d",p, d1, d1);
     Kokkos::View<double****> in_c_p_d_d("in_c_p_d_d",c, p, d1, d1);
@@ -3297,7 +3295,6 @@ for (unsigned int i=0; i<in_p_d_d.dimension(0); i++)
       data_c_1(i,j) = Teuchos::ScalarTraits<double>::random();
       datainv_c_1(i,j) = 1.0 / data_c_1(i,j);	
 	}
-	std::cout <<errorFlag<<std::endl;
     // Tensor values vary by point
     art::matmatProductDataData<double>(in_c_p_d_d, data_c_p_one, in_p_d_d);
     art::matmatProductDataData<double>(out_c_p_d_d, data_c_p, in_p_d_d);
@@ -3402,7 +3399,6 @@ RealSpaceTools<double>::inverse(datainv_c_p_d_d, data_c_p_d_d);
       *outStream << "\n\nINCORRECT matmatProductDataData (16): check matrix inverse property, w/ double transpose\n\n";
       errorFlag = -1000;
     }
-    std::cout <<errorFlag<<std::endl;
     // Tensor values do not vary by point: test "N" and "T" (no-transpose/transpose) options
     art::matmatProductDataData<double>(in_c_p_d_d, data_c_p_one, in_p_d_d);
     art::matmatProductDataData<double>(out_c_p_d_d, data_c_1_d_d, in_p_d_d);
@@ -3420,7 +3416,6 @@ RealSpaceTools<double>::inverse(datainv_c_p_d_d, data_c_p_d_d);
       *outStream << "\n\nINCORRECT matmatProductDataData (18): check matrix inverse property, w/ double transpose\n\n";
       errorFlag = -1000;
     }
-    std::cout <<errorFlag<<"brokehere"<<std::endl;
     /***********************************************************************************************
       *             Full tensor: inputData(C,P,D,D) test inverse transpose                         *
       **********************************************************************************************/
@@ -3457,7 +3452,6 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
     art::matmatProductDataData<double>(out_c_p_d_d, data_c_p_d_d, in_p_d_d);
     art::matmatProductDataData<double>(outi_c_p_d_d, datainvtrn_c_p_d_d, out_c_p_d_d, 't');
     rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-    std::cout <<errorFlag<<std::endl;
     if (rst::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
       *outStream << "\n\nINCORRECT matmatProductDataData (19): check matrix inverse transpose property\n\n";
       errorFlag = -1000;

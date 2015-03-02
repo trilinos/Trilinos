@@ -73,19 +73,54 @@ template<class Scalar>
 template<class ArrayAbs, class ArrayIn>
 void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != absArray.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( getrank(inArray) != getrank(absArray) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::absval): Array arguments must have identical ranks!");
-    for (int i=0; i<inArray.rank(); i++) {
+    for (int i=0; i<getrank(inArray); i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != absArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::absval): Dimensions of array arguments do not agree!");
     }
-#endif
+#endif 
+  
+   ArrayWrapper<Scalar,ArrayAbs, Rank<ArrayAbs >::value, false>absArrayWrap(absArray);
+   ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
+ 
+   int inArrayRank=getrank(inArray);
 
-  for (int i=0; i<inArray.size(); i++) {
-    absArray[i] = std::abs(inArray[i]);
-  }
+
+   if(inArrayRank==5){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++)
+          for (int m=0; m<inArray.dimension(4); m++){
+         absArrayWrap(i,j,k,l,m) = std::abs(inArrayWrap(i,j,k,l,m));
+          }
+	}else if(inArrayRank==4){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++){
+            absArrayWrap(i,j,k,l) = std::abs(inArrayWrap(i,j,k,l));
+          }
+	}else if(inArrayRank==3){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++){
+         absArrayWrap(i,j,k) = std::abs(inArrayWrap(i,j,k));
+          }
+	}else if(inArrayRank==2){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++){
+         absArrayWrap(i,j) = std::abs(inArrayWrap(i,j));
+          }
+	}else if(inArrayRank==1){
+   for (int i=0; i<inArray.dimension(0); i++){
+        absArrayWrap(i) = std::abs(inArrayWrap(i));
+
+          }
+	}  
 }
 
 
@@ -142,7 +177,7 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
   int inVecRank=getrank(inVecWrap);
   Scalar temp = (Scalar)0;
   switch(normType) {
-    case NORM_TWO:
+    case NORM_TWO:{
    if(inVecRank==5){ 
    for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++)
@@ -170,32 +205,32 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
       temp += inVecWrap(i)*inVecWrap(i); 	 
 	 }         
       temp = std::sqrt(temp);
+  }
       break;
-    case NORM_INF:
-    
+    case NORM_INF:{
 
      if(inVecRank==5){
    temp = std::abs(inVecWrap(0,0,0,0,0));
-   for (int i=1; i<inVec.dimension(0); i++)
+   for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++)
       for (int k=0; k<inVec.dimension(2); k++)
         for (int l=0; l<inVec.dimension(3); l++)
-          for (int m=0; m<inVec.dimension(4); m++){
+          for (int m=1; m<inVec.dimension(4); m++){
          Scalar absData = std::abs(inVecWrap(i,j,k,l,m));
          if (temp < absData) temp = absData;
 	    }
 	}else if(inVecRank==4){
  temp = std::abs(inVecWrap(0,0,0,0));		
-  for (int i=1; i<inVec.dimension(0); i++)
+  for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++)
       for (int k=0; k<inVec.dimension(2); k++)
-        for (int l=0; l<inVec.dimension(3); l++){
+        for (int l=1; l<inVec.dimension(3); l++){
          Scalar absData = std::abs(inVecWrap(i,j,k,l));
          if (temp < absData) temp = absData;
 	    }	
 	}else if(inVecRank==3){
   temp = std::abs(inVecWrap(0,0,0));		
-  for (int i=1; i<inVec.dimension(0); i++)
+  for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++)
       for (int k=0; k<inVec.dimension(2); k++){
          Scalar absData = std::abs(inVecWrap(i,j,k));
@@ -203,7 +238,7 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
 	    }	
 	}else if(inVecRank==2){
   temp = std::abs(inVecWrap(0,0));		
-  for (int i=1; i<inVec.dimension(0); i++)
+  for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++){
          Scalar absData = std::abs(inVecWrap(i,j));
          if (temp < absData) temp = absData;
@@ -214,10 +249,10 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
          Scalar absData = std::abs(inVecWrap(i));
          if (temp < absData) temp = absData;
 	    }	
-	}	            
-      
+	}
+}  
       break;
-    case NORM_ONE:
+    case NORM_ONE:{
         if(inVecRank==5){
    for (int i=0; i<inVec.dimension(0); i++)
     for (int j=0; j<inVec.dimension(1); j++)
@@ -249,7 +284,7 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm nor
           temp += std::abs(inVecWrap(i));
           }
 	}	
-
+}
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( ( (normType != NORM_TWO) && (normType != NORM_INF) && (normType != NORM_ONE) ),
@@ -547,77 +582,7 @@ void RealSpaceTools<Scalar>::transpose(Scalar* transposeMat, const Scalar* inMat
     }
   }
 }
-/*
-template<class Scalar >
 
-void RealSpaceTools<Scalar>::transpose(Scalar* transposeMat, const Scalar* inMat, const int dim) {
-  for(int i=0; i < dim; i++){
-    transposeMat(i,i)=inMat(i,i);    // Set diagonal elements
-    for(int j=i+1; j < dim; j++){
-      transposeMat(i,j)=inMat(j,i);  // Set off-diagonal elements
-      transposeMat(j,i)=inMat(i,j);
-    }
-  }
-}
-*/
-/*
-template<class Scalar>
-template<class ArrayTranspose, class ArrayIn>
-void RealSpaceTools<Scalar>::transpose(ArrayTranspose & transposeMats, const ArrayIn & inMats) {
-  int arrayRank = inMats.rank();
-
-#ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != transposeMats.rank() ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
-    for (int i=0; i<arrayRank; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != transposeMats.dimension(i) ),
-                          std::invalid_argument,
-                          ">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::transpose): Matrices are not square!");
-#endif
-
-  int dim_i0 = 1; // first  index dimension (e.g. cell index)
-  int dim_i1 = 1; // second index dimension (e.g. point index)
-  int dim    = inMats.dimension(arrayRank-2); // spatial dimension
-
-  // determine i0 and i1 dimensions
-  switch(arrayRank) {
-    case 4:
-      dim_i0 = inMats.dimension(0);
-      dim_i1 = inMats.dimension(1);
-      break;
-    case 3:
-      dim_i1 = inMats.dimension(0);
-      break;
-  }
-
-  int offset_i0, offset;
-
-  for (int i0=0; i0<dim_i0; i0++) {
-    offset_i0 = i0*dim_i1;
-    for (int i1=0; i1<dim_i1; i1++) {
-      offset  = offset_i0 + i1;
-      offset *= (dim*dim);
-
-      for(int i=0; i < dim; i++){
-        transposeMats[offset+i*dim+i]=inMats[offset+i*dim+i];    // Set diagonal elements
-        for(int j=i+1; j < dim; j++){
-          transposeMats[offset+i*dim+j]=inMats[offset+j*dim+i];  // Set off-diagonal elements
-          transposeMats[offset+j*dim+i]=inMats[offset+i*dim+j];
-        }
-      }
-
-    } // i1
-  } // i0
-
-}*/
 
 
 template<class Scalar>
@@ -786,30 +751,7 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
 
   } // switch (dim)
 }
-/*
-template<class Scalar>
-template<class ArrayInverse, class ArrayIn>
-void RealSpaceTools<Scalar>::inverseTemp(ArrayInverse & inverseMats, const ArrayIn & inMats) {
-RealSpaceTools<Scalar>::inverseTempSpec<ArrayInverse, ArrayIn, Rank<ArrayIn>::value>(inverseMats,inMats);
-}
-	template<class Scalar>
-template<class ArrayInverse, class ArrayIn>
-	struct RealSpaceTools<Scalar>::inverseTempSpec<ArrayInverse,  ArrayIn, -1>{
-	inverseTempSpec(ArrayInverse & inverseMats, const ArrayIn & inMats){
-	switch(inMats.rank()){
-		case 2:{
-		inverseTempSpec<ArrayInverse,  ArrayIn, 2>(inverseMats,inMats);	
-		}break;
-		case 3:{
-		inverseTempSpec<ArrayInverse,  ArrayIn, 3>(inverseMats,inMats);		
-		}break;
-		case 4:{
-		inverseTempSpec<ArrayInverse,  ArrayIn, 4>(inverseMats,inMats);	
-		}break;
-	}
-	
-	}
-};*/
+
 template<class Scalar>
 template<class ArrayInverse, class ArrayIn>
 void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn & inMats) {
@@ -939,7 +881,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
 #ifdef HAVE_INTREPID_DEBUG
 #ifdef HAVE_INTREPID_DEBUG_INF_CHECK
           TEUCHOS_TEST_FOR_EXCEPTION( ( (inMatsWrap(i0,i1,0,0)==(Scalar)0)   && (inMatsWrap(i0,i1,0,1)==(Scalar)0) &&
-					(inMatsWrap(i0,i1,1,0)==(Scalar)0) && (inMats(i0,i1,1,1)==(Scalar)0) ),
+					(inMatsWrap(i0,i1,1,0)==(Scalar)0) && (inMatsWrap(i0,i1,1,1)==(Scalar)0) ),
 				      std::invalid_argument,
 				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
           TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
@@ -1485,6 +1427,7 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #endif
+    ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inMatWrap(inMat);
 
   int dim = inMat.dimension(0);
   Scalar determinant(0);
@@ -1499,8 +1442,8 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
 
       for(i=0; i < 3; ++i){
         for(j=0; j < 3; ++j){
-          if( std::abs( inMat[i*dim+j] ) >  emax){
-            rowID = i;  colID = j; emax = std::abs( inMat[i*dim+j] );
+          if( std::abs( inMatWrap(i,j) ) >  emax){
+            rowID = i;  colID = j; emax = std::abs( inMatWrap(i,j) );
           }
         }
       }
@@ -1516,7 +1459,7 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
         Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
         for(i=0; i < 3; ++i){
           for(j=0; j < 3; ++j){
-            B[i][j] = inMat[rowperm[i]*dim+colperm[j]];
+            B[i][j] = inMatWrap(rowperm[i],colperm[j]);
           }
         }
         B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
@@ -1533,12 +1476,12 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
     } // case 3
 
     case 2:
-      determinant = inMat[0]*inMat[3]-
-                    inMat[1]*inMat[2];
+      determinant = inMatWrap(0,0)*inMatWrap(1,1)-
+                    inMatWrap(0,1)*inMatWrap(1,0);
       break;
 
     case 1:
-      determinant = inMat[0];
+      determinant = inMatWrap(0,0);
       break;
 
     default:
@@ -1549,428 +1492,7 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
 
   return determinant;
 }
-/*	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-    void RealSpaceTools<Scalar>::detTemp(ArrayDet & detArray, const ArrayIn & inMats){
-	
-	RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, Rank<ArrayIn>::value>(detArray,inMats);
-	}
- */
-	
-	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-	struct RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, -1>{
-		detTempSpec(ArrayDet & detArray, const ArrayIn & inMats){
-			switch(inMats.rank()){
-		case 2:{
-		detTempSpec<ArrayDet,  ArrayIn, 2>(detArray,inMats);	
-		}break;
-		case 3:{
-		detTempSpec<ArrayDet,  ArrayIn, 3>(detArray,inMats);		
-		}break;
-		case 4:{
-		detTempSpec<ArrayDet,  ArrayIn, 4>(detArray,inMats);	
-		}break;
-	}
-		
-		}
-		
-		};
-		
-	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-	struct RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, 2>{
-		detTempSpec(ArrayDet & detArray, const ArrayIn & inMats){
-		
 
-
- 
-  int dim    = inMats.dimension(0); // spatial dimension
-
- 
-
-  switch(dim) {
-    case 3: {
-      int offset_i0, offset, detOffset;   
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats(i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats(i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMats(rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArray(0) = determinant;
-       
-      break;
-    } // case 3
-
-    case 2: {
-
-          detArray(0) = inMats(0,0)*inMats(1,1)-inMats(0,1)*inMats(1,0);
-      
-      break;
-    } // case 2
-
-    case 1: {
-     
-          detArray(0) = inMats(0);
-       
-      break;
-    } // case 1
-
-  } // switch (dim)
-		
-		}
-		};
-	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-	struct RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, 3>{
-		detTempSpec(ArrayDet & detArray, const ArrayIn & inMats){
-		
-
-  int dim_i1 = 1; // second index dimension (e.g. point index)
-  int dim    = inMats.dimension(1); // spatial dimension
-
-  // determine i0 and i1 dimensions
-
-      dim_i1 = inMats.dimension(0);
-  
-
-  switch(dim) {
-    case 3: {
-     
-
-    
-       
-        for (int i1=0; i1<dim_i1; i1++) {
-        
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats(i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats(i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMats(rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArray(i1) = determinant;
-        } // for i1
-    
-      break;
-    } // case 3
-
-    case 2: {
-   
-        for (int i1=0; i1<dim_i1; i1++) {
-
-          detArray(i1) = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
-        } // for i1
-     
-      break;
-    } // case 2
-
-    case 1: {
-  
-        for (int i1=0; i1<dim_i1; i1++) {
-          detArray(i1) = inMats(i1,0,0);
-        } // for i1
-     
-      break;
-    } // case 1
-
-  } // switch (dim)
-		
-		}
-		
-		};
-		
-	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-	struct RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, 4>{
-		detTempSpec(ArrayDet & detArray, const ArrayIn & inMats){
-		 
-
-
-  int dim_i0 = 1; // first  index dimension (e.g. cell index)
-  int dim_i1 = 1; // second index dimension (e.g. point index)
-  int dim    = inMats.dimension(2); // spatial dimension
-
-      dim_i0 = inMats.dimension(0);
-      dim_i1 = inMats.dimension(1);
-    
-
-  switch(dim) {
-    case 3: {
-   
-
-      for (int i0=0; i0<dim_i0; i0++) {
-       
-        for (int i1=0; i1<dim_i1; i1++) {
-      
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats(i0,i1,i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats(i0,i1,i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMats(i0,i1,rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArray(i0,i1)= determinant;
-        } // for i1
-      } // for i0
-      break;
-    } // case 3
-
-    case 2: {   
-
-      for (int i0=0; i0<dim_i0; i0++) {
-      
-        for (int i1=0; i1<dim_i1; i1++) {
-
-          detArray(i0,i1) = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
-        } // for i1
-      } // for i0
-      break;
-    } // case 2
-
-    case 1: {
-
-      for (int i0=0; i0<dim_i0; i0++) {
-      
-        for (int i1=0; i1<dim_i1; i1++) {
-          detArray(i0,i1) = inMats(i0,i1,0,0);
-        } // for i1
-      } // for i2
-      break;
-    } // case 1
-
-  } // switch (dim)
-		
-		}
-		
-		};
-/*
-template<class Scalar>
-template<class ArrayDet, class ArrayIn>
-void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
-
-  int matArrayRank = inMats.rank();
-
-#ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( matArrayRank != detArray.rank()+2 ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
-    for (int i=0; i<matArrayRank-2; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != detArray.dimension(i) ),
-                          std::invalid_argument,
-                          ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(matArrayRank-2) != inMats.dimension(matArrayRank-1) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats.dimension(matArrayRank-2) < 1) || (inMats.dimension(matArrayRank-2) > 3) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
-#endif
-
-  int dim_i0 = 1; // first  index dimension (e.g. cell index)
-  int dim_i1 = 1; // second index dimension (e.g. point index)
-  int dim    = inMats.dimension(matArrayRank-2); // spatial dimension
-
-  // determine i0 and i1 dimensions
-  switch(matArrayRank) {
-    case 4:
-      dim_i0 = inMats.dimension(0);
-      dim_i1 = inMats.dimension(1);
-      break;
-    case 3:
-      dim_i1 = inMats.dimension(0);
-      break;
-  }
-
-  switch(dim) {
-    case 3: {
-      int offset_i0, offset, detOffset;
-
-      for (int i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (int i1=0; i1<dim_i1; i1++) {
-          offset     = offset_i0 + i1;
-          detOffset  = offset;
-          offset    *= 9;
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats[offset+i*3+j] ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats[offset+i*3+j] );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMats[offset+rowperm[i]*3+colperm[j]];
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArray[detOffset] = determinant;
-        } // for i1
-      } // for i0
-      break;
-    } // case 3
-
-    case 2: {
-      int offset_i0, offset, detOffset;
-
-      for (int i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (int i1=0; i1<dim_i1; i1++) {
-          offset     = offset_i0 + i1;
-          detOffset  = offset;
-          offset    *= 4;
-
-          detArray[detOffset] = inMats[offset]*inMats[offset+3]-inMats[offset+1]*inMats[offset+2];;
-        } // for i1
-      } // for i0
-      break;
-    } // case 2
-
-    case 1: {
-      int offset_i0, offset;
-
-      for (int i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (int i1=0; i1<dim_i1; i1++) {
-          offset  = offset_i0 + i1;;
-          detArray[offset] = inMats[offset];
-        } // for i1
-      } // for i2
-      break;
-    } // case 1
-
-  } // switch (dim)
-}
-*/
 template<class Scalar>
 template<class ArrayDet, class ArrayIn>
 void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
@@ -2024,7 +1546,7 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
 
           for(i=0; i < 3; ++i){
             for(j=0; j < 3; ++j){
-              if( std::abs( inMats(i0,i1,i,j) ) >  emax){
+              if( std::abs( inMatsWrap(i0,i1,i,j) ) >  emax){
                 rowID = i;  colID = j; emax = std::abs( inMatsWrap(i0,i1,i,j) );
               }
             }
@@ -2155,99 +1677,7 @@ break;
 		
 		}
 		
-		/*
-	template<class Scalar>
-    template<class ArrayDet, class ArrayIn>
-	struct RealSpaceTools<Scalar>::detTempSpec<ArrayDet, ArrayIn, 3>{
-		detTempSpec(ArrayDet & detArray, const ArrayIn & inMats){
-		
 
-  int dim_i1 = 1; // second index dimension (e.g. point index)
-  int dim    = inMats.dimension(1); // spatial dimension
-
-  // determine i0 and i1 dimensions
-
-      dim_i1 = inMats.dimension(0);
-  
-
-  switch(dim) {
-    case 3: {
-     
-
-    
-       
-        for (int i1=0; i1<dim_i1; i1++) {
-        
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats(i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats(i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMats(rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArray(i1) = determinant;
-        } // for i1
-    
-      break;
-    } // case 3
-
-    case 2: {
-   
-        for (int i1=0; i1<dim_i1; i1++) {
-
-          detArray(i1) = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
-        } // for i1
-     
-      break;
-    } // case 2
-
-    case 1: {
-  
-        for (int i1=0; i1<dim_i1; i1++) {
-          detArray(i1) = inMats(i1,0,0);
-        } // for i1
-     
-      break;
-    } // case 1
-
-  } // switch (dim)
-      break;
-  }
-
-
-};*/
 
 template<class Scalar>
 void RealSpaceTools<Scalar>::add(Scalar* sumArray, const Scalar* inArray1, const Scalar* inArray2, const int size) {
@@ -2271,19 +1701,57 @@ template<class Scalar>
 template<class ArraySum, class ArrayIn1, class ArrayIn2>
 void RealSpaceTools<Scalar>::add(ArraySum & sumArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != sumArray.rank()) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inArray1) != getrank(inArray2)) || (getrank(inArray1) != getrank(sumArray)) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
-    for (int i=0; i<inArray1.rank(); i++) {
+    for (int i=0; i<getrank(inArray1); i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( ( (inArray1.dimension(i) != inArray2.dimension(i)) || (inArray1.dimension(i) != sumArray.dimension(i)) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
 #endif
 
-  for (int i=0; i<inArray1.size(); i++) {
-    sumArray[i] = inArray1[i] + inArray2[i];
-  }
+
+  
+  
+   ArrayWrapper<Scalar,ArraySum, Rank<ArraySum >::value, false>sumArrayWrap(sumArray);
+   ArrayWrapper<Scalar,ArrayIn1, Rank<ArrayIn1 >::value, true>inArray1Wrap(inArray1);
+   ArrayWrapper<Scalar,ArrayIn2, Rank<ArrayIn2 >::value, true>inArray2Wrap(inArray2);
+   int inArrayRank=getrank(inArray1);
+
+
+   if(inArrayRank==5){
+   for (int i=0; i<inArray1.dimension(0); i++)
+    for (int j=0; j<inArray1.dimension(1); j++)
+      for (int k=0; k<inArray1.dimension(2); k++)
+        for (int l=0; l<inArray1.dimension(3); l++)
+          for (int m=0; m<inArray1.dimension(4); m++){
+    sumArrayWrap(i,j,k,l,m) = inArray1Wrap(i,j,k,l,m)+inArray2Wrap(i,j,k,l,m);
+          }
+	}else if(inArrayRank==4){
+   for (int i=0; i<inArray1.dimension(0); i++)
+    for (int j=0; j<inArray1.dimension(1); j++)
+      for (int k=0; k<inArray1.dimension(2); k++)
+        for (int l=0; l<inArray1.dimension(3); l++){
+           sumArrayWrap(i,j,k,l) = inArray1Wrap(i,j,k,l)+inArray2Wrap(i,j,k,l);
+          }
+	}else if(inArrayRank==3){
+   for (int i=0; i<inArray1.dimension(0); i++)
+    for (int j=0; j<inArray1.dimension(1); j++)
+      for (int k=0; k<inArray1.dimension(2); k++){
+        sumArrayWrap(i,j,k) = inArray1Wrap(i,j,k)+inArray2Wrap(i,j,k);
+          }
+	}else if(inArrayRank==2){
+   for (int i=0; i<inArray1.dimension(0); i++)
+    for (int j=0; j<inArray1.dimension(1); j++){
+         sumArrayWrap(i,j) = inArray1Wrap(i,j)+inArray2Wrap(i,j);
+          }
+	}else if(inArrayRank==1){
+   for (int i=0; i<inArray1.dimension(0); i++){
+       sumArrayWrap(i) = inArray1Wrap(i)+inArray2Wrap(i);
+
+          }
+	}
 }
 
 
@@ -2295,16 +1763,50 @@ void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArr
   TEUCHOS_TEST_FOR_EXCEPTION( ( getrank(inArray) != getrank(inoutSumArray) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
-    for (int i=0; i<inArray.rank(); i++) {
+    for (int i=0; i<getrank(inArray); i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutSumArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
     }
 #endif
+   
+  	 ArrayWrapper<Scalar,ArraySum, Rank<ArraySum >::value, false>inoutSumArrayWrap(inoutSumArray);
+	 ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
+   int inArrayRank=getrank(inArray);
 
-  for (int i=0; i<inArray.size(); i++) {
-    inoutSumArray[i] += inArray[i];
-  }
+
+   if(inArrayRank==5){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++)
+          for (int m=0; m<inArray.dimension(4); m++){
+    inoutSumArrayWrap(i,j,k,l,m) += inArrayWrap(i,j,k,l,m);
+          }
+	}else if(inArrayRank==4){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++){
+          inoutSumArrayWrap(i,j,k,l) += inArrayWrap(i,j,k,l);
+          }
+	}else if(inArrayRank==3){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++){
+          inoutSumArrayWrap(i,j,k) += inArrayWrap(i,j,k);
+          }
+	}else if(inArrayRank==2){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++){
+          inoutSumArrayWrap(i,j) += inArrayWrap(i,j);
+          }
+	}else if(inArrayRank==1){
+   for (int i=0; i<inArray.dimension(0); i++){
+          inoutSumArrayWrap(i) += inArrayWrap(i);
+
+          }
+	}
 }
 
 
@@ -2379,27 +1881,7 @@ void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & in
 
 }
 
-/*
 
-template<class Scalar>
-template<class ArrayDiff, class ArrayIn>
-void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray) {
-#ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.rank() != inoutDiffArray.rank() ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
-    for (int i=0; i<inArray.rank(); i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != inoutDiffArray.dimension(i) ),
-                          std::invalid_argument,
-                          ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
-    }
-#endif
-
-  for (int i=0; i<inArray.size(); i++) {
-    inoutDiffArray[i] -= inArray[i];
-  }
-}
-*/
 template<class Scalar>
 template<class ArrayDiff, class ArrayIn>
 void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray) {
@@ -2478,16 +1960,49 @@ void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & in
   TEUCHOS_TEST_FOR_EXCEPTION( ( getrank(inArray) != getrank(scaledArray) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::scale): Array arguments must have identical ranks!");
-    for (int i=0; i<inArray.rank(); i++) {
+    for (int i=0; i<getrank(inArray); i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( ( inArray.dimension(i) != scaledArray.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::scale): Dimensions of array arguments do not agree!");
     }
 #endif
 
-  for (int i=0; i<inArray.size(); i++) {
-    scaledArray[i] = scalar*inArray[i];
-  }
+
+  int inArrayRank=getrank(inArray);
+   ArrayWrapper<Scalar,ArrayScaled, Rank<ArrayScaled >::value, false>scaledArrayWrap(scaledArray);
+   ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>inArrayWrap(inArray);
+         if(inArrayRank==5){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++)
+          for (int m=0; m<inArray.dimension(4); m++){
+    scaledArrayWrap(i,j,k,l,m) = scalar*inArrayWrap(i,j,k,l,m);
+          }
+	}else if(inArrayRank==4){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++)
+        for (int l=0; l<inArray.dimension(3); l++){
+    scaledArrayWrap(i,j,k,l) = scalar*inArrayWrap(i,j,k,l);
+          }
+	}else if(inArrayRank==3){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++)
+      for (int k=0; k<inArray.dimension(2); k++){
+    scaledArrayWrap(i,j,k) = scalar*inArrayWrap(i,j,k);
+          }
+	}else if(inArrayRank==2){
+   for (int i=0; i<inArray.dimension(0); i++)
+    for (int j=0; j<inArray.dimension(1); j++){
+    scaledArrayWrap(i,j) = scalar*inArrayWrap(i,j);
+          }
+	}else if(inArrayRank==1){
+   for (int i=0; i<inArray.dimension(0); i++){
+     scaledArrayWrap(i) = scalar*inArrayWrap(i);
+
+          }
+	}
 }
 
 
@@ -2518,17 +2033,18 @@ template<class Scalar>
 template<class ArrayVec1, class ArrayVec2>
 Scalar RealSpaceTools<Scalar>::dot(const ArrayVec1 & inVec1, const ArrayVec2 & inVec2) {
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inVec1.rank() != 1) || (inVec2.rank() != 1) ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(inVec1) != 1) || (getrank(inVec2) != 1) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Vector arguments must have rank 1!");
     TEUCHOS_TEST_FOR_EXCEPTION( ( inVec1.dimension(0) != inVec2.dimension(0) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::dot): Dimensions of vector arguments must agree!");
 #endif
-
+   ArrayWrapper<Scalar,ArrayVec1, Rank<ArrayVec1 >::value, true>inVec1Wrap(inVec1);
+   ArrayWrapper<Scalar,ArrayVec2, Rank<ArrayVec2 >::value, true>inVec2Wrap(inVec2);
   Scalar dot(0);
-  for (int i=0; i<inVec1.size(); i++) {
-    dot += inVec1[i]*inVec2[i];
+  for (int i=0; i<inVec1.dimension(0); i++) {
+    dot += inVec1Wrap(i)*inVec2Wrap(i);
   }
   return dot;  
 
@@ -2540,7 +2056,7 @@ template<class Scalar>
 template<class ArrayDot, class ArrayVec1, class ArrayVec2>
 void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1, const ArrayVec2 & inVecs2) {
 
-  int arrayRank = inVecs1.rank();
+  int arrayRank = getrank(inVecs1);
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != getrank(dotArray)+1 ),
@@ -2563,7 +2079,9 @@ void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1,
                           ">>> ERROR (RealSpaceTools::dot): Dimensions of dot-product and vector arrays do not agree!");
     }
 #endif
-
+   ArrayWrapper<Scalar,ArrayDot, Rank<ArrayDot >::value, false>dotArrayWrap(dotArray);
+   ArrayWrapper<Scalar,ArrayVec1, Rank<ArrayVec1 >::value, true>inVecs1Wrap(inVecs1);
+   ArrayWrapper<Scalar,ArrayVec2, Rank<ArrayVec2 >::value, true>inVecs2Wrap(inVecs2);
   int dim_i0 = 1; // first  index dimension (e.g. cell index)
   int dim_i1 = 1; // second index dimension (e.g. point index)
   int dim    = inVecs1.dimension(arrayRank-1); // spatial dimension
@@ -2573,26 +2091,36 @@ void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1,
     case 3:
       dim_i0 = inVecs1.dimension(0);
       dim_i1 = inVecs1.dimension(1);
+   for (int i0=0; i0<dim_i0; i0++) {
+    for (int i1=0; i1<dim_i1; i1++) {
+      Scalar dot(0);
+      for (int i=0; i<dim; i++) {
+        dot += inVecs1Wrap(i0,i1,i)*inVecs2Wrap(i0,i1,i);
+      }
+      dotArrayWrap(i0,i1) = dot;
+    }
+  }
       break;
     case 2:
       dim_i1 = inVecs1.dimension(0);
-      break;
-  }
-
-  int offset_i0, offset, dotOffset;
-  for (int i0=0; i0<dim_i0; i0++) {
-    offset_i0 = i0*dim_i1;
-    for (int i1=0; i1<dim_i1; i1++) {
-      offset      = offset_i0 + i1;
-      dotOffset   = offset;
-      offset     *= dim;
+     for (int i1=0; i1<dim_i1; i1++) {
       Scalar dot(0);
       for (int i=0; i<dim; i++) {
-        dot += inVecs1[offset+i]*inVecs2[offset+i];
+        dot += inVecs1Wrap(i1,i)*inVecs2Wrap(i1,i);
       }
-      dotArray[dotOffset] = dot;
+      dotArrayWrap(i1) = dot;
     }
-  }
+      break;
+    case 1:
+    Scalar dot(0);
+     for (int i=0; i<dim; i++) {
+        dot += inVecs1Wrap(i)*inVecs2Wrap(i);
+      }
+      dotArrayWrap(0) = dot;
+    
+    break;      
+  }  
+  
 }
 
 
@@ -2622,7 +2150,7 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
     TEUCHOS_TEST_FOR_EXCEPTION( ( (matArrayRank < 3) || (matArrayRank > 4) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Rank of matrix array must be 3 or 4!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( matVecs.rank() != inVecs.rank() ),
+    TEUCHOS_TEST_FOR_EXCEPTION( ( getrank(matVecs) != getrank(inVecs) ),
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Vector arrays must be have the same rank!");
     for (int i=0; i<matArrayRank-1; i++) {
@@ -2630,7 +2158,7 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
     }
-    for (int i=0; i<inVecs.rank(); i++) {
+    for (int i=0; i<getrank(inVecs); i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( ( matVecs.dimension(i) != inVecs.dimension(i) ),
                           std::invalid_argument,
                           ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
@@ -2639,7 +2167,9 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
                         std::invalid_argument,
                         ">>> ERROR (RealSpaceTools::matvec): Matrices are not square!");
 #endif
-
+    ArrayWrapper<Scalar,ArrayMatVec, Rank<ArrayMatVec >::value, false>matVecsWrap(matVecs);
+    ArrayWrapper<Scalar,ArrayMat, Rank<ArrayMat >::value, true>inMatsWrap(inMats);
+    ArrayWrapper<Scalar,ArrayVec, Rank<ArrayVec >::value, true>inVecsWrap(inVecs);
   int dim_i0 = 1; // first  index dimension (e.g. cell index)
   int dim_i1 = 1; // second index dimension (e.g. point index)
   int dim    = inMats.dimension(matArrayRank-2); // spatial dimension
@@ -2649,30 +2179,35 @@ void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMa
     case 4:
       dim_i0 = inMats.dimension(0);
       dim_i1 = inMats.dimension(1);
-      break;
-    case 3:
-      dim_i1 = inMats.dimension(0);
-      break;
-  }
-
-  int offset_i0, offset, vecOffset;
-
-  for (int i0=0; i0<dim_i0; i0++) {
-    offset_i0 = i0*dim_i1;
+   for (int i0=0; i0<dim_i0; i0++) {
     for (int i1=0; i1<dim_i1; i1++) {
-      offset     = offset_i0 + i1;
-      vecOffset  = offset*dim;
-      offset     = vecOffset*dim;
-
       for (int i=0; i<dim; i++) {
         Scalar sumdot(0);
         for (int j=0; j<dim; j++) {
-          sumdot += inMats[offset+i*dim+j]*inVecs[vecOffset+j];
+          sumdot += inMatsWrap(i0,i1,i,j)*inVecsWrap(i0,i1,j);
         }
-        matVecs[vecOffset+i] = sumdot;
+        matVecsWrap(i0,i1,i) = sumdot;
       }
     }
   }
+      break;
+    case 3:
+      dim_i1 = inMats.dimension(0);
+  
+    for (int i1=0; i1<dim_i1; i1++) {
+      for (int i=0; i<dim; i++) {
+        Scalar sumdot(0);
+        for (int j=0; j<dim; j++) {
+          sumdot += inMatsWrap(i1,i,j)*inVecsWrap(i1,j);
+        }
+        matVecsWrap(i1,i) = sumdot;
+      }
+    }
+        
+      break;
+          
+  }
+  
 }
 template<class Scalar>
 template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>

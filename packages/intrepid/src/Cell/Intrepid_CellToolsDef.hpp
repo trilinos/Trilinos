@@ -1160,7 +1160,7 @@ struct setJacobianZerosDim3 {
   {
     INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
   
- ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>jacobianWrap(jacobian);   
+   ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>jacobianWrap(jacobian);   
    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
     int spaceDim  = (int)cellTopo.getDimension();
@@ -1322,7 +1322,7 @@ if(getrank(jacobian)==3){
 	   }else{*/ 
 	      for(int pt = 0; pt < points.dimension(0); pt++){
             for(int dm = 0; dm < points.dimension(1) ; dm++){
-              tempPoints(pt, dm) = points(pt, dm);
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
             }//dm
           }//pt
           for(int pt = 0; pt < points.dimension(0); pt++){
