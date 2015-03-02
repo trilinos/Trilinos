@@ -202,7 +202,8 @@ typedef std::deque<mpi_work_request *>::iterator wr_queue_iter_t;
 typedef struct mpi_memory_handle {
     int64_t rtr_tag;
     int64_t rts_tag;
-    int64_t data_tag;
+    int64_t get_data_tag;
+    int64_t put_data_tag;
 
     wr_queue_t     wr_queue;
     nthread_lock_t wr_queue_lock;
@@ -672,33 +673,38 @@ NNTI_result_t NNTI_mpi_register_memory (
             reg_buf->payload_size);
 
     if (ops == NNTI_BOP_RECV_QUEUE) {
-        mpi_mem_hdl->rtr_tag  = 0;
-        mpi_mem_hdl->rts_tag  = 0;
-        mpi_mem_hdl->data_tag = NNTI_MPI_REQUEST_TAG;
+        mpi_mem_hdl->rtr_tag      = 0;
+        mpi_mem_hdl->rts_tag      = 0;
+        mpi_mem_hdl->get_data_tag = 0;
+        mpi_mem_hdl->put_data_tag = NNTI_MPI_REQUEST_TAG;
 
     } else if (ops == NNTI_BOP_RECV_DST) {
-        mpi_mem_hdl->rtr_tag  = 0;
-        mpi_mem_hdl->rts_tag  = 0;
-        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->rtr_tag      = 0;
+        mpi_mem_hdl->rts_tag      = 0;
+        mpi_mem_hdl->get_data_tag = 0;
+        mpi_mem_hdl->put_data_tag = nthread_counter_increment(&transport_global_data.mbits);
 
     } else if (ops == NNTI_BOP_SEND_SRC) {
-        mpi_mem_hdl->rtr_tag  = 0;
-        mpi_mem_hdl->rts_tag  = 0;
-        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->rtr_tag      = 0;
+        mpi_mem_hdl->rts_tag      = 0;
+        mpi_mem_hdl->get_data_tag = 0;
+        mpi_mem_hdl->put_data_tag = nthread_counter_increment(&transport_global_data.mbits);
     } else {
-        mpi_mem_hdl->rtr_tag  = nthread_counter_increment(&transport_global_data.mbits);
-        mpi_mem_hdl->rts_tag  = nthread_counter_increment(&transport_global_data.mbits);
-        mpi_mem_hdl->data_tag = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->rtr_tag      = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->rts_tag      = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->get_data_tag = nthread_counter_increment(&transport_global_data.mbits);
+        mpi_mem_hdl->put_data_tag = nthread_counter_increment(&transport_global_data.mbits);
     }
 
     reg_buf->buffer_segments.NNTI_remote_addr_array_t_val=(NNTI_remote_addr_t *)calloc(1, sizeof(NNTI_remote_addr_t));
     reg_buf->buffer_segments.NNTI_remote_addr_array_t_len=1;
 
-    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id                      = NNTI_TRANSPORT_MPI;
-    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.size     = element_size;
-    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag  = mpi_mem_hdl->rtr_tag;
-    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag  = mpi_mem_hdl->rts_tag;
-    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag = mpi_mem_hdl->data_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].transport_id                          = NNTI_TRANSPORT_MPI;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.size         = element_size;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rtr_tag      = mpi_mem_hdl->rtr_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.rts_tag      = mpi_mem_hdl->rts_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag = mpi_mem_hdl->get_data_tag;
+    reg_buf->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag = mpi_mem_hdl->put_data_tag;
 
     if (ops == NNTI_BOP_RECV_QUEUE) {
         mpi_request_queue_handle *q_hdl=&transport_global_data.req_queue;
@@ -724,7 +730,7 @@ NNTI_result_t NNTI_mpi_register_memory (
     } else if (ops == NNTI_BOP_RECV_DST) {
         post_recv_dst_work_request(
                 reg_buf,
-                mpi_mem_hdl->data_tag,
+                mpi_mem_hdl->put_data_tag,
                 element_size);
 
     } else if ((ops & NNTI_BOP_REMOTE_READ) || (ops & NNTI_BOP_REMOTE_WRITE)) {
@@ -896,7 +902,7 @@ NNTI_result_t NNTI_mpi_send (
         mpi_wr->last_op=MPI_OP_SEND_BUFFER;
 
         dest_rank=dest_hdl->buffer_owner.peer.NNTI_remote_process_t_u.mpi.rank;
-        tag      =dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
+        tag      =dest_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag;
     }
 
     log_debug(nnti_debug_level, "sending to (rank=%d, tag=%d)", dest_rank, tag);
@@ -991,7 +997,7 @@ NNTI_result_t NNTI_mpi_put (
 
     mpi_wr->rts_msg.length=src_length;
     mpi_wr->rts_msg.offset=dest_offset;
-    mpi_wr->rts_msg.tag   =dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
+    mpi_wr->rts_msg.tag   =dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag;
 
     nthread_lock(&nnti_mpi_lock);
     rc=MPI_Issend(
@@ -1015,7 +1021,7 @@ NNTI_result_t NNTI_mpi_put (
             src_length,
             MPI_BYTE,
             dest_rank,
-            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag,
             MPI_COMM_WORLD,
             &mpi_wr->request[PUT_SEND_INDEX]);
     nthread_unlock(&nnti_mpi_lock);
@@ -1112,7 +1118,7 @@ NNTI_result_t NNTI_mpi_get (
 
     mpi_wr->rtr_msg.length=src_length;
     mpi_wr->rtr_msg.offset=src_offset;
-    mpi_wr->rtr_msg.tag=dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag;
+    mpi_wr->rtr_msg.tag=dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag;
 
     nthread_lock(&nnti_mpi_lock);
     rc=MPI_Irecv(
@@ -1120,7 +1126,7 @@ NNTI_result_t NNTI_mpi_get (
             src_length,
             MPI_BYTE,
             src_rank,
-            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag,
+            dest_buffer_hdl->buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag,
             MPI_COMM_WORLD,
             &mpi_wr->request[GET_RECV_INDEX]);
     nthread_unlock(&nnti_mpi_lock);
@@ -2617,7 +2623,7 @@ static int process_event(
                     mpi_wr->rts_msg.length,
                     MPI_BYTE,
                     event->MPI_SOURCE,
-                    mpi_mem_hdl->data_tag,
+                    mpi_mem_hdl->put_data_tag,
                     MPI_COMM_WORLD,
                     &mpi_wr->request[PUT_RECV_INDEX]);
             nthread_unlock(&nnti_mpi_lock);

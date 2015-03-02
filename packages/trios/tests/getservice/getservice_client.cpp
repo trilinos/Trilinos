@@ -368,7 +368,12 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 rc=NSSI_EINVAL;
                 goto out;
             }
-            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.data_tag) {
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.get_data_tag) {
+                log_error(getservice_debug_level, "service compare FAILED");
+                rc=NSSI_EINVAL;
+                goto out;
+            }
+            if (service1.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag != service2.req_addr.buffer_segments.NNTI_remote_addr_array_t_val[0].NNTI_remote_addr_t_u.mpi.put_data_tag) {
                 log_error(getservice_debug_level, "service compare FAILED");
                 rc=NSSI_EINVAL;
                 goto out;
