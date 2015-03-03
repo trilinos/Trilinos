@@ -742,9 +742,12 @@ namespace MueLu {
 
       // Rebalanced A
       RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
-      newA->  SetFactory("A",         manager.GetFactory("A"));
-      newA->  SetFactory("Importer",  manager.GetFactory("Importer"));
-      manager.SetFactory("A",         newA);
+      ParameterList rebAcParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rebAcParams);
+      newA->SetParameterList(rebAcParams);
+      newA->SetFactory("A",         manager.GetFactory("A"));
+      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
+      manager.SetFactory("A", newA);
 
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
@@ -752,6 +755,7 @@ namespace MueLu {
       newPparams.set("type",                           "Interpolation");
       if (changedPRrebalance_)
         newPparams.set("repartition: rebalance P and R", this->doPRrebalance_);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -764,6 +768,7 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",                           "Restriction");
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
       if (changedPRrebalance_)
         newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       if (changedImplicitTranspose_)

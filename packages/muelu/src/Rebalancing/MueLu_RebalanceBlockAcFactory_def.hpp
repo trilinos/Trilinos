@@ -69,6 +69,7 @@
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_HierarchyHelpers.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -81,8 +82,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Generating factory of the matrix A for rebalancing");
-    //validParamList->set< bool >                  ("useSubcomm",         true, "Construct subcommunicators");
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    // SET_VALID_ENTRY("repartition: use subcommunicators");
+#undef SET_VALID_ENTRY
+
+    validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A for rebalancing");
+
     return validParamList;
   }
 
@@ -167,7 +173,7 @@ namespace MueLu {
         //const ParameterList & pL = GetParameterList();
 
         ParameterList XpetraList;
-        //if (pL.get<bool>("useSubcomm") == true) {
+        //if (pL.get<bool>("repartition: use subcommunicators") == true) {
           //GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
           XpetraList.set("Restrict Communicator",false /*true*/ /*XXX*/);
         //}

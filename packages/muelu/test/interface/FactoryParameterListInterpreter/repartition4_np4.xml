@@ -50,6 +50,7 @@
       <Parameter name="factory"                                     type="string"   value="RebalanceTransferFactory"/>
       <Parameter name="type"                                        type="string"   value="Interpolation"/>
       <Parameter name="repartition: rebalance P and R"              type="bool"     value="false"/>
+      <Parameter name="repartition: use subcommunicators"           type="bool"     value="false"/>
       <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
       <Parameter name="Nullspace"                                   type="string"   value="myTentativePFact"/>
       <Parameter name="P"                                           type="string"   value="myProlongatorFact"/>
@@ -59,11 +60,13 @@
       <Parameter name="factory"                                     type="string"   value="RebalanceTransferFactory"/>
       <Parameter name="type"                                        type="string"   value="Restriction"/>
       <Parameter name="repartition: rebalance P and R"              type="bool"     value="false"/>
+      <Parameter name="repartition: use subcommunicators"           type="bool"     value="false"/>
       <Parameter name="R"                                           type="string"   value="myRestrictorFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceAFact">
       <Parameter name="factory"                                     type="string"   value="RebalanceAcFactory"/>
+      <Parameter name="repartition: use subcommunicators"           type="bool"     value="false"/>
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
     </ParameterList>
 

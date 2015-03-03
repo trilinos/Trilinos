@@ -78,14 +78,15 @@ RCP<const ParameterList> RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
-  //validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
-  //validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-  /*validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
-    // The value of "useSubcomm" paramter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
-    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
-    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");*/
+  // validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
+  // validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
+  // validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
+  // validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+  // SET_VALID_ENTRY("repartition: use subcommunicators");
+#undef SET_VALID_ENTRY
+  // validParamList->set< int >                   ("write start",               -1, "First level at which coordinates should be written to file");
+  // validParamList->set< int >                   ("write end",                 -1, "Last level at which coordinates should be written to file");
 
   // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
   // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {

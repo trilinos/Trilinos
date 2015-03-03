@@ -81,7 +81,7 @@ Level 1
   
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
@@ -89,13 +89,13 @@ Level 1
  Build (MueLu::RebalanceTransferFactory)
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
  
  Computing Ac (MueLu::RebalanceAcFactory)
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: degree = 2
@@ -179,7 +179,7 @@ Level 2
   
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
@@ -187,13 +187,13 @@ Level 2
  Build (MueLu::RebalanceTransferFactory)
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
  
  Computing Ac (MueLu::RebalanceAcFactory)
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: degree = 2
@@ -277,7 +277,7 @@ Level 3
   
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
@@ -285,13 +285,13 @@ Level 3
  Build (MueLu::RebalanceTransferFactory)
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
  
  Computing Ac (MueLu::RebalanceAcFactory)
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

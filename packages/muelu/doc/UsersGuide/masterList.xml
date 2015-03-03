@@ -588,6 +588,7 @@
   </multigrid>
 
   <rebalancing>
+
     <parameter>
       <name>repartition: enable</name>
       <type>bool</type>
@@ -681,6 +682,15 @@
       <default>false</default>
       <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
       <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: use subcommunicators</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Use subcommunicators on coarser levels.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
   </rebalancing>

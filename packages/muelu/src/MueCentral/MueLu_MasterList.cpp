@@ -71,7 +71,7 @@ namespace MueLu {
     }
     return problemSpecificList_;
   }
- 
+
    std::string MasterList::interpretParameterName(const std::string& name, const std::string& value) {
 
     // used to concatenate the return string
@@ -79,19 +79,19 @@ namespace MueLu {
 
     // put in short cuts here!
 
-    if (name == "verbosity") { 
+    if (name == "verbosity") {
       std::string verb = "none";
       if (value == "\"0\"") verb = "none";
       if (value == "\"1\"" || value == "\"2\"" || value == "\"3\"") verb = "low";
       if (value == "\"4\"" || value == "\"5\"" || value == "\"6\"") verb = "medium";
       if (value == "\"7\"" || value == "\"8\"") verb = "high";
       if (value == "\"9\"") verb = "extreme";
-      if (value == "\"10\"") verb = "test";  
+      if (value == "\"10\"") verb = "test";
       verb = "\"" + verb + "\"";
-      ss << "<Parameter name=\"verbosity\" type=\"string\" value=" << verb << "/>"; 
-      return ss.str(); 
+      ss << "<Parameter name=\"verbosity\" type=\"string\" value=" << verb << "/>";
+      return ss.str();
     }
-    
+
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
       std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
@@ -100,7 +100,7 @@ namespace MueLu {
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
                                            << "The parameter " << value << " is not supported by MueLu.");
       return ss.str();
-    }    
+    }
 
     // energy minimization is enabled
     if (name == "multigrid algorithm") {
@@ -115,25 +115,25 @@ namespace MueLu {
         *out << "WARNING: repartitioning in MueLu is different to MLs. Please refer to the MueLu users Manual for more information." << std::endl;
       }
     }
-    
+
     // put in auto-generated code here
 
 
-    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
-    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
+    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }
+    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }
+    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }
+    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
+    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
+    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
+    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
     return "";
   }
- 
+
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> MasterList::problemSpecificList_ = Teuchos::null;
   std::string                          MasterList::problemType_ = "unknown";
@@ -203,6 +203,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: remap num values\" type=\"int\" value=\"4\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
 "</ParameterList>"
 ;
@@ -210,250 +211,252 @@ namespace MueLu {
 ("Poisson-2D",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-          
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-          
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-          
+
     "</ParameterList>"
   )
 ("Poisson-3D",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-          
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-          
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-          
+
     "</ParameterList>"
   )
 ("Elasticity-2D",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
-          
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-          
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-          
+
     "</ParameterList>"
   )
 ("Elasticity-3D",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
-          
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-          
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-          
+
     "</ParameterList>"
   )
 ("MHD",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"SCHWARZ\"/>"
-          
+
     "<ParameterList name=\"smoother: params\">"
-    
+
         "<Parameter name=\"schwarz: overlap level\" type=\"int\" value=\"1\"/>"
-        
+
         "<Parameter name=\"schwarz: combine mode\" type=\"string\" value=\"Zero\"/>"
-        
+
         "<Parameter name=\"schwarz: use reordering\" type=\"bool\" value=\"false\"/>"
-        
+
         "<Parameter name=\"subdomain solver name\" type=\"string\" value=\"RILUK\"/>"
-        
+
     "<ParameterList name=\"subdomain solver parameters\">"
-    
+
         "<Parameter name=\"fact: iluk level-of-fill\" type=\"int\" value=\"0\"/>"
-        
+
         "<Parameter name=\"fact: absolute threshold\" type=\"double\" value=\"0.\"/>"
-        
+
         "<Parameter name=\"fact: relative threshold\" type=\"double\" value=\"1.\"/>"
-        
+
         "<Parameter name=\"fact: relax value\" type=\"double\" value=\"0.\"/>"
-        
+
     "</ParameterList>"
-  
+
     "</ParameterList>"
-  
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
-          
+
     "</ParameterList>"
   )
 ("ConvectionDiffusion",
 
     "<ParameterList name=\"MueLu\">"
-    
+
             "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"false\"/>"
-          
+
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-          
+
     "<ParameterList name=\"smoother: params\">"
-    
+
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Gauss-Seidel\"/>"
-        
+
     "</ParameterList>"
-  
+
             "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"new\"/>"
-          
+
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
-          
+
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
-          
+
     "</ParameterList>"
   )
 ;
   std::map<std::string,std::string> MasterList::ML2MueLuLists_ = DefaultProblemStrings<std::string,std::string>
 
          ("default values","problem: type")
-      
+
          ("ML output","verbosity")
-      
+
          ("PDE equations","number of equations")
-      
+
          ("max levels","max levels")
-      
+
          ("prec type","cycle type")
-      
+
          ("problem: symmetric","problem: symmetric")
-      
+
          ("parameterlist: syntax","parameterlist: syntax")
-      
+
          ("smoother: pre or post","smoother: pre or post")
-      
+
          ("smoother: type","smoother: type")
-      
+
          ("smoother: pre type","smoother: pre type")
-      
+
          ("smoother: post type","smoother: post type")
-      
+
          ("smoother: params","smoother: params")
-      
+
          ("smoother: pre params","smoother: pre params")
-      
+
          ("smoother: post params","smoother: post params")
-      
+
          ("smoother: overlap","smoother: overlap")
-      
+
          ("smoother: pre overlap","smoother: pre overlap")
-      
+
          ("smoother: post overlap","smoother: post overlap")
-      
+
          ("max size","coarse: max size")
-      
+
          ("coarse: type","coarse: type")
-      
+
          ("coarse: params","coarse: params")
-      
+
          ("coarse: overlap","coarse: overlap")
-      
+
          ("aggregation: type","aggregation: type")
-      
+
          ("aggregation: ordering","aggregation: ordering")
-      
+
          ("aggregation: drop scheme","aggregation: drop scheme")
-      
+
          ("aggregation: threshold","aggregation: drop tol")
-      
+
          ("aggregation: min agg size","aggregation: min agg size")
-      
+
          ("aggregation: max agg size","aggregation: max agg size")
-      
+
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
-      
+
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
-      
+
          ("aggregation: enable phase 1","aggregation: enable phase 1")
-      
+
          ("aggregation: enable phase 2a","aggregation: enable phase 2a")
-      
+
          ("aggregation: enable phase 2b","aggregation: enable phase 2b")
-      
+
          ("aggregation: enable phase 3","aggregation: enable phase 3")
-      
+
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
-      
+
          ("aggregation: export visualization data","aggregation: export visualization data")
-      
+
          ("aggregation: mode","aggregation: mode")
-      
+
          ("export data","export data")
-      
+
          ("ML print initial list","print initial parameters")
-      
+
          ("print unused","print unused parameters")
-      
+
          ("transpose: use implicit","transpose: use implicit")
-      
+
          ("energy minimization: enable","multigrid algorithm")
-      
+
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
-      
+
          ("aggregation: damping factor","sa: damping factor")
-      
+
          ("sa: use filtered matrix","sa: use filtered matrix")
-      
+
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
-      
+
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
-      
+
          ("filtered matrix: use lumping","filtered matrix: use lumping")
-      
+
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
-      
+
          ("filtered matrix: reuse graph","filtered matrix: reuse graph")
-      
+
          ("emin: iterative method","emin: iterative method")
-      
+
          ("emin: num iterations","emin: num iterations")
-      
+
          ("emin: num reuse iterations","emin: num reuse iterations")
-      
+
          ("emin: pattern","emin: pattern")
-      
+
          ("emin: pattern order","emin: pattern order")
-      
+
          ("repartition: enable","repartition: enable")
-      
+
          ("repartition: partitioner","repartition: partitioner")
-      
+
          ("repartition: params","repartition: params")
-      
+
          ("repartition: start level","repartition: start level")
-      
+
          ("repartition: min per proc","repartition: min rows per proc")
-      
+
          ("repartition: max min ratio","repartition: max imbalance")
-      
+
          ("repartition: remap parts","repartition: remap parts")
-      
+
          ("repartition: remap num values","repartition: remap num values")
-      
+
          ("repartition: print partition distribution","repartition: print partition distribution")
-      
+
          ("repartition: rebalance P and R","repartition: rebalance P and R")
-      
+
+         ("repartition: use subcommunicators","repartition: use subcommunicators")
+
          ("reuse: type","reuse: type")
       ;
 

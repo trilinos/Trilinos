@@ -87,7 +87,7 @@ Level 1
   
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
@@ -95,13 +95,13 @@ Level 1
  Build (MueLu::RebalanceTransferFactory)
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
  
  Computing Ac (MueLu::RebalanceAcFactory)
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
@@ -191,7 +191,7 @@ Level 2
   
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Interpolation
  write start = -1   [default]
  write end = -1   [default]
@@ -199,13 +199,13 @@ Level 2
  Build (MueLu::RebalanceTransferFactory)
  repartition: rebalance P and R = 0   [default]
  transpose: use implicit = 0   [default]
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  type = Restriction
  write start = -1   [default]
  write end = -1   [default]
  
  Computing Ac (MueLu::RebalanceAcFactory)
- useSubcomm = 1   [default]
+ repartition: use subcommunicators = 1   [default]
  
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  presmoother -> 
