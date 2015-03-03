@@ -212,14 +212,11 @@ namespace Tpetra {
                const bool zeroOut) : /* default is true */
     base_type (map)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-
    TEUCHOS_TEST_FOR_EXCEPTION(
      numVecs < 1, std::invalid_argument, "Tpetra::MultiVector::MultiVector"
      "(map,numVecs,zeroOut): numVecs = " << numVecs << " < 1.");
-    const size_t myLen = this->getLocalLength ();
-    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (myLen, numVecs, zeroOut);
+    const size_t lclNumRows = this->getLocalLength ();
+    view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, DeviceType> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
   }
 
@@ -245,6 +242,9 @@ namespace Tpetra {
     origView_ (source.origView_),
     whichVectors_ (source.whichVectors_)
   {
+    const char tfecfFuncName[] = "MultiVector(const MultiVector&, "
+      "const Teuchos::DataAccess): ";
+
     if (copyOrView == Teuchos::Copy) {
       // Reuse the conveniently already existing function that creates
       // a deep copy.
@@ -257,11 +257,11 @@ namespace Tpetra {
     else if (copyOrView == Teuchos::View) {
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Tpetra::MultiVector copy constructor: "
-        "The second argument 'copyOrView' has an invalid value " << copyOrView
-        << ".  Valid values include Teuchos::Copy = " << Teuchos::Copy <<
-        " and Teuchos::View = " << Teuchos::View << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::invalid_argument, "Second argument 'copyOrView' has an "
+        "invalid value " << copyOrView << ".  Valid values include "
+        "Teuchos::Copy = " << Teuchos::Copy << " and Teuchos::View = "
+        << Teuchos::View << ".");
     }
   }
 
@@ -273,10 +273,7 @@ namespace Tpetra {
     view_ (view),
     origView_ (view)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    const char tfecfFuncName[] = "Tpetra::MultiVector(map,view): ";
-
+    const char tfecfFuncName[] = "MultiVector(map,view): ";
 
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
@@ -284,17 +281,13 @@ namespace Tpetra {
     origView_.stride (stride);
     const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
       origView_.dimension_0 ();
-    const size_t lclNumRows = getLocalLength (); // comes from the Map
+    const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input view's first dimension (number "
       "of rows = " << view.dimension_0 () << ") does not not match the number "
       "of entries in the Map on the calling process.");
-    //const size_t numVecs = view_.dimension_1 ();
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
-    //   ": numVecs must be strictly positive, but you specified numVecs = "
-    //   << numVecs << ".");
   }
 
 
@@ -306,7 +299,7 @@ namespace Tpetra {
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
-    const char tfecfFuncName[] = "Tpetra::MultiVector(map,d_view): ";
+    const char tfecfFuncName[] = "MultiVector(map,d_view): ";
 
     // Get stride of view: if second dimension is 0, the stride might
     // be 0, so take view_dimension instead.
@@ -342,9 +335,7 @@ namespace Tpetra {
     view_ (view),
     origView_ (origView)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    const char tfecfFuncName[] = "Tpetra::MultiVector(map,view,origView)";
+    const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
@@ -352,23 +343,19 @@ namespace Tpetra {
     origView_.stride (stride);
     const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
       origView_.dimension_0 ();
-    const size_t lclNumRows = getLocalLength (); // comes from the Map
+    const size_t lclNumRows = this->getLocalLength (); // comes from the Map
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       LDA < lclNumRows, std::invalid_argument, "The input Kokkos::DualView's "
       "column stride LDA = " << LDA << " < getLocalLength() = " << lclNumRows
       << ".  This may also mean that the input origView's first dimension (number "
       "of rows = " << origView.dimension_0 () << ") does not not match the number "
       "of entries in the Map on the calling process.");
-    //const size_t numVecs = view_.dimension_1 ();
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
-    //   ": numVecs must be strictly positive, but you specified numVecs = "
-    //   << numVecs << ".");
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view,
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
@@ -378,23 +365,49 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,view,whichVectors): ";
+
+    const size_t lclNumRows = map.is_null () ? size_t (0) :
+      map->getNodeNumElements ();
+    // Check dimensions of the input DualView.  We accept that Kokkos
+    // might not allow construction of a 0 x m (Dual)View with m > 0,
+    // so we only require the number of rows to match if the
+    // (Dual)View has more than zero columns.  Likewise, we only
+    // require the number of columns to match if the (Dual)View has
+    // more than zero rows.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
+      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+    if (whichVectors.size () != 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        view.dimension_1 () != 0 && view.dimension_1 () == 0,
+        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        " = " << whichVectors.size () << " > 0.");
+      size_t maxColInd = 0;
+      typedef Teuchos::ArrayView<const size_t>::size_type size_type;
+      for (size_type k = 0; k < whichVectors.size (); ++k) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          whichVectors[k] == Teuchos::OrdinalTraits<size_t>::invalid (),
+          std::invalid_argument, "whichVectors[" << k << "] = "
+          "Teuchos::OrdinalTraits<size_t>::invalid().");
+        maxColInd = std::max (maxColInd, whichVectors[k]);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
+        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        << " <= max(whichVectors) = " << maxColInd << ".");
+    }
 
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
-    // size_t numVecs = view_.dimension_1 ();
-
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
-    //   ": numVecs must be strictly positive, but you specified numVecs = "
-    //   << numVecs << ".");
-    const size_t myLen = getLocalLength();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
-      "LDA must be large enough to accomodate the local entries.");
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      LDA < lclNumRows, std::invalid_argument,
+      "LDA = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
 
     if (whichVectors.size () == 1) {
       // If whichVectors has only one entry, we don't need to bother
@@ -427,23 +440,47 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
     const char tfecfFuncName[] = "MultiVector(map,view,origView,whichVectors): ";
 
+    const size_t lclNumRows = this->getLocalLength ();
+    // Check dimensions of the input DualView.  We accept that Kokkos
+    // might not allow construction of a 0 x m (Dual)View with m > 0,
+    // so we only require the number of rows to match if the
+    // (Dual)View has more than zero columns.  Likewise, we only
+    // require the number of columns to match if the (Dual)View has
+    // more than zero rows.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_0 ()) < lclNumRows,
+      std::invalid_argument, "view.dimension_0() = " << view.dimension_0 ()
+      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+    if (whichVectors.size () != 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        view.dimension_1 () != 0 && view.dimension_1 () == 0,
+        std::invalid_argument, "view.dimension_1() = 0, but whichVectors.size()"
+        " = " << whichVectors.size () << " > 0.");
+      size_t maxColInd = 0;
+      typedef Teuchos::ArrayView<const size_t>::size_type size_type;
+      for (size_type k = 0; k < whichVectors.size (); ++k) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          whichVectors[k] == Teuchos::OrdinalTraits<size_t>::invalid (),
+          std::invalid_argument, "whichVectors[" << k << "] = "
+          "Teuchos::OrdinalTraits<size_t>::invalid().");
+        maxColInd = std::max (maxColInd, whichVectors[k]);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        view.dimension_1 () != 0 && static_cast<size_t> (view.dimension_1 ()) <= maxColInd,
+        std::invalid_argument, "view.dimension_1() = " << view.dimension_1 ()
+        << " <= max(whichVectors) = " << maxColInd << ".");
+    }
     // Get stride of view: if second dimension is 0, the
     // stride might be 0, so take view_dimension instead.
     size_t stride[8];
     origView_.stride (stride);
-    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] : origView_.dimension_0 ();
-    // size_t numVecs = view_.dimension_1 ();
-
-    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numVecs < 1, std::invalid_argument,
-    //   ": numVecs must be strictly positive, but you specified numVecs = "
-    //   << numVecs << ".");
-    const size_t myLen = getLocalLength();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
-      "LDA must be large enough to accomodate the local entries.");
+    const size_t LDA = (origView_.dimension_1 () > 1) ? stride[1] :
+      origView_.dimension_0 ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      LDA < lclNumRows, std::invalid_argument, "Input DualView's column stride"
+      " = " << LDA << " < this->getLocalLength() = " << lclNumRows << ".");
 
     if (whichVectors.size () == 1) {
       // If whichVectors has only one entry, we don't need to bother
@@ -605,7 +642,6 @@ namespace Tpetra {
       return static_cast<size_t> (0);
     }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
