@@ -3899,14 +3899,14 @@ namespace Tpetra {
         // Device memory has the most recent version of src.
         this->template modify<DT> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
-        localDeepCopyConstStride (this->getDualView ().template view<DT> (),
+        Details::localDeepCopyConstStride (this->getDualView ().template view<DT> (),
                                   src.getDualView ().template view<DT> ());
         this->template sync<HMDT> (); // Sync dst from device to host.
       }
       else { // Host memory has the most recent version of src.
         this->template modify<HMDT> (); // We are about to modify dst on host.
         // Copy from src to dst on host.
-        localDeepCopyConstStride (this->getDualView ().template view<HMDT> (),
+        Details::localDeepCopyConstStride (this->getDualView ().template view<HMDT> (),
                                   src.getDualView ().template view<HMDT> ());
         this->template sync<DT> (); // Sync dst from host to device.
       }
@@ -3946,7 +3946,7 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // device.  The function ignores its dstWhichVecs argument
           // in this case.
-          localDeepCopy (this->getDualView ().template view<DT> (),
+          Details::localDeepCopy (this->getDualView ().template view<DT> (),
                          src.getDualView ().template view<DT> (),
                          true, false, srcWhichVecs.d_view, srcWhichVecs.d_view);
           // Sync *this' DualView to the host.  This is cheaper than
@@ -3969,7 +3969,7 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores its dstWhichVecs argument in
           // this case.
-          localDeepCopy (this->getDualView ().template view<HMDT> (),
+          Details::localDeepCopy (this->getDualView ().template view<HMDT> (),
                          src.getDualView ().template view<HMDT> (),
                          true, false, srcWhichVecs, srcWhichVecs);
           // Sync dst back to the device, since we only copied on the host.
@@ -3999,7 +3999,7 @@ namespace Tpetra {
             whichVecs.template sync<DT> ();
 
             // Copy src to the selected vectors of dst, on the device.
-            localDeepCopy (this->getDualView ().template view<DT> (),
+            Details::localDeepCopy (this->getDualView ().template view<DT> (),
                            src.getDualView ().template view<DT> (),
                            this->isConstantStride (), src.isConstantStride (),
                            whichVecs.d_view, whichVecs.d_view);
@@ -4023,7 +4023,7 @@ namespace Tpetra {
             }
             // Copy from src to the selected vectors of dst, on the
             // host.  The functor ignores its 4th arg in this case.
-            localDeepCopy (this->getDualView ().template view<HMDT> (),
+            Details::localDeepCopy (this->getDualView ().template view<HMDT> (),
                            src.getDualView ().template view<HMDT> (),
                            this->isConstantStride (), src.isConstantStride (),
                            whichVecs, whichVecs);
@@ -4071,7 +4071,7 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
-            localDeepCopy (this->getDualView ().template view<DT> (),
+            Details::localDeepCopy (this->getDualView ().template view<DT> (),
                            src.getDualView ().template view<DT> (),
                            this->isConstantStride (), src.isConstantStride (),
                            whichVecsDst.d_view, whichVecsSrc.d_view);
@@ -4092,7 +4092,7 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
-            localDeepCopy (this->getDualView ().template view<HMDT> (),
+            Details::localDeepCopy (this->getDualView ().template view<HMDT> (),
                            src.getDualView ().template view<HMDT> (),
                            this->isConstantStride (), src.isConstantStride (),
                            whichVectorsDst, whichVectorsSrc);
