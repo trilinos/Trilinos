@@ -212,22 +212,27 @@ namespace {
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
-    MV mvec (map, numVecs, true);
-    TEST_EQUALITY( mvec.getNumVectors(), numVecs );
-    TEST_EQUALITY( mvec.getLocalLength(), numLocal );
-    TEST_EQUALITY( mvec.getGlobalLength(), numImages*numLocal );
+    RCP<MV> mvec;
+    TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
+    if (mvec.is_null ()) {
+      out << "MV constructor threw an exception: returning" << endl;
+      return;
+    }
+    TEST_EQUALITY( mvec->getNumVectors(), numVecs );
+    TEST_EQUALITY( mvec->getLocalLength(), numLocal );
+    TEST_EQUALITY( mvec->getGlobalLength(), numImages*numLocal );
 
     // we zeroed it out in the constructor; all norms should be zero
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
-    mvec.norm2(norms);
+    TEST_NOTHROW( mvec->norm2(norms) );
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-    mvec.norm1(norms);
+    TEST_NOTHROW( mvec->norm1(norms) );
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-    mvec.normInf(norms);
+    TEST_NOTHROW( mvec->normInf(norms) );
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
     // print it
-    out << mvec << endl;
+    out << *mvec << endl;
   }
 
 
@@ -2934,33 +2939,114 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     int lclSuccess = 1;
     int gblSuccess = 1;
+    std::ostringstream errStrm;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     RCP<const Comm<int> > comm = getDefaultComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
     const size_t numLclRows = 10;
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLclRows, indexBase, comm));
 
     const size_t numVecs = 3;
-    MV X (map, numVecs, false);
+    RCP<MV> X;
+    try {
+      X = rcp (new MV (map, numVecs, false));
+      lclSuccess = 1;
+    }
+    catch (std::exception& e) {
+      errStrm << "Process " << myRank << ": MV constructor threw exception: "
+              << e.what () << endl;
+      lclSuccess = 0;
+    }
+    gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST(gblSuccess, 1);
+    if (gblSuccess != 1) {
+      out << "MV constructor threw an exception on one or more processes!" << endl;
+      for (int r = 0; r < numProcs; ++r) {
+        if (r == myRank) {
+          std::cerr << errStrm.str ();
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing.
+    }
 
     // Don't use a negative number, in case Scalar is an unsigned integer.
     const Scalar ONE = STS::one ();
     const Scalar TWO = STS::one () + STS::one ();
-    X.putScalar (TWO);
+    try {
+      X->putScalar (TWO);
+    }
+    catch (std::exception& e) {
+      errStrm << "Process " << myRank << ": MV::putScalar threw exception: "
+              << e.what () << endl;
+      lclSuccess = 0;
+    }
+    gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST(gblSuccess, 1);
+    if (gblSuccess != 1) {
+      out << "MV::putScalar threw an exception on one or more processes!" << endl;
+      for (int r = 0; r < numProcs; ++r) {
+        if (r == myRank) {
+          std::cerr << errStrm.str ();
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing.
+    }
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
-    dual_view_type X_lcl = X.getDualView ();
+    dual_view_type X_lcl;
+
+    try {
+      X_lcl = X->getDualView ();
+    }
+    catch (std::exception& e) {
+      errStrm << "Process " << myRank << ": MV::getDualView threw exception: "
+              << e.what () << endl;
+      lclSuccess = 0;
+    }
+    gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST(gblSuccess, 1);
+    if (gblSuccess != 1) {
+      out << "MV::getDualView threw an exception on one or more processes!" << endl;
+      for (int r = 0; r < numProcs; ++r) {
+        if (r == myRank) {
+          std::cerr << errStrm.str ();
+        }
+        comm->barrier ();
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing.
+    }
 
     // putScalar doesn't sync afterwards, so we have to sync manually.
     // It has the option to modify the data in the last modified
     // location without sync.  (This is supposed to avoid allocation,
     // once Kokkos::DualView gets the feature of lazy allocation on
     // modify.)
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    //
+    // The use of "execution_space" and not "memory_space" here
+    // ensures that Kokkos won't attempt to use a host execution space
+    // that hasn't been initialized.  For example, if Kokkos::OpenMP
+    // is disabled and Kokkos::Threads is enabled, the latter is
+    // always the default execution space of Kokkos::HostSpace, even
+    // when ExecSpace is Kokkos::Serial.  That's why we use
+    // execution_space here and not memory_space.
+    typedef typename dual_view_type::t_dev::execution_space DMS;
+    typedef typename dual_view_type::t_host::execution_space HMS;
     if (X_lcl.modified_device () > X_lcl.modified_host ()) {
       out << "Sync to host" << endl;
       X_lcl.template sync<HMS> ();
@@ -3002,7 +3088,7 @@ namespace {
     typedef typename MV::mag_type mag_type;
     Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
     norms.template modify<DMS> ();
-    X.normInf (norms.template view<DMS> ());
+    X->normInf (norms.template view<DMS> ());
     norms.template sync<HMS> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
@@ -3047,8 +3133,8 @@ namespace {
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    typedef typename dual_view_type::t_dev::execution_space DMS;
+    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -3174,8 +3260,15 @@ namespace {
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    // The use of "execution_space" and not "memory_space" here
+    // ensures that Kokkos won't attempt to use a host execution space
+    // that hasn't been initialized.  For example, if Kokkos::OpenMP
+    // is disabled and Kokkos::Threads is enabled, the latter is
+    // always the default execution space of Kokkos::HostSpace, even
+    // when ExecSpace is Kokkos::Serial.  That's why we use
+    // execution_space here and not memory_space.
+    typedef typename dual_view_type::t_dev::execution_space DMS;
+    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();

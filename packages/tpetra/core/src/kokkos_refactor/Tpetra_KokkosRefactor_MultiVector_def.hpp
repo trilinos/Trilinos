@@ -160,10 +160,18 @@ namespace { // (anonymous)
   // ExecSpace: The execution space (corresponds to Tpetra's DeviceType).
   template<class T, class ExecSpace>
   struct MakeUnmanagedView {
+    // The 'false' part of the branch carefully ensures that this
+    // won't attempt to use a host execution space that hasn't been
+    // initialized.  For example, if Kokkos::OpenMP is disabled and
+    // Kokkos::Threads is enabled, the latter is always the default
+    // execution space of Kokkos::HostSpace, even when ExecSpace is
+    // Kokkos::Serial.  That's why we go through the trouble of asking
+    // Kokkos::DualView what _its_ space is.  That seems to work
+    // around this default execution space issue.
     typedef typename Kokkos::Impl::if_c<
       Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<ExecSpace, Kokkos::HostSpace>::value,
       typename ExecSpace::execution_space,
-      Kokkos::HostSpace>::type host_exec_space;
+      typename Kokkos::DualView<T*, ExecSpace>::host_mirror_space>::type host_exec_space;
     typedef Kokkos::LayoutLeft array_layout;
     typedef Kokkos::View<T*, array_layout, host_exec_space,
                          Kokkos::MemoryUnmanaged> view_type;
@@ -259,7 +267,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view) :
     base_type (map),
     view_ (view),
@@ -327,7 +335,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view,
                const dual_view_type& origView) :
     base_type (map),
@@ -470,7 +478,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename dual_view_type::host_mirror_space HMS;
-    typedef MakeUnmanagedView<const IST, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<const IST, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type in_view_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutLeft, HMS> out_view_type;
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs): ";
@@ -512,7 +520,7 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename dual_view_type::host_mirror_space HMS;
-    typedef MakeUnmanagedView<const IST, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<const IST, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type in_view_type;
     typedef Kokkos::View<IST*, Kokkos::LayoutLeft, HMS> out_view_type;
     const char tfecfFuncName[] = "MultiVector(map,ArrayOfPtrs,numVecs): ";
@@ -1005,7 +1013,7 @@ namespace Tpetra {
     typedef Kokkos::View<impl_scalar_type*, col_array_layout, execution_space> vec_view_type;
     typedef typename dual_view_type::host_mirror_space host_mirror_space;
     // View of all the dot product results.
-    typedef MakeUnmanagedView<dot_type, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<dot_type, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type host_dots_view_type;
     typedef Kokkos::View<dot_type*, Kokkos::LayoutLeft,
       host_mirror_space> host_dots_managed_view_type;
@@ -1300,7 +1308,7 @@ namespace Tpetra {
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef Kokkos::View<mag_type*, execution_space> dev_norms_view_type;
-    typedef MakeUnmanagedView<mag_type, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<mag_type, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
@@ -1445,7 +1453,7 @@ namespace Tpetra {
   norm1 (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef Kokkos::View<mag_type*, execution_space> dev_norms_view_type;
-    typedef MakeUnmanagedView<mag_type, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<mag_type, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
@@ -1472,7 +1480,7 @@ namespace Tpetra {
   normInf (const Teuchos::ArrayView<mag_type>& norms) const
   {
     typedef Kokkos::View<mag_type*, execution_space> dev_norms_view_type;
-    typedef MakeUnmanagedView<mag_type, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<mag_type, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type host_norms_view_type;
 
     const size_t numNorms = static_cast<size_t> (norms.size ());
@@ -2905,7 +2913,7 @@ namespace Tpetra {
   {
     using Kokkos::subview;
     typedef impl_scalar_type IST;
-    typedef MakeUnmanagedView<IST, DeviceType> view_getter_type;
+    typedef MakeUnmanagedView<IST, execution_space> view_getter_type;
     typedef typename view_getter_type::view_type input_col_type;
     // Types of views of this MultiVector's data.
     typedef typename dual_view_type::t_host host_view_type;
