@@ -371,8 +371,10 @@ struct DynamicConnectivityTagSelector<stk::topology::ELEMENT_RANK>
 // Use macro below to deprecate functions
 #ifdef __GNUC__
 #define STK_DEPRECATED(func) func __attribute__ ((deprecated))
+#define STK_MARK_DEPRECATED __attribute__ ((deprecated))
 #else
 #define STK_DEPRECATED(func) func
+#define STK_MARK_DEPRECATED
 #endif
 
 

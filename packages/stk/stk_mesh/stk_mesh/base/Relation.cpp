@@ -211,6 +211,15 @@ void induced_part_membership(const BulkData& mesh,
                                    EntityRank            entity_rank_to ,
                                    OrdinalVector       & induced_parts)
 {
+    induced_part_membership(mesh, entity_from, omit, entity_rank_to, induced_parts);
+}
+
+void induced_part_membership(const BulkData& mesh,
+                             const Entity entity_from ,
+                             const OrdinalVector       & omit ,
+                                   EntityRank            entity_rank_to ,
+                                   OrdinalVector       & induced_parts)
+{
   const Bucket   & bucket_from    = mesh.bucket(entity_from);
   const int      local_proc_rank  = mesh.parallel_rank();
   const EntityRank entity_rank_from = bucket_from.entity_rank();
@@ -221,19 +230,12 @@ void induced_part_membership(const BulkData& mesh,
   // 'entity_from' to be accurate if it is owned by the local process.
   if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
 
-    const std::pair<const unsigned *, const unsigned *>
-      bucket_superset_ordinals = bucket_from.superset_part_ordinals();
-
-    OrdinalVector::const_iterator omit_begin = omit.begin(),
-                                  omit_end   = omit.end();
+    const stk::mesh::PartVector &superset_parts = bucket_from.supersets();
 
     // Contributions of the 'from' entity:
-    for ( const unsigned * i = bucket_superset_ordinals.first ;
-                           i != bucket_superset_ordinals.second ; ++i ) {
-      ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
-      Part & part = * all_parts[*i] ;
-
-      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit_begin, omit_end , *i )) {
+    for ( size_t i=0; i<superset_parts.size(); i++ ) {
+      Part & part = *superset_parts[i] ;
+      if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit.begin(), omit.end() , part.mesh_meta_data_ordinal() )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
@@ -254,7 +256,6 @@ void induced_part_membership(const BulkData& mesh,
 
   const EntityRank e_rank = mesh.entity_rank(entity);
   const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
-  const PartVector& all_parts = mesh.mesh_meta_data().get_parts();
 
   EntityVector temp_entities;
   Entity const* rels = NULL;
@@ -272,7 +273,7 @@ void induced_part_membership(const BulkData& mesh,
 
     for (int j = 0; j < num_rels; ++j)
     {
-      induced_part_membership(mesh, all_parts, rels[j], omit, e_rank, induced_parts);
+      induced_part_membership(mesh, rels[j], omit, e_rank, induced_parts);
     }
   }
 }

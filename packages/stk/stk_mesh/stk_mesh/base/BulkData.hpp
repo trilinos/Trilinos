@@ -755,6 +755,12 @@ protected: //functions
                                                 const PartVector & remove_parts,
                                                 bool always_propagate_internal_changes=true );
 
+  void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
+                                                                               stk::mesh::Entity e_to,
+                                                                               EntityVector &temp_entities,
+                                                                               OrdinalVector &empty,
+                                                                               OrdinalVector &to_add);
+
   bool internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt );
   bool internal_modification_end_for_change_parts();
 
@@ -935,7 +941,18 @@ private: //functions
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,
                                    const PartVector & parts );
 
-  void internal_propagate_part_changes( Entity entity, const std::vector<Part*> & removed );
+  void internal_fill_remove_parts_list(stk::mesh::Entity entity,
+                                       stk::mesh::Entity e_to,
+                                       EntityRank erank,
+                                       const std::vector<Part*> & removed,
+                                       EntityVector &temp_entities,
+                                       OrdinalVector &empty,
+                                       OrdinalVector &scratchOrdinalVector,
+                                       OrdinalVector &partsThatShouldStillBeInduced,
+                                       PartVector &delParts);
+
+  void internal_propagate_induced_part_changes_to_downward_connected_entities( Entity entity,
+                                                                               const std::vector<Part*> & removed );
 
   Ghosting & internal_create_ghosting( const std::string & name );
   void internal_verify_inputs_and_change_ghosting(
@@ -950,23 +967,25 @@ private: //functions
   void internal_update_parts_for_shared_entity(stk::mesh::Entity entity, const bool is_entity_shared, const bool did_i_just_become_owner);
   void internal_resolve_shared_modify_delete_second_pass();
 
-  void internal_basic_part_check(const Part* part,
-                                 const unsigned ent_rank,
-                                 const unsigned undef_rank,
-                                 bool& intersection_ok,
-                                 bool& rel_target_ok,
-                                 bool& rank_ok) const;
-
   inline void internal_check_unpopulated_relations(Entity entity, EntityRank rank) const;
 
-  // Returns false if there is a problem. It is expected that
-  // verify_change_parts will be called if quick_verify_change_part detects
-  // a problem, therefore we leave the generation of an exception to
-  // verify_change_parts. We want this function to be as fast as
-  // possible.
-  bool internal_quick_verify_change_part(const Part* part,
-                                         const unsigned ent_rank,
-                                         const unsigned undef_rank) const;
+  bool internal_verify_part_ranks_consistent_with_entity_rank(const PartVector & parts, const EntityRank entityRank);
+  void internal_verify_add_and_remove_part_ranks_consistent_with_entity_rank(const PartVector & add_parts,
+                                                                             const PartVector & remove_parts,
+                                                                             stk::mesh::Entity entity);
+  void internal_throw_error_if_manipulating_internal_part_memberships(const PartVector & parts);
+
+  void internal_adjust_closure_count(Entity entity,
+                                       const std::vector<Part*> & add_parts,
+                                       const std::vector<Part*> & remove_parts);
+  void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, uint16_t closureCountAdjustment);
+
+  void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
+                                                           const std::vector<Part*> & add_parts,
+                                                           const std::vector<Part*> & remove_parts,
+                                                           OrdinalVector &newBucketPartList,
+                                                           std::vector<Part*> &parts_removed);
+  void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList);
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,

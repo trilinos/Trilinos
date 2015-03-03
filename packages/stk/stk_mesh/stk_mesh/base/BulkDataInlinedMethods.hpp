@@ -407,40 +407,6 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
   return bucket(entity).has_permutation(rank);
 }
 
-/** \} */
-
-inline
-void BulkData::internal_basic_part_check(const Part* part,
-                                         const unsigned ent_rank,
-                                         const unsigned undef_rank,
-                                         bool& intersection_ok,
-                                         bool& rel_target_ok,
-                                         bool& rank_ok) const
-{
-  // const unsigned part_rank = part->primary_entity_rank();
-
-  intersection_ok = true;
-  rel_target_ok   = true;
-
-  // Do we allow arbitrary part changes to entities regardless of part rank? For the sake of the migration, we will for now.
-#ifdef SIERRA_MIGRATION
-  rank_ok = true;
-#else
-  const unsigned part_rank = part->primary_entity_rank();
-  rank_ok         = ( ent_rank == part_rank ||
-                      undef_rank  == part_rank );
-#endif
-}
-
-inline bool BulkData::internal_quick_verify_change_part(const Part* part,
-                                                        const unsigned ent_rank,
-                                                        const unsigned undef_rank) const
-{
-  bool intersection_ok=false, rel_target_ok=false, rank_ok=false;
-  internal_basic_part_check(part, ent_rank, undef_rank, intersection_ok, rel_target_ok, rank_ok);
-  return intersection_ok && rel_target_ok && rank_ok;
-}
-
 inline
 int BulkData::entity_comm_map_owner(const EntityKey & key) const
 {

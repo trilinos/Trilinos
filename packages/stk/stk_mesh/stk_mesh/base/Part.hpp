@@ -201,17 +201,9 @@ struct PartLess {
 };
 
 /** \brief  Order a collection of parts: invoke sort and then unique */
-void order( PartVector & );
-
-inline
-void order( OrdinalVector & v )
-{
-  OrdinalVector::iterator ev = v.end();
-  OrdinalVector::iterator iv = v.begin();
-  std::sort( iv , ev );
-  iv = std::unique( iv , ev );
-  v.erase( iv , ev );
-}
+void sort_and_unique( PartVector &partVector );
+void order( PartVector & ) STK_MARK_DEPRECATED;         //marked deprecated on March 2, 2015
+void order( OrdinalVector & v ) STK_MARK_DEPRECATED;    //marked deprecated on March 2, 2015
 
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.

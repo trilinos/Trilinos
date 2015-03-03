@@ -319,11 +319,16 @@ void induced_part_membership( const Part & part ,
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities.  Do not include and parts in the 'omit' list.
  */
-void induced_part_membership(const BulkData& mesh, const PartVector& all_parts,
+void induced_part_membership(const BulkData& mesh,
                              const Entity entity_from ,
                               const OrdinalVector       & omit ,
                                     EntityRank            entity_rank_to ,
                                     OrdinalVector       & induced_parts);
+void induced_part_membership(const BulkData& mesh, const PartVector& all_parts,
+                             const Entity entity_from ,
+                              const OrdinalVector       & omit ,
+                                    EntityRank            entity_rank_to ,
+                                    OrdinalVector       & induced_parts) STK_MARK_DEPRECATED; // deprecated on March 2, 2015
 
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
