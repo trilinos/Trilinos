@@ -86,6 +86,30 @@ namespace { // (anonymous)
     return view_type (x.getRawPtr (), numEnt);
   }
 
+  // For a given Node type, return the associated execution space.
+  template<class NodeType>
+  struct NodeToExecSpace {
+#ifdef KOKKOS_HAVE_SERIAL
+    typedef Kokkos::Serial execution_space;
+#else
+    typedef Kokkos::HostSpace::execution_space execution_space;
+#endif // KOKKOS_HAVE_SERIAL
+  };
+
+  // Partial specialization for the new (Kokkos refactor) Node types.
+  template<class ExecSpace>
+  struct NodeToExecSpace<Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace> > {
+    typedef typename ExecSpace::execution_space execution_space;
+  };
+
+  // For a given Kokkos (execution or memory) space, return both its
+  // execution space, and the corresponding host execution space.
+  template<class Space>
+  struct GetHostExecSpace {
+    typedef typename Space::execution_space execution_space;
+    typedef typename Kokkos::View<int*, execution_space>::HostMirror::execution_space host_execution_space;
+  };
+
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -493,12 +517,12 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename Node::execution_space execution_space;
-  typedef typename View<int*, execution_space>::HostMirror::host_mirror_space HMS;
+  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  typedef std::pair<typename View<int*, HMS>::size_type,
-                    typename View<int*, HMS>::size_type> pair_type;
+  typedef std::pair<typename View<int*, HES>::size_type,
+                    typename View<int*, HES>::size_type> pair_type;
   const char prefix[] = "Tpetra::Import_Util::packAndPrepareWithOwningPIDs: ";
 
   // FIXME (mfh 03 Jan 2015) Currently, it might be the case that if a
@@ -553,7 +577,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
       ArrayView<const LO> lidsView;
       SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
       const ST* valsViewRaw = reinterpret_cast<const ST*> (valsView.getRawPtr ());
-      View<const ST*, HMS, MemoryUnmanaged> valsViewK (valsViewRaw, valsView.size ());
+      View<const ST*, HES, MemoryUnmanaged> valsViewK (valsViewRaw, valsView.size ());
       TEUCHOS_TEST_FOR_EXCEPTION(
         static_cast<size_t> (valsViewK.dimension_0 ()) != numEnt,
         std::logic_error, prefix << "Local row " << i << " claims to have "
@@ -564,11 +588,11 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
       // NOTE (mfh 07 Feb 2015) Since we're using the host memory
       // space here for now, this doesn't assume UVM.  That may change
       // in the future, if we ever start packing on the device.
-      numBytesPerValue = PackTraits<ST, HMS>::packValueCount (valsViewK(0));
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (valsViewK(0));
     }
 
     const size_t numBytes =
-      packRowCount<LO, GO, HMS> (numEnt, numBytesPerValue);
+      packRowCount<LO, GO, HES> (numEnt, numBytesPerValue);
     numPacketsPerLID[i] = numBytes;
     totalNumBytes += numBytes;
     totalNumEntries += numEnt;
@@ -580,7 +604,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
     exports.resize (totalNumBytes);
-    View<char*, HMS, MemoryUnmanaged> exportsK (exports.getRawPtr (),
+    View<char*, HES, MemoryUnmanaged> exportsK (exports.getRawPtr (),
                                                 totalNumBytes);
     // Current position (in bytes) in the 'exports' output array.
     size_t offset = 0;
@@ -592,13 +616,13 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     const map_type& colMap = * (SourceMatrix.getColMap ());
 
     // Temporary buffers for a copy of the column gids/pids
-    View<GO*, HMS> gids;
-    View<int*, HMS> pids;
+    View<GO*, HES> gids;
+    View<int*, HES> pids;
     {
       GO gid;
       int pid;
-      gids = PackTraits<GO, HMS>::allocateArray (gid, maxRowLength, "gids");
-      pids = PackTraits<int, HMS>::allocateArray (pid, maxRowLength, "pids");
+      gids = PackTraits<GO, HES>::allocateArray (gid, maxRowLength, "gids");
+      pids = PackTraits<int, HES>::allocateArray (pid, maxRowLength, "pids");
     }
 
     for (size_type i = 0; i < numExportLIDs; i++) {
@@ -609,7 +633,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
       ArrayView<const LO> lidsView;
       SourceMatrix.getLocalRowView (lclRow, lidsView, valsView);
       const ST* valsViewRaw = reinterpret_cast<const ST*> (valsView.getRawPtr ());
-      View<const ST*, HMS, MemoryUnmanaged> valsViewK (valsViewRaw, valsView.size ());
+      View<const ST*, HES, MemoryUnmanaged> valsViewK (valsViewRaw, valsView.size ());
       const size_t numEnt = static_cast<size_t> (valsViewK.dimension_0 ());
 
       // NOTE (mfh 07 Feb 2015) Since we're using the host memory
@@ -617,11 +641,11 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
       // in the future, if we ever start packing on the device.
       const size_t numBytesPerValue = numEnt == 0 ?
         static_cast<size_t> (0) :
-        PackTraits<ST, HMS>::packValueCount (valsViewK(0));
+        PackTraits<ST, HES>::packValueCount (valsViewK(0));
 
       // Convert column indices as LIDs to column indices as GIDs.
-      View<GO*, HMS> gidsView = subview (gids, pair_type (0, numEnt));
-      View<int*, HMS> pidsView = subview (pids, pair_type (0, numEnt));
+      View<GO*, HES> gidsView = subview (gids, pair_type (0, numEnt));
+      View<int*, HES> pidsView = subview (pids, pair_type (0, numEnt));
       for (size_t k = 0; k < numEnt; ++k) {
         gidsView(k) = colMap.getGlobalElement (lidsView[k]);
         pidsView(k) = SourcePids[lidsView[k]];
@@ -629,7 +653,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
 
       // Copy the row's data into the current spot in the exports array.
       const size_t numBytes =
-        packRow<ST, LO, GO, HMS> (exportsK, offset, numEnt,
+        packRow<ST, LO, GO, HES> (exportsK, offset, numEnt,
                                   gidsView, pidsView, valsViewK,
                                   numBytesPerValue);
       // Keep track of how many bytes we packed.
@@ -666,8 +690,8 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  typedef typename Node::execution_space execution_space;
-  typedef typename Kokkos::View<int*, execution_space>::HostMirror::host_mirror_space HMS;
+  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -685,7 +709,7 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
     prefix << "importLIDs.size() = " << importLIDs.size () << " != "
     "numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
 
-  View<const char*, HMS, MemoryUnmanaged> importsK (imports.getRawPtr (),
+  View<const char*, HES, MemoryUnmanaged> importsK (imports.getRawPtr (),
                                                     imports.size ());
 
   // Number of matrix entries to unpack (returned by this function).
@@ -711,7 +735,7 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
     // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
     // values, if it has one) for the (possibly run-time-depenendent)
     // number of bytes of one of its entries.
-    const size_t numEnt = unpackRowCount<LO, HMS> (importsK, offset,
+    const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset,
                                                    numBytes, sizeof (ST));
     nnz += numEnt;
     offset += numBytes;
@@ -752,14 +776,14 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   using Teuchos::reduceAll;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename Node::execution_space execution_space;
-  typedef typename Kokkos::View<int*, execution_space>::HostMirror::host_mirror_space HMS;
+  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
-  //typedef std::pair<typename Kokkos::View<int*, HMS>::size_type,
-  //                  typename Kokkos::View<int*, HMS>::size_type> pair_type;
+  //typedef std::pair<typename Kokkos::View<int*, HES>::size_type,
+  //                  typename Kokkos::View<int*, HES>::size_type> pair_type;
   const char prefix[] = "Tpetra::Import_Util::unpackAndCombineIntoCrsArrays: ";
 
   const size_t N = TargetNumRows;
@@ -783,7 +807,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
   // Kokkos::View of the input buffer of bytes to unpack.
-  View<const char*, HMS, MemoryUnmanaged> importsK (imports.getRawPtr (),
+  View<const char*, HES, MemoryUnmanaged> importsK (imports.getRawPtr (),
                                                     imports.size ());
   // Zero the rowptr
   for (size_t i = 0; i< N+1; ++i) {
@@ -810,7 +834,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
       // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
       // values, if it has one) for the (possibly run-time -
       // depenendent) number of bytes of one of its entries.
-      const size_t numEnt = unpackRowCount<LO, HMS> (importsK, offset,
+      const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset,
                                                      numBytes, sizeof (ST));
       CSR_rowptr[importLIDs[k]] += numEnt;
       offset += numBytes;
@@ -869,9 +893,9 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   size_t numBytesPerValue = 0;
-  if (PackTraits<ST, HMS>::compileTimeSize) {
+  if (PackTraits<ST, HES>::compileTimeSize) {
     ST val; // assume that ST is default constructible
-    numBytesPerValue = PackTraits<ST, HMS>::packValueCount (val);
+    numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
   }
   else {
     // Since the packed data come from the source matrix, we can use
@@ -887,10 +911,10 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
     // assume that in our packing scheme, rows with zero entries take
     // zero bytes).
     if (Source_rowptr.size () == 0 || Source_rowptr[Source_rowptr.size () - 1] == 0) {
-      numBytesPerValue = PackTraits<ST, HMS>::packValueCount (CSR_vals[0]);
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (CSR_vals[0]);
     }
     else {
-      numBytesPerValue = PackTraits<ST, HMS>::packValueCount (Source_vals[0]);
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (Source_vals[0]);
     }
     size_t lclNumBytesPerValue = numBytesPerValue;
     Teuchos::RCP<const Teuchos::Comm<int> > comm = SourceMatrix.getComm ();
@@ -931,22 +955,22 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
       // FIXME (mfh 07 Feb 2015) Ask the matrix (rather, one of its
       // values, if it has one) for the (possibly run-time -
       // depenendent) number of bytes of one of its entries.
-      const size_t numEnt = unpackRowCount<LO, HMS> (importsK, offset, numBytes,
+      const size_t numEnt = unpackRowCount<LO, HES> (importsK, offset, numBytes,
                                                      numBytesPerValue);
       const LO lclRow = importLIDs[i];
       const size_t StartRow = NewStartRow[lclRow];
       NewStartRow[lclRow] += numEnt;
 
-      View<GO*, HMS, MemoryUnmanaged> gidsOut =
-        getNonconstView<GO, HMS> (CSR_colind (StartRow, numEnt));
-      View<int*, HMS, MemoryUnmanaged> pidsOut =
-        getNonconstView<int, HMS> (TargetPids (StartRow, numEnt));
+      View<GO*, HES, MemoryUnmanaged> gidsOut =
+        getNonconstView<GO, HES> (CSR_colind (StartRow, numEnt));
+      View<int*, HES, MemoryUnmanaged> pidsOut =
+        getNonconstView<int, HES> (TargetPids (StartRow, numEnt));
       ArrayView<Scalar> valsOutS = CSR_vals (StartRow, numEnt);
-      View<ST*, HMS, MemoryUnmanaged> valsOut =
-        getNonconstView<ST, HMS> (av_reinterpret_cast<ST> (valsOutS));
+      View<ST*, HES, MemoryUnmanaged> valsOut =
+        getNonconstView<ST, HES> (av_reinterpret_cast<ST> (valsOutS));
 
       const size_t numBytesOut =
-        unpackRow<ST, LO, GO, HMS> (gidsOut, pidsOut, valsOut, importsK,
+        unpackRow<ST, LO, GO, HES> (gidsOut, pidsOut, valsOut, importsK,
                                     offset, numBytes, numEnt, numBytesPerValue);
       if (numBytesOut != numBytes) {
 #ifdef HAVE_TPETRA_DEBUG
