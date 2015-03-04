@@ -1680,6 +1680,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
+    out << "Tpetra::MultiVector scale and assign test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     RCP<Node> node = getNode<Node>();
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -1688,6 +1691,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag tol = errorTolSlack * testingTol<Scalar>();
     const Mag M0 = ScalarTraits<Mag>::zero();
+
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1701,25 +1705,35 @@ namespace {
     // This test operator= and all of our scale ops
     // We'll do Vector and MultiVector variations
     // Also, ensure that other vectors aren't changed
-    MV A(map,numVectors,false),
-       B(map,numVectors,false);
-    A.randomize();
+
+    out << "Create A, and fill with random numbers" << endl;
+    MV A (map, numVectors, false);
+    A.randomize ();
+
+    out << "Stash away norms of columns of A" << endl;
     Array<Mag> Anrms(numVectors);
-    A.norm1(Anrms());
+    A.norm1 (Anrms ());
+
+    out << "Test B := A*2, using different methods" << endl;
     // set B = A * 2, using different techniques
-    // * get vector, Vector::operator=
+    // * deep_copy(B,A) and scale B in place
     // * get 1-vector subview(Range1D), MultiVector::operator=
     // * get 1-vector subview(ArrayView), MultiVector::operator=
     // * get data view, assign
     TEUCHOS_TEST_FOR_EXCEPT(numVectors < 4);
+
+    MV B (map, numVectors, false);
     for (size_t j = 0; j < numVectors; ++j) {
+      Teuchos::OSTab tab1 (out);
+
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
         case 0:
           {
+            out << "Method 0" << endl;
+
             RCP<V> bj = B.getVectorNonConst(j);
             RCP<const V> aj = A.getVector(j);
-            //(*bj) = (*aj);
             deep_copy((*bj),(*aj));
 
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
@@ -1730,6 +1744,8 @@ namespace {
           break;
         case 1:
           {
+            out << "Method 1" << endl;
+
             RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
             RCP<const MV> aj = A.subView(Range1D(j,j));
             ////(*bj) = (*aj);
@@ -1742,6 +1758,8 @@ namespace {
           break;
         case 2:
           {
+            out << "Method 2" << endl;
+
             RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
             RCP<const MV> aj = A.subView(tuple<size_t>(j));
             //RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
@@ -1757,6 +1775,8 @@ namespace {
           break;
         case 3:
           {
+            out << "Method 3" << endl;
+
             ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
             ArrayRCP<const Scalar> ajview = A.getData(j);
             for (size_t i=0; i < numLocal; ++i) {
@@ -1766,30 +1786,39 @@ namespace {
           break;
       }
     }
+
+    out << "Check that A wasn't modified" << endl;
     // check that A wasn't modified
     {
       Array<Mag> Anrms_aft(numVectors);
       A.norm1(Anrms_aft());
       TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_aft(),tol);
     }
+
+    out << "Check that C.scale(2,A) == B" << endl;
     // check that C.Scale(A,2.0) == B
     {
-      MV C(map,numVectors,false);
-      C.scale(as<Scalar>(2), A);
-      C.update(-1.0,B,1.0);
+      MV C (map, numVectors, false);
+      C.scale (as<Scalar> (2), A);
+
+      C.update (-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
+
+    out << "Check that C := A, C.scale(2) == B" << endl;
     // check that C=A, C.Scale(2.0) == B
     {
-      MV C(createCopy(A));
+      MV C (createCopy(A));
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
+
+    out << "Check that C := A, C.scale(tuple(2)) == B" << endl;
     // check that C=A, C.Scale(tuple(2)) == B
     {
       MV C(createCopy(A));
