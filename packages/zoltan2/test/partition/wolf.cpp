@@ -69,9 +69,9 @@ typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
 typedef zscalar_t Scalar;
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix_t;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
+typedef Vector::node_type Node;
 
 //typedef Tpetra::MultiVector<Scalar, z2TestLO, z2TestGO, znode_t> tMVector_t;
 typedef Tpetra::MultiVector<Scalar, z2TestLO, z2TestGO,znode_t> tMVector_t;
@@ -122,12 +122,12 @@ int main(int argc, char** argv)
                 "indicate whether or not to distribute "
                 "input across the communicator");
   cmdp.setOption("numParts", &numParts,
-		 "Global number of parts;");
+                 "Global number of parts;");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn
     parseReturn= cmdp.parse( argc, argv );
 
-  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED ) 
+  if( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED )
   {
     return 0;
   }
@@ -152,13 +152,13 @@ int main(int argc, char** argv)
 
 
   if (me == 0)
-  { 
+  {
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
   }
 
-  if (origMatrix->getGlobalNumRows() < 40) 
+  if (origMatrix->getGlobalNumRows() < 40)
   {
     Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
     origMatrix->describe(out, Teuchos::VERB_EXTREME);
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
   //////////////////////////////////////////////////////////////////////
   Teuchos::ParameterList params;
 
-  params.set("num_global_parts", numParts);  
+  params.set("num_global_parts", numParts);
   params.set("partitioning_approach", "partition");
   params.set("algorithm", "wolf");
   //////////////////////////////////////////////////////////////////////
@@ -220,13 +220,13 @@ int main(int argc, char** argv)
   //////////////////////////////////////////////////////////////////////
   Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> problem(&matAdapter, &params);
 
-  try 
+  try
   {
     if (me == 0) cout << "Calling solve() " << endl;
     problem.solve();
     if (me == 0) cout << "Done solve() " << endl;
   }
-  catch (std::runtime_error &e) 
+  catch (std::runtime_error &e)
   {
     cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
@@ -240,19 +240,19 @@ int main(int argc, char** argv)
       return -1;
     }
   }
-  catch (std::logic_error &e) 
+  catch (std::logic_error &e)
   {
     cout << "Logic exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
-  catch (std::bad_alloc &e) 
+  catch (std::bad_alloc &e)
   {
     cout << "Bad_alloc exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
-  catch (std::exception &e) 
+  catch (std::exception &e)
   {
     cout << "Unknown exception returned from solve(). " << e.what()
          << " FAIL" << endl;

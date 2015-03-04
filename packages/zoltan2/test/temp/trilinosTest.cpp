@@ -55,8 +55,9 @@ using std::string;
 using std::cerr;
 using std::endl;
 using Teuchos::RCP;
+using Teuchos::rcp;
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
+typedef Tpetra::Map<>::node_type znode_t;
 typedef float zscalar_t;
 typedef int zlno_t;
 typedef int zgno_t;
@@ -72,16 +73,15 @@ int main(int argc, char *argv[])
   // Error: it's a pattern matrix.  (A graph, there are non non-zeros.)
   // packages/tpetra/inout/MatrixMarket_Tpetra.hpp line 1003
   //
-  // string fname("commanche_dual.mtx"); 
+  // string fname("commanche_dual.mtx");
 
-  // Crash: 
+  // Crash:
   string fname("USAir97.mtx");
 
   //string fname("simple.mtx"); // This file is read without error
 
   RCP<tcrsMatrix_t> M;
-  RCP<KokkosClassic::DefaultNode::DefaultNodeType> dnode
-    = KokkosClassic::DefaultNode::getDefaultNode();
+  RCP<znode_t> dnode = rcp (new znode_t ());
 
   try{
     M = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
