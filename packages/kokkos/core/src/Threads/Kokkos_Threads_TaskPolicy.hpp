@@ -348,8 +348,9 @@ class TaskPolicy< Kokkos::Threads >
 {
 public:
 
-  typedef Kokkos::Threads  execution_space ;
-  typedef TaskPolicy       execution_policy ;
+  typedef Kokkos::Threads                      execution_space ;
+  typedef TaskPolicy                           execution_policy ;
+  typedef Kokkos::Impl::ThreadsExecTeamMember  member_type ;
 
 private:
 

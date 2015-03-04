@@ -641,20 +641,29 @@ public:
 namespace Kokkos {
 
 namespace Impl {
-  template<typename iType>
-  struct TeamThreadLoopBoundariesStruct<iType,SerialTeamMember> {
-    typedef iType index_type;
-    enum {start = 0};
-    const iType end;
-    enum {increment = 1};
-    const SerialTeamMember& thread;
 
-    KOKKOS_INLINE_FUNCTION
-    TeamThreadLoopBoundariesStruct (const SerialTeamMember& thread_, const iType& count):
-      end(count),
-      thread(thread_)
+template<typename iType>
+struct TeamThreadLoopBoundariesStruct<iType,SerialTeamMember> {
+  typedef iType index_type;
+  const iType begin ;
+  const iType end ;
+  enum {increment = 1};
+  const SerialTeamMember& thread;
+
+  KOKKOS_INLINE_FUNCTION
+  TeamThreadLoopBoundariesStruct (const SerialTeamMember& arg_thread, const iType& arg_count)
+    : begin(0)
+    , end(arg_count)
+    , thread(arg_thread)
     {}
-  };
+
+  KOKKOS_INLINE_FUNCTION
+  TeamThreadLoopBoundariesStruct (const SerialTeamMember& arg_thread, const iType& arg_begin, const iType & arg_end )
+    : begin( arg_begin )
+    , end(   arg_end)
+    , thread( arg_thread )
+    {}
+};
 
   template<typename iType>
   struct ThreadVectorLoopBoundariesStruct<iType,SerialTeamMember> {
@@ -668,13 +677,23 @@ namespace Impl {
       end( count )
     {}
   };
+
 } // namespace Impl
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
-  TeamThreadLoop(const Impl::SerialTeamMember& thread, const iType& count) {
+TeamThreadLoop( const Impl::SerialTeamMember& thread, const iType & count )
+{
   return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,count);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>
+TeamThreadLoop( const Impl::SerialTeamMember& thread, const iType & begin , const iType & end )
+{
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>(thread,begin,end);
 }
 
 template<typename iType>
@@ -705,7 +724,7 @@ namespace Kokkos {
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
 void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::SerialTeamMember>& loop_boundaries, const Lambda& lambda) {
-  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
+  for( iType i = loop_boundaries.begin; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
 }
 
@@ -720,7 +739,7 @@ void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::Seri
 
   result = ValueType();
 
-  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+  for( iType i = loop_boundaries.begin; i < loop_boundaries.end; i+=loop_boundaries.increment) {
     ValueType tmp = ValueType();
     lambda(i,tmp);
     result+=tmp;
@@ -743,7 +762,7 @@ void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::Seri
 
   ValueType result = init_result;
 
-  for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment) {
+  for( iType i = loop_boundaries.begin; i < loop_boundaries.end; i+=loop_boundaries.increment) {
     ValueType tmp = ValueType();
     lambda(i,tmp);
     join(result,tmp);

@@ -175,7 +175,16 @@ namespace {
 
 long eval_fib( long n )
 {
-  return n < 2 ? n : eval_fib(n-2) + eval_fib(n-1);
+  if ( n < 2 ) return n ;
+
+  std::vector<long> fib(n+1);
+
+  fib[0] = 0 ;
+  fib[1] = 1 ;
+
+  for ( long i = 2 ; i <= n ; ++i ) { fib[i] = fib[i-2] + fib[i-1]; }
+
+  return fib[n];
 }
 
 }
@@ -331,32 +340,78 @@ void test_task_dep( const int n )
 
 //----------------------------------------------------------------------------
 
+#if defined( KOKKOS_HAVE_CXX11 )
+
 template< class ExecSpace >
-struct FibArray {
+struct TaskTeam {
 
-  typedef long value_type ;
+  enum { SPAN = 8 };
 
-  Kokkos::Experimental::TaskPolicy<ExecSpace> policy ;
-  const value_type n ;
+  typedef void value_type ;
+  typedef Kokkos::Experimental::TaskPolicy<ExecSpace>  policy_type ;
+  typedef Kokkos::Experimental::Future<ExecSpace>      future_type ;
+  typedef Kokkos::View<long*,ExecSpace>                view_type ;
 
-  FibArray( const Kokkos::Experimental::TaskPolicy<ExecSpace> & arg_policy
-          , const value_type arg_n )
-    : policy(arg_policy) , n( arg_n ) {}
+  policy_type  policy ;
+  future_type  future ;
+
+  view_type  result ;
+  const long nvalue ;
+
+  TaskTeam( const policy_type & arg_policy
+          , const view_type   & arg_result
+          , const long          arg_nvalue )
+    : policy(arg_policy)
+    , future()
+    , result( arg_result )
+    , nvalue( arg_nvalue )
+    {}
 
   inline
-  void apply( value_type & result )
+  void apply( const typename policy_type::member_type & member )
     {
-      if ( n < 2 ) {
-        result = n ;
-      }
-      else {
-        const Kokkos::Experimental::Future<long,ExecSpace> fib_1 = policy.get_dependence(this,0);
-        const Kokkos::Experimental::Future<long,ExecSpace> fib_2 = policy.get_dependence(this,1);
+      const long end   = nvalue + 1 ;
+      const long begin = 0 < end - SPAN ? end - SPAN : 0 ;
 
-        result = fib_1.get() + fib_2.get();
+      if ( 0 < begin && future.get_task_state() == Kokkos::Experimental::TASK_STATE_NULL ) {
+        if ( member.team_rank() == 0 ) {
+          future = policy.spawn( policy.create_team( TaskTeam( policy , result , begin - 1 ) ) );
+          policy.clear_dependence( this );
+          policy.add_dependence( this , future );
+          policy.respawn( this );
+        }
+        return ;
       }
+
+      Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
+                          , [&]( int i ) { result[i] = i < 2 ? i : result[i-1] + result[i-2]; }
+                          );
     }
 };
+
+template< class ExecSpace >
+void test_task_team( long n )
+{
+  typedef TaskTeam< ExecSpace >            task_type ;
+  typedef typename task_type::policy_type  policy_type ;
+  typedef typename task_type::future_type  future_type ;
+  typedef typename task_type::view_type    view_type ;
+
+  policy_type  policy ;
+  view_type    result("result",n+1);
+
+  future_type f = policy.spawn( policy.create_team( task_type( policy , result , n ) ) );
+
+  Kokkos::Experimental::wait( f );
+
+  for ( long i = 0 ; i <= n ; ++i ) {
+    if ( result(i) != eval_fib(i) ) {
+      std::cerr << "test_task_team ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
+    }
+  }
+}
+
+#endif
 
 //----------------------------------------------------------------------------
 

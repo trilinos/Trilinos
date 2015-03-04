@@ -202,16 +202,18 @@ public:
         // highest ranking thread.
 
         // Copy from lower ranking to higher ranking worker.
-        for ( int i = 1 ; i < n ; ++i ) {
-          ValueOps::copy( func , m_worker_base[i-1]->m_scratch_alloc
-                           , m_worker_base[i]->m_scratch_alloc );
+        for ( int i = 1 ; i < m_worker_size ; ++i ) {
+          ValueOps::copy( func
+                        , m_worker_base[i-1]->m_scratch_alloc
+                        , m_worker_base[i]->m_scratch_alloc
+                        );
         }
 
-        ValueInit::init( func , m_worker_base[n-1]->m_scratch_alloc );
+        ValueInit::init( func , m_worker_base[m_worker_size-1]->m_scratch_alloc );
 
         // Join from lower ranking to higher ranking worker.
         // Value at m_worker_base[n-1] is zero so skip adding it to m_worker_base[n-2].
-        for ( int i = n - 1 ; --i ; ) {
+        for ( int i = m_worker_size - 1 ; --i ; ) {
           ValueJoin::join( func , m_worker_base[i-1]->m_scratch_alloc , m_worker_base[i]->m_scratch_alloc );
         }
       }
@@ -294,10 +296,10 @@ public:
       }
       else {
         volatile Type & accum = * m_shepherd_base[0]->shepherd_team_scratch_value<Type>();
-        for ( int i = 1 ; i < n ; ++i ) {
+        for ( int i = 1 ; i < team_size ; ++i ) {
           op.join( accum , * m_shepherd_base[i]->shepherd_team_scratch_value<Type>() );
         }
-        for ( int i = 1 ; i < n ; ++i ) {
+        for ( int i = 1 ; i < team_size ; ++i ) {
           * m_shepherd_base[i]->shepherd_team_scratch_value<Type>() = accum ;
         }
 
@@ -341,17 +343,17 @@ public:
         // Copy from lower ranking to higher ranking worker.
 
         Type accum = * m_shepherd_base[0]->shepherd_team_scratch_value<Type>();
-        for ( int i = 1 ; i < n ; ++i ) {
+        for ( int i = 1 ; i < team_size ; ++i ) {
           const Type tmp = * m_shepherd_base[i]->shepherd_team_scratch_value<Type>();
           accum += tmp ;
           * m_shepherd_base[i-1]->shepherd_team_scratch_value<Type>() = tmp ;
         }
 
-        * m_shepherd_base[n-1]->shepherd_team_scratch_value<Type>() =
+        * m_shepherd_base[team_size-1]->shepherd_team_scratch_value<Type>() =
           global_value ? atomic_fetch_add( global_value , accum ) : 0 ;
 
         // Join from lower ranking to higher ranking worker.
-        for ( int i = n ; --i ; ) {
+        for ( int i = team_size ; --i ; ) {
           * m_shepherd_base[i-1]->shepherd_team_scratch_value<Type>() += * m_shepherd_base[i]->shepherd_team_scratch_value<Type>();
         }
 

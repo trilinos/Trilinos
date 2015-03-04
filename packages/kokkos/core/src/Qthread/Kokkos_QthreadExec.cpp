@@ -309,6 +309,7 @@ void QthreadExec::resize_worker_scratch( const int reduce_size , const int share
 
     // Have each worker resize its memory for proper first-touch
     for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
+#if 1
     for ( int i = jshep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i ) {
 
       // Unit tests hang with this call:
@@ -317,7 +318,9 @@ void QthreadExec::resize_worker_scratch( const int reduce_size , const int share
       //
 
       qthread_fork_to( driver_resize_worker_scratch , NULL , NULL , jshep );
-    }}
+    }
+#endif
+    }
 
     driver_resize_worker_scratch( NULL );
 
@@ -350,6 +353,7 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
   const int main_shep = qthread_shep();
 
   for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
+#if 1
   for ( int i = jshep != main_shep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
 
     // Unit tests hang with this call:
@@ -358,7 +362,22 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
     //
 
     qthread_fork_to( driver_exec_all , NULL , NULL , jshep );
-  }}
+  }
+#else
+    const int num_clone = jshep != main_shep : s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
+
+    int ret = qthread_fork_clones_to_local_priority
+      ( driver_exec_all   /* function */
+      , NULL              /* function data block */
+      , NULL              /* pointer to return value feb */
+      , jshep             /* shepherd number */
+      , num_clone - 1     /* number of instances - 1 */
+      );
+
+   assert(ret == QTHREAD_SUCCESS);
+
+#endif
+  }
 
   driver_exec_all( NULL );
 

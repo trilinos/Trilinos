@@ -280,9 +280,14 @@ void Task::schedule()
 
   m_state = Kokkos::Experimental::TASK_STATE_WAITING ;
 
-  qthread_spawn( & Task::qthread_func , this , 0 , NULL
-               , m_dep_size , qprecon
-               , NO_SHEPHERD , QTHREAD_SPAWN_SIMPLE );
+  qthread_spawn( & Task::qthread_func /* function */
+               , this                 /* function argument */
+               , 0
+               , NULL
+               , m_dep_size , qprecon /* dependences */
+               , NO_SHEPHERD
+               , QTHREAD_SPAWN_SIMPLE /* allows optimization for non-blocking task */
+               );
 }
 
 void Task::wait( const Future< void, Kokkos::Qthread> & f )

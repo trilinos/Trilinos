@@ -62,7 +62,6 @@ Task * volatile s_ready_team = 0 ;
 Task * volatile s_ready_serial = 0 ;
 Task * const    s_lock   = reinterpret_cast<Task*>( ~((unsigned long)0) );
 Task * const    s_denied = reinterpret_cast<Task*>( ~((unsigned long)0) - 1 );
-Task * const    s_bogus  = reinterpret_cast<Task*>( ~((unsigned long)0) - 2 );
 
 } /* namespace */
 } /* namespace Impl */
@@ -165,40 +164,34 @@ void Task::schedule()
 
   bool insert_in_ready_queue = true ;
 
-  {
-    Task * wait_queue_head = s_bogus ; // Start with impossible value
+  for ( int i = 0 ; i < m_dep_size && insert_in_ready_queue ; ) {
 
-    for ( int i = 0 ; i < m_dep_size && insert_in_ready_queue ; ) {
+    Task * const task_dep = m_dep[i] ;
+    Task * const head_value_old = *((Task * volatile *) & task_dep->m_wait );
 
-      if ( s_denied == wait_queue_head ) {
-        // Wait queue is closed, try again with the next queue
-        ++i ;
-        wait_queue_head = s_bogus ; // Reset to impossible value
-      }
-      else {
+    if ( s_denied == head_value_old ) {
+      // Wait queue is closed, try again with the next queue
+      ++i ;
+    }
+    else {
 
-        Task * const task_dep = m_dep[i] ;
+      // Wait queue is open and not locked.
+      // If CAS succeeds then have acquired the lock.
 
-        // Wait queue is open and not locked.
-        // Read the queue exclusively via CAS, if CAS succeeds then have acquired the lock.
+      // Have exclusive access to this task.
+      // Assign m_next assuming a successfull insertion into the queue.
+      // Fence the memory assignment before attempting the CAS.
 
-        // Have exclusive access to this task.
-        // Assign m_next assuming a successfull insertion into the queue.
-        // Fence the memory assignment before attempting the insert.
+      *((Task * volatile *) & m_next ) = head_value_old ;
 
-        *((Task * volatile *) & m_next ) = wait_queue_head ;
+      memory_fence();
 
-        memory_fence();
+      // Attempt to insert this task into the queue
 
-        Task * const head_value_old = wait_queue_head ;
+      Task * const wait_queue_head = atomic_compare_exchange( & task_dep->m_wait , head_value_old , this );
 
-        // Attempt to insert this task into the queue
-
-        wait_queue_head = atomic_compare_exchange( & task_dep->m_wait , head_value_old , this );
-
-        if ( head_value_old == wait_queue_head ) {
-          insert_in_ready_queue = false ;
-        }
+      if ( head_value_old == wait_queue_head ) {
+        insert_in_ready_queue = false ;
       }
     }
   }
@@ -213,30 +206,26 @@ void Task::schedule()
 
     atomic_increment( & s_ready_count );
 
-    Task * ready_queue_head = s_bogus ; // Start with impossible value
-
     while ( insert_in_ready_queue ) {
 
-      // Read the head of ready queue, if same as previous value then CAS locks the ready queue
-      // Only access via CAS
+      Task * const head_value_old = s_ready_serial ;
 
-      // Have exclusive access to this task, assign to head of queue, assuming successful insert
-      // Fence assignment before attempting insert.
-      *((Task * volatile *) & m_next ) = ready_queue_head ;
+      if ( s_lock != head_value_old ) {
+        // Read the head of ready queue, if same as previous value then CAS locks the ready queue
+        // Only access via CAS
 
-      memory_fence();
+        // Have exclusive access to this task, assign to head of queue, assuming successful insert
+        // Fence assignment before attempting insert.
+        *((Task * volatile *) & m_next ) = head_value_old ;
 
-      Task * const head_value_old = ready_queue_head ;
+        memory_fence();
 
-      ready_queue_head = atomic_compare_exchange( & s_ready_serial , head_value_old , this );
+        Task * const ready_queue_head = atomic_compare_exchange( & s_ready_serial , head_value_old , this );
 
-      if ( head_value_old == ready_queue_head ) {
-        // Successful insert
-        insert_in_ready_queue = false ; // done
-      }
-      else if ( s_lock == ready_queue_head ) {
-        // Ready queue was locked, don't try to steal the lock
-        ready_queue_head = s_bogus ;
+        if ( head_value_old == ready_queue_head ) {
+          // Successful insert
+          insert_in_ready_queue = false ; // done
+        }
       }
     }
   }
@@ -396,7 +385,7 @@ void Task::execute_serial( Task * const task )
     // Setting the wait queue to denied denotes delete-ability of the task by any thread.
     // Therefore, once 'denied' the task pointer must be treated as invalid.
 
-    Task * wait_queue     = s_bogus ;
+    Task * wait_queue     = *((Task * volatile *) & task->m_wait );
     Task * wait_queue_old = 0 ;
 
     do {
@@ -486,62 +475,54 @@ void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const 
 
   // Each team must iterate this loop synchronously to insure team-execution of team-task
 
-  Task * task = s_bogus ;
-
   while ( 0 < s_ready_count ) {
 
     // Team grabs work from s_ready_team:  execute_ready_team_task( member );
     // OR
     // Read the head of the ready queue, if head is previous value then acquire and lock the ready queue
 
-    Task * const task_old = task ;
+    Task * const task_old = s_ready_serial ;
 
-    task = atomic_compare_exchange( & s_ready_serial , task_old , s_lock );
+    if ( s_lock != task_old && 0 != task_old ) {
 
-    if ( task_old == task ) {
+      Task * const task = atomic_compare_exchange( & s_ready_serial , task_old , s_lock );
 
-      // May have acquired the lock and task.
-      // One or more other threads may have acquired this same task and lock
-      // due to respawning ABA race condition.
-      // Can only be sure of acquire with a successful state transition from waiting to executing
+      if ( task_old == task ) {
 
-      const int old_state = atomic_compare_exchange( & task->m_state, int(TASK_STATE_WAITING), int(TASK_STATE_EXECUTING) );
+        // May have acquired the lock and task.
+        // One or more other threads may have acquired this same task and lock
+        // due to respawning ABA race condition.
+        // Can only be sure of acquire with a successful state transition from waiting to executing
 
-      if ( old_state == int(TASK_STATE_WAITING) ) {
+        const int old_state = atomic_compare_exchange( & task->m_state, int(TASK_STATE_WAITING), int(TASK_STATE_EXECUTING) );
 
-        // Transitioned this task from waiting to executing
-        // Update the queue to the next entry and release the lock
+        if ( old_state == int(TASK_STATE_WAITING) ) {
 
-        Task * const next_old = *((Task * volatile *) & task->m_next );
+          // Transitioned this task from waiting to executing
+          // Update the queue to the next entry and release the lock
 
-        Task * const s = atomic_compare_exchange( & s_ready_serial , s_lock , next_old );
+          Task * const next_old = *((Task * volatile *) & task->m_next );
 
-        if ( s != s_lock ) {
-          fprintf(stderr,"Task::execute serial pop() UNLOCK ERROR\n");
+          Task * const s = atomic_compare_exchange( & s_ready_serial , s_lock , next_old );
+
+          if ( s != s_lock ) {
+            fprintf(stderr,"Task::execute serial pop() UNLOCK ERROR\n");
+            fflush(stderr);
+          }
+
+          *((Task * volatile *) & task->m_next ) = 0 ;
+
+          execute_serial( task );
+
+          atomic_decrement( & s_ready_count );
+        }
+        else {
+          fprintf(stderr,"Task::execute serial task(0x%lx) state(%d) ERROR\n"
+                        , (unsigned long) task
+                        , old_state );
           fflush(stderr);
         }
-
-        *((Task * volatile *) & task->m_next ) = 0 ;
-
-        execute_serial( task );
-
-        atomic_decrement( & s_ready_count );
       }
-      else if ( old_state == int(TASK_STATE_EXECUTING) || old_state == int(TASK_STATE_COMPLETE) ) {
-        // Failed the race condition probably due to ABA
-        // and the task is either already executing or has completed.
-        task = s_bogus ;
-      }
-      else {
-        fprintf(stderr,"Task::execute serial task(0x%lx) state(%d) ERROR\n"
-                      , (unsigned long) task
-                      , old_state );
-        fflush(stderr);
-      }
-    }
-    else if ( s_lock == task || 0 == task ) {
-      // Don't attempt to steal a lock or acquire a null task, reset to bogus value.
-      task = s_bogus ;
     }
 
     ++iteration_count ;

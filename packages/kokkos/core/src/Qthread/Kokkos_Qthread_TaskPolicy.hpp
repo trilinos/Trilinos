@@ -546,7 +546,8 @@ class TaskPolicy< Kokkos::Qthread >
 {
 public:
 
-  typedef Kokkos::Qthread execution_space ;
+  typedef Kokkos::Qthread                        execution_space ;
+  typedef Kokkos::Impl::QthreadTeamPolicyMember  member_type ;
 
 private:
 

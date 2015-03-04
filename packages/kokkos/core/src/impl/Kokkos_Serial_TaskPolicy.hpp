@@ -195,7 +195,8 @@ public:
   template< class DerivedTaskType >
   static
   TaskMember * create( const typename DerivedTaskType::functor_type &  arg_functor
-                     , const unsigned                                  arg_dependence_capacity )
+                     , const unsigned                                  arg_dependence_capacity
+                     )
     {
       typedef typename DerivedTaskType::functor_type  functor_type ;
       typedef typename functor_type::value_type       value_type ;
@@ -216,7 +217,8 @@ public:
   static
   TaskMember * create( const typename DerivedTaskType::policy_type &   arg_policy
                      , const typename DerivedTaskType::functor_type &  arg_functor
-                     , const unsigned                                  arg_dependence_capacity )
+                     , const unsigned                                  arg_dependence_capacity
+                     )
     {
       DerivedTaskType * const task =
         new( allocate( sizeof(DerivedTaskType) , arg_dependence_capacity ) )
@@ -226,6 +228,27 @@ public:
                          , arg_policy
                          , arg_functor
                          );
+
+      return static_cast< TaskMember * >( task );
+    }
+
+  /** \brief  Allocate and construct a thread-team task */
+  template< class DerivedTaskType >
+  static
+  TaskMember * create_team( const typename DerivedTaskType::functor_type &  arg_functor
+                          , const unsigned                                  arg_dependence_capacity
+                          )
+    {
+      typedef typename DerivedTaskType::functor_type  functor_type ;
+      typedef typename functor_type::value_type       value_type ;
+
+      DerivedTaskType * const task =
+        new( allocate( sizeof(DerivedTaskType) , arg_dependence_capacity ) )
+          DerivedTaskType( & TaskMember::template deallocate< DerivedTaskType >
+                         , & TaskMember::template apply_team< functor_type , value_type >
+                         , sizeof(DerivedTaskType)
+                         , arg_dependence_capacity
+                         , arg_functor );
 
       return static_cast< TaskMember * >( task );
     }
@@ -316,6 +339,42 @@ public:
 
       Kokkos::Impl::FunctorApply< FunctorType , void , void >::apply( (FunctorType &) m );
     }
+
+  //----------------------------------------
+
+  template< class FunctorType , class ResultType >
+  static
+  void apply_team( typename Kokkos::Impl::enable_if< ! Kokkos::Impl::is_same< ResultType , void >::value , TaskMember * >::type t )
+    {
+      typedef TaskMember< Kokkos::Serial , ResultType , FunctorType > derived_type ;
+      typedef Kokkos::Impl::SerialTeamMember                          member_type ;
+
+      // TaskMember< Kokkos::Serial , ResultType , FunctorType >
+      //   : public TaskMember< Kokkos::Serial , ResultType , void >
+      //   , public FunctorType
+      //   { ... };
+
+      derived_type & m = * static_cast< derived_type * >( t );
+
+      m.FunctorType::apply( member_type(0,1,0) , m.m_result );
+    }
+
+  template< class FunctorType , class ResultType >
+  static
+  void apply_team( typename Kokkos::Impl::enable_if< Kokkos::Impl::is_same< ResultType , void >::value , TaskMember * >::type t )
+    {
+      typedef TaskMember< Kokkos::Serial , ResultType , FunctorType > derived_type ;
+      typedef Kokkos::Impl::SerialTeamMember                          member_type ;
+
+      // TaskMember< Kokkos::Serial , ResultType , FunctorType >
+      //   : public TaskMember< Kokkos::Serial , ResultType , void >
+      //   , public FunctorType
+      //   { ... };
+
+      derived_type & m = * static_cast< derived_type * >( t );
+
+      m.FunctorType::apply( member_type(0,1,0) );
+    }
 };
 
 //----------------------------------------------------------------------------
@@ -359,7 +418,6 @@ protected:
                     , arg_dependence_capacity )
     , m_result()
     {}
-
 };
 
 template< class ResultType , class FunctorType >
@@ -561,7 +619,8 @@ class TaskPolicy< Kokkos::Serial >
 {
 public:
 
-  typedef Kokkos::Serial execution_space ;
+  typedef Kokkos::Serial                  execution_space ;
+  typedef Kokkos::Impl::SerialTeamMember  member_type ;
 
 private:
 
@@ -631,6 +690,22 @@ public:
       return Future< value_type , execution_space >(
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         task_root_type::create< task_type >(
+          functor , ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) )
+#endif
+        );
+    }
+
+  template< class FunctorType >
+  KOKKOS_INLINE_FUNCTION
+  Future< typename FunctorType::value_type , execution_space >
+  create_team( const FunctorType & functor
+             , const unsigned dependence_capacity = ~0u ) const
+    {
+      typedef typename FunctorType::value_type value_type ;
+      typedef Impl::TaskMember< execution_space , value_type , FunctorType >  task_type ;
+      return Future< value_type , execution_space >(
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+        task_root_type::create_team< task_type >(
           functor , ( ~0u == dependence_capacity ? m_default_dependence_capacity : dependence_capacity ) )
 #endif
         );
