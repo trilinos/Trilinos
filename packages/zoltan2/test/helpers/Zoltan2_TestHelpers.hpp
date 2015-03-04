@@ -102,31 +102,24 @@ typedef Tpetra::Map<>::node_type znode_t;
 #include <TpetraCore_config.h>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-
   typedef unsigned long zzgid_t;
 
 # ifdef HAVE_TPETRA_FLOAT
-#   pragma message("Zoltan2 tests built with scalar_t == float")
     typedef float zscalar_t;
 # else
-#   pragma message("Zoltan2 tests built with scalar_t == double")
     typedef double zscalar_t;
 # endif
 
 # if defined HAVE_TPETRA_INT_LONG
-#   pragma message("Zoltan2 tests built with lno/gno == int/long")
     typedef int zlno_t;
     typedef long zgno_t;
 # elif defined HAVE_TPETRA_INT_LONG_LONG
-#   pragma message("Zoltan2 tests built with lno/gno == int/longlong")
     typedef int zlno_t;
     typedef long long zgno_t;
 # elif defined HAVE_TPETRA_INT_UNSIGNED
-#   pragma message("Zoltan2 tests built with lno/gno == int/size_t")
     typedef int zlno_t;
     typedef size_t zgno_t;
 # elif defined HAVE_TPETRA_INT_INT
-#   pragma message("Zoltan2 tests built with lno/gno == int/int")
     typedef int zlno_t;
     typedef int zgno_t;
 # elif
@@ -136,22 +129,16 @@ typedef Tpetra::Map<>::node_type znode_t;
 #else  // !HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 # if defined TEST_STK_DATA_TYPES
-
-#   pragma message("Zoltan2 tests built with STK types (double/ssize_t/size_t)")
     typedef size_t  zzgid_t;
     typedef double  zscalar_t;
     typedef ssize_t zlno_t;
     typedef size_t  zgno_t;
-
-#else  // !TEST_STK_DATA_TYPES
-
-#   pragma message("Zoltan2 tests built with default (double/int/int)")
+# else  // !TEST_STK_DATA_TYPES
     typedef unsigned long zzgid_t;
     typedef double zscalar_t;
     typedef int zlno_t;
     typedef int zgno_t;
 #   define HAVE_EPETRA_DATA_TYPES
-
 # endif  // TEST_STK_DATA_TYPES
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
