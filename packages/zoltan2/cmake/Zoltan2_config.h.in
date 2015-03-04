@@ -47,34 +47,6 @@
  */
 #cmakedefine HAVE_ZOLTAN2_LONG_LONG
 
-/* Tpetra explicit instantiation:
- *    scalar type is float
- *    local id type is int
- *    global id type is long
- */
-#cmakedefine HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
-
-/* Tpetra explicit instantiation:
- *    scalar type is double
- *    local id type is int
- *    global id type is long
- */
-#cmakedefine HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
-
-/* Tpetra explicit instantiation:
- *    scalar type is float
- *    local id type is int
- *    global id type is int
- */
-#cmakedefine HAVE_ZOLTAN2_INST_FLOAT_INT_INT
-
-/* Tpetra explicit instantiation:
- *    scalar type is double
- *    local id type is int
- *    global id type is int
- */
-#cmakedefine HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
-
 /* Zoltan (1) is included in the Trilinos build.
  */
 #cmakedefine HAVE_ZOLTAN2_ZOLTAN
