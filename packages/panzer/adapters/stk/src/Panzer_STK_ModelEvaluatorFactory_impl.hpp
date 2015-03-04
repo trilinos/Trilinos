@@ -1595,11 +1595,11 @@ namespace panzer_stk_classic {
                        = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer);
                    std::vector<panzer::Ordinal64> ownedIndices;
                    ugi->getOwnedIndices(ownedIndices);
-                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
+                   Teuchos::RCP<const Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
                    coords = Teuchos::rcp(new MV(coords_map,dim));
                  }
                  else {
-                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
+                   Teuchos::RCP<const Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
                    coords = Teuchos::rcp(new MV(coords_map,dim));
                  }
                }
