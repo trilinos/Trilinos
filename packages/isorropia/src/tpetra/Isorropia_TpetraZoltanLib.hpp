@@ -60,30 +60,29 @@ namespace Isorropia {
 
 namespace Tpetra {
 
-
-template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename Node = ::Tpetra::Map<int, int>::node_type >
 class ZoltanLibClass : public Library<Node> {
 public:
 
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, int inputType=Library<Node>::unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, 
-		 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph,
-	         Teuchos::RCP<CostDescriber<Node> > costs, int inputType=Library<Node>::unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, Teuchos::RCP<CostDescriber<Node> > costs, 
-                 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights, 
+                 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, int inputType=Library<Node>::unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph,
+                 Teuchos::RCP<CostDescriber<Node> > costs, int inputType=Library<Node>::unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > input_graph, Teuchos::RCP<CostDescriber<Node> > costs,
+                 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
                  int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, int inputType=Library<Node>::unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, 
+  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix,
                  Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix,
-	         Teuchos::RCP<CostDescriber<Node> > costs, int inputType=Library<Node>::unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, Teuchos::RCP<CostDescriber<Node> > costs, 
-		 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
+                 Teuchos::RCP<CostDescriber<Node> > costs, int inputType=Library<Node>::unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > input_matrix, Teuchos::RCP<CostDescriber<Node> > costs,
+                 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
                  int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords, int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > input_coords,
-		 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights, int inputType=Library<Node>::unspecified_input_);
+                 Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights, int inputType=Library<Node>::unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const ::Tpetra::Map<int,int,Node> > input_map, int inputType=Library<Node>::unspecified_input_);
 
 
@@ -91,7 +90,7 @@ public:
 
   /** Method to partition the object that the ZoltanLibClass was contructed with.
 
-      \param[in] paramlist  Parameters to govern partitioning. 
+      \param[in] paramlist  Parameters to govern partitioning.
 
       \param[out]  newPartitions The new partition for each of my objects, in
                                    local ID order.  The objects may be rows or
@@ -109,31 +108,31 @@ public:
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
-	      std::vector<int>& newPartitions,
-	      int& exportsSize,
-	      std::vector<int>& imports);
+              std::vector<int>& newPartitions,
+              int& exportsSize,
+              std::vector<int>& imports);
 
   /** Method to color the object that the ZoltanLibClass was contructed with.
 
-      \param[in] paramlist  Parameters to govern coloring. 
+      \param[in] paramlist  Parameters to govern coloring.
 
       \param[out]  colorAssignment A list of integers indicating the coloring of
                               the object, in local ID order.
   */
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& colorAssignment);
+        std::vector<int>& colorAssignment);
 
   /** Method to order the object that the ZoltanLibClass was contructed with.
 
-      \param[in] paramlist  Parameters to govern ordering . 
+      \param[in] paramlist  Parameters to govern ordering .
 
       \param[out]  orderAssignment A list of integers indicating the ordering of
                               the object, in local ID order.
   */
   virtual int
   order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& orderAssignment);
+        std::vector<int>& orderAssignment);
 
 protected:
   virtual int precompute();

@@ -83,8 +83,8 @@ namespace ZoltanLib {
  */
 
 
-template <typename Node = KokkosClassic::DefaultNode::DefaultNodeType >
-class QueryObject 
+template <typename Node = ::Tpetra::Map<int,int>::node_type >
+class QueryObject
 {
 
   /** haveGraph is true if we have CrsGraph, and not a CrsMatrix or
@@ -97,7 +97,7 @@ class QueryObject
     */
   Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > graph_;
 
-  /** The CrsMatrix. 
+  /** The CrsMatrix.
       The QueryObject must be constructed with one of
       an ::Tpetra::CrsGraph, an Tpetra::RowMatrix or an Tpetra::MultiVector.
     */
@@ -151,53 +151,53 @@ class QueryObject
       objects currently assigned to this process.
    */
   void My_Object_List  (int num_gid_entries, int num_lid_entries,
-		     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-		     int weight_dim, float * object_weights, int * ierr );
+                     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+                     int weight_dim, float * object_weights, int * ierr );
 
   /** My_Number_Edges_Multi() is a query function used for graph partitioning
       only.  It returns to Zoltan the number of edges (non-zeroes) that each
       vertex (row) has.
    */
   void My_Number_Edges_Multi  (int num_gid_entries, int num_lid_entries,
-	       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-	       int *num_edges, int * ierr );
+               int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+               int *num_edges, int * ierr );
 
   /** My_Edge_List_Multi() is a query function used for graph partitioning
       only.  For each vertex (row), it returns a list of the global ID of
       each neighbor (non-zero) and the process owning that neighbor (that row).
    */
   void My_Edge_List_Multi(int num_gid_entries, int num_lid_entries,
-	       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-	       int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
-	       int weight_dim, float * edge_weights, int * ierr );
+               int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+               int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
+               int weight_dim, float * edge_weights, int * ierr );
 
   /** My_HG_Size_CS() is a query function used for hypergraph partitioning
-      only. Zoltan calls this query to get size of the non-zeros lists from the QueryObject. 
+      only. Zoltan calls this query to get size of the non-zeros lists from the QueryObject.
    */
   void My_HG_Size_CS (int* num_lists, int* num_pins, int* format,
-			  int * ierr );
+                          int * ierr );
 
   /** My_HG_CS() is a query function used for hypergraph partitioning
-      only. Zoltan calls this query to get the non-zeros lists from the QueryObject. 
+      only. Zoltan calls this query to get the non-zeros lists from the QueryObject.
    */
   void My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins,
-	   int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
-				       int * ierr );
+           int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
+                                       int * ierr );
 
 
   /** My_FGHG_CS() is a query function used for fine-grain hypergraph partitioning
-      only. Zoltan calls this query to get the non-zeros lists from the QueryObject. 
+      only. Zoltan calls this query to get the non-zeros lists from the QueryObject.
    */
   void My_FGHG_CS (int num_gid_entries, int num_row_or_col, int num_pins,
-	   int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
-				       int * ierr );
+           int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
+                                       int * ierr );
 
   /** My_HG_Size_Edge_Weights() is a query function used for hypergraph partitioning
       only. Zoltan calls this query to get number of hyperedge weights that this
       QueryObject will be providing.
    */
   void My_HG_Size_Edge_Weights(int* num_edges, int* ierr);
-  
+
   /** My_HG_Edge_Weights() is a query function used for hypergraph partitioning
       only. Zoltan calls this query to get hyperedge weights from this
       QueryObject.
@@ -223,15 +223,15 @@ class QueryObject
   /** Constructor
    */
   QueryObject( Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > graph,
-	       Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
-	       int inputType);
+               Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
+               int inputType);
 
 
   /** Constructor
    */
   QueryObject( Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > matrix,
-	       Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
-	       int inputType);
+               Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
+               int inputType);
 
   /** Constructor
    */
@@ -242,7 +242,7 @@ class QueryObject
   /** Constructor
    */
   QueryObject(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > graph,
-	      Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs, 
+              Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
               Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > coords,
               Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
               int inputType);
@@ -251,7 +251,7 @@ class QueryObject
   /** Constructor
    */
   QueryObject(Teuchos::RCP<const ::Tpetra::RowMatrix<double,int,int,Node> > matrix,
-	      Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
+              Teuchos::RCP<const Isorropia::Tpetra::CostDescriber<Node> > costs,
               Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > coords,
               Teuchos::RCP<const ::Tpetra::MultiVector<double,int,int,Node> > weights,
               int inputType);
@@ -260,7 +260,7 @@ class QueryObject
   /** Constructor
    */
   QueryObject( Teuchos::RCP<const ::Tpetra::Map<int,int,Node> > inputMap,
-	       int inputType);
+               int inputType);
 
 
 
@@ -313,15 +313,15 @@ class QueryObject
 
   /** input_type_ == graph_geometric_input_
       This indicates that the Tpetra::MultiVector represents graph and
-      has geometric coordinates (see above).  
-      This is necessary for hierarchical partitioning                                                                                                            
+      has geometric coordinates (see above).
+      This is necessary for hierarchical partitioning
       with both graph and geometric methods.
   */
   static const int graph_geometric_input_ = 7;
 
   /** input_type_ == hgraph_graph_geometric_input_
       This indicates that the Tpetra::MultiVector represents a hypergraph
-      and graph and has geometric coordinates(see above).  This is necessary for 
+      and graph and has geometric coordinates(see above).  This is necessary for
       hierarchical partitioning using hypergraph, graph, and geometric methods.
   */
   static const int hgraph_graph_geometric_input_ = 8;
@@ -340,7 +340,7 @@ class QueryObject
 
 
   /** The input_type_ indicates how the object to be partitioned is to
-      be interpreted - as a graph or a hypergraph for row partitioning, 
+      be interpreted - as a graph or a hypergraph for row partitioning,
       as a hypergraph for fine-grain partitioning, or as a list of coordinates for geometric
       partitioning.
     */
@@ -370,43 +370,43 @@ class QueryObject
   /** The interface to a particular QueryObject's My_Number_Objects query function.
    */
   static int Number_Objects(void *data, int *ierr);
-  
+
   /** The interface to a particular QueryObject's My_Object_List query function.
    */
   static void Object_List  ( void * data, int num_gid_entries, int num_lid_entries,
-		     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-		     int weight_dim, float * object_weights, int * ierr );
+                     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+                     int weight_dim, float * object_weights, int * ierr );
 
   // Query functions for graph partitioning only
-  
+
   /** The interface to a particular QueryObject's My_Number_Edges_Multi query function.
    */
   static void Number_Edges_Multi  ( void * data, int num_gid_entries, int num_lid_entries,
-	       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-	       int *num_edges, int * ierr );
+               int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+               int *num_edges, int * ierr );
 
   /** The interface to a particular QueryObject's My_Edges_Multi query function.
    */
   static void Edge_List_Multi( void * data, int num_gid_entries, int num_lid_entries,
-	       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-	       int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
-	       int weight_dim, float * edge_weights, int * ierr );
+               int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+               int *num_edges, ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
+               int weight_dim, float * edge_weights, int * ierr );
 
   // Query functions for hypergraph partitioning only
-  
+
   /** The interface to a particular QueryObject's My_HG_Size_CS query function.
    */
   static void HG_Size_CS ( void * data, int* num_lists, int* num_pins, int* format,
-			  int * ierr );
+                          int * ierr );
   /** The interface to a particular QueryObject's My_HG_CS query function.
    */
   static void HG_CS ( void * data, int num_gid_entries, int num_row_or_col, int num_pins,
-	   int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
-				       int * ierr );
+           int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
+                                       int * ierr );
   /** The interface to a particular QueryObject's My_HG_Size_Edge_Weights query function.
    */
   static void HG_Size_Edge_Weights(void * data, int* num_edges, int* ierr);
-  
+
   /** The interface to a particular QueryObject's My_HG_Edge_Weights query function.
    */
   static void HG_Edge_Weights(void * data,
