@@ -42,59 +42,76 @@ struct MultiVectorStatic{
   ~MultiVectorStatic() {}
 };
 
-
-
-/*------------------------------------------------------------------------------------------
- *-------------------------- Multiply with scalar: y = a * x -------------------------------
- *------------------------------------------------------------------------------------------*/
+/// \brief Functor for R.scale(array of alphas, MV X).
+///
+/// R(i,j) = alphas[j] * X(i,j), subject to the usual BLAS rules if
+/// any of the alphas[j] coefficients are zero.
 template<class RVector, class aVector, class XVector>
 struct MV_MulScalarFunctor
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   RVector m_r;
-  typename XVector::const_type m_x ;
-  typename aVector::const_type m_a ;
+  typename XVector::const_type m_x;
+  typename aVector::const_type m_a;
   size_type n;
-  MV_MulScalarFunctor() {n=1;}
-  //--------------------------------------------------------------------------
+
+  MV_MulScalarFunctor () : n (1) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-        for(size_type k=0;k<n;k++)
-           m_r(i,k) = m_a[k]*m_x(i,k);
+    for (size_type k = 0; k < n; ++k) {
+      if (m_a[k] == Kokkos::Details::ArithTraits<typename aVector::non_const_value_type>::zero ()) {
+        m_r(i,k) = Kokkos::Details::ArithTraits<typename RVector::non_const_value_type>::zero ();
+      } else {
+        m_r(i,k) = m_a[k] * m_x(i,k);
+      }
+    }
   }
 };
 
+/// \brief Functor for X.scale(array of alphas).
+///
+/// X(i,j) *= alphas[j], subject to the usual BLAS rules if any of the
+/// alphas[j] coefficients are zero.
 template<class aVector, class XVector>
 struct MV_MulScalarFunctorSelf
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   XVector m_x;
-  typename aVector::const_type   m_a ;
+  typename aVector::const_type m_a;
   size_type n;
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-        for(size_type k=0;k<n;k++)
-           m_x(i,k) *= m_a[k];
+    for (size_type k = 0; k < n; ++k) {
+      if (m_a[k] == Kokkos::Details::ArithTraits<typename aVector::non_const_value_type>::zero ()) {
+        m_x(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+      } else {
+        m_x(i,k) *= m_a[k];
+      }
+    }
   }
 };
 
-template<class RVector, class DataType,class Layout,class Device, class MemoryManagement,class Specialisation, class XVector>
-RVector MV_MulScalar (const RVector& r, const typename Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation>& a, const XVector& x)
+
+//! Function for R.scale (array a, MV X) or X.scale (array a).
+template<class RVector, class DataType, class Layout, class Device, class MemoryManagement, class Specialisation, class XVector>
+RVector
+MV_MulScalar (const RVector& r,
+              const Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation>& a,
+              const XVector& x)
 {
   typedef typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
   if (r == x) {
@@ -115,54 +132,75 @@ RVector MV_MulScalar (const RVector& r, const typename Kokkos::View<DataType,Lay
   return r;
 }
 
+/// \brief Functor for R.scale(value alpha, MV X).
+///
+/// R(i,j) = alpha * X(i,j), subject to the usual BLAS rules if alpha
+/// is zero.
 template<class RVector, class XVector>
-struct MV_MulScalarFunctor<RVector,typename RVector::value_type,XVector>
+struct MV_MulScalarFunctor<RVector, typename RVector::value_type, XVector>
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   RVector m_r;
-  typename XVector::const_type m_x ;
-  typename RVector::value_type m_a ;
+  typename XVector::const_type m_x;
+  typename RVector::value_type m_a;
   size_type n;
-  MV_MulScalarFunctor() {n=1;}
-  //--------------------------------------------------------------------------
+
+  MV_MulScalarFunctor () : n (1) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-        for(size_type k=0;k<n;k++)
-           m_r(i,k) = m_a*m_x(i,k);
+    for (size_type k = 0; k < n; ++k) {
+      if (m_a == Kokkos::Details::ArithTraits<typename RVector::value_type>::zero ()) {
+        m_r(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+      } else {
+        m_r(i,k) = m_a * m_x(i,k);
+      }
+    }
   }
 };
 
+/// \brief Functor for X.scale(value alpha).
+///
+/// R(i,j) *= alpha, subject to the usual BLAS rules if alpha is zero.
 template<class XVector>
 struct MV_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   XVector m_x;
-  typename XVector::non_const_value_type m_a ;
+  typename XVector::non_const_value_type m_a;
   size_type n;
-  //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
 #ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-        for(size_type k=0;k<n;k++)
-           m_x(i,k) *= m_a;
+    for (size_type k = 0; k < n; ++k) {
+      if (m_a == Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ()) {
+        m_x(i,k) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+      } else {
+        m_x(i,k) *= m_a;
+      }
+    }
   }
 };
 
+
+//! Function for R.scale (value a, MV X) or X.scale (value a).
 template<class RVector, class XVector>
-RVector MV_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
+RVector
+MV_MulScalar (const RVector& r,
+              const typename XVector::non_const_value_type& a,
+              const XVector& x)
 {
   /*if(r.dimension_1()==1) {
     typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
@@ -172,21 +210,22 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::non_const_value
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
     return V_MulScalar(r_1d,a,x_1d);
   }*/
+
   if (r == x) {
-    MV_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector> op ;
-    op.m_x = x ;
-    op.m_a = a ;
-    op.n = x.dimension(1);
+    MV_MulScalarFunctorSelf<typename XVector::non_const_value_type, XVector> op ;
+    op.m_x = x;
+    op.m_a = a;
+    op.n = x.dimension (1);
     Kokkos::parallel_for (x.dimension (0), op);
     return r;
   }
 
-  MV_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op ;
-  op.m_r = r ;
-  op.m_x = x ;
-  op.m_a = a ;
-  op.n = x.dimension(1);
-  Kokkos::parallel_for( x.dimension(0) , op );
+  MV_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op;
+  op.m_r = r;
+  op.m_x = x;
+  op.m_a = a;
+  op.n = x.dimension (1);
+  Kokkos::parallel_for (x.dimension (0), op);
   return r;
 }
 
@@ -2585,79 +2624,97 @@ struct V_MulScalarFunctor
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    m_r(i) = m_a[0]*m_x(i);
+    if (m_a[0] == Kokkos::Details::ArithTraits<typename aVector::non_const_value_type>::zero ()) {
+      m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+    } else {
+      m_r(i) = m_a[0]*m_x(i);
+    }
   }
 };
 
 template<class aVector, class XVector>
 struct V_MulScalarFunctorSelf
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   XVector m_x;
-  typename aVector::const_type   m_a ;
+  typename aVector::const_type m_a;
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i) const
   {
-    m_x(i) *= m_a(0);
+    if (m_a(0) == Kokkos::Details::ArithTraits<typename aVector::non_const_value_type>::zero ()) {
+      m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+    } else {
+      m_x(i) *= m_a(0);
+    }
   }
 };
 
 template<class RVector, class DataType,class Layout,class Device, class MemoryManagement,class Specialisation, class XVector>
-RVector V_MulScalar( const RVector & r, const typename Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation> & a, const XVector & x)
+RVector
+V_MulScalar (const RVector& r,
+             const typename Kokkos::View<DataType,Layout,Device,MemoryManagement,Specialisation>& a,
+             const XVector& x)
 {
-  typedef       typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
-  if(r==x) {
-    V_MulScalarFunctorSelf<aVector,XVector> op ;
-          op.m_x = x ;
-          op.m_a = a ;
-          Kokkos::parallel_for( x.dimension(0) , op );
-          return r;
+  typedef typename Kokkos::View<DataType,Layout,Device,MemoryManagement> aVector;
+  if (r == x) {
+    V_MulScalarFunctorSelf<aVector,XVector> op;
+    op.m_x = x;
+    op.m_a = a;
+    Kokkos::parallel_for (x.dimension (0) , op);
+    return r;
   }
 
-  V_MulScalarFunctor<RVector,aVector,XVector> op ;
-  op.m_r = r ;
-  op.m_x = x ;
-  op.m_a = a ;
-  Kokkos::parallel_for( x.dimension(0) , op );
+  V_MulScalarFunctor<RVector,aVector,XVector> op;
+  op.m_r = r;
+  op.m_x = x;
+  op.m_a = a;
+  Kokkos::parallel_for (x.dimension (0), op);
   return r;
 }
 
 template<class RVector, class XVector>
 struct V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   RVector m_r;
-  typename XVector::const_type m_x ;
-  typename XVector::value_type m_a ;
+  typename XVector::const_type m_x;
+  typename XVector::value_type m_a;
   //--------------------------------------------------------------------------
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
-    m_r(i) = m_a*m_x(i);
+    if (m_a == Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ()) {
+      m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+    } else {
+      m_r(i) = m_a*m_x(i);
+    }
   }
 };
 
 template<class XVector>
 struct V_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   XVector m_x;
-  typename XVector::non_const_value_type m_a ;
-  //--------------------------------------------------------------------------
+  typename XVector::non_const_value_type m_a;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
-    m_x(i) *= m_a;
+    if (m_a == Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ()) {
+      m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::zero ();
+    } else {
+      m_x(i) *= m_a;
+    }
   }
 };
 
@@ -2665,31 +2722,31 @@ struct V_MulScalarFunctorSelf<typename XVector::non_const_value_type,XVector>
 template<class RVector, class XVector>
 RVector V_MulScalar( const RVector & r, const typename XVector::non_const_value_type &a, const XVector & x)
 {
-  if(r==x) {
-    V_MulScalarFunctorSelf<typename RVector::value_type,RVector> op ;
-          op.m_x = r ;
-          op.m_a = a ;
-          Kokkos::parallel_for( x.dimension(0) , op );
-          return r;
+  if (r == x) {
+    V_MulScalarFunctorSelf<typename RVector::value_type,RVector> op;
+    op.m_x = r;
+    op.m_a = a;
+    Kokkos::parallel_for (x.dimension (0), op);
+    return r;
   }
 
-  V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op ;
-  op.m_r = r ;
-  op.m_x = x ;
-  op.m_a = a ;
-  Kokkos::parallel_for( x.dimension(0) , op );
+  V_MulScalarFunctor<RVector,typename XVector::non_const_value_type,XVector> op;
+  op.m_r = r;
+  op.m_x = x;
+  op.m_a = a;
+  Kokkos::parallel_for (x.dimension (0), op);
   return r;
 }
 
 template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y>
 struct V_AddVectorFunctor
 {
-  typedef typename RVector::execution_space        execution_space;
-  typedef typename RVector::size_type            size_type;
-  typedef typename XVector::non_const_value_type           value_type;
-  RVector   m_r ;
-  typename XVector::const_type  m_x ;
-  typename YVector::const_type   m_y ;
+  typedef typename RVector::execution_space execution_space;
+  typedef typename RVector::size_type       size_type;
+  typedef typename XVector::non_const_value_type value_type;
+  RVector   m_r;
+  typename XVector::const_type  m_x;
+  typename YVector::const_type   m_y;
   const value_type m_a;
   const value_type m_b;
 
