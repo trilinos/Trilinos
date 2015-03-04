@@ -18,15 +18,14 @@ typedef int    size_type;
 //typedef Kokkos::Qthread space_type;
 typedef Kokkos::Serial space_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+using namespace Example;
 
-typedef Example::CrsMatrixBase<CrsMatrixView,ordinal_type,size_type,space_type> CrsHierBase;
-typedef Example::CrsMatrixHelper CrsMatrixHelper;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;    
+typedef CrsMatrixBase<CrsMatrixViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
 
-typedef Example::Uplo Uplo;
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;    
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -39,7 +38,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -49,21 +48,21 @@ int main (int argc, char *argv[]) {
   }
   AA.importMatrixMarket(in);
 
-  GraphHelper S(AA);
+  GraphHelperType S(AA);
   S.computeOrdering();
   cout << S << endl;
 
-  CrsMatrixBase PA("Permuted AA");
+  CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
 
   {
     const int uplo = Uplo::Lower;
 
-    CrsMatrixBase FF("FF::Lower");
+    CrsMatrixBaseType FF("FF::Lower");
     FF.copy(uplo, PA);
     cout << FF << endl;
     
-    CrsHierBase HH("HH::Lower");
+    CrsHierBaseType HH("HH::Lower");
     
     CrsMatrixHelper::flat2hier(uplo,
                                FF, HH, 
@@ -76,11 +75,11 @@ int main (int argc, char *argv[]) {
   {
     const int uplo = Uplo::Upper;
 
-    CrsMatrixBase FF("FF::Upper");
+    CrsMatrixBaseType FF("FF::Upper");
     FF.copy(uplo, PA);
     cout << FF << endl;
     
-    CrsHierBase HH("HH::Upper");
+    CrsHierBaseType HH("HH::Upper");
     
     CrsMatrixHelper::flat2hier(uplo,
                                FF, HH, 

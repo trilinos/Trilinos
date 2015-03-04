@@ -14,8 +14,8 @@
 
 #include "crs_matrix_helper.hpp"
 
-#include "task_factory.hpp"
-#include "crs_task_view.hpp"
+#include "team_factory.hpp"
+#include "crs_team_view.hpp"
 
 using namespace std;
 
@@ -30,12 +30,11 @@ using namespace Example;
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef TaskFactory<Kokkos::Experimental::TaskPolicy<space_type>,
-                    Kokkos::Experimental::Future<int,space_type> > TaskFactoryType;
-typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
+typedef TeamFactory<Kokkos::TeamPolicy<space_type>, Kokkos::Impl::TeamThreadLoopBoundariesStruct> TeamFactoryType;
+typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
 
-typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
-typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
+typedef CrsMatrixBase<CrsTeamViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
+typedef CrsTeamView<CrsHierBaseType,TeamFactoryType> CrsHierViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {

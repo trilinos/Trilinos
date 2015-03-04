@@ -12,10 +12,10 @@ typedef int    size_type;
 
 typedef Kokkos::Serial space_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+using namespace Example;
 
-typedef Example::Uplo Uplo;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -28,7 +28,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -38,13 +38,15 @@ int main (int argc, char *argv[]) {
   }
   AA.importMatrixMarket(in);
 
-  GraphHelper S(AA);
-
-  S.computeOrdering();
-  cout << S << endl;
-
-  CrsMatrixBase PA("Permuted AA");
-  PA.copy(S.PermVector(), S.InvPermVector(), AA);
+  {
+    GraphHelperType S(AA);
+    
+    S.computeOrdering();
+    cout << S << endl;
+    
+    CrsMatrixBaseType PA("Permuted AA");
+    PA.copy(S.PermVector(), S.InvPermVector(), AA);
+  }
 
   Kokkos::finalize();
 

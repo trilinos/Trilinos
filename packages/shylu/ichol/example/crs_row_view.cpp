@@ -13,9 +13,11 @@ typedef size_t size_type;
 
 typedef Kokkos::OpenMP space_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
-typedef Example::CrsRowView<CrsMatrixBase> CrsRowView;
+using namespace Example;
+
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
+typedef CrsRowView<CrsMatrixBaseType> CrsRowViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -28,7 +30,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl; 
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -39,10 +41,10 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(&AA,    2, 6, 
+    CrsMatrixViewType A(&AA,    2, 6, 
                     /**/    3, 8);
   
-    CrsRowView row;
+    CrsRowViewType row;
     row.setView(A, 2);
     cout << row << endl;
 

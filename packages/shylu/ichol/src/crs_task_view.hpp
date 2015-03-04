@@ -28,6 +28,9 @@ namespace Example {
     void setFuture(const future_type &f) { _f = f; }
     future_type Future() const { return _f; }
 
+    // future is not properly initialized with using statement
+    // using CrsMatrixView<CrsMatBaseType>::CrsMatrixView;
+
     CrsTaskView() 
       : CrsMatrixView<CrsMatBaseType>(),
         _f()

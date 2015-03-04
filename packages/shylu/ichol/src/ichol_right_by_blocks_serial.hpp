@@ -15,6 +15,7 @@ namespace Example {
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genScalarTask_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                       typename CrsTaskViewType::policy_type::member_type &member,
                                        const CrsTaskViewType A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -32,8 +33,9 @@ namespace Example {
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                     const CrsTaskViewType A,
-                                     const CrsTaskViewType B) {
+                                      typename CrsTaskViewType::policy_type::member_type &member,
+                                      const CrsTaskViewType A,
+                                      const CrsTaskViewType B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -55,6 +57,7 @@ namespace Example {
   template<typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int genHerkTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                      typename CrsTaskViewType::policy_type::member_type &member,
                                       const CrsTaskViewType A,
                                       const CrsTaskViewType C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;

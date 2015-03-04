@@ -15,10 +15,10 @@ typedef int    size_type;
 
 typedef Kokkos::OpenMP host_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+using namespace Example;
 
-typedef Example::Partition Partition;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -31,7 +31,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -42,11 +42,11 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsMatrixView A(AA);
-
-    CrsMatrixView ATL, ATR,     A00,  a01,     A02,
-      /**/        ABL, ABR,     a10t, alpha11, a12t,
-      /**/                      A20,  a21,     A22;  
+    CrsMatrixViewType A(AA);
+    
+    CrsMatrixViewType ATL, ATR,     A00,  a01,     A02,
+      /**/            ABL, ABR,     a10t, alpha11, a12t,
+      /**/                          A20,  a21,     A22;  
   
     Part_2x2(A,  ATL, ATR,
              /**/ABL, ABR, 
@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
                       ABL, ABR, /**/  A20,  a21,     A22,  
                       1, 1, Partition::BottomRight);
       // -----------------------------------------------------
-      CrsMatrixView AB0, ab1;
+      CrsMatrixViewType AB0, ab1;
       
       Merge_2x1(alpha11,
                 a21,     ab1);

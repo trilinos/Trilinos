@@ -45,12 +45,6 @@ namespace Example {
       policy.add_dependence(after, before);
     }
 
-    static
-    void wait(policy_type &policy,
-              const future_type &obj) {
-      // policy.wait(obj);
-    }
-
   };
 
 }

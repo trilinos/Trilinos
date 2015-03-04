@@ -13,7 +13,8 @@ namespace Example {
   template<int ArgTransA, int ArgTransB, int ArgAlgo>
   struct Gemm {
     template<typename ScalarType, 
-             typename CrsMatViewType>
+             typename CrsMatViewType,
+             typename ParallelForType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const ScalarType alpha,
                       const CrsMatViewType A,
@@ -22,7 +23,8 @@ namespace Example {
                       const CrsMatViewType C);
 
     template<typename ScalarType, 
-             typename CrsMatViewType>
+             typename CrsMatViewType,
+             typename ParallelForType>
     class TaskFunctor {
     private:
       ScalarType _alpha, _beta;
@@ -43,10 +45,17 @@ namespace Example {
 
       string Label() const { return "Gemm"; }
 
+      // task execution
       typedef int value_type;      
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke(_alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke<ScalarType,CrsMatViewType,ParallelForType>(_alpha, _A, _B, _beta, _C);
       }
+
+      // task-data execution
+      void operator()(const member_type &member) const {
+        Gemm::invoke<ScalarType,CrsMatViewType,ParallelForType>(_alpha, _A, _B, _beta, _C);
+      }
+        
     };
 
   };
@@ -54,7 +63,7 @@ namespace Example {
 }
 
 
-#include "gemm_nt_t.hpp"
+// #include "gemm_nt_t.hpp"
 #include "gemm_t_nt.hpp"
 
 #endif

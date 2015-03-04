@@ -13,9 +13,11 @@
 using namespace std;
 
 typedef Kokkos::Serial space_type;
-typedef Kokkos::Future<int,space_type> future_type;
+typedef Kokkos::Experimental::Future<int,space_type> future_type;
 
-class SimpleTask : public Example::Disp {
+using namespace Example;
+
+class SimpleTask : public Disp {
 private:
   double _data;
   future_type _f;
@@ -39,7 +41,7 @@ typedef class SimpleTask value_type;
 typedef int              ordinal_type;
 typedef size_t           size_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 
 int main (int argc, char *argv[]) {
 
@@ -49,11 +51,11 @@ int main (int argc, char *argv[]) {
        << endl;
 
   { // Test on an empty matrix
-    CrsMatrixBase A("Empty A");
+    CrsMatrixBaseType A("Empty A");
   }
 
   { // Test on matrix allocation
-    CrsMatrixBase A("A, 3x3 Allocated", 3, 3, 9);
+    CrsMatrixBaseType A("A, 3x3 Allocated", 3, 3, 9);
 
     cout << A << endl;
   }

@@ -12,10 +12,10 @@ typedef size_t size_type;
 typedef Kokkos::OpenMP space_type;
 typedef Kokkos::OpenMP device_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,device_type> CrsMatrixBaseDevice;
+using namespace Example;
 
-typedef Example::Uplo Uplo;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,device_type> CrsMatrixBaseDeviceType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -29,21 +29,21 @@ int main (int argc, char *argv[]) {
        << endl;
 
   { // Test on an empty matrix
-    CrsMatrixBase A("Empty A");
+    CrsMatrixBaseType A("Empty A");
     cout << A << endl;
   }
 
   { // Test on matrix allocation
-    CrsMatrixBase A("A, 3x3 Allocated", 3, 3, 9);
+    CrsMatrixBaseType A("A, 3x3 Allocated", 3, 3, 9);
     cout << A << endl;
   }
 
   { // Test on attaching buffers
     ordinal_type m = 3, n = 3, nnz = 9, cnt = 0;
 
-    CrsMatrixBase::size_type_array    ap("External::RowPtrArray", m+1);
-    CrsMatrixBase::ordinal_type_array aj("External::ColIdxArray", nnz);
-    CrsMatrixBase::value_type_array   ax("External::ValueArray",  nnz);
+    CrsMatrixBaseType::size_type_array    ap("External::RowPtrArray", m+1);
+    CrsMatrixBaseType::ordinal_type_array aj("External::ColIdxArray", nnz);
+    CrsMatrixBaseType::value_type_array   ax("External::ValueArray",  nnz);
 
     // column major 3x3 dense filling
     ap[0] = cnt;
@@ -55,31 +55,32 @@ int main (int argc, char *argv[]) {
       ap[i+1] = cnt;
     }
 
-    CrsMatrixBase A("A, External buffer wrapped", 
+    CrsMatrixBaseType A("A, External buffer wrapped", 
                     m, n, nnz,
                     ap, aj, ax);
     
     cout << A << endl;
 
     // Test on copying operations
-    CrsMatrixBase B(A);
+    CrsMatrixBaseType B(A);
     B.setLabel("B, shallow-copy of A");
     cout << B << endl;
 
-    CrsMatrixBase C("C, deep-copy of A");
+    CrsMatrixBaseType C("C, deep-copy of A");
     C.copy(A);
     cout << C << endl;
 
-    CrsMatrixBase Dl("D, deep-copy of A lower triangular");
+    CrsMatrixBaseType Dl("D, deep-copy of A lower triangular");
     Dl.copy(Uplo::Lower, A);
     cout << Dl << endl;
 
-    CrsMatrixBase Du("D, deep-copy of A upper triangular");
+    CrsMatrixBaseType Du("D, deep-copy of A upper triangular");
     Du.copy(Uplo::Upper, A);
     cout << Du << endl;
 
-    CrsMatrixBase::ordinal_type_array p ("External::PermVector", n);
-    CrsMatrixBase::ordinal_type_array ip("External::InvPermVector", m);    
+    // Test on permutation operators
+    CrsMatrixBaseType::ordinal_type_array p ("External::PermVector", n);
+    CrsMatrixBaseType::ordinal_type_array ip("External::InvPermVector", m);    
 
     for (ordinal_type i=0;i<m;++i)
       ip[i] = (m - i - 1);
@@ -87,28 +88,28 @@ int main (int argc, char *argv[]) {
     for (ordinal_type j=0;j<n;++j)
       p[j] = (n - j - 1);
 
-    CrsMatrixBase E("E, permuted in A");
+    CrsMatrixBaseType E("E, permuted in A");
     E.copy(p, ip, A);
     cout << E << endl;
 
     // Heterogeneous copy
-    CrsMatrixBaseDevice F("F, allocated in the device");
+    CrsMatrixBaseDeviceType F("F, allocated in the device");
     F.copy(A);
     
-    CrsMatrixBase G("G, allocated in the host");    
+    CrsMatrixBaseType G("G, allocated in the host");    
     G.copy(F);
 
     cout << G << endl;
   }
 
-  { // File input
+  { // Test on file io
     ifstream in;
     in.open(argv[1]);
     if (!in.good()) {
       cout << "Error in open the file: " << argv[1] << endl;
       return -1;
     }
-    CrsMatrixBase A("A, imported from a file");
+    CrsMatrixBaseType A("A, imported from a file");
     A.importMatrixMarket(in);
 
     cout << A << endl;

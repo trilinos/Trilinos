@@ -14,9 +14,11 @@ typedef size_t size_type;
 
 typedef Kokkos::OpenMP host_type; 
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
-typedef Example::CrsRowView<CrsMatrixBase> CrsRowView;
+using namespace Example;
+
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,host_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
+typedef CrsRowView<CrsMatrixBaseType> CrsRowViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -29,7 +31,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -40,14 +42,14 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
 
   {
-    CrsRowView a, b;
-    a.setView(CrsMatrixView(&AA, /**/ 2, 6, /**/ 3, 8), 2);
-    b.setView(CrsMatrixView(&AA, /**/ 3, 7, /**/ 3, 8), 2);
+    CrsRowViewType a, b;
+    a.setView(CrsMatrixViewType(&AA, /**/ 2, 6, /**/ 3, 8), 2);
+    b.setView(CrsMatrixViewType(&AA, /**/ 3, 7, /**/ 3, 8), 2);
     
     cout << " a = " << endl << a << endl;
     cout << " b = " << endl << b << endl;
-    cout << " dot(a,b) = " << Example::dot(a,b) << endl;
-    cout << " dot(a,a) = " << Example::dot(a) << endl;
+    cout << " dot(a,b) = " << dot(a,b) << endl;
+    cout << " dot(a,a) = " << dot(a) << endl;
   }
 
   Kokkos::finalize(); 

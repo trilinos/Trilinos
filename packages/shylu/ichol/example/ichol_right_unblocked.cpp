@@ -7,6 +7,11 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
+#include "crs_team_view.hpp"
+
+#include "sequential_for.hpp"
+#include "team_factory.hpp"
+
 #include "ichol.hpp"
 
 using namespace std;
@@ -17,13 +22,15 @@ typedef int    size_type;
 
 typedef Kokkos::OpenMP space_type; 
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+using namespace Example;
 
-typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef Example::Uplo Uplo;
-typedef Example::AlgoIChol AlgoIChol;
+typedef TeamFactory<TeamPolicy,TeamThreadLoopRegion> TeamFactoryType;
+typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
+
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -36,7 +43,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -47,30 +54,33 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
   cout << AA << endl;
 
-  GraphHelper S(AA);
+  GraphHelperType S(AA);
   S.computeOrdering();
   
-  CrsMatrixBase PA("Permuted AA");
+  CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
   
-  CrsMatrixBase UU("UU");
+  CrsMatrixBaseType UU("UU");
   UU.copy(Uplo::Upper, PA);
   
   cout << UU << endl;
   
-  CrsMatrixView U(UU);
+  CrsTeamViewType U(UU);
   U.fillRowViewArray();
   
-  int r_val = 0;
+  {
+    int r_val = 0;
+    typedef typename CrsTeamViewType::policy_type::member_type member_type;
+
+    IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
+      ::TaskFunctor<CrsTeamViewType,SequentialFor>(U).apply(member_type(), r_val);
   
-  // r_val = Example::IChol<Uplo::Upper,AlgoIChol::RightUnblocked>::invoke(U);
-  Example::IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>::TaskFunctor<CrsMatrixView>(U).apply(r_val);
-  
-  if (r_val != 0)  {
-    cout << " Error = " << r_val << endl;
-    return r_val;
+    if (r_val != 0)  {
+      cout << " Error = " << r_val << endl;
+      return r_val;
+    }
+    cout << UU << endl;
   }
-  cout << UU << endl;
 
   Kokkos::finalize();
 

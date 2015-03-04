@@ -13,15 +13,18 @@ namespace Example {
   template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo> 
   struct Trsm {
     template<typename ScalarType,
-             typename CrsMatViewType>
+             typename CrsMatViewType,
+             typename ParallelForType>
     KOKKOS_INLINE_FUNCTION
-    static int invoke(const int diag,
+    static int invoke(const ParallelForType::member_type member,
+                      const int diag,
                       const ScalarType alpha,
                       const CrsMatViewType A,
                       const CrsMatViewType B);
 
     template<typename ScalarType,
-             typename CrsMatViewType>
+             typename CrsMatViewType,
+             typename ParallelForType>
     class TaskFunctor {
     private:
       int _diag;
@@ -41,10 +44,19 @@ namespace Example {
 
       string Label() const { return "Trsm"; }
       
+      // task execution
       typedef int value_type;
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_diag, _alpha, _A, _B);
+        r_val = Trsm::invoke<ScalarType,CrsMatViewType,ParallelForType>(ParallelForType::Root,
+                                                                        _diag, _alpha, _A, _B);
       }
+
+      // task-data execution
+      void operator()(const member_type &member) const {
+        Trsm::invoke<ScalarType,CrsMatViewType,ParallelForType>(member, 
+                                                                _diag, _alpha, _A, _B);
+      }
+
     };
   };
   

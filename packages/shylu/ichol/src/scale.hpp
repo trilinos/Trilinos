@@ -22,10 +22,13 @@ namespace Example {
   
   
   template<typename ScalarType, 
-           typename CrsMatViewType>
+           typename CrsMatViewType,
+           typename ParallelForType>
   KOKKOS_INLINE_FUNCTION 
   int
-  scale(const ScalarType alpha, CrsMatViewType &A) {
+  scale(const ParallelForType::member_type member, 
+        const ScalarType alpha, 
+        CrsMatViewType &A) {
     typedef typename CrsMatViewType::ordinal_type  ordinal_type;
     typedef typename CrsMatViewType::value_type    value_type;
     typedef typename CrsMatViewType::row_view_type row_view_type;
@@ -34,11 +37,12 @@ namespace Example {
       // do nothing
     } else {
       row_view_type row;
-      for (ordinal_type i=0;i<A.NumRows();++i) {
-        row.setView(A, i);
-        for (ordinal_type j=0;j<row.NumNonZeros();++j)
-          row.Value(j) *= alpha;
-      }
+      ParallelFor(ParallelFor::TeamThreadLoop(member, 0, A.NumRows()),
+                  [&](const ordinal_type i) {
+                    row.setView(A, i);
+                    for (ordinal_type j=0;j<row.NumNonZeros();++j)
+                      row.Value(j) *= alpha;
+                  });
     }
 
     return 0;
