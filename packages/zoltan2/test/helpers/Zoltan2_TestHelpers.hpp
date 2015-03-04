@@ -84,15 +84,15 @@ typedef Tpetra::Map<>::node_type znode_t;
 // are using these data types, we can test Epetra user input.
 
 // TODO:  KDD 8/13/14
-// Global definitions of types gno_t, lno_t, zgid_t and 
-// scalar_t can cause bugs in the code.  If a class fails to define these 
+// Global definitions of types gno_t, lno_t, zgid_t and
+// scalar_t can cause bugs in the code.  If a class fails to define these
 // types, but this file is included before the class file, the types
 // from Zoltan2_TestHelpers.hpp will be used in the class.  Compilation in
 // user programs (without Zoltan2_TestHelpers.hpp) would then fail.  An
 // example of this bug was in the GeometricGenerator class, which used
 // scalar_t without defining it.
-// In this "fix," I changed gno_t, lno_t, zgid_t, scalar_t, and node_t to 
-// zgno_t, zlno_t, zzgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.  
+// In this "fix," I changed gno_t, lno_t, zgid_t, scalar_t, and node_t to
+// zgno_t, zlno_t, zzgid_t, zscalar_t and znode_t in Zoltan2_TestHelpers.hpp.
 // This change is not the best fix; a better fix would remove the global
 // definitions, but that would require more work.  (An even better change
 // would use the Teuchos test framework to cycle through various options,
@@ -118,11 +118,11 @@ typedef Tpetra::Map<>::node_type znode_t;
     typedef long long zgno_t;
 # elif defined HAVE_TPETRA_INT_UNSIGNED
     typedef int zlno_t;
-    typedef size_t zgno_t;
+    typedef unsigned zgno_t;
 # elif defined HAVE_TPETRA_INT_INT
     typedef int zlno_t;
     typedef int zgno_t;
-# elif
+# else
 #   error "Tpetra uses ETI, but no lno/gno instantiation is recognized"
 # endif
 
@@ -155,7 +155,7 @@ typedef Tpetra::Map<>::node_type znode_t;
     std::cout.fill(' '); \
   }
 
-#include <ErrorHandlingForTests.hpp>  
+#include <ErrorHandlingForTests.hpp>
 #include <UserInputForTests.hpp>
 #include <PrintData.hpp>
 
