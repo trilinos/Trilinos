@@ -594,7 +594,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ScalarType,
 
 
 // Unit test macro isn't smart enough to deal with namespace qualifications.
-typedef KokkosClassic::DefaultNode::DefaultNodeType the_node_type;
+typedef Tpetra::Details::DefaultTypes::node_type the_node_type;
 
 // We instantiate tests for all combinations of the following parameters:
 // - indexBase = {0, 1}

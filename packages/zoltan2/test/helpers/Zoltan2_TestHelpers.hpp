@@ -52,8 +52,8 @@
 #include <Zoltan2_Util.hpp>
 #include <iostream>
 
-#include <Kokkos_DefaultNode.hpp>
-typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
+#include <Tpetra_Map.hpp>
+typedef Tpetra::Map<>::node_type znode_t;
 
 // The path to the directory of test data
 

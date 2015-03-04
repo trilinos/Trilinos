@@ -51,7 +51,7 @@
 
 namespace Tpetra {
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform () :
     comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
     node_ (Teuchos::null)
@@ -62,13 +62,9 @@ namespace Tpetra {
     // Initializing Kokkos with the wrong command-line arguments may
     // result in poor performance due to the wrong assignment of
     // software threads to hardware execution units.
-    //
-    // if (node_.is_null ()) {
-    //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-    // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc, char*** argv) :
     comm_ (Teuchos::null),
     node_ (Teuchos::null)
@@ -83,7 +79,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (const Teuchos::RCP<NodeType>& node) :
     comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
     node_ (node)
@@ -100,7 +96,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc, char*** argv, const Teuchos::RCP<NodeType>& node) :
     comm_ (Teuchos::null),
     node_ (node)
@@ -115,7 +111,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (const Teuchos::RCP<NodeType>& node,
                const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm)
     : comm_ (Teuchos::null),
@@ -137,7 +133,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc,
                char*** argv,
                const Teuchos::RCP<NodeType>& node,
@@ -172,7 +168,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (const Teuchos::RCP<NodeType>& node, MPI_Comm rawMpiComm)
     : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
       node_ (node)
@@ -184,7 +180,7 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   MpiPlatform (int* argc,
                char*** argv,
                const Teuchos::RCP<NodeType>& node,
@@ -202,11 +198,11 @@ namespace Tpetra {
     // }
   }
 
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   ~MpiPlatform () {}
 
   Teuchos::RCP<const Teuchos::Comm<int> >
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   getComm () const {
     TEUCHOS_TEST_FOR_EXCEPTION(
       comm_.is_null (), std::logic_error, "Tpetra::MpiPlatform::getComm: "
@@ -215,8 +211,8 @@ namespace Tpetra {
     return comm_;
   }
 
-  Teuchos::RCP<MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::NodeType>
-  MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>::
+  Teuchos::RCP<MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::NodeType>
+  MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   getNode () const
   {
     typedef MpiPlatform<NodeType> this_type;

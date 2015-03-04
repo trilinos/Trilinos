@@ -904,7 +904,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
 // INSTANTIATE THE TEMPLATED UNIT TESTS
 //////////////////////////////////////////////////////////////////////
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_type;
+typedef Tpetra::Details::DefaultTypes::node_type default_node_type;
 #define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, gaussSeidelSerial, LO, GO, SCALAR, default_node_type ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, reorderedGaussSeidelSerial, LO, GO, SCALAR, default_node_type )

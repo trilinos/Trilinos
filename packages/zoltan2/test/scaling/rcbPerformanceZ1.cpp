@@ -95,10 +95,9 @@ using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::CommandLineProcessor;
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
-
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
+typedef tMap_t::node_type znode_t;
 
 //////////////////////////////////////////////////////////////////////////////
 // Data structure for data
