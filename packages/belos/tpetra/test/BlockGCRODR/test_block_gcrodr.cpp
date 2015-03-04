@@ -76,22 +76,21 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef long int global_ordinal_type;
   typedef int local_ordinal_type;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   //
   // Tpetra objects which are the MV and OP template parameters of the
   // Belos specialization which we are testing.
   //
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type> MV;
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type> OP;
   //
   // Other typedefs.
   //
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> sparse_matrix_type;
+  typedef MV::node_type node_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
-
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   RCP<node_type> node = Belos::Tpetra::getNode<node_type> ();
   RCP<oblackholestream> blackHole (new oblackholestream);
   const int myRank = comm->getRank ();
