@@ -173,7 +173,7 @@ public:
     gsampler_->sumAll(*myh,hv);
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     Pv.set(v.dual());
   }
 };

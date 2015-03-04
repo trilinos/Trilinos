@@ -69,6 +69,7 @@
 #include "ROL_SmoothCVaRQuad.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
+#include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
 
 template<class Real> 
@@ -183,7 +184,7 @@ int main(int argc, char* argv[]) {
     // Build risk-averse objective function
     ParametrizedObjectiveEx1<double> pObj;
     Teuchos::RCP<ROL::RiskMeasure<double> > rm;
-    Teuchos::RCP<ROL::RiskAverseObjective<double> > obj;
+    Teuchos::RCP<ROL::Objective<double> > obj;
     // Build bound constraints
     std::vector<double> l(dim,0.0);
     std::vector<double> u(dim,1.0);
@@ -200,6 +201,28 @@ int main(int argc, char* argv[]) {
     *outStream << "\nRISK NEUTRAL\n";
     rm  = Teuchos::rcp( new ROL::RiskMeasure<double>() );
     obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    // Test objective functions
+    for ( unsigned i = 0; i < dim; i++ ) {
+      (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
+    }
+    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
+    obj->checkGradient(x,d,true,*outStream);
+    obj->checkHessVec(x,d,true,*outStream);
+    // Run ROL algorithm
+    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo->run(x,*obj,*con,true,*outStream);
+    // Print Solution
+    *outStream << "x = (";
+    for ( unsigned i = 0; i < dim-1; i++ ) {
+      *outStream << (*x_rcp)[i] << ", ";
+    }
+    *outStream << (*x_rcp)[dim-1] << ")\n";
+    /**********************************************************************************************/
+    /************************* RISK NEUTRAL *******************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nRISK NEUTRAL\n";
+    obj = Teuchos::rcp( new ROL::RiskNeutralObjective<double>(pObj,vsampler,vsampler) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
