@@ -329,7 +329,7 @@ namespace MueLu {
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    if (reuseType != "none" && (multigridAlgo != "sa" && multigridAlgo != "emin")) {
+    if (reuseType != "none" && (multigridAlgo != "sa" && multigridAlgo != "emin" && multigridAlgo != "unsmoothed")) {
         this->GetOStream(Warnings0) << "Ignoring reuse options as multigrid algorithm is not \"sa\" or \"emin\"" << std::endl;
         reuseType = "none";
     }

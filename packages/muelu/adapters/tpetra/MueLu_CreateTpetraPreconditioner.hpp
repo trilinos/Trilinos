@@ -195,13 +195,39 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                                  MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op) {
-    RCP<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H = Op.GetHierarchy();
-    H->GetLevel(0)->Set("A", TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
+    typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
+
+    RCP<Hierarchy> H = Op.GetHierarchy();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no levels in it");
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no fine level operator");
+    RCP<Level> level0 = H->GetLevel(0);
+
+    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
+    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
+
+    RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
+    if (!A0.is_null()) {
+      // If a user provided a "number of equations" argument in a parameter list
+      // during the initial setup, we must honor that settings and reuse it for
+      // all consequent setups.
+      A->SetFixedBlockSize(A0->GetFixedBlockSize());
+    }
+    level0->Set("A", A);
+
     H->SetupRe();
   }
-
 
 } //namespace
 
