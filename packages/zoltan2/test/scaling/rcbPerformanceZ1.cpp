@@ -94,11 +94,7 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::CommandLineProcessor;
-/*
-typedef int zlno_t;
-typedef long zgno_t;
-typedef double zscalar_t;
-*/
+
 typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
