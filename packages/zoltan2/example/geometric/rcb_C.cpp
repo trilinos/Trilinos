@@ -74,7 +74,11 @@ int main(int argc, char *argv[])
 
   typedef double scalar_t;
   typedef int localId_t;
+#ifdef HAVE_ZOLTAN2_LONG_LONG_INT
   typedef long long globalId_t;
+#else
+  typedef int globalId_t;
+#endif
 
   typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
