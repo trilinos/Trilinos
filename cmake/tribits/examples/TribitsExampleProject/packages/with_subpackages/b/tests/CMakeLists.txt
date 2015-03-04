@@ -46,7 +46,7 @@ TRIBITS_VERBOSE_PRINT_VAR(test_of_b_TEST_NAME)
 # Example of changing CTest property on advanced test
 IF (test_of_b_TEST_NAME)
   SET_TESTS_PROPERTIES( ${test_of_b_TEST_NAME}
-    PROPERTIES  TIMEOUT  3.0 )
+    PROPERTIES  TIMEOUT  12.0 )
 ENDIF()
 
 #
