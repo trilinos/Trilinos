@@ -195,7 +195,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  vectorIndexOutOfRange(size_t VectorIndex) const {
+  vectorIndexOutOfRange (const size_t VectorIndex) const {
     return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
   }
 
@@ -2680,8 +2680,8 @@ namespace Tpetra {
   MultiVector<
     Scalar, LocalOrdinal, GlobalOrdinal,
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
-              size_t offset) const
+  offsetView (const Teuchos::RCP<const map_type>& subMap,
+              const size_t offset) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -2793,8 +2793,8 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
-                      size_t offset)
+  offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
+                      const size_t offset)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
@@ -2805,7 +2805,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  subView (const ArrayView<const size_t>& cols) const
+  subView (const Teuchos::ArrayView<const size_t>& cols) const
   {
     using Teuchos::Array;
     using Teuchos::rcp;
@@ -2912,7 +2912,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  getVector (size_t j) const
+  getVector (const size_t j) const
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -2920,28 +2920,31 @@ namespace Tpetra {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> V;
 
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(j), std::runtime_error, "Tpetra::MultiVector::"
-      "getVector(NonConst): index j (== " << j << ") exceeds valid column "
-      "range for this multivector.");
+    const char tfecfFuncName[] = "getVector(NonConst): ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      this->vectorIndexOutOfRange (j), std::runtime_error, "Input index j (== "
+      << j << ") exceeds valid range [0, " << this->getNumVectors ()
+      << " - 1].");
 #endif // HAVE_TPETRA_DEBUG
-
-    const size_t jj = isConstantStride () ? static_cast<size_t> (j) :
-      static_cast<size_t> (whichVectors_[j]);
+    const size_t jj = this->isConstantStride () ?
+      static_cast<size_t> (j) :
+      static_cast<size_t> (this->whichVectors_[j]);
     const std::pair<size_t, size_t> rng (jj, jj+1);
-    if(view_.dimension_0()>0)
+    if (view_.dimension_0 () > 0) {
       return rcp (new V (this->getMap (),
-                       subview<dual_view_type> (view_, ALL (), rng),
-                       origView_));
-    else
-      return rcp (new V (this->getMap()));
+                         subview<dual_view_type> (view_, ALL (), rng),
+                         origView_));
+    } else {
+      // FIXME (mfh 04 Mar 2015) Doesn't this need to know about origView_?
+      return rcp (new V (this->getMap ()));
+    }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
-  getVectorNonConst (size_t j)
+  getVectorNonConst (const size_t j)
   {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal,
       Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;

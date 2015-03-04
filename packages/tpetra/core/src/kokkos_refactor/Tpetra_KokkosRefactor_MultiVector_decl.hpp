@@ -1017,8 +1017,8 @@ namespace Tpetra {
     /// offset may equal the number of local entries in
     /// <tt>*this</tt>.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
-    offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& subMap,
-                size_t offset) const;
+    offsetView (const Teuchos::RCP<const map_type>& subMap,
+                const size_t offset) const;
 
     /// \brief Return a nonconst view of a subset of rows.
     ///
@@ -1038,16 +1038,16 @@ namespace Tpetra {
     /// See the documentation of offsetView() for a code example and
     /// an explanation of edge cases.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
-    offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> > &subMap,
-                        size_t offset);
+    offsetViewNonConst (const Teuchos::RCP<const map_type>& subMap,
+                        const size_t offset);
 
     //! Return a Vector which is a const view of column j.
     Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
-    getVector (size_t j) const;
+    getVector (const size_t j) const;
 
     //! Return a Vector which is a nonconst view of column j.
     Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false> >
-    getVectorNonConst (size_t j);
+    getVectorNonConst (const size_t j);
 
     //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP<const Scalar> getData (size_t j) const;
@@ -1928,7 +1928,8 @@ namespace Tpetra {
                                const Teuchos::ArrayRCP<S>&,
                                const size_t, const size_t);
 
-    bool vectorIndexOutOfRange (size_t VectorIndex) const;
+    // Return true if and only if VectorIndex is a valid column index.
+    bool vectorIndexOutOfRange (const size_t VectorIndex) const;
 
     /// \brief Persisting view of j-th column in the given ArrayRCP.
     ///
