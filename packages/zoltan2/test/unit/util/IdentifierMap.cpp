@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
   //   when GIDs are std::pair<int,int>
   //////////////////////////////////////////////////////////
   //  Ids are not ordinals.  
-  Zoltan2::BasicUserTypes<float, std::pair<int,int>, int, long> UserPairGids;
+  Zoltan2::BasicUserTypes<double, std::pair<int,int>, int, long> UserPairGids;
 
   ArrayRCP<std::pair<int,int> > nonOrdinalGids(
      new std::pair<int,int> [numLocalObjects],

@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 #endif
 
   typedef double scalar_t;
-  typedef long   localId_t;
+  typedef int    localId_t;
   typedef long   globalId_t;
 
   ///////////////////////////////////////////////////////////////////////
