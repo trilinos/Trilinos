@@ -68,6 +68,12 @@ namespace Zoltan2{
 // Default local ordinal
 typedef int default_lno_t;
 
+// Default global ordinal
+typedef int default_gno_t;
+
+// Default scalar type (for weights, coordinates)
+typedef double default_scalar_t;
+
 // Default part number type.
 typedef int default_part_t;  // Restrictions in MPI interface will make it
                              // somewhat difficult to change default_part_t to
@@ -77,30 +83,6 @@ typedef int default_part_t;  // Restrictions in MPI interface will make it
 
 // Until Kokkos node types are supported, use default
 typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t; 
-
-
-#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
-typedef float default_scalar_t;
-typedef long default_gno_t;
-#else
- #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
- typedef double default_scalar_t;
- typedef long default_gno_t;
- #else
-  #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
-  typedef float default_scalar_t;
-  typedef int default_gno_t;
-  #else
-   #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
-   typedef double default_scalar_t;
-   typedef int default_gno_t;
-   #else
-   typedef double default_scalar_t;
-   typedef int default_gno_t;
-   #endif
-  #endif
- #endif
-#endif
 
 /*! \brief A simple class that can be the User template argument 
  *             for an InputAdapter.
