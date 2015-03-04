@@ -109,8 +109,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
     return;
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
-  typedef int LO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Details::DefaultTypes::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).

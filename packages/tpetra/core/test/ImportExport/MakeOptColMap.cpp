@@ -460,7 +460,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test1, LO, GO )
   {
-    typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+    typedef Tpetra::Details::DefaultTypes::node_type NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
 
@@ -498,7 +498,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test2, LO, GO )
   {
-    typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+    typedef Tpetra::Details::DefaultTypes::node_type NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
 
@@ -541,7 +541,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MakeOptColMap, Test3, LO, GO )
   {
-    typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+    typedef Tpetra::Details::DefaultTypes::node_type NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef typename GetImportType<map_type>::import_type import_type;
 

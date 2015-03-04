@@ -308,7 +308,7 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   typedef double ST;
   typedef int LO;
   typedef long GO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::Details::DefaultTypes::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;

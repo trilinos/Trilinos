@@ -111,7 +111,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NodeConversion, SCALAR, LO, GO, N2 )
   {
-    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
+    typedef typename Tpetra::Details::DefaultTypes::node_type N1;
     typedef Map<LO,GO,N1>              Map1;
     typedef CrsMatrix<SCALAR,LO,GO,N1> Mat1;
     typedef CrsMatrix<SCALAR,LO,GO,N2> Mat2;

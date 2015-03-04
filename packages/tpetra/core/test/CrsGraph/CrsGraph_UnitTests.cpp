@@ -1135,7 +1135,7 @@ namespace {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
+    typedef typename Tpetra::Details::DefaultTypes::node_type N1;
     typedef Map<LO,GO,N1>      Map1;
     typedef CrsGraph<LO,GO,N1> Graph1;
     typedef CrsGraph<LO,GO,N2> Graph2;
