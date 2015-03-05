@@ -70,31 +70,15 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(coarseLevel, "P");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level & coarseLevel) const {
+  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Transpose P", coarseLevel);
 
-    // PFact might be called twice: once for P, once for R. Disabling the debug check.
-    RCP<const FactoryBase> PFact = GetFactory("P");
-    if (PFact == Teuchos::null) { PFact = coarseLevel.GetFactoryManager()->GetFactory("P"); }
-    MueLu::DisableMultipleCallCheck check(rcp_dynamic_cast<const TwoLevelFactoryBase>(PFact));
-
-    //
-    //
-    //
-
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
-
-    //doesn't work -- bug in EpetraExt?
-    // Teuchos::ParameterList matrixList;
-    //RCP<Matrix> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getRangeMap(), matrixList);
-    //      RCP<CrsMatrixWrap> I = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsMatrixWrap>("Identity", P->getDomainMap(), matrixList);
-    //RCP<Matrix> R = Utils::TwoMatrixMultiply(P, true, I, false); //doesn't work -- bug in EpetraExt?
-    //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
     RCP<Matrix> R = Utils2::Transpose(*P, true);
 
@@ -107,10 +91,11 @@ namespace MueLu {
     Set(coarseLevel, "R", R);
 
     ///////////////////////// EXPERIMENTAL
-    if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);
+    if (P->IsView("stridedMaps"))
+      R->CreateView("stridedMaps", P, true);
     ///////////////////////// EXPERIMENTAL
 
-  } //Build
+  }
 
 } //namespace MueLu
 
