@@ -1072,104 +1072,110 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
 
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector>
-RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
-                const bVector &bv, const YVector & y, int n,
-                int a=2,int b=2)
+RVector
+MV_AddVector (const RVector& r,
+              const aVector& av,
+              const XVector& x,
+              const bVector& bv,
+              const YVector & y,
+              const int n,
+              const int a = 2,
+              const int b = 2)
 {
    if(a==1&&b==1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b==-1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,-1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,-1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==-1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,-1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,-1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==-1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,-1> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,-1> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b*b!=1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,2> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,1,2> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b*b!=1) {
-     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,2> op ;
-     op.m_r = r ;
-     op.m_x = x ;
-     op.m_y = y ;
-     op.m_a = av ;
-     op.m_b = bv ;
+     MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,-1,2> op;
+     op.m_r = r;
+     op.m_x = x;
+     op.m_y = y;
+     op.m_a = av;
+     op.m_b = bv;
      op.n = x.dimension(1);
      Kokkos::parallel_for( n , op );
      return r;
    }
-   MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,2> op ;
-   op.m_r = r ;
-   op.m_x = x ;
-   op.m_y = y ;
-   op.m_a = av ;
-   op.m_b = bv ;
+   MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,2> op;
+   op.m_r = r;
+   op.m_x = x;
+   op.m_y = y;
+   op.m_a = av;
+   op.m_b = bv;
    op.n = x.dimension(1);
    Kokkos::parallel_for( n , op );
 
@@ -1201,66 +1207,88 @@ RVector MV_AddSpecialise( const RVector & r,const aVector &av,const XVector & x,
 }
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector>
-RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
-    const bVector &bv, const YVector & y, int n = -1)
+RVector
+MV_Add (const RVector& r,
+        const aVector& av,
+        const XVector& x,
+        const bVector& bv,
+        const YVector& y,
+        int n = -1)
 {
-  if(n==-1) n = x.dimension_0();
-  if(x.dimension(1)>16)
-    return MV_AddVector( r,av,x,bv,y,n,2,2);
+  if (n == -1) {
+    n = x.dimension_0 ();
+  }
+  if (x.dimension (1) > 16) {
+    return MV_AddVector (r, av, x, bv, y, n, 2, 2);
+  }
 
-  if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
+  if (x.dimension_1 () == 1) {
+    typedef View<typename RVector::value_type*, typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+    RVector1D r_1d = subview<RVector1D> (r, ALL(), 0);
+    XVector1D x_1d = subview<XVector1D> (x, ALL(), 0);
+    YVector1D y_1d = subview<YVector1D> (y, ALL(), 0);
 
-    V_Add(r_1d,av,x_1d,bv,y_1d,n);
+    V_Add (r_1d, av, x_1d, bv, y_1d, n);
     return r;
-  } else
-  return MV_AddUnroll( r,av,x,bv,y,n,2,2);
+  } else {
+    return MV_AddUnroll (r, av, x, bv, y, n, 2, 2);
+  }
 }
 
 template<class RVector,class XVector,class YVector>
-RVector MV_Add( const RVector & r, const XVector & x, const YVector & y, int n = -1)
+RVector
+MV_Add (const RVector& r,
+        const XVector& x,
+        const YVector& y,
+        int n = -1)
 {
-  if(n==-1) n = x.dimension_0();
-  if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
+  if (n == -1) {
+    n = x.dimension_0 ();
+  }
+  if (x.dimension_1 () == 1) {
+    typedef View<typename RVector::value_type*, typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+    RVector1D r_1d = subview<RVector1D> (r , ALL(), 0);
+    XVector1D x_1d = subview<XVector1D> (x , ALL(), 0);
+    YVector1D y_1d = subview<YVector1D> (y , ALL(), 0);
 
-    V_Add(r_1d,x_1d,y_1d,n);
+    V_Add (r_1d, x_1d, y_1d, n);
     return r;
   } else {
-    typename XVector::const_value_type a = 1.0;
-    return MV_AddSpecialise(r,a,x,a,y,n,1,1);
+    typename XVector::const_value_type a =
+      Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::one ();
+    return MV_AddSpecialise (r, a, x, a, y, n, 1, 1);
   }
 }
 
 template<class RVector,class XVector,class bVector, class YVector>
-RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const YVector & y, int n = -1 )
+RVector MV_Add (const RVector& r,
+                const XVector& x,
+                const bVector& bv,
+                const YVector& y,
+                int n = -1)
 {
-  if(n==-1) n = x.dimension_0();
-  if(x.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-    typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
+  if (n == -1) {
+    n = x.dimension_0 ();
+  }
+  if (x.dimension_1 () == 1) {
+    typedef View<typename RVector::value_type*, typename RVector::execution_space> RVector1D;
+    typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
+    typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+    RVector1D r_1d = subview<RVector1D> (r, ALL (), 0);
+    XVector1D x_1d = subview<XVector1D> (x, ALL (), 0);
+    YVector1D y_1d = subview<YVector1D> (y, ALL (), 0);
 
-    V_Add(r_1d,x_1d,bv,y_1d,n);
+    V_Add (r_1d, x_1d, bv, y_1d, n);
     return r;
   } else {
-    MV_AddSpecialise(r,bv,x,bv,y,n,1,2);
+    MV_AddSpecialise (r, bv, x, bv, y, n, 1, 2);
   }
 }
 
@@ -3267,69 +3295,64 @@ XVector V_ReciprocalThreshold( const XVector & x, const typename XVector::non_co
   return x;
 }
 
-/*------------------------------------------------------------------------------------------
- *-------------------------- Abs element wise: y[i] = abs(x[i]) ------------------------
- *------------------------------------------------------------------------------------------*/
+//! Functor for element-wise absolute value: r(i) = abs(x(i))
 template<class RVector, class XVector>
 struct V_AbsFunctor
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   RVector m_r;
-  typename XVector::const_type m_x ;
+  typename XVector::const_type m_x;
 
-  V_AbsFunctor(RVector r, XVector x):m_r(r),m_x(x) {}
-  //--------------------------------------------------------------------------
+  V_AbsFunctor (const RVector& r, const XVector& x) : m_r (r), m_x (x) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
-    m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
+    m_r(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs (m_x(i));
   }
 };
 
+//! Functor for element-wise absolute value in place: x(i) = abs(x(i))
 template<class XVector>
 struct V_AbsSelfFunctor
 {
-  typedef typename XVector::execution_space        execution_space;
-  typedef typename XVector::size_type            size_type;
+  typedef typename XVector::execution_space execution_space;
+  typedef typename XVector::size_type       size_type;
 
   XVector m_x ;
-
-  V_AbsSelfFunctor(XVector x):m_x(x) {}
-  //--------------------------------------------------------------------------
+  V_AbsSelfFunctor (const XVector& x) : m_x (x) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i) const
+  void operator() (const size_type i) const
   {
-     m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs(m_x(i));
+     m_x(i) = Kokkos::Details::ArithTraits<typename XVector::non_const_value_type>::abs (m_x(i));
   }
 };
 
+/// \brief Compute element-wise absolute value: r(i) = abs(x(i)).
+///
+/// We allow r to alias x.  In that case, we compute in place.
 template<class RVector, class XVector>
 RVector V_Abs( const RVector & r, const XVector & x)
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_Abs -- dimension(0) of r and x don't match");
-  */
-
-
-  if(r==x) {
-    V_AbsSelfFunctor<XVector> op(x) ;
-    Kokkos::parallel_for( x.dimension_0() , op );
-    return r;
+  if (r == x) {
+    V_AbsSelfFunctor<XVector> op (x);
+    Kokkos::parallel_for (x.dimension_0 () , op);
+  } else {
+    V_AbsFunctor<RVector, XVector> op (r, x);
+    Kokkos::parallel_for (x.dimension_0 (), op);
   }
-
-  V_AbsFunctor<RVector,XVector> op(r,x) ;
-  Kokkos::parallel_for( x.dimension_0() , op );
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *------ ElementWiseMultiply element wise: C(i) = c*C(i) + ab*A(i)*B(i) --------------
- *------------------------------------------------------------------------------------------*/
+/// \brief Functor for element-wise multiply of vectors.
+///
+/// This functor implements Tpetra::MultiVector::elementWiseMultiply,
+/// for the case where all MultiVector instances in question have only
+/// a single column.  Thus, the functor computes C(i) = c*C(i) +
+/// ab*A(i)*B(i).
 template<class CVector, class AVector, class BVector>
 struct V_ElementWiseMultiplyFunctor
 {
@@ -3350,10 +3373,18 @@ struct V_ElementWiseMultiplyFunctor
     m_c (c), m_C (C), m_ab (ab), m_A (A), m_B (B)
   {}
 
-  KOKKOS_INLINE_FUNCTION void operator () (const size_type i) const {
-    if (m_c == Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ()) {
-      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
-        return; // DO NOTHING (BLAS update rules)
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type i) const
+  {
+    const typename CVector::non_const_value_type zero_C =
+      Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ();
+    const typename AVector::non_const_value_type zero_A =
+      Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ();
+
+    if (m_c == zero_C) {
+      if (m_ab == zero_A) {
+        // Overwrite m_C with zeros, per BLAS update rules.
+        m_C(i) = zero_C;
       }
       else { // m_ab != 0, but m_c == 0
         // BLAS update rules say that if m_c == 0, we must overwrite
@@ -3363,7 +3394,7 @@ struct V_ElementWiseMultiplyFunctor
       }
     }
     else { // m_c != 0
-      if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
+      if (m_ab == zero_A) {
         m_C(i) = m_c * m_C(i);
       }
       else { // m_ab != 0, and m_c != 0
@@ -3375,33 +3406,28 @@ struct V_ElementWiseMultiplyFunctor
 
 
 template<class CVector, class AVector, class BVector>
-CVector V_ElementWiseMultiply(
-      typename CVector::const_value_type c,
-      CVector C,
-      typename AVector::const_value_type ab,
-      AVector A,
-      BVector B
-    )
+CVector
+V_ElementWiseMultiply (const typename CVector::const_value_type& c,
+                       const CVector& C,
+                       const typename AVector::const_value_type& ab,
+                       const AVector& A,
+                       const BVector& B)
 {
-  // TODO: Add error check (didn't link for some reason?)
-  /*if(r.dimension_0() != x.dimension_0())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(0) of r and x don't match");
-  if(r.dimension_1() != x.dimension_1())
-    Kokkos::Impl::throw_runtime_exception("Kokkos::MV_ElementWiseMultiply -- dimension(1) of r and x don't match");*/
+  const typename CVector::non_const_value_type zero_C =
+    Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ();
+  const typename AVector::non_const_value_type zero_A =
+    Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ();
 
-  //TODO: Get 1D version done
-  /*if(r.dimension_1()==1) {
-    typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
-    typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
-
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-    return V_ElementWiseMultiply(r_1d,x_1d);
-  }*/
-
-  V_ElementWiseMultiplyFunctor<CVector,AVector,BVector> op(c,C,ab,A,B) ;
-  Kokkos::parallel_for( C.dimension_0() , op );
+  if (ab == zero_A && c == zero_C) {
+    // Overwrite m_C with zeros, per BLAS update rules.
+    Kokkos::Impl::ViewFill<CVector> (C, zero_C);
+  }
+  else {
+    V_ElementWiseMultiplyFunctor<CVector, AVector, BVector> op (c, C, ab, A, B);
+    Kokkos::parallel_for (C.dimension_0 (), op);
+  }
   return C;
 }
-}//end namespace Kokkos
+
+} // namespace Kokkos
 #endif /* KOKKOS_MULTIVECTOR_H_ */
