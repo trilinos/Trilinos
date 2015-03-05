@@ -431,9 +431,9 @@ RVector MV_Abs( const RVector & r, const XVector & x)
   return r;
 }
 
-/*------------------------------------------------------------------------------------------
- *------ ElementWiseMultiply element wise: C(i,j) = c*C(i,j) + ab*A(i)*B(i,j) --------------
- *------------------------------------------------------------------------------------------*/
+/// \brief Functor for MultiVector::elementWiseMultiply.
+///
+/// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual BLAS update rules.
 template<class CVector, class AVector, class BVector>
 struct MV_ElementWiseMultiplyFunctor
 {
@@ -456,12 +456,18 @@ struct MV_ElementWiseMultiplyFunctor
       const size_type n):
       m_c(c),m_C(C),m_ab(ab),m_A(A),m_B(B),m_n(n)
       {}
-  //--------------------------------------------------------------------------
 
-  KOKKOS_INLINE_FUNCTION void operator() (const size_type i) const {
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const size_type i) const
+  {
     if (m_c == Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ()) {
       if (m_ab == Kokkos::Details::ArithTraits<typename AVector::non_const_value_type>::zero ()) {
-        return; // DO NOTHING (BLAS update rules)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+        for (size_type k = 0; k < m_n; ++k) {
+          m_C(i,k) = Kokkos::Details::ArithTraits<typename CVector::non_const_value_type>::zero ();
+        }
       }
       else { // m_ab != 0, but m_c == 0
         // BLAS update rules say that if m_c == 0, we must overwrite m_C.
