@@ -1461,7 +1461,8 @@ NNTI_result_t NNTI_ib_register_memory (
 
             log_debug(nnti_debug_level, "mr=%p mr_list[0]=%p", ib_mem_hdl->mr, ib_mem_hdl->mr_list[0]);
 
-            if (ops == NNTI_BOP_RECV_DST) {
+            if ((ops & NNTI_BOP_REMOTE_WRITE) ||
+                (ops & NNTI_BOP_REMOTE_READ)) {
                 post_recv_work_request(
                         reg_buf,
                         -1,
@@ -1532,8 +1533,8 @@ NNTI_result_t NNTI_ib_register_segments (
     assert(ops>0);
     assert(reg_buf);
 
-    if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
-        log_debug(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types cannot be segmented.");
+    if (ops == NNTI_BOP_RECV_QUEUE) {
+        log_debug(nnti_debug_level, "NNTI_BOP_RECV_QUEUE cannot be segmented.");
         return(NNTI_EINVAL);
     }
 
@@ -1840,7 +1841,7 @@ NNTI_result_t NNTI_ib_send (
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_BOP_SEND_SRC;
+    wr->ops              =NNTI_BOP_LOCAL_READ;
     wr->result           =NNTI_OK;
     wr->transport_private=(uint64_t)ib_wr;
 
