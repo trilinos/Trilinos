@@ -714,10 +714,10 @@ enum NNTI_buf_ops_t {
     NNTI_BOP_LOCAL_WRITE=4,
     /** @brief a remote process/NIC can write to this buffer */
     NNTI_BOP_REMOTE_WRITE=8,
-    /** @brief this buffer can be sent from */
-    NNTI_BOP_SEND_SRC=16,
-    /** @brief this buffer can be received into */
-    NNTI_BOP_RECV_DST=32,
+    /** @brief operations on this memory generate events that cause work requests to change state */
+    NNTI_BOP_WITH_EVENTS=16,
+    /** @brief SENDs to this memory occur at the offset+length of the last SEND */
+    NNTI_BOP_QUEUING=32,
     /** @brief this buffer has multiple receive slots */
     NNTI_BOP_RECV_QUEUE=64,
     /** @brief this buffer allows atomic operations */
@@ -725,21 +725,21 @@ enum NNTI_buf_ops_t {
 };
 
 /** @brief this buffer can be put from */
-const NNTI_PUT_SRC=NNTI_BOP_LOCAL_READ;
+%#define NNTI_PUT_SRC    ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_WITH_EVENTS))
 /** @brief this buffer can be put into */
-const NNTI_PUT_DST=NNTI_BOP_REMOTE_WRITE;
+%#define NNTI_PUT_DST    ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_WRITE))
 /** @brief this buffer can be got from */
-const NNTI_GET_SRC=NNTI_BOP_REMOTE_READ;
+%#define NNTI_GET_SRC    ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_READ))
 /** @brief this buffer can be got into */
-const NNTI_GET_DST=NNTI_BOP_LOCAL_WRITE;
+%#define NNTI_GET_DST    ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_WRITE|NNTI_BOP_WITH_EVENTS))
 /** @brief this buffer can be sent from */
-const NNTI_SEND_SRC=NNTI_BOP_SEND_SRC;
+%#define NNTI_SEND_SRC   ((NNTI_buf_ops_t)(NNTI_BOP_LOCAL_READ|NNTI_BOP_WITH_EVENTS))
 /** @brief this buffer can be received into */
-const NNTI_RECV_DST=NNTI_BOP_RECV_DST;
+%#define NNTI_RECV_DST   ((NNTI_buf_ops_t)(NNTI_BOP_REMOTE_WRITE|NNTI_BOP_WITH_EVENTS))
 /** @brief this buffer has multiple receive slots */
-const NNTI_RECV_QUEUE=NNTI_BOP_RECV_QUEUE;
+%#define NNTI_RECV_QUEUE ((NNTI_buf_ops_t)(NNTI_BOP_RECV_QUEUE))
 /** @brief this buffer allows atomic operations */
-const NNTI_ATOMICS=NNTI_BOP_ATOMICS;
+%#define NNTI_ATOMICS    ((NNTI_buf_ops_t)(NNTI_BOP_ATOMICS))
 
 
 /***********  Buffer Type  ***********/
