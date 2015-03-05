@@ -613,10 +613,8 @@ struct NNTI_bgqpami_rdma_addr_t {
  * @brief RDMA address used for the MPI implementation.
  */
 struct NNTI_mpi_rdma_addr_t {
-    /** @brief The MPI tag for RTR msg. */
-    NNTI_match_bits rtr_tag;
-    /** @brief The MPI tag for RTS msg. */
-    NNTI_match_bits rts_tag;
+    /** @brief The MPI tag for RTR/RTS msg. */
+    NNTI_match_bits cmd_tag;
     /** @brief The MPI tag for GET data msg. */
     NNTI_match_bits get_data_tag;
     /** @brief The MPI tag for PUT data msg. */

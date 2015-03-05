@@ -201,8 +201,7 @@ void fprint_NNTI_remote_addr(
                 << addr->NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2 << ")" << std::endl;
         break;
     case NNTI_TRANSPORT_MPI:
-        out << subprefix << "   rtr_tag      = " << addr->NNTI_remote_addr_t_u.mpi.rtr_tag << std::endl;
-        out << subprefix << "   rts_tag      = " << addr->NNTI_remote_addr_t_u.mpi.rts_tag << std::endl;
+        out << subprefix << "   cmd_tag      = " << addr->NNTI_remote_addr_t_u.mpi.cmd_tag << std::endl;
         out << subprefix << "   get_data_tag = " << addr->NNTI_remote_addr_t_u.mpi.get_data_tag << std::endl;
         out << subprefix << "   put_data_tag = " << addr->NNTI_remote_addr_t_u.mpi.put_data_tag << std::endl;
         out << subprefix << "   size         = " << addr->NNTI_remote_addr_t_u.mpi.size << std::endl;
