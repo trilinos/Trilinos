@@ -154,7 +154,7 @@ public:
       return t ;
     }
 
-  
+  //----------------------------------------
 
   template< class DerivedTaskType , class Tag >
   KOKKOS_FUNCTION static
@@ -181,6 +181,8 @@ public:
 
       Kokkos::Impl::FunctorApply< functor_type , Tag , void >::apply( (functor_type &) self );
     }
+
+  //----------------------------------------
 
   template< class DerivedTaskType , class Tag >
   KOKKOS_FUNCTION static

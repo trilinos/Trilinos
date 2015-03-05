@@ -402,6 +402,14 @@ TEST_F( threads , task_policy )
   for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
 }
 
+#if 0 && defined( KOKKOS_HAVE_CXX11 )
+TEST_F( threads , task_team )
+{
+  TestTaskPolicy::test_task_team< Kokkos::Threads >(100);
+}
+#endif
+
+
 } // namespace Test
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

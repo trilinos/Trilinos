@@ -54,7 +54,10 @@
 #include <Kokkos_Atomic.hpp>
 #include <impl/Kokkos_Error.hpp>
 
+// Defines to enable experimental Qthread functionality
+
 #define QTHREAD_LOCAL_PRIORITY
+#define CLONED_TASKS
 
 #include <qthread/qthread.h>
 
@@ -352,8 +355,8 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
  
   const int main_shep = qthread_shep();
 
-  for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
 #if 1
+  for ( int jshep = 0 , iwork = 0 ; jshep < s_number_shepherds ; ++jshep ) {
   for ( int i = jshep != main_shep ? 0 : 1 ; i < s_number_workers_per_shepherd ; ++i , ++iwork ) {
 
     // Unit tests hang with this call:
@@ -362,9 +365,12 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
     //
 
     qthread_fork_to( driver_exec_all , NULL , NULL , jshep );
-  }
+  }}
 #else
-    const int num_clone = jshep != main_shep : s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
+  // If this function is used before the 'qthread.task_policy' unit test
+  // the 'qthread.task_policy' unit test fails with a seg-fault within libqthread.so.
+  for ( int jshep = 0 ; jshep < s_number_shepherds ; ++jshep ) {
+    const int num_clone = jshep != main_shep ? s_number_workers_per_shepherd : s_number_workers_per_shepherd - 1 ;
 
     int ret = qthread_fork_clones_to_local_priority
       ( driver_exec_all   /* function */
@@ -375,9 +381,8 @@ void QthreadExec::exec_all( Qthread & , QthreadExecFunctionPointer func , const 
       );
 
    assert(ret == QTHREAD_SUCCESS);
-
-#endif
   }
+#endif
 
   driver_exec_all( NULL );
 
