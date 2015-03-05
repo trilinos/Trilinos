@@ -1568,8 +1568,8 @@ NNTI_result_t NNTI_gni_register_segments (
 
     log_debug(nnti_ee_debug_level, "enter (reg_buf=%p)", reg_buf);
 
-    if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
-        log_debug(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types cannot be segmented.");
+    if (ops == NNTI_BOP_RECV_QUEUE) {
+        log_debug(nnti_debug_level, "NNTI_BOP_RECV_QUEUE type cannot be segmented.");
         return(NNTI_EINVAL);
     }
 
@@ -1842,7 +1842,7 @@ NNTI_result_t NNTI_gni_send (
 
     wr->transport_id     =msg_hdl->transport_id;
     wr->reg_buf          =(NNTI_buffer_t*)msg_hdl;
-    wr->ops              =NNTI_BOP_SEND_SRC;
+    wr->ops              =msg_hdl->ops;
     wr->transport_private=(uint64_t)gni_wr;
 
     log_debug(nnti_debug_level, "sending to (%s, instance=%llu)", peer_hdl->url, (uint64_t)peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id);
@@ -1855,7 +1855,7 @@ NNTI_result_t NNTI_gni_send (
         request_send(peer_hdl, conn, msg_hdl, 0, gni_wr);
         trios_stop_timer("send to request queue", call_time);
 
-    } else if (dest_hdl->ops == NNTI_BOP_RECV_DST) {
+    } else {
         nnti_gni_connection_t *conn=get_conn_peer(peer_hdl);
         assert(conn);
 
@@ -1864,6 +1864,7 @@ NNTI_result_t NNTI_gni_send (
         trios_stop_timer("send to receive dest", call_time);
 
         wr->result=NNTI_OK;
+//        NNTI_gni_put(msg_hdl, 0, msg_hdl->payload_size, dest_hdl, 0, wr);
     }
 
     log_debug(nnti_ee_debug_level, "exit (wr=%p ; gni_wr=%p)", wr, gni_wr);
@@ -2912,7 +2913,7 @@ NNTI_result_t NNTI_gni_create_work_request (
     		}
     	}
     	log_debug(nnti_debug_level, "q->head=%lld ; q->tail==%lld", q_hdl->head, q_hdl->tail);
-    } else if (reg_buf->ops == NNTI_BOP_RECV_DST) {
+    } else if (reg_buf->ops & NNTI_BOP_WITH_EVENTS) {
     	gni_wr=gni_mem_hdl->wr_queue->front();
 		GNI_ATTACH_WR(wr,gni_wr);
     } else {
@@ -3042,7 +3043,7 @@ NNTI_result_t NNTI_gni_destroy_work_request (
 		}
 
     	log_debug(nnti_debug_level, "q->head=%lld ; q->tail==%lld", q_hdl->head, q_hdl->tail);
-    } else if (wr->ops == NNTI_BOP_RECV_DST) {
+    } else if (wr->ops & NNTI_BOP_WITH_EVENTS) {
         nthread_lock(&gni_mem_hdl->wr_queue_lock);
 		gni_wr->state=NNTI_GNI_WR_STATE_POSTED;
         q_victim=find(gni_mem_hdl->wr_queue->begin(), gni_mem_hdl->wr_queue->end(), gni_wr);
@@ -4008,7 +4009,7 @@ nthread_lock(&nnti_mem_lock);
         }
     }
 
-    if (ops == NNTI_BOP_RECV_DST) {
+    if ((ops & NNTI_BOP_REMOTE_WRITE) && (ops & NNTI_BOP_WITH_EVENTS)) {
         post_recv_work_request(reg_buf);
     }
 
@@ -4097,12 +4098,12 @@ static int need_mem_cq(NNTI_buf_ops_t ops)
 
     if (!config.use_rdma_events) {
         if ((ops == NNTI_BOP_RECV_QUEUE) ||
-            (ops == NNTI_BOP_RECV_DST)) {
+            (ops & NNTI_BOP_WITH_EVENTS)) {
             need_cq=1;
         }
     } else {
         if ((ops == NNTI_BOP_RECV_QUEUE)    ||
-            (ops == NNTI_BOP_RECV_DST)      ||
+            (ops & NNTI_BOP_WITH_EVENTS)    ||
             (ops == NNTI_BOP_REMOTE_WRITE)  ||
             ((ops == NNTI_BOP_REMOTE_READ) && (config.rdma_mode != RDMA_CROSSOVER))) {
             need_cq=1;
@@ -4122,12 +4123,12 @@ static int need_wc_mem_cq(NNTI_buf_ops_t ops)
 
     if (!config.use_rdma_events) {
         if ((ops == NNTI_BOP_RECV_QUEUE) ||
-            (ops == NNTI_BOP_RECV_DST))  {
+            (ops & NNTI_BOP_WITH_EVENTS)) {
             need_cq=1;
         }
     } else {
         if ((ops == NNTI_BOP_RECV_QUEUE)   ||
-            (ops == NNTI_BOP_RECV_DST)     ||
+            (ops & NNTI_BOP_WITH_EVENTS)   ||
             (ops == NNTI_BOP_REMOTE_WRITE) ||
             (ops == NNTI_BOP_REMOTE_READ)) {
             need_cq=1;
