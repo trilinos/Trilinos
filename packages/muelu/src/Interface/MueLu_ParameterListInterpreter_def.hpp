@@ -87,6 +87,10 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+// These code chunks should only be enabled once Tpetra supports proper graph
+// reuse in MMM. At the moment, only Epetra does, while Tpetra throws
+// #define REUSE_MATRIX_GRAPHS
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -328,14 +332,25 @@ namespace MueLu {
     // SetParameterList sets default values for non mentioned parameters, including factories
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+    TEUCHOS_TEST_FOR_EXCEPTION(reuseType != "none" && reuseType != "tP" && reuseType != "RP" && reuseType != "emin" && reuseType != "RAP" && reuseType != "full",
+                               Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    if (reuseType != "none" && (multigridAlgo != "sa" && multigridAlgo != "emin" && multigridAlgo != "unsmoothed")) {
-        this->GetOStream(Warnings0) << "Ignoring reuse options as multigrid algorithm is not \"sa\" or \"emin\"" << std::endl;
-        reuseType = "none";
-    }
-    if (reuseType == "emin" && multigridAlgo != "emin") {
-      this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
+                               Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+
+    // Only some combinations of reuse and multigrid algorithms are tested, all
+    // other are considered invalid at the moment
+    if (reuseType == "none" || reuseType == "RP" || reuseType == "RAP") {
+      // This works for all kinds of multigrid algorithms
+
+    } else if (reuseType == "tP" && (multigridAlgo != "sa" && multigridAlgo != "unsmoothed")) {
       reuseType = "none";
+      this->GetOStream(Warnings0) << "Ignoring \"tP\" reuse option as it is only compatible with \"sa\", or \"unsmoothed\" multigrid algorithms" << std::endl;
+
+    } else if (reuseType == "emin" && multigridAlgo != "emin") {
+      reuseType = "none";
+      this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
     }
 
     // === Smoothing ===
@@ -551,14 +566,17 @@ namespace MueLu {
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);
 
+    if (reuseType == "tP") {
+      keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Ptent").get()));
+      keeps.push_back(keep_pair("P",         manager.GetFactory("Ptent").get()));
+    }
+
     // Nullspace
     RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
     nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
     manager.SetFactory("Nullspace", nullSpace);
 
     // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
-                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
     if (multigridAlgo == "unsmoothed") {
       manager.SetFactory("P", Ptent);
 
@@ -567,6 +585,13 @@ namespace MueLu {
       RCP<SaPFactory> P = rcp(new SaPFactory());
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+#if REUSE_MATRIX_GRAPHS
+      if (reuseType == "tP" && MUELU_TEST_PARAM_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, false)) {
+        // Pattern can only be reuse when we don't use filtered matrix, as
+        // otherwise graph can potentially change
+        Pparams.set("Keep AP Pattern", true);
+      }
+#endif
       P->SetParameterList(Pparams);
 
       // Filtering
@@ -647,9 +672,7 @@ namespace MueLu {
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     ParameterList RAPparams;
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
-#if 0
-    // This should be enable once Tpetra supports proper graph reuse in MMM
-    // At the moment, only Epetra does, and Tpetra throws
+#if REUSE_MATRIX_GRAPHS
     if (reuseType == "RP") {
       RAPparams.set("Keep AP Pattern",  true);
       RAPparams.set("Keep RAP Pattern", true);
@@ -676,13 +699,15 @@ namespace MueLu {
       RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
     }
 
+    if (reuseType == "RP" || reuseType == "RAP" || reuseType == "full")
+      keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Nullspace").get()));
+
     if (reuseType == "RP") {
       keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
       if (!this->implicitTranspose_)
         keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
     }
-    if ((reuseType == "RP" || reuseType == "emin") &&
-        useCoordinates_)
+    if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_)
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
 
     // === Repartitioning ===
@@ -691,10 +716,41 @@ namespace MueLu {
 #ifdef HAVE_MPI
       // Short summary of the issue: RebalanceTransferFactory shares ownership
       // of "P" with SaPFactory, and therefore, changes the stored version.
-      // Unless we do a deep copy or something similar, this leads to
-      // inconsistencies in reuse.
-      TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && reuseType == "RP", Exceptions::InvalidArgument,
-                                 "Reuse type \"PR\" requires \"repartition: rebalance P and R\" set to false");
+      // That means that if SaPFactory generated P, and stored it on the level,
+      // then after rebalancing the value in that storage changed. It goes
+      // against the concept of factories (I think), that every factory is
+      // responsible for its own objects, and they are immutable outside.
+      //
+      // In reuse, this is what happens: as we reuse Importer across setups,
+      // the order of factories changes, and coupled with shared ownership
+      // leads to problems.
+      // *First setup*
+      //    SaP               builds     P [and stores it]
+      //    TransP            builds     R [and stores it]
+      //    RAP               builds     A [and stores it]
+      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (*)
+      //    RebalanceTransfer rebalances R
+      //    RebalanceAc       rebalances A
+      // *Second setup* ("RP" reuse)
+      //    RebalanceTransfer rebalances P [which is incorrect due to (*)]
+      //    RebalanceTransfer rebalances R
+      //    RAP               builds     A [which is incorrect due to (*)]
+      //    RebalanceAc       rebalances A [which throws due to map inconsistency]
+      //    ...
+      // *Second setup* ("tP" reuse)
+      //    SaP               builds     P [and stores it]
+      //    RebalanceTransfer rebalances P [and changes the P stored by SaP]   (**)
+      //    TransP            builds     R [which is incorrect due to (**)]
+      //    RebalanceTransfer rebalances R
+      //    ...
+      //
+      // Couple solutions to this:
+      //    1. [implemented] Requre "tP" and "PR" reuse to only be used with
+      //       implicit rebalancing.
+      //    2. Do deep copy of P, and changed domain map and importer there.
+      //       Need to investigate how expensive this is.
+      TEUCHOS_TEST_FOR_EXCEPTION(this->doPRrebalance_ && (reuseType == "tP" || reuseType == "RP"), Exceptions::InvalidArgument,
+                                 "Reuse types \"tP\" and \"PR\" require \"repartition: rebalance P and R\" set to \"false\"");
 
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,

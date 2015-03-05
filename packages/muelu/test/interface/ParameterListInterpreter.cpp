@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
           system(cmd.c_str());
         }
 
-        std::filebuf buffer;
+        std::filebuf    buffer;
         std::streambuf* oldbuffer = NULL;
         if (myRank == 0) {
           // Redirect output
@@ -175,16 +175,11 @@ int main(int argc, char *argv[]) {
         // first to include "test" verbosity
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-        if (k == 0) {
-          // easy
-          paramList.set("verbosity", "test");
-        } else if (k == 1) {
-          // factory
-          ParameterList& hierList = paramList.sublist("Hierarchy");
-          hierList.set("verbosity", "Test");
-        } else if (k == 2) {
-          // ML parameter list interpreter
-          paramList.set("ML output", 42);
+        switch (k) {
+          case 0: paramList                     .set("verbosity", "test"); break; // easy
+          case 1: paramList.sublist("Hierarchy").set("verbosity", "Test"); break; // factory
+          case 2: paramList                     .set("ML output",     42); break; // ML
+          // FIXME: should not case 3: follow case 2:
         }
 
         try {
