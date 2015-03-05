@@ -233,7 +233,7 @@ inline bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const
             << "               been ghosted from proc " << expectedProcs[0] << "." << std::endl;
       }
       else {
-        const int owner_rank = mesh.entity_comm_map_owner(entityKey);
+        const int owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
         if (owner_rank != expectedProcs[0]) {
           oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
               << "               when it should have been ghosted from proc " << expectedProcs[0] << "." << std::endl;
@@ -266,7 +266,7 @@ inline bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const
         oss << "check_state(): Cannot provide processors with STATE_NOT_GHOSTED_FROM_FROM check." << std::endl;
       }
       if (mesh.in_receive_ghost( mesh.aura_ghosting() , entityKey )) {
-        const int owner_rank = mesh.entity_comm_map_owner(entityKey);
+        const int owner_rank = mesh.my_internal_entity_comm_map_owner(entityKey);
         oss << "check_state(): Entity " << entityKey << " was ghosted from proc " << owner_rank << std::endl
             << "               when it shouldn't have been ghosted." << std::endl;
       }

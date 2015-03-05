@@ -59,7 +59,7 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
                           bool use_element_parts )
   : m_spatial_dimension(2),
     m_meta_data( m_spatial_dimension ),
-    m_bulk_data( m_meta_data, pm, 100 ),
+    m_bulk_data( m_meta_data, pm ),
     m_element_parts(),
     m_element_part_extra( m_meta_data.declare_part("element_extra" , stk::topology::ELEMENT_RANK ) ),
     m_num_element_per_proc( num_element_per_proc ),

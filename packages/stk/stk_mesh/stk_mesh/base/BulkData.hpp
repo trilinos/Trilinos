@@ -508,7 +508,7 @@ public:
   PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
   PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }   //CLEANUP: can replace app usage with comm_procs
 
-  int entity_comm_map_owner(const EntityKey & key) const;       // CLEANUP: can make protected
+  STK_DEPRECATED(int entity_comm_map_owner(const EntityKey & key) const); //deprecated on March 2, 2015
 
   // Comm-related convenience methods
 
@@ -695,6 +695,8 @@ public:
 #endif // STK_BUILT_IN_SIERRA
 
 protected: //functions
+
+  int internal_entity_comm_map_owner(const EntityKey & key) const;
 
   inline entitySharing internal_is_entity_marked(Entity entity) const;
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }

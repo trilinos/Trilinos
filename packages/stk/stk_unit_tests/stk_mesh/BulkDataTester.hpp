@@ -150,6 +150,10 @@ public:
         return internal_entity_comm_map_shared(key);
     }
 
+    int my_internal_entity_comm_map_owner(const EntityKey & key) const
+    {
+        return internal_entity_comm_map_owner(key);
+    }
 };
 
 } } } // namespace stk mesh unit_test

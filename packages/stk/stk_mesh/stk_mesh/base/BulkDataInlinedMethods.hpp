@@ -410,6 +410,11 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 inline
 int BulkData::entity_comm_map_owner(const EntityKey & key) const
 {
+    return internal_entity_comm_map_owner(key);
+}
+inline
+int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
+{
   const int owner_rank = m_entity_comm_map.owner_rank(key);
   ThrowAssertMsg(owner_rank == InvalidProcessRank || owner_rank == parallel_owner_rank(get_entity(key)),
                  "Expected entity " << key.id() << " with rank " << key.rank() << " to have owner " <<
@@ -421,7 +426,7 @@ inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
   // Ghost communication with owner.
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   PairIterEntityComm ec = entity_comm_map(key);
   return !ec.empty() && ec.front().ghost_id != 0 &&
          ec.front().proc == owner_rank;
@@ -430,7 +435,7 @@ bool BulkData::in_receive_ghost( EntityKey key ) const
 inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   return in_ghost( ghost , key , owner_rank );
 }
 
@@ -438,7 +443,7 @@ inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
   // Ghost communication with non-owner.
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   PairIterEntityComm ec = entity_comm_map(key);
   return ! ec.empty() && ec.back().ghost_id != 0 &&
     ec.back().proc != owner_rank;

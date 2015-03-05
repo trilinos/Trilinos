@@ -1165,7 +1165,7 @@ bool BulkData::in_shared(EntityKey key, int proc) const
 bool BulkData::is_aura_ghosted_onto_another_proc( EntityKey key ) const
 {
   const int proc = parallel_rank();
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   if ( proc == owner_rank )
   {
       for ( PairIterEntityComm ec = entity_comm_map(key); ! ec.empty() ; ++ec ) {
@@ -1180,7 +1180,7 @@ bool BulkData::is_aura_ghosted_onto_another_proc( EntityKey key ) const
 
 bool BulkData::in_send_ghost( EntityKey key , int proc ) const
 {
-  const int owner_rank = entity_comm_map_owner(key);
+  const int owner_rank = internal_entity_comm_map_owner(key);
   for ( PairIterEntityComm ec = entity_comm_map(key); ! ec.empty() ; ++ec ) {
     if ( ec->ghost_id != 0 &&
          ec->proc     != owner_rank &&
