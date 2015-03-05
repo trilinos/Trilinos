@@ -822,6 +822,10 @@ public:
 #else
     {}
 #endif
+
+  inline static
+  void wait( const Future< void , Kokkos::Serial > & future )
+  { task_root_type::wait( future ); }
 };
 
 inline

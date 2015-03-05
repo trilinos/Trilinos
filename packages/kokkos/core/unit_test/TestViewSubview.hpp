@@ -98,8 +98,8 @@ void test_left_0()
   Kokkos::View<int****,Kokkos::LayoutStride,Space> sx4 =
     Kokkos::subview( x_static_8, 0, Kokkos::pair<int,int>(0,2) /* of [3] */
                                , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
-                               , 2, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 3, Kokkos::pair<int,int>(2,4) /* of [5] */
+                               , 1, Kokkos::pair<int,int>(0,2) /* of [3] */
+                               , 2, Kokkos::pair<int,int>(2,4) /* of [5] */
                    );
 
   ASSERT_TRUE( ! sx4.is_contiguous() );
@@ -108,7 +108,7 @@ void test_left_0()
   for ( int i1 = 0 ; i1 < (int) sx4.dimension_1() ; ++i1 )
   for ( int i2 = 0 ; i2 < (int) sx4.dimension_2() ; ++i2 )
   for ( int i3 = 0 ; i3 < (int) sx4.dimension_3() ; ++i3 ) {
-    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x_static_8(0,0+i0, 1,1+i1, 2,0+i2, 3,2+i3) );
+    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x_static_8(0,0+i0, 1,1+i1, 1,0+i2, 2,2+i3) );
   }
 }
 
@@ -157,9 +157,9 @@ void test_left_1()
 
   Kokkos::View<int****,Kokkos::LayoutStride,Space> sx4 =
     Kokkos::subview( x8, 0, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
-                               , 2, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 3, Kokkos::pair<int,int>(2,4) /* of [5] */
+                       , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
+                       , 1, Kokkos::pair<int,int>(0,2) /* of [3] */
+                       , 2, Kokkos::pair<int,int>(2,4) /* of [5] */
                    );
 
   ASSERT_TRUE( ! sx4.is_contiguous() );
@@ -168,7 +168,7 @@ void test_left_1()
   for ( int i1 = 0 ; i1 < (int) sx4.dimension_1() ; ++i1 )
   for ( int i2 = 0 ; i2 < (int) sx4.dimension_2() ; ++i2 )
   for ( int i3 = 0 ; i3 < (int) sx4.dimension_3() ; ++i3 ) {
-    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x8(0,0+i0, 1,1+i1, 2,0+i2, 3,2+i3) );
+    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x8(0,0+i0, 1,1+i1, 1,0+i2, 2,2+i3) );
   }
 }
 
@@ -315,15 +315,15 @@ void test_right_0()
   Kokkos::View<int****,Kokkos::LayoutStride,Space> sx4 =
     Kokkos::subview( x_static_8, 0, Kokkos::pair<int,int>(0,2) /* of [3] */
                                , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
-                               , 2, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 3, Kokkos::pair<int,int>(2,4) /* of [5] */
+                               , 1, Kokkos::pair<int,int>(0,2) /* of [3] */
+                               , 2, Kokkos::pair<int,int>(2,4) /* of [5] */
                    );
 
   for ( int i0 = 0 ; i0 < (int) sx4.dimension_0() ; ++i0 )
   for ( int i1 = 0 ; i1 < (int) sx4.dimension_1() ; ++i1 )
   for ( int i2 = 0 ; i2 < (int) sx4.dimension_2() ; ++i2 )
   for ( int i3 = 0 ; i3 < (int) sx4.dimension_3() ; ++i3 ) {
-    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x_static_8(0, 0+i0, 1, 1+i1, 2, 0+i2, 3, 2+i3) );
+    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x_static_8(0, 0+i0, 1, 1+i1, 1, 0+i2, 2, 2+i3) );
   }
 }
 
@@ -366,16 +366,16 @@ void test_right_1()
 
   Kokkos::View<int****,Kokkos::LayoutStride,Space> sx4 =
     Kokkos::subview( x8, 0, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
-                               , 2, Kokkos::pair<int,int>(0,2) /* of [3] */
-                               , 3, Kokkos::pair<int,int>(2,4) /* of [5] */
+                       , 1, Kokkos::pair<int,int>(1,3) /* of [5] */
+                       , 1, Kokkos::pair<int,int>(0,2) /* of [3] */
+                       , 2, Kokkos::pair<int,int>(2,4) /* of [5] */
                    );
 
   for ( int i0 = 0 ; i0 < (int) sx4.dimension_0() ; ++i0 )
   for ( int i1 = 0 ; i1 < (int) sx4.dimension_1() ; ++i1 )
   for ( int i2 = 0 ; i2 < (int) sx4.dimension_2() ; ++i2 )
   for ( int i3 = 0 ; i3 < (int) sx4.dimension_3() ; ++i3 ) {
-    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x8(0,0+i0, 1,1+i1, 2,0+i2, 3,2+i3) );
+    ASSERT_TRUE( & sx4(i0,i1,i2,i3) == & x8(0,0+i0, 1,1+i1, 1,0+i2, 2,2+i3) );
   }
 }
 

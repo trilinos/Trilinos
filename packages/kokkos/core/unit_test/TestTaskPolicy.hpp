@@ -390,23 +390,90 @@ struct TaskTeam {
 };
 
 template< class ExecSpace >
+struct TaskTeamValue {
+
+  enum { SPAN = 8 };
+
+  typedef long value_type ;
+  typedef Kokkos::Experimental::TaskPolicy<ExecSpace>         policy_type ;
+  typedef Kokkos::Experimental::Future<value_type,ExecSpace>  future_type ;
+  typedef Kokkos::View<long*,ExecSpace>                       view_type ;
+
+  policy_type  policy ;
+  future_type  future ;
+
+  view_type  result ;
+  const long nvalue ;
+
+  TaskTeamValue( const policy_type & arg_policy
+               , const view_type   & arg_result
+               , const long          arg_nvalue )
+    : policy(arg_policy)
+    , future()
+    , result( arg_result )
+    , nvalue( arg_nvalue )
+    {}
+
+  inline
+  void apply( const typename policy_type::member_type & member , value_type & final )
+    {
+      const long end   = nvalue + 1 ;
+      const long begin = 0 < end - SPAN ? end - SPAN : 0 ;
+
+      if ( 0 < begin && future.get_task_state() == Kokkos::Experimental::TASK_STATE_NULL ) {
+        if ( member.team_rank() == 0 ) {
+          future = policy.spawn( policy.create_team( TaskTeamValue( policy , result , begin - 1 ) ) );
+          policy.clear_dependence( this );
+          policy.add_dependence( this , future );
+          policy.respawn( this );
+        }
+        return ;
+      }
+
+      Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
+                          , [&]( int i ) { result[i] = i < 2 ? i : result[i-1] + result[i-2]; }
+                          );
+
+      if ( member.team_rank() == 0 ) {
+        final = result[nvalue] ;
+      }
+    }
+};
+
+template< class ExecSpace >
 void test_task_team( long n )
 {
   typedef TaskTeam< ExecSpace >            task_type ;
-  typedef typename task_type::policy_type  policy_type ;
-  typedef typename task_type::future_type  future_type ;
+  typedef TaskTeamValue< ExecSpace >       task_value_type ;
   typedef typename task_type::view_type    view_type ;
+  typedef typename task_type::policy_type  policy_type ;
+
+  typedef typename task_type::future_type        future_type ;
+  typedef typename task_value_type::future_type  future_value_type ;
 
   policy_type  policy ;
   view_type    result("result",n+1);
 
   future_type f = policy.spawn( policy.create_team( task_type( policy , result , n ) ) );
 
-  Kokkos::Experimental::wait( f );
+  Kokkos::Experimental::wait( policy );
 
   for ( long i = 0 ; i <= n ; ++i ) {
     if ( result(i) != eval_fib(i) ) {
-      std::cerr << "test_task_team ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
+      std::cerr << "test_task_team void ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
+    }
+  }
+
+  future_value_type fv = policy.spawn( policy.create_team( task_value_type( policy , result , n ) ) );
+
+  Kokkos::Experimental::wait( policy );
+
+  if ( fv.get() != eval_fib(n) ) {
+    std::cerr << "test_task_team value ERROR future = " << fv.get() << " != " << eval_fib(n) << std::endl ;
+  }
+  for ( long i = 0 ; i <= n ; ++i ) {
+    if ( result(i) != eval_fib(i) ) {
+      std::cerr << "test_task_team value ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
     }
   }
 }
