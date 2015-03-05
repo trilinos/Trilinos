@@ -157,13 +157,16 @@ public:
       \param[in] vs   Vector space that this corresponds to
       \param[in] ged  Global evaluation data object that handles ghosting
       \param[in] initial Initial value to use for this parameter (defaults in the equation set)
+      \param[in] jacLOF Jacobian linear object factory that is required for computing
+                        derivatives with respect to this parameter.
 
       \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
   */
   int addDistributedParameter(const std::string & name,
                               const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                               const Teuchos::RCP<GlobalEvaluationData> & ged,
-                              const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial);
+                              const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
+                              const Teuchos::RCP<const LinearObjFactory<panzer::Traits> > & jacLOF=Teuchos::null);
 
   /** Add a global evaluation data object that will be filled as a side
     * effect when evalModel is called. This is useful for building things
@@ -256,6 +259,14 @@ public:
   void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
                          const Teuchos::RCP<Thyra::VectorBase<Scalar> > & f) const;
 
+  /** Setup all the assembly input arguments required by "inArgs".
+    *
+    * \param[in] inArgs Model evalutor input arguments
+    * \param[in/out] ae_inArgs Assembly engine input arguments.
+    */
+  void setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                           panzer::AssemblyEngineInArgs & ae_inargs) const;
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -275,8 +286,7 @@ private:
                            const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Construct a simple response dicatated by this set of out args
-  void evalModelImpl_basic_g(panzer::AssemblyEngineInArgs ae_inargs,
-                             const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  void evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdx
@@ -284,8 +294,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdx(AssemblyEngineInArgs ae_inargs,
-                                const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of dfdp
@@ -293,9 +302,8 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp(AssemblyEngineInArgs ae_inargs,
-                                const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+  void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Does this set of out args require a simple response?
   bool required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
@@ -304,7 +312,7 @@ private:
   bool required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
-  bool required_basic_dfdp(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+  bool required_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Initialize the nominal values with good starting conditions
   void initializeNominalValues();
@@ -329,6 +337,7 @@ private: // data members
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > names;
     std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > spaces;
     std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > initial_values;
+    std::vector<Teuchos::RCP<const LinearObjFactory<panzer::Traits> > > deriv_lofs;
     std::vector<bool> are_distributed;
 
     // for interaction with the panzer::ParamLib
