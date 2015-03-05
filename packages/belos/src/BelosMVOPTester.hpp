@@ -119,10 +119,7 @@ namespace Belos {
            destruction of the view, changes in the view are not reflected in the
            source multivector.
 
-         GetVecLength
-             MV: will always be positive (MV cannot have zero vectors)
-
-         GetGlobalLength (MultiVecTraitsExt) 
+         GetGlobalLength (MultiVecTraitsExt)
              MV: will always be positive (MV cannot have zero vectors)
 
          GetNumberVecs
@@ -210,18 +207,6 @@ namespace Belos {
     if ( MVT::GetNumberVecs(*A) <= 0 ) {
       om->stream(Warnings)
         << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << endl
-        << "Returned <= 0." << endl;
-      return false;
-    }
-
-
-    /*********** GetVecLength() ******************************************
-       Verify:
-       1) This number should be strictly positive
-    *********************************************************************/
-    if ( MVT::GetVecLength(*A) <= 0 ) {
-      om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraits::GetVecLength()" << endl
         << "Returned <= 0." << endl;
       return false;
     }
@@ -402,7 +387,7 @@ namespace Belos {
             << "Vector had negative norm." << endl;
           return false;
         }
-        else if ( norms[i] != STS::squareroot(MVT::GetVecLength(*B)) && !BadNormWarning ) {
+        else if ( norms[i] != STS::squareroot(MVText::GetGlobalLength(*B)) && !BadNormWarning ) {
           om->stream(Warnings)
             << endl
             << "Warning testing MultiVecTraits::MvInit()." << endl
