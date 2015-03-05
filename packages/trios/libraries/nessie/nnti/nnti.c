@@ -491,8 +491,8 @@ NNTI_result_t NNTI_register_memory (
     if (available_transports[trans_hdl->id].initialized==0) {
         rc=NNTI_ENOTINIT;
     } else {
-        if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
-            log_error(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types require the use of NNTI_alloc().");
+        if (ops == NNTI_BOP_RECV_QUEUE) {
+            log_error(nnti_debug_level, "NNTI_BOP_RECV_QUEUE type require the use of NNTI_alloc().");
             rc=NNTI_EINVAL;
         } else {
             rc = available_transports[trans_hdl->id].ops.nnti_register_memory_fn(
@@ -534,8 +534,8 @@ NNTI_result_t NNTI_register_segments (
     if (available_transports[trans_hdl->id].initialized==0) {
         rc=NNTI_ENOTINIT;
     } else {
-        if ((ops == NNTI_BOP_SEND_SRC) || (ops == NNTI_BOP_RECV_DST) || (ops == NNTI_BOP_RECV_QUEUE)) {
-            log_error(nnti_debug_level, "NNTI_BOP_SEND_SRC, NNTI_BOP_RECV_DST and NNTI_BOP_RECV_QUEUE types cannot be segmented.");
+        if (ops == NNTI_BOP_RECV_QUEUE) {
+            log_error(nnti_debug_level, "NNTI_BOP_RECV_QUEUE type cannot be segmented.");
             rc=NNTI_EINVAL;
         } else {
             rc = available_transports[trans_hdl->id].ops.nnti_register_segments_fn(
