@@ -170,22 +170,42 @@ public:
   }
 
   //! The imaginary part of this complex number.
-  KOKKOS_INLINE_FUNCTION RealType imag () const {
+  KOKKOS_INLINE_FUNCTION RealType& imag () {
     return im_;
   }
 
   //! The real part of this complex number.
-  KOKKOS_INLINE_FUNCTION RealType real () const {
+  KOKKOS_INLINE_FUNCTION RealType& real () {
+    return re_;
+  }
+
+  //! The imaginary part of this complex number.
+  KOKKOS_INLINE_FUNCTION const RealType imag () const {
+    return im_;
+  }
+
+  //! The real part of this complex number.
+  KOKKOS_INLINE_FUNCTION const RealType real () const {
     return re_;
   }
 
   //! The imaginary part of this complex number (volatile overload).
-  KOKKOS_INLINE_FUNCTION RealType imag () const volatile {
+  KOKKOS_INLINE_FUNCTION volatile RealType& imag () volatile {
     return im_;
   }
 
   //! The real part of this complex number (volatile overload).
-  KOKKOS_INLINE_FUNCTION RealType real () const volatile {
+  KOKKOS_INLINE_FUNCTION volatile RealType& real () volatile {
+    return re_;
+  }
+
+  //! The imaginary part of this complex number (volatile overload).
+  KOKKOS_INLINE_FUNCTION const RealType imag () const volatile {
+    return im_;
+  }
+
+  //! The real part of this complex number (volatile overload).
+  KOKKOS_INLINE_FUNCTION const RealType real () const volatile {
     return re_;
   }
 
@@ -478,7 +498,7 @@ atomic_add (volatile ::Kokkos::complex<double>* const dest,
   #else
   ::Kokkos::atomic_add (&dest->real(), src.real ());
   ::Kokkos::atomic_add (&dest->imag(), src.imag ());
-  #endif  dest->atomic_add (src);
+  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
@@ -493,7 +513,7 @@ atomic_add (volatile ::Kokkos::complex<float>* const dest,
   #else
   ::Kokkos::atomic_add (&dest->real(), src.real ());
   ::Kokkos::atomic_add (&dest->imag(), src.imag ());
-  #endif  dest->atomic_add (src);
+  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
