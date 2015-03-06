@@ -1106,6 +1106,13 @@ Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
+  TeamThreadLoop(const Impl::CudaTeamMember& thread, const iType& begin, const iType& end) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>(thread,begin,end);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >
   ThreadVectorLoop(Impl::CudaTeamMember thread, const iType count) {
   return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >(thread,count);

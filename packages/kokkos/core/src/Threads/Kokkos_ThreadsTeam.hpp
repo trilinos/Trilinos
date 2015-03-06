@@ -487,12 +487,12 @@ TeamThreadLoop(const Impl::ThreadsExecTeamMember& thread, const iType& count)
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>
-TeamThreadLoop( const Impl::ThreadsExecTeamMember& thread
+TeamThreadRange( const Impl::ThreadsExecTeamMember& thread
                , const iType & begin
                , const iType & end
                )
 {
-  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>(thread,begin,end);
+  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::ThreadsExecTeamMember>(thread,begin,end);
 }
 
 

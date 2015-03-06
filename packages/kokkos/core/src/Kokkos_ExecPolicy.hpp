@@ -418,7 +418,7 @@ public:
     {}
 
   KOKKOS_INLINE_FUNCTION
-  TeamThreadLoopBoundariesStruct( const TeamMemberType& arg_thread
+  TeamThreadRangeBoundariesStruct( const TeamMemberType& arg_thread
                                 , const iType& arg_begin
                                 , const iType& arg_end
                                 )
@@ -456,16 +456,35 @@ public:
   };
 } // namespace Impl
 
-/*template<typename iType, class TeamMemberType>
-KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadLoopBoundariesStruct<iType,TeamMemberType>
-  TeamThreadLoop(TeamMemberType thread, const iType count);
-
+/** \brief  Execution policy for parallel work over a threads within a team.
+ *
+ *  The range is split over all threads in a team. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a single count. So the range is (0,count].
+ */
 template<typename iType, class TeamMemberType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadVectorLoopBoundariesStruct<iType,TeamMemberType>
-  ThreadVectorLoop(TeamMemberType thread, const iType count);*/
+Impl::TeamThreadLoopBoundariesStruct<iType,TeamMemberType> TeamThreadLoop(const TeamMemberType&, const iType& count);
 
+/** \brief  Execution policy for parallel work over a threads within a team.
+ *
+ *  The range is split over all threads in a team. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a begin and end. So the range is (begin,end].
+ */
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,TeamMemberType> TeamThreadLoop(const TeamMemberType&, const iType& begin, const iType& end);
+
+/** \brief  Execution policy for a vector parallel loop.
+ *
+ *  The range is split over all vector lanes in a thread. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a single count. So the range is (0,count].
+ */
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorLoopBoundariesStruct<iType,TeamMemberType> ThreadVectorLoop(const TeamMemberType&, const iType& count);
 
 } // namespace Kokkos
 

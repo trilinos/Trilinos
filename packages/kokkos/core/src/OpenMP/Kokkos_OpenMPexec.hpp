@@ -559,6 +559,13 @@ Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>
+  TeamThreadLoop(const Impl::OpenMPexecTeamMember& thread, const iType& begin, const iType& end) {
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember>(thread,begin,end);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >
   ThreadVectorLoop(const Impl::OpenMPexecTeamMember& thread, const iType& count) {
   return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::OpenMPexecTeamMember >(thread,count);
