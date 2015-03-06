@@ -2,21 +2,23 @@
 EXTRA_ARGS=$@
 
 #needed to find qt
-export PATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:$PATH
+export PATH=/home/trilinos/tpl/gcc4.1.2/swig-3.0.2/bin:/home/trilinos/tpl/gcc4.1.2/qt-4.5.2/bin:/home/trilinos/python-2.7.3/bin:$PATH
 
-NETCDF_DIR=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2
-BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_49_0
+NETCDF_DIR=/home/trilinos/tpl/gcc4.7.2/netcdf-4.3.2
+HDF5_DIR=/home/trilinos/tpl/gcc4.7.2/hdf5-1.8.12
+BOOST_DIR=/home/trilinos/tpl/gcc4.1.2/boost_1_55_0
 MPI4PY_DIR=/home/trilinos/tpl/gcc4.1.2/mpi4py-1.3
 SCOTCH_DIR=/home/trilinos/tpl/gcc4.1.2/scotch_5.1
 PARMETIS_DIR=/home/trilinos/tpl/gcc4.1.2/ParMETIS3_1
+SUPERLU_DIR=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/
 
-export PYTHONPATH="$MPI4PY_DIR/lib64/python:/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages"
++export PYTHONPATH="/home/trilinos/tpl/gcc4.1.2/numpy-1.9.1/lib/python2.7/site-packages"
 rm -f CMakeCache.txt
 
 cmake \
--D CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc \
--D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ \
--D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
+-D CMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gcc \
+-D CMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/g++ \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.7.2/base/bin/gfortran \
 -D CMAKE_BUILD_TYPE:STRING=RELEASE \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 -D BUILD_SHARED_LIBS=ON \
@@ -26,11 +28,18 @@ cmake \
 -D Scotch_INCLUDE_DIRS=$SCOTCH_DIR/include \
 -D Scotch_LIBRARY_DIRS=$SCOTCH_DIR/lib \
 -D Netcdf_INCLUDE_DIRS=$NETCDF_DIR/include \
--D Netcdf_LIBRARY_DIRS=$NETCDF_DIR/lib \
+-D Netcdf_LIBRARY_DIRS="$NETCDF_DIR/lib;$HDF5_DIR/lib" \
+-D Netcdf_LIBRARY_NAMES="netcdf;hdf5_hl;hdf5" \
+-D HDF5_INCLUDE_DIRS=$HDF5_DIR/include \
+-D HDF5_LIBRARY_DIRS=$HDF5_DIR/lib \
 -D Boost_INCLUDE_DIRS=$BOOST_DIR \
 -D BoostLib_INCLUDE_DIRS=$BOOST_DIR/include \
 -D BoostLib_LIBRARY_DIRS=$BOOST_DIR/lib \
+-D SuperLU_INCLUDE_DIRS=$SUPERLU_DIR/SRC \
+-D SuperLU_LIBRARY_DIRS=$SUPERLU_DIR/lib \
+-D TPL_ENABLE_SuperLU=ON \
 -D TPL_ENABLE_Matio=OFF \
+-D TPL_ENABLE_HDF5=ON \
 -D Trilinos_DATA_DIR:STRING=/home/bmpersc/nightly/TrilinosData \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
@@ -39,5 +48,8 @@ cmake \
 -D Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_STK:BOOL=OFF \
+-D Trilinos_ENABLE_Optika:BOOL=OFF \
+-D PyTrilinos_DOCSTRINGS=OFF \
 $EXTRA_ARGS \
-../trilinos-10.12.2-Source
+../trilinos-11.14.1-Source
