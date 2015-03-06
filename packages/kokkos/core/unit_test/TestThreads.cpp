@@ -398,14 +398,16 @@ TEST_F( threads , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Threads >( 10 );
   // TestTaskPolicy::test_norm2< Kokkos::Threads >( 1000 );
-  for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Threads >(i);
-  for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
+  // for ( long i = 0 ; i < 30 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Threads >(i);
+  // for ( long i = 0 ; i < 40 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
+  for ( long i = 0 ; i < 20 ; ++i ) TestTaskPolicy::test_fib< Kokkos::Threads >(i);
+  for ( long i = 0 ; i < 25 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
 }
 
-#if 0 && defined( KOKKOS_HAVE_CXX11 )
+#if defined( KOKKOS_HAVE_CXX11 )
 TEST_F( threads , task_team )
 {
-  TestTaskPolicy::test_task_team< Kokkos::Threads >(100);
+  TestTaskPolicy::test_task_team< Kokkos::Threads >(1000);
 }
 #endif
 

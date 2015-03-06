@@ -374,22 +374,59 @@ public:
 namespace Kokkos {
 
 namespace Impl {
-  template<typename iType, class TeamMemberType>
-  struct TeamThreadLoopBoundariesStruct {
-    typedef iType index_type;
-    const iType start;
-    const iType end;
-    enum {increment = 1};
-    const TeamMemberType& thread;
 
-    KOKKOS_INLINE_FUNCTION
-    TeamThreadLoopBoundariesStruct (const TeamMemberType& thread_, const iType& count):
-      start( ( (count + thread_.team_size()-1) / thread_.team_size() ) * thread_.team_rank() ),
-      end(   ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ) <= count?
-             ( (count + thread_.team_size()-1) / thread_.team_size() ) * ( thread_.team_rank() + 1 ):count),
-      thread(thread_)
+template<typename iType, class TeamMemberType>
+struct TeamThreadLoopBoundariesStruct {
+private:
+
+  KOKKOS_INLINE_FUNCTION static
+  iType ibegin( const iType & arg_begin
+              , const iType & arg_end
+              , const iType & arg_rank
+              , const iType & arg_size
+              )
+    {
+      return arg_begin + ( ( arg_end - arg_begin + arg_size - 1 ) / arg_size ) * arg_rank ;
+    }
+
+  KOKKOS_INLINE_FUNCTION static
+  iType iend( const iType & arg_begin
+            , const iType & arg_end
+            , const iType & arg_rank
+            , const iType & arg_size
+            )
+    {
+      const iType end = arg_begin + ( ( arg_end - arg_begin + arg_size - 1 ) / arg_size ) * ( arg_rank + 1 );
+      return end < arg_end ? end : arg_end ;
+    }
+
+public:
+
+  typedef iType index_type;
+  const iType start;
+  const iType end;
+  enum {increment = 1};
+  const TeamMemberType& thread;
+
+  KOKKOS_INLINE_FUNCTION
+  TeamThreadLoopBoundariesStruct( const TeamMemberType& arg_thread
+                                , const iType& arg_end
+                                )
+    : start( ibegin( 0 , arg_end , arg_thread.team_rank() , arg_thread.team_size() ) )
+    , end(   iend(   0 , arg_end , arg_thread.team_rank() , arg_thread.team_size() ) )
+    , thread( arg_thread )
     {}
-  };
+
+  KOKKOS_INLINE_FUNCTION
+  TeamThreadLoopBoundariesStruct( const TeamMemberType& arg_thread
+                                , const iType& arg_begin
+                                , const iType& arg_end
+                                )
+    : start( ibegin( arg_begin , arg_end , arg_thread.team_rank() , arg_thread.team_size() ) )
+    , end(   iend(   arg_begin , arg_end , arg_thread.team_rank() , arg_thread.team_size() ) )
+    , thread( arg_thread )
+    {}
+};
 
   template<typename iType, class TeamMemberType>
   struct ThreadVectorLoopBoundariesStruct {

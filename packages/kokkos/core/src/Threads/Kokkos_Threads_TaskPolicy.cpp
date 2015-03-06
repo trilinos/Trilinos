@@ -57,8 +57,9 @@ typedef TaskMember< Kokkos::Threads , void , void > Task ;
 
 namespace {
 
-int    volatile s_ready_count = 0 ;
-Task * volatile s_ready_team = 0 ;
+int    volatile s_count_serial = 0 ;
+int    volatile s_count_team   = 0 ;
+Task * volatile s_ready_team   = 0 ;
 Task * volatile s_ready_serial = 0 ;
 Task * const    s_lock   = reinterpret_cast<Task*>( ~((unsigned long)0) );
 Task * const    s_denied = reinterpret_cast<Task*>( ~((unsigned long)0) - 1 );
@@ -204,11 +205,20 @@ void Task::schedule()
     // Increment the count of ready tasks.
     // Count is decremented when task is complete.
 
-    atomic_increment( & s_ready_count );
+    Task * volatile * queue = 0 ;
+
+    if ( m_serial ) {
+      atomic_increment( & s_count_serial );
+      queue = & s_ready_serial ;
+    }
+    else {
+      atomic_increment( & s_count_team );
+      queue = & s_ready_team ;
+    }
 
     while ( insert_in_ready_queue ) {
 
-      Task * const head_value_old = s_ready_serial ;
+      Task * const head_value_old = *queue ;
 
       if ( s_lock != head_value_old ) {
         // Read the head of ready queue, if same as previous value then CAS locks the ready queue
@@ -220,7 +230,7 @@ void Task::schedule()
 
         memory_fence();
 
-        Task * const ready_queue_head = atomic_compare_exchange( & s_ready_serial , head_value_old , this );
+        Task * const ready_queue_head = atomic_compare_exchange( queue , head_value_old , this );
 
         if ( head_value_old == ready_queue_head ) {
           // Successful insert
@@ -349,10 +359,57 @@ void Task::clear_dependence()
 
 //----------------------------------------------------------------------------
 
-void Task::execute_serial( Task * const task )
+Task * Task::pop_ready_task( Task * volatile * const queue )
 {
-  if ( task->m_serial ) (*task->m_serial)( task );
+  Task * const task_old = *queue ;
 
+  if ( s_lock != task_old && 0 != task_old ) {
+
+    Task * const task = atomic_compare_exchange( queue , task_old , s_lock );
+
+    if ( task_old == task ) {
+
+      // May have acquired the lock and task.
+      // One or more other threads may have acquired this same task and lock
+      // due to respawning ABA race condition.
+      // Can only be sure of acquire with a successful state transition from waiting to executing
+
+      const int old_state = atomic_compare_exchange( & task->m_state, int(TASK_STATE_WAITING), int(TASK_STATE_EXECUTING) );
+
+      if ( old_state == int(TASK_STATE_WAITING) ) {
+
+        // Transitioned this task from waiting to executing
+        // Update the queue to the next entry and release the lock
+
+        Task * const next_old = *((Task * volatile *) & task->m_next );
+
+        Task * const s = atomic_compare_exchange( queue , s_lock , next_old );
+
+        if ( s != s_lock ) {
+          fprintf(stderr,"Task::pop_ready_task( 0x%lx ) UNLOCK ERROR\n", (unsigned long) queue );
+          fflush(stderr);
+        }
+
+        *((Task * volatile *) & task->m_next ) = 0 ;
+
+        return task ;
+      }
+      else {
+        fprintf(stderr,"Task::pop_ready_task( 0x%lx ) task(0x%lx) state(%d) ERROR\n"
+                      , (unsigned long) queue
+                      , (unsigned long) task
+                      , old_state );
+        fflush(stderr);
+      }
+    }
+  }
+
+  return (Task *) 0 ;
+}
+
+
+void Task::complete_executed_task( Task * task , volatile int * const queue_count )
+{
   // State is either executing or if respawned then waiting,
   // try to transition from executing to complete.
   // Reads the current value.
@@ -393,135 +450,76 @@ void Task::execute_serial( Task * const task )
       wait_queue     = atomic_compare_exchange( & task->m_wait , wait_queue_old , s_denied );
     } while ( wait_queue_old != wait_queue );
 
+    task = 0 ;
+
     // Pop waiting tasks and schedule them
     while ( wait_queue ) {
       Task * const x = wait_queue ; wait_queue = x->m_next ; x->m_next = 0 ;
       x->schedule();
     }
   }
+
+  atomic_decrement( queue_count );
 }
 
-bool Task::execute_ready_team_task( Kokkos::Impl::ThreadsExecTeamMember & member )
-{
-  enum { skip = true };
-
-  std::pair< Task * , int > task_work(0,0) ;
-
-  // If the team-task queue has work then try to execute from there
-
-  if ( skip ) {
-
-  if ( member.team_broadcast_root() ) {
-
-    // One member of the team attempts to claim a unit of work.
-
-    while ( ( 0 != ( task_work.first = s_ready_team ) ) &&
-            ( ( task_work.second = atomic_fetch_add( & task_work.first->m_league_rank , -1 ) ) < 0 ) );
-
-    if ( 0 != task_work.first ) {
-
-      // Claimed the last unit of work for this task so remove this task from the queue.
-
-      s_ready_team = task_work.first->m_next ;
-
-      task_work.first->m_next = 0 ;
-    }
-  }
-
-  // Broadcast task to team members, a barrier for the team
-  member.team_broadcast_root( task_work );
-
-  if ( 0 != task_work.first ) {
-
-    // Work is claimed from the team task queue.
-
-    // If state is not executing then set state to executing.
-    // ok if this happens concurrently-redundantly
-
-    if ( task_work.first->m_state != Kokkos::Experimental::TASK_STATE_EXECUTING ) {
-      task_work.first->m_state = Kokkos::Experimental::TASK_STATE_EXECUTING ;
-    }
-
-    // Set league rank and size on member
-    // 'm_league_rank' is initialized to league_size - 1.
-
-    member.set_league_shmem( task_work.second                // league rank
-                           , task_work.first->m_league_size  // league size
-                           , task_work.first->m_shmem_size   // team shared size
-                           );
-
-    (*task_work.first->m_team)( task_work.first , member );
-
-    member.team_barrier();
-
-    if ( ( member.team_rank() == 0 ) &&
-         ( 0 == atomic_fetch_add( & task_work.first->m_league_end , -1 ) ) ) {
-      execute_serial( task_work.first );
-    }
-  }
-  }
-
-  // Return if team task queue was not empty
-  return task_work.first != 0 ;
-}
+//----------------------------------------------------------------------------
 
 void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const void * )
 {
+  typedef Kokkos::Impl::ThreadsExecTeamMember member_type ;
+
   // Whole pool is calling this function
 
-  Kokkos::Impl::ThreadsExecTeamMember member( exec , TeamPolicy< Kokkos::Threads >( 1 , team_fixed_size() ) , 0 );
+  // Create the thread team member with shared memory for the given task.
+  member_type member( exec , TeamPolicy< Kokkos::Threads >( 1 , team_fixed_size() ) , 0 );
+
+  Kokkos::Impl::ThreadsExec & exec_team_base = member.threads_exec_team_base();
+
+  Task * volatile * const task_team_ptr = reinterpret_cast<Task**>( exec_team_base.reduce_memory() );
+
+  if ( member.team_fan_in() ) {
+    *task_team_ptr = 0 ;
+    Kokkos::memory_fence();
+  }
+  member.team_fan_out();
 
   long int iteration_count = 0 ;
 
   // Each team must iterate this loop synchronously to insure team-execution of team-task
 
-  while ( 0 < s_ready_count ) {
+  while ( 0 < s_count_serial || 0 < s_count_team ) {
 
-    // Team grabs work from s_ready_team:  execute_ready_team_task( member );
-    // OR
-    // Read the head of the ready queue, if head is previous value then acquire and lock the ready queue
+    if ( member.team_rank() == 0 ) {
+      // Only one team member attempts to pop a team task
+      *task_team_ptr = pop_ready_task( & s_ready_team );
+    }
 
-    Task * const task_old = s_ready_serial ;
+    // Query if team acquired a team task
+    Task * const task_team = *task_team_ptr ;
 
-    if ( s_lock != task_old && 0 != task_old ) {
+    if ( task_team ) {
+      // Set shared memory
+      member.set_league_shmem( 0 , 1 , task_team->m_shmem_size );
 
-      Task * const task = atomic_compare_exchange( & s_ready_serial , task_old , s_lock );
+      (*task_team->m_team)( task_team , member );
 
-      if ( task_old == task ) {
+      // Do not proceed until all members have completed the task,
+      // the task has been completed or rescheduled, and
+      // the team task pointer has been cleared.
+      if ( member.team_fan_in() ) {
+        complete_executed_task( task_team , & s_count_team );
+        *task_team_ptr = 0 ;
+        Kokkos::memory_fence();
+      }
+      member.team_fan_out();
+    }
+    else {
+      Task * const task_serial = pop_ready_task( & s_ready_serial );
 
-        // May have acquired the lock and task.
-        // One or more other threads may have acquired this same task and lock
-        // due to respawning ABA race condition.
-        // Can only be sure of acquire with a successful state transition from waiting to executing
+      if ( task_serial ) {
+        if ( task_serial->m_serial ) (*task_serial->m_serial)( task_serial );
 
-        const int old_state = atomic_compare_exchange( & task->m_state, int(TASK_STATE_WAITING), int(TASK_STATE_EXECUTING) );
-
-        if ( old_state == int(TASK_STATE_WAITING) ) {
-
-          // Transitioned this task from waiting to executing
-          // Update the queue to the next entry and release the lock
-
-          Task * const next_old = *((Task * volatile *) & task->m_next );
-
-          Task * const s = atomic_compare_exchange( & s_ready_serial , s_lock , next_old );
-
-          if ( s != s_lock ) {
-            fprintf(stderr,"Task::execute serial pop() UNLOCK ERROR\n");
-            fflush(stderr);
-          }
-
-          *((Task * volatile *) & task->m_next ) = 0 ;
-
-          execute_serial( task );
-
-          atomic_decrement( & s_ready_count );
-        }
-        else {
-          fprintf(stderr,"Task::execute serial task(0x%lx) state(%d) ERROR\n"
-                        , (unsigned long) task
-                        , old_state );
-          fflush(stderr);
-        }
+        complete_executed_task( task_serial , & s_count_serial );
       }
     }
 
@@ -533,14 +531,18 @@ void Task::execute_ready_tasks_driver( Kokkos::Impl::ThreadsExec & exec , const 
 
 void Task::execute_ready_tasks()
 {
+  typedef Kokkos::Impl::ThreadsExecTeamMember member_type ;
+
+  enum { BASE_SHMEM = 1024 };
+
+  Kokkos::Impl::ThreadsExec::resize_scratch( 0 , member_type::team_reduce_size() + BASE_SHMEM );
   Kokkos::Impl::ThreadsExec::start( & Task::execute_ready_tasks_driver , 0 );
   Kokkos::Impl::ThreadsExec::fence();
 }
 
 void Task::wait( const Future< void , Kokkos::Threads > & f )
 {
-  Kokkos::Impl::ThreadsExec::start( & Task::execute_ready_tasks_driver , 0 );
-  Kokkos::Impl::ThreadsExec::fence();
+  execute_ready_tasks();
 }
 
 } /* namespace Impl */
@@ -548,3 +550,4 @@ void Task::wait( const Future< void , Kokkos::Threads > & f )
 } /* namespace Kokkos */
 
 #endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */
+
