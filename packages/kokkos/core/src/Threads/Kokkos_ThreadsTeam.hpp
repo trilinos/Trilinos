@@ -136,43 +136,6 @@ public:
       team_fan_out();
     }
 
-  KOKKOS_INLINE_FUNCTION
-  bool team_broadcast_root() const { return ! m_team_rank_rev ; }
-
-  template< class ValueType >
-  KOKKOS_INLINE_FUNCTION
-  void team_broadcast_root( ValueType & value )
-#if ! defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-    { }
-#else
-    {
-      enum { count = sizeof(ValueType) / sizeof(int) +
-                   ( sizeof(ValueType) % sizeof(int) ? 1 : 0 ) };
-
-      // Make sure there is enough scratch space:
-
-      typedef typename Impl::StaticAssert< count * sizeof(int) <= TEAM_REDUCE_SIZE , volatile int >::type type ;
-
-      if ( team_fan_in() ) {
-        type * const src = (type *) ( & value );
-        for ( int i = 0 ; i < m_team_size ; ++i ) {
-          type * const dst = (type *) m_team_base[i]->scratch_memory();
-          for ( int j = 0 ; j < count ; ++j ) dst[j] = src[j] ;
-        }
-        memory_fence();
-      }
-
-      team_fan_out();
-
-      {
-        type * const dst = (type *) ( & value );
-        type * const src = (type *) m_exec.scratch_memory();
-        for ( int j = 0 ; j < count ; ++j ) dst[j] = src[j] ;
-      }
-    }
-#endif
-
-
   template<class ValueType>
   KOKKOS_INLINE_FUNCTION
   void team_broadcast(ValueType& value, const int& thread_id) const
@@ -349,22 +312,7 @@ public:
   KOKKOS_INLINE_FUNCTION ArgType team_scan( const ArgType & value ) const
     { return this-> template team_scan<ArgType>( value , 0 ); }
 
-#ifdef KOKKOS_HAVE_CXX11
 
-  /** \brief  Inter-thread parallel for. Executes op(iType i) for each i=0..N-1.
-   *
-   * The range i=0..N-1 is mapped to all threads of the the calling thread team.
-   * This functionality requires C++11 support.*/
-  template< typename iType, class Operation>
-  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
-    const int chunk = ((n+m_team_size-1)/m_team_size);
-    const int start = chunk*m_team_rank;
-    const int end = start+chunk<n?start+chunk:n;
-    for(int i=start; i<end ; i++) {
-      op(i);
-    }
-  }
-#endif
   //----------------------------------------
   // Private for the driver
 

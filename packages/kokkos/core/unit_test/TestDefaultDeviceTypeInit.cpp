@@ -72,7 +72,7 @@ namespace Impl {
     if(do_threads) {
       int nthreads = 3;
 
-#ifdef _OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
       if(omp_get_max_threads() < 3)
         nthreads = omp_get_max_threads();
 #endif
@@ -129,7 +129,7 @@ namespace Impl {
     if(do_threads) {
       int nthreads = 3;
 
-#ifdef _OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
       if(omp_get_max_threads() < 3)
         nthreads = omp_get_max_threads();
 #endif

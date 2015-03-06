@@ -183,23 +183,6 @@ public:
   __device__ inline Type team_scan( const Type & value ) const
     { return this->template team_scan<Type>( value , 0 ); }
 
-
-#ifdef KOKKOS_HAVE_CXX11
-  template< class Operation >
-  __device__ inline void vector_single(const Operation & op) const {
-    if(threadIdx.x == 0)
-      op();
-  }
-
-  template< class Operation, typename ValueType>
-  __device__ inline void vector_single(const Operation & op, ValueType& bcast) const {
-    if(threadIdx.x == 0)
-      op();
-    bcast = shfl(bcast,0,blockDim.x);
-  }
-
-#endif
-
   //----------------------------------------
   // Private for the driver
 
@@ -238,13 +221,6 @@ public:
   template< typename Type >
   Type team_scan( const Type & value ) const {return Type();}
 
-#ifdef KOKKOS_HAVE_CXX11
-  template< class Operation >
-  void vector_single(const Operation & op) const {}
-
-  template< class Operation , typename ValueType>
-  void vector_single(const Operation & op, ValueType& val) const {}
-#endif
   //----------------------------------------
   // Private for the driver
 

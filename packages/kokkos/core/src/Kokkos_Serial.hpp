@@ -269,20 +269,6 @@ public:
   KOKKOS_INLINE_FUNCTION Type team_scan( const Type & ) const
     { return Type(0); }
 
-#ifdef KOKKOS_HAVE_CXX11
-
-  /** \brief  Executes op(iType i) for each i=0..N-1.
-   *
-   * This functionality requires C++11 support.*/
-  template< typename iType, class Operation>
-  KOKKOS_INLINE_FUNCTION void team_par_for(const iType n, const Operation & op) const {
-    for(int i=0; i<n ; i++) {
-      op(i);
-    }
-  }
-
-#endif
-
   //----------------------------------------
   // Execution space specific:
 
