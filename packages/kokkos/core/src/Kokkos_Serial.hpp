@@ -84,14 +84,14 @@ public:
   typedef HostSpace::size_type  size_type ;
   //! This device's preferred memory space.
   typedef HostSpace             memory_space ;
+  //! This execution space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   //! This device's preferred array layout.
   typedef LayoutRight           array_layout ;
 
   /// \brief  Scratch memory space
   typedef ScratchMemorySpace< Kokkos::Serial >  scratch_memory_space ;
-
-  //! For backward compatibility:
-  typedef Serial                device_type ;
 
   //@}
 

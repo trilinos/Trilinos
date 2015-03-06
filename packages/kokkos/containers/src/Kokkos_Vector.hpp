@@ -60,7 +60,7 @@ class vector : public DualView<Scalar*,LayoutLeft,Space> {
 public:
   typedef typename Space::memory_space memory_space;
   typedef typename Space::execution_space execution_space;
-  typedef typename Impl::DeviceInternal<execution_space,memory_space> device_type;
+  typedef typename Kokkos::Device<execution_space,memory_space> device_type;
 
   typedef Scalar value_type;
   typedef Scalar* pointer;

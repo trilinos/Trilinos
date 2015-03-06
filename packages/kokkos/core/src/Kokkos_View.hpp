@@ -238,6 +238,7 @@ public:
 
   typedef ExecutionSpace   execution_space ;
   typedef MemorySpace      memory_space ;
+  typedef Device<ExecutionSpace,MemorySpace>  device_type ;
   typedef MemoryTraits     memory_traits ;
   typedef HostMirrorSpace  host_mirror_space ;
 
@@ -249,7 +250,6 @@ public:
 
   //------------------------------------
 
-  typedef Impl::DeviceInternal<ExecutionSpace,MemorySpace>  device_type ; // for backward compatibility, to be removed
 
   //------------------------------------
   // Specialization tag:

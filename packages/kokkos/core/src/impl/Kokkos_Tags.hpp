@@ -53,16 +53,21 @@
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+//----------------------------------------------------------------------------
+
+template<class ExecutionSpace, class MemorySpace>
+struct Device {
+  typedef ExecutionSpace execution_space;
+  typedef MemorySpace memory_space;
+  typedef Device<execution_space,memory_space> device_type;
+};
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
 namespace Impl {
-
-struct LayoutTag {};
-
-struct MemorySpaceTag {};
-struct MemoryTraitsTag {};
-
-struct ExecutionPolicyTag {};
-struct ExecutionSpaceTag {};
-
 
 template< class C , class Enable = void >
 struct is_memory_space : public bool_< false > {};
@@ -101,15 +106,6 @@ struct is_memory_traits< C , typename Impl::enable_if_type< typename C::memory_t
   : public bool_< Impl::is_same< C , typename C::memory_traits >::value > {};
 
 
-
-//----------------------------------------------------------------------------
-
-template<class ExecutionSpace, class MemorySpace>
-struct DeviceInternal {
-  typedef ExecutionSpace execution_space;
-  typedef MemorySpace memory_space;
-};
-
 //----------------------------------------------------------------------------
 
 template< class C , class Enable = void >
@@ -120,7 +116,7 @@ struct is_space< C
                  , typename Impl::enable_if<(
                      Impl::is_same< C , typename C::execution_space >::value ||
                      Impl::is_same< C , typename C::memory_space    >::value ||
-                     Impl::is_same< C , Impl::DeviceInternal<
+                     Impl::is_same< C , Device<
                                              typename C::execution_space,
                                              typename C::memory_space> >::value
                    )>::type
@@ -154,7 +150,7 @@ struct is_space< C
   typedef execution_space host_execution_space;
 #endif
 
-  typedef DeviceInternal<host_execution_space,host_memory_space> host_mirror_space;
+  typedef Device<host_execution_space,host_memory_space> host_mirror_space;
 };
 }
 }

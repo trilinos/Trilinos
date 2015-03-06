@@ -78,6 +78,9 @@ public:
   //! Tag this class as a memory space
   typedef ScratchMemorySpace                memory_space ;
   typedef ExecSpace                         execution_space ;
+  //! This execution space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef typename ExecSpace::array_layout  array_layout ;
   typedef typename ExecSpace::size_type     size_type ;
 

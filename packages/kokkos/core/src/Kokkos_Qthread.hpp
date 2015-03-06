@@ -74,13 +74,13 @@ public:
   //! Tag this class as an execution space
   typedef Qthread                  execution_space ;
   typedef Kokkos::HostSpace        memory_space ;
+  //! This execution space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef Kokkos::LayoutRight      array_layout ;
   typedef memory_space::size_type  size_type ;
 
   typedef ScratchMemorySpace< Qthread > scratch_memory_space ;
-
-  //! For backward compatibility:
-  typedef Qthread                  device_type ;
 
   //@}
   /*------------------------------------------------------------------------*/
