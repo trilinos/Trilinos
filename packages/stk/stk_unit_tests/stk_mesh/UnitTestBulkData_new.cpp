@@ -337,7 +337,7 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
   TestBoxFixture fixture;
-  BulkData             &bulk = fixture.bulk_data ();
+  stk::mesh::unit_test::BulkDataTester &bulk = fixture.bulk_data ();
   PartVector            add_part;
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
@@ -352,8 +352,8 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   bulk.modification_begin();
 
   for ( EntityCommListInfoVector::const_iterator
-        i =  bulk.comm_list().begin();
-        i != bulk.comm_list().end() ; ++i ) {
+        i =  bulk.my_internal_comm_list().begin();
+        i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
       if ( i->owner == fixture.comm_rank() ) {
         bulk.change_entity_parts ( i->entity, add_part, PartVector() );
@@ -364,8 +364,8 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   bulk.modification_end();
 
   for ( EntityCommListInfoVector::const_iterator
-        i =  bulk.comm_list().begin();
-        i != bulk.comm_list().end() ; ++i ) {
+        i =  bulk.my_internal_comm_list().begin();
+        i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
       ASSERT_TRUE ( bulk.bucket(i->entity).member ( fixture.m_part_A_0 ) );
     }

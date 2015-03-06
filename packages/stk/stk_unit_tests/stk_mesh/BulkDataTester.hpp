@@ -50,6 +50,16 @@ public:
     {
     }
 
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data,
+                   MPI_Comm comm,
+                   bool add_fmwk_data,
+                   ConnectivityMap const* arg_connectivity_map,
+                   FieldDataManager *field_data_manager,
+                   unsigned bucket_capacity) :
+            stk::mesh::BulkData(mesh_meta_data, comm, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
+    {
+    }
+
     virtual ~BulkDataTester()
     {
     }
@@ -153,6 +163,21 @@ public:
     int my_internal_entity_comm_map_owner(const EntityKey & key) const
     {
         return internal_entity_comm_map_owner(key);
+    }
+
+    const EntityCommListInfoVector & my_internal_comm_list() const
+    {
+        return comm_list();
+    }
+
+    PairIterEntityComm my_internal_entity_comm_map(const EntityKey & key) const
+    {
+        return entity_comm_map(key);
+    }
+
+    PairIterEntityComm my_internal_entity_comm_map(const EntityKey & key, const Ghosting & sub) const
+    {
+        return entity_comm_map(key, sub);
     }
 };
 

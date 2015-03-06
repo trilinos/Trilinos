@@ -88,7 +88,7 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   BoxFixture fixture(pm);
   MetaData& meta = fixture.fem_meta();
-  BulkData& bulk = fixture.bulk_data();
+  stk::mesh::unit_test::BulkDataTester& bulk = fixture.bulk_data();
 
   const EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
@@ -231,8 +231,8 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   size_t count_shared_entities = 0 ;
   for (stk::mesh::EntityCommListInfoVector::const_iterator
-       i = bulk.comm_list().begin() ;
-       i != bulk.comm_list().end() ;
+       i = bulk.my_internal_comm_list().begin() ;
+       i != bulk.my_internal_comm_list().end() ;
        ++i) {
     std::vector<int> shared_procs;
     bulk.comm_shared_procs(i->key,shared_procs);

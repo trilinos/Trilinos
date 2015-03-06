@@ -118,7 +118,7 @@ extern char** gl_argv;
 namespace
 {
 
-void donate_one_element(BulkData & mesh, bool aura)
+void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
 {
     const int p_rank = mesh.parallel_rank();
 
@@ -138,7 +138,7 @@ void donate_one_element(BulkData & mesh, bool aura)
     EntityKey node_key;
     Entity elem = Entity();
 
-    for(stk::mesh::EntityCommListInfoVector::const_iterator i = mesh.comm_list().begin(); i != mesh.comm_list().end(); ++i)
+    for(stk::mesh::EntityCommListInfoVector::const_iterator i = mesh.my_internal_comm_list().begin(); i != mesh.my_internal_comm_list().end(); ++i)
     {
         if(mesh.in_shared(i->key) && i->key.rank() == BaseEntityRank)
         {
@@ -201,7 +201,7 @@ void donate_one_element(BulkData & mesh, bool aura)
     }
 }
 
-void donate_all_shared_nodes(BulkData & mesh, bool aura)
+void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh, bool aura)
 {
     const int p_rank = mesh.parallel_rank();
 
@@ -214,7 +214,7 @@ void donate_all_shared_nodes(BulkData & mesh, bool aura)
 
     // Donate owned shared nodes to first sharing process.
 
-    const stk::mesh::EntityCommListInfoVector & entity_comm = mesh.comm_list();
+    const stk::mesh::EntityCommListInfoVector & entity_comm = mesh.my_internal_comm_list();
 
     ASSERT_TRUE( ! entity_comm.empty());
 
@@ -910,8 +910,8 @@ TEST(BulkData, testChangeOwner_ring)
             change[0].first = ring_mesh.m_bulk_data.get_entity(stk::topology::NODE_RANK, ring_mesh.m_node_ids[1]);
             change[0].second = p_size;
             // Error to change a ghost:
-            for(stk::mesh::EntityCommListInfoVector::const_iterator ec = ring_mesh.m_bulk_data.comm_list().begin();
-                    ec != ring_mesh.m_bulk_data.comm_list().end(); ++ec)
+            for(stk::mesh::EntityCommListInfoVector::const_iterator ec = ring_mesh.m_bulk_data.my_internal_comm_list().begin();
+                    ec != ring_mesh.m_bulk_data.my_internal_comm_list().end(); ++ec)
                     {
                 if(bulk.in_receive_ghost(ec->key))
                 {
@@ -1002,7 +1002,7 @@ TEST(BulkData, testChangeOwner_box)
         bool aura = false;
         BoxFixture fixture(pm, 100);
         fixture.fem_meta().commit();
-        BulkData & bulk = fixture.bulk_data();
+        stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
 
         bulk.modification_begin();
@@ -1020,7 +1020,7 @@ TEST(BulkData, testChangeOwner_box)
         bool aura = false;
         BoxFixture fixture(pm, 100);
         fixture.fem_meta().commit();
-        BulkData & bulk = fixture.bulk_data();
+        stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
 
         bulk.modification_begin();
@@ -1035,7 +1035,7 @@ TEST(BulkData, testChangeOwner_box)
         bool aura = false;
         BoxFixture fixture(pm, 100);
         fixture.fem_meta().commit();
-        BulkData & bulk = fixture.bulk_data();
+        stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
 
         bulk.modification_begin();
@@ -1049,7 +1049,7 @@ TEST(BulkData, testChangeOwner_box)
     if(1 < p_size)
     {
         BoxFixture fixture(pm, 100);
-        BulkData & bulk = fixture.bulk_data();
+        stk::mesh::unit_test::BulkDataTester & bulk = fixture.bulk_data();
         MetaData & box_meta = fixture.fem_meta();
         box_meta.commit();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -3186,11 +3186,11 @@ TEST(BulkData, ModificationEnd)
         stk::mesh::EntityKey nodeEntityKey(stk::topology::NODE_RANK, nodeToCheck);
         stk::mesh::EntityKey entityToMoveKey(stk::topology::ELEMENT_RANK, elementToMove);
 
-        stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData->comm_list().begin(),
-                                                                                    stkMeshBulkData->comm_list().end(),
+        stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData->my_internal_comm_list().begin(),
+                                                                                    stkMeshBulkData->my_internal_comm_list().end(),
                                                                                     nodeEntityKey);
 
-        ASSERT_TRUE(iter != stkMeshBulkData->comm_list().end());
+        ASSERT_TRUE(iter != stkMeshBulkData->my_internal_comm_list().end());
         EXPECT_EQ(nodeEntityKey, iter->key);
         EXPECT_TRUE(stkMeshBulkData->is_valid(iter->entity));
 
@@ -3206,9 +3206,9 @@ TEST(BulkData, ModificationEnd)
         // Really testing destroy_entity
         stk::mesh::impl::delete_shared_entities_which_are_no_longer_in_owned_closure(*stkMeshBulkData);
 
-        iter = std::lower_bound(stkMeshBulkData->comm_list().begin(), stkMeshBulkData->comm_list().end(), nodeEntityKey);
+        iter = std::lower_bound(stkMeshBulkData->my_internal_comm_list().begin(), stkMeshBulkData->my_internal_comm_list().end(), nodeEntityKey);
 
-        ASSERT_TRUE(iter != stkMeshBulkData->comm_list().end());
+        ASSERT_TRUE(iter != stkMeshBulkData->my_internal_comm_list().end());
         EXPECT_EQ(nodeEntityKey, iter->key);
 
         if(stkMeshBulkData->parallel_rank() == 0)

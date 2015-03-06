@@ -35,7 +35,7 @@
 #define Stk_Mesh_Fixtures_BoxFixture_hpp
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <unit_tests/BulkDataTester.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for entity_rank_names, MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <string>                       // for string
@@ -61,7 +61,7 @@ public:
   ~BoxFixture () {}
 
   MetaData & fem_meta () { return m_fem_meta; }
-  BulkData & bulk_data () { return m_bulk_data; }
+  stk::mesh::unit_test::BulkDataTester & bulk_data () { return m_bulk_data; }
 
   int  comm_size() const { return m_comm_size; }
   int  comm_rank() const { return m_comm_rank; }
@@ -89,7 +89,7 @@ public:
 
 protected:
   MetaData m_fem_meta;
-  BulkData m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester m_bulk_data;
 
   int m_comm_rank;
   int m_comm_size;

@@ -34,11 +34,11 @@ const EntityRank ELEM_RANK = stk::topology::ELEM_RANK;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline bool isEntityValidOnCommList(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity)
+inline bool isEntityValidOnCommList(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData, stk::mesh::Entity entity)
 {
     EntityKey entityKey = stkMeshBulkData.entity_key(entity);
-    stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.comm_list().begin(), stkMeshBulkData.comm_list().end(), entityKey);
-    return iter != stkMeshBulkData.comm_list().end() && entityKey == iter->key;
+    stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), entityKey);
+    return iter != stkMeshBulkData.my_internal_comm_list().end() && entityKey == iter->key;
 }
 
 

@@ -227,7 +227,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    BulkData& bulk = mesh.m_bulk_data;
+    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
@@ -282,13 +282,13 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    ASSERT_TRUE( bulk.comm_list().empty() );
+    ASSERT_TRUE( bulk.my_internal_comm_list().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
     RingFixture mesh( pm , nPerProc , false /* No element parts */ );
     mesh.m_meta_data.commit();
-    BulkData& bulk = mesh.m_bulk_data;
+    stk::mesh::unit_test::BulkDataTester& bulk = mesh.m_bulk_data;
 
     bulk.modification_begin();
     mesh.generate_mesh( );
@@ -353,7 +353,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     assert_is_destroyed(bulk, bulk.get_entity(stk::topology::ELEMENT_RANK, node_element_ids[1] ) );
 
     // assert that no entities are shared or ghosted
-    ASSERT_TRUE( bulk.comm_list().empty() );
+    ASSERT_TRUE( bulk.my_internal_comm_list().empty() );
   }
 }
 

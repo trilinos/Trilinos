@@ -178,7 +178,7 @@ namespace unit_test {
 void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 {
   MetaData& meta = ring.m_meta_data;
-  BulkData& bulk = ring.m_bulk_data;
+  stk::mesh::unit_test::BulkDataTester& bulk = ring.m_bulk_data;
 
   const int p_rank     = bulk.parallel_rank();
   const int p_size     = bulk.parallel_size();
@@ -255,8 +255,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   unsigned count_shared = 0 ;
   for ( stk::mesh::EntityCommListInfoVector::const_iterator
-        i = bulk.comm_list().begin() ;
-        i != bulk.comm_list().end() ; ++i )
+        i = bulk.my_internal_comm_list().begin() ;
+        i != bulk.my_internal_comm_list().end() ; ++i )
   {
     if ( bulk.in_shared( i->key ) ) { ++count_shared ; }
   }

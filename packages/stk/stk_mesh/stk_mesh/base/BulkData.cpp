@@ -2357,9 +2357,9 @@ void BulkData::get_locally_modified_shared_entities(stk::mesh::EntityToDependent
 
 void BulkData::erase_all_sharing_for_invalid_entities_on_comm_map()
 {
-    for(size_t i=0; i<this->comm_list().size(); ++i)
+    for(size_t i=0; i<this->internal_comm_list().size(); ++i)
     {
-        stk::mesh::EntityKey key = this->comm_list()[i].key;
+        stk::mesh::EntityKey key = this->internal_comm_list()[i].key;
         stk::mesh::Entity entity = this->get_entity(key);
         if( !this->is_valid(entity) )
         {
@@ -3126,7 +3126,7 @@ void BulkData::internal_change_ghosting(
     // the entity if it's a ghost on this process. new_recv will contain
     // all ghosts on this process by the end of the loop.
     for ( EntityCommListInfoVector::const_iterator
-          i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
+          i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i ) {
       if ( in_receive_ghost( ghosting , i->key ) ) {
         entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.insert( i->key );
       }
@@ -3467,7 +3467,7 @@ void BulkData::internal_regenerate_aura()
   Entity const* rels = NULL;
   int num_rels = 0;
   for ( EntityCommListInfoVector::const_iterator
-      i = comm_list().begin() ; i != comm_list().end() ; ++i )
+      i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i )
   {
     const EntityRank erank = static_cast<EntityRank>(i->key.rank());
 
@@ -3547,25 +3547,16 @@ EntityCommListInfo find_entity(const BulkData& mesh,
   return *lb_itr;
 }
 
-struct EntityParallelState {
-  int                 from_proc;
-  EntityState         state;
-  EntityCommListInfo  comm_info;
-  const BulkData* mesh;
+}
 
-  bool operator<(const EntityParallelState& rhs) const
-  { return EntityLess(*mesh)(comm_info.entity, rhs.comm_info.entity); }
-};
-
-
-bool pack_entity_modification( const BulkData & mesh ,
+bool BulkData::pack_entity_modification( const BulkData & mesh ,
                                const bool packShared ,
                                stk::CommSparse & comm )
 {
   bool flag = false;
   bool packGhosted = packShared == false;
 
-  const EntityCommListInfoVector & entityCommList = mesh.comm_list();
+  const EntityCommListInfoVector & entityCommList = mesh.internal_comm_list();
 
   for ( EntityCommListInfoVector::const_iterator
         i = entityCommList.begin() ; i != entityCommList.end() ; ++i ) {
@@ -3592,7 +3583,7 @@ bool pack_entity_modification( const BulkData & mesh ,
   return flag ;
 }
 
-void communicate_entity_modification( const BulkData & mesh ,
+void BulkData::communicate_entity_modification( const BulkData & mesh ,
                                       const bool shared ,
                                       std::vector<EntityParallelState > & data )
 {
@@ -3617,7 +3608,7 @@ void communicate_entity_modification( const BulkData & mesh ,
 
     comm.communicate();
 
-    const EntityCommListInfoVector & entityCommList = mesh.comm_list();
+    const EntityCommListInfoVector & entityCommList = mesh.internal_comm_list();
     for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
       CommBuffer & buf = comm.recv_buffer( procNumber );
       EntityKey key;
@@ -3638,8 +3629,6 @@ void communicate_entity_modification( const BulkData & mesh ,
   }
 
   std::sort( data.begin() , data.end() );
-
-}
 
 }
 
@@ -3841,7 +3830,7 @@ void BulkData::internal_resolve_shared_modify_delete()
 
   // Erase all sharing communication lists for Destroyed entities:
   for ( EntityCommListInfoVector::const_reverse_iterator
-        i = comm_list().rbegin() ; i != comm_list().rend() ; ++i) {
+        i = internal_comm_list().rbegin() ; i != internal_comm_list().rend() ; ++i) {
     if ( !is_valid(i->entity) ) {
         entity_comm_map_erase( i->key, shared_ghosting() );
     }
@@ -3951,7 +3940,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
   // 2) Owned and modified entities.
 
   for ( EntityCommListInfoVector::const_reverse_iterator
-        i = comm_list().rbegin() ; i != comm_list().rend() ; ++i) {
+        i = internal_comm_list().rbegin() ; i != internal_comm_list().rend() ; ++i) {
 
     Entity entity = i->entity;
 
@@ -5139,7 +5128,7 @@ bool BulkData::should_sort_buckets_by_first_entity_identifier() const
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {
-    EntityCommListInfoVector const& all_comm = comm_list();
+    EntityCommListInfoVector const& all_comm = internal_comm_list();
 
     // Flush previous map
     const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());

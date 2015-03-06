@@ -450,7 +450,7 @@ public:
       const Entity side , unsigned local_side_id ) const;
 
   /** \brief  All entities with communication information. */
-  const EntityCommListInfoVector & comm_list() const { return m_entity_comm_list; }     // CLEANUP: outside of unit tests only used in percept for consistency checks (copied from BulkData) and printing
+  const EntityCommListInfoVector & comm_list() const { return internal_comm_list(); }     // CLEANUP: outside of unit tests only used in percept for consistency checks (copied from BulkData) and printing
 
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
 
@@ -505,8 +505,8 @@ public:
 
   /** \brief  Entity Comm functions that are now moved to BulkData
    */
-  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
-  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }   //CLEANUP: can replace app usage with comm_procs
+  PairIterEntityComm entity_comm_map(const EntityKey & key) const { return internal_entity_comm_map(key); } // CLEANUP: could be replaced by comm_shared_procs outside testing (percept prints all ghostings)
+  PairIterEntityComm entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return internal_entity_comm_map(key,sub); }   //CLEANUP: can replace app usage with comm_procs
 
   STK_DEPRECATED(int entity_comm_map_owner(const EntityKey & key) const); //deprecated on March 2, 2015
 
@@ -696,6 +696,9 @@ public:
 
 protected: //functions
 
+  const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
+  PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
+  PairIterEntityComm internal_entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
   int internal_entity_comm_map_owner(const EntityKey & key) const;
 
   inline entitySharing internal_is_entity_marked(Entity entity) const;
@@ -860,6 +863,22 @@ protected: //functions
 
 private: //functions
 
+  struct EntityParallelState {
+    int                 from_proc;
+    EntityState         state;
+    EntityCommListInfo  comm_info;
+    const BulkData* mesh;
+
+    bool operator<(const EntityParallelState& rhs) const
+    { return EntityLess(*mesh)(comm_info.entity, rhs.comm_info.entity); }
+  };
+
+  void communicate_entity_modification( const BulkData & mesh ,
+                                        const bool shared ,
+                                        std::vector<EntityParallelState > & data );
+  bool pack_entity_modification( const BulkData & mesh ,
+                                 const bool packShared ,
+                                 stk::CommSparse & comm );
 
   // Only to be called from add_node_sharing
   void protect_orphaned_node(Entity entity)
