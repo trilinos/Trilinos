@@ -213,41 +213,6 @@ public:
     re_ += src;
   }
 
-  KOKKOS_INLINE_FUNCTION void atomic_add (const complex<RealType>& x) volatile {
-    // We can do the atomic update of a complex number componentwise,
-    // since the components don't interact in an add operation.  This
-    // does NOT work for dd_real!
-    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-    ::Kokkos::atomic_add(this,x);
-    #else
-    ::Kokkos::atomic_add (&re_, x.real ());
-    ::Kokkos::atomic_add (&im_, x.imag ());
-    #endif
-  }
-
-  KOKKOS_INLINE_FUNCTION void atomic_assign (const complex<RealType>& x) volatile {
-    /*The following text is wrong. Atomic operations only guarantee that each operation
-    actually takes effect: it does not guarantee any order. As a consequence the
-    component wise assignment would potentially end up with the real and imaginary part
-    coming from different assignments.*/
-    // We can do atomic assignment componentwise, because atomics only
-    // promise that a sequence of atomic operations, once complete,
-    // will eventually reach the value it would have reached after
-    // executing them sequentially.  Thus, intermediate results might
-    // be out of order, but the final result is the same as if the
-    // operations had been executed sequentially.
-    //
-    // The one problem is if we mix atomic_add and atomic_assign.
-    // Those operations do not commute with each other, so we cannot
-    // mix them and expect to get the same answer if the order of
-    // operations changes.
-    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-      ::Kokkos::atomic_assign(this,x);
-    #else
-      *this = x;
-    #endif
-  }
-
   KOKKOS_INLINE_FUNCTION
   complex<RealType>& operator -= (const complex<RealType>& src) {
     re_ -= src.re_;
@@ -505,28 +470,82 @@ KOKKOS_INLINE_FUNCTION void
 atomic_add (volatile ::Kokkos::complex<double>* const dest,
             const ::Kokkos::complex<double> src)
 {
-  dest->atomic_add (src);
+  // We can do the atomic update of a complex number componentwise,
+  // since the components don't interact in an add operation.  This
+  // does NOT work for dd_real!
+  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+  ::Kokkos::atomic_add(dest,src);
+  #else
+  ::Kokkos::atomic_add (&dest->real(), src.real ());
+  ::Kokkos::atomic_add (&dest->imag(), src.imag ());
+  #endif  dest->atomic_add (src);
 }
 
 KOKKOS_INLINE_FUNCTION void
 atomic_add (volatile ::Kokkos::complex<float>* const dest,
             const ::Kokkos::complex<float> src)
 {
-  dest->atomic_add (src);
+  // We can do the atomic update of a complex number componentwise,
+  // since the components don't interact in an add operation.  This
+  // does NOT work for dd_real!
+  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+  ::Kokkos::atomic_add(dest,src);
+  #else
+  ::Kokkos::atomic_add (&dest->real(), src.real ());
+  ::Kokkos::atomic_add (&dest->imag(), src.imag ());
+  #endif  dest->atomic_add (src);
 }
 
 KOKKOS_INLINE_FUNCTION void
 atomic_assign (volatile ::Kokkos::complex<double>* const dest,
                const ::Kokkos::complex<double> src)
 {
-  dest->atomic_assign (src);
+  /*The following text is wrong. Atomic operations only guarantee that each operation
+  actually takes effect: it does not guarantee any order. As a consequence the
+  component wise assignment would potentially end up with the real and imaginary part
+  coming from different assignments.*/
+  // We can do atomic assignment componentwise, because atomics only
+  // promise that a sequence of atomic operations, once complete,
+  // will eventually reach the value it would have reached after
+  // executing them sequentially.  Thus, intermediate results might
+  // be out of order, but the final result is the same as if the
+  // operations had been executed sequentially.
+  //
+  // The one problem is if we mix atomic_add and atomic_assign.
+  // Those operations do not commute with each other, so we cannot
+  // mix them and expect to get the same answer if the order of
+  // operations changes.
+  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+    ::Kokkos::atomic_assign(dest,src);
+  #else
+    *dest = src;
+  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
 atomic_assign (volatile ::Kokkos::complex<float>* const dest,
                const ::Kokkos::complex<float> src)
 {
-  dest->atomic_assign (src);
+  /*The following text is wrong. Atomic operations only guarantee that each operation
+  actually takes effect: it does not guarantee any order. As a consequence the
+  component wise assignment would potentially end up with the real and imaginary part
+  coming from different assignments.*/
+  // We can do atomic assignment componentwise, because atomics only
+  // promise that a sequence of atomic operations, once complete,
+  // will eventually reach the value it would have reached after
+  // executing them sequentially.  Thus, intermediate results might
+  // be out of order, but the final result is the same as if the
+  // operations had been executed sequentially.
+  //
+  // The one problem is if we mix atomic_add and atomic_assign.
+  // Those operations do not commute with each other, so we cannot
+  // mix them and expect to get the same answer if the order of
+  // operations changes.
+  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
+    ::Kokkos::atomic_assign(dest,src);
+  #else
+    *dest = src;
+  #endif
 }
 
 } // namespace Kokkos
