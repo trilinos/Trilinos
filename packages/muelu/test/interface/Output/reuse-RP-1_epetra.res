@@ -1,1 +1,1 @@
-Caught exception: Reuse type "PR" requires "repartition: rebalance P and R" set to false
+Caught exception: Reuse types "tP" and "PR" require "repartition: rebalance P and R" set to "false"
