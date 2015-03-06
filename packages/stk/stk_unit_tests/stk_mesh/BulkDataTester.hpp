@@ -167,17 +167,17 @@ public:
 
     const EntityCommListInfoVector & my_internal_comm_list() const
     {
-        return comm_list();
+        return internal_comm_list();
     }
 
     PairIterEntityComm my_internal_entity_comm_map(const EntityKey & key) const
     {
-        return entity_comm_map(key);
+        return internal_entity_comm_map(key);
     }
 
     PairIterEntityComm my_internal_entity_comm_map(const EntityKey & key, const Ghosting & sub) const
     {
-        return entity_comm_map(key, sub);
+        return internal_entity_comm_map(key, sub);
     }
 };
 

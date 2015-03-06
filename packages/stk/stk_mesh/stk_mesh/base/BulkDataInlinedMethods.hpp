@@ -427,7 +427,7 @@ bool BulkData::in_receive_ghost( EntityKey key ) const
 {
   // Ghost communication with owner.
   const int owner_rank = internal_entity_comm_map_owner(key);
-  PairIterEntityComm ec = entity_comm_map(key);
+  PairIterEntityComm ec = internal_entity_comm_map(key);
   return !ec.empty() && ec.front().ghost_id != 0 &&
          ec.front().proc == owner_rank;
 }
@@ -444,7 +444,7 @@ bool BulkData::in_send_ghost( EntityKey key) const
 {
   // Ghost communication with non-owner.
   const int owner_rank = internal_entity_comm_map_owner(key);
-  PairIterEntityComm ec = entity_comm_map(key);
+  PairIterEntityComm ec = internal_entity_comm_map(key);
   return ! ec.empty() && ec.back().ghost_id != 0 &&
     ec.back().proc != owner_rank;
 }

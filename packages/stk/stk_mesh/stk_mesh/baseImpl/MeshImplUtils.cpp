@@ -470,7 +470,7 @@ void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
                                                 bool&                  bad_comm)
 {
   const EntityKey key = mesh.entity_key(entity);
-  const PairIterEntityComm ec = mesh.entity_comm_map(key);
+  const PairIterEntityComm ec = mesh.internal_entity_comm_map(key);
   const unsigned ec_size = ec.size();
   std::vector<unsigned> ec_idx_shared;
   std::vector<unsigned> ec_idx_not_shared;
@@ -663,7 +663,7 @@ void unpack_not_owned_verify_report_errors(const BulkData& mesh,
               << ")" << std::endl ;
   }
   else if ( bad_comm ) {
-    const PairIterEntityComm ec = mesh.entity_comm_map(key);
+    const PairIterEntityComm ec = mesh.internal_entity_comm_map(key);
     if ( mesh.in_shared( key ) ) {
       error_log << " sharing(" ;
       for ( size_t j = 0 ; j < ec.size() &&
@@ -758,7 +758,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                               std::ostream & error_log )
 {
   const int               p_rank = mesh.parallel_rank();
-  const EntityCommListInfoVector & entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector & entity_comm = mesh.internal_comm_list();
 
 #if (defined(DEBUG_PRINT_COMM_LIST)  && defined(DEBUG_PRINT_COMM_LIST_UNPACK))
   par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");
@@ -873,7 +873,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
 void pack_owned_verify( CommAll & all , const BulkData & mesh )
 {
-  const EntityCommListInfoVector & entity_comm = mesh.comm_list();
+  const EntityCommListInfoVector & entity_comm = mesh.internal_comm_list();
   const int p_rank = all.parallel_rank();
 
   for ( EntityCommListInfoVector::const_iterator
@@ -884,7 +884,7 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
       std::vector<int> share_procs ;
       std::vector<int> ghost_procs ;
 
-      const PairIterEntityComm comm = mesh.entity_comm_map(i->key);
+      const PairIterEntityComm comm = mesh.internal_entity_comm_map(i->key);
 
       for ( size_t j = 0 ; j < comm.size() ; ++j ) {
         if ( comm[j].ghost_id == stk::mesh::BulkData::SHARED ) {
@@ -963,10 +963,9 @@ void pack_owned_verify( CommAll & all , const BulkData & mesh )
   }
 }
 
-namespace {
 bool ordered_comm(const BulkData& bulk, const Entity entity )
 {
-  const PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entity));
+  const PairIterEntityComm ec = bulk.internal_entity_comm_map(bulk.entity_key(entity));
   const size_t n = ec.size();
   for ( size_t i = 1 ; i < n ; ++i ) {
     if ( ! ( ec[i-1] < ec[i] ) ) {
@@ -974,7 +973,6 @@ bool ordered_comm(const BulkData& bulk, const Entity entity )
     }
   }
   return true ;
-}
 }
 
 void printConnectivityOfRank(BulkData& M, Entity entity, stk::topology::rank_t connectedRank, std::ostream & error_log)
@@ -1111,7 +1109,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
       }
 
       error_log<<"comm(";
-      PairIterEntityComm ip = M.entity_comm_map(M.entity_key(entity));
+      PairIterEntityComm ip = M.internal_entity_comm_map(M.entity_key(entity));
       for ( ; ! ip.empty() ; ++ip ) {
         error_log << " ghost_id=" << ip->ghost_id << ":proc=" << ip->proc ;
       }
@@ -1129,10 +1127,10 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
   std::vector<int> sharing_procs;
   std::vector<int> aura_procs;
   for ( EntityCommListInfoVector::const_iterator
-        i =  M.comm_list().begin() ;
-        i != M.comm_list().end() ; ++i ) {
+        i =  M.internal_comm_list().begin() ;
+        i != M.internal_comm_list().end() ; ++i ) {
 
-    const PairIterEntityComm ec = M.entity_comm_map(i->key);
+    const PairIterEntityComm ec = M.internal_entity_comm_map(i->key);
 
     if ( ec.empty() ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
@@ -1178,9 +1176,9 @@ bool verify_parallel_attributes_comm_list_info( BulkData & M , size_t comm_count
     }
   }
 
-  if ( M.comm_list().size() != comm_count ) {
+  if ( M.internal_comm_list().size() != comm_count ) {
     error_log << __FILE__ << ":" << __LINE__ << ": ";
-    error_log << " ERROR: entity_comm.size() = " << M.comm_list().size();
+    error_log << " ERROR: entity_comm.size() = " << M.internal_comm_list().size();
     error_log << " != " << comm_count << " = entities with comm info" ;
     error_log << std::endl ;
     result = false ;
@@ -1309,8 +1307,8 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
 void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh )
 {
   for ( EntityCommListInfoVector::const_reverse_iterator
-        i =  mesh.comm_list().rbegin() ;
-        i != mesh.comm_list().rend() ; ++i) {
+        i =  mesh.internal_comm_list().rbegin() ;
+        i != mesh.internal_comm_list().rend() ; ++i) {
 
     Entity entity = i->entity;
 

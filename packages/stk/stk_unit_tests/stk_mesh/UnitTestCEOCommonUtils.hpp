@@ -283,12 +283,7 @@ inline bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const
             << "that we do not own" << std::endl;
       }
       std::vector<int> meshProcs;
-      for ( PairIterEntityComm ec = mesh.entity_comm_map(entityKey); ! ec.empty() ; ++ec ) {
-        if ( ec->ghost_id == 1 ) {
-          meshProcs.push_back(ec->proc);
-        }
-      }
-      std::sort(meshProcs.begin(), meshProcs.end());
+      mesh.comm_procs(mesh.aura_ghosting(), entityKey, meshProcs);
 
       bool lists_match = true;
       if (meshProcs.size() != expectedProcs.size()) {
@@ -322,11 +317,12 @@ inline bool check_state(const stk::mesh::unit_test::BulkDataTester & mesh, const
       if (!expectedProcs.empty()) {
         oss << "check_state(): Cannot provide processors with STATE_NOT_GHOSTED_TO check." << std::endl;
       }
+      std::vector<int> auraProcs;
+      mesh.comm_procs(mesh.aura_ghosting(), entityKey, auraProcs);
       std::vector<int> meshProcs;
-      for ( PairIterEntityComm ec = mesh.entity_comm_map(entityKey); ! ec.empty() ; ++ec ) {
-        if ( (ec->ghost_id == 1) &&
-             (mesh.parallel_owner_rank(entity) == p_rank) ) {
-          meshProcs.push_back(ec->proc);
+      for ( size_t i=0; i<auraProcs.size(); i++ ) {
+        if (mesh.parallel_owner_rank(entity) == p_rank) {
+          meshProcs.push_back(auraProcs[i]);
         }
       }
 

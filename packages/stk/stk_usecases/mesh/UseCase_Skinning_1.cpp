@@ -125,12 +125,14 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
       stk::mesh::Entity const *rel_nodes_iter = mesh.begin_nodes(middle_element);
       stk::mesh::Entity const *rel_nodes_end = mesh.end_nodes(middle_element);
 
+      std::vector<int> commProcs;
       for (; rel_nodes_iter != rel_nodes_end; ++rel_nodes_iter) {
         stk::mesh::Entity current_node = *rel_nodes_iter;
         //each node should be attached to only 1 element and 3 faces
         correct_relations &= ( mesh.count_relations(current_node) == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= ( mesh.entity_comm_map(mesh.entity_key(current_node)).size() == 0 );
+        mesh.comm_procs(mesh.entity_key(current_node), commProcs);
+        correct_comm      &= ( commProcs.size() == 0 );
       }
     }
     passed &= (correct_skin && correct_relations && correct_comm);

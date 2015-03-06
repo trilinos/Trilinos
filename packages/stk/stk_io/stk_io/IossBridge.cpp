@@ -1326,13 +1326,11 @@ namespace stk {
           std::vector<mesh::Entity> entities;
           get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), entities);
 
+          std::vector<int> sharingProcs;
           size_t size = 0;
           for (size_t i=0; i < entities.size(); i++) {
-            for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
-              if (ec->ghost_id == 0) {
-                size++;
-              }
-            }
+            bulk.comm_shared_procs(bulk.entity_key(entities[i]), sharingProcs);
+            size+=sharingProcs.size();
           }
 
           Ioss::DatabaseIO *dbo = io_region.get_database();
@@ -1805,12 +1803,12 @@ namespace stk {
           std::vector<INT> ep;
           ep.reserve(size*2);
 
+          std::vector<int> sharingProcs;
           for (size_t i=0; i < entities.size(); i++) {
-            for ( stk::mesh::PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entities[i])); ! ec.empty() ; ++ec ) {
-              if (ec->ghost_id == 0) {
-                ep.push_back(bulk.identifier(entities[i]));
-                ep.push_back(ec->proc);
-              }
+            bulk.comm_shared_procs(bulk.entity_key(entities[i]), sharingProcs);
+            for ( size_t j=0; j<sharingProcs.size(); j++ ) {
+              ep.push_back(bulk.identifier(entities[i]));
+              ep.push_back(sharingProcs[j]);
             }
           }
           io_cs->put_field_data("entity_processor", ep);
