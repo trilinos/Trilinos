@@ -3389,6 +3389,117 @@ namespace {
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
+  // Exercise getVector, subView(Range1D) and subCopy(Range1D) where
+  // some processes have zero rows.  Contributed by Andrew Bradley.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SubView, LO, GO, ST, Node )
+  {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Vector<ST, LO, GO, Node> V;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
+
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+    std::ostringstream errStrm; // for error collection
+
+    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+    // Create a Map that puts everything on Process 0 and nothing on the other processes.
+    const Tpetra::global_size_t gblNumInds = 10;
+    const size_t lclNumInds = (myRank == 0) ? 10 : 0;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (gblNumInds, lclNumInds, indexBase, comm));
+    // Create a MultiVector with this Map.
+    MV mv (map, 2);
+
+    // Now try to access using getVector(i).
+    RCP<const V> v0, v1;
+    try {
+      v0 = mv.getVector (0);
+      v1 = mv.getVector (1);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVector(?) threw exception: " << e.what () << endl;
+    }
+    // Make sure that no process threw an exception.
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "getVector FAILED on one or more processes!" << endl;
+      for (int p = 0; p < numProcs; ++p) {
+        if (myRank == p && lclSuccess != 1) {
+          // 'out' only prints on Process 0.  It's really not OK for
+          // other processes to print to stdout, but it usually works
+          // and we need to do it for debugging.
+          std::cout << errStrm.str () << std::flush;
+        }
+        comm->barrier (); // wait for output to finish
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing
+    }
+
+    Teuchos::Range1D r (0, 1);
+    RCP<const MV> mv_sv;
+    try {
+      mv_sv = mv.subView (r);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView(Range1D(0,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    // Make sure that no process threw an exception.
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "subView(Range1D(0,1)) FAILED on one or more processes!" << endl;
+      for (int p = 0; p < numProcs; ++p) {
+        if (myRank == p && lclSuccess != 1) {
+          // 'out' only prints on Process 0.  It's really not OK for
+          // other processes to print to stdout, but it usually works
+          // and we need to do it for debugging.
+          std::cout << errStrm.str () << std::flush;
+        }
+        comm->barrier (); // wait for output to finish
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing
+    }
+
+    // Test subCopy (which reportedly has the same issue as subView).
+    RCP<const MV> mv_sc;
+    try {
+      mv_sc = mv.subCopy (r);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subCopy(Range1D(0,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    // Make sure that no process threw an exception.
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "subCopy(Range1D(0,1)) FAILED on one or more processes!" << endl;
+      for (int p = 0; p < numProcs; ++p) {
+        if (myRank == p && lclSuccess != 1) {
+          // 'out' only prints on Process 0.  It's really not OK for
+          // other processes to print to stdout, but it usually works
+          // and we need to do it for debugging.
+          std::cout << errStrm.str () << std::flush;
+        }
+        comm->barrier (); // wait for output to finish
+        comm->barrier ();
+        comm->barrier ();
+      }
+      return; // no sense in continuing
+    }
+  }
 
 //
 // INSTANTIATIONS
@@ -3427,7 +3538,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubView           , LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
