@@ -7,6 +7,11 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
+#include "crs_team_view.hpp"
+
+#include "sequential_for.hpp"
+#include "team_factory.hpp"
+
 #include "ichol.hpp"
 
 using namespace std;
@@ -15,31 +20,31 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-typedef Kokkos::OpenMP space_type; 
+typedef Kokkos::OpenMP space_type;
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+using namespace Example;
 
-typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef Example::Uplo Uplo;
-typedef Example::AlgoIChol AlgoIChol;
+typedef TeamFactory<TeamPolicy,TeamThreadLoopRegion> TeamFactoryType;
+typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
 
-using Example::IChol;
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
 int main (int argc, char *argv[]) {
   if (argc < 3) {
     cout << "Usage: " << argv[0] << " filename" << " blksize" << endl;
     return -1;
   }
-  
+
   Kokkos::initialize();
   cout << "Default execution space initialized = "
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
-  
-  CrsMatrixBase AA("AA");
-  
+
+  CrsMatrixBaseType AA("AA");
+
   ifstream in;
   in.open(argv[1]);
   if (!in.good()) {
@@ -49,28 +54,32 @@ int main (int argc, char *argv[]) {
   AA.importMatrixMarket(in);
   cout << AA << endl;
 
-  GraphHelper S(AA);
+  GraphHelperType S(AA);
   S.computeOrdering();
 
-  CrsMatrixBase PA("Permuted AA");
+  CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
-  
-  CrsMatrixBase UU("Upper Triangular of AA");
+
+  CrsMatrixBaseType UU("Upper Triangular of AA");
   UU.copy(Uplo::Upper, PA);
-  
-  CrsMatrixView U(UU);
-  
-  IChol<Uplo::Upper,AlgoIChol::RightBlocked>::blocksize = atoi(argv[2]);
-  
-  int r_val = 0;
-  //r_val = IChol<Uplo::Upper,AlgoIChol::RightBlocked>::invoke(U);
-  IChol<Uplo::Upper,AlgoIChol::RightBlocked>::TaskFunctor<CrsMatrixView>(U).apply(r_val);
-  if (r_val != 0) { 
-    cout << " Error = " << r_val << endl;
-    return r_val;
+
+  CrsTeamViewType U(UU);
+
+  {
+    IChol<Uplo::Upper,AlgoIChol::RightBlocked>::blocksize = atoi(argv[2]);
+
+    int r_val = 0;
+    typedef typename CrsTeamViewType::policy_type::member_type member_type;
+
+    IChol<Uplo::Upper,AlgoIChol::RightBlocked>
+      ::TaskFunctor<CrsTeamViewType,SequentialFor>(U).apply(member_type(), r_val);
+
+    if (r_val != 0) {
+      cout << " Error = " << r_val << endl;
+      return r_val;
+    }
+    cout << UU << endl;
   }
-  
-  cout << UU << endl;
 
   Kokkos::finalize();
 

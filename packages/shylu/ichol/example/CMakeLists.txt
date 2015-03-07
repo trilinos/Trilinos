@@ -114,6 +114,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  ichol_right_blocked
+  SOURCES ichol_right_blocked.cpp
+  COMM serial mpi
+  )
+
 #TRIBITS_ADD_EXECUTABLE(
 #  ichol_strong_scale
 #  SOURCES ichol_strong_scale.cpp
