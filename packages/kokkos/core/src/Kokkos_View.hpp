@@ -493,6 +493,8 @@ public:
   /** return type for all indexing operators */
   typedef typename view_data_management::return_type reference_type ;
 
+  enum { reference_type_is_lvalue = view_data_management::ReturnTypeIsReference };
+
   typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
@@ -1556,7 +1558,7 @@ namespace Kokkos {
 
 struct ALL { KOKKOS_INLINE_FUNCTION ALL(){} };
 
-template< class DstViewType ,
+/*template< class DstViewType ,
           class T , class L , class D , class M , class S ,
           class ArgType0 >
 KOKKOS_INLINE_FUNCTION
@@ -1706,7 +1708,7 @@ subview( const View<T,L,D,M,S> & src ,
   Impl::ViewAssignment<typename DstViewType::specialize,S>( dst, src, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
 
   return dst ;
-}
+}*/
 
 } // namespace Kokkos
 
