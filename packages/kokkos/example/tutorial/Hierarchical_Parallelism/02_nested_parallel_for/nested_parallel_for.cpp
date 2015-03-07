@@ -59,7 +59,7 @@ struct hello_world {
     // All three Kokkos parallel patterns are allowed (for, reduce, scan) and they
     // largely follow the same syntax as on the global level.
     // The execution policy for the Thread level nesting (the Vector level is in the next
-    // tutorial example) is Kokkos::TeamThreadLoop. This means the loop will be executed
+    // tutorial example) is Kokkos::TeamThreadRange. This means the loop will be executed
     // by all members of the team and the loop count will be split between threads of the
     // team. Its arguments are the team_member, and a loop count.
     // Not every thread will do the same amount of iterations. On a GPU for example with
@@ -71,7 +71,7 @@ struct hello_world {
     // operator using a team_policy acts like a parallel region for the team. That means
     // that everything outside of the nested parallel_for is also executed by all threads
     // of the team.
-    Kokkos::parallel_for(Kokkos::TeamThreadLoop(thread,31), [&] (const int& i) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(thread,31), [&] (const int& i) {
        printf("Hello World: (%i , %i) executed loop %i \n",thread.league_rank(),thread.team_rank(),i);
     });
   }
