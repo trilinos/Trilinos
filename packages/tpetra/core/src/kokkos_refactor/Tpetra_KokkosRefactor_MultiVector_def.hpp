@@ -2936,29 +2936,56 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::rcp;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
-    const char prefix[] = "Tpetra::MultiVector::subView(Range1D): ";
+    const char tfecfFuncName[] = "subView(Range1D): ";
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      colRng.size() == 0, std::runtime_error, prefix << "Range must include "
-      "at least one vector.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (colRng.size ()) > this->getNumVectors (),
-      std::runtime_error, prefix << "colRng.size() = " << colRng.size ()
-      << " > this->getNumVectors() = " << this->getNumVectors () << ".");
+    const size_t numVecs = this->getNumVectors ();
+    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    //   colRng.size() == 0, std::runtime_error, prefix << "Range must include "
+    //   "at least one vector.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (colRng.size ()) > numVecs, std::runtime_error,
+      "colRng.size() = " << colRng.size () << " > this->getNumVectors() = "
+      << numVecs << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      numVecs > 0 && colRng.size () > 0 && (colRng.lbound () < 0 || colRng.ubound () >= numVecs),
+      std::invalid_argument, "Nonempty input range [" << colRng.lbound () <<
+      "," << colRng.ubound () << "] exceeds the valid range of column indices "
+      "[0, " << numVecs << "].");
 
-    // resulting MultiVector is constant stride only if *this is
-    if (isConstantStride ()) {
-      // view goes from first entry of first vector to last entry of last vector
-      std::pair<size_t, size_t> cols (colRng.lbound (), colRng.ubound () + 1);
-      return rcp (new MV (this->getMap (),
-                          subview<dual_view_type> (view_, ALL (), cols),
-                          origView_));
+    // FIXME (mfh 07 Mar 2015) The commented-out subview() invocations
+    // using ALL() don't work when some processes have zero rows, but
+    // the enabled code does work.
+    const std::pair<size_t, size_t> rows (0, this->getLocalLength ());
+    if (colRng.size () == 0) {
+      const std::pair<size_t, size_t> cols (0, 0); // empty range
+      //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), cols);
+      dual_view_type X_sub = subview<dual_view_type> (view_, rows, cols);
+      return rcp (new MV (this->getMap (), X_sub, origView_));
     }
     else {
-      // otherwise, use a subset of this whichVectors_ to construct new multivector
-      Array<size_t> which (whichVectors_.begin () + colRng.lbound (),
-                           whichVectors_.begin () + colRng.ubound () + 1);
-      return rcp (new MV (this->getMap (), view_, origView_, which));
+      // resulting MultiVector is constant stride only if *this is
+      if (isConstantStride ()) {
+        const std::pair<size_t, size_t> cols (colRng.lbound (), colRng.ubound () + 1);
+        //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), cols);
+        dual_view_type X_sub = subview<dual_view_type> (view_, rows, cols);
+        return rcp (new MV (this->getMap (), X_sub, origView_));
+      }
+      else {
+        if (colRng.size () == 1) {
+          // We're only asking for one column, so the result does have
+          // constant stride, even though this MultiVector does not.
+          const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
+                                               whichVectors_[0] + colRng.ubound () + 1);
+          //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), col);
+          dual_view_type X_sub = subview<dual_view_type> (view_, rows, col);
+          return rcp (new MV (this->getMap (), X_sub, origView_));
+        }
+        else {
+          Array<size_t> which (whichVectors_.begin () + colRng.lbound (),
+                               whichVectors_.begin () + colRng.ubound () + 1);
+          return rcp (new MV (this->getMap (), view_, origView_, which));
+        }
+      }
     }
   }
 
