@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY( & X(0,0) , & X_view(0,0) );
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   // will implement Tpetra::MultiVector methods like get2dView.
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.dimension_1 ());
   for (size_t j = 0; j < static_cast<size_t> (X_view.dimension_1 ()); ++j) {
-    ka_view_type X_j = Kokkos::subview<ka_view_type> (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
+    ka_view_type X_j = Kokkos::subview (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
     TEST_EQUALITY( & X_view(0,j) , & X_j(0,0) );
     TEST_EQUALITY(static_cast<size_t>(X_j.dimension_0()), numRows);
     TEST_EQUALITY_CONST(X_j.dimension_1(), 1);
@@ -360,7 +360,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   const size_t ZERO = static_cast<size_t> (0);
 
   ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
