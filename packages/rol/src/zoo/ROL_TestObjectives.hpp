@@ -57,6 +57,7 @@
 #include "ROL_LeastSquares.hpp"
 #include "ROL_PoissonControl.hpp"
 #include "ROL_PoissonInversion.hpp"
+#include "ROL_Zakharov.hpp"
 
 #include "ROL_HS1.hpp"
 #include "ROL_HS2.hpp"
@@ -87,6 +88,7 @@ namespace ROL {
       case TESTOBJECTIVES_LEASTSQUARES:        ZOO::getLeastSquares(obj,x0,x);     break; 
       case TESTOBJECTIVES_POISSONCONTROL:      ZOO::getPoissonControl(obj,x0,x);   break;
       case TESTOBJECTIVES_POISSONINVERSION:    ZOO::getPoissonInversion(obj,x0,x); break;
+      case TESTOBJECTIVES_ZAKHAROV:            ZOO::getZakharov(obj,x0,x);         break; 
       case TESTOBJECTIVES_LAST:                break;
     }
   }
