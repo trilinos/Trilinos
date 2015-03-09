@@ -20,9 +20,9 @@ namespace Example {
              typename ParallelForType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member,
-                      const ScalarType &alpha,
+                      const ScalarType alpha,
                       const CrsExecViewType &A,
-                      const ScalarType &beta,
+                      const ScalarType beta,
                       const CrsExecViewType &C);
 
     // task-data parallel interface

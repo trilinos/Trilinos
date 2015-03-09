@@ -21,7 +21,7 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member,
                       const int diag,
-                      const ScalarType &alpha,
+                      const ScalarType alpha,
                       const CrsExecViewType &A,
                       const CrsExecViewType &B);
 

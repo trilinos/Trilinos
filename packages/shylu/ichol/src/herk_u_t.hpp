@@ -19,9 +19,9 @@ namespace Example {
   Herk<Uplo::Upper,Trans::ConjTranspose,
        AlgoHerk::ForRightBlocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
-           const ScalarType &alpha,
+           const ScalarType alpha,
            const CrsExecViewType &A,
-           const ScalarType &beta,
+           const ScalarType beta,
            const CrsExecViewType &C) {
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::value_type        value_type;

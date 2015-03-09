@@ -21,7 +21,7 @@ namespace Example {
        AlgoTrsm::ForRightBlocked>
   ::invoke(const typename CrsExecViewType::policy_type::member_type &member,
            const int diag,
-           const ScalarType &alpha,
+           const ScalarType alpha,
            const CrsExecViewType &A,
            const CrsExecViewType &B) {
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;

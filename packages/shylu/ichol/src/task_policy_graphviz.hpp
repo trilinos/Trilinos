@@ -73,8 +73,15 @@ namespace Example {
   
   class TaskPolicy : public Disp {
   public:
+    typedef class TeamThreadMember member_type;
+
     template<typename TaskFunctorType> 
     Future create(const TaskFunctorType &func, const int dep_size) {
+      return Future(new Task(func.Label()));
+    }
+
+    template<typename TaskFunctorType> 
+    Future create_team(const TaskFunctorType &func, const int dep_size) {
       return Future(new Task(func.Label()));
     }
     

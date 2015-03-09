@@ -82,6 +82,6 @@ namespace Example {
 #include "ichol_right_blocked.hpp"
 
 // task / task-data parallel
-//#include "ichol_right_by_blocks.hpp"
+#include "ichol_right_by_blocks.hpp"
 
 #endif
