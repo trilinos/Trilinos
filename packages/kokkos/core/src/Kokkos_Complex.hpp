@@ -486,6 +486,7 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
   return os;
 }
 
+#if defined(KOKKOS_HAVE_CXX11) || defined(__CUDA_ARCH__)
 KOKKOS_INLINE_FUNCTION void
 atomic_add (volatile ::Kokkos::complex<double>* const dest,
             const ::Kokkos::complex<double> src)
@@ -493,12 +494,8 @@ atomic_add (volatile ::Kokkos::complex<double>* const dest,
   // We can do the atomic update of a complex number componentwise,
   // since the components don't interact in an add operation.  This
   // does NOT work for dd_real!
-  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-  ::Kokkos::atomic_add(dest,src);
-  #else
   ::Kokkos::atomic_add (&dest->real(), src.real ());
   ::Kokkos::atomic_add (&dest->imag(), src.imag ());
-  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
@@ -508,12 +505,8 @@ atomic_add (volatile ::Kokkos::complex<float>* const dest,
   // We can do the atomic update of a complex number componentwise,
   // since the components don't interact in an add operation.  This
   // does NOT work for dd_real!
-  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-  ::Kokkos::atomic_add(dest,src);
-  #else
   ::Kokkos::atomic_add (&dest->real(), src.real ());
   ::Kokkos::atomic_add (&dest->imag(), src.imag ());
-  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
@@ -535,11 +528,7 @@ atomic_assign (volatile ::Kokkos::complex<double>* const dest,
   // Those operations do not commute with each other, so we cannot
   // mix them and expect to get the same answer if the order of
   // operations changes.
-  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-    ::Kokkos::atomic_assign(dest,src);
-  #else
     *dest = src;
-  #endif
 }
 
 KOKKOS_INLINE_FUNCTION void
@@ -561,12 +550,9 @@ atomic_assign (volatile ::Kokkos::complex<float>* const dest,
   // Those operations do not commute with each other, so we cannot
   // mix them and expect to get the same answer if the order of
   // operations changes.
-  #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-    ::Kokkos::atomic_assign(dest,src);
-  #else
     *dest = src;
-  #endif
 }
+#endif
 
 } // namespace Kokkos
 
