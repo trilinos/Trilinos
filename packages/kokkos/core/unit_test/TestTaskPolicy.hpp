@@ -383,13 +383,8 @@ struct TaskTeam {
         return ;
       }
 
-<<<<<<< HEAD
-      Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
-                          , [&]( int i ) { result[i] = i + 1 ; }
-=======
       Kokkos::parallel_for( Kokkos::TeamThreadRange(member,begin,end)
-                          , [&]( int i ) { result[i] = i < 2 ? i : result[i-1] + result[i-2]; }
->>>>>>> Kokkos: Code CleanUp for release: Renamed [TeamThreadVector]Loop to Range
+                          , [&]( int i ) { result[i] = i + 1 ; }
                           );
     }
 };
