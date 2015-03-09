@@ -115,17 +115,18 @@ namespace panzer_stk_classic {
 
     /** \brief Builds the model evaluators for a panzer assembly
         
-	\param[in] comm (Required) Teuchos communicator.  Must be non-null.
-	\param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
-	\param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
-	\param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
-	\param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
+        \param[in] comm (Required) Teuchos communicator.  Must be non-null.
+        \param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
+        \param[in] eqset_factory (Required) Equation set factory to provide user defined equation sets.
+        \param[in] bc_factory (Required) Boundary condition factory to provide user defined boundary conditions.
+        \param[in] cm_factory (Required) Closure model factory to provide user defined closure models.
     */
     void buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-		      const Teuchos::RCP<panzer::GlobalData>& global_data,
+                      const Teuchos::RCP<panzer::GlobalData>& global_data,
                       const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                       const panzer::BCStrategyFactory & bc_factory,
-		      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory);
+                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                      bool meConstructionOn=true);
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
@@ -147,8 +148,8 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > 
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
-				    const Teuchos::RCP<panzer::GlobalData>& global_data,
-				    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
+                                    const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                    const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
                     const Teuchos::Ptr<const panzer_stk_classic::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
                     const Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
@@ -222,11 +223,11 @@ namespace panzer_stk_classic {
     buildPhysicsModelEvaluator(bool buildThyraME,
                         const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                         const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
-       	 	        const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
-		        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
                         const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
-		        const Teuchos::RCP<panzer::GlobalData> & global_data,
-		        bool is_transient,double t_init) const;
+                        const Teuchos::RCP<panzer::GlobalData> & global_data,
+                        bool is_transient,double t_init) const;
 
 
     bool useDynamicCoordinates() const
@@ -300,7 +301,7 @@ namespace panzer_stk_classic {
      * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
     */
     double getInitialTime(Teuchos::ParameterList& transient_ic_params,
-			  const panzer_stk_classic::STK_Interface& mesh) const;
+                          const panzer_stk_classic::STK_Interface& mesh) const;
 
     /**
       */
