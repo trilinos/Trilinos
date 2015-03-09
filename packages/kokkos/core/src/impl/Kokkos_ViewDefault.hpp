@@ -2162,7 +2162,7 @@ private:
   // otherwise use the source view's execution space.
 
   typedef typename Impl::if_c< Impl::is_space< SrcArg1Type >::value , SrcArg1Type ,
-          typename Impl::if_c< Impl::is_space< SrcArg2Type >::value , SrcArg2Type , typename SrcViewType::execution_space
+          typename Impl::if_c< Impl::is_space< SrcArg2Type >::value , SrcArg2Type , typename SrcViewType::device_type
   >::type >::type OutputSpace ;
 
 public:

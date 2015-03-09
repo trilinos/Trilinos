@@ -122,7 +122,7 @@ private:
 
     const std::pair<unsigned,unsigned> send_range( m_map.count_interior , m_map.count_interior + m_map.count_send );
 
-    vector_type vsend = subview<vector_type>( v , send_range );
+    vector_type vsend = subview( v , send_range );
 
     Impl::DeepCopy<HostSpace,typename Device::memory_space>( m_host_send_buffer.ptr_on_device() ,
                                                              vsend.ptr_on_device() ,
@@ -159,7 +159,7 @@ private:
     const size_t recv_msg_count = m_recv_request.size();
     const std::pair<unsigned,unsigned> recv_range( m_map.count_owned , m_map.count_owned + m_map.count_receive );
 
-    const vector_type vrecv = subview<vector_type>( v , recv_range );
+    const vector_type vrecv = subview( v , recv_range );
 
     // Wait for receives and verify:
 
@@ -290,7 +290,7 @@ void cgsolve(
   // Need input vector to matvec to be owned + received
   vector_type pAll ( "cg::p" , count_total );
 
-  vector_type p = Kokkos::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type p = Kokkos::subview( pAll , std::pair<size_t,size_t>(0,count_owned) );
   vector_type r ( "cg::r" , count_owned );
   vector_type Ap( "cg::Ap", count_owned );
 
