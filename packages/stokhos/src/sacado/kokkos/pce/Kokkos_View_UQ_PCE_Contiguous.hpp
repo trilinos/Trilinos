@@ -2434,6 +2434,17 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R6::begin( arg6 )
                                         , R7::begin( arg7 ) );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , R6::begin( arg6 )
+                        , R7::begin( arg7 ) ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2524,6 +2535,17 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R6::begin( arg6 )
                                         , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , R6::begin( arg6 )
+                        , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2612,6 +2634,17 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , 0
                                         , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2698,6 +2731,17 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , 0
                                         , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , 0
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2781,6 +2825,17 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , 0
                                         , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , 0
+                        , 0
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2852,6 +2907,13 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R2::begin( arg2 )
                                         , 0 , 0 , 0 , 0 , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2919,6 +2981,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                                         , R1::begin( arg1 )
                                         , 0 , 0 , 0 , 0 , 0 , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , 0 , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
@@ -2982,6 +3050,11 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
                         src.m_offset_map( R0::begin( arg0 )
                                         , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
       m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
       m_sacado_size = src.m_sacado_size;
       m_storage_size = src.m_storage_size;
       m_stride = src.m_stride;
