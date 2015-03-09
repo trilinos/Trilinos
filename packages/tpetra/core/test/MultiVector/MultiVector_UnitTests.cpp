@@ -3637,7 +3637,9 @@ namespace {
     typename dual_view_type::t_host X_host =
       X_gbl.template getLocalView<HMS> ();
     X_gbl.template modify<HMS> ();
+
     Kokkos::Impl::ViewFill<typename dual_view_type::t_host> (X_host, THREE);
+    X_gbl.template sync<DMS> ();
 
     // FIXME (mfh 01 Mar 2015) We avoid writing a separate functor to
     // check the contents of X_lcl, by copying to host and checking
@@ -3645,6 +3647,8 @@ namespace {
     // device, by using a parallel_reduce functor.
     typename dual_view_type::t_dev::HostMirror X_lcl_host =
       Kokkos::create_mirror_view (X_lcl);
+    Kokkos::deep_copy(X_lcl_host,X_lcl);
+
     bool same = true;
     for (size_t j = 0; j < numVecs; ++j) {
       for (size_t i = 0; i < numLclRows; ++i) {

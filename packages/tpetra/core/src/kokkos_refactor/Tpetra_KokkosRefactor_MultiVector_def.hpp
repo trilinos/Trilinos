@@ -2967,7 +2967,7 @@ namespace Tpetra {
       if (isConstantStride ()) {
         const std::pair<size_t, size_t> cols (colRng.lbound (), colRng.ubound () + 1);
         //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), cols);
-        dual_view_type X_sub = subview<dual_view_type> (view_, rows, cols);
+        dual_view_type X_sub = subview (view_, rows, cols);
         return rcp (new MV (this->getMap (), X_sub, origView_));
       }
       else {
@@ -2977,7 +2977,7 @@ namespace Tpetra {
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
                                                whichVectors_[0] + colRng.ubound () + 1);
           //dual_view_type X_sub = subview<dual_view_type> (view_, ALL (), col);
-          dual_view_type X_sub = subview<dual_view_type> (view_, rows, col);
+          dual_view_type X_sub = subview (view_, rows, col);
           return rcp (new MV (this->getMap (), X_sub, origView_));
         }
         else {
