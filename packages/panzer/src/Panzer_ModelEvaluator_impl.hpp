@@ -85,7 +85,6 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                bool build_transient_support,
                double t_init)
   : t_init_(t_init)
-  , fmb_(fmb)
   , require_in_args_refresh_(true)
   , require_out_args_refresh_(true)
   , responseLibrary_(rLibrary)
@@ -129,6 +128,45 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   // now that the vector spaces are setup we can allocate the nominal values
   // (i.e. initial conditions)
   initializeNominalValues();
+}
+
+template<typename Scalar>
+panzer::ModelEvaluator<Scalar>::
+ModelEvaluator(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+               const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
+               const Teuchos::RCP<panzer::GlobalData>& global_data,
+               bool build_transient_support,double t_init)
+  : t_init_(t_init)
+  , require_in_args_refresh_(true)
+  , require_out_args_refresh_(true)
+  , global_data_(global_data)
+  , build_transient_support_(build_transient_support)
+  , lof_(lof)
+  , solverFactory_(solverFactory)
+  , oneTimeDirichletBeta_on_(false)
+  , oneTimeDirichletBeta_(0.0)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  TEUCHOS_ASSERT(lof_!=Teuchos::null);
+
+  //
+  // Build x, f spaces
+  //
+  
+  // dynamic cast to blocked LOF for now
+  RCP<const ThyraObjFactory<Scalar> > tof = rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof_,true);
+
+  x_space_ = tof->getThyraDomainSpace();
+  f_space_ = tof->getThyraRangeSpace();
+
+  // now that the vector spaces are setup we can allocate the nominal values
+  // (i.e. initial conditions)
+  initializeNominalValues();
+
+  // allocate a response library so that responses can be added, it will be initialized in "setupModel"
+  responseLibrary_ = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
 }
 
 template<typename Scalar>
@@ -258,6 +296,50 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues()
     nomInArgs.set_p(p,parameters_.initial_values[p]);
 
   nominalValues_ = nomInArgs;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
+           const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+           const std::vector<panzer::BC> & bcs,
+           const panzer::EquationSetFactory & eqset_factory,
+           const panzer::BCStrategyFactory& bc_factory,
+           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& volume_cm_factory,
+           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
+           const Teuchos::ParameterList& closure_models,
+           const Teuchos::ParameterList& user_data,
+           bool writeGraph,const std::string & graphPrefix)
+{
+  // First: build residual assembly engine
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  {
+    // 1. build Field manager builder
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+    fmb->setWorksetContainer(wc);
+    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
+
+    // Print Phalanx DAGs
+    if (writeGraph){
+      fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+    }
+
+    panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
+    ae_tm_.buildObjects(builder);
+  }
+
+  // Second: build the responses
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // responseLibrary_ = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wc,lof_->getUniqueGlobalIndexerBase(),lof_));
+  responseLibrary_->initialize(wc,lof_->getUniqueGlobalIndexerBase(),lof_);
+
+  buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
 }
 
 template <typename Scalar>

@@ -87,6 +87,11 @@ public:
 		 const Teuchos::RCP<panzer::GlobalData>& global_data,
 		 bool build_transient_support,double t_init);
 
+  ModelEvaluator(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+                 const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
+		 const Teuchos::RCP<panzer::GlobalData>& global_data,
+		 bool build_transient_support,double t_init);
+
   /** \brief . */
   ModelEvaluator();
 
@@ -122,6 +127,17 @@ public:
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
 
   //@}
+
+  void setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                  const std::vector<panzer::BC> & bcs,
+                  const panzer::EquationSetFactory & eqset_factory,
+                  const panzer::BCStrategyFactory& bc_factory,
+                  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& volume_cm_factory,
+                  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
+                  const Teuchos::ParameterList& closure_models,
+                  const Teuchos::ParameterList& user_data,
+                  bool writeGraph=false,const std::string & graphPrefix="");
 
   /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
 
@@ -340,7 +356,6 @@ private: // data members
 
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
-  Teuchos::RCP<panzer::FieldManagerBuilder> fmb_;
   mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
 
   // parameters

@@ -101,11 +101,15 @@ namespace panzer {
     RCP<panzer::GlobalData> gd;
     RCP<panzer::LinearObjFactory<panzer::Traits> > lof;
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
-    Teuchos::ParameterList user_data;
+
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    std::vector<panzer::BC> bcs;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
+    Teuchos::RCP<panzer::BCStrategyFactory> bc_factory;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models;
+    Teuchos::ParameterList user_data;
   };
 
   struct RespFactoryFunc_Builder {
@@ -145,10 +149,18 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      //std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
     
-      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      // RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                     ap.closure_models,
+                     ap.user_data,false,"");
 
       InArgs in_args = me->createInArgs();
       OutArgs out_args = me->createOutArgs();
@@ -195,9 +207,10 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      // std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      // RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
  
       RespFactoryFunc_Builder builder;
       builder.comm = MPI_COMM_WORLD;
@@ -208,7 +221,14 @@ namespace panzer {
       blocks.push_back(panzer::blockDescriptor("eblock-0_0"));
       blocks.push_back(panzer::blockDescriptor("eblock-1_0"));
       me->addResponse("TEMPERATURE",blocks,builder);
-      me->buildResponses(ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,ap.closure_models,ap.user_data);
+      // me->buildResponses(ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,ap.closure_models,ap.user_data);
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                     ap.closure_models,
+                     ap.user_data,false,"");
 
       InArgs nomValues = me->getNominalValues();
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
@@ -263,11 +283,20 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-      p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
+      // std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      // p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
 
       bool build_transient_support = false;
-      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      // RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->addParameter("SOURCE_TEMPERATURE");
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                     ap.closure_models,
+                     ap.user_data,false,"");
 
       Teuchos::Array<std::string> params;
       params.push_back("DUMMY_A");
@@ -380,11 +409,20 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-      p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
+      // std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      // p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
 
       bool build_transient_support = false;
-      RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+     //  RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->addParameter("SOURCE_TEMPERATURE");
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                      ap.closure_models,
+                      ap.user_data,false,"");
 
       RCP<Thyra::VectorBase<double> > x = Thyra::createMember(me->get_x_space());
       Thyra::put_scalar(1.0,x.ptr());
@@ -487,11 +525,20 @@ namespace panzer {
     Teuchos::RCP<panzer::LOCPair_GlobalEvaluationData> dataObject;
     RCP<PME> me;
     {
-      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-      p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
+      // std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      // p_names.push_back(Teuchos::rcp(new Teuchos::Array<std::string>(1,"SOURCE_TEMPERATURE")));
 
       bool build_transient_support = false;
-      me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      // me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->addParameter("SOURCE_TEMPERATURE");
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                      ap.closure_models,
+                      ap.user_data,false,"");
 
       // extract the vector space for the distributed parameter
       Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs 
@@ -588,7 +635,14 @@ namespace panzer {
 
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
 
-    me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,true,0.0));
+    me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,true,0.0));
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,
+                   *ap.bc_factory,
+                   ap.cm_factory,
+                   ap.cm_factory,
+                    ap.closure_models,
+                    ap.user_data,false,"");
 
     // setup some initial conditions
     RCP<Thyra::VectorBase<double> > x0     = Thyra::createMember(me->get_x_space());
@@ -849,7 +903,7 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     const std::size_t workset_size = 20;
     ap.eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-    user_app::BCFactory bc_factory;
+    ap.bc_factory = Teuchos::rcp(new user_app::BCFactory);
     ap.gd = panzer::createGlobalData();
     {
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -881,6 +935,7 @@ namespace panzer {
        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,ap.physicsBlocks,workset_size));
+    ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -925,7 +980,7 @@ namespace panzer {
 
     ap.fmb->setWorksetContainer(wkstContainer);
     ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*linObjFactory,ap.user_data);
-    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,closure_models,*linObjFactory,ap.user_data);
+    ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,*ap.bc_factory,closure_models,*linObjFactory,ap.user_data);
   }
 
 
