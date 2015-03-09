@@ -51,35 +51,35 @@ ProductOperator::ProductOperator()
 {}
 
 ProductOperator::ProductOperator(
-        const int                                            num_Op
-        ,const Teuchos::RefCountPtr<const Epetra_Operator>   Op[]
-        ,const Teuchos::ETransp                              Op_trans[]
-        ,const EApplyMode                                    Op_inverse[]
+        const int                                            numOp
+        ,const Teuchos::RefCountPtr<const Epetra_Operator>   op[]
+        ,const Teuchos::ETransp                              opTrans[]
+        ,const EApplyMode                                    opInverse[]
         )
 {
-        initialize(num_Op,Op,Op_trans,Op_inverse);
+        initialize(numOp,op,opTrans,opInverse);
 }
 
 void ProductOperator::initialize(
-        const int                                      num_Op
-        ,const Teuchos::RefCountPtr<const Epetra_Operator>   Op[]
-        ,const Teuchos::ETransp                        Op_trans[]
-        ,const EApplyMode                              Op_inverse[]
+        const int                                  numOp
+        ,const Teuchos::RCP<const Epetra_Operator> op[]
+        ,const Teuchos::ETransp                    opTrans[]
+        ,const EApplyMode                          opInverse[]
         )
 {
 #ifdef _DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
-                num_Op < 1, std::invalid_argument
+                numOp < 1, std::invalid_argument
                 ,"ProductOperator::initialize(...): Error!"
                 );
         // ToDo: Validate maps for operators!
 #endif // _DEBUG
-        Op_.resize(num_Op);
-        Op_trans_.resize(num_Op);
-        Op_inverse_.resize(num_Op);
-        std::copy( Op, Op + num_Op, Op_.begin() );
-        std::copy( Op_trans, Op_trans + num_Op, Op_trans_.begin() );
-        std::copy( Op_inverse, Op_inverse + num_Op, Op_inverse_.begin() );
+        Op_.resize(numOp);
+        Op_trans_.resize(numOp);
+        Op_inverse_.resize(numOp);
+        std::copy( op, op + numOp, Op_.begin() );
+        std::copy( opTrans, opTrans + numOp, Op_trans_.begin() );
+        std::copy( opInverse, opInverse + numOp, Op_inverse_.begin() );
         UseTranspose_ = false;
         // Wipe cache vectors so that they will be reset just to be safe
         range_vecs_.resize(0);
@@ -87,24 +87,24 @@ void ProductOperator::initialize(
 }
 
 void ProductOperator::uninitialize(
-        int                                      *num_Op
-        ,Teuchos::RefCountPtr<const Epetra_Operator>   Op[]
-        ,Teuchos::ETransp                        Op_trans[]
-        ,EApplyMode                              Op_inverse[]
+        int                                  *numOp
+        ,Teuchos::RCP<const Epetra_Operator> op[]
+        ,Teuchos::ETransp                    opTrans[]
+        ,EApplyMode                          opInverse[]
         )
 {
 #ifdef _DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
-                (Op!=NULL || Op_trans!=NULL || Op_inverse!=NULL) && num_Op==NULL
+                (op != NULL || opTrans != NULL || opInverse!=NULL) && numOp==NULL
                 ,std::invalid_argument
                 ,"ProductOperator::uninitialize(...): Error!"
                 );
 #endif // _DEBUG
-        if(num_Op) {
-                *num_Op = Op_.size();
-                if(Op) std::copy( Op_.begin(), Op_.end(), Op );
-                if(Op_trans) std::copy( Op_trans_.begin(), Op_trans_.end(), Op_trans );
-                if(Op_inverse) std::copy( Op_inverse_.begin(), Op_inverse_.end(), Op_inverse );
+        if(numOp) {
+                *numOp = Op_.size();
+                if(op) std::copy( Op_.begin(), Op_.end(), op );
+                if(opTrans) std::copy( Op_trans_.begin(), Op_trans_.end(), opTrans );
+                if(opInverse) std::copy( Op_inverse_.begin(), Op_inverse_.end(), opInverse );
         }
         UseTranspose_ = false;
         Op_.resize(0);
@@ -116,93 +116,92 @@ void ProductOperator::uninitialize(
 
 void ProductOperator::applyConstituent(
         const int                  k
-        ,Teuchos::ETransp          Op_trans
-        ,EApplyMode                Op_inverse
+        ,Teuchos::ETransp          opTrans
+        ,EApplyMode                opInverse
         ,const Epetra_MultiVector  &X_k
         ,Epetra_MultiVector        *Y_k
         ) const
 {
   Epetra_Operator &Op_k = const_cast<Epetra_Operator&>(*Op_[k]); // Okay since we put back UseTranspose!
   bool oldUseTranspose = Op_k.UseTranspose();
-        Op_k.SetUseTranspose((Op_trans==Teuchos::NO_TRANS)!=(Op_trans_[k]==Teuchos::NO_TRANS));
-        const bool applyInverse_k = (Op_inverse==APPLY_MODE_APPLY)!=(Op_inverse_[k]==APPLY_MODE_APPLY);
-        const int err = !applyInverse_k ? Op_[k]->Apply(X_k,*Y_k) :  Op_[k]->ApplyInverse(X_k,*Y_k);
+  Op_k.SetUseTranspose((opTrans==Teuchos::NO_TRANS) != (Op_trans_[k]==Teuchos::NO_TRANS));
+  const bool applyInverse_k = (opInverse==APPLY_MODE_APPLY) != (Op_inverse_[k]==APPLY_MODE_APPLY);
+  const int err = ! applyInverse_k ? Op_[k]->Apply(X_k,*Y_k) : Op_[k]->ApplyInverse(X_k,*Y_k);
   Op_k.SetUseTranspose(oldUseTranspose);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-                err!=0, std::runtime_error
-                ,"ProductOperator::applyConstituent(...): Error, Op["<<k<<"]."
-                <<(!applyInverse_k?"Apply":"ApplyInverse")<<"(...) returned "
-                "err = "<<err<<" with Op["<<k<<"].UseTranspose() = "<<Op_[k]->UseTranspose()<<"!"
-                );
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    err!=0, std::runtime_error, "ProductOperator::applyConstituent(...): Error,"
+    " Op["<<k<<"]." << (!applyInverse_k?"Apply":"ApplyInverse") << "(...) "
+    "returned err = " << err << " with Op["<<k<<"].UseTranspose() = "<<
+    Op_[k]->UseTranspose() << "!");
 }
 
 // Overridden from Epetra_Operator
 
-int ProductOperator::SetUseTranspose(bool UseTranspose)
+int ProductOperator::SetUseTranspose(bool useTranspose)
 {
         assertInitialized();
-        UseTranspose_ = UseTranspose;
+        UseTranspose_ = useTranspose;
         return 0;
 }
 
 int ProductOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-        assertInitialized();
-        const int num_Op = this->num_Op();
-        // Setup the temporary vectors
-        initializeTempVecs(false);
-        // Apply the constituent operators one at a time!
-        if( !UseTranspose_ ) {
-                //
-                // Forward Mat-vec: Y = M * X (See main documenation)
-                //
-                for( int k = num_Op-1; k >= 0; --k ) {
-                        const Epetra_MultiVector  &X_k = ( k==num_Op-1 ? X : *range_vecs_[k]   );
-                        Epetra_MultiVector        &Y_k = ( k==0        ? Y : *range_vecs_[k-1] );
-                        applyConstituent(k,Teuchos::NO_TRANS,APPLY_MODE_APPLY,X_k,&Y_k);
-                }
-        }
-        else if( UseTranspose_ ) {
-                //
-                // Adjoint Mat-vec: Y = M' * X (See main documentation)
-                //
-                for( int k = 0; k <= num_Op-1; ++k ) {
-                        const Epetra_MultiVector  &X_k = ( k==0         ? X : *domain_vecs_[k-1] );
-                        Epetra_MultiVector        &Y_k = ( k==num_Op-1  ? Y : *domain_vecs_[k]   );
-                        applyConstituent(k,Teuchos::TRANS,APPLY_MODE_APPLY,X_k,&Y_k);
-                }
-        }
-        return 0;
+  assertInitialized();
+  const int numOp = this->num_Op();
+  // Setup the temporary vectors
+  initializeTempVecs(false);
+  // Apply the constituent operators one at a time!
+  if( !UseTranspose_ ) {
+    //
+    // Forward Mat-vec: Y = M * X (See main documenation)
+    //
+    for( int k = numOp-1; k >= 0; --k ) {
+      const Epetra_MultiVector  &X_k = ( k==numOp-1 ? X : *range_vecs_[k]   );
+      Epetra_MultiVector        &Y_k = ( k==0        ? Y : *range_vecs_[k-1] );
+      applyConstituent(k,Teuchos::NO_TRANS,APPLY_MODE_APPLY,X_k,&Y_k);
+    }
+  }
+  else if( UseTranspose_ ) {
+    //
+    // Adjoint Mat-vec: Y = M' * X (See main documentation)
+    //
+    for( int k = 0; k <= numOp-1; ++k ) {
+      const Epetra_MultiVector  &X_k = ( k==0         ? X : *domain_vecs_[k-1] );
+      Epetra_MultiVector        &Y_k = ( k==numOp-1  ? Y : *domain_vecs_[k]   );
+      applyConstituent(k,Teuchos::TRANS,APPLY_MODE_APPLY,X_k,&Y_k);
+    }
+  }
+  return 0;
 }
 
 int ProductOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-        assertInitialized();
-        const int num_Op = this->num_Op();
-        // Setup the temporary vectors
-        initializeTempVecs(true);
-        // Apply the constituent operators one at a time!
-        if( !UseTranspose_ ) {
-                //
-                // Forward Inverse Mat-vec: Y = inv(M) * X (See main documenation)
-                //
-                for( int k = 0; k <= num_Op-1; ++k ) {
-                        const Epetra_MultiVector  &X_k = ( k==0         ? X : *domain_vecs_[k-1] );
-                        Epetra_MultiVector        &Y_k = ( k==num_Op-1  ? Y : *domain_vecs_[k]   );
-                        applyConstituent(k,Teuchos::NO_TRANS,APPLY_MODE_APPLY_INVERSE,X_k,&Y_k);
-                }
-        }
-        else if( UseTranspose_ ) {
-                //
-                // Adjoint Invese Mat-vec: Y = inv(M') * X (See main documentation)
-                //
-                for( int k = num_Op-1; k >= 0; --k ) {
-                        const Epetra_MultiVector  &X_k = ( k==num_Op-1 ? X : *range_vecs_[k]   );
-                        Epetra_MultiVector        &Y_k = ( k==0        ? Y : *range_vecs_[k-1] );
-                        applyConstituent(k,Teuchos::TRANS,APPLY_MODE_APPLY_INVERSE,X_k,&Y_k);
-                }
-        }
-        return 0;
+  assertInitialized();
+  const int numOp = this->num_Op();
+  // Setup the temporary vectors
+  initializeTempVecs(true);
+  // Apply the constituent operators one at a time!
+  if( !UseTranspose_ ) {
+    //
+    // Forward Inverse Mat-vec: Y = inv(M) * X (See main documenation)
+    //
+    for( int k = 0; k <= numOp-1; ++k ) {
+      const Epetra_MultiVector  &X_k = ( k==0         ? X : *domain_vecs_[k-1] );
+      Epetra_MultiVector        &Y_k = ( k==numOp-1  ? Y : *domain_vecs_[k]   );
+      applyConstituent(k,Teuchos::NO_TRANS,APPLY_MODE_APPLY_INVERSE,X_k,&Y_k);
+    }
+  }
+  else if( UseTranspose_ ) {
+    //
+    // Adjoint Invese Mat-vec: Y = inv(M') * X (See main documentation)
+    //
+    for( int k = numOp-1; k >= 0; --k ) {
+      const Epetra_MultiVector  &X_k = ( k==numOp-1 ? X : *range_vecs_[k]   );
+      Epetra_MultiVector        &Y_k = ( k==0        ? Y : *range_vecs_[k-1] );
+      applyConstituent(k,Teuchos::TRANS,APPLY_MODE_APPLY_INVERSE,X_k,&Y_k);
+    }
+  }
+  return 0;
 }
 
 double ProductOperator::NormInf() const
@@ -260,8 +259,8 @@ ProductOperator::OperatorRangeMap() const
 
 void ProductOperator::initializeTempVecs(bool applyInverse) const
 {
-  const int num_Op = this->num_Op ();
-  if (num_Op > 0) {
+  const int numOp = this->num_Op ();
+  if (numOp > 0) {
     // FIXME (mfh 24 Mar 2014): I added the parentheses around the ||
     // below to silence a compiler warning.  I'm concerned that the
     // original author of that code didn't understand that && takes
@@ -276,12 +275,12 @@ void ProductOperator::initializeTempVecs(bool applyInverse) const
       //
       //  T[k-1] = M[k]*T[k]
       //
-      //    for k = num_Op-1...1
+      //    for k = numOp-1...1
       //
-      //      where: T[num_Op-1] = X (input vector)
+      //      where: T[numOp-1] = X (input vector)
       //
-      range_vecs_.resize (num_Op - 1);
-      for (int k = num_Op-1; k >= 1; --k) {
+      range_vecs_.resize (numOp - 1);
+      for (int k = numOp-1; k >= 1; --k) {
         range_vecs_[k-1] = Teuchos::rcp (new Epetra_Vector ((Op_trans_[k]==Teuchos::NO_TRANS) == (Op_inverse_[k]==APPLY_MODE_APPLY)
                                                             ? Op_[k]->OperatorRangeMap ()
                                                             : Op_[k]->OperatorDomainMap ()));
@@ -301,12 +300,12 @@ void ProductOperator::initializeTempVecs(bool applyInverse) const
       //
       //   T[k] = M[k]'*T[k-1]
       //
-      //     for k = 0...num_Op-2
+      //     for k = 0...numOp-2
       //
       //       where: T[-1]       = X (input vector)
       //
-      domain_vecs_.resize (num_Op - 1);
-      for (int k = 0; k <= num_Op - 2; ++k) {
+      domain_vecs_.resize (numOp - 1);
+      for (int k = 0; k <= numOp - 2; ++k) {
         domain_vecs_[k] = Teuchos::rcp (new Epetra_Vector ((Op_trans_[k]==Teuchos::NO_TRANS) == (Op_inverse_[k]==APPLY_MODE_APPLY)
                                                            ? Op_[k]->OperatorDomainMap ()
                                                            : Op_[k]->OperatorRangeMap ()));
