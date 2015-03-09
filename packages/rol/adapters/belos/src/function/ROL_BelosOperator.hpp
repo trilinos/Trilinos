@@ -41,67 +41,48 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_LINEAROPERATOR_H
-#define ROL_LINEAROPERATOR_H
-
-#include "ROL_Vector.hpp"
-
-/** @ingroup func_group
-    \class ROL::LinearOperator
-    \brief Provides the interface to apply a linear operator.
-
-    ROL's linear operator interface is designed to interface with ROL's Krylov methods.
-    These linear operators often represent projected Hessians or preconditioners.  
-    The basic operator interace, to be implemented by the user, requires:
-    \li #apply -- apply operator to a vector.
-
-    The user may also implement:
-    \li #update -- update the state of the linear operator.
-    \li #applyInverse -- apply the inverse operator to a vector.
-
-    ---
+/** 
+    \class Belos::OperatorTraits<Scalar,ROL::Vector<Scalar>,ROL::LinearOperator<Scalar>> 
+    \brief Provides interface for using ROL::LinearOperator with Belos solvers
+           (excluding block solvers).    
+    \author Created by Greg von Winckel
 */
 
 
-namespace ROL {
+#ifndef ROL_BELOS_OPERATOR_HPP
+#define ROL_BELOS_OPERATOR_HPP
 
-template <class Real>
-class LinearOperator {
-public:
+#include "BelosConfigDefs.hpp"
+#include "BelosTypes.hpp"
+#include "BelosMultiVecTraits.hpp"
+#include "BelosOperatorTraits.hpp"
 
-  virtual ~LinearOperator() {}
+#include "ROL_Vector.hpp"
+#include "ROL_LinearOperator.hpp"
 
-  /** \brief Update linear operator. 
+namespace Belos {
 
-      This function updates the linear operator at new iterations. 
-      @param[in]          x      is the new iterate. 
-      @param[in]          flag   is true if the iterate has changed.
-      @param[in]          iter   is the outer algorithm iterations count.
-  */
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+    template<class Scalar>
+    class OperatorTraits<Scalar,ROL::Vector<Scalar>,ROL::LinearOperator<Scalar>> {
+        public:
+            static void
+            /// Note that ROL and Belos use reverse orderings
+            /// for input and output vectors
+            Apply(const ROL::LinearOperator<Scalar>& Op,
+                  const ROL::Vector<Scalar> &X,
+                        ROL::Vector<Scalar> &Y,
+                  const ETrans trans = NOTRANS) {
+                 Scalar tol=0;
+                 Op.apply(Y,X,tol);    
+            }
 
-  /** \brief Apply linear operator.
+            static bool
+            HasApplyTranspose(const ROL::LinearOperator<Scalar>& Op) {
+                return false;
+            }
+    };
 
-      This function applies the linear operator to a vector.
-      @param[out]         Hv  is the output vector.
-      @param[in]          v   is the input vector.
-      @param[in]          tol is a tolerance for inexact linear operator application.
-  */
-  virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const = 0;
-
-  /** \brief Apply inverse of linear operator.
-
-      This function applies the inverse of linear operator to a vector.
-      @param[out]         Hv  is the output vector.
-      @param[in]          v   is the input vector.
-      @param[in]          tol is a tolerance for inexact linear operator application.
-  */
-  virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    Hv.set(v);
-  }
-
-}; // class LinearOperator
-
-} // namespace ROL
+}
 
 #endif
+
