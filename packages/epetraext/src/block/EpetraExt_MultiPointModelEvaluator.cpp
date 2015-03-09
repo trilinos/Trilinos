@@ -46,11 +46,11 @@
 #include "Teuchos_as.hpp"
 
 EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
-    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
-    const Teuchos::RefCountPtr<EpetraExt::MultiComm> &globalComm_,
+    Teuchos::RCP<EpetraExt::ModelEvaluator> underlyingME_,
+    const Teuchos::RCP<EpetraExt::MultiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec_,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec_,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec_
+    Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > >  q_vec_,
+    Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > >  matching_vec_
     ) :
     underlyingME(underlyingME_),
     globalComm(globalComm_),
@@ -232,37 +232,37 @@ EpetraExt::MultiPointModelEvaluator::~MultiPointModelEvaluator()
   }
 }
 
-Teuchos::RefCountPtr<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_x_map() const
+Teuchos::RCP<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_x_map() const
 {
   return Teuchos::rcp(&(block_W->OperatorDomainMap()), false);
 }
 
-Teuchos::RefCountPtr<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_f_map() const
+Teuchos::RCP<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_f_map() const
 {
   return get_x_map();
 }
 
-Teuchos::RefCountPtr<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_p_map(int l) const
+Teuchos::RCP<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_p_map(int l) const
 {
   return underlyingME->get_p_map(l);
 }
 
-Teuchos::RefCountPtr<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_g_map(int j) const
+Teuchos::RCP<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_g_map(int j) const
 {
   return underlyingME->get_g_map(j);
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> EpetraExt::MultiPointModelEvaluator::get_x_init() const
+Teuchos::RCP<const Epetra_Vector> EpetraExt::MultiPointModelEvaluator::get_x_init() const
 {
   return solution_init;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> EpetraExt::MultiPointModelEvaluator::get_p_init(int l) const
+Teuchos::RCP<const Epetra_Vector> EpetraExt::MultiPointModelEvaluator::get_p_init(int l) const
 {
   return underlyingME->get_p_init(l);
 }
 
-Teuchos::RefCountPtr<Epetra_Operator> EpetraExt::MultiPointModelEvaluator::create_W() const
+Teuchos::RCP<Epetra_Operator> EpetraExt::MultiPointModelEvaluator::create_W() const
 {
   return block_W;
 }
@@ -331,25 +331,25 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
 
   //temp code for multipoint param q vec
 /*
-  Teuchos::RefCountPtr<Epetra_Vector> q =
+  Teuchos::RCP<Epetra_Vector> q =
     Teuchos::rcp(new Epetra_Vector(*(underlyingME->get_p_map(1))));
 */
 
   // Parse InArgs
-  Teuchos::RefCountPtr<const Epetra_Vector> p_in = inArgs.get_p(0);
+  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   if (p_in.get()) underlyingInArgs.set_p(0, p_in);
 
-  Teuchos::RefCountPtr<const Epetra_Vector> x_in = inArgs.get_x();
+  Teuchos::RCP<const Epetra_Vector> x_in = inArgs.get_x();
   block_x->Epetra_Vector::operator=(*x_in); //copy into block vector
 
   // Parse OutArgs
-  Teuchos::RefCountPtr<Epetra_Vector> f_out = outArgs.get_f();
+  Teuchos::RCP<Epetra_Vector> f_out = outArgs.get_f();
 
-  Teuchos::RefCountPtr<Epetra_Operator> W_out = outArgs.get_W();
-  Teuchos::RefCountPtr<EpetraExt::BlockCrsMatrix> W_block =
+  Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
+  Teuchos::RCP<EpetraExt::BlockCrsMatrix> W_block =
      Teuchos::rcp_dynamic_cast<EpetraExt::BlockCrsMatrix>(W_out);
 
-  Teuchos::RefCountPtr<Epetra_Vector> g_out;
+  Teuchos::RCP<Epetra_Vector> g_out;
   if (underlyingNg) g_out = outArgs.get_g(0);
   if (g_out.get()) g_out->PutScalar(0.0);
 

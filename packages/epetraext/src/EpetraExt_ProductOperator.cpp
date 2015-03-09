@@ -52,7 +52,7 @@ ProductOperator::ProductOperator()
 
 ProductOperator::ProductOperator(
         const int                                            numOp
-        ,const Teuchos::RefCountPtr<const Epetra_Operator>   op[]
+        ,const Teuchos::RCP<const Epetra_Operator>   op[]
         ,const Teuchos::ETransp                              opTrans[]
         ,const EApplyMode                                    opInverse[]
         )
