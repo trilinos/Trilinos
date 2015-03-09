@@ -2585,14 +2585,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
 #endif
             {
                 if(this->comm->getSize() > 1){
-                    try{
                         reduceAll<int, mj_scalar_t>( *(this->comm), *reductionOp,
                                         total_reduction_size,
                                         this->total_part_weight_left_right_closests,
                                         this->global_total_part_weight_left_right_closests);
 
-                    }
-                    Z2_THROW_OUTSIDE_ERROR(*(this->mj_env))
                 }
                 else {
                         memcpy(
