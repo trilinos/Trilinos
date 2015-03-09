@@ -15,16 +15,16 @@ namespace Example {
   public:
     static int blocksize;
 
-    // flat matrix interface
-    // ---------------------
+    // data-parallel interface
+    // =======================
     template<typename CrsExecViewType, 
              typename ParallelForType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(const typename CrsExecViewType::policy_type::member_type &member, 
                       const CrsExecViewType &A);
 
-    // task interface
-    // --------------
+    // task-data parallel interface
+    // ============================
     template<typename CrsExecViewType, 
              typename ParallelForType>
     class TaskFunctor {
@@ -64,12 +64,12 @@ namespace Example {
 
 // unblocked version blas operations
 //#include "dot.hpp"
-//#include "scale.hpp"
+#include "scale.hpp"
 
 // blocked version blas operations
-//#include "gemm.hpp"
-//#include "trsm.hpp"
-//#include "herk.hpp"
+#include "gemm.hpp"
+#include "trsm.hpp"
+#include "herk.hpp"
 
 // left looking: only for testing 
 //#include "ichol_left_unblocked.hpp"
@@ -79,9 +79,9 @@ namespace Example {
 // right looking: performance with CRS
 //#include "ichol_right_unblocked.hpp"
 #include "ichol_right_unblocked_opt1.hpp"
-//#include "ichol_right_blocked.hpp"
+#include "ichol_right_blocked.hpp"
 
 // task / task-data parallel
-//#include "ichol_right_by_blocks.hpp"
+#include "ichol_right_by_blocks.hpp"
 
 #endif

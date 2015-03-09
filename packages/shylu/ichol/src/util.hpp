@@ -60,7 +60,6 @@ namespace Example {
     static const int BottomRight = 404;
   };
 
-
   /// \class Uplo
   /// \brief Matrix upper/lower parameters.
   class Uplo {
@@ -92,6 +91,14 @@ namespace Example {
     static const int Transpose     = 801;
     static const int ConjTranspose = 802;
     static const int NoTranspose   = 803;
+  };
+
+  /// \class Loop
+  /// \brief outer/innner parameters
+  class Loop {
+    static const int Outer = 901;
+    static const int Inner = 902;
+    static const int Fused = 903;
   };
 
   /// \class AlgoChol

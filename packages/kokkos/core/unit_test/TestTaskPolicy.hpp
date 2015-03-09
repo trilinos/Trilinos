@@ -384,7 +384,7 @@ struct TaskTeam {
       }
 
       Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
-                          , [&]( int i ) { result[i] = i < 2 ? i : result[i-1] + result[i-2]; }
+                          , [&]( int i ) { result[i] = i + 1 ; }
                           );
     }
 };
@@ -431,12 +431,14 @@ struct TaskTeamValue {
       }
 
       Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
-                          , [&]( int i ) { result[i] = i < 2 ? i : result[i-1] + result[i-2]; }
+                          , [&]( int i ) { result[i] = i + 1 ; }
                           );
 
       if ( member.team_rank() == 0 ) {
         final = result[nvalue] ;
       }
+
+      Kokkos::memory_fence();
     }
 };
 
@@ -459,8 +461,9 @@ void test_task_team( long n )
   Kokkos::Experimental::wait( policy );
 
   for ( long i = 0 ; i <= n ; ++i ) {
-    if ( result(i) != eval_fib(i) ) {
-      std::cerr << "test_task_team void ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
+    const long answer = i + 1 ;
+    if ( result(i) != answer ) {
+      std::cerr << "test_task_team void ERROR result(" << i << ") = " << result(i) << " != " << answer << std::endl ;
     }
   }
 
@@ -468,12 +471,13 @@ void test_task_team( long n )
 
   Kokkos::Experimental::wait( policy );
 
-  if ( fv.get() != eval_fib(n) ) {
-    std::cerr << "test_task_team value ERROR future = " << fv.get() << " != " << eval_fib(n) << std::endl ;
+  if ( fv.get() != n + 1 ) {
+    std::cerr << "test_task_team value ERROR future = " << fv.get() << " != " << n + 1 << std::endl ;
   }
   for ( long i = 0 ; i <= n ; ++i ) {
-    if ( result(i) != eval_fib(i) ) {
-      std::cerr << "test_task_team value ERROR result(" << i << ") = " << result(i) << " != " << eval_fib(i) << std::endl ;
+    const long answer = i + 1 ;
+    if ( result(i) != answer ) {
+      std::cerr << "test_task_team value ERROR result(" << i << ") = " << result(i) << " != " << answer << std::endl ;
     }
   }
 }

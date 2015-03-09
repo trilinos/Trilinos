@@ -71,6 +71,15 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+# Sequential for loop for debugging
+# =================================
+
+TRIBITS_ADD_EXECUTABLE(
+  sequential_for
+  SOURCES sequential_for.cpp
+  COMM serial mpi
+  )
+
 # Execution Factory 
 # =================
 
@@ -114,19 +123,27 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  ichol_right_blocked
+  SOURCES ichol_right_blocked.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  ichol_right_by_blocks
+  SOURCES ichol_right_by_blocks.cpp
+  COMM serial mpi
+  )
+
+# Benchmark
+# ==========
+
 #TRIBITS_ADD_EXECUTABLE(
 #  ichol_strong_scale
 #  SOURCES ichol_strong_scale.cpp
 #  COMM serial mpi
 #  )
 
-
-
-TRIBITS_ADD_EXECUTABLE(
-  sequential_for
-  SOURCES sequential_for.cpp
-  COMM serial mpi
-  )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUICHOL_SimpleSparseTest_File
         SOURCE_FILES test.mtx
