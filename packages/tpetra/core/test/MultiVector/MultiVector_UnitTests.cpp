@@ -3389,9 +3389,33 @@ namespace {
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
+// Macro used inside the SubViewSomeZeroRows test below.  It tests for
+// global error, and if so, prints each process' error message and
+// quits the test early.
+//
+// 'out' only prints on Process 0.  It's really not OK for other
+// processes to print to stdout, but it usually works and we need to
+// do it for debugging.
+#define SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( WHAT_STRING ) do { \
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess)); \
+  TEST_EQUALITY_CONST( gblSuccess, 1 ); \
+  if (gblSuccess != 1) { \
+    out << WHAT_STRING << " FAILED on one or more processes!" << endl; \
+    for (int p = 0; p < numProcs; ++p) { \
+      if (myRank == p && lclSuccess != 1) { \
+        std::cout << errStrm.str () << std::flush; \
+      } \
+      comm->barrier (); \
+      comm->barrier (); \
+      comm->barrier (); \
+    } \
+  } \
+  return; \
+} while (false)
+
   // Exercise getVector, subView(Range1D) and subCopy(Range1D) where
   // some processes have zero rows.  Contributed by Andrew Bradley.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SubView, LO, GO, ST, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SubViewSomeZeroRows, LO, GO, ST, Node )
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
@@ -3400,6 +3424,9 @@ namespace {
     typedef Tpetra::Vector<ST, LO, GO, Node> V;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
 
+    out << "Tpetra::MultiVector: Test subView and subCopy when some processes "
+      "have zero rows" << endl;
+
     int lclSuccess = 1;
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
@@ -3407,43 +3434,59 @@ namespace {
     RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
-    // Create a Map that puts everything on Process 0 and nothing on the other processes.
+
+    // Create a Map that puts everything on Process 0 and nothing on
+    // the other processes.
     const Tpetra::global_size_t gblNumInds = 10;
     const size_t lclNumInds = (myRank == 0) ? 10 : 0;
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (gblNumInds, lclNumInds, indexBase, comm));
-    // Create a MultiVector with this Map.
-    MV mv (map, 2);
+    // Create a MultiVector with this Map.  Give it at least three
+    // columns, so that when we try to take a subview with two
+    // columns, it's actually a nontrivial subview.  (subView might
+    // have an optimization when the input column range is exactly the
+    // original set of columns.)
+    const size_t origNumVecs = 5;
+    MV mv (map, origNumVecs);
 
-    // Now try to access using getVector(i).
-    RCP<const V> v0, v1;
+    // Make sure that getVector(NonConst) works on this MultiVector.
+    // While doing that, fill each column with data that distinguish
+    // it from the other columns.
+    RCP<V> v_j;
     try {
-      v0 = mv.getVector (0);
-      v1 = mv.getVector (1);
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        // Use j+1, so that no column gets filled with zeros.  That
+        // will distinguish the zeroth column from a zero-filled
+        // (Multi)Vector.
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
     } catch (std::exception& e) {
       lclSuccess = 0;
-      errStrm << "Process " << myRank << ": mv.getVector(?) threw exception: " << e.what () << endl;
+      errStrm << "Process " << myRank << ": mv.getVector(j), "
+        "mv.getVectorNonConst(j), or v_j->putScalar() threw exception: "
+              << e.what () << endl;
     }
-    // Make sure that no process threw an exception.
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      out << "getVector FAILED on one or more processes!" << endl;
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p && lclSuccess != 1) {
-          // 'out' only prints on Process 0.  It's really not OK for
-          // other processes to print to stdout, but it usually works
-          // and we need to do it for debugging.
-          std::cout << errStrm.str () << std::flush;
-        }
-        comm->barrier (); // wait for output to finish
-        comm->barrier ();
-        comm->barrier ();
-      }
-      return; // no sense in continuing
-    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVector(j), mv.getVectorNonConst(j), or v_j->putScalar()" );
 
+    // Make sure that every column got the right data.  Don't use
+    // getVectorNonConst(j) to test this; we need independent
+    // confirmation.
+    try {
+      Array<typename MV::mag_type> norms (mv.getNumVectors ());
+      mv.normInf (norms ());
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        TEST_EQUALITY( norms[j], static_cast<ST> (j+1) );
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.normInf() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.normInf()" );
+
+    // Test getting a subView of the first two columns.
+    out << "Test subView(Range1D(0,1))" << endl;
     Teuchos::Range1D r (0, 1);
     RCP<const MV> mv_sv;
     try {
@@ -3453,26 +3496,55 @@ namespace {
       errStrm << "Process " << myRank << ": mv.subView(Range1D(0,1)) "
         "threw exception: " << e.what () << endl;
     }
-    // Make sure that no process threw an exception.
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      out << "subView(Range1D(0,1)) FAILED on one or more processes!" << endl;
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p && lclSuccess != 1) {
-          // 'out' only prints on Process 0.  It's really not OK for
-          // other processes to print to stdout, but it usually works
-          // and we need to do it for debugging.
-          std::cout << errStrm.str () << std::flush;
-        }
-        comm->barrier (); // wait for output to finish
-        comm->barrier ();
-        comm->barrier ();
-      }
-      return; // no sense in continuing
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView(Range1D(0,1))" );
+
+    // Make sure that the two columns being viewed actually have the
+    // right data in them.
+    try {
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sv->normInf (norms ());
+      TEST_EQUALITY( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv_sv->normInf() "
+        "threw exception: " << e.what () << endl;
     }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv->normInf()" );
+
+    // Make sure that the supposed "view" is actually a view.  That
+    // is, if I change the original MultiVector's data, the view
+    // should see the change right away.
+    try {
+      // Even if ST is bool, at least one of the columns will see the
+      // change (mod it by 2 to see why).
+      mv.putScalar (static_cast<ST> (mv.getNumVectors ()));
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sv->normInf (norms ());
+      TEST_EQUALITY_CONST( norms[0], static_cast<ST> (mv.getNumVectors ()) );
+      TEST_EQUALITY_CONST( norms[1], static_cast<ST> (mv.getNumVectors ()) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.putScalar() or mv_sv->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.putScalar() or mv_sv->normInf()" );
+
+    // Restore the MultiVector's original data.
+    try {
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVectorNonConst(j) or "
+        "v_j->putScalar() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVectorNonConst(j) or v_j->putScalar()" );
 
     // Test subCopy (which reportedly has the same issue as subView).
+    out << "Test subCopy(Range1D(0,1))" << endl;
     RCP<const MV> mv_sc;
     try {
       mv_sc = mv.subCopy (r);
@@ -3481,24 +3553,225 @@ namespace {
       errStrm << "Process " << myRank << ": mv.subCopy(Range1D(0,1)) "
         "threw exception: " << e.what () << endl;
     }
-    // Make sure that no process threw an exception.
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      out << "subCopy(Range1D(0,1)) FAILED on one or more processes!" << endl;
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p && lclSuccess != 1) {
-          // 'out' only prints on Process 0.  It's really not OK for
-          // other processes to print to stdout, but it usually works
-          // and we need to do it for debugging.
-          std::cout << errStrm.str () << std::flush;
-        }
-        comm->barrier (); // wait for output to finish
-        comm->barrier ();
-        comm->barrier ();
-      }
-      return; // no sense in continuing
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subCopy(Range1D(0,1))" );
+
+    // Make sure that the two copied columns actually have the right
+    // data in them.
+    try {
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sc->normInf (norms ());
+      TEST_EQUALITY( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv_sc->normInf() "
+        "threw exception: " << e.what () << endl;
     }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc->normInf()" );
+
+    // Make sure that the supposed "copy" is actually a (deep) copy.
+    // That is, if I change the original MultiVector's data, the copy
+    // should NOT see the change.
+    try {
+      // Even if ST is bool, at least one of the columns will see the
+      // change (mod it by 2 to see why).
+      mv.putScalar (static_cast<ST> (mv.getNumVectors ()));
+      Array<typename MV::mag_type> norms (mv_sc->getNumVectors ());
+      mv_sc->normInf (norms ());
+      TEST_EQUALITY_CONST( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY_CONST( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.putScalar() or mv_sc->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.putScalar() or mv_sc->normInf()" );
+
+    // Restore the MultiVector's original data.
+    try {
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVectorNonConst(j) or "
+        "v_j->putScalar() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVectorNonConst(j) or v_j->putScalar()" );
+
+    // Test getting a subView of just the first column.
+    out << "Test subView(Range1D(1,1))" << endl;
+    Teuchos::Range1D r11 (1, 1);
+    try {
+      mv_sv = mv.subView (r11);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView(Range1D(1,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView(Range1D(1,1))" );
+
+    // Single-column subviews must always have constant stride.
+    {
+      bool constStride = false;
+      try {
+        constStride = ! mv_sv.is_null () && mv_sv->isConstantStride ();
+      } catch (std::exception& e) {
+        lclSuccess = 0;
+        errStrm << "Process " << myRank << ": mv_sv->isConstantStride() "
+          "threw exception: " << e.what () << endl;
+      }
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv->isConstantStride()" );
+      lclSuccess = constStride ? 1 : 0;
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv having constant stride" );
+    }
+
+    // Test subCopy of just the first column.
+    out << "Test subCopy(Range1D(1,1))" << endl;
+    try {
+      mv_sc = mv.subCopy (r11);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subCopy(Range1D(1,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subCopy(Range1D(1,1))" );
+
+    // Single-column subcopies must always have constant stride.
+    {
+      bool constStride = false;
+      try {
+        constStride = ! mv_sc.is_null () && mv_sc->isConstantStride ();
+      } catch (std::exception& e) {
+        lclSuccess = 0;
+        errStrm << "Process " << myRank << ": mv_sc->isConstantStride() "
+          "threw exception: " << e.what () << endl;
+      }
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc->isConstantStride()" );
+      lclSuccess = constStride ? 1 : 0;
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc having constant stride" );
+    }
+
+    //
+    // Make a noncontiguous subview of the original MultiVector.  Test
+    // that both multiple-column and single-column subviews and
+    // subcopies work.
+    //
+
+    // Start with a noncontiguous subview of the original MV.
+    out << "Test subView([0, 2, 4])" << endl;
+    RCP<const MV> X_noncontig;
+    try {
+      Array<size_t> colsToView (3);
+      colsToView[0] = 0;
+      colsToView[1] = 2;
+      colsToView[2] = 4;
+      X_noncontig = mv.subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView([0, 2, 4]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView([0, 2, 4])" );
+
+    // Test getting a multiple-column noncontiguous subview of the
+    // noncontiguous subview.
+    out << "Test multi-column noncontig subview of noncontig subview" << endl;
+    try {
+      // View columns 0 and 2 of X_noncontig, which should be columns
+      // 0 and 4 of the original MV.
+      Array<size_t> colsToView (2);
+      colsToView[0] = 0;
+      colsToView[1] = 2;
+      mv_sv = X_noncontig->subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView([0, 2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView([0, 2])" );
+
+    // Test getting a multiple-column noncontiguous subcopy of the
+    // noncontiguous subview.
+    out << "Test multi-column noncontig subcopy of noncontig subview" << endl;
+    try {
+      // Copy columns 0 and 2 of X_noncontig, which should be columns
+      // 0 and 4 of the original MV.
+      Array<size_t> colsToCopy (2);
+      colsToCopy[0] = 0;
+      colsToCopy[1] = 2;
+      mv_sc = X_noncontig->subCopy (colsToCopy);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy([0, 2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy([0, 2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subView(Teuchos::ArrayView<const size_t>).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::ArrayView<const size_t>" << endl;
+    try {
+      // View column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      Array<size_t> colsToView (1);
+      colsToView[0] = 2;
+      mv_sv = X_noncontig->subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView([2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView([2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subView(Teuchos::Range1D).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::Range1D" << endl;
+    try {
+      // View column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      mv_sv = X_noncontig->subView (Teuchos::Range1D (2, 2));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView(Range1D(2,2)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView(Range1D(2,2))" );
+
+    // Test getting a single-column subcopy of the noncontiguous
+    // subview, using subCopy(Teuchos::ArrayView<const size_t>).
+    out << "Test single-column noncontig subcopy of noncontig subview, "
+      "using Teuchos::ArrayView<const size_t>" << endl;
+    try {
+      // Copy column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      Array<size_t> colsToCopy (1);
+      colsToCopy[0] = 2;
+      mv_sv = X_noncontig->subCopy (colsToCopy);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy([2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy([2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subCopy(Teuchos::Range1D).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::Range1D" << endl;
+    try {
+      // Copy column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      mv_sc = X_noncontig->subCopy (Teuchos::Range1D (2, 2));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy(Range1D(2,2)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy(Range1D(2,2))" );
   }
 
 //
@@ -3539,7 +3812,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubView           , LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
