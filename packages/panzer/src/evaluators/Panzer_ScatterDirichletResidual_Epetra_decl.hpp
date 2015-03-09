@@ -116,7 +116,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -145,7 +145,7 @@ private:
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 };
 
 // **************************************************************
@@ -183,7 +183,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -214,7 +214,7 @@ private:
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 };
 
 // **************************************************************
@@ -253,7 +253,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -283,7 +283,7 @@ private:
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_Epetra();
 };

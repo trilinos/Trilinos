@@ -86,7 +86,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,Cell,NODE> scatterField = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    PHX::MDField<const ScalarT,Cell,NODE> scatterField = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterField);
@@ -131,7 +131,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -141,7 +141,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -316,7 +316,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -326,7 +326,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }

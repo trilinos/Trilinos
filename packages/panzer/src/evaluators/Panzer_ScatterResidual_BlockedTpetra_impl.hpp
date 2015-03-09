@@ -80,7 +80,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,Cell,NODE> field = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    PHX::MDField<const ScalarT,Cell,NODE> field = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(field);
@@ -120,7 +120,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -258,7 +258,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);

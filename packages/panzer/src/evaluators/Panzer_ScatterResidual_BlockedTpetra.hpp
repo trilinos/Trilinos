@@ -138,7 +138,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -220,7 +220,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
