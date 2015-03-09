@@ -619,15 +619,18 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // evaluate responses...uses the stored assembly arguments and containers
   if(required_basic_g(outArgs)) {
-     evalModelImpl_basic_g(inArgs,outArgs);
+    evalModelImpl_basic_g(inArgs,outArgs);
 
-     // evaluate response derivatives 
-     if(required_basic_dgdx(outArgs))
-       evalModelImpl_basic_dgdx(inArgs,outArgs);
+    // evaluate response derivatives 
+    if(required_basic_dgdx(outArgs))
+      evalModelImpl_basic_dgdx(inArgs,outArgs);
   }
 
   if(required_basic_dfdp_scalar(outArgs))
-     evalModelImpl_basic_dfdp_scalar(inArgs,outArgs);
+    evalModelImpl_basic_dfdp_scalar(inArgs,outArgs);
+
+  if(required_basic_dfdp_distro(outArgs))
+    evalModelImpl_basic_dfdp_distro(inArgs,outArgs);
 }
 
 template <typename Scalar>
@@ -752,8 +755,8 @@ void panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
-   // optional sanity check
-   // TEUCHOS_ASSERT(required_basic_g(outArgs));
+  // optional sanity check
+  // TEUCHOS_ASSERT(required_basic_g(outArgs));
 
   // setup all the assembly in arguments (this is parameters and
   // x/x_dot). At this point with the exception of the one time dirichlet
@@ -762,13 +765,13 @@ evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   setupAssemblyInArgs(inArgs,ae_inargs);
 
   for(std::size_t i=0;i<g_names_.size();i++) {
-     Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = outArgs.get_g(i);
-     if(vec!=Teuchos::null) {
-       std::string responseName = g_names_[i];
-       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
-           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(responseLibrary_->getResponse<panzer::Traits::Residual>(responseName));
-       resp->setVector(vec);
-     }
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = outArgs.get_g(i);
+    if(vec!=Teuchos::null) {
+      std::string responseName = g_names_[i];
+      Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp 
+          = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(responseLibrary_->getResponse<panzer::Traits::Residual>(responseName));
+      resp->setVector(vec);
+    }
   }
 
   // evaluator responses
@@ -819,7 +822,7 @@ template <typename Scalar>
 void 
 panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-                         const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -864,7 +867,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
        thGlobalContainer->set_f_th(vec);
 
        // add container into in args object
-       std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_.names[i])[j];
+       std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_.names[parameters_.scalar_index[i]])[j];
        ae_inargs.addGlobalEvaluationData(name,loc_pair->getGhostedLOC());
        ae_inargs.addGlobalEvaluationData(name+"_pair",loc_pair);
 
@@ -919,6 +922,23 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 }
 
 template <typename Scalar>
+void 
+panzer::ModelEvaluator<Scalar>::
+evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+  TEUCHOS_ASSERT(required_basic_dfdp_distro(outArgs));
+
+  TEUCHOS_ASSERT(false);
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+}
+
+template <typename Scalar>
 bool panzer::ModelEvaluator<Scalar>::
 required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -962,6 +982,31 @@ required_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &out
  
      // this is for scalar parameters only
      if(parameters_.are_distributed[i])
+       continue;
+
+     // no derivatives are supported
+     if(outArgs.supports(MEB::OUT_ARG_DfDp,i).none())
+       continue;
+
+     // this is basically a redundant computation
+     activeFPArgs |= (!outArgs.get_DfDp(i).isEmpty());
+   }
+
+   return activeFPArgs;
+}
+
+template <typename Scalar>
+bool panzer::ModelEvaluator<Scalar>::
+required_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   typedef Thyra::ModelEvaluatorBase MEB;
+
+   // determine if any of the outArgs are not null!
+   bool activeFPArgs = false;
+   for(int i=0;i<outArgs.Np();i++) {
+ 
+     // this is for scalar parameters only
+     if(!parameters_.are_distributed[i])
        continue;
 
      // no derivatives are supported

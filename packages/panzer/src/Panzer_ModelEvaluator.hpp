@@ -299,10 +299,18 @@ private:
 
   /** handles evaluation of dfdp
     *
-    * \note This method should (basically) be a no-op if <code>required_basic_dfdp(outArgs)==false</code>.
+    * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
   void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  /** handles evaluation of dfdp
+    *
+    * \note This method should (basically) be a no-op if <code>required_basic_dfdp_distro(outArgs)==false</code>.
+    *       However, for efficiency this is not checked.
+    */
+  void evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Does this set of out args require a simple response?
@@ -311,8 +319,11 @@ private:
   //! Are their required responses in the out args? DgDx 
   bool required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
+  //! Are derivatives of the residual with respect to the scalar parameters in the out args? DfDp 
   bool required_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Are derivatives of the residual with respect to the distributed parameters in the out args? DfDp 
+  bool required_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Initialize the nominal values with good starting conditions
   void initializeNominalValues();
@@ -341,7 +352,11 @@ private: // data members
     std::vector<bool> are_distributed;
 
     // for interaction with the panzer::ParamLib
-    std::vector<int> scalar_index;
+    // 
+    // Note that scalar_index.size()==scalar_values.size() <= names.size
+    // Moreover the parameter name associated with a particular ParamVec is
+    // names[scalar_index[i]]. Note that scalar_values.size()==sum(not are_distributed).
+    std::vector<int> scalar_index;                       
     mutable std::vector<panzer::ParamVec> scalar_values;
   } parameters_;
 
@@ -349,7 +364,7 @@ private: // data members
   mutable bool require_out_args_refresh_;
 
   // responses
-  mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
+  mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_;
   std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
   std::vector<std::string> g_names_;
 
