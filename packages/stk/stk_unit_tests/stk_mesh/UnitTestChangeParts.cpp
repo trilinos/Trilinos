@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include "UnitTestUtils.hpp"
+#include "StkMeshUnitTestUtils.hpp"
 
 namespace
 {

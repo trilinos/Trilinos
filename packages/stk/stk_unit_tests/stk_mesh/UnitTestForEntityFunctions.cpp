@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
-#include "UnitTestUtils.hpp"
+#include "StkMeshUnitTestUtils.hpp"
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
