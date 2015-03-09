@@ -361,7 +361,7 @@ namespace Tpetra {
     const std::pair<size_t, size_t> offsetPair (offset, offset + newNumRows);
     // Need 'this->' to get view_ and origView_ from parent class.
     return rcp (new V (subMap,
-                       subview<dual_view_type> (this->view_, offsetPair, ALL ()),
+                       subview (this->view_, offsetPair, ALL ()),
                        this->origView_));
   }
 

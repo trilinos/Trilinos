@@ -2491,7 +2491,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
       typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
-      subview_type sv = Kokkos::subview<subview_type> (k_values1D_, range);
+      subview_type sv = Kokkos::subview (k_values1D_, range);
       return ArrayView<const ST> (sv.ptr_on_device (), rowinfo.allocSize);
     }
     else if (values2D_ != null) {
@@ -3065,7 +3065,7 @@ namespace Tpetra {
       typename host_view_type::memory_traits>
       host_view_1d_type;
     host_view_1d_type lclVecHost1d =
-      Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);
+      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
     const size_t myNumRows = getNodeNumRows ();
@@ -3136,7 +3136,7 @@ namespace Tpetra {
       typename host_view_type::memory_traits>
       host_view_1d_type;
     host_view_1d_type lclVecHost1d =
-      Kokkos::subview<host_view_1d_type> (lclVecHost, Kokkos::ALL (), 0);
+      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
     const size_t myNumRows = getNodeNumRows ();

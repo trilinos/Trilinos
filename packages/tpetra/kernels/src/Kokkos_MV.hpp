@@ -206,8 +206,8 @@ MV_MulScalar (const RVector& r,
     typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
     typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
     return V_MulScalar(r_1d,a,x_1d);
   }*/
 
@@ -293,8 +293,8 @@ RVector MV_Reciprocal( const RVector & r, const XVector & x)
     typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
     typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
     return V_MulScalar(r_1d,a,x_1d);
   }*/
   if(r==x) {
@@ -416,8 +416,8 @@ RVector MV_Abs( const RVector & r, const XVector & x)
     typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
     typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
     return V_Abs(r_1d,x_1d);
   }*/
   if(r==x) {
@@ -524,8 +524,8 @@ CVector MV_ElementWiseMultiply(
     typedef View<typename RVector::value_type*,typename RVector::execution_space> RVector1D;
     typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
     return V_ElementWiseMultiply(r_1d,x_1d);
   }*/
 
@@ -1196,9 +1196,9 @@ RVector MV_AddSpecialise( const RVector & r,const aVector &av,const XVector & x,
     typedef View<typename XVector::const_value_type*,typename XVector::execution_space> XVector1D;
     typedef View<typename YVector::const_value_type*,typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
-    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
-    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+    RVector1D r_1d = Kokkos::subview( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview( x , ALL(),0 );
+    YVector1D y_1d = Kokkos::subview( y , ALL(),0 );
 
     V_Add(r_1d,av,x_1d,bv,y_1d,n);
     return r;
@@ -1227,9 +1227,9 @@ MV_Add (const RVector& r,
     typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
     typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = subview<RVector1D> (r, ALL(), 0);
-    XVector1D x_1d = subview<XVector1D> (x, ALL(), 0);
-    YVector1D y_1d = subview<YVector1D> (y, ALL(), 0);
+    RVector1D r_1d = subview (r, ALL(), 0);
+    XVector1D x_1d = subview (x, ALL(), 0);
+    YVector1D y_1d = subview (y, ALL(), 0);
 
     V_Add (r_1d, av, x_1d, bv, y_1d, n);
     return r;
@@ -1253,9 +1253,9 @@ MV_Add (const RVector& r,
     typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
     typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = subview<RVector1D> (r , ALL(), 0);
-    XVector1D x_1d = subview<XVector1D> (x , ALL(), 0);
-    YVector1D y_1d = subview<YVector1D> (y , ALL(), 0);
+    RVector1D r_1d = subview (r , ALL(), 0);
+    XVector1D x_1d = subview (x , ALL(), 0);
+    YVector1D y_1d = subview (y , ALL(), 0);
 
     V_Add (r_1d, x_1d, y_1d, n);
     return r;
@@ -1281,9 +1281,9 @@ RVector MV_Add (const RVector& r,
     typedef View<typename XVector::const_value_type*, typename XVector::execution_space> XVector1D;
     typedef View<typename YVector::const_value_type*, typename YVector::execution_space> YVector1D;
 
-    RVector1D r_1d = subview<RVector1D> (r, ALL (), 0);
-    XVector1D x_1d = subview<XVector1D> (x, ALL (), 0);
-    YVector1D y_1d = subview<YVector1D> (y, ALL (), 0);
+    RVector1D r_1d = subview (r, ALL (), 0);
+    XVector1D x_1d = subview (x, ALL (), 0);
+    YVector1D y_1d = subview (y, ALL (), 0);
 
     V_Add (r_1d, x_1d, bv, y_1d, n);
     return r;
@@ -1496,7 +1496,7 @@ struct MultiVecDotFunctor {
 // Implementation detail of Tpetra::MultiVector::norm2, when the
 // MultiVector has constant stride.  Compute the square of the
 // two-norm of each column of a multivector.
-template<class MultiVecViewType>
+template<class MultiVecViewType, class NormsViewType>
 struct MultiVecNorm2SquaredFunctor {
   typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
@@ -1506,7 +1506,7 @@ struct MultiVecNorm2SquaredFunctor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
+  typedef NormsViewType norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1599,7 +1599,7 @@ struct MultiVecNorm2SquaredFunctor {
 // Implementation detail of Tpetra::MultiVector::norm1, when the
 // MultiVector has constant stride.  Compute the one-norm of each
 // column of a multivector.
-template<class MultiVecViewType>
+template<class MultiVecViewType, class NormsViewType>
 struct MultiVecNorm1Functor {
   typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
@@ -1609,7 +1609,7 @@ struct MultiVecNorm1Functor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
+  typedef NormsViewType norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1701,7 +1701,7 @@ struct MultiVecNorm1Functor {
 // Implementation detail of Tpetra::MultiVector::normInf, when the
 // MultiVector has constant stride.  Compute the infinity-norm of each
 // column of a multivector.
-template<class MultiVecViewType>
+template<class MultiVecViewType, class NormsViewType>
 struct MultiVecNormInfFunctor {
   typedef typename MultiVecViewType::execution_space execution_space;
   typedef typename MultiVecViewType::size_type size_type;
@@ -1711,7 +1711,7 @@ struct MultiVecNormInfFunctor {
 
   typedef MultiVecViewType mv_view_type;
   typedef typename MultiVecViewType::const_type mv_const_view_type;
-  typedef Kokkos::View<typename IPT::mag_type*, execution_space> norms_view_type;
+  typedef NormsViewType norms_view_type;
 
   mv_const_view_type X_;
   norms_view_type norms_;
@@ -1879,7 +1879,7 @@ struct VecDotFunctor {
 
 
 // Compute the square of the two-norm of a single vector.
-template<class VecViewType>
+template<class VecViewType, class NormViewType>
 struct VecNorm2SquaredFunctor {
   typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
@@ -1888,7 +1888,7 @@ struct VecNorm2SquaredFunctor {
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
+  typedef NormViewType norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -1927,7 +1927,7 @@ struct VecNorm2SquaredFunctor {
 
 
 // Compute the square of the one-norm of a single vector.
-template<class VecViewType>
+template<class VecViewType, class NormViewType>
 struct VecNorm1Functor {
   typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
@@ -1936,7 +1936,7 @@ struct VecNorm1Functor {
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
+  typedef NormViewType norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -1974,7 +1974,7 @@ struct VecNorm1Functor {
 
 
 // Compute the square of the infinity-norm of a single vector.
-template<class VecViewType>
+template<class VecViewType, class NormViewType>
 struct VecNormInfFunctor {
   typedef typename VecViewType::execution_space execution_space;
   typedef typename VecViewType::size_type size_type;
@@ -1983,7 +1983,7 @@ struct VecNormInfFunctor {
   typedef typename IPT::mag_type value_type;
   typedef typename VecViewType::const_type vec_const_view_type;
   // This is a nonconst scalar view.  It holds one mag_type instance.
-  typedef Kokkos::View<typename IPT::mag_type, execution_space> norm_view_type;
+  typedef NormViewType norm_view_type;
 
   vec_const_view_type x_;
   norm_view_type norm_;
@@ -2282,8 +2282,8 @@ MV_Dot (const rVector& r,
       typedef View<typename YVector::const_value_type*,
                    typename YVector::execution_space> YVector1D;
 
-      XVector1D x_1d = Kokkos::subview<XVector1D> (x, ALL (), 0);
-      YVector1D y_1d = Kokkos::subview<YVector1D> (y, ALL (), 0);
+      XVector1D x_1d = Kokkos::subview (x, ALL (), 0);
+      YVector1D y_1d = Kokkos::subview (y, ALL (), 0);
       r[0] = V_Dot (x_1d, y_1d, numRows);
       break;
     }

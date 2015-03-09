@@ -1655,7 +1655,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
       typedef View<typename DomainVectorType::const_value_type*,typename DomainVector::array_layout ,typename DomainVectorType::execution_space> DomainVector1DPlain;
       typedef View<typename RangeVectorType::value_type*,typename RangeVector::array_layout ,typename RangeVectorType::execution_space,typename RangeVector::memory_traits> RangeVector1D;
 
-       Kokkos::subview< RangeVector1D >( y , ALL(),0 );
+       Kokkos::subview( y , ALL(),0 );
 
        if (conjugate) {
          typedef MV_MultiplySingleFunctor<RangeVector1D, CrsMatrixType, DomainVector1D,
@@ -1663,8 +1663,8 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
          OpType op;
          const typename CrsMatrixType::ordinal_type nrow = A.numRows ();
          op.m_A = A;
-         op.m_x = Kokkos::subview< DomainVector1DPlain > (x, ALL (), 0);
-         op.m_y = Kokkos::subview< RangeVector1D > (y, ALL(), 0);
+         op.m_x = Kokkos::subview (x, ALL (), 0);
+         op.m_y = Kokkos::subview (y, ALL(), 0);
          op.beta = betav;
          op.alpha = alphav;
          op.n = x.dimension(1);
@@ -1676,8 +1676,8 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
          OpType op;
          const typename CrsMatrixType::ordinal_type nrow = A.numRows ();
          op.m_A = A;
-         op.m_x = Kokkos::subview< DomainVector1DPlain > (x, ALL (), 0);
-         op.m_y = Kokkos::subview< RangeVector1D > (y, ALL(), 0);
+         op.m_x = Kokkos::subview (x, ALL (), 0);
+         op.m_y = Kokkos::subview (y, ALL(), 0);
          op.beta = betav;
          op.alpha = alphav;
          op.n = x.dimension(1);

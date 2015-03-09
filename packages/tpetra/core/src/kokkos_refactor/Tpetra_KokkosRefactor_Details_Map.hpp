@@ -704,7 +704,7 @@ namespace Tpetra {
 
           std::pair<size_t, size_t> offsetInfo (numContig, numContig + numNonContig);
           nonContigEntries =
-            Kokkos::subview<Kokkos::View<const GO*, DeviceType> > (lgMap_, offsetInfo);
+            Kokkos::subview (lgMap_, offsetInfo);
 
           TEUCHOS_TEST_FOR_EXCEPTION(
             static_cast<size_t> (nonContigEntries.dimension_0 ()) != numNonContig,
