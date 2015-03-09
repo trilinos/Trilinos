@@ -190,12 +190,33 @@ namespace panzer_stk_classic {
                               bool is_transient,bool is_explicit,
                               const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null) const;
 
-    bool useDynamicCoordinates() const
-    { return useDynamicCoordinates_; }
+    /** \brief Setup the initial conditions in a model evaluator. Note that this
+      *        is entirely self contained.
+      */
+    void setupInitialConditions(Thyra::ModelEvaluator<ScalarT> & model,
+                                panzer::WorksetContainer & wkstContainer,
+                                const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                const panzer::LinearObjFactory<panzer::Traits> & lof,
+                                const Teuchos::ParameterList & initial_cond_pl,
+                                const Teuchos::ParameterList & user_data_pl,
+                                bool write_dot_files,const std::string & dot_file_prefix) const;
 
-  protected:
- 
-    /** This method is to assist with construction of the model evaluators  internally.
+    /** \brief Write the initial conditions to exodus. Note that this
+      *        is entirely self contained.
+      */
+    void writeInitialConditions(const Thyra::ModelEvaluator<ScalarT> & model,
+                                const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                                const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
+                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                                const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                const Teuchos::ParameterList & closure_model_pl,
+                                const Teuchos::ParameterList & user_data_pl,
+                                int workset_size) const;
+
+    /** This method is to assist with construction of the model evaluators.
       */ 
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
     buildPhysicsModelEvaluator(bool buildThyraME,
@@ -207,6 +228,12 @@ namespace panzer_stk_classic {
 		        const Teuchos::RCP<panzer::GlobalData> & global_data,
 		        bool is_transient,double t_init) const;
 
+
+    bool useDynamicCoordinates() const
+    { return useDynamicCoordinates_; }
+
+  protected:
+ 
     Teuchos::RCP<panzer::FieldManagerBuilder> 
     buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
