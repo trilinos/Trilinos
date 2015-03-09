@@ -53,6 +53,7 @@
 
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"

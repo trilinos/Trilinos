@@ -64,8 +64,8 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterInitialCondition_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
+template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterInitialCondition_BlockedTpetra<EvalT, TRAITS,LO,GO,NodeT>::
 ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
 { 
@@ -82,7 +82,7 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDO
   
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,Cell,NODE> field = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    PHX::MDField<const ScalarT,Cell,NODE> field = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(field);
@@ -98,8 +98,8 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDO
 // Specialization: Residual
 // **********************************************************************
 
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
@@ -119,7 +119,7 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDO
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -135,8 +135,8 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDO
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
@@ -153,8 +153,8 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
@@ -162,8 +162,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
@@ -232,8 +232,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
@@ -256,7 +256,7 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -272,8 +272,8 @@ ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
 		      PHX::FieldManager<TRAITS>& fm)
 {
@@ -290,15 +290,15 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
 }
 
 // **********************************************************************
-template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
-void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    TEUCHOS_ASSERT(false);  // this should not be executed!

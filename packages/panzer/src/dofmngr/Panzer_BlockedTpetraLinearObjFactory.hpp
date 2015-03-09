@@ -145,7 +145,7 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -165,12 +165,12 @@ public:
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed initial condition scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   { return Teuchos::rcp(new ScatterInitialCondition_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   { return Teuchos::rcp(new ScatterInitialCondition_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
 /*************** Generic helper functions for container setup *******************/
    
@@ -343,7 +343,5 @@ protected:
 };
 
 }
-
-#include "Panzer_BlockedTpetraLinearObjFactory_impl.hpp"
 
 #endif
