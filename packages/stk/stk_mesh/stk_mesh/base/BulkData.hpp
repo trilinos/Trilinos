@@ -1070,8 +1070,8 @@ private: //functions
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting;
-  friend void ::stk::mesh::communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
-  friend void ::stk::mesh::communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
+  friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend bool ::stk::mesh::impl::ordered_comm(const BulkData& bulk, const Entity entity );
   friend void ::stk::mesh::impl::delete_shared_entities_which_are_no_longer_in_owned_closure(BulkData & mesh);
   friend void ::stk::mesh::impl::pack_owned_verify(CommAll & all, const BulkData & mesh);
