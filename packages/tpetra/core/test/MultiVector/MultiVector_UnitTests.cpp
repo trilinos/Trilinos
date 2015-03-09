@@ -748,39 +748,322 @@ namespace {
     }
   }
 
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiply, LO , GO , Scalar , Node )
+  // Test Tpetra::MultiVector::elementWiseMultiply.
+  //
+  // Be sure to exercise all combinations of the cases alpha =
+  // {-1,0,1,other} and beta = {-1,0,1,other}, as these commonly have
+  // special cases.
+  //
+  // Also be sure to exercise the common case (also often with a
+  // special-case implementation) where all the MultiVectors have one
+  // column.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiply, LO , GO , ST , Node )
   {
     using Teuchos::View;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
-    // create a Map
-    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node);
-    const Mag    M0 = ScalarTraits<Mag>::zero();
-    const Scalar S1 = ScalarTraits<Scalar>::one();
-    const Scalar S0 = ScalarTraits<Scalar>::zero();
-    {
-      // case 1: C = S1*A@B ('@' denotes element-wise multiplication)
-      // C has 2 vectors, A has 1 vector, B has 2 vectors.
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<ST> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+    typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
+    typedef Tpetra::Vector<ST,LO,GO,Node> V;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+
+    out << "Tpetra::MultiVector::elementWiseMultiply test" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Create a Map.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const size_t lclNumRows = 3;
+    const GST gblNumRows = comm->getSize () * lclNumRows;
+    const GO indexBase = 0;
+    RCP<const map_type> map3n =
+      rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+
+    const MT M0 = STM::zero ();
+    const ST S0 = STS::zero ();
+    const ST S1 = STS::one ();
+
+    // In what follows, '@' (without single quotes) denotes
+    // element-wise multiplication -- that is, what
+    // MultiVector::elementWiseMultiply implements.
+
+    const size_t maxNumVecs = 3;
+
+    // Test for various numbers of columns.
+    for (size_t numVecs = 1; numVecs <= maxNumVecs; ++numVecs) {
+      out << "Test numVecs = " << numVecs << endl;
+      Teuchos::OSTab tab1 (out);
+
+      // A (always) has 1 vector, and B and C have numVecs vectors.
+      V A (map3n);
+      MV B (map3n, numVecs);
+      MV C (map3n, numVecs);
+      MV C_exp (map3n, numVecs);
+      Array<MT> C_norms (C.getNumVectors ());
+      Array<MT> C_zeros (C.getNumVectors ());
+      std::fill (C_zeros.begin (), C_zeros.end (), M0);
+
+      int caseNum = 0;
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 0*(A @ B)" << endl;
+      // Fill A and B initially with nonzero values, just for
+      // generality.  C should get filled with zeros afterwards.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S0, A, B, S0);
+
+        C_exp.putScalar (S0);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S3 = S1 + S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S0, A, B, S1);
+
+        C_exp.putScalar (S3);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 2*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S2 = S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, S2);
+
+        C_exp.putScalar (S2);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 1*(A @ B)" << endl;
       // A and B will be filled with 1s, so C should get filled with 1s.
-      V A(map3n,1);
-      MV B(map3n,2),
-         C(map3n,2);
-      // fill multivectors with ones
-      A.putScalar(ScalarTraits<Scalar>::one());
-      B.putScalar(ScalarTraits<Scalar>::one());
-      // fill expected answers Array
-      Teuchos::Array<Scalar> check2(6,1); // each entry (of six) is 1
-      // test
-      ArrayRCP<const Scalar> tmpView;
-      C.elementWiseMultiply(S1, A, B, S0);
-      tmpView = C.get1dView();
-      TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S1, A, B, S0);
+
+        C_exp.putScalar (S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + (-1)*(A @ B)" << endl;
+      // A and B will be filled with 1, so C should get filled with -1.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (-S1, A, B, S0);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be 5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, S1);
+
+        C_exp.putScalar (S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -1 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + (-1)*(A @ B)" << endl;
+      // Fill A with 2, B with 3, and C with 1.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S5 = S2 + S3;
+
+        A.putScalar (S2);
+        B.putScalar (S3);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (-S1, A, B, S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + (-1)*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (-S1, A, B, -S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 2*(A @ B)" << endl;
+      // Fill A with 3 and B with 4.  C should be 24 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S24 = S2 * S3 * S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S2, A, B, S0);
+
+        C_exp.putScalar (S24);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-2)*C + 2*(A @ B)" << endl;
+      // Fill A with 3, B with 4, and C with 5.  C should be 14 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S5 = S4 + S1;
+        const ST S14 = S5 * S2 + S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+        C.putScalar (S5);
+
+        C.elementWiseMultiply (S2, A, B, -S2);
+
+        C_exp.putScalar (S14);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
     }
   }
 
