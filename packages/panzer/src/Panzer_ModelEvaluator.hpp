@@ -81,16 +81,16 @@ public:
 
   ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                  const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-		 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
-		 const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+                 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+                 const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
-		 const Teuchos::RCP<panzer::GlobalData>& global_data,
-		 bool build_transient_support,double t_init);
+                 const Teuchos::RCP<panzer::GlobalData>& global_data,
+                 bool build_transient_support,double t_init);
 
   ModelEvaluator(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
-		 const Teuchos::RCP<panzer::GlobalData>& global_data,
-		 bool build_transient_support,double t_init);
+                 const Teuchos::RCP<panzer::GlobalData>& global_data,
+                 bool build_transient_support,double t_init);
 
   /** \brief . */
   ModelEvaluator();

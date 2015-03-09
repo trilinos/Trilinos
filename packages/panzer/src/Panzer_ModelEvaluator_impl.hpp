@@ -218,7 +218,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 panzer::ModelEvaluator<Scalar>::get_g_space(int i) const
 {
   TEUCHOS_ASSERT(i>=0 && 
-		 static_cast<typename std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >::size_type>(i)<g_space_.size());
+                 static_cast<typename std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >::size_type>(i)<g_space_.size());
 
   return g_space_[i];
 }
@@ -370,7 +370,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
 
   // Make sure construction built in transient support
   TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
-		     "ModelEvaluator was not built with transient support enabled!");
+                     "ModelEvaluator was not built with transient support enabled!");
 
   ae_inargs.container_ = lof_->buildLinearObjContainer(); // we use a new global container
   ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
@@ -400,7 +400,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
       rcp_dynamic_cast<const Thyra::SpmdVectorBase<Scalar> >(p,true)->getLocalData(Teuchos::ptrFromRef(p_data));
 
       for (unsigned int j=0; j < parameters_.scalar_values[i].size(); j++) {
-	parameters_.scalar_values[i][j].baseValue = p_data[j];
+        parameters_.scalar_values[i][j].baseValue = p_data[j];
         parameters_.scalar_values[i][j].family->setRealValueForAllTypes(parameters_.scalar_values[i][j].baseValue);
       }
     }
@@ -737,7 +737,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Make sure construction built in transient support
   TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
-		     "ModelEvaluator was not built with transient support enabled!");
+                     "ModelEvaluator was not built with transient support enabled!");
 
   //
   // Get the output arguments
