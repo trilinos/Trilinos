@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
+#include "UnitTestUtils.hpp"
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
@@ -72,15 +73,6 @@ public:
     }
 };
 
-void generateMesh(const std::string &generatedMeshSpec, stk::mesh::BulkData &bulkData, MPI_Comm communicator)
-{
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.set_bulk_data(bulkData);
-    exodusFileReader.add_mesh_database(generatedMeshSpec, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
-}
-
 struct CountNumNodesAlgorithm : public AlgorithmPerEntity
 {
     CountNumNodesAlgorithm(int &numNodes) :
@@ -104,7 +96,7 @@ TEST(ForEntityFunction, test_for_each_node_run)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        generateMesh(generatedMeshSpec, bulkData, communicator);
+        stk::mesh::unit_test::readMesh(generatedMeshSpec, bulkData, communicator);
 
         int numNodes = 0;
         CountNumNodesAlgorithm countNumNodesAlgorithm(numNodes);
@@ -153,7 +145,7 @@ TEST(ForEntityFunction, test_for_communicated_entities_run)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        generateMesh(generatedMeshSpec, bulkData, communicator);
+        stk::mesh::unit_test::readMesh(generatedMeshSpec, bulkData, communicator);
 
         size_t numCommunicatedEntities = 0;
         CountNumCommunicatedEntitiesAlgorithm countNumCommunicatedEntitiesAlgorithm(numCommunicatedEntities);

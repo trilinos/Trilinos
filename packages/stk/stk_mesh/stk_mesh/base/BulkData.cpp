@@ -5242,6 +5242,19 @@ void BulkData::batch_change_entity_parts( const stk::mesh::EntityVector& entitie
                           const std::vector<PartVector>& remove_parts,
                           bool always_propagate_internal_changes)
 {
+    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
+    if(!stkMeshRunningUnderFramework)
+    {
+        for(size_t i=0; i<add_parts.size(); i++)
+        {
+            internal_throw_error_if_manipulating_internal_part_memberships(add_parts[i]);
+        }
+        for(size_t i=0; i<remove_parts.size(); i++)
+        {
+            internal_throw_error_if_manipulating_internal_part_memberships(remove_parts[i]);
+        }
+    }
+
     bool starting_modification = modification_begin();
     ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
