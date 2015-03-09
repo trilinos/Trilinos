@@ -163,7 +163,7 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& y) const
   {
-    Scalar result;
+    dot_type result;
     this->dot (y, Teuchos::arrayView (&result, 1));
     return result;
   }
