@@ -140,7 +140,7 @@ struct LocalViewTraits< Kokkos::View<T,L,Kokkos::Cuda,M,Kokkos::Impl::ViewMPVect
                                            const unsigned local_rank)
   {
     const Sacado::MP::VectorPartition part(local_rank, local_rank+1);
-    local_view_type local_v = Kokkos::subview<local_view_type>(v, part);
+    local_view_type local_v = Kokkos::subview(v, part);
     return local_v;
   }
 };
@@ -158,7 +158,7 @@ struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVect
                                            const unsigned local_rank)
   {
     const Sacado::MP::VectorPartition part(local_rank, local_rank+1);
-    local_view_type local_v = Kokkos::subview<local_view_type>(v, part);
+    local_view_type local_v = Kokkos::subview(v, part);
     return local_v;
   }
 };
