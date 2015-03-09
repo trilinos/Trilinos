@@ -3204,7 +3204,7 @@ TEST(BulkData, ModificationEnd)
         }
 
         // Really testing destroy_entity
-        stk::mesh::impl::delete_shared_entities_which_are_no_longer_in_owned_closure(*stkMeshBulkData);
+        stkMeshBulkData->my_delete_shared_entities_which_are_no_longer_in_owned_closure();
 
         iter = std::lower_bound(stkMeshBulkData->my_internal_comm_list().begin(), stkMeshBulkData->my_internal_comm_list().end(), nodeEntityKey);
 

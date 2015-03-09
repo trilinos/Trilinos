@@ -65,8 +65,6 @@ bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity eleme
 bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
-void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
-bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
 void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
         stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes);
 
@@ -79,17 +77,6 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change );
-
-void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
-                                                const BulkData &       mesh,
-                                                Entity                 entity,
-                                                EntityKey &            recv_entity_key,
-                                                int       &            recv_owner_rank,
-                                                unsigned  &            recv_comm_count,
-                                                std::vector<Part*>&    recv_parts,
-                                                std::vector<Relation>& recv_relations,
-                                                std::vector<int>    &  recv_comm,
-                                                bool&                  bad_comm);
 
 int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);

@@ -50,6 +50,11 @@ public:
     {
     }
 
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &conn_map) :
+            stk::mesh::BulkData(mesh_meta_data, comm, false, &conn_map)
+    {
+    }
+
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                    MPI_Comm comm,
                    bool add_fmwk_data,
@@ -64,6 +69,36 @@ public:
     {
     }
 
+    bool is_entity_in_ghosting_comm_map(stk::mesh::Entity entity);
+
+    void check_sharing_comm_maps();
+
+    uint16_t closure_count(stk::mesh::Entity entity)
+    {
+        return m_closure_count[entity.local_offset()];
+    }
+
+    void reset_closure_count(stk::mesh::Entity entity)
+    {
+        m_closure_count[entity.local_offset()] = 0;
+    }
+
+    uint16_t my_orphaned_node_marking()
+    {
+        return orphaned_node_marking;
+    }
+
+    const stk::mesh::EntityCommDatabase my_entity_comm_map() const
+    {
+        return m_entity_comm_map;
+    }
+
+    bool is_ghosted_somewhere(stk::mesh::EntityKey key) const
+    {
+        return !internal_entity_comm_map(key, aura_ghosting()).empty();
+    }
+
+
     bool my_internal_modification_end(bool regenerate_aura = true, modification_optimization opt = MOD_END_COMPRESS_AND_SORT)
     {
       return this->internal_modification_end(regenerate_aura, opt);
@@ -76,16 +111,6 @@ public:
     void my_resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new)
     {
         this->resolve_ownership_of_modified_entities(shared_new);
-    }
-
-    uint16_t closure_count(stk::mesh::Entity entity)
-    {
-        return m_closure_count[entity.local_offset()];
-    }
-
-    uint16_t my_orphaned_node_marking()
-    {
-        return orphaned_node_marking;
     }
 
     bool my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
@@ -113,17 +138,10 @@ public:
         BulkData::entity_comm_map_clear_ghosting(key);
     }
 
-    const stk::mesh::EntityCommDatabase my_entity_comm_map() const
-    {
-        return m_entity_comm_map;
-    }
-
     bool my_internal_modification_end_for_change_entity_owner( bool regenerate_aura, modification_optimization opt )
     {
         return this->internal_modification_end_for_change_entity_owner(regenerate_aura, opt);
     }
-
-    bool is_entity_in_ghosting_comm_map(stk::mesh::Entity entity);
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
     {
@@ -178,6 +196,75 @@ public:
     PairIterEntityComm my_internal_entity_comm_map(const EntityKey & key, const Ghosting & sub) const
     {
         return internal_entity_comm_map(key, sub);
+    }
+
+    bool my_comm_mesh_verify_parallel_consistency(std::ostream & error_log)
+    {
+        return comm_mesh_verify_parallel_consistency(error_log);
+    }
+
+
+
+
+
+    void my_internal_resolve_shared_modify_delete()
+    {
+        this->internal_resolve_shared_modify_delete();
+    }
+
+    void my_internal_resolve_ghosted_modify_delete()
+    {
+        this->internal_resolve_ghosted_modify_delete();
+    }
+
+    void my_internal_resolve_parallel_create()
+    {
+        this->internal_resolve_parallel_create();
+    }
+
+    void my_update_comm_list_based_on_changes_in_comm_map()
+    {
+        this->update_comm_list_based_on_changes_in_comm_map();
+    }
+
+    void my_internal_update_distributed_index(std::vector<stk::mesh::Entity> & shared_new )
+    {
+        this->internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_new );
+    }
+
+    void my_internal_update_distributed_index(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new )
+    {
+        this->internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(entityRank, shared_new);
+    }
+
+    void my_move_entities_to_proper_part_ownership( std::vector<stk::mesh::Entity> &shared_modified )
+    {
+        this->move_entities_to_proper_part_ownership( shared_modified );
+    }
+
+    void my_add_comm_list_entries_for_entities( std::vector<stk::mesh::Entity> &shared_modified )
+    {
+        this->add_comm_list_entries_for_entities( shared_modified );
+    }
+
+    void my_internal_resolve_shared_membership()
+    {
+        this->internal_resolve_shared_membership();
+    }
+
+    void my_internal_regenerate_aura()
+    {
+        this->internal_regenerate_aura();
+    }
+
+    void my_set_state(stk::mesh::Entity entity, stk::mesh::EntityState entity_state)
+    {
+        set_state(entity,entity_state);
+    }
+
+    void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
+    {
+        delete_shared_entities_which_are_no_longer_in_owned_closure();
     }
 };
 

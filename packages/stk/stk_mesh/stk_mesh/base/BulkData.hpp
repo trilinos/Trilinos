@@ -89,37 +89,6 @@ namespace mesh {
 class BulkData;
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
-namespace impl {
-bool ordered_comm(const BulkData& bulk, const Entity entity );
-void delete_shared_entities_which_are_no_longer_in_owned_closure(BulkData & mesh);
-void pack_owned_verify(CommAll & all, const BulkData & mesh);
-bool unpack_not_owned_verify(CommAll & comm_all, const BulkData & mesh, std::ostream & error_log);
-bool verify_parallel_attributes_comm_list_info(BulkData & M, size_t comm_count, std::ostream & error_log);
-bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, std::ostream & error_log, size_t& comm_count );
-void unpack_not_owned_verify_report_errors(const BulkData& mesh,
-                                           Entity entity,
-                                           bool bad_key,
-                                           bool bad_own,
-                                           bool bad_part,
-                                           bool bad_rel,
-                                           bool bad_comm,
-                                           EntityKey            recv_entity_key,
-                                           int                  recv_owner_rank,
-                                           std::vector<Part*> const&    recv_parts,
-                                           std::vector<Relation> const& recv_relations,
-                                           std::vector<int>    const&  recv_comm,
-                                           std::ostream & error_log);
-void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
-                                                const BulkData &       mesh,
-                                                Entity                 entity,
-                                                EntityKey &            recv_entity_key,
-                                                int       &            recv_owner_rank,
-                                                unsigned  &            recv_comm_count,
-                                                std::vector<Part*>&    recv_parts,
-                                                std::vector<Relation>& recv_relations,
-                                                std::vector<int>    &  recv_comm,
-                                                bool&                  bad_comm);
-}
 
 class BulkData {
 
@@ -897,6 +866,8 @@ protected: //functions
                                  const RelationIdentifier local_id );
 
   void check_mesh_consistency();
+  bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
+  void delete_shared_entities_which_are_no_longer_in_owned_closure();
 
 private: //functions
 
@@ -1069,30 +1040,31 @@ private: //functions
   friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
-  friend class Ghosting;
+  friend class Ghosting; // friend until Ghosting is refactored to be like Entity
+
+  // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
-  friend bool ::stk::mesh::impl::ordered_comm(const BulkData& bulk, const Entity entity );
-  friend void ::stk::mesh::impl::delete_shared_entities_which_are_no_longer_in_owned_closure(BulkData & mesh);
-  friend void ::stk::mesh::impl::pack_owned_verify(CommAll & all, const BulkData & mesh);
-  friend bool ::stk::mesh::impl::unpack_not_owned_verify(CommAll & comm_all, const BulkData & mesh, std::ostream & error_log);
-  friend bool ::stk::mesh::impl::verify_parallel_attributes_comm_list_info(BulkData & M, size_t comm_count, std::ostream & error_log);
-  friend bool ::stk::mesh::impl::verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, std::ostream & error_log, size_t& comm_count );
-  friend void ::stk::mesh::impl::unpack_not_owned_verify_report_errors(const BulkData& mesh,
-                                             Entity entity,
+
+  bool ordered_comm( const Entity entity );
+  void pack_owned_verify(CommAll & all);
+  bool unpack_not_owned_verify(CommAll & comm_all, std::ostream & error_log);
+  bool verify_parallel_attributes( std::ostream & error_log );
+  bool verify_parallel_attributes_comm_list_info(size_t comm_count, std::ostream & error_log);
+  bool verify_parallel_attributes_for_bucket( Bucket const& bucket, std::ostream & error_log, size_t& comm_count );
+  void unpack_not_owned_verify_report_errors(Entity entity,
                                              bool bad_key,
                                              bool bad_own,
                                              bool bad_part,
                                              bool bad_rel,
                                              bool bad_comm,
-                                             EntityKey            recv_entity_key,
-                                             int                  recv_owner_rank,
-                                             std::vector<Part*> const&    recv_parts,
+                                             EntityKey recv_entity_key,
+                                             int recv_owner_rank,
+                                             std::vector<Part*> const& recv_parts,
                                              std::vector<Relation> const& recv_relations,
-                                             std::vector<int>    const&  recv_comm,
+                                             std::vector<int> const& recv_comm,
                                              std::ostream & error_log);
-  friend void ::stk::mesh::impl::unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
-                                                  const BulkData &       mesh,
+  void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
                                                   Entity                 entity,
                                                   EntityKey &            recv_entity_key,
                                                   int       &            recv_owner_rank,
