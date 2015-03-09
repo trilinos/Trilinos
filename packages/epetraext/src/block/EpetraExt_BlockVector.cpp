@@ -60,8 +60,8 @@ BlockVector::BlockVector(
 //=============================================================================
 // EpetraExt::BlockVector Constructor
 BlockVector::BlockVector(
-      Epetra_DataAccess CV, 
-      const Epetra_BlockMap & BaseMap, 
+      Epetra_DataAccess CV,
+      const Epetra_BlockMap & BaseMap,
       const Epetra_Vector & BlockVec)
   : Epetra_Vector( CV, BlockVec, 0 ),
     BaseMap_( BaseMap ),
@@ -93,19 +93,19 @@ int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, long long Global
    // by the IndexOffset and extract the value from this blockVector
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID64(i)));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID64(i) << std::endl;
-	     return -1;
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::GetBlock: " << i << " "
+                  << IndexOffset << " " << BaseMap_.GID64(i) << std::endl;
+             return -1;
       }
-      BaseVector[i] = Values_[localIndex]; 
+      BaseVector[i] = Values_[localIndex];
    }
 
    return 0;
 }
 
 //=========================================================================
-int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, long long GlobalBlockRow) 
+int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, long long GlobalBlockRow)
 {
    long long IndexOffset = GlobalBlockRow * Offset_;
    int localIndex=0;
@@ -114,19 +114,19 @@ int BlockVector::LoadBlockValues(const Epetra_Vector & BaseVector, long long Glo
    // by the IndexOffset and load into this blockVector
    for (int i=0; i<BaseMap_.NumMyElements(); i++) {
       localIndex = this->Map().LID((IndexOffset + BaseMap_.GID64(i)));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::GetBlock: " << i << " " 
-		  << IndexOffset << " " << BaseMap_.GID64(i) << std::endl;
-	     return -1;
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::GetBlock: " << i << " "
+                  << IndexOffset << " " << BaseMap_.GID64(i) << std::endl;
+             return -1;
       }
       (*this)[localIndex] = BaseVector[i];
    }
 
    return 0;
-}   
+}
 //=========================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
+int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* theValues,
                                           int* Indices, int GlobalBlockRow)
 {
    long long IndexOffset = GlobalBlockRow * Offset_;
@@ -136,18 +136,18 @@ int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
    // by the IndexOffset and load into this blockVector
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
                   << " " << IndexOffset << " " << Indices[i] << std::endl;
-	     return -1;
+             return -1;
       }
-      (*this)[localIndex] += Values[i];
+      (*this)[localIndex] += theValues[i];
    }
 
    return 0;
-}   
+}
 //=========================================================================
-int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
+int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* theValues,
                                           int* Indices, int GlobalBlockRow)
 {
    long long IndexOffset = GlobalBlockRow * Offset_;
@@ -157,20 +157,20 @@ int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
    // by the IndexOffset and load into this blockVector
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
                   << " " << IndexOffset << " " << Indices[i] << std::endl;
-	     return -1;
+             return -1;
       }
-      (*this)[localIndex] = Values[i];
+      (*this)[localIndex] = theValues[i];
    }
 
    return 0;
-}   
+}
 #endif
 //=========================================================================
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
+int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* theValues,
                                           long long* Indices, long long GlobalBlockRow)
 {
    long long IndexOffset = GlobalBlockRow * Offset_;
@@ -180,18 +180,18 @@ int BlockVector::BlockSumIntoGlobalValues(int NumIndices, double* Values,
    // by the IndexOffset and load into this blockVector
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::BlockSumIntoGlobalValues: " << i
                   << " " << IndexOffset << " " << Indices[i] << std::endl;
-	     return -1;
+             return -1;
       }
-      (*this)[localIndex] += Values[i];
+      (*this)[localIndex] += theValues[i];
    }
 
    return 0;
-}   
+}
 //=========================================================================
-int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
+int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* theValues,
                                           long long* Indices, long long GlobalBlockRow)
 {
    long long IndexOffset = GlobalBlockRow * Offset_;
@@ -201,16 +201,16 @@ int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
    // by the IndexOffset and load into this blockVector
    for (int i=0; i<NumIndices; i++) {
       localIndex = this->Map().LID((IndexOffset + Indices[i]));
-      if (localIndex==-1) { 
-	     std::cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
+      if (localIndex==-1) {
+             std::cout << "Error in  BlockVector::BlockReplaceGlobalValues: " << i
                   << " " << IndexOffset << " " << Indices[i] << std::endl;
-	     return -1;
+             return -1;
       }
-      (*this)[localIndex] = Values[i];
+      (*this)[localIndex] = theValues[i];
    }
 
    return 0;
-}   
+}
 #endif
 //=========================================================================
 Teuchos::RCP<const Epetra_Vector>

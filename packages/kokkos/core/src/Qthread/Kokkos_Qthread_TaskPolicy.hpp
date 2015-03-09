@@ -50,7 +50,18 @@
 #include <typeinfo>
 #include <stdexcept>
 
+//----------------------------------------------------------------------------
+// Defines to enable experimental Qthread functionality
+
+#define QTHREAD_LOCAL_PRIORITY
+#define CLONED_TASKS
+
 #include <qthread.h>
+
+#undef QTHREAD_LOCAL_PRIORITY
+#undef CLONED_TASKS
+
+//----------------------------------------------------------------------------
 
 #include <Kokkos_Qthread.hpp>
 #include <Kokkos_TaskPolicy.hpp>
@@ -546,7 +557,8 @@ class TaskPolicy< Kokkos::Qthread >
 {
 public:
 
-  typedef Kokkos::Qthread execution_space ;
+  typedef Kokkos::Qthread                        execution_space ;
+  typedef Kokkos::Impl::QthreadTeamPolicyMember  member_type ;
 
 private:
 

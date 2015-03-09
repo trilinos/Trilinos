@@ -748,39 +748,322 @@ namespace {
     }
   }
 
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiply, LO , GO , Scalar , Node )
+  // Test Tpetra::MultiVector::elementWiseMultiply.
+  //
+  // Be sure to exercise all combinations of the cases alpha =
+  // {-1,0,1,other} and beta = {-1,0,1,other}, as these commonly have
+  // special cases.
+  //
+  // Also be sure to exercise the common case (also often with a
+  // special-case implementation) where all the MultiVectors have one
+  // column.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiply, LO , GO , ST , Node )
   {
     using Teuchos::View;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
-    // create a Map
-    RCP<const Map<LO,GO,Node> > map3n = createContigMapWithNode<LO,GO>(INVALID,3,comm,node);
-    const Mag    M0 = ScalarTraits<Mag>::zero();
-    const Scalar S1 = ScalarTraits<Scalar>::one();
-    const Scalar S0 = ScalarTraits<Scalar>::zero();
-    {
-      // case 1: C = S1*A@B ('@' denotes element-wise multiplication)
-      // C has 2 vectors, A has 1 vector, B has 2 vectors.
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<ST> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+    typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
+    typedef Tpetra::Vector<ST,LO,GO,Node> V;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+
+    out << "Tpetra::MultiVector::elementWiseMultiply test" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Create a Map.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const size_t lclNumRows = 3;
+    const GST gblNumRows = comm->getSize () * lclNumRows;
+    const GO indexBase = 0;
+    RCP<const map_type> map3n =
+      rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+
+    const MT M0 = STM::zero ();
+    const ST S0 = STS::zero ();
+    const ST S1 = STS::one ();
+
+    // In what follows, '@' (without single quotes) denotes
+    // element-wise multiplication -- that is, what
+    // MultiVector::elementWiseMultiply implements.
+
+    const size_t maxNumVecs = 3;
+
+    // Test for various numbers of columns.
+    for (size_t numVecs = 1; numVecs <= maxNumVecs; ++numVecs) {
+      out << "Test numVecs = " << numVecs << endl;
+      Teuchos::OSTab tab1 (out);
+
+      // A (always) has 1 vector, and B and C have numVecs vectors.
+      V A (map3n);
+      MV B (map3n, numVecs);
+      MV C (map3n, numVecs);
+      MV C_exp (map3n, numVecs);
+      Array<MT> C_norms (C.getNumVectors ());
+      Array<MT> C_zeros (C.getNumVectors ());
+      std::fill (C_zeros.begin (), C_zeros.end (), M0);
+
+      int caseNum = 0;
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 0*(A @ B)" << endl;
+      // Fill A and B initially with nonzero values, just for
+      // generality.  C should get filled with zeros afterwards.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S0, A, B, S0);
+
+        C_exp.putScalar (S0);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S3 = S1 + S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S0, A, B, S1);
+
+        C_exp.putScalar (S3);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 2*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S2 = S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, S2);
+
+        C_exp.putScalar (S2);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 1*(A @ B)" << endl;
       // A and B will be filled with 1s, so C should get filled with 1s.
-      V A(map3n,1);
-      MV B(map3n,2),
-         C(map3n,2);
-      // fill multivectors with ones
-      A.putScalar(ScalarTraits<Scalar>::one());
-      B.putScalar(ScalarTraits<Scalar>::one());
-      // fill expected answers Array
-      Teuchos::Array<Scalar> check2(6,1); // each entry (of six) is 1
-      // test
-      ArrayRCP<const Scalar> tmpView;
-      C.elementWiseMultiply(S1, A, B, S0);
-      tmpView = C.get1dView();
-      TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S1, A, B, S0);
+
+        C_exp.putScalar (S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + (-1)*(A @ B)" << endl;
+      // A and B will be filled with 1, so C should get filled with -1.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (-S1, A, B, S0);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be 5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, S1);
+
+        C_exp.putScalar (S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -1 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + (-1)*(A @ B)" << endl;
+      // Fill A with 2, B with 3, and C with 1.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S5 = S2 + S3;
+
+        A.putScalar (S2);
+        B.putScalar (S3);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (-S1, A, B, S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + (-1)*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (-S1, A, B, -S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 2*(A @ B)" << endl;
+      // Fill A with 3 and B with 4.  C should be 24 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S24 = S2 * S3 * S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S2, A, B, S0);
+
+        C_exp.putScalar (S24);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-2)*C + 2*(A @ B)" << endl;
+      // Fill A with 3, B with 4, and C with 5.  C should be 14 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S5 = S4 + S1;
+        const ST S14 = S5 * S2 + S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+        C.putScalar (S5);
+
+        C.elementWiseMultiply (S2, A, B, -S2);
+
+        C_exp.putScalar (S14);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
     }
   }
 
@@ -1680,6 +1963,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
+    out << "Tpetra::MultiVector scale and assign test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     RCP<Node> node = getNode<Node>();
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -1688,6 +1974,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag tol = errorTolSlack * testingTol<Scalar>();
     const Mag M0 = ScalarTraits<Mag>::zero();
+
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1701,25 +1988,35 @@ namespace {
     // This test operator= and all of our scale ops
     // We'll do Vector and MultiVector variations
     // Also, ensure that other vectors aren't changed
-    MV A(map,numVectors,false),
-       B(map,numVectors,false);
-    A.randomize();
+
+    out << "Create A, and fill with random numbers" << endl;
+    MV A (map, numVectors, false);
+    A.randomize ();
+
+    out << "Stash away norms of columns of A" << endl;
     Array<Mag> Anrms(numVectors);
-    A.norm1(Anrms());
+    A.norm1 (Anrms ());
+
+    out << "Test B := A*2, using different methods" << endl;
     // set B = A * 2, using different techniques
-    // * get vector, Vector::operator=
+    // * deep_copy(B,A) and scale B in place
     // * get 1-vector subview(Range1D), MultiVector::operator=
     // * get 1-vector subview(ArrayView), MultiVector::operator=
     // * get data view, assign
     TEUCHOS_TEST_FOR_EXCEPT(numVectors < 4);
+
+    MV B (map, numVectors, false);
     for (size_t j = 0; j < numVectors; ++j) {
+      Teuchos::OSTab tab1 (out);
+
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
         case 0:
           {
+            out << "Method 0" << endl;
+
             RCP<V> bj = B.getVectorNonConst(j);
             RCP<const V> aj = A.getVector(j);
-            //(*bj) = (*aj);
             deep_copy((*bj),(*aj));
 
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
@@ -1730,6 +2027,8 @@ namespace {
           break;
         case 1:
           {
+            out << "Method 1" << endl;
+
             RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
             RCP<const MV> aj = A.subView(Range1D(j,j));
             ////(*bj) = (*aj);
@@ -1742,6 +2041,8 @@ namespace {
           break;
         case 2:
           {
+            out << "Method 2" << endl;
+
             RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
             RCP<const MV> aj = A.subView(tuple<size_t>(j));
             //RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
@@ -1757,6 +2058,8 @@ namespace {
           break;
         case 3:
           {
+            out << "Method 3" << endl;
+
             ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
             ArrayRCP<const Scalar> ajview = A.getData(j);
             for (size_t i=0; i < numLocal; ++i) {
@@ -1766,30 +2069,39 @@ namespace {
           break;
       }
     }
+
+    out << "Check that A wasn't modified" << endl;
     // check that A wasn't modified
     {
       Array<Mag> Anrms_aft(numVectors);
       A.norm1(Anrms_aft());
       TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_aft(),tol);
     }
+
+    out << "Check that C.scale(2,A) == B" << endl;
     // check that C.Scale(A,2.0) == B
     {
-      MV C(map,numVectors,false);
-      C.scale(as<Scalar>(2), A);
-      C.update(-1.0,B,1.0);
+      MV C (map, numVectors, false);
+      C.scale (as<Scalar> (2), A);
+
+      C.update (-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
+
+    out << "Check that C := A, C.scale(2) == B" << endl;
     // check that C=A, C.Scale(2.0) == B
     {
-      MV C(createCopy(A));
+      MV C (createCopy(A));
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
+
+    out << "Check that C := A, C.scale(tuple(2)) == B" << endl;
     // check that C=A, C.Scale(tuple(2)) == B
     {
       MV C(createCopy(A));
@@ -3360,6 +3672,390 @@ namespace {
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
+// Macro used inside the SubViewSomeZeroRows test below.  It tests for
+// global error, and if so, prints each process' error message and
+// quits the test early.
+//
+// 'out' only prints on Process 0.  It's really not OK for other
+// processes to print to stdout, but it usually works and we need to
+// do it for debugging.
+#define SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( WHAT_STRING ) do { \
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess)); \
+  TEST_EQUALITY_CONST( gblSuccess, 1 ); \
+  if (gblSuccess != 1) { \
+    out << WHAT_STRING << " FAILED on one or more processes!" << endl; \
+    for (int p = 0; p < numProcs; ++p) { \
+      if (myRank == p && lclSuccess != 1) { \
+        std::cout << errStrm.str () << std::flush; \
+      } \
+      comm->barrier (); \
+      comm->barrier (); \
+      comm->barrier (); \
+    } \
+  } \
+  return; \
+} while (false)
+
+  // Exercise getVector, subView(Range1D) and subCopy(Range1D) where
+  // some processes have zero rows.  Contributed by Andrew Bradley.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SubViewSomeZeroRows, LO, GO, ST, Node )
+  {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Vector<ST, LO, GO, Node> V;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
+
+    out << "Tpetra::MultiVector: Test subView and subCopy when some processes "
+      "have zero rows" << endl;
+
+    int lclSuccess = 1;
+    int gblSuccess = 1;
+    std::ostringstream errStrm; // for error collection
+
+    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
+    // Create a Map that puts everything on Process 0 and nothing on
+    // the other processes.
+    const Tpetra::global_size_t gblNumInds = 10;
+    const size_t lclNumInds = (myRank == 0) ? 10 : 0;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (gblNumInds, lclNumInds, indexBase, comm));
+    // Create a MultiVector with this Map.  Give it at least three
+    // columns, so that when we try to take a subview with two
+    // columns, it's actually a nontrivial subview.  (subView might
+    // have an optimization when the input column range is exactly the
+    // original set of columns.)
+    const size_t origNumVecs = 5;
+    MV mv (map, origNumVecs);
+
+    // Make sure that getVector(NonConst) works on this MultiVector.
+    // While doing that, fill each column with data that distinguish
+    // it from the other columns.
+    RCP<V> v_j;
+    try {
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        // Use j+1, so that no column gets filled with zeros.  That
+        // will distinguish the zeroth column from a zero-filled
+        // (Multi)Vector.
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVector(j), "
+        "mv.getVectorNonConst(j), or v_j->putScalar() threw exception: "
+              << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVector(j), mv.getVectorNonConst(j), or v_j->putScalar()" );
+
+    // Make sure that every column got the right data.  Don't use
+    // getVectorNonConst(j) to test this; we need independent
+    // confirmation.
+    try {
+      Array<typename MV::mag_type> norms (mv.getNumVectors ());
+      mv.normInf (norms ());
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        TEST_EQUALITY( norms[j], static_cast<ST> (j+1) );
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.normInf() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.normInf()" );
+
+    // Test getting a subView of the first two columns.
+    out << "Test subView(Range1D(0,1))" << endl;
+    Teuchos::Range1D r (0, 1);
+    RCP<const MV> mv_sv;
+    try {
+      mv_sv = mv.subView (r);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView(Range1D(0,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView(Range1D(0,1))" );
+
+    // Make sure that the two columns being viewed actually have the
+    // right data in them.
+    try {
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sv->normInf (norms ());
+      TEST_EQUALITY( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv_sv->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv->normInf()" );
+
+    // Make sure that the supposed "view" is actually a view.  That
+    // is, if I change the original MultiVector's data, the view
+    // should see the change right away.
+    try {
+      // Even if ST is bool, at least one of the columns will see the
+      // change (mod it by 2 to see why).
+      mv.putScalar (static_cast<ST> (mv.getNumVectors ()));
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sv->normInf (norms ());
+      TEST_EQUALITY_CONST( norms[0], static_cast<ST> (mv.getNumVectors ()) );
+      TEST_EQUALITY_CONST( norms[1], static_cast<ST> (mv.getNumVectors ()) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.putScalar() or mv_sv->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.putScalar() or mv_sv->normInf()" );
+
+    // Restore the MultiVector's original data.
+    try {
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVectorNonConst(j) or "
+        "v_j->putScalar() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVectorNonConst(j) or v_j->putScalar()" );
+
+    // Test subCopy (which reportedly has the same issue as subView).
+    out << "Test subCopy(Range1D(0,1))" << endl;
+    RCP<const MV> mv_sc;
+    try {
+      mv_sc = mv.subCopy (r);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subCopy(Range1D(0,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subCopy(Range1D(0,1))" );
+
+    // Make sure that the two copied columns actually have the right
+    // data in them.
+    try {
+      Array<typename MV::mag_type> norms (mv_sv->getNumVectors ());
+      mv_sc->normInf (norms ());
+      TEST_EQUALITY( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv_sc->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc->normInf()" );
+
+    // Make sure that the supposed "copy" is actually a (deep) copy.
+    // That is, if I change the original MultiVector's data, the copy
+    // should NOT see the change.
+    try {
+      // Even if ST is bool, at least one of the columns will see the
+      // change (mod it by 2 to see why).
+      mv.putScalar (static_cast<ST> (mv.getNumVectors ()));
+      Array<typename MV::mag_type> norms (mv_sc->getNumVectors ());
+      mv_sc->normInf (norms ());
+      TEST_EQUALITY_CONST( norms[0], static_cast<ST> (1) );
+      TEST_EQUALITY_CONST( norms[1], static_cast<ST> (2) );
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.putScalar() or mv_sc->normInf() "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.putScalar() or mv_sc->normInf()" );
+
+    // Restore the MultiVector's original data.
+    try {
+      for (size_t j = 0; j < mv.getNumVectors (); ++j) {
+        v_j = mv.getVectorNonConst (j);
+        v_j->putScalar (static_cast<ST> (j+1));
+      }
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.getVectorNonConst(j) or "
+        "v_j->putScalar() threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.getVectorNonConst(j) or v_j->putScalar()" );
+
+    // Test getting a subView of just the first column.
+    out << "Test subView(Range1D(1,1))" << endl;
+    Teuchos::Range1D r11 (1, 1);
+    try {
+      mv_sv = mv.subView (r11);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView(Range1D(1,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView(Range1D(1,1))" );
+
+    // Single-column subviews must always have constant stride.
+    {
+      bool constStride = false;
+      try {
+        constStride = ! mv_sv.is_null () && mv_sv->isConstantStride ();
+      } catch (std::exception& e) {
+        lclSuccess = 0;
+        errStrm << "Process " << myRank << ": mv_sv->isConstantStride() "
+          "threw exception: " << e.what () << endl;
+      }
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv->isConstantStride()" );
+      lclSuccess = constStride ? 1 : 0;
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sv having constant stride" );
+    }
+
+    // Test subCopy of just the first column.
+    out << "Test subCopy(Range1D(1,1))" << endl;
+    try {
+      mv_sc = mv.subCopy (r11);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subCopy(Range1D(1,1)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subCopy(Range1D(1,1))" );
+
+    // Single-column subcopies must always have constant stride.
+    {
+      bool constStride = false;
+      try {
+        constStride = ! mv_sc.is_null () && mv_sc->isConstantStride ();
+      } catch (std::exception& e) {
+        lclSuccess = 0;
+        errStrm << "Process " << myRank << ": mv_sc->isConstantStride() "
+          "threw exception: " << e.what () << endl;
+      }
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc->isConstantStride()" );
+      lclSuccess = constStride ? 1 : 0;
+      SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv_sc having constant stride" );
+    }
+
+    //
+    // Make a noncontiguous subview of the original MultiVector.  Test
+    // that both multiple-column and single-column subviews and
+    // subcopies work.
+    //
+
+    // Start with a noncontiguous subview of the original MV.
+    out << "Test subView([0, 2, 4])" << endl;
+    RCP<const MV> X_noncontig;
+    try {
+      Array<size_t> colsToView (3);
+      colsToView[0] = 0;
+      colsToView[1] = 2;
+      colsToView[2] = 4;
+      X_noncontig = mv.subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": mv.subView([0, 2, 4]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "mv.subView([0, 2, 4])" );
+
+    // Test getting a multiple-column noncontiguous subview of the
+    // noncontiguous subview.
+    out << "Test multi-column noncontig subview of noncontig subview" << endl;
+    try {
+      // View columns 0 and 2 of X_noncontig, which should be columns
+      // 0 and 4 of the original MV.
+      Array<size_t> colsToView (2);
+      colsToView[0] = 0;
+      colsToView[1] = 2;
+      mv_sv = X_noncontig->subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView([0, 2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView([0, 2])" );
+
+    // Test getting a multiple-column noncontiguous subcopy of the
+    // noncontiguous subview.
+    out << "Test multi-column noncontig subcopy of noncontig subview" << endl;
+    try {
+      // Copy columns 0 and 2 of X_noncontig, which should be columns
+      // 0 and 4 of the original MV.
+      Array<size_t> colsToCopy (2);
+      colsToCopy[0] = 0;
+      colsToCopy[1] = 2;
+      mv_sc = X_noncontig->subCopy (colsToCopy);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy([0, 2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy([0, 2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subView(Teuchos::ArrayView<const size_t>).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::ArrayView<const size_t>" << endl;
+    try {
+      // View column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      Array<size_t> colsToView (1);
+      colsToView[0] = 2;
+      mv_sv = X_noncontig->subView (colsToView);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView([2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView([2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subView(Teuchos::Range1D).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::Range1D" << endl;
+    try {
+      // View column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      mv_sv = X_noncontig->subView (Teuchos::Range1D (2, 2));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subView(Range1D(2,2)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subView(Range1D(2,2))" );
+
+    // Test getting a single-column subcopy of the noncontiguous
+    // subview, using subCopy(Teuchos::ArrayView<const size_t>).
+    out << "Test single-column noncontig subcopy of noncontig subview, "
+      "using Teuchos::ArrayView<const size_t>" << endl;
+    try {
+      // Copy column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      Array<size_t> colsToCopy (1);
+      colsToCopy[0] = 2;
+      mv_sv = X_noncontig->subCopy (colsToCopy);
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy([2]) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy([2])" );
+
+    // Test getting a single-column subview of the noncontiguous
+    // subview, using subCopy(Teuchos::Range1D).
+    out << "Test single-column noncontig subview of noncontig subview, "
+      "using Teuchos::Range1D" << endl;
+    try {
+      // Copy column 2 of X_noncontig, which should be column 4 of the
+      // original MV.
+      mv_sc = X_noncontig->subCopy (Teuchos::Range1D (2, 2));
+    } catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Process " << myRank << ": X_noncontig->subCopy(Range1D(2,2)) "
+        "threw exception: " << e.what () << endl;
+    }
+    SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "X_noncontig->subCopy(Range1D(2,2))" );
+  }
 
 //
 // INSTANTIATIONS
@@ -3398,7 +4094,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE )
 
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)

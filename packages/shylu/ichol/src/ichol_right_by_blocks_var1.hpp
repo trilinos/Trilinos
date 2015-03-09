@@ -12,23 +12,23 @@ namespace Example {
 
   using namespace std;
   
-  template<typename CrsTaskViewType>
+  template<typename CrsTaskViewType, typename ParallelForType>
   KOKKOS_INLINE_FUNCTION
   int genScalarTask_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                       const CrsTaskViewType A) {
+                                       const CrsTaskViewType &A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
     typedef typename CrsTaskViewType::future_type       future_type;
     typedef typename CrsTaskViewType::task_factory_type task_factory_type;
-    
+
     row_view_type a(A, 0); 
     value_type &aa = a.Value(0);
 
     // construct a task
     future_type f = task_factory_type::create(policy,
                                               IChol<Uplo::Upper,AlgoIChol::RightUnblockedOpt1>
-                                              ::TaskFunctor<value_type>(aa));
+                                              ::TaskFunctor<value_type,ParallelForType>(aa));
 
     // manage dependence
     task_factory_type::addDependence(policy, f, aa.Future());
@@ -40,11 +40,11 @@ namespace Example {
     return 0;
   }
 
-  template<typename CrsTaskViewType>
+  template<typename CrsTaskViewType, typename ParallelForType>
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                     const CrsTaskViewType A,
-                                     const CrsTaskViewType B) {
+                                      const CrsTaskViewType &A,
+                                      const CrsTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -62,7 +62,7 @@ namespace Example {
       future_type f = task_factory_type
         ::create(policy, 
                  Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForRightBlocked>
-                 ::TaskFunctor<double,value_type>(Diag::NonUnit, 1.0, aa, bb));
+                 ::TaskFunctor<double,value_type,ParallelForType>(Diag::NonUnit, 1.0, aa, bb));
       
       // trsm dependence
       task_factory_type::addDependence(policy, f, aa.Future());
@@ -80,18 +80,18 @@ namespace Example {
     return 0;
   }
 
-  template<typename CrsTaskViewType>
+  template<typename CrsTaskViewType, typename ParallelForType>
   KOKKOS_INLINE_FUNCTION
   int genHerkTasks_UpperRightByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                      const CrsTaskViewType A,
-                                      const CrsTaskViewType C) {
+                                      const CrsTaskViewType &A,
+                                      const CrsTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
     typedef typename CrsTaskViewType::future_type       future_type;
     typedef typename CrsTaskViewType::task_factory_type task_factory_type;
-    
+
     // case that X.transpose, A.no_transpose, Y.no_transpose
 
     row_view_type a(A,0), c; 
@@ -117,7 +117,7 @@ namespace Example {
             future_type f = task_factory_type
               ::create(policy, 
                        Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForRightBlocked>
-                       ::TaskFunctor<double,value_type>(-1.0, val_at_i, 1.0, cc));
+                       ::TaskFunctor<double,value_type,ParallelForType>(-1.0, val_at_i, 1.0, cc));
             
             // dependence
             task_factory_type::addDependence(policy, f, val_at_i.Future());              
@@ -138,7 +138,7 @@ namespace Example {
             future_type f = task_factory_type
               ::create(policy, 
                        Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForRightBlocked>
-                       ::TaskFunctor<double,value_type>(-1.0, val_at_i, val_at_j, 1.0, cc));
+                       ::TaskFunctor<double,value_type,ParallelForType>(-1.0, val_at_i, val_at_j, 1.0, cc));
             
             // dependence
             task_factory_type::addDependence(policy, f, val_at_i.Future());

@@ -28,6 +28,10 @@ IF (ROL_ENABLE_Epetra)
   ADD_SUBDIRECTORY(adapters/epetra)
 ENDIF()
 
+IF (ROL_ENABLE_Belos)
+  ADD_SUBDIRECTORY(adapters/belos)
+ENDIF()
+
 IF (ROL_ENABLE_Sacado)
   ADD_SUBDIRECTORY(adapters/sacado)
 ENDIF()
@@ -36,6 +40,9 @@ IF (ROL_ENABLE_Thyra)
   ADD_SUBDIRECTORY(adapters/thyra)
 ENDIF()
 
+IF (ROL_ENABLE_ROL_Python)
+  ADD_SUBDIRECTORY(adapters/python)
+ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test util)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

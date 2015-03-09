@@ -45,15 +45,10 @@
 #include "Ifpack.h"
 #include "Ifpack_Utils.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_IntVector.h"
-
-using Teuchos::RefCountPtr;
-using Teuchos::rcp;
-
-
 
 #ifdef HAVE_IFPACK_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
@@ -86,8 +81,10 @@ Ifpack_SORa::Ifpack_SORa(Epetra_RowMatrix* A):
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
-  if(Acrs) Acrs_=rcp(Acrs,false);
-  A_=rcp(A,false);
+  if (Acrs) {
+    Acrs_= Teuchos::rcp (Acrs, false);
+  }
+  A_ = Teuchos::rcp (A, false);
 }
 
 void Ifpack_SORa::Destroy(){
@@ -105,7 +102,7 @@ int Ifpack_SORa::Initialize(){
 
   if (A_->Comm().NumProc() != 1) IsParallel_ = true;
   else {
-    IsParallel_ = false;    
+    IsParallel_ = false;
     // Don't use interproc damping, for obvious reasons
     UseInterprocDamping_=false;
   }
@@ -132,7 +129,7 @@ int Ifpack_SORa::TCompute(){
   bool RowMatrixMode=(Acrs_==Teuchos::null);
 
   // Label
-  sprintf(Label_, "IFPACK SORa (alpha=%5.2f gamma=%5.2f)",Alpha_,Gamma_); 
+  sprintf(Label_, "IFPACK SORa (alpha=%5.2f gamma=%5.2f)",Alpha_,Gamma_);
 
   if(RowMatrixMode){
     if(!A_->Comm().MyPID()) cout<<"SORa: RowMatrix mode enabled"<<endl;
@@ -142,20 +139,20 @@ int Ifpack_SORa::TCompute(){
 
     int Nmax=A_->MaxNumEntries();
     int length;
-    std::vector<double> values(Nmax); 
+    std::vector<double> values(Nmax);
     Epetra_CrsMatrix *Acrs=new Epetra_CrsMatrix(Copy,*RowMap,Nmax);
 
-	std::vector<int> indices_local(Nmax);
+        std::vector<int> indices_local(Nmax);
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-	if(RowMap->GlobalIndicesInt()) {
+        if(RowMap->GlobalIndicesInt()) {
       for(int i=0;i<Arow->NumMyRows();i++) {
         Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices_local[0]);
         for(int j=0;j<length;j++)
           indices_local[j]= ColMap->GID(indices_local[j]);
         Acrs->InsertGlobalValues(RowMap->GID(i),length,&values[0],&indices_local[0]);
       }
-	}
-	else
+        }
+        else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(RowMap->GlobalIndicesLongLong()) {
@@ -166,13 +163,13 @@ int Ifpack_SORa::TCompute(){
           indices_global[j]= (int_type) ColMap->GID64(indices_local[j]);
         Acrs->InsertGlobalValues((int_type) RowMap->GID64(i),length,&values[0],&indices_global[0]);
       }
-	}
-	else
+        }
+        else
 #endif
     throw "Ifpack_SORa::TCompute: GlobalIndices type unknown";
 
     Acrs->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());
-    Acrs_=rcp(Acrs,true);
+    Acrs_ = Teuchos::rcp (Acrs, true);
   }
 
   // Create Askew2
@@ -180,7 +177,7 @@ int Ifpack_SORa::TCompute(){
   // There are probably more efficient ways to do this but this method has the bonus of allowing code reuse.
   IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*Acrs_,false,1,*Acrs_,true,-1,Askew2));
   Askew2->FillComplete();
-  
+
   // Create Aherm2
   IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*Acrs_,false,1,*Acrs_,true,1,Aherm2));
   Aherm2->FillComplete();
@@ -204,7 +201,7 @@ int Ifpack_SORa::TCompute(){
 
   // Dirichlet Detection & Nuking of Aherm2 and Askew2
   // Note: Relies on Aherm2/Askew2 having identical sparsity patterns (see sanity check above)
-  if(HaveOAZBoundaries_){ 
+  if(HaveOAZBoundaries_){
     int numBCRows;
     int* dirRows=FindLocalDiricheltRowsFromOnesAndZeros(*Acrs_,numBCRows);
     Epetra_IntVector* dirCols=FindLocalDirichletColumnsFromRows(dirRows,numBCRows,*Aherm2);
@@ -233,20 +230,20 @@ int Ifpack_SORa::TCompute(){
     double ipdamp=0.0;
     int idx=0;
 
-    for(int j=rowptr_s[i];j<rowptr_s[i+1];j++){      
+    for(int j=rowptr_s[i];j<rowptr_s[i+1];j++){
       int_type colgid = (int_type) Askew2->GCID64(colind_s[j]);
       c_data+=fabs(vals_s[j]);
       if(rowgid>colgid){
-	// Rely on the fact that off-diagonal entries are always numbered last, dropping the entry entirely.
-	if(colind_s[j] < N) {       
-	  gids[idx]=colgid;
-	  newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
-	  idx++;
-	}
-	else{
-	  ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
-	}
-      }   
+        // Rely on the fact that off-diagonal entries are always numbered last, dropping the entry entirely.
+        if(colind_s[j] < N) {
+          gids[idx]=colgid;
+          newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
+          idx++;
+        }
+        else{
+          ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
+        }
+      }
     }
     if(idx>0)
       IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
@@ -258,9 +255,9 @@ int Ifpack_SORa::TCompute(){
     W->InsertGlobalValues(rowgid,1,&w_val,&rowgid);
     IFPACK_CHK_ERR(Wdiag->ReplaceGlobalValues(1,&w_val,&rowgid));
   }
-  W->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());      
-  W_=rcp(W);
-  Wdiag_=rcp(Wdiag);
+  W->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());
+  W_= Teuchos::rcp(W);
+  Wdiag_= Teuchos::rcp(Wdiag);
 
   // Mark as computed
   IsComputed_=true;
@@ -291,13 +288,13 @@ int Ifpack_SORa::Compute(){
   int ret_val = 0;
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
-	  ret_val = TCompute<int>();
+          ret_val = TCompute<int>();
   }
   else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
-	  ret_val = TCompute<long long>();
+          ret_val = TCompute<long long>();
   }
   else
 #endif
@@ -307,18 +304,18 @@ int Ifpack_SORa::Compute(){
 }
 
 
-int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{  
+int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   if(!IsComputed_) return -1;
   Time_.ResetStartTime();
-  bool initial_guess_is_zero=false;  
-  int NumMyRows=W_->NumMyRows();
-  int NumVectors = X.NumVectors();
+  bool initial_guess_is_zero=false;
+  const int lclNumRows = W_->NumMyRows();
+  const int NumVectors = X.NumVectors();
   Epetra_MultiVector Temp(A_->RowMatrixRowMap(),NumVectors);
 
   double omega=GetOmega();
 
   // need to create an auxiliary vector, Xcopy
-  Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
+  Teuchos::RCP<const Epetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0]){
     Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
     // Since the user didn't give us anything better, our initial guess is zero.
@@ -326,12 +323,12 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
     initial_guess_is_zero=true;
   }
   else
-    Xcopy = Teuchos::rcp( &X, false ); 
+    Xcopy = Teuchos::rcp( &X, false );
 
-  Teuchos::RefCountPtr< Epetra_MultiVector > T2;
-  // Note: Assuming that the matrix has an importer.  Ifpack_PointRelaxation doesn't do this, but given that 
+  Teuchos::RCP< Epetra_MultiVector > T2;
+  // Note: Assuming that the matrix has an importer.  Ifpack_PointRelaxation doesn't do this, but given that
   // I have a CrsMatrix, I'm probably OK.
-  // Note: This is the lazy man's version sacrificing a few extra flops for avoiding if statements to determine 
+  // Note: This is the lazy man's version sacrificing a few extra flops for avoiding if statements to determine
   // if things are on or off processor.
   // Note: T2 must be zero'd out
   if (IsParallel_ && W_->Importer())  T2 = Teuchos::rcp( new Epetra_MultiVector(W_->Importer()->TargetMap(),NumVectors,true));
@@ -350,31 +347,31 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 
 
   for(int i=0; i<NumSweeps_; i++){
-    // Calculate b-Ax 
-    if(!initial_guess_is_zero  || i > 0) {      
+    // Calculate b-Ax
+    if(!initial_guess_is_zero  || i > 0) {
       A_->Apply(Y,Temp);
       Temp.Update(1.0,*Xcopy,-1.0);
     }
-    else 
+    else
       Temp.Update(1.0,*Xcopy,0.0);
 
-    // Note: The off-processor entries of T2 never get touched (they're always zero) and the other entries are updated 
+    // Note: The off-processor entries of T2 never get touched (they're always zero) and the other entries are updated
     // in this sweep before they are used, so we don't need to reset T2 to zero here.
 
     // Do backsolve & update
     // x = x  + W^{-1} (b - A x)
-    for(int j=0; j<NumMyRows; j++){
+    for(int j=0; j<lclNumRows; j++){
       double diag=d_ptr[j];
       for (int m=0 ; m<NumVectors; m++) {
-	double dtmp=0.0;
-	// Note: Since the diagonal is in the matrix, we need to zero that entry of T2 here to make sure it doesn't contribute.
-	t2_ptr[m][j]=0.0;
-	for(int k=rowptr[j];k<rowptr[j+1];k++){
-	  dtmp+= values[k]*t2_ptr[m][colind[k]];
-	}
-	// Yes, we need to update both of these.
-	t2_ptr[m][j] = (t_ptr[m][j]- dtmp)/diag;     
-	y_ptr[m][j] += omega*t2_ptr[m][j];
+        double dtmp=0.0;
+        // Note: Since the diagonal is in the matrix, we need to zero that entry of T2 here to make sure it doesn't contribute.
+        t2_ptr[m][j]=0.0;
+        for(int k=rowptr[j];k<rowptr[j+1];k++){
+          dtmp+= values[k]*t2_ptr[m][colind[k]];
+        }
+        // Yes, we need to update both of these.
+        t2_ptr[m][j] = (t_ptr[m][j]- dtmp)/diag;
+        y_ptr[m][j] += omega*t2_ptr[m][j];
       }
     }
   }
@@ -395,7 +392,7 @@ ostream& Ifpack_SORa::Print(ostream& os) const{
 }
 
 
-double Ifpack_SORa::Condest(const Ifpack_CondestType CT, 
+double Ifpack_SORa::Condest(const Ifpack_CondestType CT,
                              const int MaxIters,
                              const double Tol,
                              Epetra_RowMatrix* Matrix_in){
@@ -416,26 +413,26 @@ inline int* FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matr
     int ierr = Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     if (ierr == 0) {
       int nz=0;
-      for (int j=0; j<numEntries; j++) if (vals[j]!=0) nz++;      
-      if (nz==1) dirichletRows[numBCRows++] = i;           
+      for (int j=0; j<numEntries; j++) if (vals[j]!=0) nz++;
+      if (nz==1) dirichletRows[numBCRows++] = i;
       // EXPERIMENTAL: Treat Special Inflow Boundaries as Dirichlet Boundaries
-      if(nz==2) dirichletRows[numBCRows++] = i;        
+      if(nz==2) dirichletRows[numBCRows++] = i;
     }/*end if*/
   }/*end for*/
   return dirichletRows;
 }/*end FindLocalDiricheltRowsFromOnesAndZeros*/
 
 
-// ====================================================================== 
+// ======================================================================
  //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
 inline Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
   // Zero the columns corresponding to the Dirichlet rows.  Completely ignore the matrix maps.
-  
+
   // Build rows
   Epetra_IntVector ZeroRows(Matrix.RowMap());
   Epetra_IntVector *ZeroCols=new Epetra_IntVector(Matrix.ColMap());
-  ZeroRows.PutValue(0);  
-  ZeroCols->PutValue(0);  
+  ZeroRows.PutValue(0);
+  ZeroCols->PutValue(0);
 
   // Easy Case: We're all on one processor
   if(Matrix.RowMap().SameAs(Matrix.ColMap())){
@@ -448,21 +445,21 @@ inline Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichlet
   for (int i=0; i < numBCRows; i++)
     ZeroRows[dirichletRows[i]]=1;
 
-  // Boundary exchange to move the data  
+  // Boundary exchange to move the data
   if(Matrix.RowMap().SameAs(Matrix.DomainMap())){
     // Use A's Importer if we have one
-    ZeroCols->Import(ZeroRows,*Matrix.Importer(),Insert);     
+    ZeroCols->Import(ZeroRows,*Matrix.Importer(),Insert);
   }
   else{
     // Use custom importer if we don't
     Epetra_Import Importer(Matrix.ColMap(),Matrix.RowMap());
-    ZeroCols->Import(ZeroRows,Importer,Insert);      
+    ZeroCols->Import(ZeroRows,Importer,Insert);
   }
   return ZeroCols;
 }
 
 
-// ====================================================================== 
+// ======================================================================
 inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCRows,const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix){
   /* This function zeros out rows & columns of Matrix.
      Comments: The graph of Matrix is unchanged.
@@ -472,7 +469,7 @@ inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCR
     int numEntries, *cols;
     double *vals;
     Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
-    for (int j=0; j<numEntries; j++) vals[j]=0.0; 
+    for (int j=0; j<numEntries; j++) vals[j]=0.0;
   }/*end for*/
 
   // Nuke the columns
@@ -521,7 +518,7 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
     // Compute the Rayleigh Quotient
     y.Dot(x, &RQ_top);
     x.Dot(x, &RQ_bottom);
-    lambda_max = RQ_top / RQ_bottom;   
+    lambda_max = RQ_top / RQ_bottom;
     y.Norm2(&norm);
     if (norm == 0.0) IFPACK_CHK_ERR(-1);
     x.Update(1.0 / norm, y, 0.0);

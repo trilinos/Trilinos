@@ -1,0 +1,22 @@
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/belos/src/vector)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/belos/src/function)
+
+IF(${PROJECT_NAME}_ENABLE_Belos)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_01
+    SOURCES example_01.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )  
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    BelosDataCopy
+    SOURCE_FILES
+    parameters.xml
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+ENDIF()

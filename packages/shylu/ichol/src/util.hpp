@@ -38,12 +38,6 @@ namespace Example {
 #define CHKERR(ierr)                                                    \
   if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; }
 
-// #undef CHKERR_RETURN(ierr)                                                 \
-//   if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; return ierr; }
-
-// #undef CHKERR_BREAK(ierr)                                                 \
-//   if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; break; }
-
 #define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
 #define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what
 #define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
@@ -65,7 +59,6 @@ namespace Example {
     static const int BottomLeft  = 403;
     static const int BottomRight = 404;
   };
-
 
   /// \class Uplo
   /// \brief Matrix upper/lower parameters.
@@ -98,6 +91,14 @@ namespace Example {
     static const int Transpose     = 801;
     static const int ConjTranspose = 802;
     static const int NoTranspose   = 803;
+  };
+
+  /// \class Loop
+  /// \brief outer/innner parameters
+  class Loop {
+    static const int Outer = 901;
+    static const int Inner = 902;
+    static const int Fused = 903;
   };
 
   /// \class AlgoChol

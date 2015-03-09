@@ -6,6 +6,7 @@
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
                                                            
 #include "util.hpp"
+#include "sequential_for.hpp"
 #include "graph_helper_scotch.hpp"
 
 #include "crs_matrix_base.hpp"
@@ -17,6 +18,7 @@
 
 #include "task_policy_graphviz.hpp"
 #include "task_factory.hpp"
+#include "task_team_factory.hpp"
 
 #include "ichol.hpp"
 
@@ -27,41 +29,35 @@ typedef int    ordinal_type;
 typedef int    size_type;
 
 // space 
-//typedef Kokkos::Serial space_type;
-typedef Kokkos::Qthread space_type;
+typedef Kokkos::Serial space_type;
+//typedef Kokkos::Qthread space_type;
+
+using namespace Example;
 
 // flat matrix 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
 // scotch reordering
-typedef Example::GraphHelper_Scotch<CrsMatrixBase> GraphHelper;
+typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
-//#define USE_GRAPHVIZ
+#define USE_GRAPHVIZ
 
 #ifdef USE_GRAPHVIZ
-typedef Example::TaskFactory<Example::TaskPolicy,
-                             Example::Future> TaskFactory;
+typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
 #else
-typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
-                             Kokkos::Future<int,space_type> > TaskFactory;
-using Kokkos::wait;
+typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<space_type>,
+                        Kokkos::Experimental::Future<int,space_type>,
+                        TeamThreadLoopRegion> TaskFactoryType;
+using Kokkos::Experimental::wait;
 #endif
 
-// flat2hier
-typedef Example::CrsMatrixHelper CrsMatrixHelper; 
-
 // block representation for CrsMatrix
-typedef Example::CrsTaskView<CrsMatrixBase,TaskFactory> CrsTaskView;
+typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
 
 // hier matrix
-typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type,space_type> CrsHierBase;
-typedef Example::CrsTaskView<CrsHierBase,TaskFactory> CrsHierView;
-
-typedef Example::Uplo Uplo;
-typedef Example::AlgoIChol AlgoIChol;
-
-using Example::IChol;
+typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
+typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -78,7 +74,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
 
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -88,18 +84,18 @@ int main (int argc, char *argv[]) {
   }
   AA.importMatrixMarket(in);
 
-  GraphHelper S(AA);
+  GraphHelperType S(AA);
   S.computeOrdering();
 
-  CrsMatrixBase PA("Permuted AA");
+  CrsMatrixBaseType PA("Permuted AA");
   PA.copy(S.PermVector(), S.InvPermVector(), AA);
   
-  CrsMatrixBase UU("UU");
+  CrsMatrixBaseType UU("UU");
   UU.copy(Uplo::Upper, PA);
 
   cout << UU << endl;
 
-  CrsHierBase HH("HH");
+  CrsHierBaseType HH("HH");
 
   CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HH,
                              S.NumBlocks(),
@@ -108,33 +104,37 @@ int main (int argc, char *argv[]) {
 
   cout << HH << endl;
 
-  CrsHierView H(HH);
+  CrsHierViewType H(HH);
 
-  IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::invoke(H);
+  {
+    typedef typename CrsTaskViewType::policy_type::member_type member_type;
 
+    IChol<Uplo::Upper,AlgoIChol::RightByBlocks>::invoke<CrsHierViewType,SequentialFor>(member_type(), H);
+    
 #ifdef USE_GRAPHVIZ
-  // do nothing
+    // do nothing
 #else
-  for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
-    wait(HH.Value(k).Future());
+    for (ordinal_type k=0;k<HH.NumNonZeros();++k) 
+      wait(HH.Value(k).Future());
 #endif
-
-  cout << UU << endl;
-
+    
+    cout << UU << endl;
+    
 #ifdef USE_GRAPHVIZ
-  ofstream out;
-  out.open("graph_right.gv");
-  if (!out.good()) {
-    cout << "Error in open the file: task_graph.gv" << endl;
-    return -1;
-  }
-
-  TaskFactory::policy_type policy;
-  policy.graphviz(out);
+    ofstream out;
+    out.open("graph_right.gv");
+    if (!out.good()) {
+      cout << "Error in open the file: task_graph.gv" << endl;
+      return -1;
+    }
+    
+    TaskFactoryType::policy_type policy;
+    policy.graphviz(out);
 #endif
-
+  }
+  
   Kokkos::Qthread::finalize();
   //Kokkos::finalize(); 
-
+  
   return 0;
 }

@@ -1680,6 +1680,12 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // short doesn't implement a NaN value, but we can still have it
+    // return some "flag" value that can help users find use of
+    // uninitialized data.
+    return static_cast<val_type> (-1);
+  }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -1768,6 +1774,12 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // unsigned short doesn't implement a NaN value, but we can still
+    // have it return some "flag" value that can help users find use
+    // of uninitialized data.
+    return max ();
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
@@ -1866,6 +1878,12 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // int doesn't implement a NaN value, but we can still have it
+    // return some "flag" value that can help users find use of
+    // uninitialized data.
+    return -1;
+  }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -1954,6 +1972,12 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // unsigned int doesn't implement a NaN value, but we can still
+    // have it return some "flag" value that can help users find use
+    // of uninitialized data.
+    return max ();
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
@@ -2045,6 +2069,12 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // long doesn't implement a NaN value, but we can still have it
+    // return some "flag" value that can help users find use of
+    // uninitialized data.
+    return -1;
+  }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -2133,6 +2163,12 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<long> ( ::log10 (static_cast<double> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // unsigned long doesn't implement a NaN value, but we can still
+    // have it return some "flag" value that can help users find use
+    // of uninitialized data.
+    return max ();
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
@@ -2238,6 +2274,12 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
   }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // long long doesn't implement a NaN value, but we can still have
+    // it return some "flag" value that can help users find use of
+    // uninitialized data.
+    return -1;
+  }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();
   }
@@ -2327,6 +2369,12 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
     return static_cast<val_type> ( ::log10 (static_cast<double> (x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+    // unsigned long long doesn't implement a NaN value, but we can
+    // still have it return some "flag" value that can help users find
+    // use of uninitialized data.
+    return max ();
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return zero ();

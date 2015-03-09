@@ -76,9 +76,9 @@ namespace Example {
     typedef typename CrsHierBase::ordinal_type            ordinal_type;
     typedef typename CrsHierBase::size_type               size_type;
     
-    typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
-    typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
-    typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
+    //typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
+    //typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+    //typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
     
     size_type nnz = 0;
     
@@ -101,6 +101,8 @@ namespace Example {
     
     hier._ap[nblks] = nnz;
     hier._nnz = nnz;
+
+    return 0;
   }
 
   template<typename CrsFlatBase,
@@ -116,8 +118,8 @@ namespace Example {
     typedef typename CrsHierBase::size_type              size_type;
     
     typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
-    typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
-    typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
+    //typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+    //typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
     
     ordinal_type_array tmp = ordinal_type_array("flat2hier:tmp", nblks+1);
     size_type nnz = 0;

@@ -42,8 +42,6 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_VECTOR_DEF_HPP
 #define TPETRA_KOKKOS_REFACTOR_VECTOR_DEF_HPP
 
-#include <Kokkos_DefaultArithmetic.hpp>
-#include <Kokkos_NodeTrace.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 
@@ -52,7 +50,6 @@
 #endif
 #include <KokkosCompat_View.hpp>
 #include <Kokkos_MV.hpp>
-#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {
 
@@ -166,50 +163,9 @@ namespace Tpetra {
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>::
   dot (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, false>& y) const
   {
-    using Kokkos::subview;
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_SUM;
-    using Teuchos::reduceAll;
-
-    const size_t lclNumRows = this->getLocalLength ();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! this->getMap ()->isCompatible (* (y.getMap ())), std::runtime_error,
-      "Tpetra::Vector::dots: Vectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << * (this->getMap ())
-      << "y.getMap(): " << std::endl << * (y.getMap ()) << std::endl);
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclNumRows != y.getLocalLength (), std::runtime_error,
-      "Tpetra::Vector::dots: Vectors do not have the same local length.");
-#endif // HAVE_TPETRA_DEBUG
-
-    typedef Kokkos::View<impl_scalar_type*,
-      typename dual_view_type::array_layout,
-      DeviceType> col_view_type;
-
-    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    // FIXME (mfh 04 Jan 2015) We should actually prefer executing
-    // this kernel where the data were most recently updated.  The
-    // problem is that *this and y may have been most recently updated
-    // in different memory spaces.  What should we do then?  Perhaps
-    // the best option would be to allocate a temporary in the
-    // "capacity" memory space and do the work there.  Or, we could
-    // ignore the "const" appellation and just sync *this.
-    col_view_type X_0 = subview<col_view_type> (this->view_.d_view, rowRng, 0);
-    col_view_type Y_0 = subview<col_view_type> (y.view_.d_view, rowRng, 0);
-
-    dot_type gbldot = Kokkos::V_Dot (X_0, Y_0, lclNumRows);
-    if (this->isDistributed ()) {
-      Teuchos::RCP<const map_type> map = this->getMap ();
-      Teuchos::RCP<const Teuchos::Comm<int> > comm =
-        map.is_null () ? Teuchos::null : map->getComm ();
-      if (! comm.is_null ()) {
-        dot_type lcldot = gbldot;
-        reduceAll<int, dot_type> (*comm, REDUCE_SUM, lcldot, outArg (gbldot));
-      }
-    }
-    return gbldot;
+    dot_type result;
+    this->dot (y, Teuchos::arrayView (&result, 1));
+    return result;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -317,22 +273,31 @@ namespace Tpetra {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
             // VERB_MEDIUM and higher prints getLocalLength()
-            out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
+            out << "Process " << setw(width) << myImageID << ":" << endl;
+            Teuchos::OSTab tab1 (out);
+            const size_t lclNumRows = this->getLocalLength ();
+
+            out << "Local length: " << lclNumRows << endl;
             if (vl != VERB_MEDIUM) {
               // VERB_HIGH and higher prints isConstantStride() and stride()
-              if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-                /*RCP<Node> node = this->lclMV_.getNode();
-                KOKKOS_NODE_TRACE("Vector::describe()")
-                ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                                               this->getLocalLength(),
-                                                               MVT::getValues(this->lclMV_) );
+              if (vl == VERB_EXTREME && lclNumRows > 0) {
                 // VERB_EXTREME prints values
-                for (size_t i=0; i<this->getLocalLength(); ++i) {
-                  out << setw(width) << this->getMap()->getGlobalElement(i)
-                      << ": "
-                      << myview[i] << endl;
+                dual_view_type X_lcl = this->getDualView ();
+
+                // We have to be able to access the data on host in
+                // order to print it.
+                //
+                // FIXME (mfh 06 Mar 2015) For now, just sync to host.
+                // At some point, we might like to check whether the
+                // host execution space can access device memory, so
+                // that we can avoid the sync.
+                typedef typename dual_view_type::t_host::execution_space HES;
+                X_lcl.template sync<HES> ();
+                typename dual_view_type::t_host X_host = X_lcl.h_view;
+                for (size_t i = 0; i < lclNumRows; ++i) {
+                  out << setw(width) << this->getMap ()->getGlobalElement (i)
+                      << ": " << X_host(i,0) << endl;
                 }
-                myview = Teuchos::null;*/
               }
             }
             else {
@@ -340,7 +305,7 @@ namespace Tpetra {
             }
           }
         }
-        comm.barrier();
+        comm.barrier ();
       }
     }
   }

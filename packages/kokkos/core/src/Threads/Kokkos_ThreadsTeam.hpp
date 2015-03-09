@@ -86,6 +86,8 @@ private:
   void set_team_shared()
     { new( & m_team_shared ) space( ((char *) (*m_team_base)->scratch_memory()) + TEAM_REDUCE_SIZE , m_team_shared_size ); }
   
+public:
+
   // Fan-in and wait until the matching fan-out is called.
   // The root thread which does not wait will return true.
   // All other threads will return false during the fan-out.
@@ -409,6 +411,9 @@ public:
       }
     }
 
+  inline
+  ThreadsExec & threads_exec_team_base() const { return **m_team_base ; }
+
   bool valid() const
     { return m_league_rank < m_league_end ; }
 
@@ -526,9 +531,22 @@ namespace Kokkos {
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>
-  TeamThreadLoop(const Impl::ThreadsExecTeamMember& thread, const iType& count) {
+TeamThreadLoop(const Impl::ThreadsExecTeamMember& thread, const iType& count)
+{
   return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>(thread,count);
 }
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>
+TeamThreadLoop( const Impl::ThreadsExecTeamMember& thread
+               , const iType & begin
+               , const iType & end
+               )
+{
+  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::ThreadsExecTeamMember>(thread,begin,end);
+}
+
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION

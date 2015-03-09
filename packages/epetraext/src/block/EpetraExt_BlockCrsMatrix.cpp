@@ -52,12 +52,12 @@ using std::vector;
 BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_CrsGraph & BaseGraph,
         const vector<int> & RowStencil,
-        int RowIndex,
-        const Epetra_Comm & GlobalComm  ) 
-  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<int> >(1,RowStencil), vector<int>(1,RowIndex), GlobalComm )) ),
+        int rowIndex,
+        const Epetra_Comm & GlobalComm  )
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<int> >(1,RowStencil), vector<int>(1,rowIndex), GlobalComm )) ),
     BaseGraph_( BaseGraph ),
     RowStencil_int_( vector< vector<int> >(1,RowStencil) ),
-    RowIndices_int_( vector<int>(1,RowIndex) ),
+    RowIndices_int_( vector<int>(1,rowIndex) ),
     ROffset_(BlockUtility::CalculateOffset64(BaseGraph.RowMap())),
     COffset_(BlockUtility::CalculateOffset64(BaseGraph.ColMap()))
 {
@@ -68,12 +68,12 @@ BlockCrsMatrix::BlockCrsMatrix(
 BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_CrsGraph & BaseGraph,
         const vector<long long> & RowStencil,
-        long long RowIndex,
-        const Epetra_Comm & GlobalComm  ) 
-  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<long long> >(1,RowStencil), vector<long long>(1,RowIndex), GlobalComm )) ),
+        long long rowIndex,
+        const Epetra_Comm & GlobalComm  )
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<long long> >(1,RowStencil), vector<long long>(1,rowIndex), GlobalComm )) ),
     BaseGraph_( BaseGraph ),
     RowStencil_LL_( vector< vector<long long> >(1,RowStencil) ),
-    RowIndices_LL_( vector<long long>(1,RowIndex) ),
+    RowIndices_LL_( vector<long long>(1,rowIndex) ),
     ROffset_(BlockUtility::CalculateOffset64(BaseGraph.RowMap())),
     COffset_(BlockUtility::CalculateOffset64(BaseGraph.ColMap()))
 {
@@ -86,7 +86,7 @@ BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_CrsGraph & BaseGraph,
         const vector< vector<int> > & RowStencil,
         const vector<int> & RowIndices,
-        const Epetra_Comm & GlobalComm  ) 
+        const Epetra_Comm & GlobalComm  )
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndices, GlobalComm )) ),
     BaseGraph_( BaseGraph ),
     RowStencil_int_( RowStencil ),
@@ -101,7 +101,7 @@ BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_CrsGraph & BaseGraph,
         const vector< vector<long long> > & RowStencil,
         const vector<long long> & RowIndices,
-        const Epetra_Comm & GlobalComm  ) 
+        const Epetra_Comm & GlobalComm  )
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndices, GlobalComm )) ),
     BaseGraph_( BaseGraph ),
     RowStencil_LL_( RowStencil ),
@@ -116,7 +116,7 @@ BlockCrsMatrix::BlockCrsMatrix(
 BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_CrsGraph & BaseGraph,
         const Epetra_CrsGraph & LocalBlockGraph,
-        const Epetra_Comm & GlobalComm  ) 
+        const Epetra_Comm & GlobalComm  )
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, LocalBlockGraph, GlobalComm )) ),
     BaseGraph_( BaseGraph ),
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -149,7 +149,7 @@ BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_RowMatrix & BaseMatrix,
         const vector< vector<int> > & RowStencil,
         const vector<int> & RowIndices,
-        const Epetra_Comm & GlobalComm  ) 
+        const Epetra_Comm & GlobalComm  )
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseMatrix, RowStencil, RowIndices, GlobalComm )) ),
     BaseGraph_( Copy, BaseMatrix.RowMatrixRowMap(), 1 ), //Junk to satisfy constructor
     RowStencil_int_( RowStencil ),
@@ -165,7 +165,7 @@ BlockCrsMatrix::BlockCrsMatrix(
         const Epetra_RowMatrix & BaseMatrix,
         const vector< vector<long long> > & RowStencil,
         const vector<long long> & RowIndices,
-        const Epetra_Comm & GlobalComm  ) 
+        const Epetra_Comm & GlobalComm  )
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseMatrix, RowStencil, RowIndices, GlobalComm )) ),
     BaseGraph_( Copy, BaseMatrix.RowMatrixRowMap(), 1 ), //Junk to satisfy constructor
     RowStencil_LL_( RowStencil ),
@@ -177,7 +177,7 @@ BlockCrsMatrix::BlockCrsMatrix(
 #endif
 
 //==============================================================================
-BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix ) 
+BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix )
   : Epetra_CrsMatrix( dynamic_cast<const Epetra_CrsMatrix &>( Matrix ) ),
     BaseGraph_( Matrix.BaseGraph_ ),
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -218,21 +218,21 @@ void BlockCrsMatrix::TLoadBlock(const Epetra_RowMatrix & BaseMatrix, const int_t
   int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int> Indices_local(MaxIndices);
   vector<int_type> Indices_global(MaxIndices);
-  vector<double> Values(MaxIndices);
+  vector<double> vals(MaxIndices);
   int NumIndices;
   int ierr=0;
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
-    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &Values[0], &Indices_local[0] );
+    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &vals[0], &Indices_local[0] );
 
     // Convert to BlockMatrix Global numbering scheme
     for( int l = 0; l < NumIndices; ++l )
        Indices_global[l] = ColOffset +  (int_type) BaseColMap.GID64(Indices_local[l]);
 
     int_type BaseRow = (int_type) BaseMap.GID64(i);
-    ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices_global[0]); 
+    ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices, &vals[0], &Indices_global[0]);
     if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::LoadBlock ReplaceGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices_global[0] << std::endl;
+            "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices_global[0] << std::endl;
 
   }
 }
@@ -241,7 +241,7 @@ void BlockCrsMatrix::TLoadBlock(const Epetra_RowMatrix & BaseMatrix, const int_t
 void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt() && BaseMatrix.RowMatrixRowMap().GlobalIndicesInt())
-	return TLoadBlock<int>(BaseMatrix, Row, Col);
+        return TLoadBlock<int>(BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::LoadBlock: Global indices not int";
 }
@@ -251,7 +251,7 @@ void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Ro
 void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong() && BaseMatrix.RowMatrixRowMap().GlobalIndicesLongLong())
-	return TLoadBlock<long long>(BaseMatrix, Row, Col);
+        return TLoadBlock<long long>(BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::LoadBlock: Global indices not long long";
 }
@@ -277,24 +277,26 @@ void BlockCrsMatrix::TSumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMa
   int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int> Indices_local(MaxIndices);
   vector<int_type> Indices_global(MaxIndices);
-  vector<double> Values(MaxIndices);
+  vector<double> vals(MaxIndices);
   int NumIndices;
   int ierr=0;
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
-    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &Values[0], &Indices_local[0] );
+    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &vals[0], &Indices_local[0] );
 
     // Convert to BlockMatrix Global numbering scheme
     for( int l = 0; l < NumIndices; ++l ) {
        Indices_global[l] = ColOffset +  (int_type) BaseColMap.GID64(Indices_local[l]);
-       Values[l] *= alpha;
+       vals[l] *= alpha;
     }
 
     int_type BaseRow = (int_type) BaseMap.GID64(i);
-    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices_global[0]); 
-    if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices_global[0] << std::endl;
-
+    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &vals[0], &Indices_global[0]);
+    if (ierr != 0) {
+      std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues "
+        "err = " << ierr << std::endl << "\t  Row " << BaseRow + RowOffset <<
+        "Col start" << Indices_global[0] << std::endl;
+    }
   }
 }
 
@@ -302,7 +304,7 @@ void BlockCrsMatrix::TSumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMa
 void BlockCrsMatrix::SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt() && BaseMatrix.RowMatrixRowMap().GlobalIndicesInt())
-	return TSumIntoBlock<int>(alpha, BaseMatrix, Row, Col);
+        return TSumIntoBlock<int>(alpha, BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::SumIntoBlock: Global indices not int";
 }
@@ -312,7 +314,7 @@ void BlockCrsMatrix::SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMat
 void BlockCrsMatrix::SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong() && BaseMatrix.RowMatrixRowMap().GlobalIndicesLongLong())
-	return TSumIntoBlock<long long>(alpha, BaseMatrix, Row, Col);
+        return TSumIntoBlock<long long>(alpha, BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::SumIntoBlock: Global indices not long long";
 }
@@ -336,24 +338,27 @@ void BlockCrsMatrix::TSumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & 
   int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int> Indices_local(MaxIndices);
   vector<int_type> Indices_global(MaxIndices);
-  vector<double> Values(MaxIndices);
+  vector<double> vals(MaxIndices);
   int NumIndices;
   int ierr=0;
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
-    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &Values[0], &Indices_local[0] );
+    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &vals[0], &Indices_local[0] );
 
     // Convert to BlockMatrix Global numbering scheme
     for( int l = 0; l < NumIndices; ++l ) {
        Indices_global[l] = ColOffset +  (int_type) BaseColMap.GID64(Indices_local[l]);
-       Values[l] *= alpha;
+       vals[l] *= alpha;
     }
 
     int_type BaseRow = (int_type) BaseMap.GID64(i);
-    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices_global[0]); 
-    if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues err = " << ierr <<
-	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices_global[0] << std::endl;
-
+    ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices, &vals[0], &Indices_global[0]);
+    if (ierr != 0) {
+      std::cout << "WARNING BlockCrsMatrix::SumIntoBlock SumIntoGlobalValues "
+                << "err = " << ierr << std::endl
+                << "\t  Row " << BaseRow + RowOffset
+                << " Col start" << Indices_global[0] << std::endl;
+    }
   }
 }
 
@@ -361,7 +366,7 @@ void BlockCrsMatrix::TSumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & 
 void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt() && BaseMatrix.RowMatrixRowMap().GlobalIndicesInt())
-	return TSumIntoGlobalBlock<int>(alpha, BaseMatrix, Row, Col);
+        return TSumIntoGlobalBlock<int>(alpha, BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::SumIntoGlobalBlock: Global indices not int";
 }
@@ -371,7 +376,7 @@ void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & B
 void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong() && BaseMatrix.RowMatrixRowMap().GlobalIndicesLongLong())
-	return TSumIntoGlobalBlock<long long>(alpha, BaseMatrix, Row, Col);
+        return TSumIntoGlobalBlock<long long>(alpha, BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::SumIntoGlobalBlock: Global indices not long long";
 }
@@ -381,7 +386,7 @@ void BlockCrsMatrix::SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & B
 //==============================================================================
 template<typename int_type>
 void BlockCrsMatrix::TBlockSumIntoGlobalValues(const int_type BaseRow, int NumIndices,
-     double* Values, const int_type* Indices, const int_type Row, const int_type Col)
+     double* vals, const int_type* Indices, const int_type Row, const int_type Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
   std::vector<int_type>& RowIndices_ = TRowIndices<int_type>();
@@ -394,18 +399,21 @@ void BlockCrsMatrix::TBlockSumIntoGlobalValues(const int_type BaseRow, int NumIn
   for( int l = 0; l < NumIndices; ++l ) OffsetIndices[l] = Indices[l] + ColOffset;
 
   int ierr = this->SumIntoGlobalValues(BaseRow + RowOffset, NumIndices,
-                                   Values, &OffsetIndices[0]); 
+                                   vals, &OffsetIndices[0]);
 
-  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockSumIntoGlobalValues err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
+  if (ierr != 0) {
+    std::cout << "WARNING BlockCrsMatrix::BlockSumIntoGlobalValues err = "
+              << ierr << std::endl << "\t  Row " << BaseRow + RowOffset
+              << " Col start" << Indices[0] << std::endl;
+  }
 }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
-     double* Values, const int* Indices, const int Row, const int Col)
+     double* vals, const int* Indices, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt())
-	return TBlockSumIntoGlobalValues<int>(BaseRow, NumIndices, Values, Indices, Row, Col);
+    return TBlockSumIntoGlobalValues<int>(BaseRow, NumIndices, vals, Indices, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockSumIntoGlobalValues: Global indices not int";
 }
@@ -413,10 +421,10 @@ void BlockCrsMatrix::BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockSumIntoGlobalValues(const long long BaseRow, int NumIndices,
-     double* Values, const long long* Indices, const long long Row, const long long Col)
+     double* vals, const long long* Indices, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong() && Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong())
-	return TBlockSumIntoGlobalValues<long long>(BaseRow, NumIndices, Values, Indices, Row, Col);
+    return TBlockSumIntoGlobalValues<long long>(BaseRow, NumIndices, vals, Indices, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockSumIntoGlobalValues: Global indices not long long";
 }
@@ -425,7 +433,7 @@ void BlockCrsMatrix::BlockSumIntoGlobalValues(const long long BaseRow, int NumIn
 //==============================================================================
 template<typename int_type>
 void BlockCrsMatrix::TBlockReplaceGlobalValues(const int_type BaseRow, int NumIndices,
-     double* Values, const int_type* Indices, const int_type Row, const int_type Col)
+     double* vals, const int_type* Indices, const int_type Row, const int_type Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
   std::vector<int_type>& RowIndices_ = TRowIndices<int_type>();
@@ -438,18 +446,21 @@ void BlockCrsMatrix::TBlockReplaceGlobalValues(const int_type BaseRow, int NumIn
   for( int l = 0; l < NumIndices; ++l ) OffsetIndices[l] = Indices[l] + ColOffset;
 
   int ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices,
-                                   Values, &OffsetIndices[0]); 
+                                       vals, &OffsetIndices[0]);
 
-  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockReplaceGlobalValues err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << std::endl;
+  if (ierr != 0) {
+    std::cout << "WARNING BlockCrsMatrix::BlockReplaceGlobalValues err = "
+              << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col start"
+              << Indices[0] << std::endl;
+  }
 }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
-     double* Values, const int* Indices, const int Row, const int Col)
+     double* vals, const int* Indices, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt())
-	return TBlockReplaceGlobalValues<int>(BaseRow, NumIndices, Values, Indices, Row, Col);
+    return TBlockReplaceGlobalValues<int>(BaseRow, NumIndices, vals, Indices, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockReplaceGlobalValues: Global indices not int";
 }
@@ -457,10 +468,10 @@ void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockReplaceGlobalValues(const long long BaseRow, int NumIndices,
-     double* Values, const long long* Indices, const long long Row, const long long Col)
+     double* vals, const long long* Indices, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong())
-	return TBlockReplaceGlobalValues<long long>(BaseRow, NumIndices, Values, Indices, Row, Col);
+    return TBlockReplaceGlobalValues<long long>(BaseRow, NumIndices, vals, Indices, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockReplaceGlobalValues: Global indices not long long";
 }
@@ -468,11 +479,11 @@ void BlockCrsMatrix::BlockReplaceGlobalValues(const long long BaseRow, int NumIn
 
 //==============================================================================
 template<typename int_type>
-void BlockCrsMatrix::TBlockExtractGlobalRowView(const int_type BaseRow, 
-					       int& NumEntries, 
-					       double*& Values, 
-					       const int_type Row, 
-					       const int_type Col)
+void BlockCrsMatrix::TBlockExtractGlobalRowView(const int_type BaseRow,
+                                               int& NumEntries,
+                                               double*& vals,
+                                               const int_type Row,
+                                               const int_type Col)
 //All arguments could be const, except some were not set as const in CrsMatrix
 {
   std::vector<int_type>& RowIndices_ = TRowIndices<int_type>();
@@ -482,22 +493,25 @@ void BlockCrsMatrix::TBlockExtractGlobalRowView(const int_type BaseRow,
 
   // Get the whole row
   int ierr = this->ExtractGlobalRowView(BaseRow + RowOffset, NumEntries,
-					Values); 
+                                        vals);
 
   // Adjust for just this block column
-  Values += ColOffset;
+  vals += ColOffset;
   NumEntries -= ColOffset;
 
-  if (ierr != 0) std::cout << "WARNING BlockCrsMatrix::BlockExtractGlobalRowView err = "
-     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col " << Col+ColOffset << std::endl;
+  if (ierr != 0) {
+    std::cout << "WARNING BlockCrsMatrix::BlockExtractGlobalRowView err = "
+              << ierr << "\n\t  Row " << BaseRow + RowOffset
+              << " Col " << Col+ColOffset << std::endl;
+  }
 }
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow, int& NumEntries,
-     double*& Values, const int Row, const int Col)
+     double*& vals, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt())
-	return TBlockExtractGlobalRowView<int>(BaseRow, NumEntries, Values, Row, Col);
+    return TBlockExtractGlobalRowView<int>(BaseRow, NumEntries, vals, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockExtractGlobalRowView: Global indices not int";
 }
@@ -505,10 +519,10 @@ void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow, int& NumEntrie
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 void BlockCrsMatrix::BlockExtractGlobalRowView(const long long BaseRow, int& NumEntries,
-     double*& Values, const long long Row, const long long Col)
+     double*& vals, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong())
-	return TBlockExtractGlobalRowView<long long>(BaseRow, NumEntries, Values, Row, Col);
+    return TBlockExtractGlobalRowView<long long>(BaseRow, NumEntries, vals, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::BlockExtractGlobalRowView: Global indices not long long";
 }
@@ -530,11 +544,11 @@ void BlockCrsMatrix::TExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int_type
 
   // This routine extracts entries of a BaseMatrix from a big  BlockCrsMatrix
   // It performs the following operation on the global IDs row-by-row
-  // BaseMatrix.val[i][j] = this->val[i+rowOffset][j+ColOffset] 
+  // BaseMatrix.val[i][j] = this->val[i+rowOffset][j+ColOffset]
 
   int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int_type> Indices(MaxIndices);
-  vector<double> Values(MaxIndices);
+  vector<double> vals(MaxIndices);
   int NumIndices;
   int_type indx,icol;
   double* BlkValues;
@@ -548,7 +562,7 @@ void BlockCrsMatrix::TExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int_type
     // Get pointers to values and indices of whole block matrix row
     int_type BaseRow = (int_type) BaseMap.GID64(i);
     int myBlkBaseRow = this->RowMatrixRowMap().LID(BaseRow + RowOffset);
-    ierr = this->ExtractMyRowView(myBlkBaseRow, BlkNumIndices, BlkValues, BlkIndices); 
+    ierr = this->ExtractMyRowView(myBlkBaseRow, BlkNumIndices, BlkValues, BlkIndices);
 
     NumIndices = 0;
     // Grab columns with global indices in correct range for this block
@@ -557,14 +571,13 @@ void BlockCrsMatrix::TExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int_type
        indx = icol - ColOffset;
        if (indx >= 0 && indx < COffset_) {
          Indices[NumIndices] = indx;
-         Values[NumIndices] = BlkValues[l];
-	 NumIndices++;
+         vals[NumIndices] = BlkValues[l];
+         NumIndices++;
        }
     }
 
     //Load this row into base matrix
-    BaseMatrix.ReplaceGlobalValues(BaseRow, NumIndices, &Values[0], &Indices[0] );
-
+    BaseMatrix.ReplaceGlobalValues(BaseRow, NumIndices, &vals[0], &Indices[0]);
   }
 }
 
@@ -572,7 +585,7 @@ void BlockCrsMatrix::TExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int_type
 void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesInt() && BaseMatrix.RowMatrixRowMap().GlobalIndicesInt())
-	return TExtractBlock<int>(BaseMatrix, Row, Col);
+        return TExtractBlock<int>(BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::ExtractBlock: Global indices not int";
 }
@@ -582,7 +595,7 @@ void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, 
 void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const long long Row, const long long Col)
 {
   if(Epetra_CrsMatrix::RowMatrixRowMap().GlobalIndicesLongLong() && BaseMatrix.RowMatrixRowMap().GlobalIndicesLongLong())
-	return TExtractBlock<long long>(BaseMatrix, Row, Col);
+        return TExtractBlock<long long>(BaseMatrix, Row, Col);
   else
     throw "EpetraExt::BlockCrsMatrix::ExtractBlock: Global indices not long long";
 }

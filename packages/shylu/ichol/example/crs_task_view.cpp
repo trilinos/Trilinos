@@ -25,19 +25,17 @@ typedef size_t size_type;
 
 typedef Kokkos::Serial space_type; 
 
-typedef Example::CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBase;
-typedef Example::CrsMatrixView<CrsMatrixBase> CrsMatrixView;
+using namespace Example;
 
-typedef Example::TaskFactory<Kokkos::TaskPolicy<space_type>,
-                             Kokkos::Future<int,space_type> > TaskFactory;
-typedef Example::CrsTaskView<CrsMatrixBase,TaskFactory> CrsTaskView;
+typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
+typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef Example::CrsMatrixBase<CrsTaskView,ordinal_type,size_type,space_type> CrsHierBase;
-typedef Example::CrsTaskView<CrsHierBase,TaskFactory> CrsHierView;
+typedef TaskFactory<Kokkos::Experimental::TaskPolicy<space_type>,
+                    Kokkos::Experimental::Future<int,space_type> > TaskFactoryType;
+typedef CrsTaskView<CrsMatrixBaseType,TaskFactoryType> CrsTaskViewType;
 
-typedef Example::CrsMatrixHelper CrsMatrixHelper; 
-
-typedef Example::Uplo Uplo;
+typedef CrsMatrixBase<CrsTaskViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
+typedef CrsTaskView<CrsHierBaseType,TaskFactoryType> CrsHierViewType;
 
 int main (int argc, char *argv[]) {
   if (argc < 2) {
@@ -50,7 +48,7 @@ int main (int argc, char *argv[]) {
        << typeid(Kokkos::DefaultExecutionSpace).name()
        << endl;
   
-  CrsMatrixBase AA("AA");
+  CrsMatrixBaseType AA("AA");
 
   ifstream in;
   in.open(argv[1]);
@@ -60,16 +58,16 @@ int main (int argc, char *argv[]) {
   }
   AA.importMatrixMarket(in);
 
-  CrsMatrixBase LL("LL");
+  CrsMatrixBaseType LL("LL");
   LL.copy(Uplo::Lower, AA);
 
-  CrsHierBase HH("HH");
+  CrsHierBaseType HH("HH");
   CrsMatrixHelper::flat2hier(LL, HH);
 
   cout << "Hier Matrix HH = " << endl
        << HH << endl;
 
-  CrsHierView H;
+  CrsHierViewType H;
   H.setView(&HH, 2, 3, 2, 3);
 
   cout << "Block Partitioned Matrix H = " << endl

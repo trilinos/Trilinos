@@ -91,9 +91,6 @@ enum TaskState
   , TASK_STATE_COMPLETE     = 8  ///<  Execution is complete
   };
 
-template< class Arg1 = void , class Arg2 = void >
-class FutureArray ;
-
 /**
  *
  *  Future< space >  // value_type == void
@@ -108,7 +105,6 @@ private:
   template< class , class , class > friend class Impl::TaskMember ;
   template< class > friend class TaskPolicy ;
   template< class , class > friend class Future ;
-  template< class , class > friend class FutureArray ;
 
   // Argument #2, if not void, must be the space.
   enum { Arg1_is_space  = Kokkos::Impl::is_execution_space< Arg1 >::value };
