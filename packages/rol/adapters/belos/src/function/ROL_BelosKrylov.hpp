@@ -53,6 +53,9 @@
 #ifndef ROL_BELOS_KRYLOV_HPP
 #define ROL_BELOS_KRYLOV_HPP
 
+#include "BelosSolverFactory.hpp"   
+#include "BelosSolverManager.hpp"   
+
 #include "ROL_Krylov.hpp"
 #include "ROL_BelosVector.hpp"
 #include "ROL_BelosOperator.hpp"

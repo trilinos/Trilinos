@@ -34,7 +34,9 @@ IF (ROL_ENABLE_Belos)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
   APPEND_SET(HEADERS
-    function/ROL_Belos_Multivec.hpp
+    vector/ROL_BelosVector.hpp
+    function/ROL_BelosKrylov.hpp
+    function/ROL_Belos_Operator.hpp
   )
 ENDIF()
 
