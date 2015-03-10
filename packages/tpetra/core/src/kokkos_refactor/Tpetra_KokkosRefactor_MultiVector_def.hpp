@@ -2489,7 +2489,6 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::V_Add;
     using Kokkos::subview;
-    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
     // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.
