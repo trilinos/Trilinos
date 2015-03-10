@@ -104,10 +104,11 @@ template <typename part_t>
 void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, vector <int> grid_dims){
   int dim = grid_dims.size();
   int neighborCount = 2 * dim;
-  task_comm_xadj = allocMemory<part_t>(taskCount);
+  task_comm_xadj = allocMemory<part_t>(taskCount+1);
   task_comm_adj = allocMemory<part_t>(taskCount * neighborCount);
 
   part_t neighBorIndex = 0;
+  task_comm_xadj[0] = 0;
   for (part_t i = 0; i < taskCount; ++i){
     part_t prevDimMul = 1;
     for (int j = 0; j < dim; ++j){
@@ -121,7 +122,7 @@ void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t
         task_comm_adj[neighBorIndex++] = rNeighbor;
       }
     }
-    task_comm_xadj[i] = neighBorIndex;
+    task_comm_xadj[i+1] = neighBorIndex;
   }
 
 }
@@ -621,10 +622,9 @@ public:
     part_t commCount = 0;
     for (part_t task = 0; task < this->no_tasks; ++task){
       int assigned_proc = task_to_proc[task];
-      part_t task_adj_begin = 0;
       //cout << "task:" << task << endl;
-      part_t task_adj_end = task_communication_xadj[task];
-      if (task > 0) task_adj_begin = task_communication_xadj[task - 1];
+      part_t task_adj_begin = task_communication_xadj[task];
+      part_t task_adj_end = task_communication_xadj[task+1];
 
       commCount += task_adj_end - task_adj_begin;
       //cout << "task:" << task << " proc:" << assigned_proc << endl;
@@ -1333,9 +1333,8 @@ protected:
 
     ff << "set style arrow 5 nohead size screen 0.03,15,135 ls 1" << std::endl;
     for (part_t i = 0; i < this->ntasks;++i){
-      part_t pb = 0;
-      if (i > 0) pb = task_communication_xadj[i -1];
-      part_t pe = task_communication_xadj[i];
+      part_t pb = task_communication_xadj[i];
+      part_t pe = task_communication_xadj[i+1];
       for (part_t p = pb; p < pe; ++p){
         part_t n = task_communication_adj[p];
 
@@ -1469,10 +1468,10 @@ public:
     if (comm_->getRank() == 0){
 
       part_t taskCommCount = task_communication_xadj.size();
-      std::cout << " TotalComm:" << task_communication_xadj[taskCommCount - 1] << std::endl;
+      std::cout << " TotalComm:" << task_communication_xadj[taskCommCount] << std::endl;
       part_t maxN = task_communication_xadj[0];
-      for (part_t i = 1; i < taskCommCount; ++i){
-        part_t nc = task_communication_xadj[i] - task_communication_xadj[i - 1];
+      for (part_t i = 1; i <= taskCommCount; ++i){
+        part_t nc = task_communication_xadj[i] - task_communication_xadj[i-1];
         if (maxN < nc) maxN = nc;
       }
       std::cout << " maxNeighbor:" << maxN << std::endl;
@@ -1542,7 +1541,7 @@ public:
    *  \param num_tasks is the number of tasks.
    *  \param task_coords is the coordinates of the tasks.
    *  \param task_comm_xadj is the task communication graphs xadj array.
-   *        (task-i adjacency is between task_comm_xadj[i-1] and task_comm_xadj[i])
+   *        (task i adjacency is between task_comm_xadj[i] and task_comm_xadj[i+1])
    *  \param task_comm_adj is task communication graphs adj array.
    *  \param task_communication_edge_weight_ is the weight of the communication in task graph.
    *  \param recursion_depth is the recursion depth that will be applied to partitioning.
@@ -1864,7 +1863,7 @@ public:
  *  \param num_tasks is the number of tasks.
  *  \param task_coords is the coordinates of the tasks.
  *  \param task_comm_xadj is the task communication graphs xadj array.
- *        (task-i adjacency is between task_comm_xadj[i-1] and task_comm_xadj[i])
+ *        (task i's adjacency is between task_comm_xadj[i] and task_comm_xadj[i+1])
  *  \param task_comm_adj is task communication graphs adj array.
  *  \param task_communication_edge_weight_ is the weight of the communication 
  *         in task graph.
@@ -1914,11 +1913,11 @@ void coordinateTaskMapperInterface(
   // default Node.
   typedef Tpetra::MultiVector<tcoord_t, part_t, part_t> tMVector_t;
 
-  Teuchos::ArrayRCP<part_t> task_communication_xadj (task_comm_xadj, 0, num_tasks, false);
+  Teuchos::ArrayRCP<part_t> task_communication_xadj (task_comm_xadj, 0, num_tasks+1, false);
 
   Teuchos::ArrayRCP<part_t> task_communication_adj;
   if (task_comm_xadj){
-    Teuchos::ArrayRCP<part_t> tmp_task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+    Teuchos::ArrayRCP<part_t> tmp_task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks], false);
     task_communication_adj = tmp_task_communication_adj;
   }
 
