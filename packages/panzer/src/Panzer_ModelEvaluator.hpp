@@ -283,6 +283,9 @@ public:
   void setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                            panzer::AssemblyEngineInArgs & ae_inargs) const;
 
+  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
+  { return responseLibrary_; }
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
