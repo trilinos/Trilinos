@@ -1,0 +1,41 @@
+#!/bin/bash
+
+EXTRA_ARGS=$@
+
+if [ "$TRILINOS_DIR" == "" ] ; then
+  _ABS_FILE_PATH=`readlink -f $0`
+  _SCRIPT_DIR=`dirname $_ABS_FILE_PATH`
+  TRILINOS_DIR=$_SCRIPT_DIR/../../../..
+fi
+
+TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
+echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+
+DRIVERS_BASE_DIR=$TRILINOS_DIR_ABS/cmake/ctest/drivers/fissile4
+
+cmake \
+-D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH="$DRIVERS_BASE_DIR/gcc-4.8.3-base-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.8.3.cmake" \
+-D TPL_ENABLE_MPI=ON \
+-D CMAKE_BUILD_TYPE=RELEASE \
+-D Trilinos_ENABLE_DEBUG=ON \
+-D Trilinos_ENABLE_TESTS=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION=ON \
+-D DART_TESTING_TIMEOUT=180.0 \
+-D CTEST_BUILD_FLAGS="-j16" \
+-D CTEST_PARALLEL_LEVEL="16" \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D TPL_ENABLE_BinUtils:BOOL=ON \
+-D Teuchos_ENABLE_COMPLEX=OFF \
+-D Tpetra_INST_COMPLEX_DOUBLE=OFF \
+-D Tpetra_INST_COMPLEX_FLOAT=OFF \
+-D Tpetra_INST_FLOAT=OFF \
+-D Teuchos_ENABLE_FLOAT=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_CONFIGURE_TIMING:BOOL=ON \
+-D Teuchos_ENABLE_DEFAULT_STACKTRACE:BOOL=ON \
+$EXTRA_ARGS \
+${TRILINOS_DIR_ABS}
+
+# Above, I am using the core build options for CASL development but I am doing
+# a true debug, with explicit instantiation, stack tracing, etc.
