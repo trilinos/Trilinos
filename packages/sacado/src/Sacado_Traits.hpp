@@ -69,7 +69,7 @@ namespace Sacado {
    */
   enum DerivInit {
     NoInitDerivArray = 0, //!< Do not initialize the derivative array
-    InitDerivArray,       //!< Initialize the derivative array
+    InitDerivArray        //!< Initialize the derivative array
   };
 
   //! Base template specification for %Promote
