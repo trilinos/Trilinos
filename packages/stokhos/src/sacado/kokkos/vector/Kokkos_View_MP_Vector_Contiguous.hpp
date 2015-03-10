@@ -1160,6 +1160,22 @@ create_mirror( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src )
   return host_view_type( label , dims );
 }
 
+template< class DstViewType ,
+          class T , class L , class D , class M >
+KOKKOS_INLINE_FUNCTION
+DstViewType
+partition( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src ,
+           const unsigned beg ,
+           const unsigned end )
+{
+  DstViewType dst ;
+  const Sacado::MP::VectorPartition part( beg , end );
+  Impl::ViewAssignment<typename DstViewType::specialize,
+                       Impl::ViewMPVectorContiguous>( dst , src , part );
+
+  return dst ;
+}
+
 } // namespace Kokkos
 
 namespace Kokkos {
