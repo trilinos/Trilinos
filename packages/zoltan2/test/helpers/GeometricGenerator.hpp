@@ -527,7 +527,7 @@ public:
           if(++iteration > MAX_ITER_ALLOWED) {
             throw "Max number of Iteration is reached for point creation. Check the area criteria or hole coordinates.";
           }
-          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt, &state);
+          CoordinatePoint <T> p = this->getPoint( this->assignedPrevious + cnt, state);
 
           bool isInHole = false;
           for(lno_t i = 0; i < holeCount; ++i){
