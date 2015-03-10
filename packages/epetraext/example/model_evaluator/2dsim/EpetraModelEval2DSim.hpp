@@ -66,11 +66,11 @@ public:
 
   /** \brief . */
   EpetraModelEval2DSim(
-		const double         d                   = 10.0
-		,const double        p0                  = 2.0
-		,const double        p1                  = 0.0
-		,const double        x00                 = 1.0
-		,const double        x01                 = 1.0
+                const double         d                   = 10.0
+                ,const double        p0                  = 2.0
+                ,const double        p1                  = 0.0
+                ,const double        x00                 = 1.0
+                ,const double        x01                 = 1.0
     ,const bool          showGetInvalidArg   = false
     );
 
@@ -78,13 +78,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -103,15 +103,15 @@ private:
   bool      showGetInvalidArg_;
 
   bool      isInitialized_;
-  
-  Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
-  Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
-  
-  Teuchos::RefCountPtr<Epetra_Vector> x0_;
-  Teuchos::RefCountPtr<Epetra_Vector> p_;
-  
-  Teuchos::RefCountPtr<Epetra_CrsGraph>  W_graph_;
-  
+
+  Teuchos::RCP<const Epetra_Comm>  epetra_comm_;
+  Teuchos::RCP<const Epetra_Map>   map_x_;
+
+  Teuchos::RCP<Epetra_Vector> x0_;
+  Teuchos::RCP<Epetra_Vector> p_;
+
+  Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
+
 };
 
 #endif // EPETRA_MODEL_EVAL_2D_SIM_HPP

@@ -1582,8 +1582,11 @@ namespace Tpetra {
       norms_view_type theNorms = subview (normsOut, colRng);
       mv_view_type X = subview (X_lcl, rowRng, colRng);
 
+      // mfh 10 Mar 2015: Kokkos::(Dual)View subviews don't quite
+      // behave how you think when they have zero rows.  In that case,
+      // it returns a 0 x 0 (Dual)View.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X.dimension_0 () != lclNumRows || X.dimension_1 () != numVecs,
+        lclNumRows != 0 && (X.dimension_0 () != lclNumRows || X.dimension_1 () != numVecs),
         std::logic_error, "X's dimensions are " << X.dimension_0 () << " x "
         << X.dimension_1 () << ", which differ from the local dimensions "
         << lclNumRows << " x " << numVecs << ".  Please report this bug to "
@@ -2489,7 +2492,6 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::V_Add;
     using Kokkos::subview;
-    typedef Kokkos::View<impl_scalar_type*, DeviceType> view_type;
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
     // FIXME (mfh 07 Jan 2015) See note on two-argument scale() above.

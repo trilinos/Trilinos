@@ -203,7 +203,6 @@ namespace Kokkos {
                    const Ordinal begin,
                    const Ordinal end)
     {
-      typedef Kokkos::View<T*,L,D,M> view_type;
       return Kokkos::subview (view, std::make_pair (begin, end));
     }
 
@@ -213,7 +212,6 @@ namespace Kokkos {
                     const Ordinal offset,
                     const Ordinal size)
     {
-      typedef Kokkos::View<T*,L,D,M> view_type;
       return Kokkos::subview (view, std::make_pair (offset, offset+size));
     }
 
