@@ -1796,8 +1796,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef BaseScalar BelosScalar;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
-  typedef Belos::OperatorTraits<BelosScalar,MV,OP> BOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,MV> BMVT;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
   RCP< BLinProb > problem = rcp(new BLinProb(matrix, x, b));
@@ -1836,8 +1834,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Stokhos::create_flat_vector_view(*b, flat_b_map);
   typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FMV;
   typedef Tpetra::Operator<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FOP;
-  typedef Belos::OperatorTraits<BelosScalar,FMV,FOP> FBOPT;
-  typedef Belos::MultiVecTraits<BelosScalar,FMV> FBMVT;
   typedef Belos::LinearProblem<BelosScalar,FMV,FOP> FBLinProb;
   RCP< FBLinProb > flat_problem =
     rcp(new FBLinProb(flat_matrix, flat_x, flat_b));

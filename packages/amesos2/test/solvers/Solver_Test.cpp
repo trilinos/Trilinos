@@ -57,7 +57,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -558,7 +558,7 @@ do_solve_routine(const string& solver_name,
   using std::endl;
   typedef typename ArrayView<const RCP<Vector> >::iterator rhs_it_t;
   bool success = true;          // prove me wrong!
- 
+
   solution_checker<Vector> checker;
   RCP<Amesos2::Solver<Matrix,Vector> > solver;
 
@@ -607,11 +607,11 @@ do_solve_routine(const string& solver_name,
     case SOLVE_SHORT:
       solver = Amesos2::create<Matrix,Vector>(solver_name, A1);
       break;
-      
+
     }
     if(num_vecs < count)
       {}
-      
+
 
     solver->setParameters( rcpFromRef(solve_params) );
 

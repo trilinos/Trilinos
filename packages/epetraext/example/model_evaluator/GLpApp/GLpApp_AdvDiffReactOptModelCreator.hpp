@@ -59,10 +59,10 @@ public:
   void setupCLP( Teuchos::CommandLineProcessor *clp );
 
   /** \brief . */
-  Teuchos::RefCountPtr<AdvDiffReactOptModel>
+  Teuchos::RCP<AdvDiffReactOptModel>
   createModel(
-    const Teuchos::RefCountPtr<const Epetra_Comm>     &comm
-    ,std::ostream                                     *out  = NULL
+    const Teuchos::RCP<const Epetra_Comm>     &comm
+    ,std::ostream                             *out  = NULL
     ) const;
 
 private:
@@ -79,7 +79,7 @@ private:
   double              x0_;
   double              p0_;
   bool                supportDerivatives_;
-  
+
 };
 
 } // namespace GLpApp

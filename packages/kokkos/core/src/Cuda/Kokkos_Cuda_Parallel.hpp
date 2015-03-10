@@ -301,7 +301,7 @@ public:
     {
       // Allow only power-of-two vector_length
       int check = 0;
-      for(int k = 1; k < vector_length_max(); k*=2)
+      for(int k = 1; k <= vector_length_max(); k*=2)
         if(k == vector_length_request)
           check = 1;
       if(!check)
@@ -319,7 +319,7 @@ public:
     {
       // Allow only power-of-two vector_length
       int check = 0;
-      for(int k = 1; k < vector_length_max(); k*=2)
+      for(int k = 1; k <= vector_length_max(); k*=2)
         if(k == vector_length_request)
           check = 1;
       if(!check)
@@ -433,13 +433,13 @@ private:
   size_type         m_league_size ;
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type member ) const
     { m_functor( member ); }
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member ) const
     { m_functor( TagType() , member ); }
@@ -705,14 +705,14 @@ private:
   size_type         m_league_size ;
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member 
              , reference_type update ) const
     { m_functor( member , update ); }
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member 
              , reference_type update ) const
@@ -1139,8 +1139,10 @@ namespace Kokkos {
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
 void parallel_for(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
+  #ifdef __CUDA_ARCH__
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
+  #endif
 }
 
 /** \brief  Inter-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1202,9 +1204,10 @@ template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
 void parallel_for(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >&
     loop_boundaries, const Lambda& lambda) {
-
+#ifdef __CUDA_ARCH__
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
+#endif
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.

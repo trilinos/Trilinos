@@ -60,7 +60,7 @@
  * This class will support a wide number of different types of abstract
  * problem types that will allow NOX, LOCA, Rythmos, Aristos, and MOOCHO to
  * solve different types of problems with Charon.
- * 
+ *
  * ToDo: Finish documentation!
  */
 
@@ -75,11 +75,11 @@ namespace EpetraExt {
 
   /** \brief . */
   MultiPointModelEvaluator(
-    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
-    const Teuchos::RefCountPtr<EpetraExt::MultiComm> &globalComm_,
+    Teuchos::RCP<EpetraExt::ModelEvaluator> underlyingME_,
+    const Teuchos::RCP<EpetraExt::MultiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  qvec,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec = Teuchos::null
+    Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > >  qvec,
+    Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > >  matching_vec = Teuchos::null
     );
 
   //@}
@@ -91,19 +91,19 @@ namespace EpetraExt {
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+  Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+  Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -115,32 +115,32 @@ namespace EpetraExt {
 
   private:
 
-   Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME;
+   Teuchos::RCP<EpetraExt::ModelEvaluator> underlyingME;
 
    //! Pointer to the global (full XYZT) communicator.
-   Teuchos::RefCountPtr<EpetraExt::MultiComm> globalComm;
+   Teuchos::RCP<EpetraExt::MultiComm> globalComm;
 
    //! Array of parameter vectors that define the multi-point problem
-   Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > > q_vec;
+   Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > > q_vec;
 
    //! Pointer to split (spatial) Jacobian matrix.
-   Teuchos::RefCountPtr<Epetra_RowMatrix> split_W;
+   Teuchos::RCP<Epetra_RowMatrix> split_W;
 
    //! Split (spatial) input vector -- local storage.
-   Teuchos::RefCountPtr<Epetra_Vector> split_x;
+   Teuchos::RCP<Epetra_Vector> split_x;
 
    //! Split (spatial) residual vector -- local storage.
-   Teuchos::RefCountPtr<Epetra_Vector> split_f;
+   Teuchos::RCP<Epetra_Vector> split_f;
 
    //! Split vector of response functions -- local storage.
-   Teuchos::RefCountPtr<Epetra_Vector> split_g;
+   Teuchos::RCP<Epetra_Vector> split_g;
 
    //! Split sensitivity vector -- local storage.
-   Teuchos::RefCountPtr<Epetra_MultiVector> split_DfDp;
+   Teuchos::RCP<Epetra_MultiVector> split_DfDp;
 
    //! Split sensitivity vector -- local storage.
-   Teuchos::RefCountPtr<Epetra_MultiVector> split_DgDx;
-   Teuchos::RefCountPtr<Epetra_MultiVector> split_DgDp;
+   Teuchos::RCP<Epetra_MultiVector> split_DgDx;
+   Teuchos::RCP<Epetra_MultiVector> split_DgDp;
 
    EpetraExt::ModelEvaluator::DerivativeMultiVector* derivMV_DfDp;
    EpetraExt::ModelEvaluator::Derivative* deriv_DfDp;
@@ -150,7 +150,7 @@ namespace EpetraExt {
    EpetraExt::ModelEvaluator::Derivative* deriv_DgDp;
 
    //! Pointer to global XYZT Jacobian matrix
-   Teuchos::RefCountPtr<EpetraExt::BlockCrsMatrix> block_W;
+   Teuchos::RCP<EpetraExt::BlockCrsMatrix> block_W;
 
    //! Pointer to global multipoint solution vector -- local storage.
    EpetraExt::BlockVector* block_x;
@@ -165,7 +165,7 @@ namespace EpetraExt {
    EpetraExt::BlockMultiVector* block_DgDx;
 
    //! Pointer to initial multipoint solution vector.
-   Teuchos::RefCountPtr<EpetraExt::BlockVector> solution_init;
+   Teuchos::RCP<EpetraExt::BlockVector> solution_init;
 
    //! Number of g vectors supported by underlyingME, often used as a bool
    int underlyingNg;
@@ -208,7 +208,7 @@ namespace EpetraExt {
    int num_p0;
 
    //! Array of vectors that have data for g-matching optimization problem
-   Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > > matching_vec;
+   Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Vector> > > matching_vec;
    bool matchingProblem;
 
   };

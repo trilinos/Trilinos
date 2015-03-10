@@ -925,17 +925,17 @@ ModelEvaluator::~ModelEvaluator()
 
 
 // Vector maps
- 
- 
-Teuchos::RefCountPtr<const Epetra_Map>
+
+
+Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::get_p_map(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ModelEvaluator::get_p_names(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
 { return Teuchos::null; }
 
@@ -943,19 +943,19 @@ ModelEvaluator::get_g_map(int j) const
 // Initial guesses for variables/parameters
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_dot_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_dotdot_init() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_init(int l) const
 { return Teuchos::null; }
 
@@ -972,22 +972,22 @@ double ModelEvaluator::getInfBound() const
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_lower_bounds() const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_x_upper_bounds() const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_lower_bounds(int l) const
 { return Teuchos::null; }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ModelEvaluator::get_p_upper_bounds(int l) const
 { return Teuchos::null; }
 
@@ -1003,31 +1003,31 @@ double ModelEvaluator::get_t_upper_bound() const
 // Factory functions for creating derivative objects
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_W() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<EpetraExt::ModelEvaluator::Preconditioner>
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 ModelEvaluator::create_WPrec() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DfDp_op(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_dot_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_dotdot_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDx_op(int j) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ModelEvaluator::create_DgDp_op( int j, int l ) const
 { return Teuchos::null; }
 
@@ -1123,7 +1123,7 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
 }
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraExt::getLinearOp(
   const std::string &modelEvalDescription,
   const ModelEvaluator::Derivative &deriv,
@@ -1139,7 +1139,7 @@ EpetraExt::getLinearOp(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::getMultiVector(
   const std::string &modelEvalDescription,
   const ModelEvaluator::Derivative &deriv,
@@ -1152,7 +1152,7 @@ EpetraExt::getMultiVector(
     ,"For model \'" << modelEvalDescription << "\' the derivative \'"
     << derivName << "\' is of type Epetra_Operator and not of type Epetra_MultiVector!"
     );
-  Teuchos::RefCountPtr<Epetra_MultiVector>
+  Teuchos::RCP<Epetra_MultiVector>
     mv = deriv.getMultiVector();
   if(mv.get()) {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1166,7 +1166,7 @@ EpetraExt::getMultiVector(
 }
 
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraExt::get_DfDp_op(
   const int l,
   const ModelEvaluator::OutArgs &outArgs
@@ -1181,7 +1181,7 @@ EpetraExt::get_DfDp_op(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DfDp_mv(
   const int l,
   const ModelEvaluator::OutArgs &outArgs
@@ -1197,7 +1197,7 @@ EpetraExt::get_DfDp_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_dot_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1214,7 +1214,7 @@ EpetraExt::get_DgDx_dot_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_dotdot_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1231,7 +1231,7 @@ EpetraExt::get_DgDx_dotdot_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDx_mv(
   const int j,
   const ModelEvaluator::OutArgs &outArgs,
@@ -1248,7 +1248,7 @@ EpetraExt::get_DgDx_mv(
 }
 
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 EpetraExt::get_DgDp_mv(
   const int j,
   const int l,

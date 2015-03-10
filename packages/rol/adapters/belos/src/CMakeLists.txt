@@ -36,7 +36,7 @@ IF (ROL_ENABLE_Belos)
   APPEND_SET(HEADERS
     vector/ROL_BelosVector.hpp
     function/ROL_BelosKrylov.hpp
-    function/ROL_Belos_Operator.hpp
+    function/ROL_BelosOperator.hpp
   )
 ENDIF()
 

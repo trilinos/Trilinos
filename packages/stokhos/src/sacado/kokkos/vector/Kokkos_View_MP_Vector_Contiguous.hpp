@@ -1160,6 +1160,22 @@ create_mirror( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src )
   return host_view_type( label , dims );
 }
 
+template< class DstViewType ,
+          class T , class L , class D , class M >
+KOKKOS_INLINE_FUNCTION
+DstViewType
+partition( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src ,
+           const unsigned beg ,
+           const unsigned end )
+{
+  DstViewType dst ;
+  const Sacado::MP::VectorPartition part( beg , end );
+  Impl::ViewAssignment<typename DstViewType::specialize,
+                       Impl::ViewMPVectorContiguous>( dst , src , part );
+
+  return dst ;
+}
+
 } // namespace Kokkos
 
 namespace Kokkos {
@@ -2030,12 +2046,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg7_type & arg7
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2129,12 +2145,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg6_type & arg6
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2226,12 +2242,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg5_type & arg5
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2321,12 +2337,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg4_type & arg4
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2413,12 +2429,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg3_type & arg3
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2503,12 +2519,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg2_type & arg2
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2577,12 +2593,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg1_type & arg1
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type
@@ -2645,12 +2661,12 @@ View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::
     , const SubArg0_type & arg0
     )
   : m_ptr_on_device( (typename traits::value_type*) NULL)
-  , m_offset_map()
-  , m_management()
   , m_allocation()
-  , m_sacado_size(0)
-  , m_storage_size(0)
+  , m_offset_map()
   , m_stride(1)
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
 {
   // This constructor can only be used to construct a subview
   // from the source view.  This type must match the subview type

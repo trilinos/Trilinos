@@ -55,7 +55,7 @@
 #include "EpetraExt_MultiSerialComm.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -76,25 +76,25 @@ int main( int argc, char **argv )
     // Create a two-level communicator for space&time parallelism
     int numSpatialProcs = 1;
     int numTimeSteps = 2;
-    Teuchos::RefCountPtr <EpetraExt::MultiMpiComm> globalComm =
+    Teuchos::RCP <EpetraExt::MultiMpiComm> globalComm =
       Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD,
             numSpatialProcs,
             numTimeSteps));
 
     // Get the communicator for the spatial sub-problem
-    //Teuchos::RefCountPtr <Epetra_MpiComm> comm =
+    //Teuchos::RCP <Epetra_MpiComm> comm =
     //   Teuchos::rcp(&(globalComm->SubDomainComm()), false);
 #else
     // Create a two-level communicator for space&time parallelism
     int numTimeSteps = 2;
-    Teuchos::RefCountPtr <EpetraExt::MultiSerialComm> globalComm =
+    Teuchos::RCP <EpetraExt::MultiSerialComm> globalComm =
       Teuchos::rcp(new EpetraExt::MultiSerialComm(numTimeSteps));
 
     // Get the communicator for the spatial sub-problem
-    // Teuchos::RefCountPtr <Epetra_SerialComm> comm =
+    // Teuchos::RCP <Epetra_SerialComm> comm =
     //   Teuchos::rcp(&(globalComm->SubDomainComm()), false);
 #endif
-    Teuchos::RefCountPtr <Epetra_Comm> comm =
+    Teuchos::RCP <Epetra_Comm> comm =
       Teuchos::rcp(&(globalComm->SubDomainComm()), false);
 
     std::string fileName = "task.xml";
@@ -102,11 +102,11 @@ int main( int argc, char **argv )
       fileName = argv[1];
 
     // Instantiate the continuation manager
-    Teuchos::RefCountPtr <ContinuationManager> contManager =
+    Teuchos::RCP <ContinuationManager> contManager =
       Teuchos::rcp(new ContinuationManager(comm,fileName));
 
     // Instantiate the problem
-    Teuchos::RefCountPtr <PeriodicLinearSystem> problem =
+    Teuchos::RCP <PeriodicLinearSystem> problem =
       Teuchos::rcp(new PeriodicLinearSystem(comm));
 
     // Set the problem in the continuation manager

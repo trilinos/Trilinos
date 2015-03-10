@@ -47,7 +47,7 @@
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 void GLpApp::rect2DMeshGenerator(
   const int                      numProc
@@ -67,7 +67,7 @@ void GLpApp::rect2DMeshGenerator(
   ,const bool                    dumpAll
   )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(out_arg,false));
   Teuchos::OSTab tab(out);
   if(out.get())

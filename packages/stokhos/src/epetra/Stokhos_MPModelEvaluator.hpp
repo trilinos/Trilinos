@@ -105,16 +105,16 @@ namespace Stokhos {
     Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
 
     //! Create MP operator representing dg/dxdot
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDx_dot_op(int j) const;
 
     //! Create MP operator representing dg/dx
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDx_op(int j) const;
 
     //! Create MP operator representing dg/dp
-    Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op(int j, int i) const;
+    Teuchos::RCP<Epetra_Operator> create_DgDp_op(int j, int i) const;
 
     //! Create MP operator representing df/dp
-    Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int i) const;
+    Teuchos::RCP<Epetra_Operator> create_DfDp_op(int i) const;
 
     //! Create InArgs
     InArgs createInArgs() const;
