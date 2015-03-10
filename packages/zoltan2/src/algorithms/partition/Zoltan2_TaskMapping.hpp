@@ -1822,30 +1822,38 @@ public:
 /*! \brief Constructor
  * The interface function that calls CoordinateTaskMapper which will also perform the mapping operation.
  * The result mapping can be obtained by
- *        --proc_to_task_xadj: which holds the beginning and end indices of tasks on proc_to_task_adj
- *          that is assigned to a processor.
- *          the tasks assigned to processor i are between proc_to_task_xadj[i-1] and
- *          proc_to_task_xadj[i] on proc_to_task_adj.
+ *    -proc_to_task_xadj: which holds the beginning and end indices of 
+ *     tasks on proc_to_task_adj that is assigned to a processor.
+ *     the tasks assigned to processor i are between proc_to_task_xadj[i-1] and
+ *     proc_to_task_xadj[i] on proc_to_task_adj.
  *
- *        --proc_to_task_adj: holds the task adj array.
+ *    -proc_to_task_adj: holds the task adj array.
  *
- *      -task_comm_xadj, task_comm_adj, task_communication_edge_weight_ can be provided NULL.
- *        In this case all processors will calculate the same mapping.
- *      -If task_comm_xadj, task_comm_adj and provided, algorithm will perform rotations,
- *        and processors will calculate different mappings, and best one will be reduced.
- *      -If task_communication_edge_weight_ is provided with task_comm_xadj, task_comm_adj
- *        this will be used when cost is calculated.
- *      -recursion_depth is a mandatory argument. In the case part_no_array is not null, this parameter
- *        should represent the length of part_no_array.
- *        If part_no_array is given as NULL, then this will give the recursion depth for the algorith,
- *        Maximum number is ceil(log_2(min(num_processors, num_tasks))), and providing a higher number will
- *        be equivalant to this. Partitioning algorithm will work as RCB when maximum number is given,
- *        which performs the best mapping results.
- *      -part_no_array: The best results are obtained when this parameter is given as NULL. But if this is
- *        provided, partitioning will use this array for partitioning each dimension to the given numbers.
- *        The multiplication of these numbers should be equal to min(num_processors, num_tasks).
- *      -machine_dimensions: This can be NULL, but if provided the algorithm will perform shift of the machine coords so that
- *        the largest gap is treated as wrap-around link.
+ *    -task_comm_xadj, task_comm_adj, task_communication_edge_weight_ 
+ *     can be provided NULL.
+ *     In this case all processors will calculate the same mapping.
+ *    -If task_comm_xadj, task_comm_adj and provided, algorithm will perform 
+ *     rotations, and processors will calculate different mappings, and 
+ *     best one will be reduced.
+ *    -If task_communication_edge_weight_ is provided with 
+ *     task_comm_xadj, task_comm_adj, this will be used when cost is calculated.
+ *    -recursion_depth is a mandatory argument. In the case part_no_array 
+ *     is not null, this parameter
+ *     should represent the length of part_no_array.
+ *     If part_no_array is given as NULL, then this will give the 
+ *     recursion depth for the algorithm,
+ *     Maximum number is ceil(log_2(min(num_processors, num_tasks))), 
+ *     and providing a higher number will
+ *     be equivalant to this. Partitioning algorithm will work as RCB 
+ *     when maximum number is given, which performs the best mapping results.
+ *    -part_no_array: The best results are obtained when this parameter 
+ *     is given as NULL. But if this is provided, partitioning will use this 
+ *     array for partitioning each dimension to the given numbers.
+ *     The multiplication of these numbers should be equal to 
+ *     min(num_processors, num_tasks).
+ *    -machine_dimensions: This can be NULL, but if provided the algorithm 
+ *     will perform shift of the machine coords so that
+ *     the largest gap is treated as wrap-around link.
  *
  *  \param problemComm is the communication object.
  *  \param proc_dim dimensions of the processor coordinates.
@@ -1858,17 +1866,25 @@ public:
  *  \param task_comm_xadj is the task communication graphs xadj array.
  *        (task-i adjacency is between task_comm_xadj[i-1] and task_comm_xadj[i])
  *  \param task_comm_adj is task communication graphs adj array.
- *  \param task_communication_edge_weight_ is the weight of the communication in task graph.
- *  \param proc_to_task_xadj is is the output for tasks showing which proc has the which parts.
- *        (proc-i will own the tasks from proc_to_task_xadj[i-1] to proc_to_task_xadj[i])
- *  \param proc_to_task_adj is the ouput list of tasks pointed by proc_to_task_xadj
- *  \param recursion_depth is the recursion depth that will be applied to partitioning.
+ *  \param task_communication_edge_weight_ is the weight of the communication 
+ *         in task graph.
+ *  \param proc_to_task_xadj is is the output for tasks showing which proc 
+ *         has the which parts.
+ *        (proc-i will own the tasks from proc_to_task_xadj[i-1] to 
+ *        proc_to_task_xadj[i])
+ *  \param proc_to_task_adj is the ouput list of tasks pointed by 
+ *        proc_to_task_xadj
+ *  \param recursion_depth is the recursion depth that will be applied to 
+ *        partitioning.
  *        If part_no_array is provided, then it is the length of this array.
- *  \param part_no_array if part_no_array is provided, partitioning algorithm will be forced to use
- *        this array for partitioning. However, the multiplication of each entries in this array
- *      should be equal to min(num_processors, num_tasks).
- *      \param *machine_dimensions: the dimensions of the machine network. For example for hopper 17x8x24
- *        This can be NULL, but if provided the algorithm will perform shift of the machine coords so that
+ *  \param part_no_array if part_no_array is provided, partitioning algorithm 
+ *        will be forced to use *        this array for partitioning. However, 
+ *        the multiplication of each entries in this array
+ *       should be equal to min(num_processors, num_tasks).
+ *  \param *machine_dimensions: the dimensions of the machine network. For 
+ *        example for hopper 17x8x24
+ *        This can be NULL, but if provided the algorithm will perform 
+ *        shift of the machine coords so that
  *        the largest gap is treated as wrap-around link.
  */
 template <typename part_t, typename pcoord_t, typename tcoord_t>
