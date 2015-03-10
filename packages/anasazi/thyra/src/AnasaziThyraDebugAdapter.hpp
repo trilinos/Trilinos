@@ -334,7 +334,7 @@ namespace Anasazi {
 
    /*! \brief Copy a std::vector<> of timers into this object
     */
-   void copyTimers( std::vector<Teuchos::RCP<Teuchos::Time> >& timers ) {
+   void copyTimers( const std::vector<Teuchos::RCP<Teuchos::Time> >& timers ) {
      _timerCreate = timers[0];
      _timerClone = timers[1];
      _timerDestroy = timers[2];
