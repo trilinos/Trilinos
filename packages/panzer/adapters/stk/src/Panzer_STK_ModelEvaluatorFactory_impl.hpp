@@ -453,6 +453,7 @@ namespace panzer_stk_classic {
       conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
     else
       conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+    m_conn_manager = conn_manager;
 
     // build DOF Manager
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -589,6 +590,7 @@ namespace panzer_stk_classic {
     TEUCHOS_ASSERT(linObjFactory!=Teuchos::null);
     m_global_indexer = globalIndexer;
     m_lin_obj_factory = linObjFactory;
+    m_blockedAssembly = blockedAssembly;
 
     // print out load balancing information
     fout << "Degree of freedom load balancing: " << loadBalanceString << std::endl;
@@ -598,6 +600,8 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+
+    m_wkstContainer = wkstContainer;
 
     // set the global indexer so the orientations are evaluated
     wkstContainer->setGlobalIndexer(globalIndexer);

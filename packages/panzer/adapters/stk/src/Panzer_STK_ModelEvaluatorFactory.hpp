@@ -167,6 +167,14 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const 
     { return m_global_indexer; }
 
+    //! Get connection manager
+    Teuchos::RCP<panzer::ConnManagerBase<int> > getConnManager() const 
+    { return m_conn_manager; }
+
+    //! Is blocked assembly?
+    bool isBlockedAssembly() const 
+    { return m_blockedAssembly; }
+
     //! Get linear object factory used to build model evaluator
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
@@ -233,6 +241,25 @@ namespace panzer_stk_classic {
     bool useDynamicCoordinates() const
     { return useDynamicCoordinates_; }
 
+    /** \brief Gets the initial time from either the input parameter list or an exodus file
+     *      
+     * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
+     * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
+    */
+    double getInitialTime(Teuchos::ParameterList& transient_ic_params,
+                          const panzer_stk_classic::STK_Interface& mesh) const;
+
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+
+    //! Get the workset container associated with the mesh database.
+    Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
+    { return m_wkstContainer; }
+
   protected:
  
     Teuchos::RCP<panzer::FieldManagerBuilder> 
@@ -295,14 +322,6 @@ namespace panzer_stk_classic {
     void fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
-    /** \brief Gets the initial time from either the input parameter list or an exodus file
-     *      
-     * \param [in] transient_ic_params ParameterList that determines where to get the initial time value.
-     * \param [in] mesh STK Mesh database used if the time value should come from the exodus file
-    */
-    double getInitialTime(Teuchos::ParameterList& transient_ic_params,
-                          const panzer_stk_classic::STK_Interface& mesh) const;
-
     /**
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
@@ -318,13 +337,6 @@ namespace panzer_stk_classic {
                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
-
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-    buildLOWSFactory(bool blockedAssembly,
-                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
     /** Build LOWS factory.
       */
@@ -353,6 +365,7 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer_stk_classic::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
+    Teuchos::RCP<panzer::ConnManagerBase<int> > m_conn_manager;
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
     Teuchos::RCP<panzer::GlobalData> m_global_data;
     #ifdef HAVE_TEKO 
@@ -360,10 +373,12 @@ namespace panzer_stk_classic {
     #endif
     bool useDiscreteAdjoint;
     bool m_is_transient;
+    bool m_blockedAssembly;
     Teuchos::RCP<const panzer::EquationSetFactory> m_eqset_factory;
 
     Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> m_rythmos_observer_factory;
+    Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
  
     bool useDynamicCoordinates_;
   };
