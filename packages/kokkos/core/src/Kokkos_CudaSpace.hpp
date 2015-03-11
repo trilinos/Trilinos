@@ -70,6 +70,8 @@ public:
   //! Tag this class as a kokkos memory space
   typedef CudaSpace             memory_space ;
   typedef Kokkos::Cuda          execution_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   typedef unsigned int          size_type ;
 
   typedef Impl::CudaMallocAllocator allocator;
@@ -116,6 +118,7 @@ public:
   //! Tag this class as a kokkos memory space
   typedef CudaUVMSpace          memory_space ;
   typedef Cuda                  execution_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
   typedef unsigned int          size_type ;
 
   /** \brief  If UVM capability is available */
@@ -157,11 +160,12 @@ class CudaHostPinnedSpace {
 public:
 
   //! Tag this class as a kokkos memory space
-  typedef CudaHostPinnedSpace         memory_space ;
-  typedef unsigned int                size_type ;
-
   /** \brief  Memory is in HostSpace so use the HostSpace::execution_space */
   typedef HostSpace::execution_space  execution_space ;
+  typedef CudaHostPinnedSpace         memory_space ;
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+  typedef unsigned int                size_type ;
+
 
   typedef Impl::CudaHostAllocator allocator ;
 

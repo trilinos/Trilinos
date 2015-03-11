@@ -1292,7 +1292,7 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        row_view_type rowView = subview<row_view_type> (k_lclInds1D_, rng);
+        row_view_type rowView = subview (k_lclInds1D_, rng);
         return Teuchos::ArrayView<const LO> (rowView.ptr_on_device (), len,
                                              Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
@@ -1326,7 +1326,7 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        row_view_type rowView = subview<row_view_type> (k_lclInds1D_, rng);
+        row_view_type rowView = subview (k_lclInds1D_, rng);
         return Teuchos::ArrayView<LO> (rowView.ptr_on_device (), len,
                                        Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
@@ -1659,7 +1659,7 @@ namespace Tpetra {
       input_view_type inputInds (indices.getRawPtr (), indices.size ());
       const size_t start = rowInfo.offset1D + rowInfo.numEntries; // end of row
       const std::pair<size_t, size_t> rng (start, start + newNumEntries);
-      row_view_type myInds = subview<row_view_type> (k_lclInds1D_, rng);
+      row_view_type myInds = subview (k_lclInds1D_, rng);
       Kokkos::deep_copy (myInds, inputInds);
     }
     else {

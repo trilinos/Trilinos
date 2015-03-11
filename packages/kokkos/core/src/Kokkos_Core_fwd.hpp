@@ -79,6 +79,8 @@ class CudaHostPinnedSpace ;  ///< Memory space on Host accessible to Cuda GPU
 class Cuda ;                 ///< Execution space for Cuda GPU
 #endif
 
+template<class ExecutionSpace, class MemorySpace>
+struct Device;
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

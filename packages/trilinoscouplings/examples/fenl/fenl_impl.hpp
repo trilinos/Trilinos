@@ -266,7 +266,7 @@ public:
     , g_nodal_delta(    RowMap, 1 )
     , g_nodal_solution_no_overlap(
         RowMap ,
-        Kokkos::subview<LocalDualVectorType>( g_nodal_solution.getDualView()
+        Kokkos::subview( g_nodal_solution.getDualView()
                                             , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
                                             , Kokkos::ALL()
                                             ) )
@@ -372,14 +372,14 @@ public:
       const LocalDualVectorType k_nodal_delta    = g_nodal_delta   .getDualView();
 
       const LocalVectorType nodal_solution =
-        Kokkos::subview<LocalVectorType>(k_nodal_solution.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_solution.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_residual =
-        Kokkos::subview<LocalVectorType>(k_nodal_residual.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_residual.d_view,Kokkos::ALL(),0);
       const LocalVectorType nodal_delta =
-        Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
       LocalVectorType nodal_solution_no_overlap =
-        Kokkos::subview<LocalVectorType>(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
+        Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
 
       // Get DeviceConfig structs used by some functors
       Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;

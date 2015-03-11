@@ -643,8 +643,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(y_1D, A, x_1D);
   }
   else {
@@ -698,8 +698,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(y_1D, a, A, x_1D);
   }
   else {
@@ -770,8 +770,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(b, y_1D, a, A, x_1D);
   }
   else {

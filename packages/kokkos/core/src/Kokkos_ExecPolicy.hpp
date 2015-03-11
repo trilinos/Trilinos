@@ -376,7 +376,7 @@ namespace Kokkos {
 namespace Impl {
 
 template<typename iType, class TeamMemberType>
-struct TeamThreadLoopBoundariesStruct {
+struct TeamThreadRangeBoundariesStruct {
 private:
 
   KOKKOS_INLINE_FUNCTION static
@@ -409,7 +409,7 @@ public:
   const TeamMemberType& thread;
 
   KOKKOS_INLINE_FUNCTION
-  TeamThreadLoopBoundariesStruct( const TeamMemberType& arg_thread
+  TeamThreadRangeBoundariesStruct( const TeamMemberType& arg_thread
                                 , const iType& arg_end
                                 )
     : start( ibegin( 0 , arg_end , arg_thread.team_rank() , arg_thread.team_size() ) )
@@ -418,7 +418,7 @@ public:
     {}
 
   KOKKOS_INLINE_FUNCTION
-  TeamThreadLoopBoundariesStruct( const TeamMemberType& arg_thread
+  TeamThreadRangeBoundariesStruct( const TeamMemberType& arg_thread
                                 , const iType& arg_begin
                                 , const iType& arg_end
                                 )
@@ -429,14 +429,14 @@ public:
 };
 
   template<typename iType, class TeamMemberType>
-  struct ThreadVectorLoopBoundariesStruct {
+  struct ThreadVectorRangeBoundariesStruct {
     typedef iType index_type;
     enum {start = 0};
     const iType end;
     enum {increment = 1};
 
     KOKKOS_INLINE_FUNCTION
-    ThreadVectorLoopBoundariesStruct (const TeamMemberType& thread, const iType& count):
+    ThreadVectorRangeBoundariesStruct (const TeamMemberType& thread, const iType& count):
       end( count )
     {}
   };
@@ -456,16 +456,35 @@ public:
   };
 } // namespace Impl
 
-/*template<typename iType, class TeamMemberType>
-KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadLoopBoundariesStruct<iType,TeamMemberType>
-  TeamThreadLoop(TeamMemberType thread, const iType count);
-
+/** \brief  Execution policy for parallel work over a threads within a team.
+ *
+ *  The range is split over all threads in a team. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a single count. So the range is (0,count].
+ */
 template<typename iType, class TeamMemberType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadVectorLoopBoundariesStruct<iType,TeamMemberType>
-  ThreadVectorLoop(TeamMemberType thread, const iType count);*/
+Impl::TeamThreadRangeBoundariesStruct<iType,TeamMemberType> TeamThreadRange(const TeamMemberType&, const iType& count);
 
+/** \brief  Execution policy for parallel work over a threads within a team.
+ *
+ *  The range is split over all threads in a team. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a begin and end. So the range is (begin,end].
+ */
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::TeamThreadRangeBoundariesStruct<iType,TeamMemberType> TeamThreadRange(const TeamMemberType&, const iType& begin, const iType& end);
+
+/** \brief  Execution policy for a vector parallel loop.
+ *
+ *  The range is split over all vector lanes in a thread. The Mapping scheme depends on the architecture.
+ *  This policy is used together with a parallel pattern as a nested layer within a kernel launched
+ *  with the TeamPolicy. This variant expects a single count. So the range is (0,count].
+ */
+template<typename iType, class TeamMemberType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorRangeBoundariesStruct<iType,TeamMemberType> ThreadVectorRange(const TeamMemberType&, const iType& count);
 
 } // namespace Kokkos
 

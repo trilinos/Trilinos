@@ -57,7 +57,8 @@ bool checkFadArrays(const ArrayType& x,
       << "." << std::endl;
 
   // Check Fads match
-  for (int i=0; i<x.size(); i++) {
+  const int sz = x.size();
+  for (int i=0; i<sz; i++) {
     bool success2 = Sacado::IsEqual<FadType>::eval(x[i], x2[i]);
     out << tag << " Fad array comparison test " << i;
     if (success2)

@@ -220,9 +220,9 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type xx_view = Kokkos::subview( xx , span );
       vector_type x_col =
-        Kokkos::subview<vector_type>( x, Kokkos::ALL(), col_indices[col] );
+        Kokkos::subview( x, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
@@ -249,9 +249,9 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type yy_view = Kokkos::subview( yy , span );
       vector_type y_col =
-        Kokkos::subview<vector_type>( y, Kokkos::ALL(), col_indices[col] );
+        Kokkos::subview( y, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -365,9 +365,9 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       vector_type yy_view =
-        Kokkos::subview<vector_type>( yy ,  Kokkos::ALL(), col );
+        Kokkos::subview( yy ,  Kokkos::ALL(), col );
       vector_type y_col =
-        Kokkos::subview<vector_type>( y, Kokkos::ALL(), col_indices[col] );
+        Kokkos::subview( y, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -389,9 +389,9 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type xx_view = Kokkos::subview( xx , span );
       vector_type x_col =
-        Kokkos::subview<vector_type>( x, Kokkos::ALL(), col_indices[col] );
+        Kokkos::subview( x, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(xx_view, x_col);
     }
 
@@ -418,9 +418,9 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type yy_view = Kokkos::subview( yy , span );
       vector_type y_col =
-        Kokkos::subview<vector_type>( y, Kokkos::ALL(), col_indices[col] );
+        Kokkos::subview( y, Kokkos::ALL(), col_indices[col] );
       Kokkos::deep_copy(y_col, yy_view );
     }
   }
@@ -632,7 +632,7 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type xx_view = Kokkos::subview( xx , span );
       Kokkos::deep_copy(xx_view, x[col]);
     }
 
@@ -659,7 +659,7 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type yy_view = Kokkos::subview( yy , span );
       Kokkos::deep_copy(y[col], yy_view );
     }
   }
@@ -697,7 +697,7 @@ public:
 
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type xx_view = Kokkos::subview<vector_type>( xx , span );
+      vector_type xx_view = Kokkos::subview( xx , span );
       Kokkos::deep_copy(xx_view, x[col]);
     }
 
@@ -724,7 +724,7 @@ public:
     // Copy columns out of continguous multivector
     for (size_t col=0; col<ncol; col++) {
       const std::pair< size_t , size_t > span( n * col , n * ( col + 1 ) );
-      vector_type yy_view = Kokkos::subview<vector_type>( yy , span );
+      vector_type yy_view = Kokkos::subview( yy , span );
       Kokkos::deep_copy(y[col], yy_view );
     }
   }

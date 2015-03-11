@@ -50,7 +50,7 @@
 #endif
 #include "EpetraExt_XMLReader.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_FileInputSource.hpp"
@@ -126,12 +126,12 @@ Read(const std::string& Label, Epetra_CrsGraph*& Graph)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
-	bool debug = false;
+        bool debug = false;
         int NumGlobalRows = child.getRequiredInt("Rows");
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalEntries = child.getRequiredInt("Entries");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << std::endl;
+        if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         Graph = new Epetra_CrsGraph(Copy, map, 0);
@@ -175,12 +175,12 @@ Read64(const std::string& Label, Epetra_CrsGraph*& Graph)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
-	bool debug = false;
+        bool debug = false;
         long long NumGlobalRows = child.getRequired<long long>("Rows");
         long long NumGlobalCols = child.getRequired<long long>("Columns");
         long long NumGlobalEntries = child.getRequired<long long>("Entries");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << std::endl;
+        if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         Graph = new Epetra_CrsGraph(Copy, map, 0);
@@ -239,12 +239,12 @@ Read(const std::string& Label, Epetra_CrsMatrix*& matrix)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
-	bool debug = false;
+        bool debug = false;
         int NumGlobalRows = child.getRequiredInt("Rows");
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalNonzeros = child.getRequiredInt("Nonzeros");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << std::endl;
+        if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         matrix = new Epetra_CrsMatrix(Copy, map, 0);
@@ -291,12 +291,12 @@ Read64(const std::string& Label, Epetra_CrsMatrix*& matrix)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
-	bool debug = false;
+        bool debug = false;
         long long NumGlobalRows = child.getRequiredInt("Rows");
         long long NumGlobalCols = child.getRequiredInt("Columns");
         long long NumGlobalNonzeros = child.getRequiredInt("Nonzeros");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << std::endl;
+        if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         matrix = new Epetra_CrsMatrix(Copy, map, 0);
@@ -378,9 +378,9 @@ Read(const std::string& Label, Epetra_MultiVector*& MultiVector)
 
           TEUCHOS_TEST_FOR_EXCEPTION(tokens.size() != (unsigned) NumVectors, std::logic_error,
                              "wrong number of tokens in line; "
-                             << "tokens.size() = " << tokens.size() 
+                             << "tokens.size() = " << tokens.size()
                              << ", NumVectors = " << NumVectors);
-	  int tsize = (int) tokens.size();
+          int tsize = (int) tokens.size();
           for (int k = 0; k < tsize; ++k)
           {
             if (Map.LID(count) != -1)
@@ -437,9 +437,9 @@ Read64(const std::string& Label, Epetra_MultiVector*& MultiVector)
 
           TEUCHOS_TEST_FOR_EXCEPTION(tokens.size() != (unsigned) NumVectors, std::logic_error,
                              "wrong number of tokens in line; "
-                             << "tokens.size() = " << tokens.size() 
+                             << "tokens.size() = " << tokens.size()
                              << ", NumVectors = " << NumVectors);
-	  int tsize = (int) tokens.size();
+          int tsize = (int) tokens.size();
           for (int k = 0; k < tsize; ++k)
           {
             if (Map.LID(count) != -1)
@@ -498,7 +498,7 @@ Read(const std::string& Label, Epetra_Map*& Map)
           const XMLObject& newChild = child.getChild(iproc);
           int count = 0;
 
-          if (newChild.hasAttribute("ID") && 
+          if (newChild.hasAttribute("ID") &&
               newChild.getRequiredInt("ID") == Comm_.MyPID())
           {
             for (int j = 0; j < newChild.numContentLines(); ++j)
@@ -508,7 +508,7 @@ Read(const std::string& Label, Epetra_Map*& Map)
               const std::string& line = newChild.getContentLine(j);
 
               Tokenize(line, tokens, " \n\r\t");
-	      int tsize = (int) tokens.size();
+              int tsize = (int) tokens.size();
               for (int k = 0; k < tsize; ++k)
               {
                 MyGlobalElements[count++] = atoi((char*)tokens[k].c_str());
@@ -566,7 +566,7 @@ Read64(const std::string& Label, Epetra_Map*& Map)
           const XMLObject& newChild = child.getChild(iproc);
           int count = 0;
 
-          if (newChild.hasAttribute("ID") && 
+          if (newChild.hasAttribute("ID") &&
               newChild.getRequiredInt("ID") == Comm_.MyPID())
           {
             for (int j = 0; j < newChild.numContentLines(); ++j)
@@ -576,7 +576,7 @@ Read64(const std::string& Label, Epetra_Map*& Map)
               const std::string& line = newChild.getContentLine(j);
 
               Tokenize(line, tokens, " \n\r\t");
-	      int tsize = (int) tokens.size();
+              int tsize = (int) tokens.size();
               for (int k = 0; k < tsize; ++k)
               {
                 char *endp;

@@ -45,8 +45,8 @@
 
 namespace GenSQP {
 
-YUEpetraVector::YUEpetraVector( const Teuchos::RefCountPtr<Epetra_MultiVector> &y_epetra_vec,
-                                const Teuchos::RefCountPtr<Epetra_MultiVector> &u_epetra_vec )
+YUEpetraVector::YUEpetraVector( const Teuchos::RCP<Epetra_MultiVector> &y_epetra_vec,
+                                const Teuchos::RCP<Epetra_MultiVector> &u_epetra_vec )
   :y_epetra_vec_(y_epetra_vec), u_epetra_vec_(u_epetra_vec)
     {}
 
@@ -95,23 +95,23 @@ void YUEpetraVector::Set( const double &alpha, const Vector &x )
     u_epetra_vec_->Scale( alpha, *ex.u_epetra_vec_ );
 }
 
-Teuchos::RefCountPtr<Vector> YUEpetraVector::createVector() const
+Teuchos::RCP<Vector> YUEpetraVector::createVector() const
 {
-  Teuchos::RefCountPtr<Epetra_MultiVector> yptr =
+  Teuchos::RCP<Epetra_MultiVector> yptr =
       Teuchos::rcp(new Epetra_MultiVector(y_epetra_vec_->Map(),1,false));
-  Teuchos::RefCountPtr<Epetra_MultiVector> uptr = Teuchos::null;
+  Teuchos::RCP<Epetra_MultiVector> uptr = Teuchos::null;
   if (u_epetra_vec_.get() != 0)
     uptr = Teuchos::rcp(new Epetra_MultiVector(u_epetra_vec_->Map(),1,false));
-  
+
   return Teuchos::rcp( new YUEpetraVector( yptr, uptr ));
 }
 
-Teuchos::RefCountPtr<const Epetra_MultiVector> YUEpetraVector::getYVector() const
+Teuchos::RCP<const Epetra_MultiVector> YUEpetraVector::getYVector() const
 {
   return y_epetra_vec_;
 }
 
-Teuchos::RefCountPtr<const Epetra_MultiVector> YUEpetraVector::getUVector() const
+Teuchos::RCP<const Epetra_MultiVector> YUEpetraVector::getUVector() const
 {
   return u_epetra_vec_;
 }

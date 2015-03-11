@@ -640,27 +640,27 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
       unsigned jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         int j = index(j_it);
-        vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-        vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+        vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+        vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
         Kokkos::deep_copy(tt, xx);
       }
       multi_vec_type tmp_x_view =
-        Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+        Kokkos::subview( tmp_x, Kokkos::ALL(),
                                          std::make_pair(0u,nj));
       multi_vec_type tmp_y_view =
-        Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+        Kokkos::subview( tmp_y, Kokkos::ALL(),
                                          std::make_pair(0u,nj));
       Stokhos::multiply( matrix[k] , tmp_x_view , tmp_y_view, smo );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         vec_type tmp_y_view =
-          Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+          Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
         for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
           int i = index(i_it);
           value_type c = value(i_it);
-          vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+          vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
           Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
         }
       }
@@ -744,27 +744,27 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
       unsigned jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         int j = index(j_it);
-        vec_type xx = Kokkos::subview<vec_type>( x, Kokkos::ALL(), j );
-        vec_type tt = Kokkos::subview<vec_type>( tmp_x, Kokkos::ALL(), jdx++ );
+        vec_type xx = Kokkos::subview( x, Kokkos::ALL(), j );
+        vec_type tt = Kokkos::subview( tmp_x, Kokkos::ALL(), jdx++ );
         Kokkos::deep_copy(tt, xx);
       }
       multi_vec_type tmp_x_view =
-        Kokkos::subview<multi_vec_type>( tmp_x, Kokkos::ALL(),
+        Kokkos::subview( tmp_x, Kokkos::ALL(),
                                          std::make_pair(0u,jdx));
       multi_vec_type tmp_y_view =
-        Kokkos::subview<multi_vec_type>( tmp_y, Kokkos::ALL(),
+        Kokkos::subview( tmp_y, Kokkos::ALL(),
                                          std::make_pair(0u,jdx));
       Kokkos::MV_Multiply( tmp_y_view , matrix[k] , tmp_x_view  );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         vec_type tmp_y_view =
-          Kokkos::subview<vec_type>( tmp_y, Kokkos::ALL(), jdx++ );
+          Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
         for (kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
           int i = index(i_it);
           value_type c = value(i_it);
-          vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+          vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
           //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
           Kokkos::V_Add(y_view, c, tmp_y_view, value_type(1.0), y_view);
         }

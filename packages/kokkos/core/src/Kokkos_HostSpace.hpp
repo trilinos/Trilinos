@@ -92,6 +92,10 @@ public:
 #  error "At least one of the following host execution spaces must be defined: Kokkos::OpenMP, Kokkos::Serial, or Kokkos::Threads.  You might be seeing this message if you disabled the Kokkos::Serial device explicitly using the Kokkos_ENABLE_Serial:BOOL=OFF CMake option, but did not enable any of the other host execution space devices."
 #endif
 
+  //! This memory space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
+
 #if defined( KOKKOS_USE_PAGE_ALIGNED_HOST_MEMORY )
   typedef Impl::PageAlignedAllocator allocator ;
 #else

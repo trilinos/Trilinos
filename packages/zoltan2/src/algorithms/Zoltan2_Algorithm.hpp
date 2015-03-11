@@ -166,10 +166,10 @@ public:
   //  global communication pattern in the partition.
   //  
   //  \param comXAdj:  (out) the offset array:  offsets into comAdj
-  //                         Format is comXAdj[0] = # nbor parts of part 0
-  //                         Format is comXAdj[i] = Sum of # nbor parts of parts
-  //                                                0 through i
-  //                         TODO:  Change this array to standard CSR format
+  //                         Format is standard CSR format:
+  //                         # nbor parts of part i = comXAdj[i+1]-comXAdj[i]
+  //                         That is, comXAdj[i] = Sum of # nbor parts of parts
+  //                                               0 through i-1
   //  \param comAdj    (out) the neighboring parts
   virtual void getCommunicationGraph(
     const PartitioningSolution<Adapter> *solution,

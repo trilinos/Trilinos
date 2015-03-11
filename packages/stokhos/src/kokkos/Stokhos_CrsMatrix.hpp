@@ -627,9 +627,9 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
   typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
   for (size_t i=0; i<col_indices.size(); ++i) {
     InputVectorType x_view =
-      Kokkos::subview<InputVectorType>( x , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( x , Kokkos::ALL() , col_indices[i] );
     OutputVectorType y_view =
-      Kokkos::subview<OutputVectorType>( y , Kokkos::ALL() , col_indices[i] );
+      Kokkos::subview( y , Kokkos::ALL() , col_indices[i] );
     multiply_type::apply( A , x_view , y_view );
   }
 }

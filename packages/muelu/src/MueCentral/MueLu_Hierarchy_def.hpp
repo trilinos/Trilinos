@@ -888,15 +888,13 @@ namespace MueLu {
       }
 
       if (!aborted) {
-        double operatorComplexity = as<double>(std::accumulate(nnzPerLevel.begin(), nnzPerLevel.end(), 0)) / nnzPerLevel[0];
-
         std::ostringstream oss;
         oss << "\n--------------------------------------------------------------------------------\n" <<
             "---                            Multigrid Summary                             ---\n"
             "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-            << operatorComplexity << std::endl;
+            << GetOperatorComplexity() << std::endl;
         oss << std::endl;
 
         Xpetra::global_size_t tt = rowsPerLevel[0];

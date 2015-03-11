@@ -383,7 +383,7 @@ struct TaskTeam {
         return ;
       }
 
-      Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
+      Kokkos::parallel_for( Kokkos::TeamThreadRange(member,begin,end)
                           , [&]( int i ) { result[i] = i + 1 ; }
                           );
     }
@@ -430,7 +430,7 @@ struct TaskTeamValue {
         return ;
       }
 
-      Kokkos::parallel_for( Kokkos::TeamThreadLoop(member,begin,end)
+      Kokkos::parallel_for( Kokkos::TeamThreadRange(member,begin,end)
                           , [&]( int i ) { result[i] = i + 1 ; }
                           );
 

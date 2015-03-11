@@ -1256,9 +1256,9 @@ public:
     const size_type num_col = x.dimension_1();
     for (size_type i=0; i<num_col; ++i) {
       input_vector_1d_type x_col =
-        Kokkos::subview<input_vector_1d_type>(x, Kokkos::ALL(), i);
+        Kokkos::subview(x, Kokkos::ALL(), i);
       output_vector_1d_type y_col =
-        Kokkos::subview<output_vector_1d_type>(y, Kokkos::ALL(), i);
+        Kokkos::subview(y, Kokkos::ALL(), i);
       MeanMultiply1D::apply( A, x_col, y_col, a, b );
     }
   }
@@ -1455,8 +1455,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(y_1D, A, x_1D);
   }
   else {
@@ -1513,8 +1513,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(y_1D, a, A, x_1D);
   }
   else {
@@ -1577,8 +1577,8 @@ MV_Multiply(
         OutputViewDevice,OutputMemory > OutputView1D;
     typedef Kokkos::View< Sacado::UQ::PCE<InputStorage>*, InputLayout,
         InputViewDevice, InputMemory > InputView1D;
-    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
-    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    OutputView1D y_1D = subview(y, ALL(), 0);
+    InputView1D x_1D = subview(x, ALL(), 0);
     MV_Multiply(b, y_1D, a, A, x_1D);
   }
   else {

@@ -101,14 +101,15 @@ public:
   typedef CudaSpace             memory_space ;
 #endif
 
+  //! This execution space preferred device_type
+  typedef Kokkos::Device<execution_space,memory_space> device_type;
+
   //! The size_type best suited for this execution space.
   typedef memory_space::size_type  size_type ;
 
   //! This execution space's preferred array layout.
   typedef LayoutLeft            array_layout ;
 
-  //! For backward compatibility
-  typedef Cuda                  device_type ;
   //! 
   typedef ScratchMemorySpace< Cuda >  scratch_memory_space ;
 

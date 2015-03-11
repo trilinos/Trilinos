@@ -93,7 +93,7 @@ void modified_gram_schmidt(
 
   for ( int j = 0 ; j < count ; ++j ) {
 
-    const vector_view_type  Qj = Kokkos::subview< vector_view_type >( Q , ALL , j );
+    const vector_view_type  Qj = Kokkos::subview( Q , ALL , j );
 
     // reads  += length
     // writes += 0
@@ -109,7 +109,7 @@ void modified_gram_schmidt(
 
     for ( int k = j + 1 ; k < count ; ++k ) {
 
-      const vector_view_type  Qk = Kokkos::subview< vector_view_type >( Q , ALL , k );
+      const vector_view_type  Qk = Kokkos::subview( Q , ALL , k );
 
       // reads  += 2 * length
       // writes += 0

@@ -55,7 +55,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -76,11 +76,11 @@ int main( int argc, char **argv )
 
 #ifdef HAVE_MPI
     // Create a communicator
-    Teuchos::RefCountPtr <Epetra_MpiComm> comm =
+    Teuchos::RCP <Epetra_MpiComm> comm =
       Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
     // Create a communicator
-    Teuchos::RefCountPtr <Epetra_SerialComm> comm =
+    Teuchos::RCP <Epetra_SerialComm> comm =
       Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
@@ -89,11 +89,11 @@ int main( int argc, char **argv )
       fileName = argv[1];
 
     // Instantiate the continuation manager
-    Teuchos::RefCountPtr <ContinuationManager> contManager =
+    Teuchos::RCP <ContinuationManager> contManager =
       Teuchos::rcp(new ContinuationManager(comm,fileName));
 
     // Instantiate the problem
-    Teuchos::RefCountPtr <LinearSystem> problem =
+    Teuchos::RCP <LinearSystem> problem =
       Teuchos::rcp(new LinearSystem(comm));
 
     // Set the problem in the continuation manager

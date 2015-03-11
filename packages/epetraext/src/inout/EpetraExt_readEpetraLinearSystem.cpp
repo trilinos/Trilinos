@@ -47,17 +47,17 @@
 void EpetraExt::readEpetraLinearSystem(
   const std::string                               &fileName
   ,const Epetra_Comm                              &comm
-  ,Teuchos::RefCountPtr<Epetra_CrsMatrix>         *A
-  ,Teuchos::RefCountPtr<Epetra_Map>               *map
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *x
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *b
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *xExact
+  ,Teuchos::RCP<Epetra_CrsMatrix>         *A
+  ,Teuchos::RCP<Epetra_Map>               *map
+  ,Teuchos::RCP<Epetra_Vector>            *x
+  ,Teuchos::RCP<Epetra_Vector>            *b
+  ,Teuchos::RCP<Epetra_Vector>            *xExact
   )
 {
 
   Epetra_Map       *readMap;
-  Epetra_CrsMatrix *readA; 
-  Epetra_Vector    *readx; 
+  Epetra_CrsMatrix *readA;
+  Epetra_Vector    *readx;
   Epetra_Vector    *readb;
   Epetra_Vector    *readxexact;
 
@@ -67,36 +67,36 @@ void EpetraExt::readEpetraLinearSystem(
   //std::cout << "\nfileName = " << fileName << "\next = " << ext << std::endl;
 
   char *hacked_file_str = const_cast<char*>(fileName.c_str());
-  
-  if ( ext == "triU" ) { 
-    const bool NonContiguousMap = true; 
+
+  if ( ext == "triU" ) {
+    const bool NonContiguousMap = true;
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra(
-        hacked_file_str, false, comm, readMap, readA, readx, 
+        hacked_file_str, false, comm, readMap, readA, readx,
         readb, readxexact, NonContiguousMap
         )
       );
   }
-  else if ( ext == "triS" ) { 
-    const bool NonContiguousMap = true; 
+  else if ( ext == "triS" ) {
+    const bool NonContiguousMap = true;
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra(
-        hacked_file_str, true, comm, readMap, readA, readx, 
+        hacked_file_str, true, comm, readMap, readA, readx,
         readb, readxexact, NonContiguousMap
         )
       );
   }
-  else if( ext == "mtx" ) { 
+  else if( ext == "mtx" ) {
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadMatrixMarket2Epetra(
-        hacked_file_str, comm, readMap, 
+        hacked_file_str, comm, readMap,
         readA, readx, readb, readxexact
         )
       );
   }
   else if ( ext == "hb" ) {
     Trilinos_Util_ReadHb2Epetra(
-      hacked_file_str, comm, readMap, readA, readx, 
+      hacked_file_str, comm, readMap, readA, readx,
       readb, readxexact
       ); // No error return???
   }
@@ -108,18 +108,18 @@ void EpetraExt::readEpetraLinearSystem(
       );
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
-  Teuchos::RefCountPtr<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
+  Teuchos::RCP<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
+  Teuchos::RCP<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
+  Teuchos::RCP<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
+  Teuchos::RCP<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
+  Teuchos::RCP<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
 
   if(A)       *A       = loc_A;
   if(map)     *map     = loc_map;
   if(x)       *x       = loc_x;
   if(b)       *b       = loc_b;
   if(xExact)  *xExact  = loc_xExact;
-  
+
 }
 #endif
 
@@ -127,17 +127,17 @@ void EpetraExt::readEpetraLinearSystem(
 void EpetraExt::readEpetraLinearSystem64(
   const std::string                               &fileName
   ,const Epetra_Comm                              &comm
-  ,Teuchos::RefCountPtr<Epetra_CrsMatrix>         *A
-  ,Teuchos::RefCountPtr<Epetra_Map>               *map
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *x
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *b
-  ,Teuchos::RefCountPtr<Epetra_Vector>            *xExact
+  ,Teuchos::RCP<Epetra_CrsMatrix>         *A
+  ,Teuchos::RCP<Epetra_Map>               *map
+  ,Teuchos::RCP<Epetra_Vector>            *x
+  ,Teuchos::RCP<Epetra_Vector>            *b
+  ,Teuchos::RCP<Epetra_Vector>            *xExact
   )
 {
 
   Epetra_Map       *readMap;
-  Epetra_CrsMatrix *readA; 
-  Epetra_Vector    *readx; 
+  Epetra_CrsMatrix *readA;
+  Epetra_Vector    *readx;
   Epetra_Vector    *readb;
   Epetra_Vector    *readxexact;
 
@@ -147,36 +147,36 @@ void EpetraExt::readEpetraLinearSystem64(
   //std::cout << "\nfileName = " << fileName << "\next = " << ext << std::endl;
 
   char *hacked_file_str = const_cast<char*>(fileName.c_str());
-  
-  if ( ext == "triU" ) { 
-    const bool NonContiguousMap = true; 
+
+  if ( ext == "triU" ) {
+    const bool NonContiguousMap = true;
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra64(
-        hacked_file_str, false, comm, readMap, readA, readx, 
+        hacked_file_str, false, comm, readMap, readA, readx,
         readb, readxexact, NonContiguousMap
         )
       );
   }
-  else if ( ext == "triS" ) { 
-    const bool NonContiguousMap = true; 
+  else if ( ext == "triS" ) {
+    const bool NonContiguousMap = true;
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadTriples2Epetra64(
-        hacked_file_str, true, comm, readMap, readA, readx, 
+        hacked_file_str, true, comm, readMap, readA, readx,
         readb, readxexact, NonContiguousMap
         )
       );
   }
-  else if( ext == "mtx" ) { 
+  else if( ext == "mtx" ) {
     TEUCHOS_TEST_FOR_EXCEPT(
       0!=Trilinos_Util_ReadMatrixMarket2Epetra64(
-        hacked_file_str, comm, readMap, 
+        hacked_file_str, comm, readMap,
         readA, readx, readb, readxexact
         )
       );
   }
   else if ( ext == "hb" ) {
     Trilinos_Util_ReadHb2Epetra64(
-      hacked_file_str, comm, readMap, readA, readx, 
+      hacked_file_str, comm, readMap, readA, readx,
       readb, readxexact
       ); // No error return???
   }
@@ -188,17 +188,17 @@ void EpetraExt::readEpetraLinearSystem64(
       );
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
-  Teuchos::RefCountPtr<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
-  Teuchos::RefCountPtr<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
+  Teuchos::RCP<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
+  Teuchos::RCP<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
+  Teuchos::RCP<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
+  Teuchos::RCP<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
+  Teuchos::RCP<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
 
   if(A)       *A       = loc_A;
   if(map)     *map     = loc_map;
   if(x)       *x       = loc_x;
   if(b)       *b       = loc_b;
   if(xExact)  *xExact  = loc_xExact;
-  
+
 }
 #endif

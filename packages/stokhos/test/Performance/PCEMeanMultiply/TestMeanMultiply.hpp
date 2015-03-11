@@ -220,9 +220,9 @@ test_mean_multiply(const OrdinalType order,
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
         // scalar_vector_type xc =
-        //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
+        //   Kokkos::subview(x, Kokkos::ALL(), col);
         // scalar_vector_type yc =
-        //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        //   Kokkos::subview(y, Kokkos::ALL(), col);
         // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
         Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
       }
@@ -233,9 +233,9 @@ test_mean_multiply(const OrdinalType order,
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
         // scalar_vector_type xc =
-        //   Kokkos::subview<scalar_vector_type>(x, Kokkos::ALL(), col);
+        //   Kokkos::subview(x, Kokkos::ALL(), col);
         // scalar_vector_type yc =
-        //   Kokkos::subview<scalar_vector_type>(y, Kokkos::ALL(), col);
+        //   Kokkos::subview(y, Kokkos::ALL(), col);
         // Kokkos::MV_Multiply( yc, scalar_matrix, xc );
         Kokkos::MV_Multiply( y_col[col], scalar_matrix, x_col[col] );
       }

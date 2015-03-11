@@ -66,7 +66,7 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -134,8 +134,8 @@ int assemblyFECrs(const Epetra_Comm &,
                   const Epetra_SerialDenseMatrix &,
                   const Epetra_IntSerialDenseMatrix &,
                   const Epetra_IntSerialDenseMatrix &,
-                  Teuchos::RefCountPtr<Epetra_FECrsMatrix> &,
-                  Teuchos::RefCountPtr<Epetra_FEVector> &);
+                  Teuchos::RCP<Epetra_FECrsMatrix> &,
+                  Teuchos::RCP<Epetra_FEVector> &);
 
 int assemblyFECrs(const Epetra_Comm &,
                   const Epetra_IntSerialDenseVector &,
@@ -144,8 +144,8 @@ int assemblyFECrs(const Epetra_Comm &,
                   const Epetra_SerialDenseMatrix &,
                   const Epetra_IntSerialDenseMatrix &,
                   const Epetra_IntSerialDenseMatrix &,
-                  Teuchos::RefCountPtr<Epetra_FECrsMatrix> &,
-                  Teuchos::RefCountPtr<Epetra_FEVector> &,
+                  Teuchos::RCP<Epetra_FECrsMatrix> &,
+                  Teuchos::RCP<Epetra_FEVector> &,
                   bool);
 
 int assemble(const Epetra_Comm &,
@@ -155,9 +155,9 @@ int assemble(const Epetra_Comm &,
              const Epetra_SerialDenseMatrix &,
              const Epetra_IntSerialDenseMatrix &,
              const Epetra_IntSerialDenseMatrix &,
-             Teuchos::RefCountPtr<Epetra_FECrsMatrix> &,
-             Teuchos::RefCountPtr<Epetra_FECrsMatrix> &,
-             Teuchos::RefCountPtr<Epetra_FEVector> &);
+             Teuchos::RCP<Epetra_FECrsMatrix> &,
+             Teuchos::RCP<Epetra_FECrsMatrix> &,
+             Teuchos::RCP<Epetra_FEVector> &);
 
 int assemble_bdry(
   const Epetra_Comm                                &Comm
@@ -167,8 +167,8 @@ int assemble_bdry(
   ,const Epetra_SerialDenseMatrix                  &pcoords
   ,const Epetra_IntSerialDenseMatrix               &t
   ,const Epetra_IntSerialDenseMatrix               &e
-  ,Teuchos::RefCountPtr<Epetra_FECrsMatrix>        *B
-  ,Teuchos::RefCountPtr<Epetra_FECrsMatrix>        *R
+  ,Teuchos::RCP<Epetra_FECrsMatrix>        *B
+  ,Teuchos::RCP<Epetra_FECrsMatrix>        *R
   );
 
 int nonlinvec(const Epetra_Comm &,
@@ -177,8 +177,8 @@ int nonlinvec(const Epetra_Comm &,
               const Epetra_IntSerialDenseVector &,
               const Epetra_SerialDenseMatrix &,
               const Epetra_IntSerialDenseMatrix &,
-              const Teuchos::RefCountPtr<const Epetra_MultiVector> &,
-              Teuchos::RefCountPtr<Epetra_FEVector> &);
+              const Teuchos::RCP<const Epetra_MultiVector> &,
+              Teuchos::RCP<Epetra_FEVector> &);
 
 int nonlinjac(const Epetra_Comm &,
               const Epetra_IntSerialDenseVector &,
@@ -186,8 +186,8 @@ int nonlinjac(const Epetra_Comm &,
               const Epetra_IntSerialDenseVector &,
               const Epetra_SerialDenseMatrix &,
               const Epetra_IntSerialDenseMatrix &,
-              const Teuchos::RefCountPtr<const Epetra_MultiVector> &,
-              Teuchos::RefCountPtr<Epetra_FECrsMatrix> &);
+              const Teuchos::RCP<const Epetra_MultiVector> &,
+              Teuchos::RCP<Epetra_FECrsMatrix> &);
 
 int nonlinhessvec(const Epetra_Comm &,
                   const Epetra_IntSerialDenseVector &,
@@ -195,10 +195,10 @@ int nonlinhessvec(const Epetra_Comm &,
                   const Epetra_IntSerialDenseVector &,
                   const Epetra_SerialDenseMatrix &,
                   const Epetra_IntSerialDenseMatrix &,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> &,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> &,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> &,
-                  Teuchos::RefCountPtr<Epetra_FEVector> &);
+                  const Teuchos::RCP<const Epetra_MultiVector> &,
+                  const Teuchos::RCP<const Epetra_MultiVector> &,
+                  const Teuchos::RCP<const Epetra_MultiVector> &,
+                  Teuchos::RCP<Epetra_FEVector> &);
 
 int compproduct(Epetra_SerialDenseVector &, double *, double *);
 
@@ -223,7 +223,7 @@ void gfctn(const Epetra_SerialDenseVector & , Epetra_SerialDenseVector & );
 //
 
 GLpYUEpetraDataPool::GLpYUEpetraDataPool(
-  Teuchos::RefCountPtr<const Epetra_Comm>    const& commptr
+  Teuchos::RCP<const Epetra_Comm>    const& commptr
   ,const double                              beta
   ,const double                              len_x
   ,const double                              len_y
@@ -278,7 +278,7 @@ void GLpYUEpetraDataPool::computeAll( const GenSQP::Vector &x )
 {
 
   // Dynamic cast back to Epetra vectors here.
-  Teuchos::RefCountPtr<const Epetra_MultiVector> ey =
+  Teuchos::RCP<const Epetra_MultiVector> ey =
         (Teuchos::dyn_cast<GenSQP::YUEpetraVector>(const_cast<GenSQP::Vector&>(x))).getYVector();
 
   computeNy(ey);
@@ -286,16 +286,16 @@ void GLpYUEpetraDataPool::computeAll( const GenSQP::Vector &x )
   computeNpy(ey);
 
   computeAugmat();
-  
+
 }
 
 int GLpYUEpetraDataPool::solveAugsys(
-  const Teuchos::RefCountPtr<const Epetra_MultiVector> & rhsy,
-  const Teuchos::RefCountPtr<const Epetra_MultiVector> & rhsu,
-  const Teuchos::RefCountPtr<const Epetra_MultiVector> & rhsp,
-  const Teuchos::RefCountPtr<Epetra_MultiVector> & y,
-  const Teuchos::RefCountPtr<Epetra_MultiVector> & u,
-  const Teuchos::RefCountPtr<Epetra_MultiVector> & p,
+  const Teuchos::RCP<const Epetra_MultiVector> & rhsy,
+  const Teuchos::RCP<const Epetra_MultiVector> & rhsu,
+  const Teuchos::RCP<const Epetra_MultiVector> & rhsp,
+  const Teuchos::RCP<Epetra_MultiVector> & y,
+  const Teuchos::RCP<Epetra_MultiVector> & u,
+  const Teuchos::RCP<Epetra_MultiVector> & p,
   double tol )
 {
 /*
@@ -304,17 +304,17 @@ int GLpYUEpetraDataPool::solveAugsys(
                           // 11 for AztecOO with built-in Schwarz DD preconditioning and ILU on subdomains
                           // 12 for AztecOO with IFPACK Schwarz DD preconditioning and Umfpack on subdomains
                           // 13 for a direct sparse solver (Umfpack, KLU)
-  
+
   if (systemChoice == 1) {
     // We're using the full KKT system formulation to solve the augmented system.
-   
+
     Epetra_Map standardmap(A_->DomainMap());
     int numstates = standardmap.NumGlobalElements();
     Epetra_Map bdryctrlmap(B_->DomainMap());
     int numcontrols = bdryctrlmap.NumGlobalElements();
     Epetra_Vector rhs( (Epetra_BlockMap&)Augmat_->RangeMap() );
     Epetra_Vector soln( (Epetra_BlockMap&)Augmat_->RangeMap() );
-    soln.Random();  
+    soln.Random();
 
     std::vector<double> values(rhsy->MyLength() + rhsu->MyLength() + rhsp->MyLength());
     std::vector<int> indices(rhsy->MyLength() + rhsu->MyLength() + rhsp->MyLength());
@@ -371,7 +371,7 @@ int GLpYUEpetraDataPool::solveAugsys(
       std::string PrecType = "Amesos";
       int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
                             // it is ignored.
-  
+
       Ifpack_Preconditioner* Prec = Factory.Create(PrecType, &(*Augmat_), OverlapLevel);
       assert(Prec != 0);
 
@@ -427,19 +427,19 @@ int GLpYUEpetraDataPool::solveAugsys(
       Problem.SetOperator(&(*Augmat_));
       Problem.SetLHS(&soln);
       Problem.SetRHS(&rhs);
-      
+
       EpetraExt::LinearProblem_Reindex reindex(NULL);
       Epetra_LinearProblem newProblem = reindex(Problem);
-      
+
       Amesos_Klu kktsolver(newProblem);
-   
+
       AMESOS_CHK_ERR(kktsolver.SymbolicFactorization());
       AMESOS_CHK_ERR(kktsolver.NumericFactorization());
       AMESOS_CHK_ERR(kktsolver.Solve());
       kktsolver.PrintTiming();
     }
-    
-    
+
+
     for (int i=0; i<rhsy->MyLength(); i++) {
       (*((*y)(0)))[i] = soln[i];
     }
@@ -449,14 +449,14 @@ int GLpYUEpetraDataPool::solveAugsys(
     for (int i=0; i<rhsp->MyLength(); i++) {
       (*((*p)(0)))[i] = soln[i+rhsy->MyLength()+rhsu->MyLength()];
     }
-    
+
   }
   else if (systemChoice == 2) {
     // We're using the Schur complement formulation to solve the augmented system.
-  
+
     // Form linear operator.
     GLpApp::SchurOp schurop(A_, B_, Npy_);
-  
+
     // Form Schur complement right-hand side.
     Epetra_MultiVector ny( (Epetra_BlockMap&)Npy_->RangeMap(), 1);
     Epetra_MultiVector ay( (Epetra_BlockMap&)A_->RangeMap(), 1);
@@ -467,7 +467,7 @@ int GLpYUEpetraDataPool::solveAugsys(
     B_->Multiply(false, *rhsu, bu);
     schurrhs.Update(1.0, ny, 1.0, ay, 0.0);
     schurrhs.Update(-1.0, *rhsp, 1.0, bu, 1.0);
-  
+
     p->PutScalar(0.0);
     Epetra_LinearProblem linprob(&schurop, &(*p), &schurrhs);
     AztecOO::AztecOO Solver(linprob);
@@ -475,7 +475,7 @@ int GLpYUEpetraDataPool::solveAugsys(
     Solver.SetAztecOption( AZ_precond, AZ_none );
     Solver.SetAztecOption( AZ_output, AZ_none );
     Solver.Iterate(8000,tol);
-  
+
     Epetra_MultiVector bp( (Epetra_BlockMap&)B_->DomainMap(), 1);
     B_->Multiply(true, *p, bp);
     u->Update(1.0, *rhsu, -1.0, bp, 0.0);
@@ -492,57 +492,57 @@ int GLpYUEpetraDataPool::solveAugsys(
   return 0;
 }
 
-Teuchos::RefCountPtr<const Epetra_Comm> GLpYUEpetraDataPool::getCommPtr()   { return commptr_; }
+Teuchos::RCP<const Epetra_Comm> GLpYUEpetraDataPool::getCommPtr()   { return commptr_; }
 
-Teuchos::RefCountPtr<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getA()  { return A_; }
+Teuchos::RCP<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getA()  { return A_; }
 
-Teuchos::RefCountPtr<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getB()  { return B_; }
+Teuchos::RCP<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getB()  { return B_; }
 
-Teuchos::RefCountPtr<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getH()  { return H_; }
+Teuchos::RCP<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getH()  { return H_; }
 
-Teuchos::RefCountPtr<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getR()  { return R_; }
+Teuchos::RCP<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getR()  { return R_; }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix> GLpYUEpetraDataPool::getAugmat()  { return Augmat_; }
+Teuchos::RCP<Epetra_CrsMatrix> GLpYUEpetraDataPool::getAugmat()  { return Augmat_; }
 
-Teuchos::RefCountPtr<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getNpy()  { return Npy_; }
+Teuchos::RCP<Epetra_FECrsMatrix> GLpYUEpetraDataPool::getNpy()  { return Npy_; }
 
-Teuchos::RefCountPtr<Epetra_FEVector> GLpYUEpetraDataPool::getb()  { return b_; }
+Teuchos::RCP<Epetra_FEVector> GLpYUEpetraDataPool::getb()  { return b_; }
 
-Teuchos::RefCountPtr<Epetra_FEVector> GLpYUEpetraDataPool::getq()  { return q_; }
+Teuchos::RCP<Epetra_FEVector> GLpYUEpetraDataPool::getq()  { return q_; }
 
-Teuchos::RefCountPtr<Epetra_FEVector> GLpYUEpetraDataPool::getNy()  { return Ny_; }
+Teuchos::RCP<Epetra_FEVector> GLpYUEpetraDataPool::getNy()  { return Ny_; }
 
 double GLpYUEpetraDataPool::getbeta()  { return beta_; }
 
-Teuchos::RefCountPtr<const Epetra_SerialDenseMatrix> GLpYUEpetraDataPool::getipcoords()  { return ipcoords_; }
+Teuchos::RCP<const Epetra_SerialDenseMatrix> GLpYUEpetraDataPool::getipcoords()  { return ipcoords_; }
 
-Teuchos::RefCountPtr<const Epetra_IntSerialDenseVector> GLpYUEpetraDataPool::getipindx()  { return ipindx_; }
+Teuchos::RCP<const Epetra_IntSerialDenseVector> GLpYUEpetraDataPool::getipindx()  { return ipindx_; }
 
-Teuchos::RefCountPtr<const Epetra_SerialDenseMatrix> GLpYUEpetraDataPool::getpcoords()  { return pcoords_; }
+Teuchos::RCP<const Epetra_SerialDenseMatrix> GLpYUEpetraDataPool::getpcoords()  { return pcoords_; }
 
-Teuchos::RefCountPtr<const Epetra_IntSerialDenseVector> GLpYUEpetraDataPool::getpindx()  { return pindx_; }
+Teuchos::RCP<const Epetra_IntSerialDenseVector> GLpYUEpetraDataPool::getpindx()  { return pindx_; }
 
-Teuchos::RefCountPtr<const Epetra_IntSerialDenseMatrix> GLpYUEpetraDataPool::gett()  { return t_; }
+Teuchos::RCP<const Epetra_IntSerialDenseMatrix> GLpYUEpetraDataPool::gett()  { return t_; }
 
-Teuchos::RefCountPtr<const Epetra_IntSerialDenseMatrix> GLpYUEpetraDataPool::gete()  { return e_; }
+Teuchos::RCP<const Epetra_IntSerialDenseMatrix> GLpYUEpetraDataPool::gete()  { return e_; }
 
 
-void GLpYUEpetraDataPool::computeNy( const Teuchos::RefCountPtr<const Epetra_MultiVector> & y )
+void GLpYUEpetraDataPool::computeNy( const Teuchos::RCP<const Epetra_MultiVector> & y )
 {
   Epetra_Map overlapmap(-1, pindx_->M(), (int*)(pindx_)->A(), 1, *commptr_);
   Epetra_Map standardmap(A_->DomainMap());
-  Teuchos::RefCountPtr<Epetra_MultiVector> yoverlap = Teuchos::rcp(new Epetra_MultiVector(overlapmap, 1));
+  Teuchos::RCP<Epetra_MultiVector> yoverlap = Teuchos::rcp(new Epetra_MultiVector(overlapmap, 1));
   Epetra_Import Importer(overlapmap, standardmap);
   yoverlap->Import(*y, Importer, Insert);
   nonlinvec(*commptr_, *ipindx_, *ipcoords_, *pindx_, *pcoords_, *t_, yoverlap, Ny_);
 }
 
 
-void GLpYUEpetraDataPool::computeNpy( const Teuchos::RefCountPtr<const Epetra_MultiVector> & y )
+void GLpYUEpetraDataPool::computeNpy( const Teuchos::RCP<const Epetra_MultiVector> & y )
 {
   Epetra_Map overlapmap(-1, pindx_->M(), (int*)(pindx_)->A(), 1, *commptr_);
   Epetra_Map standardmap(A_->DomainMap());
-  Teuchos::RefCountPtr<Epetra_MultiVector> yoverlap = Teuchos::rcp(new Epetra_MultiVector(overlapmap, 1));
+  Teuchos::RCP<Epetra_MultiVector> yoverlap = Teuchos::rcp(new Epetra_MultiVector(overlapmap, 1));
   Epetra_Import Importer(overlapmap, standardmap);
   yoverlap->Import(*y, Importer, Insert);
   nonlinjac(*commptr_, *ipindx_, *ipcoords_, *pindx_, *pcoords_, *t_, yoverlap, Npy_);
@@ -562,7 +562,7 @@ void GLpYUEpetraDataPool::computeAugmat()
   int nummycontrols = bdryctrlmap.NumMyElements();
 
   Epetra_IntSerialDenseVector KKTmapindx(2*nummystates+nummycontrols);
-  
+
   // Build KKT map.
   Epetra_IntSerialDenseVector states(nummystates);
   Epetra_IntSerialDenseVector controls(nummycontrols);
@@ -576,10 +576,10 @@ void GLpYUEpetraDataPool::computeAugmat()
     KKTmapindx(nummystates+i) = numstates+controls(i);
   }
   Epetra_Map KKTmap(-1, 2*nummystates+nummycontrols, KKTmapindx.Values(), indexBase, *(commptr_));
-  
-  
+
+
   // Start building the KKT matrix.
-  
+
   Augmat_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, KKTmap, 0));
 
   double one[1];
@@ -587,7 +587,7 @@ void GLpYUEpetraDataPool::computeAugmat()
   for (int i=0; i<nummystates+nummycontrols; i++) {
     Augmat_->InsertGlobalValues(KKTmapindx.Values()[i], 1, one, KKTmapindx.Values()+i);
   }
-  
+
   int checkentries=0;
   int nummyentries=0;
   Epetra_SerialDenseVector values(nummyentries);
@@ -600,7 +600,7 @@ void GLpYUEpetraDataPool::computeAugmat()
     A_->ExtractGlobalRowCopy(KKTmapindx.Values()[i], nummyentries, checkentries, values.Values(),
                              indices.Values());
     if (nummyentries > 0)
-      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(), 
+      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(),
                                   indices.Values());
     nummyentries = Npy_->NumMyEntries(i);
     values.Resize(nummyentries);
@@ -608,7 +608,7 @@ void GLpYUEpetraDataPool::computeAugmat()
     Npy_->ExtractGlobalRowCopy(KKTmapindx.Values()[i], nummyentries, checkentries, values.Values(),
                              indices.Values());
     if (nummyentries > 0)
-      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(), 
+      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(),
                                   indices.Values());
   }
   // Insert B into Augmat.
@@ -621,10 +621,10 @@ void GLpYUEpetraDataPool::computeAugmat()
     for (int j=0; j<nummyentries; j++)
       indices[j] = indices[j]+numstates;
     if (nummyentries > 0)
-      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(), 
+      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i]+2*numstates, nummyentries, values.Values(),
                                   indices.Values());
   }
-  
+
   EpetraExt::RowMatrix_Transpose transposer;
   Epetra_CrsMatrix & transA = dynamic_cast<Epetra_CrsMatrix&>(transposer(*A_));
   Epetra_CrsMatrix & transB = dynamic_cast<Epetra_CrsMatrix&>(transposer(*B_));
@@ -639,7 +639,7 @@ void GLpYUEpetraDataPool::computeAugmat()
     for (int j=0; j<nummyentries; j++)
       indices[j] = indices[j]+2*numstates;
     if (nummyentries > 0)
-      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i], nummyentries, values.Values(), 
+      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i], nummyentries, values.Values(),
                                   indices.Values());
     nummyentries = transNpy.NumMyEntries(i);
     values.Resize(nummyentries);
@@ -649,7 +649,7 @@ void GLpYUEpetraDataPool::computeAugmat()
     for (int j=0; j<nummyentries; j++)
       indices[j] = indices[j]+2*numstates;
     if (nummyentries > 0)
-      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i], nummyentries, values.Values(), 
+      Augmat_->InsertGlobalValues(KKTmapindx.Values()[i], nummyentries, values.Values(),
                                   indices.Values());
   }
   // Insert transpose of B into Augmat.
@@ -679,7 +679,7 @@ void GLpYUEpetraDataPool::computeAugmat()
 
 }
 
-void GLpYUEpetraDataPool::PrintVec( const Teuchos::RefCountPtr<const Epetra_Vector> & x )
+void GLpYUEpetraDataPool::PrintVec( const Teuchos::RCP<const Epetra_Vector> & x )
 {
   Vector2MATLAB(*x, std::cout);
 }
@@ -690,7 +690,7 @@ Usr_Par::Usr_Par() {
 
   // get nodes and weights
   quadrature(2,3,Nodes,Weights);
-    
+
   // Evaluate nodal basis functions and their derivatives at quadrature
   // pts N(i,j) = value of the j-th basis function at quadrature node i.
   N.Shape(Nodes.M(),3);
@@ -728,7 +728,7 @@ Usr_Par::Usr_Par() {
   S3(0,0)= 1.0; S3(0,1)= 0.0; S3(0,2)=-1.0;
   S3(1,0)= 0.0; S3(1,1)= 0.0; S3(1,2)= 0.0;
   S3(2,0)=-1.0; S3(2,1)= 0.0; S3(2,2)= 1.0;
-    
+
   // Evaluate integrals of basis functions N(i).
   Nw.Size(3);
   Nw.Multiply('T', 'N', 1.0, N, Weights, 0.0);
@@ -744,7 +744,7 @@ Usr_Par::Usr_Par() {
 
   // Evaluate integrals of 27 products N(i)*N(j)*N(k).
   NNNw = new Epetra_SerialDenseMatrix[3];
-  NNNw[0].Shape(3,3); NNNw[1].Shape(3,3); NNNw[2].Shape(3,3); 
+  NNNw[0].Shape(3,3); NNNw[1].Shape(3,3); NNNw[2].Shape(3,3);
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++) {
       for (int k=0; k<3; k++) {
@@ -756,7 +756,7 @@ Usr_Par::Usr_Par() {
 
   // Evaluate integrals of 27 products N(i)*(dN(j)/dx1)*N(k).
   NdNdx1Nw = new Epetra_SerialDenseMatrix[3];
-  NdNdx1Nw[0].Shape(3,3); NdNdx1Nw[1].Shape(3,3); NdNdx1Nw[2].Shape(3,3); 
+  NdNdx1Nw[0].Shape(3,3); NdNdx1Nw[1].Shape(3,3); NdNdx1Nw[2].Shape(3,3);
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++) {
       for (int k=0; k<3; k++) {
@@ -768,7 +768,7 @@ Usr_Par::Usr_Par() {
 
   // Evaluate integrals of 27 products N(i)*(dN(j)/dx2)*N(k).
   NdNdx2Nw = new Epetra_SerialDenseMatrix[3];
-  NdNdx2Nw[0].Shape(3,3); NdNdx2Nw[1].Shape(3,3); NdNdx2Nw[2].Shape(3,3); 
+  NdNdx2Nw[0].Shape(3,3); NdNdx2Nw[1].Shape(3,3); NdNdx2Nw[2].Shape(3,3);
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++) {
       for (int k=0; k<3; k++) {
@@ -895,15 +895,15 @@ int GLpApp::assemble_bdry(
   ,const Epetra_SerialDenseMatrix                  &pcoords
   ,const Epetra_IntSerialDenseMatrix               &t
   ,const Epetra_IntSerialDenseMatrix               &e
-  ,Teuchos::RefCountPtr<Epetra_FECrsMatrix>        *B_out
-  ,Teuchos::RefCountPtr<Epetra_FECrsMatrix>        *R_out
+  ,Teuchos::RCP<Epetra_FECrsMatrix>        *B_out
+  ,Teuchos::RCP<Epetra_FECrsMatrix>        *R_out
   )
 {
 
   using Teuchos::rcp;
 
 #ifdef GLPAPP_SHOW_BOUNDARY_ASSEMBLY
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   *out << "\nEntering assemble_bdry(...) ...\n";
@@ -939,7 +939,7 @@ int GLpApp::assemble_bdry(
     );
   const int numMyBdryNodes = lastindx - MyBdryNode.Values();
   MyBdryNode.Resize(numMyBdryNodes); // RAB: This does not overwrite?
-  
+
   //
   // Define the maps for the various lists
   //
@@ -960,11 +960,11 @@ int GLpApp::assemble_bdry(
   //
   // Allocate matrices to fill
   //
-  Teuchos::RefCountPtr<Epetra_FECrsMatrix>
+  Teuchos::RCP<Epetra_FECrsMatrix>
     B = rcp(new Epetra_FECrsMatrix(Copy,standardmap,0)),
     R = rcp(new Epetra_FECrsMatrix(Copy,standardmap,0));
   // NOTE: The data map is the same as for the volume matrices. Later, when
-  // FillComplete is called, we will fix the proper domain and range maps. 
+  // FillComplete is called, we will fix the proper domain and range maps.
   // Declare quantities needed for the call to the local assembly routine.
   const int numNodesPerEdge = 2;
   Epetra_IntSerialDenseVector epetra_nodes(numNodesPerEdge);
@@ -992,9 +992,9 @@ int GLpApp::assemble_bdry(
       y0 = pcoords(local_id_0,1),
       x1 = pcoords(local_id_1,0),
       y1 = pcoords(local_id_1,1);
-    
+
     const double l = sqrt(pow(x0-x1,2) + pow(y0-y1,2));  // Length of this edge
-    
+
     // We have an explicit formula for Bt.
     const double l_sixth = l * (1.0/6.0);
     Bt(0,0) = l_sixth * 2.0;
@@ -1015,7 +1015,7 @@ int GLpApp::assemble_bdry(
     if (err<0) return(err);
     err = R->InsertGlobalValues(epetra_nodes,Bt,format);
     if (err<0) return(err);
-    
+
   }
 
 /*
@@ -1089,7 +1089,7 @@ int GLpApp::assemble_bdry(
 
   -# Assembles the FE volume stiffness matrix \e A and the right-hand side \e b for the
   solution of an advection-diffusion equation using piecewise linear finite elements.
-  The advection-diffusion equation is 
+  The advection-diffusion equation is
   \f{align*}
        - \nabla \cdot \left( K(x) \nabla y(x) \right) + \mathbf{c}(x) \cdot \nabla y(x) + r(x) y(x)
        &= f(x), & x &\in \Omega,\;  \\
@@ -1113,9 +1113,9 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
              const Epetra_SerialDenseMatrix & pcoords,
              const Epetra_IntSerialDenseMatrix & t,
              const Epetra_IntSerialDenseMatrix & e,
-             RefCountPtr<Epetra_FECrsMatrix> & A,
-             RefCountPtr<Epetra_FECrsMatrix> & M,
-             RefCountPtr<Epetra_FEVector> & b)
+             RCP<Epetra_FECrsMatrix> & A,
+             RCP<Epetra_FECrsMatrix> & M,
+             RCP<Epetra_FEVector> & b)
 {
 
   int myPID = Comm.MyPID();
@@ -1146,7 +1146,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
   Epetra_SerialDenseMatrix At;
   Epetra_SerialDenseVector bt;
   Epetra_SerialDenseMatrix vertices(numNodesPerElem, pcoords.N());
-  
+
   Epetra_SerialDenseVector k(numNodesPerElem);
   for (i=0; i< numNodesPerElem; i++) k(i)=1.0;
   Epetra_SerialDenseMatrix c(numNodesPerElem,2);
@@ -1166,7 +1166,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
       vertices(j,0) = pcoords(overlapmap.LID(nodes[j]), 0);
       vertices(j,1) = pcoords(overlapmap.LID(nodes[j]), 1);
       // set rhs function
-      f(j) = cos(GLp_pi*vertices(j,0))*cos(GLp_pi*vertices(j,1)) * 
+      f(j) = cos(GLp_pi*vertices(j,0))*cos(GLp_pi*vertices(j,1)) *
                (2*GLp_pi*GLp_pi + pow(cos(GLp_pi*vertices(j,0)),2)*pow(cos(GLp_pi*vertices(j,1)),2) - 1.0);
     }
     lassembly(vertices, k, c, r, f, usr_par, At, bt);
@@ -1199,7 +1199,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
 
     // Get quadrature weights and points.
     quadrature(1, 2, quadnodes, quadweights);
-    
+
     // Evaluate nodal basis functions at quadrature points
     // N(i,j) value of basis function j at quadrature node i
     N.Shape(quadnodes.M(),2);
@@ -1229,7 +1229,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
       l = blas.NRM2(neumann_add.M(), neumann_add.A());
       neumann_add.Multiply('N', 'N', 1.0, NN, g, 0.0);
       neumann_add.Scale(l);
-      err = b->SumIntoGlobalValues(neumann_nodes, neumann_add); 
+      err = b->SumIntoGlobalValues(neumann_nodes, neumann_add);
       if (err<0) return(err);
     }
   }
@@ -1256,7 +1256,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
 
     // Get quadrature weights and points.
     quadrature(1, 2, quadnodes, quadweights);
-    
+
     // Evaluate nodal basis functions at quadrature points
     // N(i,j) value of basis function j at quadrature node i
     N.Shape(quadnodes.M(),2);
@@ -1293,7 +1293,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
     double l;
     for (i=0; i<robin.M(); i++) {
       robin_nodes(0) = robin(i,0); robin_nodes(1) = robin(i,1);
-      
+
       robin_b_add(0) = pcoords(overlapmap.LID(robin_nodes(0)),0)
                       -pcoords(overlapmap.LID(robin_nodes(1)),0);
       robin_b_add(1) = pcoords(overlapmap.LID(robin_nodes(0)),1)
@@ -1301,7 +1301,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
       l = blas.NRM2(robin_b_add.M(), robin_b_add.A());
       robin_b_add.Multiply('N', 'N', 1.0, NN, g, 0.0);
       robin_b_add.Scale(l);
-      err = b->SumIntoGlobalValues(robin_nodes, robin_b_add); 
+      err = b->SumIntoGlobalValues(robin_nodes, robin_b_add);
       if (err<0) return(err);
 
       NNN[0].Scale(sigma(0)); NNN[1].Scale(sigma(1));
@@ -1373,7 +1373,7 @@ int GLpApp::assemble(const Epetra_Comm & Comm,
 
 /* \brief Computes local stiffness matrix and local RHS vector for simplex
            (triangles in two dimensions).
-                            
+
   \param  vertices   [in]  - Matrix containing the global coordinates of the current simplex.
   \param  k          [in]  - Vector containing the value of the diffusion \f$k\f$ at each vertex
                              (\f$k\f$ is assumed to be piecewise linear), where \f$k\f$ is the coeff in the
@@ -1423,8 +1423,8 @@ int GLpApp::lassembly(const Epetra_SerialDenseMatrix & vertices,
   // Note that the constructors below initialize all entries to 0.
   Epetra_SerialDenseMatrix B(2,2);
   Epetra_SerialDenseMatrix b(2,2);
-  Epetra_SerialDenseMatrix BtB(2,2);  
-  Epetra_SerialDenseMatrix C(2,2);  
+  Epetra_SerialDenseMatrix BtB(2,2);
+  Epetra_SerialDenseMatrix C(2,2);
   Epetra_SerialDenseMatrix M1(3,3);
   Epetra_SerialDenseMatrix M2(3,3);
   Epetra_SerialDenseMatrix M3(3,3);
@@ -1446,7 +1446,7 @@ int GLpApp::lassembly(const Epetra_SerialDenseMatrix & vertices,
   inverse(BtB, C);
 
   inverse(B, b); b.Scale(dB);
-  
+
   // Compute the part corresponding to div(K*grad(u)).
   tmp = usr_par.S1; tmp.Scale(C(0,0));
   M1 += tmp;
@@ -1485,8 +1485,8 @@ int GLpApp::lassembly(const Epetra_SerialDenseMatrix & vertices,
   At += M2;
   At += M3;
 
-  bt.Multiply('T', 'N', adB, usr_par.NNw, f, 0.0);  
-  
+  bt.Multiply('T', 'N', adB, usr_par.NNw, f, 0.0);
+
   return(0);
 }
 
@@ -1511,7 +1511,7 @@ int GLpApp::inverse(const Epetra_SerialDenseMatrix & mat,
 
   lapack.GETRF(dim, dim, inv.A(), dim, ipiv.A(), &info);
   lapack.GETRI(dim, inv.A(), dim, ipiv.A(), work.A(), &dim, &info);
-  
+
   return(0);
 }
 
@@ -1526,11 +1526,11 @@ double GLpApp::determinant(const Epetra_SerialDenseMatrix & mat)
   //Teuchos::LAPACK<int,double> lapack;
   Epetra_LAPACK lapack;
   double det;
-  int swaps; 
+  int swaps;
   int dim = mat.M();
   int info;
   Epetra_IntSerialDenseVector ipiv(dim);
- 
+
   Epetra_SerialDenseMatrix mymat(mat);
   lapack.GETRF(dim, dim, mymat.A(), dim, ipiv.A(), &info);
 
@@ -1679,10 +1679,10 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
                   const Epetra_IntSerialDenseVector & pindx,
                   const Epetra_SerialDenseMatrix & pcoords,
                   const Epetra_IntSerialDenseMatrix & t,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> & y,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> & s,
-                  const Teuchos::RefCountPtr<const Epetra_MultiVector> & lambda,
-                  Teuchos::RefCountPtr<Epetra_FEVector> & hessvec)
+                  const Teuchos::RCP<const Epetra_MultiVector> & y,
+                  const Teuchos::RCP<const Epetra_MultiVector> & s,
+                  const Teuchos::RCP<const Epetra_MultiVector> & lambda,
+                  Teuchos::RCP<Epetra_FEVector> & hessvec)
 {
 
   int myPID = Comm.MyPID();
@@ -1702,7 +1702,7 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
 
   int* nodes = new int[numNodesPerElem];
   int i=0, j=0, err=0;
-  
+
   // get quadrature nodes and weights
   Epetra_SerialDenseMatrix Nodes;
   Epetra_SerialDenseVector Weights;
@@ -1744,10 +1744,10 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
   lgfctnNi.Size(numQuadPts);
   lgfctnNls.Size(numQuadPts);
   lhessvec.Size(numNodesPerElem);
-  
+
   Epetra_SerialDenseMatrix B(2,2);
   double adB;
-  
+
   for(i=0; i<numLocElems; i++) {
 
     nodes[0] = t(i,0); nodes[1] = t(i,1); nodes[2] = t(i,2);
@@ -1774,7 +1774,7 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
     Nls.Multiply('N', 'N', 1.0, N, ls, 0.0);            //N*ls
     Nllambda.Multiply('N', 'N', 1.0, N, llambda, 0.0);  //N*llambda
     g2pfctn(Nly, lgfctn);
-    
+
     for (int i=0; i<numNodesPerElem; i++) {
       compproduct(lgfctnNi, lgfctn.A(), N[i]);
       compproduct(lgfctnNls, lgfctnNi.A(), Nls.A(), Nllambda.A());  // g2pfctn(Nly).*Nls.*Nllambda.*N(:,i)
@@ -1802,7 +1802,7 @@ int GLpApp::nonlinhessvec(const Epetra_Comm & Comm,
 void GLpApp::g2pfctn(const Epetra_SerialDenseVector & v, Epetra_SerialDenseVector & gv) {
   for (int i=0; i<v.M(); i++) {
     gv(i) = 6.0*v(i);
-  }  
+  }
 }
 
 /*  \brief Performs finite-element assembly of the Jacobian of the nonlinear form.
@@ -1843,8 +1843,8 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
               const Epetra_IntSerialDenseVector & pindx,
               const Epetra_SerialDenseMatrix & pcoords,
               const Epetra_IntSerialDenseMatrix & t,
-              const Teuchos::RefCountPtr<const Epetra_MultiVector> & y,
-              Teuchos::RefCountPtr<Epetra_FECrsMatrix> & Gp)
+              const Teuchos::RCP<const Epetra_MultiVector> & y,
+              Teuchos::RCP<Epetra_FECrsMatrix> & Gp)
 {
 
   int myPID = Comm.MyPID();
@@ -1865,7 +1865,7 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
 
   int* nodes = new int[numNodesPerElem];
   int i=0, j=0, err=0;
-  
+
   // get quadrature nodes and weights
   Epetra_SerialDenseMatrix Nodes;
   Epetra_SerialDenseVector Weights;
@@ -1881,7 +1881,7 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
     N(i,1) = Nodes(i,0);
     N(i,2) = Nodes(i,1);
   }
-  
+
   // Declare quantities needed for the call to the local assembly routine.
   Epetra_IntSerialDenseVector epetra_nodes(View, nodes, numNodesPerElem);
   Epetra_SerialDenseMatrix vertices(numNodesPerElem, pcoords.N());
@@ -1897,10 +1897,10 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
   lgfctn.Size(numQuadPts);
   lgfctnNiNj.Size(numQuadPts);
   lGp.Shape(numNodesPerElem, numNodesPerElem);
-  
+
   Epetra_SerialDenseMatrix B(2,2);
   double adB;
-  
+
   for(i=0; i<numLocElems; i++) {
 
     nodes[0] = t(i,0); nodes[1] = t(i,1); nodes[2] = t(i,2);
@@ -1916,21 +1916,21 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
     }
     adB  = abs(determinant(B));
 
-    // Construct local (to each processor) element view of y. 
+    // Construct local (to each processor) element view of y.
     for (j=0; j<numNodesPerElem; j++) {
       ly(j) = (*((*y)(0)))[overlapmap.LID(nodes[j])];
     }
 
     Nly.Multiply('N', 'N', 1.0, N, ly, 0.0);
     gpfctn(Nly, lgfctn);
-    
+
     for (int i=0; i<numNodesPerElem; i++) {
       for (int j=0; j<numNodesPerElem; j++) {
         compproduct(lgfctnNiNj, lgfctn.A(), N[i], N[j]);
         lGp(i,j) = adB*lgfctnNiNj.Dot(Weights);
       }
     }
-    
+
     err = Gp->InsertGlobalValues(epetra_nodes, lGp, format);
     if (err<0) return(err);
   }
@@ -1952,7 +1952,7 @@ int GLpApp::nonlinjac(const Epetra_Comm & Comm,
 void GLpApp::gpfctn(const Epetra_SerialDenseVector & v, Epetra_SerialDenseVector & gv) {
   for (int i=0; i<v.M(); i++) {
     gv(i) = 3.0*pow(v(i),2)-1.0;
-  }  
+  }
 }
 
 /*  \brief Performs finite-element assembly of the nonlinear reaction term.
@@ -1993,8 +1993,8 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
               const Epetra_IntSerialDenseVector & pindx,
               const Epetra_SerialDenseMatrix & pcoords,
               const Epetra_IntSerialDenseMatrix & t,
-              const Teuchos::RefCountPtr<const Epetra_MultiVector> & y,
-              Teuchos::RefCountPtr<Epetra_FEVector> & g)
+              const Teuchos::RCP<const Epetra_MultiVector> & y,
+              Teuchos::RCP<Epetra_FEVector> & g)
 {
 
   int myPID = Comm.MyPID();
@@ -2014,7 +2014,7 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
 
   int* nodes = new int[numNodesPerElem];
   int i=0, j=0, err=0;
-  
+
   // get quadrature nodes and weights
   Epetra_SerialDenseMatrix Nodes;
   Epetra_SerialDenseVector Weights;
@@ -2046,10 +2046,10 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
   lgfctn.Size(numQuadPts);
   lgfctnNi.Size(numQuadPts);
   lg.Size(numNodesPerElem);
-  
+
   Epetra_SerialDenseMatrix B(2,2);
   double adB;
-  
+
   for(i=0; i<numLocElems; i++) {
 
     nodes[0] = t(i,0); nodes[1] = t(i,1); nodes[2] = t(i,2);
@@ -2065,19 +2065,19 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
     }
     adB  = abs(determinant(B));
 
-    // Construct local (to each processor) element view of y. 
+    // Construct local (to each processor) element view of y.
     for (j=0; j<numNodesPerElem; j++) {
       ly(j) = (*((*y)(0)))[overlapmap.LID(nodes[j])];
     }
 
     Nly.Multiply('N', 'N', 1.0, N, ly, 0.0);
     gfctn(Nly, lgfctn);
-    
+
     for (int i=0; i<numNodesPerElem; i++) {
       compproduct(lgfctnNi, lgfctn.A(), N[i]);
       lg(i) = adB*lgfctnNi.Dot(Weights);
     }
-    
+
     err = g->SumIntoGlobalValues(epetra_nodes, lg);
     if (err<0) return(err);
   }
@@ -2100,7 +2100,7 @@ int GLpApp::nonlinvec(const Epetra_Comm & Comm,
 void GLpApp::gfctn(const Epetra_SerialDenseVector & v, Epetra_SerialDenseVector & gv) {
   for (int i=0; i<v.M(); i++) {
     gv(i) = pow(v(i),3)-v(i);
-  }  
+  }
 }
 
 /* ======== ================ *
@@ -2119,20 +2119,20 @@ void GLpApp::gfctn(const Epetra_SerialDenseVector & v, Epetra_SerialDenseVector 
  * Parameters:
  * ----------
  *
- * - Epetra_CrsMatrix  reference to the distributed CrsMatrix to 
+ * - Epetra_CrsMatrix  reference to the distributed CrsMatrix to
  *                     print out
- * - std::ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream
  */
 
-bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile) 
+bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile)
 {
 
-  int MyPID = A.Comm().MyPID(); 
+  int MyPID = A.Comm().MyPID();
   int NumProc = A.Comm().NumProc();
 
   // work only on transformed matrices;
   if( A.IndicesAreLocal() == false ) {
-    if( MyPID == 0 ) { 
+    if( MyPID == 0 ) {
       std::cerr << "ERROR in "<< __FILE__ << ", line " << __LINE__ << std::endl;
       std::cerr << "Function CrsMatrix2MATLAB accepts\n";
       std::cerr << "transformed matrices ONLY. Please call A.TransformToLoca()\n";
@@ -2185,11 +2185,11 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile
         double *Values = new double[NumNzRow];
         int *Indices = new int[NumNzRow];
 
-        A.ExtractMyRowCopy(MyRow, NumNzRow, 
+        A.ExtractMyRowCopy(MyRow, NumNzRow,
                            NumEntries, Values, Indices);
         // print out the elements with MATLAB syntax
         for( int j=0 ; j<NumEntries ; ++j ) {
-          outfile << "A(" << GlobalRow  + IndexBase 
+          outfile << "A(" << GlobalRow  + IndexBase
                   << "," << A.GCID(Indices[j]) + IndexBase
                   << ") = " << Values[j] << ";\n";
         }
@@ -2197,7 +2197,7 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile
         delete Values;
         delete Indices;
       }
-      
+
     }
     A.Comm().Barrier();
   }
@@ -2223,17 +2223,17 @@ bool GLpApp::CrsMatrix2MATLAB(const Epetra_CrsMatrix & A, std::ostream & outfile
  * ----------
  *
  * - Epetra_Vector     reference to vector
- * - std::ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream
  */
 
 bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, std::ostream & outfile)
 {
-  
-  int MyPID = v.Comm().MyPID(); 
+
+  int MyPID = v.Comm().MyPID();
   int NumProc = v.Comm().NumProc();
   int MyLength = v.MyLength();
   int GlobalLength = v.GlobalLength();
-  
+
   // print out on std::cout if no filename is provided
 
   // write on file the dimension of the matrix
@@ -2243,7 +2243,7 @@ bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, std::ostream & outfile)
   int NumMyElements = v.Map().NumMyElements();
   // get update list
   int * MyGlobalElements = v.Map().MyGlobalElements( );
-  
+
   int Row;
 
   int IndexBase = v.Map().IndexBase(); // MATLAB starts from 0
@@ -2264,9 +2264,9 @@ bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, std::ostream & outfile)
         outfile << "v(" << MyGlobalElements[Row] + IndexBase
              << ") = " << v[Row] << ";\n";
       }
-      
+
     }
-      
+
     v.Comm().Barrier();
   }
 
@@ -2291,17 +2291,17 @@ bool GLpApp::Vector2MATLAB( const Epetra_Vector & v, std::ostream & outfile)
  * ----------
  *
  * - Epetra_FEVector   reference to FE vector
- * - std::ostream &         reference to output stream 
+ * - std::ostream &         reference to output stream
  */
 
 bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, std::ostream & outfile)
 {
-  
-  int MyPID = v.Comm().MyPID(); 
+
+  int MyPID = v.Comm().MyPID();
   int NumProc = v.Comm().NumProc();
   int MyLength = v.MyLength();
   int GlobalLength = v.GlobalLength();
-  
+
   // print out on std::cout if no filename is provided
 
   // write on file the dimension of the matrix
@@ -2311,7 +2311,7 @@ bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, std::ostream & outfile)
   int NumMyElements = v.Map().NumMyElements();
   // get update list
   int * MyGlobalElements = v.Map().MyGlobalElements( );
-  
+
   int Row;
 
   int IndexBase = v.Map().IndexBase(); // MATLAB starts from 0
@@ -2332,9 +2332,9 @@ bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, std::ostream & outfile)
         outfile << "v(" << MyGlobalElements[Row] + IndexBase
              << ") = " << v[0][Row] << ";\n";
       }
-      
+
     }
-      
+
     v.Comm().Barrier();
   }
 
@@ -2347,7 +2347,7 @@ bool GLpApp::FEVector2MATLAB( const Epetra_FEVector & v, std::ostream & outfile)
              on the interval [0,1] (dim = 1) \n
              on the triangle with vertices (0,0), (1,0), (0,1) (if dim = 2) \n
              on the tetrahedron with vertices (0,0,0), (1,0,0), (0,1,0), (0,0,1) (if dim = 3).
-             
+
   \param  dim     [in]   - spatial dimension (dim = 1, 2)
   \param  order   [in]   - required degree of polynomials that integrate exactly
   \param  nodes   [out]  - Matrix in which the i-th row of nodes gives coordinates of the i-th quadrature node
@@ -2359,7 +2359,7 @@ int GLpApp::quadrature(const int dim, const int order,
                Epetra_SerialDenseMatrix & nodes,
                Epetra_SerialDenseVector & weights)
 {
-  
+
   if (dim == 1) {
 
     // Gauss quadrature nodes and weights on the interval [0,1]
@@ -2396,7 +2396,7 @@ int GLpApp::quadrature(const int dim, const int order,
 
   }
   else if (dim == 2) {
-    
+
     // Quadrature nodes and weights on the unit simplex with
     // vertices (0,0), (1,0), and (0,1).
 
