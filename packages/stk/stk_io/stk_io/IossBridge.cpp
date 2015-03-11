@@ -362,7 +362,7 @@ namespace {
     std::vector<T> io_field_data(entity_count*field_component_count);
 
     for (size_t i=0; i < entity_count; ++i) {
-      if (mesh.is_valid(entities[i])) {
+      if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fld_data != NULL) {
           for(size_t j=0; j<field_component_count; ++j) {
