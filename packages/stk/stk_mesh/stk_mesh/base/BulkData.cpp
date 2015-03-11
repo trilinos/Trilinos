@@ -6375,7 +6375,8 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
     const int      p_owner    = parallel_owner_rank(entity);
     const bool     ordered    = ordered_comm( entity );
     const bool     shares     = in_shared( entity_key(entity) );
-    const bool     recv_ghost = in_receive_ghost( aura_ghosting(), entity_key(entity) );
+    const bool     recv_aura = in_receive_ghost( aura_ghosting(), entity_key(entity) );
+    const bool     recv_any_ghost = in_receive_ghost( entity_key(entity) );
     const bool     send_ghost = in_send_ghost( entity_key(entity) );
     const bool     ownedClosure = owned_closure(entity);
 
@@ -6424,16 +6425,17 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
       this_result = false ;
     }
 
-    // Must be either owned_closure or recv_ghost but not both.
+    // Must be either owned_closure or recv_aura but not both.
 
-    if (   ownedClosure &&   recv_ghost ) {
+
+    if (   ownedClosure &&   recv_aura ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem: entity is both recv ghost and in owned_closure;"<<std::endl;
+      error_log << "problem: entity is both recv aura ghost and in owned_closure;"<<std::endl;
       this_result = false ;
     }
-    if ( ! ownedClosure && ! recv_ghost ) {
+    if ( ! ownedClosure && ! recv_any_ghost ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem: entity is neither recv_ghost nor in owned_closure;"<<std::endl;
+      error_log << "problem: entity is neither a recv ghost nor in owned_closure;"<<std::endl;
       this_result = false ;
     }
 
@@ -6460,7 +6462,7 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
       }
     }
 
-    if ( shares || recv_ghost || send_ghost ) { ++comm_count ; }
+    if ( shares || recv_any_ghost || send_ghost ) { ++comm_count ; }
 
     if ( ! this_result ) {
       result = false ;
