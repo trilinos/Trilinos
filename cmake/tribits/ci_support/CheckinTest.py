@@ -2414,7 +2414,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
             # Get then final commit message
             finalCommitEmailBodyStr = lastCommitMessageStr
             finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr()
-            finalCommitEmailBodyStr += shortCommitEmailBodyExtra
+            finalCommitEmailBodyStr += shortCommitEmailBodyExtra.encode("utf8")
             finalCommitEmailBodyStr += localCommitSHA1ListStr
             if forcedCommitPush:
               finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
