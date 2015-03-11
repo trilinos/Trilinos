@@ -98,7 +98,7 @@ typedef panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::
 
 namespace panzer {
 
-Teuchos::RCP<CrsMatrixType> getSubBlock(int i,int j,Thyra::LinearOpBase<double> & lo)
+Teuchos::RCP<CrsMatrixType> getSubBlock_tp(int i,int j,Thyra::LinearOpBase<double> & lo)
 {
    Thyra::BlockedLinearOpBase<double> & blo = Teuchos::dyn_cast<Thyra::BlockedLinearOpBase<double> >(lo);
    Teuchos::RCP<OperatorType> t_blo = 
@@ -107,7 +107,7 @@ Teuchos::RCP<CrsMatrixType> getSubBlock(int i,int j,Thyra::LinearOpBase<double> 
    return rcp_dynamic_cast<CrsMatrixType>(t_blo);
 }
 
-Teuchos::RCP<const CrsMatrixType> getSubBlock(int i,int j,const Thyra::LinearOpBase<double> & lo)
+Teuchos::RCP<const CrsMatrixType> getSubBlock_tp(int i,int j,const Thyra::LinearOpBase<double> & lo)
 {
    const Thyra::BlockedLinearOpBase<double> & blo = Teuchos::dyn_cast<const Thyra::BlockedLinearOpBase<double> >(lo);
    Teuchos::RCP<const OperatorType> t_blo = 
@@ -418,7 +418,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, graph_constr)
    A_11->print(out);
 }
 
-TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
+TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 {
    PHX::KokkosDeviceSession session;
 
@@ -481,7 +481,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    // b_sys->get_A()->PutScalar(-3.0);
    for(int i=0;i<numBlocks;i++) {
       for(int j=0;j<numBlocks;j++) {
-         RCP<CrsMatrixType> M = getSubBlock(i,j,*b_sys->get_A());
+         RCP<CrsMatrixType> M = getSubBlock_tp(i,j,*b_sys->get_A());
          M->resumeFill();
          M->setAllToScalar(-3.0);
          M->fillComplete(M->getDomainMap(),M->getRangeMap());
@@ -566,7 +566,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
          TEST_EQUALITY(data[5],0.0);      // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -592,7 +592,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
          TEST_EQUALITY(data[6],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(3,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -668,7 +668,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
 
    for(int i=0;i<numBlocks;i++)
       for(int j=0;j<numBlocks;j++)
-         putScalar(-3.0,*getSubBlock(i,j,*b_sys->get_A()));
+         putScalar(-3.0,*getSubBlock_tp(i,j,*b_sys->get_A()));
 
    // there are 3 cases for adjustDirichlet
    //   1. Local set only for GID
@@ -755,7 +755,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[5],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -777,7 +777,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[0],0.0);
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],0.0);
@@ -798,7 +798,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[6],0.0);     // case 2
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(3,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
@@ -820,7 +820,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
          TEST_EQUALITY(data[0],-3.0);
 
          for(int j=0;j<numBlocks;j++) {
-            RCP<const CrsMatrixType> subA = getSubBlock(i,j,*A);
+            RCP<const CrsMatrixType> subA = getSubBlock_tp(i,j,*A);
 
             subA->getLocalRowCopy(0,indices,values,numEntries);
             for(std::size_t k=0;k<numEntries;k++) TEST_EQUALITY(values[k],-3.0);
