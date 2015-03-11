@@ -4030,6 +4030,9 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
 
 void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity> &shared_modified )
 {
+    std::ostringstream error_msg;
+    int error_flag = 0;
+
     PartVector shared_part, owned_part, empty;
     shared_part.push_back(&m_mesh_meta_data.globally_shared_part());
     owned_part.push_back(&m_mesh_meta_data.locally_owned_part());
@@ -4072,7 +4075,36 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
             // Remove the globally_shared
             internal_change_entity_parts(entity, empty /*add*/, shared_part /*remove*/);
         }
+
+        // Newly created shared entity had better be in the owned closure
+        bool isEntityGhost = !this->owned_closure(entity) && state(entity)==Created;
+        if(isEntityGhost)
+        {
+            if(0 == error_flag)
+            {
+                error_flag = 1;
+                error_msg << "\nP" << parallel_rank() << ": " << " FAILED\n"
+                          << "  The following entities were declared on multiple processors,\n"
+                          << "  cannot be parallel-shared, and were declared with"
+                          << "  parallel-ghosting information. {\n";
+            }
+            error_msg << "    " << print_entity_key(m_mesh_meta_data, entity_key(entity));
+            error_msg << " also declared on";
+            for(PairIterEntityComm ec = internal_entity_comm_map_shared(entity_key(entity)); !ec.empty(); ++ec)
+            {
+                error_msg << " P" << ec->proc;
+            }
+            error_msg << "\n";
+        }
     }
+
+    // Parallel-consistent error checking of above loop
+    if(error_flag)
+    {
+        error_msg << "}\n";
+    }
+    all_reduce(parallel(), ReduceMax<1>(&error_flag));
+    ThrowErrorMsgIf( error_flag, error_msg.str());
 }
 
 
