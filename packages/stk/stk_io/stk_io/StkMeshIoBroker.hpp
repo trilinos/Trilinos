@@ -559,6 +559,14 @@ namespace stk {
       const stk::mesh::MetaData &meta_data() const;
       const stk::mesh::BulkData &bulk_data() const;
 
+      // Special RCP getters for meta_data and bulk_data. Use these to handoff
+      // meta/bulk data to classes that also track meta/bulk data via RCP.
+      Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return m_meta_data; }
+      Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return m_bulk_data; }
+
+      Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return m_meta_data; }
+      Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return m_bulk_data; }
+
       // Return the coordinate field for this mesh.
       stk::mesh::FieldBase const& get_coordinate_field();
 
