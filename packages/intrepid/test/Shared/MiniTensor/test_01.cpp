@@ -80,7 +80,7 @@ generate_sequence(
   return v;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_fundamentals(Index const dimension)
 {
@@ -150,61 +150,83 @@ test_fundamentals(Index const dimension)
   decremented = error <= machine_epsilon<Scalar>();
   passed = passed && decremented;
 
- 
 #ifdef HAVE_INTREPID_KOKKOSCORE
   //test Tensor fill and create for Kokkos data types
-  Kokkos::View<Scalar*, Kokkos::Serial> X1_k ("X1_kokkos",dimension);
-  Kokkos::View<Scalar**, Kokkos::Serial> X2_k ("X2_kokkos",dimension,dimension);
-  Kokkos::View<Scalar***, Kokkos::Serial> X3_k ("X3_kokkos",dimension,dimension,dimension);
-  Kokkos::View<Scalar****, Kokkos::Serial> X4_k ("X4_kokkos",dimension,dimension, dimension, dimension);
+  Kokkos::View<Scalar *, Kokkos::Serial>
+  X1("X1_kokkos", dimension);
 
-  Kokkos::deep_copy(X1_k, 3.1);
-  Kokkos::deep_copy(X2_k, 3.2);
-  Kokkos::deep_copy(X3_k, 3.3);
-  Kokkos::deep_copy(X4_k, 3.4);
+  Kokkos::View<Scalar **, Kokkos::Serial>
+  X2("X2_kokkos", dimension, dimension);
 
-  Tensor  A1_k(dimension); //(X1_k,0);
+  Kokkos::View<Scalar ***, Kokkos::Serial>
+  X3("X3_kokkos", dimension, dimension, dimension);
 
- // Index const  number_components = A1_k.get_number_components();
-  Index rank=0;
-  Index temp=number_components;
+  Kokkos::View<Scalar ****, Kokkos::Serial>
+  X4("X4_kokkos", dimension, dimension, dimension, dimension);
 
-  while (temp!=1){
-   temp =temp/dimension;
-   rank=rank +1;
-   if (temp<1) TEUCHOS_TEST_FOR_EXCEPTION( ( (temp<1)  ), std::invalid_argument,
-                                  ">>> ERROR (MiniTensor:: fill): rank calculation is not correct");
+  Kokkos::deep_copy(X1, 3.1);
+  Kokkos::deep_copy(X2, 3.2);
+  Kokkos::deep_copy(X3, 3.3);
+  Kokkos::deep_copy(X4, 3.4);
+
+  Tensor
+  Z(dimension); //(X1_k,0);
+
+  Index
+  rank = 0;
+
+  Index
+  temp = number_components;
+
+  while (temp != 1) {
+    temp = temp / dimension;
+    rank = rank + 1;
+    assert(temp > 0);
   }
 
-  if (rank==1)
-   A1_k.fill(X1_k,0);
+  switch (rank) {
+  default:
+    assert(false);
+    break;
 
-  if (rank==2)
-   A1_k.fill(X2_k,0,0);
- 
-  if (rank==3)
-   A1_k.fill(X3_k,0,0,0);
+  case 1:
+    Z.fill(X1, 0);
+    break;
 
-  if (rank==4)
-   A1_k.fill(X4_k,0,0,0,0);
+  case 2:
+    Z.fill(X2, 0, 0);
+    break;
 
-  Tensor B1_k=A1_k;
+  case 3:
+    Z.fill(X3, 0, 0, 0);
+    break;
 
-  Tensor C1_k;
-  C1_k = B1_k - A1_k;
+  case 4:
+    Z.fill(X4, 0, 0, 0, 0);
+    break;
+  }
 
-  error = norm_f(C1_k);
+  // Test copy constructor.
+  Tensor const
+  U = Z;
+
+  // Test copy assignment.
+  Tensor
+  V;
+
+  V = U - Z;
+
+  error = norm_f(V);
 
   bool const
   tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
   passed = passed && tensor_create_from_1d_kokkos;
 #endif 
 
-
   return passed;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_filling(Index const dimension)
 {
@@ -275,7 +297,7 @@ test_filling(Index const dimension)
   return passed;
 }
 
-template <typename Tensor, typename Scalar>
+template<typename Tensor, typename Scalar>
 bool
 test_arithmetic(Index const dimension)
 {
@@ -290,7 +312,7 @@ test_arithmetic(Index const dimension)
 
   Real const
   sum_squares = number_components * (number_components + 1) *
-  (2 * number_components + 1) / 6;
+      (2 * number_components + 1) / 6;
 
   // Test addition
   Tensor const
@@ -597,7 +619,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Exponential)
 
   Real const error = norm(D) / norm(B);
 
-  TEST_COMPARE( error, <=, 100.0 * machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
@@ -611,9 +633,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen)
 
   boost::tie(V, D) = eig_sym(A);
 
-  TEST_COMPARE(std::abs(D(0,0) - 1.1), <=, machine_epsilon<Real>());
-  TEST_COMPARE(std::abs(D(1,1) - 1.0), <=, machine_epsilon<Real>());
-  TEST_COMPARE(std::abs(D(2,2) - 0.9), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(0, 0) - 1.1), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(1, 1) - 1.0), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(D(2, 2) - 0.9), <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
@@ -628,8 +650,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, LeftPolarDecomposition)
   Tensor<Real> R(3);
   boost::tie(V, R) = polar_left(F);
 
-  TEST_COMPARE(norm(V-V0), <=, 10.0*machine_epsilon<Real>());
-  TEST_COMPARE(norm(R-R0), <=, machine_epsilon<Real>());
+  TEST_COMPARE(norm(V - V0), <=, 10.0 * machine_epsilon<Real>());
+  TEST_COMPARE(norm(R - R0), <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
@@ -643,10 +665,10 @@ TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
 
   TEST_COMPARE(norm(r), <=, machine_epsilon<Real>());
 
-  TEST_COMPARE( std::abs(r0(0,1) + 0.785398163397448), <=,
-      10.0*machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(r0(0, 1) + 0.785398163397448), <=,
+      10.0 * machine_epsilon<Real>());
 
-  TEST_COMPARE( std::abs(r0(0,1) + r0(1,0)), <=, machine_epsilon<Real>());
+  TEST_COMPARE(std::abs(r0(0, 1) + r0(1, 0)), <=, machine_epsilon<Real>());
 
   Real theta = std::acos(-1.0) + 10 * machine_epsilon<Real>();
 
@@ -662,7 +684,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, LogRotation)
   Rref(0, 1) = -theta;
   Rref(1, 0) = theta;
 
-  TEST_COMPARE(norm(logR - Rref), <=, 100*machine_epsilon<Real>());
+  TEST_COMPARE(norm(logR - Rref), <=, 100 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
@@ -675,7 +697,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
 
   Tensor<Real> f = bch(logV, logR);
 
-  TEST_COMPARE( std::abs(f(0,0) - std::log(3.0)), <=,
+  TEST_COMPARE(std::abs(f(0, 0) - std::log(3.0)), <=,
       machine_epsilon<Real>());
 
   Vector<Real> u(3);
@@ -698,9 +720,9 @@ TEUCHOS_UNIT_TEST(MiniTensor, BakerCampbellHausdorff)
   Rref(1, 0) = 1.0;
   Rref(2, 2) = -1.0;
 
-  TEST_COMPARE( norm(Rref-R1), <=, 100.0*machine_epsilon<Real>());
-  TEST_COMPARE( norm(exp_skew_symmetric(logR) - R), <=,
-      100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(Rref - R1), <=, 100.0 * machine_epsilon<Real>());
+  TEST_COMPARE(norm(exp_skew_symmetric(logR) - R), <=,
+      100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
@@ -721,14 +743,14 @@ TEUCHOS_UNIT_TEST(MiniTensor, PolarLeftLog)
 
   Real const error = norm(v - L) / norm(L);
 
-  TEST_COMPARE( error, <=, 100*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
 {
   Tensor<Real> A = 3.0 * eye<Real>(3);
 
-  TEST_COMPARE( norm(A - vol(A)), <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(A - vol(A)), <=, 100.0 * machine_epsilon<Real>());
 
   Tensor<Real> B = dev(A);
 
@@ -736,7 +758,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, VolumetricDeviatoric)
   A(1, 1) = 0.0;
   A(2, 2) = 0.0;
 
-  TEST_COMPARE( norm(A - B), <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(norm(A - B), <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
@@ -773,7 +795,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD2x2)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
@@ -788,7 +810,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
@@ -804,7 +826,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
 
   Sacado::Fad::DFad<Real> const error = norm(B - A) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, MixedTypes)
@@ -868,7 +890,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
@@ -883,7 +905,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
@@ -902,7 +924,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Polar3x3)
 
   Real const error = norm(B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
@@ -919,7 +941,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Cholesky)
 
   Real const error = norm(G - B) / norm(A);
 
-  TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
@@ -965,7 +987,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
 
   Tensor4<Real> B = kronecker(Q, A);
 
-  Real const error = norm_f(B-A) / norm_f(A);
+  Real const error = norm_f(B - A) / norm_f(A);
 
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
@@ -1087,7 +1109,6 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
     TEST_COMPARE(is_equal, ==, true);
   }
 
-
   {
     //
     // use double explicitly
@@ -1106,32 +1127,32 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
     std::string
     type_string =
-        Sacado::StringName<Sacado::ScalarType<A>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<A>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<A>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<A>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ScalarType<B>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<B>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<B>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<B>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ScalarType<C>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<C>::type>::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<Sacado::ValueType<C>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<C>::type>::eval();
 
     TEST_COMPARE(type_string, ==, fad_string);
   }
