@@ -100,11 +100,11 @@ public:
   ~CSet();
   CSet();
 
-private:
-
   typedef void (*DeleteFunction)(void *);
 
   typedef std::pair< const std::type_info * , DeleteFunction > Manager ;
+
+private:
 
   const void * p_get( const std::type_info & ) const ;
 
