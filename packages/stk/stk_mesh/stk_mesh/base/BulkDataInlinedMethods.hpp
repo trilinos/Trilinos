@@ -444,8 +444,8 @@ bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
-    const int owner_rank = entity_comm_map_owner(key);
-    for ( PairIterEntityComm ec = entity_comm_map(key); ! ec.empty() ; ++ec )
+    const int owner_rank = internal_entity_comm_map_owner(key);
+    for ( PairIterEntityComm ec = internal_entity_comm_map(key); ! ec.empty() ; ++ec )
     {
       if ( ec->ghost_id != 0 &&
            ec->proc     != owner_rank)
