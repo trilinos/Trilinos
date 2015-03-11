@@ -182,7 +182,7 @@ public:
                               const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                               const Teuchos::RCP<GlobalEvaluationData> & ged,
                               const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                              const Teuchos::RCP<const LinearObjFactory<panzer::Traits> > & jacLOF=Teuchos::null);
+                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi=Teuchos::null);
 
   /** Add a global evaluation data object that will be filled as a side
     * effect when evalModel is called. This is useful for building things
@@ -349,6 +349,21 @@ private:
 
 private: // data members
 
+  struct ParameterObject {
+    bool is_distributed; // or (is scalar?)
+    Teuchos::RCP<Teuchos::Array<std::string> > names;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > space;
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_value;
+
+    // for distributed parameters
+    Teuchos::RCP<const UniqueGlobalIndexerBase> global_indexer;
+
+    // for scalar parameters
+    panzer::ParamVec scalar_value;
+  };
+
+  Teuchos::RCP<ParameterObject> createScalarParameter(const Teuchos::Array<std::string> & names) const;
+
   double t_init_;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
@@ -366,16 +381,12 @@ private: // data members
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > names;
     std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > spaces;
     std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > initial_values;
+    std::vector<Teuchos::RCP<const UniqueGlobalIndexerBase> > global_indexers;
     std::vector<Teuchos::RCP<const LinearObjFactory<panzer::Traits> > > deriv_lofs;
     std::vector<bool> are_distributed;
 
-    // for interaction with the panzer::ParamLib
-    // 
-    // Note that scalar_index.size()==scalar_values.size() <= names.size
-    // Moreover the parameter name associated with a particular ParamVec is
-    // names[scalar_index[i]]. Note that scalar_values.size()==sum(not are_distributed).
-    std::vector<int> scalar_index;                       
     mutable std::vector<panzer::ParamVec> scalar_values;
+
   } parameters_;
 
   mutable bool require_in_args_refresh_;

@@ -492,8 +492,8 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 
       if(!parameters_.are_distributed[p])
         outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_MV_BY_COL));
-      else if(parameters_.are_distributed[p] && parameters_.deriv_lofs[p]!=Teuchos::null)
-        outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_MV_BY_COL));
+      // else if(parameters_.are_distributed[p] && parameters_.deriv_lofs[p]!=Teuchos::null)
+      //   outArgs.setSupports(MEB::OUT_ARG_DfDp,p,MEB::DerivativeSupport(MEB::DERIV_MV_BY_COL));
     }
   
     prototypeOutArgs_ = outArgs;
@@ -558,7 +558,6 @@ addParameter(const Teuchos::Array<std::string> & names)
   // associate vector with the ParamLib
   std::size_t p = parameters_.scalar_values.size();
   parameters_.scalar_values.push_back(panzer::ParamVec());
-  parameters_.scalar_index.push_back(parameter_index);
   global_data_->pl->fillVector<panzer::Traits::Residual>(names, parameters_.scalar_values[p]);
 
   panzer::ParamVec & scalar_values = parameters_.scalar_values[p];
@@ -566,7 +565,7 @@ addParameter(const Teuchos::Array<std::string> & names)
   // build initial condition vector
   RCP<const Thyra::VectorSpaceBase<Scalar> > vs = 
     Thyra::locallyReplicatedDefaultSpmdVectorSpace<Scalar>(rcp(new Teuchos::MpiComm<long int>(lof_->getComm().getRawMpiComm())),
-                                                                                              scalar_values.size());
+                                                                                              names.size());
   RCP<Thyra::SpmdVectorBase<Scalar> > vec = 
     rcp_dynamic_cast<Thyra::SpmdVectorBase<Scalar> >(Thyra::createMember(vs));
   
@@ -592,7 +591,7 @@ addDistributedParameter(const std::string & key,
                         const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                         const Teuchos::RCP<GlobalEvaluationData> & ged,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,
-                        const Teuchos::RCP<const LinearObjFactory<panzer::Traits> > & jacLOF)
+                        const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi)
 {
   int parameter_index = parameters_.names.size();
 
@@ -607,7 +606,7 @@ addDistributedParameter(const std::string & key,
   parameters_.spaces.push_back(vs);
   parameters_.initial_values.push_back(initial);
   parameters_.are_distributed.push_back(true);
-  parameters_.deriv_lofs.push_back(jacLOF);
+  parameters_.scalar_values.push_back(panzer::ParamVec()); // this is a dummy place holder
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
@@ -926,7 +925,11 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
    std::vector<std::string> activeParameters;
 
    int totalParameterCount = 0;
-   for(std::size_t i=0; i < parameters_.scalar_values.size(); i++) {
+   for(std::size_t i=0; i < parameters_.names.size(); i++) {
+     // skip non-scalar parameters
+     if(parameters_.are_distributed[i])
+       continue;
+
      // have derivatives been requested?
      MEB::Derivative<Scalar> deriv = outArgs.get_DfDp(i);
      if(deriv.isEmpty())
@@ -949,7 +952,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
        thGlobalContainer->set_f_th(vec);
 
        // add container into in args object
-       std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_.names[parameters_.scalar_index[i]])[j];
+       std::string name = "PARAMETER_SENSITIVIES: "+(*parameters_.names[i])[j];
        ae_inargs.addGlobalEvaluationData(name,loc_pair->getGhostedLOC());
        ae_inargs.addGlobalEvaluationData(name+"_pair",loc_pair);
 
@@ -970,7 +973,11 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
    ///////////////////////////////////////////////////////////////////////////////////////
 
    int paramIndex = 0;
-   for (std::size_t i=0; i < parameters_.scalar_values.size(); i++) {
+   for(std::size_t i=0; i < parameters_.names.size(); i++) {
+     // skip non-scalar parameters
+     if(parameters_.are_distributed[i])
+       continue;
+
      // don't modify the parameter if its not needed
      MEB::Derivative<Scalar> deriv = outArgs.get_DfDp(i);
      if(deriv.isEmpty()) {
@@ -1108,6 +1115,46 @@ setOneTimeDirichletBeta(const Scalar & beta) const
 {
   oneTimeDirichletBeta_on_ = true;
   oneTimeDirichletBeta_    = beta;
+}
+
+// ParameterObject methods
+template <typename Scalar>
+Teuchos::RCP<typename panzer::ModelEvaluator<Scalar>::ParameterObject> 
+panzer::ModelEvaluator<Scalar>::
+createScalarParameter(const Teuchos::Array<std::string> & in_names) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  RCP<ParameterObject> paramObj = rcp(new ParameterObject);
+
+  paramObj->names = rcp(new Teuchos::Array<std::string>(in_names));
+  paramObj->is_distributed = false;
+
+  // associate vector with the ParamLib
+  paramObj->scalar_value = panzer::ParamVec();
+
+  global_data_->pl->fillVector<panzer::Traits::Residual>(*paramObj->names, paramObj->scalar_value);
+
+  // build initial condition vector
+  paramObj->space =
+    Thyra::locallyReplicatedDefaultSpmdVectorSpace<Scalar>(rcp(new Teuchos::MpiComm<long int>(lof_->getComm().getRawMpiComm())),
+                                                                                              paramObj->names->size());
+  
+  // fill vector with parameter values
+  Teuchos::ArrayRCP<Scalar> data;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > initial_value 
+      = Thyra::createMember(paramObj->space);
+  RCP<Thyra::SpmdVectorBase<Scalar> > vec
+      = rcp_dynamic_cast<Thyra::SpmdVectorBase<Scalar> >(initial_value);
+  vec->getNonconstLocalData(ptrFromRef(data));
+  for (unsigned int i=0; i < paramObj->scalar_value.size(); i++)
+    data[i] = paramObj->scalar_value[i].baseValue;
+
+  paramObj->initial_value = Thyra::createMember(paramObj->space);
+
+  return paramObj;
 }
 
 #endif
