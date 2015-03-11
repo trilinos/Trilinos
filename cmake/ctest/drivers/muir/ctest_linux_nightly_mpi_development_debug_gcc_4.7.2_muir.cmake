@@ -87,6 +87,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF"
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   "-DTrilinos_ENABLE_MOOCHO=OFF"
+  "-DTrilinos_ENABLE_Optika=OFF"
   )
 
 #
