@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    ROL::ZOO::Objective_Zakharov<RealT> obj;
     int dim = 10; // Set problem dimension. 
 
     Teuchos::ParameterList parlist;
@@ -109,12 +108,18 @@ int main(int argc, char *argv[]) {
 
     // Iteration Vector
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    // Set Initial Guess
+    Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+
+    // Set Initial Guess and vector of natural numbers
     for (int i=0; i<dim; i++) {
       (*x_rcp)[i]   = 4;
+      (*k_rcp)[i]   = i+1.0;
     }
 
+    Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
     ROL::StdVector<RealT> x(x_rcp);
+
+    ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
     // Run Algorithm
     std::vector<std::string> output = algo.run(x, obj, false);

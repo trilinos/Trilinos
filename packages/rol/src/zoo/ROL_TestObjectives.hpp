@@ -49,6 +49,7 @@
 #ifndef ROL_TESTOBJECTIVES_HPP
 #define ROL_TESTOBJECTIVES_HPP
 
+
 #include "ROL_Rosenbrock.hpp"
 #include "ROL_FreudensteinRoth.hpp"
 #include "ROL_Beale.hpp"
@@ -92,6 +93,8 @@ namespace ROL {
       case TESTOBJECTIVES_LAST:                break;
     }
   }
+
+
 
   template<class Real>
   void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<BoundConstraint<Real> > &con, 
