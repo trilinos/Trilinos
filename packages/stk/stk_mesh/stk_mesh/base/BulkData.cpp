@@ -6375,7 +6375,7 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
     const int      p_owner    = parallel_owner_rank(entity);
     const bool     ordered    = ordered_comm( entity );
     const bool     shares     = in_shared( entity_key(entity) );
-    const bool     recv_ghost = in_receive_ghost( entity_key(entity) );
+    const bool     recv_ghost = in_receive_ghost( aura_ghosting(), entity_key(entity) );
     const bool     send_ghost = in_send_ghost( entity_key(entity) );
     const bool     ownedClosure = owned_closure(entity);
 
