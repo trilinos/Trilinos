@@ -60,6 +60,31 @@ public:
     {
     }
 
+    void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    {
+
+    }
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val)
+    {
+
+    }
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val)
+    {
+
+    }
+
+    void track_comm_map_clear_ghosting(stk::mesh::EntityKey key)
+    {
+
+    }
+
+    void track_comm_map_clear(stk::mesh::EntityKey key)
+    {
+
+    }
+
     void write_summary(int mod_cycle_count, bool sort=true)
     {
     }
@@ -90,6 +115,16 @@ public:
     void track_destroy_entity(stk::mesh::Entity entity);
 
     void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts);
+
+    void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val);
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val);
+
+    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val);
+
+    void track_comm_map_clear_ghosting(stk::mesh::EntityKey key);
+
+    void track_comm_map_clear(stk::mesh::EntityKey key);
 
     void write_summary(int mod_cycle_count, bool sort=true);
 

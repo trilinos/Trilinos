@@ -2517,12 +2517,31 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
     std::set<EntityKey> & modified_ghosts = store_entity_key.entity_key_set;
 
+    std::set<EntityKey>::iterator iter = modified_ghosts.begin();
+    std::vector<EntityKey> keysThatAreBothSharedAndCustomGhosted;
+
+    for (;iter!=modified_ghosts.end();++iter)
+    {
+        if ( in_shared(*iter) )
+        {
+            keysThatAreBothSharedAndCustomGhosted.push_back(*iter);
+        }
+    }
+
+    for(size_t i=0;i<keysThatAreBothSharedAndCustomGhosted.size();++i)
+    {
+        modified_ghosts.erase(keysThatAreBothSharedAndCustomGhosted[i]);
+        entity_comm_map_clear_ghosting(keysThatAreBothSharedAndCustomGhosted[i]);
+        std::cerr << "proc " << parallel_rank() << " is clearing all ghosting for key " << keysThatAreBothSharedAndCustomGhosted[i] << std::endl;
+    }
+
     // The ghosted change list will become invalid
     ghosted_change.clear();
 
     std::vector<EntityProc> empty_add ;
     std::vector<EntityKey>  remove_modified_ghosts( modified_ghosts.begin() ,
                                                     modified_ghosts.end() );
+
 
     // Skip 'm_ghosting[0]' which is the shared subset.
     for ( std::vector<Ghosting*>::iterator
@@ -3873,7 +3892,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     const bool remotely_destroyed = Deleted == i->state ;
     const bool isAlreadyDestroyed  = !is_valid(entity);
 
-
     if ( local_owner ) { // Sending to 'remote_proc' for ghosting
 
       if ( remotely_destroyed ) {
@@ -3894,24 +3912,22 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     else { // Receiving from 'remote_proc' for ghosting
 
       const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
+      bool isAuraGhost = false;
       bool isCustomGhost = false;
       PairIterEntityComm pairIterEntityComm = internal_entity_comm_map(key);
       for(unsigned j=0; j<pairIterEntityComm.size(); ++j)
       {
-          if (pairIterEntityComm[j].ghost_id > 1)
+          if (pairIterEntityComm[j].ghost_id == AURA)
+          {
+              isAuraGhost = true;
+          }
+          else if (pairIterEntityComm[j].ghost_id > AURA)
           {
               isCustomGhost = true;
-              if ( hasBeenPromotedToSharedOrOwned )
-              {
-                  ghosting_change_flags[pairIterEntityComm[j].ghost_id] = true ;
-                  entity_comm_map_erase(key, *m_ghosting[pairIterEntityComm[j].ghost_id]);
-              }
           }
       }
 
-      const bool isAuraGhost = !isCustomGhost;
-
-      if(isAuraGhost)
+      if ( isAuraGhost )
       {
           entity_comm_map_erase(key, aura_ghosting());
           ghosting_change_flags[AURA] = true ;
@@ -3920,7 +3936,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       if(!isAlreadyDestroyed)
       {
           const bool wasDestroyedByOwner = remotely_destroyed;
-          const bool shouldDestroyGhost = wasDestroyedByOwner || (isAuraGhost && !hasBeenPromotedToSharedOrOwned);
+          const bool shouldDestroyGhost = wasDestroyedByOwner || (isAuraGhost && !isCustomGhost && !hasBeenPromotedToSharedOrOwned);
 
           if ( shouldDestroyGhost )
           {
@@ -4014,9 +4030,6 @@ void BulkData::resolve_ownership_of_modified_entities( const std::vector<Entity>
 
 void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity> &shared_modified )
 {
-    std::ostringstream error_msg;
-    int error_flag = 0;
-
     PartVector shared_part, owned_part, empty;
     shared_part.push_back(&m_mesh_meta_data.globally_shared_part());
     owned_part.push_back(&m_mesh_meta_data.locally_owned_part());
@@ -4059,36 +4072,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
             // Remove the globally_shared
             internal_change_entity_parts(entity, empty /*add*/, shared_part /*remove*/);
         }
-
-        // Newly created shared entity had better be in the owned closure
-        bool isEntityGhost = !this->owned_closure(entity);
-        if(isEntityGhost)
-        {
-            if(0 == error_flag)
-            {
-                error_flag = 1;
-                error_msg << "\nP" << parallel_rank() << ": " << " FAILED\n"
-                          << "  The following entities were declared on multiple processors,\n"
-                          << "  cannot be parallel-shared, and were declared with"
-                          << "  parallel-ghosting information. {\n";
-            }
-            error_msg << "    " << print_entity_key(m_mesh_meta_data, entity_key(entity));
-            error_msg << " also declared on";
-            for(PairIterEntityComm ec = internal_entity_comm_map_shared(entity_key(entity)); !ec.empty(); ++ec)
-            {
-                error_msg << " P" << ec->proc;
-            }
-            error_msg << "\n";
-        }
     }
-
-    // Parallel-consistent error checking of above loop
-    if(error_flag)
-    {
-        error_msg << "}\n";
-    }
-    all_reduce(parallel(), ReduceMax<1>(&error_flag));
-    ThrowErrorMsgIf( error_flag, error_msg.str());
 }
 
 

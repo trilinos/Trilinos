@@ -356,10 +356,12 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
 
       entry.first = mesh.get_entity( key );
 
-      if ( mesh.in_receive_ghost( mesh.entity_key(entry.first) ) ) {
+      if ( mesh.in_receive_ghost( key ) ) {
         ghosted_change.push_back( entry );
       }
-      else {
+
+      if ( mesh.in_shared(key) )
+      {
         shared_change.push_back( entry );
       }
     }

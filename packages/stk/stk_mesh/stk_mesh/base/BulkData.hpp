@@ -795,14 +795,32 @@ protected: //functions
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified );
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
+
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val)
   {
+      m_modSummary.track_comm_map_insert(entity, val);
       return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity));
   }
-  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
-  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
-  void entity_comm_map_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
-  void entity_comm_map_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val)
+  {
+      m_modSummary.track_comm_map_erase(key, val);
+      return m_entity_comm_map.erase(key,val);
+  }
+  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost)
+  {
+      m_modSummary.track_comm_map_erase(key, ghost);
+      return m_entity_comm_map.erase(key,ghost);
+  }
+  void entity_comm_map_clear_ghosting(const EntityKey & key )
+  {
+      m_modSummary.track_comm_map_clear_ghosting(key);
+      m_entity_comm_map.comm_clear_ghosting(key);
+  }
+  void entity_comm_map_clear(const EntityKey & key)
+  {
+      m_modSummary.track_comm_map_clear(key);
+      m_entity_comm_map.comm_clear(key);
+  }
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.

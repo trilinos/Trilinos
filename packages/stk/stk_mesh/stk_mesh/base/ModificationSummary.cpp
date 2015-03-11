@@ -40,7 +40,7 @@ void ModificationSummary::track_change_ghosting(const stk::mesh::Ghosting & ghos
     {
         os << "Deleting receive ghost " << remove_receive[i] << " for ghosting " << ghosts.name() << std::endl;
         addEntityKeyAndStringToTracker(remove_receive[i], os.str());
-        os.str();
+        os.str("");
     }
 }
 
@@ -124,6 +124,56 @@ void ModificationSummary::track_change_entity_parts(stk::mesh::Entity entity, co
         writeParts(os, "removing parts:", rmParts);
 
         addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
+    }
+}
+
+void ModificationSummary::track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+{
+    if(isValid(entity))
+    {
+        std::ostringstream os;
+        os << "Adding entity with key " << getEntityKey(entity) << " to comm_map for ghosting id: " << val.ghost_id << " to proc " << val.proc << "\n";
+        addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
+    }
+}
+
+void ModificationSummary::track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val)
+{
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Erasing entity with key " << key << " from comm_map for ghosting id: " << val.ghost_id << " to proc " << val.proc << "\n";
+        addEntityKeyAndStringToTracker(key, os.str());
+    }
+}
+
+void ModificationSummary::track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val)
+{
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Erasing entity with key " << key << " from comm_map for ghosting id: " << val.ordinal() << " for all procs\n";
+        addEntityKeyAndStringToTracker(key, os.str());
+    }
+}
+
+void ModificationSummary::track_comm_map_clear_ghosting(stk::mesh::EntityKey key)
+{
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Erasing entity with key " << key << " from all ghosting comm_maps\n";
+        addEntityKeyAndStringToTracker(key, os.str());
+    }
+}
+
+void ModificationSummary::track_comm_map_clear(stk::mesh::EntityKey key)
+{
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Erasing entity with key " << key << " from all ghosting and sharing comm_maps\n";
+        addEntityKeyAndStringToTracker(key, os.str());
     }
 }
 

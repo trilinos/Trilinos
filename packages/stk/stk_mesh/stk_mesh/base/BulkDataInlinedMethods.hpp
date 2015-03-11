@@ -425,11 +425,13 @@ int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
 inline
 bool BulkData::in_receive_ghost( EntityKey key ) const
 {
-  // Ghost communication with owner.
-  const int owner_rank = internal_entity_comm_map_owner(key);
-  PairIterEntityComm ec = internal_entity_comm_map(key);
-  return !ec.empty() && ec.front().ghost_id != 0 &&
-         ec.front().proc == owner_rank;
+  const std::vector<Ghosting*> & ghosts= ghostings();
+  for (size_t i=ghosts.size()-1;i>=AURA;--i)
+  {
+      if ( in_receive_ghost(*ghosts[i], key) )
+          return true;
+  }
+  return false;
 }
 
 inline
@@ -442,11 +444,16 @@ bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 inline
 bool BulkData::in_send_ghost( EntityKey key) const
 {
-  // Ghost communication with non-owner.
-  const int owner_rank = internal_entity_comm_map_owner(key);
-  PairIterEntityComm ec = internal_entity_comm_map(key);
-  return ! ec.empty() && ec.back().ghost_id != 0 &&
-    ec.back().proc != owner_rank;
+    const int owner_rank = entity_comm_map_owner(key);
+    for ( PairIterEntityComm ec = entity_comm_map(key); ! ec.empty() ; ++ec )
+    {
+      if ( ec->ghost_id != 0 &&
+           ec->proc     != owner_rank)
+      {
+        return true;
+      }
+    }
+    return false;
 }
 
 inline
