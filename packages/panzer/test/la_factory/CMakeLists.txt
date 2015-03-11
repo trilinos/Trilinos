@@ -66,10 +66,10 @@ ENDIF()
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test)
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  tCloneLOF
-#  SOURCES tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
-#  COMM mpi
-#  NUM_MPI_PROCS 2
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tCloneLOF
+  SOURCES tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  )
 

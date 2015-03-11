@@ -242,6 +242,14 @@ public:
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return gidProvider_; }
 
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
+   { return colGidProvider_!=Teuchos::null ? colGidProvider_ : gidProvider_; }
+
+   //! Get the range unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
+   { return gidProvider_; }
+
 protected:
    Teuchos::RCP<Epetra_Vector> getGhostedEpetraVector() const;
    Teuchos::RCP<Epetra_Vector> getEpetraVector() const;
