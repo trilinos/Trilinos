@@ -795,7 +795,20 @@ protected:
 
   //@}
 
-};
+  /** \brief constructor */
+  //@{
+ 
+  /** \brief . */
+  ModelEvaluatorBase();
+
+  //@}
+
+private:
+  // Not defined and not to be called
+  ModelEvaluatorBase(const ModelEvaluatorBase&);
+  ModelEvaluatorBase& operator=(const ModelEvaluatorBase&);
+
+}; // ModelEvaluatorBase
 
 
 /** \relates ModelEvaluatorBase */
