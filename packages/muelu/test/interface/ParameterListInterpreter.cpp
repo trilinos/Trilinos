@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
           case 0: paramList                     .set("verbosity", "test"); break; // easy
           case 1: paramList.sublist("Hierarchy").set("verbosity", "Test"); break; // factory
           case 2: paramList                     .set("ML output",     42); break; // ML
-          // FIXME: should not case 3: follow case 2:
+          case 3: paramList                     .set("ML output",     10); break; // ML
         }
 
         try {
