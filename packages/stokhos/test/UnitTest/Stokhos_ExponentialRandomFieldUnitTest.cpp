@@ -61,7 +61,7 @@ namespace ExponentialRandomFieldUnitTest {
     Teuchos::ParameterList solverParams;
     solverParams.set("Nonlinear Solver Tolerance", 1e-8);
     typedef Stokhos::KL::OneDExponentialCovarianceFunction<double> cov_type;
-    typedef typename cov_type::eigen_pair_type eigen_pair_type;
+    typedef cov_type::eigen_pair_type eigen_pair_type;
     cov_type cov(M, a, b, L, 0, solverParams);
 
     // Get eigenpairs
@@ -86,7 +86,7 @@ namespace ExponentialRandomFieldUnitTest {
     Teuchos::ParameterList solverParams;
     solverParams.set("Nonlinear Solver Tolerance", 1e-8);
     typedef Stokhos::KL::OneDExponentialCovarianceFunction<double> cov_type;
-    typedef typename cov_type::eigen_pair_type eigen_pair_type;
+    typedef cov_type::eigen_pair_type eigen_pair_type;
     cov_type cov(M, a, b, L, 0, solverParams);
 
     // Get eigenpairs
@@ -124,7 +124,7 @@ namespace ExponentialRandomFieldUnitTest {
     // Setup covariance function
     Teuchos::ParameterList solverParams;
     typedef Stokhos::KL::OneDExponentialCovarianceFunction<double> cov_type;
-    typedef typename cov_type::eigen_pair_type eigen_pair_type;
+    typedef cov_type::eigen_pair_type eigen_pair_type;
     cov_type cov(M, a, b, L, 0, solverParams);
 
     // Get eigenpairs
@@ -174,7 +174,7 @@ namespace ExponentialRandomFieldUnitTest {
     // Setup covariance function
     Teuchos::ParameterList solverParams;
     typedef Stokhos::KL::OneDExponentialCovarianceFunction<double> cov_type;
-    typedef typename cov_type::eigen_pair_type eigen_pair_type;
+    typedef cov_type::eigen_pair_type eigen_pair_type;
     cov_type cov(M, a, b, L, 0, solverParams);
 
     // Get eigenpairs
@@ -227,7 +227,7 @@ namespace ExponentialRandomFieldUnitTest {
     // Setup covariance function
     Teuchos::ParameterList solverParams;
     typedef Stokhos::KL::OneDExponentialCovarianceFunction<double> cov_type;
-    typedef typename cov_type::eigen_pair_type eigen_pair_type;
+    typedef cov_type::eigen_pair_type eigen_pair_type;
     cov_type cov(M, a, b, L, 0, solverParams);
 
     // Get eigenpairs
