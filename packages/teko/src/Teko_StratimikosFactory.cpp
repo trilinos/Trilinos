@@ -44,11 +44,13 @@ namespace {
    class TekoFactoryBuilder 
          : public Teuchos::AbstractFactory<Thyra::PreconditionerFactoryBase<double> > {
    public:
-      TekoFactoryBuilder(const Teuchos::RCP<Teko::RequestHandler> & rh) : requestHandler_(rh) {}
+      TekoFactoryBuilder(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
+                         const Teuchos::RCP<Teko::RequestHandler> & rh) : builder_(builder), requestHandler_(rh) {}
       Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > create() const
-      { return Teuchos::rcp(new StratimikosFactory(requestHandler_)); }
+      { return Teuchos::rcp(new StratimikosFactory(builder_,requestHandler_)); }
  
    private:
+      Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> builder_;
       Teuchos::RCP<Teko::RequestHandler> requestHandler_;
    };
 }
@@ -61,6 +63,13 @@ StratimikosFactory::StratimikosFactory()
 // Constructors/initializers/accessors
 StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> & rh)
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd()))
+{
+   setRequestHandler(rh);
+}
+
+StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> & builder,
+                                       const Teuchos::RCP<Teko::RequestHandler> & rh)
+  :epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())), builder_(builder)
 {
    setRequestHandler(rh);
 }
@@ -172,7 +181,7 @@ void StratimikosFactory::initializePrec_Thyra(
     timer.start(true);
 
     // build library, and set request handler (user defined!)
-    invLib_  = Teko::InverseLibrary::buildFromParameterList(paramList_->sublist("Inverse Factory Library"));
+    invLib_  = Teko::InverseLibrary::buildFromParameterList(paramList_->sublist("Inverse Factory Library"),builder_);
     invLib_->setRequestHandler(reqHandler_);
 
     // build preconditioner factory
@@ -312,7 +321,7 @@ void StratimikosFactory::initializePrec_Epetra(
     }
 
     // build library, and set request handler (user defined!)
-    invLib_  = Teko::InverseLibrary::buildFromParameterList(paramList_->sublist("Inverse Factory Library"));
+    invLib_  = Teko::InverseLibrary::buildFromParameterList(paramList_->sublist("Inverse Factory Library"),builder_);
     invLib_->setRequestHandler(reqHandler_);
 
     // build preconditioner factory
@@ -602,10 +611,12 @@ void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & build
    TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
                       "Teko::addTekoToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
 
+   Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> builderCopy 
+       = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder(builder));
+
    // use default constructor to add Teko::StratimikosFactory
-   builder.setPreconditioningStrategyFactory(
-         Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,Teko::StratimikosFactory>(),
-         stratName);
+   Teuchos::RCP<TekoFactoryBuilder> tekoFactoryBuilder = Teuchos::rcp(new TekoFactoryBuilder(builderCopy,Teuchos::null));
+   builder.setPreconditioningStrategyFactory(tekoFactoryBuilder,stratName);
 }
 
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder,
@@ -615,9 +626,12 @@ void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & build
    TEUCHOS_TEST_FOR_EXCEPTION(builder.getValidParameters()->sublist("Preconditioner Types").isParameter(stratName),std::logic_error,
                       "Teko::addTekoToStratimikosBuilder cannot add \"" + stratName +"\" because it is already included in builder!");
 
+   Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> builderCopy 
+       = Teuchos::rcp(new Stratimikos::DefaultLinearSolverBuilder(builder));
+
    // build an instance of a Teuchos::AbsractFactory<Thyra::PFB> so request handler is passed onto
    // the resulting StratimikosFactory
-   Teuchos::RCP<TekoFactoryBuilder> tekoFactoryBuilder = Teuchos::rcp(new TekoFactoryBuilder(rh));
+   Teuchos::RCP<TekoFactoryBuilder> tekoFactoryBuilder = Teuchos::rcp(new TekoFactoryBuilder(builderCopy,rh));
    builder.setPreconditioningStrategyFactory(tekoFactoryBuilder,stratName);
 }
 
