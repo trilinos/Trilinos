@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -86,7 +86,7 @@ public:
     }
 
   //@}
- 
+
 protected:
 
   /** \name Overridded protected functions overridden from ReductionFunctional. */
@@ -96,7 +96,7 @@ protected:
   virtual typename ScalarTraits<Scalar>::magnitudeType
   reduceImpl(const VectorBase<Scalar> &v) const
     {
-      typedef ScalarTraits<Scalar> ST;
+      // typedef ScalarTraits<Scalar> ST; // unused
       return norm<Scalar>(v);
     }
 
@@ -175,11 +175,12 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ReductionFunctional, reduce )
 
 #ifdef THYRA_DEBUG
 
-  
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ReductionFunctional, notCompatible, Scalar )
 {
-  typedef ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
+  // typedef ScalarTraits<Scalar> ST; // unused
+  // typedef typename ST::magnitudeType ScalarMag; // unused
+  // typedef ScalarTraits<ScalarMag> SMT; // unused
   const RCP<VectorBase<Scalar> > v = createMember<Scalar>(defaultSpmdVectorSpace<Scalar>(n));
   MockNormReductionFunctional<Scalar> mockNormReductionFunctional(
     defaultSpmdVectorSpace<Scalar>(n/2));
@@ -195,11 +196,12 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ReductionFunctional, notCompati
 // SolveCriteria
 //
 
-  
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SolveCriteria, defaultConstruct, Scalar )
 {
-  typedef ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
+  // typedef ScalarTraits<Scalar> ST; // unused
+  // typedef typename ST::magnitudeType ScalarMag; // unused
+  // typedef ScalarTraits<ScalarMag> SMT; // unused
   SolveCriteria<Scalar> solveCriteria;
   TEST_EQUALITY(solveCriteria.solveMeasureType.numerator, SOLVE_MEASURE_ONE);
   TEST_EQUALITY(solveCriteria.solveMeasureType.denominator, SOLVE_MEASURE_ONE);
@@ -210,11 +212,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SolveCriteria, defaultConstruct, Scalar )
 }
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( SolveCriteria, defaultConstruct )
 
-  
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( SolveCriteria, constructAll, Scalar )
 {
   typedef ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
+  // typedef ScalarTraits<ScalarMag> SMT; // unused
   const SolveMeasureType solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL, SOLVE_MEASURE_NORM_RHS);
   const ScalarMag requestedTol = 0.5;
   RCP<ParameterList> extraParameters = Teuchos::parameterList();

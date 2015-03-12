@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -92,7 +92,7 @@ inline Scalar cube(const Scalar &x) { return x*x*x; }
 
 
 //
-// Test basic construction 
+// Test basic construction
 //
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Thyra::Ordinal Ordinal;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  //typedef Thyra::ModelEvaluatorBase MEB; // unused
   using Thyra::derivativeGradient;
   using Thyra::create_DgDp_mv;
   using Thyra::eval_g_DgDp;
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
 
   RCP<const Thyra::ModelEvaluator<Scalar> >
     model = Thyra::diagonalQuadraticResponseOnlyModelEvaluator<Scalar>(g_localDim);
-  
+
   TEST_ASSERT(!is_null(model));
   TEST_EQUALITY_CONST(model->Np(), 1);
   TEST_EQUALITY_CONST(model->Ng(), 1);
@@ -137,15 +137,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
 
   const Ordinal globalDim = p_space->dim();
   out << "\nglobalDim = " << globalDim << "\n";
-  
+
   TEST_FLOATING_EQUALITY( get_ele<Scalar>(*g, 0),
     as<Scalar>(0.5*globalDim)*val*val, as<ScalarMag>(g_tol_scale*ST::eps()/globalDim));
-  
+
   TEST_FLOATING_EQUALITY(
     norm_2<Scalar>(*g_grad),
     ST::magnitude(ST::squareroot(as<Scalar>(globalDim)*val*val)),
     as<ScalarMag>(g_tol_scale*ST::eps()/globalDim));
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Thyra::Ordinal Ordinal;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  //typedef Thyra::ModelEvaluatorBase MEB; // unused
   using Thyra::VectorSpaceBase;
   using Thyra::VectorBase;
   using Thyra::derivativeGradient;
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   const Scalar p_val = as<Scalar>(2.0);
   const RCP<VectorBase<Scalar> > p_init = createMember(p_space);
   V_S(p_init.ptr(), p_val);
-  
+
   RCP<VectorBase<Scalar> >
     g = createMember(g_space),
     g_grad = createMember(p_space);
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
 
   const Ordinal globalDim = p_space->dim();
   out << "\nglobalDim = " << globalDim << "\n";
-  
+
   TEST_FLOATING_EQUALITY(
     get_ele<Scalar>(*g, 0),
     as<Scalar>(
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
       ),
     as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
-  
+
   TEST_FLOATING_EQUALITY(
     sum(*g_grad),
     as<Scalar>(
@@ -241,7 +241,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
       ),
     as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Thyra::Ordinal Ordinal;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  //typedef Thyra::ModelEvaluatorBase MEB; // unused
   using Thyra::derivativeGradient;
   using Thyra::VectorSpaceBase;
   using Thyra::VectorBase;
@@ -310,7 +310,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
 
   const Ordinal globalDim = p_space->dim();
   out << "\nglobalDim = " << globalDim << "\n";
-  
+
   TEST_FLOATING_EQUALITY(
     scalarProd(*x, *y),
     as<Scalar>( globalDim * (diag_val / diag_bar_val) * x_val * y_val ),
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   const Scalar p_val = as<Scalar>(2.0);
   const RCP<VectorBase<Scalar> > p_init = createMember(p_space);
   V_S(p_init.ptr(), p_val);
-  
+
   RCP<VectorBase<Scalar> >
     g = createMember(g_space),
     g_grad = createMember(p_space);
@@ -340,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
 
   eval_g_DgDp<Scalar>(*model, 0, *p_init, 0,
     g.ptr(),derivativeGradient<Scalar>(g_grad) );
-  
+
   TEST_FLOATING_EQUALITY(
     get_ele<Scalar>(*g, 0),
     as<Scalar>(
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
       ),
     as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
-  
+
   TEST_FLOATING_EQUALITY(
     sum(*g_grad),
     as<Scalar>(
@@ -362,7 +362,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
       ),
     as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
-  
+
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
