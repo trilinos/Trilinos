@@ -92,7 +92,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Anasazi               packages/anasazi                  PS
   Zoltan2               packages/zoltan2                  SS
   Ifpack2               packages/ifpack2                  PS
-  ShyLU                 packages/shylu                    EX
+  ShyLU                 packages/shylu                    SS
   Stratimikos           packages/stratimikos              PS
   FEI                   packages/fei                      PS
   Teko                  packages/teko                     SS
