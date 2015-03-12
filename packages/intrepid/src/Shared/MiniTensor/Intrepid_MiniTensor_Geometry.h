@@ -374,10 +374,10 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
@@ -388,13 +388,13 @@ private:
   T
   minimum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_maximum_;
 };
 
@@ -417,10 +417,10 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
@@ -431,13 +431,13 @@ private:
   T
   minimum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_maximum_;
 };
 
@@ -466,10 +466,10 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, N>
+  Vector<T, 4>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, N>
+  Vector<T, 4>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
@@ -480,13 +480,13 @@ private:
   T
   minimum_;
 
-  Vector<T, N>
+  Vector<T, 4>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, N>
+  Vector<T, 4>
   arg_maximum_;
 };
 
@@ -515,10 +515,10 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, N>
+  Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
@@ -529,13 +529,13 @@ private:
   T
   minimum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, N>
+  Vector<T, 2>
   arg_maximum_;
 };
 
@@ -558,10 +558,10 @@ public:
   T
   get_maximum() const {return maximum_;}
 
-  Vector<T, N>
+  Vector<T, 3>
   get_arg_minimum() const {return arg_minimum_;}
 
-  Vector<T, N>
+  Vector<T, 3>
   get_arg_maximum() const {return arg_maximum_;}
 
 private:
@@ -572,13 +572,13 @@ private:
   T
   minimum_;
 
-  Vector<T, N>
+  Vector<T, 3>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, N>
+  Vector<T, 3>
   arg_maximum_;
 };
 
