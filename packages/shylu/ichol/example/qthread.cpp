@@ -38,7 +38,7 @@ struct DoNothing {
     // team-task interface
     void apply(const policy_type::member_type &member, value_type &r_val) {
       const int begin = 1, end = 10;
-      auto range = Kokkos::TeamThreadLoop(member,begin,end);
+      auto range = Kokkos::TeamThreadRange(member,begin,end);
 
       Kokkos::parallel_for(range,
                            [&](int i) { 

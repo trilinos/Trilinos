@@ -30,7 +30,7 @@ using namespace Example;
 typedef CrsMatrixBase<value_type,ordinal_type,size_type,space_type> CrsMatrixBaseType;
 typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-typedef TeamFactory<Kokkos::TeamPolicy<space_type>, Kokkos::Impl::TeamThreadLoopBoundariesStruct> TeamFactoryType;
+typedef TeamFactory<Kokkos::TeamPolicy<space_type>, Kokkos::Impl::TeamThreadRangeBoundariesStruct> TeamFactoryType;
 typedef CrsTeamView<CrsMatrixBaseType,TeamFactoryType> CrsTeamViewType;
 
 typedef CrsMatrixBase<CrsTeamViewType,ordinal_type,size_type,space_type> CrsHierBaseType;
